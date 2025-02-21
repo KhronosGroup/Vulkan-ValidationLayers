@@ -19,7 +19,7 @@
 
 
 import os
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 class PnextChainExtractionGenerator(BaseGenerator):
@@ -83,9 +83,9 @@ class PnextChainExtractionGenerator(BaseGenerator):
 
             // Remove last element from a pNext chain
             void PnextChainRemoveLast(void *chain);
-            
+
             // Free dynamically allocated pnext chain structs
-            void PnextChainFree(void *chain);       
+            void PnextChainFree(void *chain);
 
             // Helper class relying on RAII to help with adding and removing an element from a pNext chain
             class PnextChainScopedAdd {
@@ -164,11 +164,11 @@ void *PnextChainExtract(const void */*in_pnext_chain*/, T &/*out*/) { assert(fal
             }
 
             void PnextChainFree(void *chain) {
-                if (!chain) return;       
+                if (!chain) return;
                 auto header = reinterpret_cast<VkBaseOutStructure *>(chain);
                 switch (header->sType) {
             ''')
-        
+
         guard_helper = PlatformGuardHelper()
         for struct in [x for x in self.vk.structs.values() if x.extends]:
             out.extend(guard_helper.add_guard(struct.protect))

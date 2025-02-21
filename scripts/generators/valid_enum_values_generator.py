@@ -18,7 +18,7 @@
 
 import os
 from collections import defaultdict
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 class ValidEnumValuesOutputGenerator(BaseGenerator):

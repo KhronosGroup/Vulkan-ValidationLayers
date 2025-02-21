@@ -20,7 +20,7 @@
 
 import os
 import re
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 # Need pyparsing because the Vulkan-Headers use it in dependencyBNF

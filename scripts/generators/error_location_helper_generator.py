@@ -16,7 +16,7 @@
 # limitations under the License.
 
 import os
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 
 class ErrorLocationHelperOutputGenerator(BaseGenerator):
     def __init__(self):

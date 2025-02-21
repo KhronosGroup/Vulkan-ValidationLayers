@@ -17,8 +17,8 @@
 import os
 import sys
 from generators.generator_utils import buildListVUID, getVUID
-from generators.vulkan_object import Queues, CommandScope
-from generators.base_generator import BaseGenerator
+from vulkan_object import Queues, CommandScope
+from base_generator import BaseGenerator
 #
 # CommandValidationOutputGenerator - Generate implicit vkCmd validation for CoreChecks
 class CommandValidationOutputGenerator(BaseGenerator):

@@ -19,7 +19,7 @@
 
 
 import os
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 class FeatureRequirementsGenerator(BaseGenerator):

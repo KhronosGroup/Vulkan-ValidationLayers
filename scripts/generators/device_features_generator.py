@@ -16,7 +16,7 @@
 
 import os
 import re
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 
 # For detecting VkPhysicalDevice*Features* structs
 featuresStructPattern = re.compile(r'VkPhysicalDevice.*Features[A-Z0-9]*')

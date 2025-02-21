@@ -20,8 +20,8 @@
 
 import os
 from generators.generator_utils import buildListVUID, getVUID, PlatformGuardHelper
-from generators.vulkan_object import Handle, Command, Struct, Member, Param
-from generators.base_generator import BaseGenerator
+from vulkan_object import Handle, Command, Struct, Member, Param
+from base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
 # customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,

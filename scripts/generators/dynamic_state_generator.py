@@ -15,7 +15,7 @@
 # limitations under the License.
 
 import os
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 
 # TODO - Get in vk.xml
 # This is a representation of all the dynamic state information

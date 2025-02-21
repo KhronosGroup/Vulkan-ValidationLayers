@@ -57,7 +57,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         print("Inside Vulkan-Headers there is a registry/reg.py file that is used.")
         sys.exit(1) # Return without call stack so easy to spot error
 
-    from generators.base_generator import BaseGeneratorOptions
+    from base_generator import BaseGeneratorOptions
     from generators.thread_safety_generator import ThreadSafetyOutputGenerator
     from generators.stateless_validation_helper_generator import StatelessValidationHelperOutputGenerator
     from generators.object_tracker_generator import  ObjectTrackerOutputGenerator
@@ -88,7 +88,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
 
     # These set fields that are needed by both OutputGenerator and BaseGenerator,
     # but are uniform and don't need to be set at a per-generated file level
-    from generators.base_generator import SetOutputDirectory, SetTargetApiName, SetMergedApiNames, EnableCaching
+    from base_generator import SetOutputDirectory, SetTargetApiName, SetMergedApiNames, EnableCaching
     SetOutputDirectory(directory)
     SetTargetApiName(api)
 

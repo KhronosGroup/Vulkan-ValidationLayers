@@ -19,8 +19,8 @@
 # limitations under the License.
 
 import os
-from generators.vulkan_object import Command, Param
-from generators.base_generator import BaseGenerator
+from vulkan_object import Command, Param
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 def GetParentInstance(param: Param) -> str:

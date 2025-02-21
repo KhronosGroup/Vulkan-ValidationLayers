@@ -17,8 +17,8 @@
 import sys
 import os
 import json
-from generators.vulkan_object import SpirvEnables
-from generators.base_generator import BaseGenerator
+from vulkan_object import SpirvEnables
+from base_generator import BaseGenerator
 from generators.generator_utils import IsNonVulkanSprivCapability
 
 #
