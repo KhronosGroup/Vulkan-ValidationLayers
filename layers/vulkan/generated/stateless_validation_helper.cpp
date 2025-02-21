@@ -4524,6 +4524,23 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {  // Covers
+                                                                                // VUID-VkPhysicalDevicePresentMeteringFeaturesNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_present_metering)) {
+                skip |= log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                     "includes a pointer to a VkStructureType "
+                                     "(VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV), but its parent extension "
+                                     "VK_NV_present_metering has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentMeteringFeaturesNV);
+                VkPhysicalDevicePresentMeteringFeaturesNV* structure = (VkPhysicalDevicePresentMeteringFeaturesNV*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentMetering), structure->presentMetering);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -10564,6 +10581,66 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkAccelerationStructureGeometryLinearSweptSpheresDataNV structure members
+        case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV: {  // Covers
+                                                                                                // VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType "
+                    "(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV), but its parent extension "
+                    "VK_NV_ray_tracing_linear_swept_spheres has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkAccelerationStructureGeometryLinearSweptSpheresDataNV);
+                VkAccelerationStructureGeometryLinearSweptSpheresDataNV* structure =
+                    (VkAccelerationStructureGeometryLinearSweptSpheresDataNV*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat, structure->vertexFormat,
+                                           "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-vertexFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::radiusFormat), vvl::Enum::VkFormat, structure->radiusFormat,
+                                           "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-radiusFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::indexType), vvl::Enum::VkIndexType, structure->indexType,
+                                           "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexType-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::indexingMode), vvl::Enum::VkRayTracingLssIndexingModeNV,
+                                           structure->indexingMode,
+                                           "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-indexingMode-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::endCapsMode), vvl::Enum::VkRayTracingLssPrimitiveEndCapsModeNV,
+                                           structure->endCapsMode,
+                                           "VUID-VkAccelerationStructureGeometryLinearSweptSpheresDataNV-endCapsMode-parameter");
+            }
+        } break;
+
+        // Validation code for VkAccelerationStructureGeometrySpheresDataNV structure members
+        case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV: {  // Covers
+                                                                                   // VUID-VkAccelerationStructureGeometrySpheresDataNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_ray_tracing_linear_swept_spheres)) {
+                skip |=
+                    log.LogError(pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                                 "includes a pointer to a VkStructureType "
+                                 "(VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV), but its parent extension "
+                                 "VK_NV_ray_tracing_linear_swept_spheres has not been enabled.");
+            }
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkAccelerationStructureGeometrySpheresDataNV);
+                VkAccelerationStructureGeometrySpheresDataNV* structure = (VkAccelerationStructureGeometrySpheresDataNV*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat, structure->vertexFormat,
+                                           "VUID-VkAccelerationStructureGeometrySpheresDataNV-vertexFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::radiusFormat), vvl::Enum::VkFormat, structure->radiusFormat,
+                                           "VUID-VkAccelerationStructureGeometrySpheresDataNV-radiusFormat-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::indexType), vvl::Enum::VkIndexType, structure->indexType,
+                                           "VUID-VkAccelerationStructureGeometrySpheresDataNV-indexType-parameter");
+            }
+        } break;
+
         // Validation code for VkImageViewSampleWeightCreateInfoQCOM structure members
         case VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM: {  // Covers
                                                                              // VUID-VkImageViewSampleWeightCreateInfoQCOM-sType-sType
@@ -11130,6 +11207,17 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         } break;
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+        // Validation code for VkSetPresentConfigNV structure members
+        case VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV: {  // Covers VUID-VkSetPresentConfigNV-sType-sType
+
+            if (!IsExtEnabled(extensions.vk_nv_present_metering)) {
+                skip |= log.LogError(
+                    pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
+                    "includes a pointer to a VkStructureType (VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV), but its parent extension "
+                    "VK_NV_present_metering has not been enabled.");
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
                                                                                    // VUID-VkWriteDescriptorSetAccelerationStructureKHR-sType-sType
@@ -11433,6 +11521,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
@@ -18449,6 +18538,7 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
                                                                  VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE,
+                                                                 VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV,
                                                                  VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_FENCE_INFO_EXT,
                                                                  VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT};
 
@@ -29174,9 +29264,16 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
             if (pInfos[infoIndex].pGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(pGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].pGeometries[geometryIndex].geometryType,
@@ -29196,9 +29293,16 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresKHR(
             if (pInfos[infoIndex].ppGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(ppGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType,
@@ -29265,9 +29369,16 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
             if (pInfos[infoIndex].pGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(pGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].pGeometries[geometryIndex].geometryType,
@@ -29287,9 +29398,16 @@ bool Device::PreCallValidateCmdBuildAccelerationStructuresIndirectKHR(VkCommandB
             if (pInfos[infoIndex].ppGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(ppGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType,
@@ -29356,9 +29474,16 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
             if (pInfos[infoIndex].pGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location pGeometries_loc = pInfos_loc.dot(Field::pGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(pGeometries_loc, pInfos[infoIndex].pGeometries[geometryIndex].pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(pGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].pGeometries[geometryIndex].geometryType,
@@ -29378,9 +29503,16 @@ bool Device::PreCallValidateBuildAccelerationStructuresKHR(VkDevice device, VkDe
             if (pInfos[infoIndex].ppGeometries != nullptr) {
                 for (uint32_t geometryIndex = 0; geometryIndex < pInfos[infoIndex].geometryCount; ++geometryIndex) {
                     [[maybe_unused]] const Location ppGeometries_loc = pInfos_loc.dot(Field::ppGeometries, geometryIndex);
-                    skip |= context.ValidateStructPnext(
-                        ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext, 0, nullptr,
-                        GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                    constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                    skip |= context.ValidateStructPnext(ppGeometries_loc, pInfos[infoIndex].ppGeometries[geometryIndex]->pNext,
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                        allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                        GeneratedVulkanHeaderVersion,
+                                                        "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                        "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                     skip |= context.ValidateRangedEnum(ppGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                        pInfos[infoIndex].ppGeometries[geometryIndex]->geometryType,
@@ -29697,9 +29829,16 @@ bool Device::PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice devic
         if (pBuildInfo->pGeometries != nullptr) {
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location pGeometries_loc = pBuildInfo_loc.dot(Field::pGeometries, geometryIndex);
-                skip |= context.ValidateStructPnext(pGeometries_loc, pBuildInfo->pGeometries[geometryIndex].pNext, 0, nullptr,
-                                                    GeneratedVulkanHeaderVersion,
-                                                    "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                skip |=
+                    context.ValidateStructPnext(pGeometries_loc, pBuildInfo->pGeometries[geometryIndex].pNext,
+                                                allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                 skip |= context.ValidateRangedEnum(pGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                    pBuildInfo->pGeometries[geometryIndex].geometryType,
@@ -29719,9 +29858,16 @@ bool Device::PreCallValidateGetAccelerationStructureBuildSizesKHR(VkDevice devic
         if (pBuildInfo->ppGeometries != nullptr) {
             for (uint32_t geometryIndex = 0; geometryIndex < pBuildInfo->geometryCount; ++geometryIndex) {
                 [[maybe_unused]] const Location ppGeometries_loc = pBuildInfo_loc.dot(Field::ppGeometries, geometryIndex);
-                skip |= context.ValidateStructPnext(ppGeometries_loc, pBuildInfo->ppGeometries[geometryIndex]->pNext, 0, nullptr,
-                                                    GeneratedVulkanHeaderVersion,
-                                                    "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext", kVUIDUndefined, true);
+                constexpr std::array allowed_structs_VkAccelerationStructureGeometryKHR = {
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_LINEAR_SWEPT_SPHERES_DATA_NV,
+                    VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_SPHERES_DATA_NV};
+
+                skip |=
+                    context.ValidateStructPnext(ppGeometries_loc, pBuildInfo->ppGeometries[geometryIndex]->pNext,
+                                                allowed_structs_VkAccelerationStructureGeometryKHR.size(),
+                                                allowed_structs_VkAccelerationStructureGeometryKHR.data(),
+                                                GeneratedVulkanHeaderVersion, "VUID-VkAccelerationStructureGeometryKHR-pNext-pNext",
+                                                "VUID-VkAccelerationStructureGeometryKHR-sType-unique", true);
 
                 skip |= context.ValidateRangedEnum(ppGeometries_loc.dot(Field::geometryType), vvl::Enum::VkGeometryTypeKHR,
                                                    pBuildInfo->ppGeometries[geometryIndex]->geometryType,

@@ -654,6 +654,8 @@ struct DeviceFeatures {
     bool presentBarrier;
     // VkPhysicalDevicePresentIdFeaturesKHR
     bool presentId;
+    // VkPhysicalDevicePresentMeteringFeaturesNV
+    bool presentMetering;
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
     bool presentModeFifoLatestReady;
     // VkPhysicalDevicePresentWaitFeaturesKHR
