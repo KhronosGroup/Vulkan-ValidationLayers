@@ -1684,6 +1684,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->vertexAttributeRobustness |= enabled->vertexAttributeRobustness == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {
+                const VkPhysicalDevicePresentMeteringFeaturesNV *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(pNext);
+                features->presentMetering |= enabled->presentMetering == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {
                 const VkPhysicalDeviceAccelerationStructureFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceAccelerationStructureFeaturesKHR *>(pNext);

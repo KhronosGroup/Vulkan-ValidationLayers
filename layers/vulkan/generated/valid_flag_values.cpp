@@ -1327,8 +1327,6 @@ std::string stateless::Context::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag
             return string_VkBufferUsageFlags2(value);
         case vvl::FlagBitmask::VkAccessFlagBits3KHR:
             return string_VkAccessFlags3KHR(value);
-        case vvl::FlagBitmask::VkPhysicalDeviceSchedulingControlsFlagBitsARM:
-            return string_VkPhysicalDeviceSchedulingControlsFlagsARM(value);
         case vvl::FlagBitmask::VkMemoryDecompressionMethodFlagBitsNV:
             return string_VkMemoryDecompressionMethodFlagsNV(value);
 

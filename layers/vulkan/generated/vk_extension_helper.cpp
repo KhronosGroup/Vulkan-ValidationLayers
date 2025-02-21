@@ -420,6 +420,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_ARM_pipeline_opacity_micromap", vvl::Extension::_VK_ARM_pipeline_opacity_micromap},
         {"VK_EXT_external_memory_metal", vvl::Extension::_VK_EXT_external_memory_metal},
         {"VK_EXT_vertex_attribute_robustness", vvl::Extension::_VK_EXT_vertex_attribute_robustness},
+        {"VK_NV_present_metering", vvl::Extension::_VK_NV_present_metering},
         {"VK_KHR_acceleration_structure", vvl::Extension::_VK_KHR_acceleration_structure},
         {"VK_KHR_ray_tracing_pipeline", vvl::Extension::_VK_KHR_ray_tracing_pipeline},
         {"VK_KHR_ray_query", vvl::Extension::_VK_KHR_ray_query},
