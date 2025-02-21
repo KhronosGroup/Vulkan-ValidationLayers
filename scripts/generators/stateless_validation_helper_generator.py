@@ -21,8 +21,8 @@
 import os
 import re
 from generators.generator_utils import buildListVUID, PlatformGuardHelper
-from generators.vulkan_object import Member, Struct
-from generators.base_generator import BaseGenerator
+from vulkan_object import Member, Struct
+from base_generator import BaseGenerator
 
 # This class is a container for any source code, data, or other behavior that is necessary to
 # customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
@@ -758,7 +758,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         lines = []    # Generated lines of code
         duplicateCountVuid = [] # prevent duplicate VUs being generated
 
-        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings" 
+        # TODO Using a regex in this context is not ideal. Would be nicer if usedLines were a list of objects with "settings"
         validatePNextRegex = re.compile(r'(.*ValidateStructPnext\(.*)(\).*\n*)', re.M)
 
         # Special struct since lots of functions have this, but it can be all combined to the same call (since it is always from the top level of a funciton)

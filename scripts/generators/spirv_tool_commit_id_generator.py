@@ -19,7 +19,7 @@
 
 import os
 import json
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 
 class SpirvToolCommitIdOutputGenerator(BaseGenerator):
     def __init__(self):

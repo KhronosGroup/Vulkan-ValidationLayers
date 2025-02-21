@@ -22,8 +22,8 @@
 # layers and interceptors.
 
 import os
-from generators.vulkan_object import Command
-from generators.base_generator import BaseGenerator
+from vulkan_object import Command
+from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
 # This class is a container for any source code, data, or other behavior that is necessary to

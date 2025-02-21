@@ -17,8 +17,8 @@
 
 import sys
 import os
-from generators.vulkan_object import Flag
-from generators.base_generator import BaseGenerator
+from vulkan_object import Flag
+from base_generator import BaseGenerator
 
 separator = ' |\n        '
 

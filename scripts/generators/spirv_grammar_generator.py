@@ -18,7 +18,7 @@ import sys
 import os
 import re
 import json
-from generators.base_generator import BaseGenerator
+from base_generator import BaseGenerator
 from generators.generator_utils import IsNonVulkanSprivCapability
 
 #
