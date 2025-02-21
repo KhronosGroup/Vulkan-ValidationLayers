@@ -616,3 +616,33 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeGpuAV, RemoveGpuAvInPresenceOfSyncVal) {
+    TEST_DESCRIPTION("Disabling GPU-AV when requirements are not met and sync val is on should not cause a crash");
+
+    SetTargetApiVersion(VK_API_VERSION_1_0);  // GPU-AV needs >1.1
+
+    const std::array validation_enables = {
+        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
+        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+    };
+    const std::array validation_disables = {
+        VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT, VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,
+        VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT, VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
+
+    AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+    VkValidationFeaturesEXT validation_features = vku::InitStructHelper();
+    validation_features.enabledValidationFeatureCount = size32(validation_enables);
+    validation_features.pEnabledValidationFeatures = validation_enables.data();
+    if (m_gpuav_disable_core) {
+        validation_features.disabledValidationFeatureCount = size32(validation_disables);
+        validation_features.pDisabledValidationFeatures = validation_disables.data();
+    }
+
+    RETURN_IF_SKIP(InitFramework(&validation_features));
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GPU-Assisted-Validation");
+    RETURN_IF_SKIP(InitState(nullptr));
+    m_errorMonitor->VerifyFound();
+}
