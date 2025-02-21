@@ -147,3 +147,11 @@ OpBranchConditional %compare %L2 %L3
 %L3 = OpLabel
 OpReturn
 ```
+
+## Creating a BDA Root Node
+
+We have used descriptors in the past to bind our buffers, but are moving to doing it all ourselves with Buffer Device Address. This gives GPU-AV full control and flexibility for us control of how we bind our resources for the shaders.
+
+The diagram below shows how we create a "Root Node" that works like a descriptor set and then instead of bindings, we just apply our addresses to the root node.
+
+![alt_text](images/gpu_av_bda_for_descriptors.svg "gpu_av_bda_for_descriptors.svg")
