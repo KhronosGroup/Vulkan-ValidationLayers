@@ -278,10 +278,7 @@ base::Instance *Instance::GetValidationObject(LayerObjectTypeId object_type) con
 }
 
 Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo)
-    : HandleWrapper(instance->debug_report),
-      settings(instance->settings),
-      dispatch_instance(instance),
-      physical_device(gpu) {
+    : HandleWrapper(instance->debug_report), settings(instance->settings), dispatch_instance(instance), physical_device(gpu) {
     // Get physical device limits for device
     VkPhysicalDeviceProperties device_properties = {};
     dispatch_instance->instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &device_properties);
@@ -718,14 +715,16 @@ void Device::ReleaseValidationObject(LayerObjectTypeId type_id) const {
         if ((*object_it)->container_type == type_id) {
             auto object = std::move(*object_it);
 
-            object_dispatch.erase(object_it);
+            // Do not remove the smart pointer, to not invalidate object_dispatch iterators
+            // object_dispatch.erase(object_it);
 
             for (auto intercept_vector_it = intercept_vectors.begin(); intercept_vector_it != intercept_vectors.end();
                  intercept_vector_it++) {
                 for (auto intercept_object_it = intercept_vector_it->begin(); intercept_object_it != intercept_vector_it->end();
                      intercept_object_it++) {
                     if (object.get() == *intercept_object_it) {
-                        intercept_vector_it->erase(intercept_object_it);
+                        // Do not actually remove the pointer, to not invalidate intercept_vectors iterators
+                        *intercept_object_it = nullptr;
                         break;
                     }
                 }
@@ -1829,7 +1828,7 @@ void Device::CmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, ui
                                                const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos) {
     if (!wrap_handles)
         return device_dispatch_table.CmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
-    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR* local_pInfos = nullptr;
+    vku::safe_VkAccelerationStructureBuildGeometryInfoKHR *local_pInfos = nullptr;
     {
         if (pInfos) {
             local_pInfos = new vku::safe_VkAccelerationStructureBuildGeometryInfoKHR[infoCount];
@@ -1843,9 +1842,9 @@ void Device::CmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, ui
                     local_pInfos[index0].dstAccelerationStructure = Unwrap(pInfos[index0].dstAccelerationStructure);
                 }
                 for (uint32_t geometry_index = 0; geometry_index < local_pInfos[index0].geometryCount; ++geometry_index) {
-                    vku::safe_VkAccelerationStructureGeometryKHR& geometry_info =
+                    vku::safe_VkAccelerationStructureGeometryKHR &geometry_info =
                         local_pInfos[index0].pGeometries != nullptr ? local_pInfos[index0].pGeometries[geometry_index]
-                        : *(local_pInfos[index0].ppGeometries[geometry_index]);
+                                                                    : *(local_pInfos[index0].ppGeometries[geometry_index]);
 
                     if (geometry_info.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
                         UnwrapPnextChainHandles(geometry_info.geometry.triangles.pNext);
@@ -2179,7 +2178,7 @@ VkResult Device::CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBina
                                            const VkAllocationCallbacks *pAllocator, VkPipelineBinaryHandlesInfoKHR *pBinaries) {
     if (!wrap_handles) return device_dispatch_table.CreatePipelineBinariesKHR(device, pCreateInfo, pAllocator, pBinaries);
     vku::safe_VkPipelineBinaryCreateInfoKHR var_local_pCreateInfo;
-    vku::safe_VkPipelineBinaryCreateInfoKHR* local_pCreateInfo = nullptr;
+    vku::safe_VkPipelineBinaryCreateInfoKHR *local_pCreateInfo = nullptr;
     const uint32_t array_size = pBinaries->pipelineBinaryCount;
     {
         if (pCreateInfo) {
@@ -2197,8 +2196,7 @@ VkResult Device::CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBina
     VkResult result = device_dispatch_table.CreatePipelineBinariesKHR(
         device, (const VkPipelineBinaryCreateInfoKHR *)local_pCreateInfo, pAllocator, (VkPipelineBinaryHandlesInfoKHR *)pBinaries);
 
-    if (pBinaries->pPipelineBinaries)
-    {
+    if (pBinaries->pPipelineBinaries) {
         for (uint32_t index0 = 0; index0 < array_size; index0++) {
             if (pBinaries->pPipelineBinaries[index0] != VK_NULL_HANDLE) {
                 pBinaries->pPipelineBinaries[index0] = WrapNew(pBinaries->pPipelineBinaries[index0]);
