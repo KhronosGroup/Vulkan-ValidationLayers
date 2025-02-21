@@ -3648,6 +3648,74 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
     }
 }
 
+// Returns null when device address is asssociated with no buffers or more than one buffer.
+// Otherwise returns a valid buffer (device address is associated with a single buffer).
+// When syncval adds memory aliasing support the need of this function can be revisited.
+static const vvl::Buffer *GetSingleBufferFromDeviceAddress(const vvl::Device &device, VkDeviceAddress device_address) {
+    vvl::span<vvl::Buffer *const> buffers = device.GetBuffersByAddress(device_address);
+    if (buffers.empty()) {
+        return nullptr;
+    }
+    if (buffers.size() > 1) {  // memory aliasing use case
+        return nullptr;
+    }
+    return buffers[0];
+}
+
+struct AccelerationStructureGeometryInfo {
+    const vvl::Buffer *vertex_data = nullptr;
+    ResourceAccessRange vertex_range;
+    const vvl::Buffer *index_data = nullptr;
+    ResourceAccessRange index_range;
+};
+
+static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
+    const vvl::Device &device, const VkAccelerationStructureGeometryKHR &geometry,
+    const VkAccelerationStructureBuildRangeInfoKHR &range_info) {
+    if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
+        const VkAccelerationStructureGeometryTrianglesDataKHR &triangles = geometry.geometry.triangles;
+        const uint32_t vertex_position_size = vkuGetFormatInfo(triangles.vertexFormat).texel_block_size;
+        if (vertex_position_size != triangles.vertexStride) {
+            // NOTE: Do not validate when there are gaps in the vertex positional data (e.g. interleaved vertex attributes).
+            // It's possible to create separate tracking ranges that skip these gaps but it's not practical for real
+            // applications where meshes have many vertices.
+            // The general solution does not take into account regularity in the vertex data - all the gaps can be described
+            // by two numbers: vertex stride and positional attribute size.
+            // The practical solution would be to implement a specialized tracking that uses such compact representation.
+            return {};
+        }
+
+        const auto p_vertex_data = GetSingleBufferFromDeviceAddress(device, triangles.vertexData.deviceAddress);
+        if (!p_vertex_data) {
+            return {};  // [core validation check]: vertexData must be valid
+        }
+        AccelerationStructureGeometryInfo geometry_info;
+        geometry_info.vertex_data = p_vertex_data;
+
+        if (triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
+            const VkDeviceSize vertex_offset = range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
+            const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
+            geometry_info.vertex_range = MakeRange(vertex_offset, vertex_data_size);
+        } else {
+            const VkDeviceSize vertex_offset = range_info.firstVertex * triangles.vertexStride;
+            const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
+            const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - vertex_offset;
+            geometry_info.vertex_range = MakeRange(vertex_offset, potentially_accessed_vertex_data_size);
+
+            const auto p_index_data = GetSingleBufferFromDeviceAddress(device, triangles.indexData.deviceAddress);
+            if (!p_index_data) {
+                return {};  // [core validation check]: indexData must be good if index type is specified
+            }
+            geometry_info.index_data = p_index_data;
+            const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
+            const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
+            geometry_info.index_range = MakeRange(range_info.primitiveOffset, index_data_size);
+        }
+        return geometry_info;
+    }
+    return {};
+}
+
 bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
     VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const ErrorObject &error_obj) const {
@@ -3659,10 +3727,9 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         // Validate scratch buffer
-        if (const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress); scratch_buffers.size() == 1) {
-            // NOTE: the above size check - do not handle mutlipe buffers until syncval aliasing support is here
+        if (const auto p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
+            const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
             // Skip invalid configurations
             {
                 const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
@@ -3723,6 +3790,40 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
+        // Validate geometry buffers
+        const VkAccelerationStructureBuildRangeInfoKHR *p_range_infos = ppBuildRangeInfos[i];
+        if (!p_range_infos) {
+            continue;  // [core validation check]: range pointers should be valid
+        }
+        for (uint32_t k = 0; k < info.geometryCount; k++) {
+            const auto *p_geometry = info.pGeometries ? &info.pGeometries[k] : info.ppGeometries[k];
+            if (!p_geometry) {
+                continue;  // [core validation check]: null pointer in ppGeometries
+            }
+            const auto geometry_info = GetValidGeometryInfo(*this, *p_geometry, p_range_infos[k]);
+            if (!geometry_info.has_value()) {
+                continue;
+            }
+            auto validate_accel_input_geometry = [this, &context, &cb_context, &commandBuffer, &error_obj](
+                                                     const vvl::Buffer &geometry_data, const ResourceAccessRange &geometry_range,
+                                                     const char *data_description) {
+                auto hazard = context.DetectHazard(geometry_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ, geometry_range);
+                if (hazard.IsHazard()) {
+                    const LogObjectList objlist(commandBuffer, geometry_data.Handle());
+                    const std::string resource_description = data_description + FormatHandle(geometry_data.Handle());
+                    const std::string error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
+                                                                          resource_description, geometry_range);
+                    return SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+                }
+                return false;
+            };
+            if (geometry_info->vertex_data) {
+                skip |= validate_accel_input_geometry(*geometry_info->vertex_data, geometry_info->vertex_range, "vertex data");
+            }
+            if (geometry_info->index_data) {
+                skip |= validate_accel_input_geometry(*geometry_info->index_data, geometry_info->index_range, "index data");
+            }
+        }
     }
     return skip;
 }
@@ -3739,10 +3840,9 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         // Record scratch buffer access
-        if (const auto scratch_buffers = GetBuffersByAddress(info.scratchData.deviceAddress); scratch_buffers.size() == 1) {
-            // NOTE: the above size check - do not handle mutlipe buffers until syncval aliasing support is here
+        if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
+            const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            const vvl::Buffer &scratch_buffer = *scratch_buffers[0];
             // Skip invalid configurations
             {
                 const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
@@ -3776,6 +3876,31 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
             const ResourceUsageTagEx dst_tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
             context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
                                       SyncOrdering::kNonAttachment, dst_range, dst_tag_ex);
+        }
+        // Record geometry buffer acceses (READ)
+        const VkAccelerationStructureBuildRangeInfoKHR *p_range_infos = ppBuildRangeInfos[i];
+        if (!p_range_infos) {
+            continue;  // [core validation check]: range pointers should be valid
+        }
+        for (uint32_t k = 0; k < info.geometryCount; k++) {
+            const auto *p_geometry = info.pGeometries ? &info.pGeometries[k] : info.ppGeometries[k];
+            if (!p_geometry) {
+                continue;  // [core validation check]: null pointer in ppGeometries
+            }
+            const auto geometry_info = GetValidGeometryInfo(*this, *p_geometry, p_range_infos[k]);
+            if (!geometry_info.has_value()) {
+                continue;
+            }
+            if (geometry_info->vertex_data) {
+                const ResourceUsageTagEx vertex_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->vertex_data->Handle());
+                context.UpdateAccessState(*geometry_info->vertex_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
+                                          SyncOrdering::kNonAttachment, geometry_info->vertex_range, vertex_tag_ex);
+            }
+            if (geometry_info->index_data) {
+                const ResourceUsageTagEx index_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->index_data->Handle());
+                context.UpdateAccessState(*geometry_info->index_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
+                                          SyncOrdering::kNonAttachment, geometry_info->index_range, index_tag_ex);
+            }
         }
     }
 }
