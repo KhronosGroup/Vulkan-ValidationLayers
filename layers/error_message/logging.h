@@ -174,6 +174,7 @@ class TypedHandleWrapper {
 struct Location;
 
 struct MessageFormatSettings {
+    bool verbose = true;
     bool display_application_name = false;
     std::string application_name;
 };
