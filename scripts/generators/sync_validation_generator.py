@@ -490,22 +490,11 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
                     stageToAccessMap[flag.name] = []
                 stageToAccessMap[flag.name].append(access.flag.name)
 
-        # ACCELERATION_STRUCTURE_BUILD accesses input geometry buffers using SHADER_READ access.
-        # The core of validation logic works with expanded stages and SHADER_STORAGE_READ was
-        # choosen to represent SHADER_READ access. Then SHADER_READ itself is handled correctly:
-        # validation logic automatically includes SHADER_READ when its sub-access is used.
-        #
-        # This new stage-access pair should be added manually because vk.xml does not define
-        # ACCELERATION_STRUCTURE_BUILD for SHADER_READ's sub-accesses.
-        #
-        # TODO: with this change SHADER_STORAGE_READ also passes validation (in addition to SHADER_READ),
-        # but other sub-accesses are not allowed. Update this logic if there is a confirmation
-        # how ACCELERATION_STRUCTURE_BUILD should work with sub-components of SHADER_READ:
-        # https://gitlab.khronos.org/vulkan/vulkan/-/issues/3640#note_434212
-        stageToAccessMap['VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
-        # Micro map, like AS Build, is a non *_STAGE_BIT that can have SHADER_READ
+        # A special case where compound access should be registered instead of its expansion.
+        # AS build and micromap build stages use SHADER_READ access directly.
+        stageToAccessMap['VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR'].append('VK_ACCESS_2_SHADER_READ_BIT')
         if 'VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT' in stageToAccessMap:
-            stageToAccessMap['VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT'].append('VK_ACCESS_2_SHADER_STORAGE_READ_BIT')
+            stageToAccessMap['VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT'].append('VK_ACCESS_2_SHADER_READ_BIT')
 
         for stage in [x for x in self.stages if x in stageToAccessMap]:
             mini_stage = stage.lstrip()
