@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,4 +99,74 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     ASSERT_TRUE(framebuffer.initialized());
+}
+
+TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffset) {
+    AddRequiredExtensions(VK_QCOM_FRAGMENT_DENSITY_MAP_OFFSET_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMap);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapOffset);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8_UNORM;
+    image_create_info.extent = {32u, 32u, 1u};
+    image_create_info.mipLevels = 1u;
+    image_create_info.arrayLayers = 1u;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    vkt::Image image(*m_device, image_create_info);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_ci = vku::InitStructHelper();
+    fragment_density_map_ci.fragmentDensityMapAttachment.layout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+
+    VkAttachmentDescription attachment_description = {};
+    attachment_description.format = VK_FORMAT_R8G8_UNORM;
+    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment_description.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment_description.finalLayout = VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT;
+
+    VkSubpassDescription subpass_description = {};
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper(&fragment_density_map_ci);
+    render_pass_ci.attachmentCount = 1u;
+    render_pass_ci.pAttachments = &attachment_description;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass_description;
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+
+    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1u, &image_view.handle());
+
+    VkRenderPassBeginInfo begin_info = vku::InitStructHelper();
+    begin_info.renderPass = render_pass.handle();
+    begin_info.framebuffer = framebuffer.handle();
+    begin_info.renderArea = {{0, 0}, {32u, 32u}};
+
+    m_command_buffer.Begin();
+
+    vk::CmdBeginRenderPass(m_command_buffer.handle(), &begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM fdm_offset_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fdm_offset_properties);
+
+    int32_t width = static_cast<int32_t>(fdm_offset_properties.fragmentDensityOffsetGranularity.width);
+    int32_t height = static_cast<int32_t>(fdm_offset_properties.fragmentDensityOffsetGranularity.height);
+    VkOffset2D offset = {width, height};
+    VkSubpassFragmentDensityMapOffsetEndInfoQCOM fdm_offset_end_info = vku::InitStructHelper();
+    fdm_offset_end_info.fragmentDensityOffsetCount = 1u;
+    fdm_offset_end_info.pFragmentDensityOffsets = &offset;
+    VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
+
+    vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
+
+    m_command_buffer.End();
 }
