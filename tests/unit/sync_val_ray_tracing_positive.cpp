@@ -132,8 +132,6 @@ TEST_F(PositiveSyncValRayTracing, UseSourceAccelerationStructureThenBarrier) {
 
 TEST_F(PositiveSyncValRayTracing, UpdateAccelerationStructureInPlace) {
     TEST_DESCRIPTION("In-place update reads and writes the same acceleration structure, ensure this does not trigger error");
-    SetTargetApiVersion(VK_API_VERSION_1_3);
-    AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(InitRayTracing());
 
     // Initial build
@@ -154,5 +152,41 @@ TEST_F(PositiveSyncValRayTracing, UpdateAccelerationStructureInPlace) {
 
     m_command_buffer.Begin();
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, ReadVertexDataDuringBuild) {
+    TEST_DESCRIPTION("Use vertex buffer as a copy source while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& vertex_buffer = triangles_geometry.device_vertex_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer dst_buffer(*m_device, vertex_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Copy(vertex_buffer, dst_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, ReadIndexDataDuringBuild) {
+    TEST_DESCRIPTION("Use index buffer as a copy source while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& index_buffer = triangles_geometry.device_index_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer dst_buffer(*m_device, index_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Copy(index_buffer, dst_buffer);
     m_command_buffer.End();
 }
