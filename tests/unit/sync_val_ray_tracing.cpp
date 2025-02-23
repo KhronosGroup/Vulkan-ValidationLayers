@@ -81,3 +81,96 @@ TEST_F(NegativeSyncValRayTracing, SourceAccelerationStructureHazard) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRayTracing, WriteVertexDataDuringBuild) {
+    TEST_DESCRIPTION("Use vertex buffer as a copy destination while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& vertex_buffer = triangles_geometry.device_vertex_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer src_buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferCopy region{};
+    region.size = 4;
+
+    // Test validation
+    m_command_buffer.Begin();
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, vertex_buffer, 1, &region);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test access update (that copy can see previous AS access)
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, vertex_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, WriteVertexDataDuringBuild2) {
+    TEST_DESCRIPTION("Use vertex buffer for non-indexed geometry as a copy destination while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& vertex_buffer = triangles_geometry.device_vertex_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer src_buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferCopy region{};
+    region.size = 4;
+
+    // Test validation
+    m_command_buffer.Begin();
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, vertex_buffer, 1, &region);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test access update (that copy can see previous AS access)
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, vertex_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, WriteIndexDataDuringBuild) {
+    TEST_DESCRIPTION("Use index buffer as a copy destination while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& index_buffer = triangles_geometry.device_index_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer src_buffer(*m_device, 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    VkBufferCopy region{};
+    region.size = 4;
+
+    // Test validation
+    m_command_buffer.Begin();
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, index_buffer, 1, &region);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test access update (that copy can see previous AS access)
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdCopyBuffer(m_command_buffer, src_buffer, index_buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
