@@ -1999,6 +1999,10 @@ class CoreChecks : public vvl::Device {
                                           const ErrorObject& error_obj) const override;
     void PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                          const RecordObject& record_obj) override;
+    bool ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+                                             const VkSubpassFragmentDensityMapOffsetEndInfoQCOM& fdm_offset_end_info,
+                                             const Location& subpass_end_loc) const;
+
     class ViewportScissorInheritanceTracker;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                            const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;

@@ -543,27 +543,27 @@
                     "maintenance4": true
                 },
                 "VkPhysicalDeviceVulkan14Features": {
-                    "globalPriorityQuery" : true,
-                    "shaderSubgroupRotate" : true,
-                    "shaderSubgroupRotateClustered" : true,
-                    "shaderFloatControls2" : true,
-                    "shaderExpectAssume" : true,
-                    "rectangularLines" : true,
-                    "bresenhamLines" : true,
-                    "smoothLines" : true,
-                    "stippledRectangularLines" : true,
-                    "stippledBresenhamLines" : true,
-                    "stippledSmoothLines" : true,
-                    "vertexAttributeInstanceRateDivisor" : true,
-                    "vertexAttributeInstanceRateZeroDivisor" : true,
-                    "indexTypeUint8" : true,
-                    "dynamicRenderingLocalRead" : true,
-                    "maintenance5" : true,
-                    "maintenance6" : true,
-                    "pipelineProtectedAccess" : true,
-                    "pipelineRobustness" : true,
-                    "hostImageCopy" : true,
-                    "pushDescriptor" : true
+                    "globalPriorityQuery": true,
+                    "shaderSubgroupRotate": true,
+                    "shaderSubgroupRotateClustered": true,
+                    "shaderFloatControls2": true,
+                    "shaderExpectAssume": true,
+                    "rectangularLines": true,
+                    "bresenhamLines": true,
+                    "smoothLines": true,
+                    "stippledRectangularLines": true,
+                    "stippledBresenhamLines": true,
+                    "stippledSmoothLines": true,
+                    "vertexAttributeInstanceRateDivisor": true,
+                    "vertexAttributeInstanceRateZeroDivisor": true,
+                    "indexTypeUint8": true,
+                    "dynamicRenderingLocalRead": true,
+                    "maintenance5": true,
+                    "maintenance6": true,
+                    "pipelineProtectedAccess": true,
+                    "pipelineRobustness": true,
+                    "hostImageCopy": true,
+                    "pushDescriptor": true
                 },
                 "VkPhysicalDeviceCoherentMemoryFeaturesAMD": {
                     "deviceCoherentMemory": true
@@ -1583,7 +1583,12 @@
                     "maxSubsampledArrayLayers": 4096,
                     "maxDescriptorSetSubsampledSamplers": 4096
                 },
-                "VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM": {},
+                "VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM": {
+                    "fragmentDensityOffsetGranularity": {
+                        "width": 8,
+                        "height": 8
+                    }
+                },
                 "VkPhysicalDeviceCooperativeMatrixPropertiesNV": {
                     "cooperativeMatrixSupportedStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
@@ -1784,9 +1789,9 @@
                     "maxVertexAttribDivisor": 4294967000,
                     "supportsNonZeroFirstInstance": true,
                     "maxPushDescriptors": 4294967000,
-                    "blockTexelViewCompatibleMultipleLayers" : true,
+                    "blockTexelViewCompatibleMultipleLayers": true,
                     "maxCombinedImageSamplerDescriptorCount": 1073741824,
-                    "identicalMemoryTypeRequirements" : true
+                    "identicalMemoryTypeRequirements": true
                 },
                 "VkPhysicalDeviceCustomBorderColorPropertiesEXT": {
                     "maxCustomBorderColorSamplers": 4294967000
