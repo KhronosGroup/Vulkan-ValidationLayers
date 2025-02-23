@@ -256,8 +256,11 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 //    m_command_buffer.End();
 // }
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, size_t triangles_count = 1);
-GeometryKHR GeometrySimpleOnHostTriangleInfo();
+GeometryKHR GeometrySimpleOnDeviceIndexedTriangleInfo(const vkt::Device& device, size_t triangles_count = 1,
+                                                      VkBufferUsageFlags additional_geometry_buffer_flags = 0);
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device& device, VkBufferUsageFlags additional_geometry_buffer_flags = 0);
+
+GeometryKHR GeometrySimpleOnHostIndexedTriangleInfo();
 
 // Cube centered at position (0,0,0), 2.0f wide
 GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device& device);

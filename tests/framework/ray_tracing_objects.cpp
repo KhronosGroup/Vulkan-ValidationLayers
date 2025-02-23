@@ -851,7 +851,8 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 }
 
 namespace blueprint {
-GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t triangles_count) {
+GeometryKHR GeometrySimpleOnDeviceIndexedTriangleInfo(const vkt::Device &device, size_t triangles_count,
+                                                      VkBufferUsageFlags additional_geometry_buffer_flags) {
     assert(triangles_count > 0);
     GeometryKHR triangle_geometry;
 
@@ -862,7 +863,7 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
     const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | additional_geometry_buffer_flags;
 
     vkt::Buffer vertex_buffer(device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
     vkt::Buffer index_buffer(device, 1024 + 3 * triangles_count * sizeof(uint32_t), buffer_usage, kHostVisibleMemProps,
@@ -914,7 +915,56 @@ GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, size_t
     return triangle_geometry;
 }
 
-GeometryKHR GeometrySimpleOnHostTriangleInfo() {
+GeometryKHR GeometrySimpleOnDeviceTriangleInfo(const vkt::Device &device, VkBufferUsageFlags additional_geometry_buffer_flags) {
+    GeometryKHR triangle_geometry;
+
+    triangle_geometry.SetType(GeometryKHR::Type::Triangle);
+
+    // Allocate vertex buffer
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | additional_geometry_buffer_flags;
+
+    vkt::Buffer vertex_buffer(device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer transform_buffer(device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    // Fill vertex buffer with triangle data
+    triangle_geometry.SetPrimitiveCount(1);
+    constexpr std::array vertices = {// Vertex 0
+                                     10.0f, 10.0f, 0.0f,
+                                     // Vertex 1
+                                     -10.0f, 10.0f, 0.0f,
+                                     // Vertex 2
+                                     0.0f, -10.0f, 0.0f};
+
+    auto vertex_buffer_ptr = static_cast<float *>(vertex_buffer.Memory().Map());
+    std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
+    vertex_buffer.Memory().Unmap();
+
+    // clang-format off
+    VkTransformMatrixKHR transform_matrix = {{
+        { 1.0f, 0.0f, 0.0f, 0.0f },
+        { 0.0f, 1.0f, 0.0f, 0.0f },
+        { 0.0f, 0.0f, 1.0f, 0.0f },
+    }};
+    // clang-format on
+
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR *>(transform_buffer.Memory().Map());
+    std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
+    transform_buffer.Memory().Unmap();
+
+    // Assign vertex and index buffers to out geometry
+    triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1);
+    triangle_geometry.SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+    triangle_geometry.SetTrianglesTransformBuffer(std::move(transform_buffer));
+    triangle_geometry.SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+
+    return triangle_geometry;
+}
+
+GeometryKHR GeometrySimpleOnHostIndexedTriangleInfo() {
     GeometryKHR triangle_geometry;
 
     triangle_geometry.SetType(GeometryKHR::Type::Triangle);
@@ -1156,7 +1206,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceBottomLevel(const vkt::Devic
     GeometryKHR geometry;
     switch (geometry_type) {
         case GeometryKHR::Type::Triangle:
-            geometry = GeometrySimpleOnDeviceTriangleInfo(device);
+            geometry = GeometrySimpleOnDeviceIndexedTriangleInfo(device);
             break;
         case GeometryKHR::Type::AABB:
             geometry = GeometrySimpleOnDeviceAABBInfo(device);
@@ -1209,7 +1259,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
     std::vector<GeometryKHR> geometries;
     switch (geometry_type) {
         case GeometryKHR::Type::Triangle:
-            geometries.emplace_back(GeometrySimpleOnHostTriangleInfo());
+            geometries.emplace_back(GeometrySimpleOnHostIndexedTriangleInfo());
             break;
         case GeometryKHR::Type::AABB:
             geometries.emplace_back(GeometrySimpleOnHostAABBInfo());

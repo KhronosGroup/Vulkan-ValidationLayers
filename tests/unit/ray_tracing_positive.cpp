@@ -404,7 +404,7 @@ TEST_F(PositiveRayTracing, BuildAccelerationStructuresList2) {
 
     auto blas_0 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     std::vector<vkt::as::GeometryKHR> geometries;
-    geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, 1000));
+    geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1000));
     blas_0.SetGeometries(std::move(geometries));
 
     blas_0.SetScratchBuffer(scratch_buffer);
