@@ -682,7 +682,7 @@ void Module::PostProcess() {
 void Module::InternalWarning(const char* tag, const char* message) {
     if (debug_report_) {
         Location loc(vvl::Func::Empty);
-        debug_report_->LogMessage(kWarningBit, {}, loc, tag, message);
+        debug_report_->LogMessage(kWarningBit, tag, {}, loc, message);
     } else {
         std::cout << "[" << tag << "] " << message << '\n';
     }
@@ -691,7 +691,7 @@ void Module::InternalWarning(const char* tag, const char* message) {
 void Module::InternalError(const char* tag, const char* message) {
     if (debug_report_) {
         Location loc(vvl::Func::Empty);
-        debug_report_->LogMessage(kErrorBit, {}, loc, tag, message);
+        debug_report_->LogMessage(kErrorBit, tag, {}, loc, message);
     } else {
         std::cerr << "[" << tag << "] " << message << '\n';
     }

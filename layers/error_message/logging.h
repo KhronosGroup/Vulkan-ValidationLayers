@@ -224,10 +224,10 @@ class DebugReport {
     }
 
     // Legacy way to log messages with C-style va_list
-    bool LogMessageVaList(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
+    bool LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                           const char *format, va_list argptr);
     // Formats messages to be in the proper format, handles VUID logic, any legacy issues, and finally calls the callback
-    bool LogMessage(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
+    bool LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                     const std::string &main_message);
 
     void BeginQueueDebugUtilsLabel(VkQueue queue, const VkDebugUtilsLabelEXT *label_info);
@@ -271,7 +271,7 @@ class Logger {
         LogError(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kErrorBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kErrorBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -281,7 +281,7 @@ class Logger {
                                                  const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kWarningBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -290,7 +290,7 @@ class Logger {
         LogWarning(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kWarningBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kWarningBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -299,7 +299,7 @@ class Logger {
                                                      const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kPerformanceWarningBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kPerformanceWarningBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -308,7 +308,7 @@ class Logger {
         LogInfo(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kInformationBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kInformationBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }
@@ -317,7 +317,7 @@ class Logger {
         LogVerbose(std::string_view vuid_text, const LogObjectList &objlist, const Location &loc, const char *format, ...) const {
         va_list argptr;
         va_start(argptr, format);
-        const bool result = debug_report->LogMessageVaList(kVerboseBit, objlist, loc, vuid_text, format, argptr);
+        const bool result = debug_report->LogMessageVaList(kVerboseBit, vuid_text, objlist, loc, format, argptr);
         va_end(argptr);
         return result;
     }

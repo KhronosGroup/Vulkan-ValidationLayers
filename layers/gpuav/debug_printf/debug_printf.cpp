@@ -350,7 +350,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
             } else {
                 // LogInfo will print out a lot of extra information (Object handles, VUID, hash, etc)
                 // If the user doesn't set "verbose", but wants to use the debug callback, we should limit it to the bare minimum
-                gpuav.debug_report->LogMessage(kInformationBit, {}, loc, "VVL-DEBUG-PRINTF", shader_message.str().c_str());
+                gpuav.debug_report->LogMessage(kInformationBit, "VVL-DEBUG-PRINTF", {}, loc, shader_message.str().c_str());
             }
         }
         output_record_i += debug_record->size;
