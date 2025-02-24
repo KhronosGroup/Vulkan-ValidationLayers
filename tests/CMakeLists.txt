@@ -158,6 +158,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/mesh.cpp
     unit/mesh_positive.cpp
     unit/multiview.cpp
+    unit/multiview_positive.cpp
     unit/nvidia_best_practices.cpp
     unit/object_lifetime.cpp
     unit/object_lifetime_positive.cpp

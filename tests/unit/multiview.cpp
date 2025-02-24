@@ -1191,3 +1191,101 @@ TEST_F(NegativeMultiview, DynamicRenderingMaxMultiviewInstanceIndex) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeMultiview, ShaderLayerBuiltInRenderPass) {
+    TEST_DESCRIPTION("Create invalid pipeline that writes to Layer built-in");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
+    RETURN_IF_SKIP(Init());
+
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkAttachmentReference color_att = {};
+    color_att.layout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentDescription attach = {};
+    attach.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
+    attach.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_att;
+
+    uint32_t view_masks[] = {0x3u};
+    VkRenderPassMultiviewCreateInfo rpmvci = vku::InitStructHelper();
+    rpmvci.subpassCount = 1;
+    rpmvci.pViewMasks = view_masks;
+
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper(&rpmvci);
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+    vkt::RenderPass render_pass(*m_device, rpci);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.renderPass = render_pass;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06050");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeMultiview, ShaderLayerBuiltInDynamicRendering) {
+    TEST_DESCRIPTION("Create invalid pipeline that writes to Layer built-in");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::multiview);
+    AddRequiredFeature(vkt::Feature::multiviewGeometryShader);
+    RETURN_IF_SKIP(Init());
+
+    static char const *gsSource = R"glsl(
+        #version 450
+        layout (triangles) in;
+        layout (triangle_strip) out;
+        layout (max_vertices = 1) out;
+        void main() {
+            gl_Position = vec4(1.0, 0.5, 0.5, 0.0);
+            EmitVertex();
+            gl_Layer = 4;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
+
+    VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+    pipeline_rendering_info.viewMask = 0x1;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06059");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
