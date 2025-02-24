@@ -90,16 +90,15 @@ class ErrorMessages {
                                      const std::string& resource_description, VkImageAspectFlagBits aspect,
                                      uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
 
-    std::string BeginRenderingError(const HazardResult& hazard, const syncval_state::DynamicRenderingInfo::Attachment& attachment,
-                                    const CommandBufferAccessContext& cb_context, vvl::Func command) const;
+    std::string BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                    const std::string& resource_description, VkAttachmentLoadOp load_op) const;
 
-    std::string EndRenderingResolveError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                         VkResolveModeFlagBits resolve_mode, const CommandBufferAccessContext& cb_context,
-                                         vvl::Func command) const;
+    std::string EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                         vvl::Func command, const std::string& resource_description,
+                                         VkResolveModeFlagBits resolve_mode, bool resolve_write) const;
 
-    std::string EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                       VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
-                                       vvl::Func command) const;
+    std::string EndRenderingStoreError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                       const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
     std::string PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                      uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const;
