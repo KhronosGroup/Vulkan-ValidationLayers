@@ -17,6 +17,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
+#include "error_message/error_location.h"
 #include "error_message/log_message_type.h"
 
 #include <iostream>
@@ -680,7 +681,8 @@ void Module::PostProcess() {
 
 void Module::InternalWarning(const char* tag, const char* message) {
     if (debug_report_) {
-        debug_report_->DebugLogMsg(kWarningBit, {}, message, tag);
+        Location loc(vvl::Func::Empty);
+        debug_report_->LogMessage(kWarningBit, {}, loc, tag, message);
     } else {
         std::cout << "[" << tag << "] " << message << '\n';
     }
@@ -688,7 +690,8 @@ void Module::InternalWarning(const char* tag, const char* message) {
 
 void Module::InternalError(const char* tag, const char* message) {
     if (debug_report_) {
-        debug_report_->DebugLogMsg(kErrorBit, {}, message, tag);
+        Location loc(vvl::Func::Empty);
+        debug_report_->LogMessage(kErrorBit, {}, loc, tag, message);
     } else {
         std::cerr << "[" << tag << "] " << message << '\n';
     }
