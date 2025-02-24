@@ -111,7 +111,7 @@ bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
     }
 }
 
-bool DebugReport::LogMessage(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
+bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                              const std::string &main_message) {
     // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
@@ -324,7 +324,7 @@ std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &lo
         }
 
         // Construct and append the specification text and link to the appropriate version of the spec
-        if (nullptr != spec_text) {
+        if (spec_text && spec_url_section) {
 #ifdef ANNOTATED_SPEC_LINK
             const char *spec_url_base = ANNOTATED_SPEC_LINK;
 #else
@@ -645,10 +645,10 @@ bool DebugReport::LogMsgEnabled(uint32_t vuid_hash, VkDebugUtilsMessageSeverityF
     return true;
 }
 
-bool DebugReport::LogMessageVaList(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
+bool DebugReport::LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                                    const char *format, va_list argptr) {
     const std::string main_message = text::VFormat(format, argptr);
-    return LogMessage(msg_flags, objects, loc, vuid_text, main_message);
+    return LogMessage(msg_flags, vuid_text, objects, loc, main_message);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
