@@ -591,7 +591,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
             skip |= LogInstrumentationError(gpuav, cb_state, objlist, instrumentation_error_blob, initial_label_stack,
                                             last_label_command_i, operation_index, error_record,
                                             descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
-                                                                       : std::vector<std::shared_ptr<DescriptorSet>>(),
+                                                                       : std::vector<std::shared_ptr<vvl::DescriptorSet>>(),
                                             bind_point, uses_shader_object, uses_robustness, loc);
             return skip;
         };
@@ -655,8 +655,8 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 
 bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
                                          std::string &out_vuid_msg,
-                                         const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets, const Location &loc,
-                                         bool uses_shader_object, bool &out_oob_access) {
+                                         const std::vector<std::shared_ptr<vvl::DescriptorSet>> &descriptor_sets,
+                                         const Location &loc, bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -714,8 +714,9 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
 }
 
 bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
-                                   std::string &out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
-                                   const Location &loc, bool uses_shader_object, bool &out_oob_access) {
+                                   std::string &out_vuid_msg,
+                                   const std::vector<std::shared_ptr<vvl::DescriptorSet>> &descriptor_sets, const Location &loc,
+                                   bool uses_shader_object, bool &out_oob_access) {
     using namespace glsl;
     bool error_found = true;
     out_oob_access = true;
@@ -1011,7 +1012,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
                              const InstrumentationErrorBlob &instrumentation_error_blob,
                              const std::vector<std::string> &initial_label_stack, uint32_t label_command_i,
                              uint32_t operation_index, const uint32_t *error_record,
-                             const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
+                             const std::vector<std::shared_ptr<vvl::DescriptorSet>> &descriptor_sets,
                              VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
                              const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have

@@ -28,21 +28,14 @@ struct ShaderObject;
 }  // namespace chassis
 
 namespace gpuav {
-class Buffer;
-class BufferView;
 class CommandBuffer;
-class ImageView;
 class Queue;
 class Sampler;
 class DescriptorSet;
 }  // namespace gpuav
 
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkBuffer, gpuav::Buffer, vvl::Buffer)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkBufferView, gpuav::BufferView, vvl::BufferView)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, gpuav::CommandBuffer, vvl::CommandBuffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkDescriptorSet, gpuav::DescriptorSet, vvl::DescriptorSet)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, gpuav::ImageView, vvl::ImageView)
-VALSTATETRACK_DERIVED_STATE_OBJECT(VkSampler, gpuav::Sampler, vvl::Sampler)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkQueue, gpuav::Queue, vvl::Queue)
 
 namespace gpuav {
@@ -81,24 +74,9 @@ class Validator : public GpuShaderInstrumentor {
     // gpuav_setup.cpp
     // -------------
   public:
-    std::shared_ptr<vvl::Buffer> CreateBufferState(VkBuffer handle, const VkBufferCreateInfo* create_info) final;
-    std::shared_ptr<vvl::BufferView> CreateBufferViewState(const std::shared_ptr<vvl::Buffer>& buffer, VkBufferView handle,
-                                                           const VkBufferViewCreateInfo* create_info,
-                                                           VkFormatFeatureFlags2 format_features) final;
-    std::shared_ptr<vvl::ImageView> CreateImageViewState(const std::shared_ptr<vvl::Image>& image_state, VkImageView handle,
-                                                         const VkImageViewCreateInfo* create_info,
-                                                         VkFormatFeatureFlags2 format_features,
-                                                         const VkFilterCubicImageViewImageFormatPropertiesEXT& cubic_props) final;
-    std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo* create_info) final;
-    std::shared_ptr<vvl::AccelerationStructureKHR> CreateAccelerationStructureState(
-        VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR* create_info,
-        std::shared_ptr<vvl::Buffer>&& buf_state) final;
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo* allocate_info,
                                                              const vvl::CommandPool* pool) final;
-    std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
-                                                            const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
-                                                            uint32_t variable_count) final;
     std::shared_ptr<vvl::Queue> CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                             VkDeviceQueueCreateFlags flags,
                                             const VkQueueFamilyProperties& queueFamilyProperties) override;
@@ -147,6 +125,9 @@ class Validator : public GpuShaderInstrumentor {
     void PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject& record_obj) final;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                        const RecordObject& record_obj) final;
+    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
+                                              VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
+                                              vvl::AllocateDescriptorSetsData& ads_state) final;
     void PostCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,
                                               const VkBindDescriptorSetsInfo* pBindDescriptorSetsInfo,
                                               const RecordObject& record_obj) final;
