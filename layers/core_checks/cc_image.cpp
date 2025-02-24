@@ -1374,8 +1374,9 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                     const LogObjectList objlist(commandBuffer, rp_state->Handle());
                     skip |= LogError("VUID-vkCmdClearAttachments-baseArrayLayer-00018", objlist,
                                      error_obj.location.dot(Field::pRects, i).dot(Field::baseArrayLayer),
-                                     "is %" PRIu32 " and layerCount is %" PRIu32 ", but the render pass instance uses multiview.",
-                                     pRects[i].baseArrayLayer, pRects[i].layerCount);
+                                     "is %" PRIu32 " and layerCount is %" PRIu32
+                                     ", but the render pass instance viewMask is 0x%" PRIx32 " (non-zero).",
+                                     pRects[i].baseArrayLayer, pRects[i].layerCount, view_mask);
                 }
             }
         }

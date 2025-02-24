@@ -650,7 +650,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                 const char *vuid = is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-query-00808" : "VUID-vkCmdBeginQuery-query-00808";
                 const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
                 skip |= LogError(vuid, objlist, loc,
-                                 "query (%" PRIu32 ") + bits set in current subpass view mask (%" PRIx32
+                                 "query (%" PRIu32 ") + bits set in current subpass viewMask (0x%" PRIx32
                                  ") is greater than the number of queries in queryPool (%" PRIu32 ").",
                                  query_obj.slot, subpass_desc->viewMask, query_pool_state->create_info.queryCount);
             }
@@ -955,7 +955,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
                     const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-query-02345" : "VUID-vkCmdEndQuery-query-00812";
                     const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
                     skip |= LogError(vuid, objlist, loc,
-                                     "query (%" PRIu32 ") + bits set in current subpass (%" PRIu32 ") view mask (%" PRIx32
+                                     "query (%" PRIu32 ") + bits set in current subpass (%" PRIu32 ") viewMask (0x%" PRIx32
                                      ") is greater than the number of queries in queryPool (%" PRIu32 ").",
                                      slot, subpass, subpass_desc->viewMask, query_pool_state->create_info.queryCount);
                 }

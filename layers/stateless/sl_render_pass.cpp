@@ -612,7 +612,7 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
 
     if (!enabled_features.multiview && (pRenderingInfo->viewMask != 0)) {
         skip |= LogError("VUID-VkRenderingInfo-multiview-06127", commandBuffer, rendering_info_loc.dot(Field::viewMask),
-                         "is %" PRId32 " but the multiview feature is not enabled.", pRenderingInfo->viewMask);
+                         "is 0x%" PRIx32 " (non-zero) but the multiview feature is not enabled.", pRenderingInfo->viewMask);
     }
 
     const auto rendering_fsr_attachment_info =
