@@ -161,24 +161,37 @@ bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error
     const syncval_state::DynamicRenderingInfo &info = cmd_state.GetRenderingInfo();
 
     // Load operations do not happen when resuming
-    if (info.info.flags & VK_RENDERING_RESUMING_BIT) return skip;
+    if (info.info.flags & VK_RENDERING_RESUMING_BIT) {
+        return skip;
+    }
 
     // Need to hazard detect load operations vs. the attachment views
     const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
     for (uint32_t i = 0; i < attachment_count; i++) {
         const auto &attachment = info.attachments[i];
         const SyncAccessIndex load_index = attachment.GetLoadUsage();
-        if (load_index == SYNC_ACCESS_INDEX_NONE) continue;
+        if (load_index == SYNC_ACCESS_INDEX_NONE) {
+            continue;
+        }
 
         const HazardResult hazard =
             GetCurrentAccessContext()->DetectHazard(attachment.view_gen, load_index, attachment.GetOrdering());
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
-            Location loc = attachment.GetLocation(error_obj.location, i);
-            const auto error =
-                sync_state_.error_messages_.BeginRenderingError(hazard, attachment, *this, error_obj.location.function);
-            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
-            if (skip) break;
+
+            std::stringstream ss;
+            ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
+            ss << attachment.GetLocation(error_obj.location, i).Fields();
+            ss << " (" << sync_state_.FormatHandle(attachment.view->Handle());
+            ss << ", loadOp " << string_VkAttachmentLoadOp(attachment.info.loadOp) << ")";
+            std::string resource_description = ss.str();
+
+            const std::string error = sync_state_.error_messages_.BeginRenderingError(hazard, *this, error_obj.location.function,
+                                                                                      resource_description, attachment.info.loadOp);
+            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, error_obj.location.function, error);
+            if (skip) {
+                break;
+            }
         }
     }
     return skip;
@@ -208,55 +221,77 @@ void CommandBufferAccessContext::RecordBeginRendering(syncval_state::BeginRender
 
 bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_obj) const {
     bool skip = false;
-    if (dynamic_rendering_info_ && (0 == (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT))) {
-        // Only validate resolve and store if not suspending (as specified by BeginRendering)
-        const syncval_state::DynamicRenderingInfo &info = *dynamic_rendering_info_;
-        const uint32_t attachment_count = static_cast<uint32_t>(info.attachments.size());
-        const AccessContext *access_context = GetCurrentAccessContext();
-        assert(access_context);
-        auto report_resolve_hazard = [&error_obj, this](const HazardResult &hazard, const Location &loc,
-                                                        const VulkanTypedHandle image_handle,
-                                                        const VkResolveModeFlagBits resolve_mode) {
-            LogObjectList objlist(cb_state_->Handle(), image_handle);
-            const auto error = sync_state_.error_messages_.EndRenderingResolveError(hazard, image_handle, resolve_mode, *this,
-                                                                                    error_obj.location.function);
-            return sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+
+    // Only validate resolve and store if not suspending (as specified by BeginRendering)
+    if (!dynamic_rendering_info_ || (dynamic_rendering_info_->info.flags & VK_RENDERING_SUSPENDING_BIT) != 0) {
+        return skip;
+    }
+
+    for (uint32_t i = 0; i < (uint32_t)dynamic_rendering_info_->attachments.size(); i++) {
+        const auto &attachment = dynamic_rendering_info_->attachments[i];
+
+        auto attachment_description = [this, &error_obj, &attachment, i](const auto &view, std::stringstream &ss) {
+            ss << vvl::String(vvl::Field::pRenderingInfo) << ".";
+            ss << attachment.GetLocation(error_obj.location, uint32_t(i)).Fields();
+            ss << " (" << sync_state_.FormatHandle(view->Handle());
         };
 
-        for (uint32_t i = 0; i < attachment_count && !skip; i++) {
-            const auto &attachment = info.attachments[i];
-            if (attachment.resolve_gen) {
-                const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
-                const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
-                // The logic about whether to resolve is embedded in the Attachment constructor
-                assert(attachment.view);
-                HazardResult hazard = access_context->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
+        // The logic about whether to resolve is embedded in the Attachment constructor
+        if (attachment.resolve_gen) {
+            const bool is_color = attachment.type == syncval_state::AttachmentType::kColor;
+            const SyncOrdering kResolveOrder = is_color ? kColorResolveOrder : kDepthStencilResolveOrder;
 
-                if (hazard.IsHazard()) {
-                    Location loc = attachment.GetLocation(error_obj.location, i);
-                    skip |= report_resolve_hazard(hazard, loc.dot(vvl::Field::imageView), attachment.view->Handle(),
-                                                  attachment.info.resolveMode);
-                }
-                if (!skip) {
-                    hazard = access_context->DetectHazard(*attachment.resolve_gen, kResolveWrite, kResolveOrder);
-                    if (hazard.IsHazard()) {
-                        Location loc = attachment.GetLocation(error_obj.location, i);
-                        skip |= report_resolve_hazard(hazard, loc.dot(vvl::Field::resolveImageView),
-                                                      attachment.resolve_view->Handle(), attachment.info.resolveMode);
-                    }
+            HazardResult hazard = current_context_->DetectHazard(attachment.view_gen, kResolveRead, kResolveOrder);
+            if (hazard.IsHazard()) {
+                LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
+
+                std::stringstream ss;
+                attachment_description(attachment.view, ss);
+                ss << ", resolveMode " << string_VkResolveModeFlagBits(attachment.info.resolveMode) << ")";
+                const std::string resource_description = ss.str();
+
+                const std::string error = sync_state_.error_messages_.EndRenderingResolveError(
+                    hazard, *this, error_obj.location.function, resource_description, attachment.info.resolveMode, false);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, error_obj.location.function, error);
+                if (skip) {
+                    break;
                 }
             }
 
-            const auto store_usage = attachment.GetStoreUsage();
-            if (store_usage != SYNC_ACCESS_INDEX_NONE) {
-                HazardResult hazard = access_context->DetectHazard(attachment.view_gen, store_usage, kStoreOrder);
-                if (hazard.IsHazard()) {
-                    const VulkanTypedHandle image_handle = attachment.view->Handle();
-                    LogObjectList objlist(cb_state_->Handle(), image_handle);
-                    Location loc = attachment.GetLocation(error_obj.location, i);
-                    const auto error = sync_state_.error_messages_.EndRenderingStoreError(
-                        hazard, image_handle, attachment.info.storeOp, *this, error_obj.location.function);
-                    skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
+            hazard = current_context_->DetectHazard(*attachment.resolve_gen, kResolveWrite, kResolveOrder);
+            if (hazard.IsHazard()) {
+                LogObjectList objlist(cb_state_->Handle(), attachment.resolve_view->Handle());
+
+                std::stringstream ss;
+                attachment_description(attachment.resolve_view, ss);
+                ss << ", resolveMode " << string_VkResolveModeFlagBits(attachment.info.resolveMode) << ")";
+                const std::string resource_description = ss.str();
+
+                const std::string error = sync_state_.error_messages_.EndRenderingResolveError(
+                    hazard, *this, error_obj.location.function, resource_description, attachment.info.resolveMode, true);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, error_obj.location.function, error);
+                if (skip) {
+                    break;
+                }
+            }
+        }
+
+        const SyncAccessIndex store_access = attachment.GetStoreUsage();
+        if (store_access != SYNC_ACCESS_INDEX_NONE) {
+            HazardResult hazard = current_context_->DetectHazard(attachment.view_gen, store_access, kStoreOrder);
+            if (hazard.IsHazard()) {
+                LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
+
+                std::stringstream ss;
+                attachment_description(attachment.view, ss);
+                ss << ", storeOp " << string_VkAttachmentStoreOp(attachment.info.storeOp) << ")";
+                const std::string resource_description = ss.str();
+
+                const std::string error = sync_state_.error_messages_.EndRenderingStoreError(
+                    hazard, *this, error_obj.location.function, resource_description, attachment.info.storeOp);
+                skip |= sync_state_.SyncError(hazard.Hazard(), objlist, error_obj.location.function, error);
+                if (skip) {
+                    break;
                 }
             }
         }

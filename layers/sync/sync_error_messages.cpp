@@ -375,6 +375,48 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
+std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                               vvl::Func command, const std::string& resource_description,
+                                               VkAttachmentLoadOp load_op) const {
+    AdditionalMessageInfo additional_info;
+
+    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
+    additional_info.properties.Add(kPropertyLoadOp, load_op_str);
+
+    if (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        additional_info.access_action = "reads";
+    } else if (load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+        additional_info.access_action = "clears";
+    } else if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
+        additional_info.access_action = "writes";
+    }
+
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                    vvl::Func command, const std::string& resource_description,
+                                                    VkResolveModeFlagBits resolve_mode, bool resolve_write) const {
+    AdditionalMessageInfo additional_info;
+
+    const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
+    additional_info.properties.Add(kPropertyResolveMode, resolve_mode_str);
+
+    additional_info.access_action = resolve_write ? "writes to single sample resolve attachment" : "reads multisample attachment";
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                  vvl::Func command, const std::string& resource_description,
+                                                  VkAttachmentStoreOp store_op) const {
+    AdditionalMessageInfo additional_info;
+
+    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
+    additional_info.properties.Add(kPropertyStoreOp, store_op_str);
+
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
 std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
     const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
@@ -432,67 +474,6 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
         // TODO: ensure correct command is used here, currently it's always empty
         // key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard,
-                                               const syncval_state::DynamicRenderingInfo::Attachment& attachment,
-                                               const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "(%s), with loadOp %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* load_op_str = string_VkAttachmentLoadOp(attachment.info.loadOp);
-    std::string message =
-        Format(format, validator_.FormatHandle(attachment.view->Handle()).c_str(), load_op_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "BeginRenderingError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyLoadOp, load_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                                    VkResolveModeFlagBits resolve_mode,
-                                                    const CommandBufferAccessContext& cb_context, vvl::Func command) const {
-    const auto format = "(%s), during resolve with resolveMode %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
-    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), resolve_mode_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "EndRenderingResolveError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyResolveMode, resolve_mode_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const VulkanTypedHandle& image_view_handle,
-                                                  VkAttachmentStoreOp store_op, const CommandBufferAccessContext& cb_context,
-                                                  vvl::Func command) const {
-    const auto format = "(%s), during store with storeOp %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
-    std::string message = Format(format, validator_.FormatHandle(image_view_handle).c_str(), store_op_str, access_info.c_str());
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "EndRenderingStoreError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyStoreOp, store_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
