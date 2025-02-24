@@ -564,6 +564,7 @@ TEST_F(NegativeRayTracing, CopyUnboundAccelerationStructure) {
     TEST_DESCRIPTION("Test CmdCopyAccelerationStructureKHR with buffer not bound to memory");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::accelerationStructure);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
