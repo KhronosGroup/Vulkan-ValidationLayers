@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,8 @@ TEST_F(PositiveLayerSettings, AllSettings) {
         {OBJECT_LAYER_NAME, "syncval_message_extra_properties", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "syncval_message_extra_properties_pretty_print", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "message_format_display_application_name", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
+        {OBJECT_LAYER_NAME, "message_format_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
+        {OBJECT_LAYER_NAME, "message_format_json", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "debug_action", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &action_ignore},
         {OBJECT_LAYER_NAME, "report_flags", VK_LAYER_SETTING_TYPE_STRING_EXT, 1, &warning},
     }};

@@ -1157,9 +1157,17 @@
                         {
                             "key": "message_format_verbose",
                             "label": "Verbose",
-                            "description": "Display Validation Type, Object Handles, Message ID, Spec Link",
+                            "description": "Display Validation Type, Object Handles, Message ID, Spec Link. (Ignored if using JSON)",
                             "type": "BOOL",
                             "default": true,
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                        },
+                        {
+                            "key": "message_format_json",
+                            "label": "JSON",
+                            "description": "Display Validation as JSON (VkDebugUtilsMessengerCallbackDataEXT::pMessage will contain JSON)",
+                            "type": "BOOL",
+                            "default": false,
                             "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
                         },
                         {
