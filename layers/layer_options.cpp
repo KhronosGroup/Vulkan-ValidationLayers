@@ -1367,7 +1367,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     for (const auto &warning : setting_warnings) {
-        settings_data->debug_report->DebugLogMsg(kWarningBit, {}, warning.c_str(), "VALIDATION-SETTINGS");
+        Location loc(vvl::Func::vkCreateInstance);
+        settings_data->debug_report->LogMessage(kWarningBit, {}, loc, "VALIDATION-SETTINGS", warning.c_str());
     }
 
     vkuDestroyLayerSettingSet(layer_setting_set, nullptr);
