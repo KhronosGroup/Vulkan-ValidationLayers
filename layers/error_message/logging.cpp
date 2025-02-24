@@ -190,7 +190,9 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     callback_data.objectCount = static_cast<uint32_t>(object_name_infos.size());
     callback_data.pObjects = object_name_infos.data();
 
-    std::string full_message = CreateMessageText(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message);
+    std::string full_message = message_format_settings.json
+                                   ? CreateMessageJson(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message)
+                                   : CreateMessageText(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message);
 
     const auto callback_list = &debug_callback_list;
     // We only output to default callbacks if there are no non-default callbacks
@@ -353,6 +355,136 @@ std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &lo
         }
     }
 
+    return oss.str();
+}
+
+std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &loc,
+                                           const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos,
+                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string &main_message) {
+    std::ostringstream oss;
+    // For now we just list each JSON field as a new line as it is "pretty-print enough".
+    // For Android, things get logged in logcat and having the JSON as a single line is easier to grab from the terminal.
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+    char new_line = ' ';
+    char line_start = ' ';
+#else
+    char new_line = '\n';
+    char line_start = '\t';
+#endif
+
+    oss << "{" << new_line;
+
+    if (message_format_settings.display_application_name && !message_format_settings.application_name.empty()) {
+        oss << line_start << "\"AppName\" : \"" << message_format_settings.application_name << "\"," << new_line;
+    }
+
+    {
+        oss << line_start << "\"Severity\" : \"";
+        if (msg_flags & kErrorBit) {
+            oss << "Error";
+        } else if (msg_flags & kWarningBit) {
+            oss << "Warning";
+        } else if (msg_flags & kPerformanceWarningBit) {
+            oss << "Performance Warning";
+        } else if (msg_flags & kInformationBit) {
+            oss << "Information";
+        } else if (msg_flags & kVerboseBit) {
+            oss << "Verbose";
+        }
+        oss << "\"," << new_line;
+    }
+
+    { oss << line_start << "\"VUID\" : \"" << vuid_text << "\"," << new_line; }
+
+    {
+        oss << line_start << "\"Objects\" : [" << new_line;
+        for (uint32_t i = 0; i < object_name_infos.size(); i++) {
+            const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
+
+            oss << line_start << line_start;
+            oss << "{\"type\" : \"" << string_VkObjectTypeHandleName(src_object.objectType) << "\", \"handle\" : \"";
+            if (0 != src_object.objectHandle) {
+                if (!debug_stable_messages) {
+                    oss << "0x" << std::hex << src_object.objectHandle;
+                }
+                oss << "\", \"name\" : \"";
+                if (src_object.pObjectName) {
+                    oss << src_object.pObjectName;
+                }
+                oss << "\"}";
+            } else {
+                oss << "VK_NULL_HANDLE\", \"name\" : \"\"}";
+            }
+            if (i + 1 != object_name_infos.size()) {
+                oss << ",";
+            }
+            oss << new_line;
+        }
+        oss << line_start << "]," << new_line;
+    }
+
+    { oss << line_start << "\"MessageID\" : \"0x" << std::hex << vuid_hash << "\"," << new_line; }
+    { oss << line_start << "\"Function\" : \"" << loc.StringFunc() << "\"," << new_line; }
+    { oss << line_start << "\"Location\" : \"" << loc.Fields() << "\"," << new_line; }
+    {
+        oss << line_start << "\"MainMessage\" : \"";
+        // For cases were where have multi-lines in the message, we need to escape them.
+        // The idea is the JSON is machine readable and when someone prints the value out, the new lines will resolve then.
+        for (char c : main_message) {
+            if (c == '\n') {
+                oss << "\\n";
+            } else {
+                oss << c;
+            }
+        }
+        oss << "\"," << new_line;
+    }
+    {
+        oss << line_start << "\"DebugRegion\" : \"";
+        if (loc.debug_region && !loc.debug_region->empty()) {
+            oss << loc.debug_region;
+        }
+        oss << "\"," << new_line;
+    }
+
+    if ((vuid_text.find("VUID-") != std::string::npos)) {
+        // Linear search makes no assumptions about the layout of the string table. This is not fast, but it does not need to be at
+        // this point in the error reporting path
+        uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
+        const char *spec_text = nullptr;
+        // Only the Antora site will make use of the sections
+        const char *spec_url_section = nullptr;
+        for (uint32_t i = 0; i < num_vuids; i++) {
+            if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
+                spec_text = vuid_spec_text[i].spec_text;
+                spec_url_section = vuid_spec_text[i].url_id;
+                break;
+            }
+        }
+
+        if (spec_text) {
+            oss << line_start << "\"SpecText\" : \"" << spec_text << "\"," << new_line;
+        } else {
+            oss << line_start << "\"SpecText\" : \"\"," << new_line;
+        }
+
+        // Construct and append the specification text and link to the appropriate version of the spec
+        if (spec_text && spec_url_section) {
+#ifdef ANNOTATED_SPEC_LINK
+            std::string spec_url_base = ANNOTATED_SPEC_LINK;
+#else
+            std::string spec_url_base = "https://docs.vulkan.org/spec/latest/";
+#endif
+            oss << line_start << "\"SpecUrl\" : \"" << spec_url_base << spec_url_section << "#" << vuid_text << "\"" << new_line;
+
+        } else {
+            oss << line_start << "\"SpecUrl\" : \"\"" << new_line;
+        }
+    } else {
+        oss << line_start << "\"SpecText\" : \"\"," << new_line;
+        oss << line_start << "\"SpecUrl\" : \"\"" << new_line;
+    }
+    oss << "}";
     return oss.str();
 }
 
