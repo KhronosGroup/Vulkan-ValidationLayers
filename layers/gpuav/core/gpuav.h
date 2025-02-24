@@ -444,7 +444,6 @@ class Validator : public GpuShaderInstrumentor {
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
 
     VmaAllocator vma_allocator_ = {};
-    VmaPool output_buffer_pool_ = VK_NULL_HANDLE;
     std::unique_ptr<vko::DescriptorSetManager> desc_set_manager_;
 
     vko::Buffer indices_buffer_;

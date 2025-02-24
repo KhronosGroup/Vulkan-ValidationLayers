@@ -128,10 +128,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
     // State Tracker (BaseClass) can end up making vma calls through callbacks - so destroy allocator last
-    if (output_buffer_pool_ != VK_NULL_HANDLE) {
-        vmaDestroyPool(vma_allocator_, output_buffer_pool_);
-        output_buffer_pool_ = VK_NULL_HANDLE;
-    }
     if (vma_allocator_) {
         vmaDestroyAllocator(vma_allocator_);
     }

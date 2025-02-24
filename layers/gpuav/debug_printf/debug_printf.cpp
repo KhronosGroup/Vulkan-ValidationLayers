@@ -385,7 +385,6 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    alloc_info.pool = gpuav.output_buffer_pool_;
     const bool success = debug_printf_output_buffer.Create(loc, &buffer_info, &alloc_info);
     if (!success) {
         return false;
