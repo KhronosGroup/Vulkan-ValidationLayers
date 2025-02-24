@@ -114,8 +114,8 @@ class Module {
     // To keep the GPU Shader Instrumentation a standalone sub-project, the runtime version needs to pass in info to allow for
     // warnings/errors to be piped into the normal callback (otherwise will be sent to stdout)
     DebugReport* debug_report_ = nullptr;
-    void InternalWarning(const char* tag, const char* message);
-    void InternalError(const char* tag, const char* message);
+    void InternalWarning(const char* tag, const std::string& message);
+    void InternalError(const char* tag, const std::string& message);
 
     // < set, [ bindings ] >
     const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut_;

@@ -624,7 +624,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         if (modifier == ' ') {
             std::string err_msg =
                 "OpString \"" + print_op_string() + "\" contains a isolated % which is missing the modifier (to escape use %%)";
-            module_.InternalError(tag, err_msg.c_str());
+            module_.InternalError(tag, err_msg);
             valid = false;
             break;
         }
@@ -677,7 +677,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                     if (i + 1 >= op_string_len) {
                         std::string err_msg = "OpString \"" + print_op_string() +
                                               "\" contains a %v at the end, but vectors require a width and type after it";
-                        module_.InternalError(tag, err_msg.c_str());
+                        module_.InternalError(tag, err_msg);
                         valid = false;
                     } else {
                         i++;
@@ -691,7 +691,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                         } else {
                             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a %v" + vec_size +
                                                   " needs to be valid vector width (v2, v3, or v4)";
-                            module_.InternalError(tag, err_msg.c_str());
+                            module_.InternalError(tag, err_msg);
                             valid = false;
                         }
                     }
@@ -700,7 +700,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                 default:
                     std::string err_msg = "OpString \"" + print_op_string() + "\" contains a \"" + modifier +
                                           "\" modifier which is an unknown modifier.";
-                    module_.InternalError(tag, err_msg.c_str());
+                    module_.InternalError(tag, err_msg);
                     valid = false;
                     break;  // unknown
             };
@@ -717,7 +717,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             if (!found_specifier) {
                 std::string err_msg = "OpString \"" + print_op_string() + "\" contains \"" + std::string(param_info.modifier) +
                                       "\" which is missing a valid specifier (d, i, o, u, x, X, a, A, e, E, f, F, g, or G).";
-                module_.InternalError(tag, err_msg.c_str());
+                module_.InternalError(tag, err_msg);
                 valid = false;
             }
         }
@@ -732,13 +732,13 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         std::string err_msg = "OpString \"" + print_op_string() + "\" contains only " + std::to_string(param_infos.size()) +
                               " modifiers, but " + std::to_string(argument_count) +
                               " arguments were passed in and some will be ignored";
-        module_.InternalWarning(tag, err_msg.c_str());
+        module_.InternalWarning(tag, err_msg);
 
     } else if (argument_count < param_infos.size()) {
         std::string err_msg = "OpString \"" + print_op_string() + "\" contains " + std::to_string(param_infos.size()) +
                               " modifiers, but only " + std::to_string(argument_count) +
                               " arguments were passed in and garbage data might start to occur";
-        module_.InternalError(tag, err_msg.c_str());
+        module_.InternalError(tag, err_msg);
         return false;
     }
 
@@ -768,7 +768,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             if (argument_type->spv_type_ != SpvType::kVector) {
                 std::string err_msg = "OpString \"" + print_op_string() + "\" contains a vector modifier \"" + param.modifier +
                                       "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a vector";
-                module_.InternalError(tag, err_msg.c_str());
+                module_.InternalError(tag, err_msg);
                 return false;
             }
             const uint32_t vector_size = argument_type->inst_.Word(3);
@@ -777,7 +777,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                                       "-wide vector modifier \"" + param.modifier + "\", but the argument (SPIR-V Id " +
                                       std::to_string(argument_id) + ") is a " + std::to_string(vector_size) +
                                       "-wide vector (values might be truncated or padded)";
-                module_.InternalWarning(tag, err_msg.c_str());
+                module_.InternalWarning(tag, err_msg);
             }
 
             // Get the underlying type (float or int)
@@ -787,7 +787,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             if (argument_type->spv_type_ == SpvType::kVector) {
                 std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-vector modifier \"" + param.modifier +
                                       "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a vector";
-                module_.InternalError(tag, err_msg.c_str());
+                module_.InternalError(tag, err_msg);
                 return false;
             }
         }
@@ -798,7 +798,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
                                   ") is not a float, int, or bool";
-            module_.InternalError(tag, err_msg.c_str());
+            module_.InternalError(tag, err_msg);
             return false;
         }
 
@@ -806,19 +806,19 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         if (!param.is_64_bit && type_is_64) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-64-bit modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") a 64-bit";
-            module_.InternalWarning(tag, err_msg.c_str());
+            module_.InternalWarning(tag, err_msg);
         } else if (param.is_64_bit && !type_is_64) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a 64-bit modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not 64-bit";
-            module_.InternalWarning(tag, err_msg.c_str());
+            module_.InternalWarning(tag, err_msg);
         } else if (!param.is_float && argument_type->spv_type_ == SpvType::kFloat) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-float modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is a float";
-            module_.InternalWarning(tag, err_msg.c_str());
+            module_.InternalWarning(tag, err_msg);
         } else if (param.is_float && argument_type->spv_type_ != SpvType::kFloat) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a float modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a float";
-            module_.InternalWarning(tag, err_msg.c_str());
+            module_.InternalWarning(tag, err_msg);
         }
     }
 
