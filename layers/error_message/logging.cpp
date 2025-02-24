@@ -113,21 +113,19 @@ bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
 
 bool DebugReport::LogMessage(VkFlags msg_flags, const LogObjectList &objects, const Location &loc, std::string_view vuid_text,
                              const std::string &main_message) {
-    assert(*(vuid_text.data() + vuid_text.size()) == '\0');
-
+    // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
     VkDebugUtilsMessageTypeFlagsEXT msg_type;
-
-    // Convert the info to the VK_EXT_debug_utils format
     DebugReportFlagsToAnnotFlags(msg_flags, &msg_severity, &msg_type);
+
     std::unique_lock<std::mutex> lock(debug_output_mutex);
+
     // Avoid logging cost if msg is to be ignored
-    const uint32_t vuid_hash = (vuid_text.empty()) ? 0 : hash_util::VuidHash(vuid_text);
+    const uint32_t vuid_hash = hash_util::VuidHash(vuid_text);
     if (!LogMsgEnabled(vuid_hash, msg_severity, msg_type)) {
         return false;
     }
 
-    bool bail = false;
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
     std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
 
@@ -208,6 +206,7 @@ bool DebugReport::LogMessage(VkFlags msg_flags, const LogObjectList &objects, co
 #endif
 
     const char *layer_prefix = "Validation";
+    bool bail = false;
     for (const auto &current_callback : *callback_list) {
         // Skip callback if it's a default callback and there are non-default callbacks present
         if (current_callback.IsDefault() && !use_default_callbacks) continue;
@@ -315,7 +314,7 @@ std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &lo
         uint32_t num_vuids = sizeof(vuid_spec_text) / sizeof(vuid_spec_text_pair);
         const char *spec_text = nullptr;
         // Only the Antora site will make use of the sections
-        std::string spec_url_section;
+        const char *spec_url_section = nullptr;
         for (uint32_t i = 0; i < num_vuids; i++) {
             if (0 == strncmp(vuid_text.data(), vuid_spec_text[i].vuid, vuid_text.size())) {
                 spec_text = vuid_spec_text[i].spec_text;
@@ -327,9 +326,9 @@ std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &lo
         // Construct and append the specification text and link to the appropriate version of the spec
         if (nullptr != spec_text) {
 #ifdef ANNOTATED_SPEC_LINK
-            std::string spec_url_base = ANNOTATED_SPEC_LINK;
+            const char *spec_url_base = ANNOTATED_SPEC_LINK;
 #else
-            std::string spec_url_base = "https://docs.vulkan.org/spec/latest/";
+            const char *spec_url_base = "https://docs.vulkan.org/spec/latest/";
 #endif
 
             // Add period at end if forgotten
