@@ -4185,6 +4185,12 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
             cb_state.activeFramebuffer->create_info.layers == 1) {
+            if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled) {
+                // If using MultiView, you should already have hit an error that Framebuffer Layer must be 1, but due to things like
+                // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4194 we should check here and ignore if things are invalid
+                // already
+                break;
+            }
             LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogUndefinedValue("Undefined-Layer-Written", objlist, vuid.loc(),
                                       "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
