@@ -589,7 +589,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
         }
         if (view_mask != 0) {
             skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-None-11062", commandBuffer, error_obj.location,
-                             "The active render pass contains a non-zero view mask (%" PRIu32 ").", view_mask);
+                             "The active render pass contains a non-zero viewMask (0x%" PRIx32 ").", view_mask);
         }
     }
 

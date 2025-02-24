@@ -220,7 +220,7 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                 if ((enabled_features.multiview == VK_FALSE) && (p_inherited_rendering_info->viewMask != 0)) {
                     skip |= LogError("VUID-VkCommandBufferInheritanceRenderingInfo-multiview-06008", commandBuffer,
                                      inheritance_loc.pNext(Struct::VkCommandBufferInheritanceRenderingInfo, Field::viewMask),
-                                     "is %" PRIu32 ", but the multiview feature was not enabled.",
+                                     "is 0x%" PRIx32 ", but the multiview feature was not enabled.",
                                      p_inherited_rendering_info->viewMask);
                 }
 
@@ -1187,7 +1187,7 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
                                              "by vkCmdBeginRendering(), but "
                                              "VkCommandBufferInheritanceRenderingInfo::viewMask (%" PRIu32
                                              ") does "
-                                             "not match VkRenderingInfo::viewMask (%" PRIu32 ").",
+                                             "not match VkRenderingInfo::viewMask (0x%" PRIx32 ").",
                                              FormatHandle(pCommandBuffers[i]).c_str(), inheritance_rendering_info.viewMask,
                                              rendering_info.viewMask);
                         }

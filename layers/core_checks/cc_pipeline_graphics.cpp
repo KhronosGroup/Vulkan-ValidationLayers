@@ -3158,7 +3158,7 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
         if ((enabled_features.multiview == VK_FALSE) && (rendering_struct->viewMask != 0)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-multiview-06577", device,
                              create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::viewMask),
-                             "is %" PRIu32 ", but the multiview feature was not enabled.", rendering_struct->viewMask);
+                             "is 0x%" PRIx32 ", but the multiview feature was not enabled.", rendering_struct->viewMask);
         }
 
         if (MostSignificantBit(rendering_struct->viewMask) >= static_cast<int32_t>(phys_dev_props_core11.maxMultiviewViewCount)) {
@@ -3464,8 +3464,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
         if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_rendering_view_mask_06178, objlist, vuid.loc(),
-                             "Currently bound pipeline %s viewMask ([%" PRIu32
-                             ") must be equal to VkRenderingInfo::viewMask ([%" PRIu32 ")",
+                             "Currently bound pipeline %s viewMask (0x%" PRIx32
+                             ") must be equal to VkRenderingInfo::viewMask (0x%" PRIx32 ")",
                              FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
         if (cb_state.IsPrimary() && (rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
@@ -4068,8 +4068,8 @@ bool CoreChecks::ValidatePipelineLibraryFlags(const VkGraphicsPipelineLibraryFla
         uint32_t lib_view_mask = lib->rendering_create_info ? lib->rendering_create_info->viewMask : 0;
         if (view_mask != lib_view_mask) {
             skip |= LogError(vuid, device, loc,
-                             "pLibraries[%" PRIu32 "] is (flags = %s and viewMask = %" PRIu32 "), but pLibraries[%" PRIu32
-                             "] is (flags = %s and viewMask %" PRIu32 ").",
+                             "pLibraries[%" PRIu32 "] is (flags = %s and viewMask = 0x%" PRIx32 "), but pLibraries[%" PRIu32
+                             "] is (flags = %s and viewMask 0x%" PRIx32 ").",
                              lib_index, string_VkGraphicsPipelineLibraryFlagsEXT(lib_flags).c_str(), view_mask, i,
                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(), lib_view_mask);
         }
@@ -4119,7 +4119,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06057"
                                              : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06047";
         skip |= LogError(vuid, device, multiview_loc,
-                         "is %" PRIu32
+                         "is 0x%" PRIx32
                          " and pStages contains tessellation shaders, but the multiviewTessellationShader feature was not enabled.",
                          view_mask);
     }
@@ -4128,7 +4128,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06058"
                                              : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06048";
         skip |= LogError(vuid, device, multiview_loc,
-                         "is %" PRIu32
+                         "is 0x%" PRIx32
                          " and pStages contains geometry shader, but the multiviewGeometryShader feature was not enabled.",
                          view_mask);
     }
@@ -4137,7 +4137,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-07720"
                                              : "VUID-VkGraphicsPipelineCreateInfo-renderPass-07064";
         skip |= LogError(vuid, device, multiview_loc,
-                         "is %" PRIu32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
+                         "is 0x%" PRIx32 " and pStages contains mesh shader, but the multiviewMeshShader feature was not enabled.",
                          view_mask);
     }
 
@@ -4148,7 +4148,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         if (stage.spirv_state->static_data_.has_builtin_layer) {
             const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059"
                                                  : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06050";
-            skip |= LogError(vuid, device, multiview_loc, "is %" PRIu32 " but %s stage contains a Layer decorated OpVariable.",
+            skip |= LogError(vuid, device, multiview_loc, "is 0x%" PRIx32 " but %s stage contains a Layer decorated OpVariable.",
                              view_mask, string_VkShaderStageFlagBits(stage.GetStage()));
         }
     }

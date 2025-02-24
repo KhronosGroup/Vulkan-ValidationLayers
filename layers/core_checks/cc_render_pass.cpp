@@ -178,7 +178,7 @@ bool CoreChecks::ValidateSubpassCompatibility(const VulkanTypedHandle &rp1_objec
             const LogObjectList objlist(rp1_object, rp1_state.Handle(), rp2_object, rp2_state.Handle());
             skip |= LogError(vuid, objlist, loc,
                              "%s is incompatible between %s (from %s) and %s (from %s), "
-                             "%" PRIu32 " != %" PRIu32 "",
+                             "0x%" PRIx32 " != 0x%" PRIx32 "",
                              subpass_loc.dot(Field::viewMask).Fields().c_str(), FormatHandle(rp1_state).c_str(),
                              FormatHandle(rp1_object).c_str(), FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str(),
                              primary_desc.viewMask, secondary_desc.viewMask);
@@ -418,7 +418,7 @@ bool CoreChecks::ValidateRenderPassCompatibility(const VulkanTypedHandle &rp1_ob
                 skip |= LogError(vuid, objlist, loc,
                                  "pCorrelatedViewMasks[%" PRIu32
                                  "] is incompatible between %s (from %s) and %s (from %s), "
-                                 "%" PRIu32 " != %" PRIu32 "",
+                                 "0x%" PRIx32 " != 0x%" PRIx32 "",
                                  i, FormatHandle(rp1_state).c_str(), FormatHandle(rp1_object).c_str(),
                                  FormatHandle(rp2_state).c_str(), FormatHandle(rp2_object).c_str(),
                                  rp1_state.create_info.pCorrelatedViewMasks[i], rp2_state.create_info.pCorrelatedViewMasks[i]);
@@ -783,24 +783,24 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
                                      FormatHandle(*view_state->image_state).c_str());
                 }
 
-                if ((subpass.viewMask != 0) &&
-                    // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9505
-                    // Doesn't account for VK_REMAINING_ARRAY_LAYERS
-                    (view_state->create_info.subresourceRange.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount)) {
-                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
-                    skip |= LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510", objlist,
-                                     offset_count_loc,
-                                     "(%" PRIu32 ") does not match the fragmentDensityMapAttachment (pAttachments[%" PRIu32
-                                     "] %s) subresourceRange.layerCount (%" PRIu32 ").",
-                                     fdm_offset_end_info.fragmentDensityOffsetCount, i, FormatHandle(*view_state).c_str(),
-                                     view_state->create_info.subresourceRange.layerCount);
-                }
-
-                if ((subpass.viewMask == 0) && (fdm_offset_end_info.fragmentDensityOffsetCount != 1)) {
-                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
-                    skip |= LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511", objlist,
+                if (subpass.viewMask == 0) {
+                    if (fdm_offset_end_info.fragmentDensityOffsetCount != 1) {
+                        const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
+                        skip |=
+                            LogError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511", objlist,
                                      offset_count_loc, "(%" PRIu32 ") should only be 1 when the multiview feature is not enabled.",
                                      fdm_offset_end_info.fragmentDensityOffsetCount);
+                    }
+                } else if (view_state->normalized_subresource_range.layerCount != fdm_offset_end_info.fragmentDensityOffsetCount) {
+                    const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
+                    skip |= LogError(
+                        "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510", objlist,
+                        offset_count_loc,
+                        "(%" PRIu32 ") does not match the fragmentDensityMapAttachment (pAttachments[%" PRIu32
+                        "] %s) subresourceRange.layerCount (%s) (subpass viewMask is 0x%" PRIx32 ")",
+                        fdm_offset_end_info.fragmentDensityOffsetCount, i, FormatHandle(*view_state).c_str(),
+                        string_LayerCount(view_state->image_state->create_info, view_state->create_info.subresourceRange).c_str(),
+                        subpass.viewMask);
                 }
             }
         }
@@ -2068,10 +2068,11 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
                         break;
                     }
                     if (subpass.viewMask != 0) {
-                        skip |= LogError(
-                            "VUID-VkSubpassDescription2-externalFormatResolve-09346", device, resolve_loc.dot(Field::attachment),
-                            "is %" PRIu32 ", pAttachments[%" PRIu32 "].format is VK_FORMAT_UNDEFINED, but viewMask is %" PRIu32 ".",
-                            resolve_attachment_index, resolve_attachment_index, subpass.viewMask);
+                        skip |= LogError("VUID-VkSubpassDescription2-externalFormatResolve-09346", device,
+                                         resolve_loc.dot(Field::attachment),
+                                         "is %" PRIu32 ", pAttachments[%" PRIu32
+                                         "].format is VK_FORMAT_UNDEFINED, but viewMask is 0x%" PRIx32 ".",
+                                         resolve_attachment_index, resolve_attachment_index, subpass.viewMask);
                     }
 
                     for (uint32_t k = 0; k < subpass.inputAttachmentCount; ++k) {
@@ -2265,7 +2266,7 @@ bool CoreChecks::ValidateCreateRenderPass(const VkRenderPassCreateInfo2 *pCreate
             view_mask_non_zero = true;
             if (!enabled_features.multiview) {
                 skip |= LogError("VUID-VkSubpassDescription2-multiview-06558", device, subpass_loc.dot(Field::viewMask),
-                                 "is %" PRIu32 ", but multiview feature is not enabled.", subpass.viewMask);
+                                 "is 0x%" PRIx32 ", but multiview feature is not enabled.", subpass.viewMask);
             }
             int highest_view_bit = MostSignificantBit(subpass.viewMask);
             if (highest_view_bit > 0 && static_cast<uint32_t>(highest_view_bit) >= phys_dev_props_core11.maxMultiviewViewCount) {
@@ -3142,7 +3143,7 @@ bool CoreChecks::ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer comman
             const LogObjectList objlist(commandBuffer, fragment_density_map_attachment_info->imageView);
             skip |= LogError("VUID-VkRenderingInfo-imageView-06108", objlist, view_loc,
                              "must have a layer count (%" PRId32
-                             ") greater than or equal to the most significant bit in viewMask (%" PRIu32 ")",
+                             ") greater than or equal to the most significant bit in viewMask (0x%" PRIx32 ")",
                              layer_count, rendering_info.viewMask);
         }
 
@@ -3232,8 +3233,8 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
                              rendering_info_loc.pNext(Struct::VkRenderingFragmentShadingRateAttachmentInfoKHR, Field::imageView),
                              "has a layerCount (%" PRId32
                              ") but must either is equal to 1 or greater than "
-                             " or equal to the index of the most significant bit in viewMask (%d)",
-                             layer_count, highest_view_bit);
+                             " or equal to the index of the most significant bit (%d) in viewMask (0x%" PRIx32 ")",
+                             layer_count, highest_view_bit, rendering_info.viewMask);
         }
     }
 
@@ -4469,11 +4470,13 @@ bool CoreChecks::ValidateFrameBufferAttachments(const VkFramebufferCreateInfo &c
                     int32_t layer_count = view_state->normalized_subresource_range.layerCount;
                     if (rp_state.has_multiview_enabled && layer_count != 1 && layer_count <= highest_view_bit) {
                         LogObjectList objlist(create_info.renderPass, image_views[i], ivci.image);
-                        skip |= LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
-                                         "has a layer count (%" PRId32
-                                         ") different than 1 or lower than the most significant bit in viewMask (%i"
-                                         ") but renderPass (%s) was specified with non-zero view masks.",
-                                         layer_count, highest_view_bit, FormatHandle(create_info.renderPass).c_str());
+                        skip |=
+                            LogError("VUID-VkFramebufferCreateInfo-renderPass-02746", objlist, attachment_loc,
+                                     "has a layer count (%" PRId32
+                                     ") different than 1 or lower than the most significant bit (%d) in viewMask (0x%" PRIx32
+                                     ""
+                                     ") but renderPass (%s) was specified with non-zero view masks.",
+                                     layer_count, highest_view_bit, subpass.viewMask, FormatHandle(create_info.renderPass).c_str());
                     }
 
                     if (!rp_state.has_multiview_enabled && layer_count != 1) {
