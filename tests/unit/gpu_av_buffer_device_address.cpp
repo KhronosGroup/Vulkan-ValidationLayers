@@ -1766,6 +1766,159 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchange) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
+    TEST_DESCRIPTION("Use BDA of the Value operand of Atomics");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO {
+            uvec4 padding;
+            uint x;
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO_IN {
+            SSBO a;
+            uint b;
+        };
+        void main() {
+            atomicAdd(b, a.x);
+        }
+    )glsl";
+
+    vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = bda_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
+    TEST_DESCRIPTION("Use BDA of the Pointer operand of Atomics");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO {
+            uvec4 padding;
+            uint x;
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO_IN {
+            SSBO a;
+        };
+        void main() {
+            atomicAdd(a.x, 1);
+        }
+    )glsl";
+
+    vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = bda_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO {
+            uvec4 padding;
+            uint x; // all invalid from here
+            uint y;
+            uint z;
+        };
+
+        layout(set = 0, binding = 0) buffer SSBO_IN {
+            SSBO a;
+        };
+        void main() {
+            atomicMax(a.x, a.y); // each produces 2 error
+            atomicMin(a.x, a.z);
+        }
+    )glsl";
+
+    vkt::Buffer bda_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = bda_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 4);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     TEST_DESCRIPTION("Slang can have a BDA pointer of a int that is not wrapped in a struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -2028,6 +2181,180 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_PieceOfDataPointerInStruct) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
+    TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the last pointer is bad");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO_A {
+            uint x;
+        };
+        layout(buffer_reference) buffer SSBO_B {
+            SSBO_A a;
+            uint y;
+        };
+
+        layout(set = 0, binding = 0) uniform UBO_IN {
+            SSBO_B b;
+        };
+
+        void main() {
+           b.a.x = 42;
+        }
+    )glsl";
+    vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer ssbo_a_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer ssbo_b_buffer(*m_device, 64, 0, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
+    buffer_ptr[0] = ssbo_b_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
+    buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
+    ssbo_b_buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
+    TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the first pointer is bad");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO_A {
+            uint x;
+        };
+        layout(buffer_reference) buffer SSBO_B {
+            SSBO_A a;
+            uint y;
+        };
+
+        layout(set = 0, binding = 0) uniform UBO_IN {
+            SSBO_B b;
+        };
+
+        void main() {
+           b.a.x = 42;
+        }
+    )glsl";
+    vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer ssbo_a_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer ssbo_b_buffer(*m_device, 64, 0, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
+    buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
+    in_buffer.Memory().Unmap();
+
+    buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
+    buffer_ptr[0] = ssbo_a_buffer.Address();
+    ssbo_b_buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // Because 'a' is null after detect 'b' is bad and causes a 2nd OOB access
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 2);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
+    TEST_DESCRIPTION("Have BDA point to more BDA creating a chain, and the first pointer is bad");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer SSBO_A {
+            uint x;
+        };
+        layout(buffer_reference) buffer SSBO_B {
+            SSBO_A a;
+            uint y;
+        };
+
+        layout(set = 0, binding = 0) buffer UBO_IN {
+            SSBO_B b;
+            uint z;
+        };
+
+        void main() {
+            z = atomicAdd(b.a.x, 1u);
+        }
+    )glsl";
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer ssbo_a_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer ssbo_b_buffer(*m_device, 64, 0, vkt::device_address);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
+    buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
+    in_buffer.Memory().Unmap();
+
+    buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
+    buffer_ptr[0] = ssbo_a_buffer.Address();
+    ssbo_b_buffer.Memory().Unmap();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // Because 'a' is null after detect 'b' is bad and causes a 2nd OOB access
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 2);
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

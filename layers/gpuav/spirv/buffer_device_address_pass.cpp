@@ -86,7 +86,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
         // Even if they are other Memory Operands the spec says it is ordered by smallest bit first,
         // Luckily |Aligned| is the smallest bit that can have an operand so we know it is here
         alignment_literal_ = inst.Word(alignment_word_index);
-    } else if (opcode == spv::OpAtomicLoad || opcode == spv::OpAtomicStore || opcode == spv::OpAtomicExchange) {
+    } else if (AtomicOperation(opcode)) {
         // Atomics are naturally aligned and by setting this to 1, it will always pass the alignment check
         alignment_literal_ = 1;
     } else {
