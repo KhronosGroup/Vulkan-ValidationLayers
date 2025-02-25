@@ -33,14 +33,22 @@ class ValidateResolveAction {
           command_(command),
           skip_(false) {}
 
-    void operator()(const char *aspect_name, const char *attachment_name, uint32_t src_at, uint32_t dst_at,
+    void operator()(const char *aspect_name, const char *resolve_action_name, uint32_t src_at, uint32_t dst_at,
                     const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                     SyncOrdering ordering_rule) {
         const HazardResult hazard = context_.DetectHazard(view_gen, gen_type, current_usage, ordering_rule);
         if (hazard.IsHazard()) {
             const Location loc(command_);
-            const auto error = cb_context_.GetSyncState().error_messages_.RenderPassResolveError(
-                hazard, cb_context_, subpass_, aspect_name, attachment_name, src_at, dst_at, command_);
+
+            std::stringstream ss;
+            ss << view_gen.GetViewState()->Handle();
+            ss << " (" << aspect_name << " " << resolve_action_name;
+            ss << ", attachment " << src_at;
+            ss << ", resolve attachment " << dst_at;
+            ss << ", subpass " << subpass_ << ")";
+            const std::string resource_description = ss.str();
+            const auto error = cb_context_.GetSyncState().error_messages_.RenderPassResolveError(hazard, cb_context_, command_,
+                                                                                                 resource_description);
             skip_ |= cb_context_.GetSyncState().SyncError(hazard.Hazard(), render_pass_, loc, error);
         }
     }
@@ -233,8 +241,14 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                                                                                                           aspect, load_op, command);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 } else {
-                    const auto error =
-                        sync_state.error_messages_.RenderPassLoadOpError(hazard, cb_context, subpass, i, aspect, load_op, command);
+                    std::stringstream ss;
+                    ss << aspect << " aspect of attachment " << i << " in subpass " << subpass;
+                    ss << " (" << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
+                    ss << ", loadOp " << string_VkAttachmentLoadOp(load_op) << ")";
+                    const std::string resource_description = ss.str();
+
+                    const std::string error = sync_state.error_messages_.RenderPassLoadOpError(
+                        hazard, cb_context, command, resource_description, subpass, i, load_op, is_color);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 }
             }
@@ -294,8 +308,17 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const VkAttachmentStoreOp store_op = checked_stencil ? ci.stencilStoreOp : ci.storeOp;
                 const Location loc(command);
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
-                    hazard, cb_context, current_subpass_, i, aspect, op_type_string, store_op, command);
+
+                std::stringstream ss;
+                ss << cb_context.GetSyncState().FormatHandle(view_gen.GetViewState()->Handle());
+                ss << " (subpass " << current_subpass_;
+                ss << ", attachment " << i;
+                ss << ", aspect " << aspect << " during store with " << op_type_string;
+                ss << " " << string_VkAttachmentStoreOp(store_op) << ")";
+                const std::string resource_description = ss.str();
+
+                const std::string error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
+                    hazard, cb_context, command, resource_description, store_op);
                 skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }

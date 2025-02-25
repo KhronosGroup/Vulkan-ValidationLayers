@@ -375,22 +375,25 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
+static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
+    if (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
+        return "reads";
+    } else if (load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+        return "clears";
+    } else if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
+        return "potentially modifies";
+    }
+    // If custon action name is not specified then it will be derived from hazard type (read or write)
+    return "";
+}
+
 std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                vvl::Func command, const std::string& resource_description,
                                                VkAttachmentLoadOp load_op) const {
     AdditionalMessageInfo additional_info;
-
     const char* load_op_str = string_VkAttachmentLoadOp(load_op);
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
-
-    if (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
-        additional_info.access_action = "reads";
-    } else if (load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-        additional_info.access_action = "clears";
-    } else if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
-        additional_info.access_action = "writes";
-    }
-
+    additional_info.access_action = GetLoadOpActionName(load_op);
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
@@ -398,10 +401,8 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
                                                     vvl::Func command, const std::string& resource_description,
                                                     VkResolveModeFlagBits resolve_mode, bool resolve_write) const {
     AdditionalMessageInfo additional_info;
-
     const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
     additional_info.properties.Add(kPropertyResolveMode, resolve_mode_str);
-
     additional_info.access_action = resolve_write ? "writes to single sample resolve attachment" : "reads multisample attachment";
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
@@ -410,10 +411,46 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
                                                   vvl::Func command, const std::string& resource_description,
                                                   VkAttachmentStoreOp store_op) const {
     AdditionalMessageInfo additional_info;
-
     const char* store_op_str = string_VkAttachmentStoreOp(store_op);
     additional_info.properties.Add(kPropertyStoreOp, store_op_str);
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
 
+std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                 vvl::Func command, const std::string& resource_description, uint32_t subpass,
+                                                 uint32_t attachment, VkAttachmentLoadOp load_op, bool is_color) const {
+    AdditionalMessageInfo additional_info;
+    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
+    additional_info.properties.Add(kPropertyLoadOp, load_op_str);
+    additional_info.access_action = GetLoadOpActionName(load_op);
+
+    if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
+        std::stringstream ss;
+        ss << "\nVulkan insight: according to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
+        if (is_color) {
+            ss << "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT for color attachment";
+        } else {
+            ss << "VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT for depth/stencil attachment";
+        }
+        ss << ").";
+        additional_info.message_end_text = ss.str();
+    }
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                  vvl::Func command, const std::string& resource_description) const {
+    // TODO: rework error message and maybe refactor ValidateResolveAction helper when this function is covered by the tests.
+    return Error(hazard, cb_context, command, resource_description);
+}
+
+// TODO: this one also does not have tests!
+std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                  vvl::Func command, const std::string& resource_description,
+                                                  VkAttachmentStoreOp store_op) const {
+    AdditionalMessageInfo additional_info;
+    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
+    additional_info.properties.Add(kPropertyStoreOp, store_op_str);
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
@@ -474,27 +511,6 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
         // TODO: ensure correct command is used here, currently it's always empty
         // key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                  uint32_t subpass, const char* aspect_name, const char* attachment_name,
-                                                  uint32_t src_attachment, uint32_t dst_attachment, vvl::Func command) const {
-    const auto format = "Hazard %s in subpass %" PRIu32 "during %s %s, from attachment %" PRIu32 " to resolve attachment %" PRIu32
-                        ". Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, aspect_name, attachment_name, src_attachment,
-                                 dst_attachment, access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassResolveError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
@@ -564,53 +580,6 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
         key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
         key_values.Add(kPropertyCommand, vvl::String(command));
         key_values.Add(kPropertyLoadOp, load_op_str);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                 uint32_t subpass, uint32_t attachment, const char* aspect_name,
-                                                 VkAttachmentLoadOp load_op, vvl::Func command) const {
-    const auto format =
-        "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " aspect %s during load with loadOp %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, aspect_name, load_op_str, access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassLoadOpError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyLoadOp, load_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                  uint32_t subpass, uint32_t attachment, const char* aspect_name,
-                                                  const char* store_op_type_name, VkAttachmentStoreOp store_op,
-                                                  vvl::Func command) const {
-    const auto format =
-        "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32 " %s aspect during store with %s %s. Access info %s";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* store_op_str = string_VkAttachmentStoreOp(store_op);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, aspect_name, store_op_type_name,
-                                 store_op_str, access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassStoreOpError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyStoreOp, store_op_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;

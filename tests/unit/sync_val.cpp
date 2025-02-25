@@ -1440,35 +1440,36 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
 
 TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     TEST_DESCRIPTION("Copying to attachment creates hazard with attachment load operation");
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Image dst_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    auto dst_image_view = dst_image.CreateView();
+    const uint32_t w = 64;
+    const uint32_t h = 64;
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+
+    vkt::Image src_image(*m_device, w, h, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::Image attachment_image(*m_device, w, h, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
+    attachment_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    vkt::ImageView attachment_view = attachment_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
-
-    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
-    vkt::Image src_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &attachment_view.handle());
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    region.extent = {m_width, m_height, 1};
+    region.extent = {w, h, 1};
 
     m_command_buffer.Begin();
-    // Initiate copy write
-    vk::CmdCopyImage(m_command_buffer, src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &region);
+    // Write to attachment
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, attachment_image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
     // Execution barrier to ensure that copy and loadOp operations do not overlap.
     // This does not synchronize memory accesses though and WAW hazard remains.
@@ -1477,8 +1478,9 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
 
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
     m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
