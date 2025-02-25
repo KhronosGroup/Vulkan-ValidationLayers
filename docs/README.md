@@ -4,6 +4,7 @@ This directory contains more detailed information about how each part of the Val
 
 - [VK_LAYER_KHRONOS_validation overview](./khronos_validation_layer.md)
     - [Core Validation Checks](./core_checks.md)
+    - [Error Message Overview](./error_messages.md)
     - [Best Practices Validation](./best_practices.md)
     - [Error Object (information used to print better error messages)](./error_object.md)
     - [Shader Debug Printf](./debug_printf.md)
