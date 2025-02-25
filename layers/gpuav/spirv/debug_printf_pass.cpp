@@ -19,6 +19,7 @@
 #include <spirv/unified1/NonSemanticDebugPrintf.h>
 #include <cstring>
 #include <iostream>
+#include <string>
 
 #include "generated/device_features.h"
 
@@ -698,8 +699,14 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                     break;
                 }
                 default:
-                    std::string err_msg = "OpString \"" + print_op_string() + "\" contains a \"" + modifier +
+                    // Need to escape, other error makes no sense
+                    std::string err_modifier = (modifier == '\n') ? "\\n" : (modifier == '\t') ? "\\t" : std::to_string(modifier);
+                    std::string err_msg = "OpString \"" + print_op_string() + "\" contains a \"" + err_modifier +
                                           "\" modifier which is an unknown modifier.";
+                    if (param_info.vector_size > 0) {
+                        // Help explain our custom vector format rules
+                        err_msg += " (for vectors you need something like %v3f which is just %f with a special v3 prefix)";
+                    }
                     module_.InternalError(tag, err_msg);
                     valid = false;
                     break;  // unknown
