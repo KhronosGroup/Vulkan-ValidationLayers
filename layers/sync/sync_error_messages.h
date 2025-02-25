@@ -92,12 +92,18 @@ class ErrorMessages {
 
     std::string BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                     const std::string& resource_description, VkAttachmentLoadOp load_op) const;
-
     std::string EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                          vvl::Func command, const std::string& resource_description,
                                          VkResolveModeFlagBits resolve_mode, bool resolve_write) const;
-
     std::string EndRenderingStoreError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                       const std::string& resource_description, VkAttachmentStoreOp store_op) const;
+
+    std::string RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                      const std::string& resource_description, uint32_t subpass, uint32_t attachment,
+                                      VkAttachmentLoadOp load_op, bool is_color) const;
+    std::string RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                       const std::string& resource_description) const;
+    std::string RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                        const std::string& resource_description, VkAttachmentStoreOp store_op) const;
 
     std::string PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -110,10 +116,6 @@ class ErrorMessages {
                               const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
                               VkCommandBuffer recorded_handle, vvl::Func command) const;
 
-    std::string RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, uint32_t subpass,
-                                       const char* aspect_name, const char* attachment_name, uint32_t src_attachment,
-                                       uint32_t dst_attachment, vvl::Func command) const;
-
     std::string RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
                                                                 VkImageLayout old_layout, VkImageLayout new_layout,
                                                                 uint32_t store_resolve_subpass, vvl::Func command) const;
@@ -125,14 +127,6 @@ class ErrorMessages {
     std::string RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
                                                         const char* aspect_name, VkAttachmentLoadOp load_op,
                                                         vvl::Func command) const;
-
-    std::string RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, uint32_t subpass,
-                                      uint32_t attachment, const char* aspect_name, VkAttachmentLoadOp load_op,
-                                      vvl::Func command) const;
-
-    std::string RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, uint32_t subpass,
-                                       uint32_t attachment, const char* aspect_name, const char* store_op_type_name,
-                                       VkAttachmentStoreOp store_op, vvl::Func command) const;
 
     std::string RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                const vvl::ImageView& view, uint32_t attachment, vvl::Func command) const;
