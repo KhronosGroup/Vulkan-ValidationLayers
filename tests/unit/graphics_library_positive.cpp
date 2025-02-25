@@ -937,6 +937,22 @@ TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering) {
     ASSERT_TRUE(exe_pipe.initialized());
 }
 
+TEST_F(PositiveGraphicsLibrary, FSIgnoredPointerGPLDynamicRendering2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9527");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.pColorAttachmentFormats = reinterpret_cast<VkFormat*>(static_cast<uintptr_t>(0xffffdead));
+    pipeline_rendering_info.colorAttachmentCount = 2;
+
+    CreatePipelineHelper vi_lib(*this);
+    vi_lib.InitVertexInputLibInfo(&pipeline_rendering_info);
+    vi_lib.CreateGraphicsPipeline();
+}
+
 TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
     TEST_DESCRIPTION("Check ignored pointers with dynamics rendering and GPL");
     SetTargetApiVersion(VK_API_VERSION_1_2);
