@@ -1746,11 +1746,19 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
         if (pCreateInfos[i].renderPass != VK_NULL_HANDLE) {
             render_pass = Get<RenderPass>(create_info.renderPass);
         } else if (enabled_features.dynamicRendering) {
-            auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
-            const bool rasterization_enabled = Pipeline::EnablesRasterizationStates(*this, create_info);
+            auto pipeline_rendering_ci = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(create_info.pNext);
             const bool has_fragment_output_state =
                 Pipeline::ContainsSubState(this, create_info, VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
-            render_pass = std::make_shared<RenderPass>(dynamic_rendering, rasterization_enabled && has_fragment_output_state);
+            const bool rasterization_enabled =
+                has_fragment_output_state && Pipeline::EnablesRasterizationStates(*this, create_info);
+            if (pipeline_rendering_ci && pipeline_rendering_ci->pColorAttachmentFormats && !rasterization_enabled) {
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9527
+                // Null here for the user, this a garbage pointer and will blow up VUL.
+                // While it have a safe 'VkPipelineRenderingCreateInfo_default' this time, future copies of the
+                // safe_VkGraphicsPipelineCreateInfo will fail.
+                const_cast<VkPipelineRenderingCreateInfo *>(pipeline_rendering_ci)->pColorAttachmentFormats = nullptr;
+            }
+            render_pass = std::make_shared<RenderPass>(pipeline_rendering_ci, rasterization_enabled);
         } else {
             const bool is_graphics_lib = GetGraphicsLibType(create_info) != static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
             const bool has_link_info = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(create_info.pNext) != nullptr;
