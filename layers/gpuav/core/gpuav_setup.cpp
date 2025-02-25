@@ -58,10 +58,14 @@ std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStru
     // get it here. Since it is used for the purpose of
     // validation, do not try to update buffer_state, since
     // it only tracks application state.
-    const VkDeviceAddress buffer_address =
-        buf_state ? buf_state->deviceAddress != 0 ? buf_state->deviceAddress : GetBufferDeviceAddressHelper(buf_state->VkHandle())
-                  : 0;
-
+    VkDeviceAddress buffer_address = 0;
+    if (buf_state) {
+        if (buf_state->deviceAddress != 0) {
+            buffer_address = buf_state->deviceAddress;
+        } else if (buf_state->Binding()) {
+            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle());
+        }
+    }
     return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address, *desc_heap_);
 }
 
