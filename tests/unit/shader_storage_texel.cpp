@@ -235,7 +235,7 @@ TEST_F(NegativeShaderStorageTexel, FormatComponentTypeMismatch) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
                               &descriptor_set.set_, 0, nullptr);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch-BufferView");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();

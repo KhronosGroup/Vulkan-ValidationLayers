@@ -29,5 +29,8 @@
 
 // This is the one function that requires mapping SPIR-V enums to Vulkan enums
 VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);
+// Since we keep things in VkFormat for checking, we need a way to get the original SPIR-V
+// Format name for any error message
+const char* string_SpirvImageFormat(VkFormat format);
 
 // NOLINTEND

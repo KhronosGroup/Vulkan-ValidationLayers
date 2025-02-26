@@ -158,6 +158,9 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
 
             // This is the one function that requires mapping SPIR-V enums to Vulkan enums
             VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format);
+            // Since we keep things in VkFormat for checking, we need a way to get the original SPIR-V
+            // Format name for any error message
+            const char* string_SpirvImageFormat(VkFormat format);
         ''')
 
         self.write("".join(out))
@@ -270,6 +273,17 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('    };\n')
         out.append('}\n')
 
+        out.append('''
+            const char* string_SpirvImageFormat(VkFormat format) {
+                switch (format) {
+            ''')
+        for format in [x for x in self.vk.formats.values() if x.spirvImageFormat]:
+            out.append(f'        case {format.name}:\n')
+            out.append(f'            return \"{format.spirvImageFormat}\";\n')
+        out.append('        default:\n')
+        out.append('            return "Unknown SPIR-V Format";\n')
+        out.append('    };\n')
+        out.append('}\n')
 
         out.append('''
 // clang-format off

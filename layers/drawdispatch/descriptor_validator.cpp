@@ -17,7 +17,9 @@
 
 #include "descriptor_validator.h"
 #include <vulkan/vulkan_core.h>
+#include <sstream>
 #include "generated/spirv_grammar_helper.h"
+#include "generated/spirv_validation_helper.h"
 #include "state_tracker/shader_stage_state.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/descriptor_sets.h"
@@ -387,15 +389,27 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
         if (image_view_ci.format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
             image_view_ci.format != resource_variable.info.image_format) {
+            // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
             auto set = descriptor_set.Handle();
             const LogObjectList objlist(set, image_view);
-            skip |= dev_state.LogUndefinedValue(
-                "Undefined-Value-StorageImage-FormatMismatch", objlist, loc,
-                "the %s is accessed by a OpTypeImage that has a format operand of %s which doesn't match the %s format (%s). Any "
-                "loads or stores with the variable will produce undefined values.",
-                DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-                string_VkFormat(resource_variable.info.image_format), dev_state.FormatHandle(image_view).c_str(),
-                string_VkFormat(image_view_ci.format));
+            std::stringstream msg;
+            msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
+                << " is accessed by a OpTypeImage that has a Format operand "
+                << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
+                << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
+                << dev_state.FormatHandle(image_view) << " format (" << string_VkFormat(image_view_ci.format)
+                << "). Any loads or stores with the variable will produce undefined values.";
+            if (vkuFormatCompatibilityClass(image_view_ci.format) ==
+                vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
+                msg << " While the formats are compatible, Storage Images must exactly match. Two ways to resolve this are\n";
+                msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.image_format)
+                    << " and swizzle the values in the shader to match the desired results.\n";
+                msg << "2. Use the Unknown format in your shader (will need the widely supported "
+                       "shaderStorageImageWriteWithoutFormat feature)";
+            }
+            msg << "\nSpec information at https://docs.vulkan.org/spec/latest/chapters/textures.html#textures-format-validation";
+            skip |= dev_state.LogUndefinedValue("Undefined-Value-StorageImage-FormatMismatch-ImageView", objlist, loc, "%s",
+                                                msg.str().c_str());
         }
 
         const bool image_format_width_64 = vkuFormatHasComponentSize(image_view_ci.format, 64);
@@ -941,15 +955,25 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
 
     if (buffer_view_format != VK_FORMAT_UNDEFINED && resource_variable.info.image_format != VK_FORMAT_UNDEFINED &&
         buffer_view_format != resource_variable.info.image_format) {
+        // This warning was added after being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4128
         auto set = descriptor_set.Handle();
         const LogObjectList objlist(set, buffer_view);
-        skip |= dev_state.LogUndefinedValue(
-            "Undefined-Value-StorageImage-FormatMismatch", objlist, loc,
-            "the %s is accessed by a OpTypeImage that has a format operand of %s which doesn't match the %s format (%s). Any loads "
-            "or stores with the variable will produce undefined values.",
-            DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
-            string_VkFormat(resource_variable.info.image_format), dev_state.FormatHandle(buffer_view).c_str(),
-            string_VkFormat(buffer_view_format));
+        std::stringstream msg;
+        msg << "the " << DescribeDescriptor(resource_variable, index, descriptor_type)
+            << " is accessed by a OpTypeImage that has a Format operand "
+            << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
+            << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
+            << dev_state.FormatHandle(buffer_view) << " format (" << string_VkFormat(buffer_view_format)
+            << "). Any loads or stores with the variable will produce undefined values.";
+        if (vkuFormatCompatibilityClass(buffer_view_format) == vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
+            msg << " While the formats are compatible, Texel Buffers must exactly match. Two ways to resolve this are\n";
+            msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.image_format)
+                << " and swizzle the values in the shader to match the desired results.\n";
+            msg << "2. Use the Unknown format in your shader";
+        }
+        msg << "\nSpec information at https://docs.vulkan.org/spec/latest/chapters/textures.html#textures-format-validation";
+        skip |= dev_state.LogUndefinedValue("Undefined-Value-StorageImage-FormatMismatch-BufferView", objlist, loc, "%s",
+                                            msg.str().c_str());
     }
 
     const bool buffer_format_width_64 = vkuFormatHasComponentSize(buffer_view_format, 64);

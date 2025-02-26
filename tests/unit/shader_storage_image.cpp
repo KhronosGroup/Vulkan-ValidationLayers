@@ -911,7 +911,7 @@ void NegativeShaderStorageImage::FormatComponentMismatchTest(std::string spirv_f
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
 
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch-ImageView");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -923,6 +923,8 @@ TEST_F(NegativeShaderStorageImage, FormatComponentTypeMismatch) {
 
 TEST_F(NegativeShaderStorageImage, FormatComponentSizeMismatch) { FormatComponentMismatchTest("Rgba8", VK_FORMAT_R8_UNORM); }
 
-TEST_F(NegativeShaderStorageImage, FormatComponentNumericMismatch) {
-    FormatComponentMismatchTest("Rgba8", VK_FORMAT_R8G8B8A8_SNORM);
+TEST_F(NegativeShaderStorageImage, FormatComponentWidthMismatch) {
+    FormatComponentMismatchTest("Rgba8", VK_FORMAT_R32G32B32A32_SFLOAT);
 }
+
+TEST_F(NegativeShaderStorageImage, FormatCompatibleMismatch) { FormatComponentMismatchTest("Rgba8", VK_FORMAT_B8G8R8A8_UNORM); }
