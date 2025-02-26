@@ -43,6 +43,12 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     uint32_t descriptor_binding_ = 0;
     uint32_t descriptor_index_id_ = 0;
 
+    // Duplicate values if dealing with SAMPLED_IMAGE and SAMPLER together
+    const Instruction* sampler_var_inst_ = nullptr;
+    uint32_t sampler_descriptor_set_ = 0;
+    uint32_t sampler_descriptor_binding_ = 0;
+    uint32_t sampler_descriptor_index_id_ = 0;
+
     // < original ID, new CopyObject ID >
     vvl::unordered_map<uint32_t, uint32_t> copy_object_map_;
 };
