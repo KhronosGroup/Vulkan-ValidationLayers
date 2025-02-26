@@ -882,6 +882,95 @@ VkFormat CompatibleSpirvImageFormat(uint32_t spirv_image_format) {
     };
 }
 
+const char *string_SpirvImageFormat(VkFormat format) {
+    switch (format) {
+        case VK_FORMAT_R8_UNORM:
+            return "R8";
+        case VK_FORMAT_R8_SNORM:
+            return "R8Snorm";
+        case VK_FORMAT_R8_UINT:
+            return "R8ui";
+        case VK_FORMAT_R8_SINT:
+            return "R8i";
+        case VK_FORMAT_R8G8_UNORM:
+            return "Rg8";
+        case VK_FORMAT_R8G8_SNORM:
+            return "Rg8Snorm";
+        case VK_FORMAT_R8G8_UINT:
+            return "Rg8ui";
+        case VK_FORMAT_R8G8_SINT:
+            return "Rg8i";
+        case VK_FORMAT_R8G8B8A8_UNORM:
+            return "Rgba8";
+        case VK_FORMAT_R8G8B8A8_SNORM:
+            return "Rgba8Snorm";
+        case VK_FORMAT_R8G8B8A8_UINT:
+            return "Rgba8ui";
+        case VK_FORMAT_R8G8B8A8_SINT:
+            return "Rgba8i";
+        case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
+            return "Rgb10A2";
+        case VK_FORMAT_A2B10G10R10_UINT_PACK32:
+            return "Rgb10a2ui";
+        case VK_FORMAT_R16_UNORM:
+            return "R16";
+        case VK_FORMAT_R16_SNORM:
+            return "R16Snorm";
+        case VK_FORMAT_R16_UINT:
+            return "R16ui";
+        case VK_FORMAT_R16_SINT:
+            return "R16i";
+        case VK_FORMAT_R16_SFLOAT:
+            return "R16f";
+        case VK_FORMAT_R16G16_UNORM:
+            return "Rg16";
+        case VK_FORMAT_R16G16_SNORM:
+            return "Rg16Snorm";
+        case VK_FORMAT_R16G16_UINT:
+            return "Rg16ui";
+        case VK_FORMAT_R16G16_SINT:
+            return "Rg16i";
+        case VK_FORMAT_R16G16_SFLOAT:
+            return "Rg16f";
+        case VK_FORMAT_R16G16B16A16_UNORM:
+            return "Rgba16";
+        case VK_FORMAT_R16G16B16A16_SNORM:
+            return "Rgba16Snorm";
+        case VK_FORMAT_R16G16B16A16_UINT:
+            return "Rgba16ui";
+        case VK_FORMAT_R16G16B16A16_SINT:
+            return "Rgba16i";
+        case VK_FORMAT_R16G16B16A16_SFLOAT:
+            return "Rgba16f";
+        case VK_FORMAT_R32_UINT:
+            return "R32ui";
+        case VK_FORMAT_R32_SINT:
+            return "R32i";
+        case VK_FORMAT_R32_SFLOAT:
+            return "R32f";
+        case VK_FORMAT_R32G32_UINT:
+            return "Rg32ui";
+        case VK_FORMAT_R32G32_SINT:
+            return "Rg32i";
+        case VK_FORMAT_R32G32_SFLOAT:
+            return "Rg32f";
+        case VK_FORMAT_R32G32B32A32_UINT:
+            return "Rgba32ui";
+        case VK_FORMAT_R32G32B32A32_SINT:
+            return "Rgba32i";
+        case VK_FORMAT_R32G32B32A32_SFLOAT:
+            return "Rgba32f";
+        case VK_FORMAT_R64_UINT:
+            return "R64ui";
+        case VK_FORMAT_R64_SINT:
+            return "R64i";
+        case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+            return "R11fG11fB10f";
+        default:
+            return "Unknown SPIR-V Format";
+    };
+}
+
 // clang-format off
 static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     static const vvl::unordered_map<uint32_t, std::string_view> table {
