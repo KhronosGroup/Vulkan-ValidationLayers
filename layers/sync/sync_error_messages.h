@@ -46,6 +46,7 @@ struct AdditionalMessageInfo {
     // For example, "clears" for a clear operation might be more specific than a write
     std::string access_action;
 
+    std::string hazard_overview;
     std::string pre_synchronization_text;
     std::string message_end_text;
 };
@@ -101,6 +102,9 @@ class ErrorMessages {
     std::string RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                       const std::string& resource_description, uint32_t subpass, uint32_t attachment,
                                       VkAttachmentLoadOp load_op, bool is_color) const;
+    std::string RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                        vvl::Func command, const std::string& resource_description,
+                                                        VkAttachmentLoadOp load_op, bool is_color) const;
     std::string RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                        const std::string& resource_description) const;
     std::string RenderPassStoreOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
@@ -124,9 +128,6 @@ class ErrorMessages {
                                                 uint32_t subpass, uint32_t attachment, VkImageLayout old_layout,
                                                 VkImageLayout new_layout, vvl::Func command) const;
 
-    std::string RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, uint32_t subpass, uint32_t attachment,
-                                                        const char* aspect_name, VkAttachmentLoadOp load_op,
-                                                        vvl::Func command) const;
 
     std::string RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                const vvl::ImageView& view, uint32_t attachment, vvl::Func command) const;
