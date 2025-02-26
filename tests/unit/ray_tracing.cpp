@@ -1870,7 +1870,7 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         // of elements in `build_infos`
         // => due to validation code optimisations, not *all* overlaps will be detected,
         // but if there is *at least one*, it will *always+ be detected.
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702", 2);
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), build_infos);
         m_command_buffer.End();
@@ -1919,10 +1919,11 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory) {
         // triggered for each pair of elements in `build_infos`, and 03668 for each element
         // => due to validation code optimisations, not *all* overlaps described by 03701 and 03702 will be detected,
         // but if there is *at least one*, it will *always+ be detected.
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701", 2);
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702", 2);
-
-        m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668", build_info_count);
+        // Also, the emitted errors will depend on how std::lower_bound operates given an input device address range,
+        // so it is unpredicatble: use SetAllowedFailureMsg to cope
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03668");
 
         m_command_buffer.Begin();
         vkt::as::BuildAccelerationStructuresKHR(m_command_buffer.handle(), blas_vec);
@@ -2053,6 +2054,8 @@ TEST_F(NegativeRayTracing, AccelerationStructuresOverlappingMemory3) {
         // elements.
         // => due to validation code optimisations, not *all* overlaps will be detected,
         // but if there is *at least one*, it will *always+ be detected.
+        // Also, the emitted errors will depend on how std::lower_bound operates given an input device address range,
+        // so it is unpredicatble: use SetAllowedFailureMsg to cope
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03703");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03702");
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBuildAccelerationStructuresKHR-scratchData-03704");
