@@ -3222,10 +3222,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ConstantArrayOOBBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8922
-TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_NonUniformSamplers) {
+TEST_F(NegativeGpuAVDescriptorIndexing, SamplersNonBindless) {
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -3239,8 +3237,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_NonUniformSamplers) {
             uint sId;
         } pc;
 
-        layout(set = 0, binding = 0) uniform texture2D kTextures2D[];
-        layout(set = 0, binding = 1) uniform sampler kSamplers[];
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D[2];
+        layout(set = 0, binding = 1) uniform sampler kSamplers[2];
         layout(location = 0) out vec4 out_color;
 
         void main() {
@@ -3251,8 +3249,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_NonUniformSamplers) {
     VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkPushConstantRange pc_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
-    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
 
     CreatePipelineHelper pipe(*this);
@@ -3265,15 +3263,21 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_NonUniformSamplers) {
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view = image.CreateView();
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     uint32_t texture_id = 0;
-    uint32_t sampler_id = 1;
+    uint32_t sampler_id = 2;  // OOB
     vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &texture_id);
     vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 4, 4, &sampler_id);
 
@@ -3285,6 +3289,202 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DISABLED_NonUniformSamplers) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, SamplersPartiallyBound) {
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char fs_source[] = R"glsl(
+        #version 460
+
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D;
+        layout(set = 0, binding = 1) uniform sampler kSamplers;
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = texture(sampler2D(kTextures2D, kSamplers), vec2(0));
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    // descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, SamplersMixedBindless) {
+    TEST_DESCRIPTION("SAMPLED_IMAGE is bindless, but the Sampler is not");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char fs_source[] = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(push_constant, std430) uniform PushConstants {
+            uint sId;
+        } pc;
+
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D;
+        layout(set = 0, binding = 1) uniform sampler kSamplers[2];
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = texture(nonuniformEXT(sampler2D(kTextures2D, kSamplers[pc.sId])), vec2(0));
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(1, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    uint32_t sampler_id = 2;  // OOB
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &sampler_id);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVDescriptorIndexing, SamplersMixedBindless2) {
+    TEST_DESCRIPTION("SAMPLED_IMAGE is non-bindless, but the Sampler is");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const char fs_source[] = R"glsl(
+        #version 460
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(push_constant, std430) uniform PushConstants {
+            uint tId;
+        } pc;
+
+        layout(set = 0, binding = 0) uniform texture2D kTextures2D[2];
+        layout(set = 0, binding = 1) uniform sampler kSamplers;
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = texture(nonuniformEXT(sampler2D(kTextures2D[pc.tId], kSamplers)), vec2(0));
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 16};
+    OneOffDescriptorIndexingSet descriptor_set(
+        m_device,
+        {{0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr, VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    uint32_t texture_id = 0;
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4, &texture_id);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
