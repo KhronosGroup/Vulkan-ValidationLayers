@@ -4024,90 +4024,38 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncVal, TestInvalidExternalSubpassDependency) {
-    TEST_DESCRIPTION("Test write after write hazard with invalid external subpass dependency");
+TEST_F(NegativeSyncVal, StoreOpAndLayoutTransitionHazard) {
+    TEST_DESCRIPTION("External subpass dependency causes hazard between storeOp and automatic layout transition");
+    RETURN_IF_SKIP(InitSyncVal());
 
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
-
-    VkSubpassDependency subpass_dependency = {};
+    VkSubpassDependency subpass_dependency{};
     subpass_dependency.srcSubpass = 0;
     subpass_dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
     subpass_dependency.srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
     subpass_dependency.dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+    // In order to barrier storeOp access from subsequent automatic layout transition,
+    // srcAccessMask should be VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
     subpass_dependency.srcAccessMask = 0;
     subpass_dependency.dstAccessMask = 0;
     subpass_dependency.dependencyFlags = 0;
 
-    VkAttachmentReference attach_ref1 = {};
-    attach_ref1.attachment = 0;
-    attach_ref1.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    VkAttachmentReference attach_ref2 = {};
-    attach_ref2.attachment = 0;
-    attach_ref2.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_D32_SFLOAT, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+    rp.AddDepthStencilAttachment(0);
+    rp.AddSubpassDependency(subpass_dependency);
+    rp.CreateRenderPass();
 
-    VkSubpassDescription subpass_descriptions[2] = {};
-    subpass_descriptions[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_descriptions[0].pDepthStencilAttachment = &attach_ref1;
-    subpass_descriptions[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass_descriptions[1].pDepthStencilAttachment = &attach_ref2;
-
-    VkAttachmentDescription attachment_description = {};
-    attachment_description.format = VK_FORMAT_D32_SFLOAT;
-    attachment_description.samples = VK_SAMPLE_COUNT_1_BIT;
-    attachment_description.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-    attachment_description.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment_description.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    attachment_description.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    attachment_description.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    attachment_description.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkRenderPassCreateInfo rp_ci = vku::InitStructHelper();
-    rp_ci.subpassCount = 1;
-    rp_ci.pSubpasses = subpass_descriptions;
-    rp_ci.attachmentCount = 1;
-    rp_ci.pAttachments = &attachment_description;
-    rp_ci.dependencyCount = 1;
-    rp_ci.pDependencies = &subpass_dependency;
-
-    vkt::RenderPass render_pass(*m_device, rp_ci);
-
-    VkClearValue clear_value = {};
-    clear_value.color = {{0, 0, 0, 0}};
-
-    VkImageCreateInfo image_ci = vku::InitStructHelper();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.format = VK_FORMAT_D32_SFLOAT;
-    image_ci.extent = {32, 32, 1};
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 1;
-    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    vkt::Image image1(*m_device, image_ci, vkt::set_layout);
-    vkt::ImageView image_view1 = image1.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    VkImageView framebuffer_attachments[1] = {image_view1.handle()};
-
-    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, framebuffer_attachments);
-
-    VkPipelineDepthStencilStateCreateInfo ds_ci = vku::InitStructHelper();
-    ds_ci.depthTestEnable = VK_FALSE;
-    ds_ci.depthWriteEnable = VK_FALSE;
-    ds_ci.depthCompareOp = VK_COMPARE_OP_NEVER;
-
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = render_pass.handle();
-    pipe.gp_ci_.pDepthStencilState = &ds_ci;
-    pipe.CreateGraphicsPipeline();
-
-    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass.handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_command_buffer.EndRenderPass();
-
     m_errorMonitor->VerifyFound();
 }
 
