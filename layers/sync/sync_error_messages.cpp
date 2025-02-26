@@ -146,6 +146,9 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     if (const auto* debug_region = key_values.FindProperty("debug_region")) {
         ss << " (debug region: " << *debug_region << ")";
     }
+    if (!additional_info.brief_description_end_text.empty()) {
+        ss << " " << additional_info.brief_description_end_text;
+    }
     ss << ". ";
 
     // Additional information before synchronization section.
@@ -158,10 +161,18 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     if (missing_synchronization) {
         const char* access_type = hazard_info.IsWrite() ? "write" : "read";
         const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
-        ss << "No sufficient synchronization is present to ensure that a " << access_type << " (";
-        ss << string_VkAccessFlagBits2(access.access_mask) << ") at ";
-        ss << string_VkPipelineStageFlagBits2(access.stage_mask) << " does not conflict with a prior ";
 
+        ss << "No sufficient synchronization is present to ensure that a ";
+        if (access.access_mask != VK_ACCESS_2_NONE) {
+            ss << access_type << " (" << string_VkAccessFlagBits2(access.access_mask) << ") at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask);
+        } else {
+            if (access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
+                ss << "layout transition";
+            }
+        }
+
+        ss << " does not conflict with a prior ";
         if (prior_access.access_mask != VK_ACCESS_2_NONE) {
             ss << prior_access_type;
             if (prior_access.access_mask != access.access_mask) {
@@ -172,6 +183,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
                 ss << "layout transition write";
             }
         }
+
         if (prior_access.stage_mask != VK_PIPELINE_STAGE_2_NONE) {
             ss << " at ";
             if (prior_access.stage_mask == access.stage_mask) {
@@ -189,9 +201,16 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         if (is_access_protected) {
             ss << " but not at " << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
-            ss << ", but to prevent this hazard, it must allow ";
-            ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
-            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+            ss << ", but to prevent this hazard, ";
+
+            if (access.access_mask != VK_ACCESS_2_NONE) {
+                ss << "it must allow ";
+                ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
+                ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+            } else {
+                // TODO: analyse exact form of synchronization is needed or specific options to use
+                ss << "it must protect layout transition accesses.";
+            }
         }
     } else {  // WAR hazard
         ss << "The current synchronization waits at ";
@@ -478,6 +497,71 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
+std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                           vvl::Func command, const std::string& resource_description,
+                                                           VkImageLayout old_layout, VkImageLayout new_layout) const {
+    const char* old_layout_str = string_VkImageLayout(old_layout);
+    const char* new_layout_str = string_VkImageLayout(new_layout);
+
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
+    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
+    additional_info.access_action = "performs image layout transition";
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
+                                                                           const CommandBufferAccessContext& cb_context,
+                                                                           vvl::Func command,
+                                                                           const std::string& resource_description,
+                                                                           VkImageLayout old_layout, VkImageLayout new_layout,
+                                                                           uint32_t store_resolve_subpass) const {
+    const char* old_layout_str = string_VkImageLayout(old_layout);
+    const char* new_layout_str = string_VkImageLayout(new_layout);
+
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
+    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
+    additional_info.access_action = "performs image layout transition";
+    additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
+    additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
+
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
+                                                                const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                                                const std::string& resource_description, VkImageLayout old_layout,
+                                                                VkImageLayout new_layout) const {
+    const char* old_layout_str = string_VkImageLayout(old_layout);
+    const char* new_layout_str = string_VkImageLayout(new_layout);
+
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
+    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
+    additional_info.access_action = "performs final image layout transition";
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
+std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
+                                                                                const CommandBufferAccessContext& cb_context,
+                                                                                vvl::Func command,
+                                                                                const std::string& resource_description,
+                                                                                VkImageLayout old_layout, VkImageLayout new_layout,
+                                                                                uint32_t store_resolve_subpass) const {
+    const char* old_layout_str = string_VkImageLayout(old_layout);
+    const char* new_layout_str = string_VkImageLayout(new_layout);
+
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
+    additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
+    additional_info.access_action = "performs final image layout transition";
+    additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
+    additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
+
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
+
 std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
     const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
@@ -540,55 +624,6 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     return message;
 }
 
-std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard, uint32_t subpass,
-                                                                           uint32_t attachment, VkImageLayout old_layout,
-                                                                           VkImageLayout new_layout, uint32_t store_resolve_subpass,
-                                                                           vvl::Func command) const {
-    const auto format =
-        "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-        " image layout transition (old_layout: %s, new_layout: %s) after store/resolve operation in subpass %" PRIu32;
-
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, old_layout_str, new_layout_str,
-                                 store_resolve_subpass);
-    if (extra_properties_) {
-        ReportKeyValues key_values;
-        key_values.Add(kPropertyMessageType, "RenderPassLayoutTransitionVsStoreOrResolveError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyOldLayout, old_layout_str);
-        key_values.Add(kPropertyNewLayout, new_layout_str);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                           uint32_t subpass, uint32_t attachment, VkImageLayout old_layout,
-                                                           VkImageLayout new_layout, vvl::Func command) const {
-    const auto format = "Hazard %s in subpass %" PRIu32 " for attachment %" PRIu32
-                        " image layout transition (old_layout: %s, new_layout: %s). Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, old_layout_str, new_layout_str,
-                                 access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassLayoutTransitionError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyOldLayout, old_layout_str);
-        key_values.Add(kPropertyNewLayout, new_layout_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
 std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                           const vvl::ImageView& view, uint32_t attachment,
                                                           vvl::Func command) const {
@@ -626,57 +661,6 @@ std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardRes
         key_values.Add(kPropertyMessageType, "RenderPassDepthStencilAttachmentError");
         key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
         key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
-                                                                                const CommandBufferAccessContext& cb_context,
-                                                                                uint32_t subpass, uint32_t attachment,
-                                                                                VkImageLayout old_layout, VkImageLayout new_layout,
-                                                                                vvl::Func command) const {
-    const auto format = "Hazard %s vs. store/resolve operations in subpass %" PRIu32 " for attachment %" PRIu32
-                        " final image layout transition (old_layout: %s, new_layout: %s).";
-    ReportKeyValues key_values;
-
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, old_layout_str, new_layout_str);
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassFinalLayoutTransitionVsStoreOrResolveError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyOldLayout, old_layout_str);
-        key_values.Add(kPropertyNewLayout, new_layout_str);
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
-                                                                const CommandBufferAccessContext& cb_context, uint32_t subpass,
-                                                                uint32_t attachment, VkImageLayout old_layout,
-                                                                VkImageLayout new_layout, vvl::Func command) const {
-    const auto format = "Hazard %s with last use subpass %" PRIu32 " for attachment %" PRIu32
-                        " final image layout transition (old_layout: %s, new_layout: %s). Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    const char* old_layout_str = string_VkImageLayout(old_layout);
-    const char* new_layout_str = string_VkImageLayout(new_layout);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, old_layout_str, new_layout_str,
-                                 access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassFinalLayoutTransitionError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyOldLayout, old_layout_str);
-        key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }

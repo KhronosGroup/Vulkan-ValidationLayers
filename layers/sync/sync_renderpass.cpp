@@ -164,19 +164,28 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
         }
         auto hazard = access_context.DetectSubpassTransitionHazard(*track_back, attachment_views[transition.attachment]);
         if (hazard.IsHazard()) {
+            const SyncValidator &sync_state = cb_context.GetSyncState();
             const Location loc(command);
+
+            const syncval_state::ImageViewState *attachment_view = attachment_views[transition.attachment].GetViewState();
+            std::stringstream ss;
+            ss << "in subpass " << subpass << " on attachment " << transition.attachment << " (";
+            ss << sync_state.FormatHandle(attachment_view->Handle());
+            ss << ", " << sync_state.FormatHandle(attachment_view->GetImageState()->Handle());
+            ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
+            ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
+            ss << ")";
+            const std::string resource_description = ss.str();
+
             if (hazard.Tag() == kInvalidTag) {
-                // TODO: there are no tests for this error
-                // TODO: investigate when we can get invalid tag
-                // Initially introduced: ee98402 - syncval: Cleanup of invalid tagging
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
-                    hazard, subpass, transition.attachment, transition.old_layout, transition.new_layout, transition.prev_pass,
-                    command);
-                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
+                const auto error = sync_state.error_messages_.RenderPassLayoutTransitionVsStoreOrResolveError(
+                    hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout,
+                    transition.prev_pass);
+                skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             } else {
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassLayoutTransitionError(
-                    hazard, cb_context, subpass, transition.attachment, transition.old_layout, transition.new_layout, command);
-                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
+                const auto error = sync_state.error_messages_.RenderPassLayoutTransitionError(
+                    hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout);
+                skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
             }
         }
     }
@@ -233,7 +242,7 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
 
             if (hazard.IsHazard()) {
                 const VkAttachmentLoadOp load_op = checked_stencil ? ci.stencilLoadOp : ci.loadOp;
-                const auto &sync_state = cb_context.GetSyncState();
+                const SyncValidator &sync_state = cb_context.GetSyncState();
                 const Location loc(command);
 
                 std::stringstream ss;
@@ -305,21 +314,22 @@ bool RenderPassAccessContext::ValidateStoreOperation(const CommandBufferAccessCo
             }
 
             if (hazard.IsHazard()) {
+                const SyncValidator &sync_state = cb_context.GetSyncState();
                 const char *const op_type_string = checked_stencil ? "stencilStoreOp" : "storeOp";
                 const VkAttachmentStoreOp store_op = checked_stencil ? ci.stencilStoreOp : ci.storeOp;
                 const Location loc(command);
 
                 std::stringstream ss;
-                ss << cb_context.GetSyncState().FormatHandle(view_gen.GetViewState()->Handle());
+                ss << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
                 ss << " (subpass " << current_subpass_;
                 ss << ", attachment " << i;
                 ss << ", aspect " << aspect << " during store with " << op_type_string;
                 ss << " " << string_VkAttachmentStoreOp(store_op) << ")";
                 const std::string resource_description = ss.str();
 
-                const std::string error = cb_context.GetSyncState().error_messages_.RenderPassStoreOpError(
-                    hazard, cb_context, command, resource_description, store_op);
-                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
+                const std::string error =
+                    sync_state.error_messages_.RenderPassStoreOpError(hazard, cb_context, command, resource_description, store_op);
+                skip |= sync_state.SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
     }
@@ -502,7 +512,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
 // TODO: SyncError reporting places in this function are not covered by the tests.
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
-    const auto &sync_state = cb_context.GetSyncState();
+    const SyncValidator &sync_state = cb_context.GetSyncState();
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
@@ -724,19 +734,27 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
         const SyncBarrier merged_barrier(trackback.barriers);
         auto hazard = context->DetectImageBarrierHazard(view_gen, merged_barrier, AccessContext::DetectOptions::kDetectPrevious);
         if (hazard.IsHazard()) {
+            const SyncValidator &sync_state = cb_context.GetSyncState();
             const Location loc(command);
-            if (hazard.Tag() == kInvalidTag) {
-                // Hazard vs. store/resolve
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
-                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout,
-                    command);
-                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
+
+            std::stringstream ss;
+            ss << "on attachment " << transition.attachment << " (";
+            ss << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
+            ss << ", " << sync_state.FormatHandle(view_gen.GetViewState()->GetImageState()->Handle());
+            ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
+            ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
+            ss << ")";
+            const std::string resource_description = ss.str();
+
+            if (hazard.Tag() == kInvalidTag) {  // Hazard vs. store/resolve
+                const std::string error = sync_state.error_messages_.RenderPassFinalLayoutTransitionVsStoreOrResolveError(
+                    hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout,
+                    transition.prev_pass);
+                skip |= sync_state.SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             } else {
-                // TODO: this error is not covered by the test
-                const auto error = cb_context.GetSyncState().error_messages_.RenderPassFinalLayoutTransitionError(
-                    hazard, cb_context, transition.prev_pass, transition.attachment, transition.old_layout, transition.new_layout,
-                    command);
-                skip |= cb_context.GetSyncState().SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
+                const std::string error = sync_state.error_messages_.RenderPassFinalLayoutTransitionError(
+                    hazard, cb_context, command, resource_description, transition.old_layout, transition.new_layout);
+                skip |= sync_state.SyncError(hazard.Hazard(), rp_state_->Handle(), loc, error);
             }
         }
     }
