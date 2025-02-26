@@ -346,7 +346,7 @@ bool CoreChecks::ValidateAccelerationStructuresDeviceScratchBufferMemoryAliasing
                                     "VUID-vkCmdBuildAccelerationStructuresKHR-dstAccelerationStructure-03701",
                                     LogObjectList(cmd_buffer, dst_as_state->VkHandle(), other_src_as_state->VkHandle()),
                                     info_i_loc.dot(Field::dstAccelerationStructure),
-                                    " overlaps with srcAccelerationStructure of pInfos[%" PRIu32
+                                    "overlaps with srcAccelerationStructure of pInfos[%" PRIu32
                                     "], which is in update mode, on device address range %s.",
                                     overlapped_address_range->info_i, string_range_hex(dst_as_other_src_as_intersection).c_str());
                             }
