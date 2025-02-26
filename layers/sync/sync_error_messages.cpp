@@ -99,8 +99,6 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
-    const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
-
     const SyncAccessInfo& access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
     const SyncAccessInfo& prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
 
@@ -111,7 +109,11 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
                                          (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
 
     // Brief description of what happened
-    ss << string_SyncHazard(hazard_type) << " hazard detected. ";
+    ss << string_SyncHazard(hazard_type) << " hazard detected";
+    if (!additional_info.hazard_overview.empty()) {
+        ss << ": " << additional_info.hazard_overview;
+    }
+    ss << ". ";
     ss << (additional_info.access_initiator.empty() ? vvl::String(command) : additional_info.access_initiator);
     ss << " ";
     if (!additional_info.access_action.empty()) {
@@ -130,10 +132,16 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     } else {
         ss << "read by ";
     }
-    if (usage_info.command == command) {
-        ss << "another " << vvl::String(usage_info.command) << " command";
+    if (hazard.Tag() == kInvalidTag) {
+        // Invalid tag for prior access means the same command performed ILT before loadOp access
+        ss << "the same command";
     } else {
-        ss << vvl::String(usage_info.command);
+        const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
+        if (usage_info.command == command) {
+            ss << "another " << vvl::String(usage_info.command) << " command";
+        } else {
+            ss << vvl::String(usage_info.command);
+        }
     }
     if (const auto* debug_region = key_values.FindProperty("debug_region")) {
         ss << " (debug region: " << *debug_region << ")";
@@ -387,6 +395,20 @@ static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
     return "";
 }
 
+static void CheckForLoadOpDontCareInsight(VkAttachmentLoadOp load_op, bool is_color, std::string& message_end_text) {
+    if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
+        std::stringstream ss;
+        ss << "\nVulkan insight: according to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
+        if (is_color) {
+            ss << "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT for color attachment";
+        } else {
+            ss << "VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT for depth/stencil attachment";
+        }
+        ss << ").";
+        message_end_text += ss.str();
+    }
+}
+
 std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                vvl::Func command, const std::string& resource_description,
                                                VkAttachmentLoadOp load_op) const {
@@ -423,18 +445,20 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
     const char* load_op_str = string_VkAttachmentLoadOp(load_op);
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
     additional_info.access_action = GetLoadOpActionName(load_op);
+    CheckForLoadOpDontCareInsight(load_op, is_color, additional_info.message_end_text);
+    return Error(hazard, cb_context, command, resource_description, additional_info);
+}
 
-    if (load_op == VK_ATTACHMENT_LOAD_OP_DONT_CARE) {
-        std::stringstream ss;
-        ss << "\nVulkan insight: according to the specification VK_ATTACHMENT_LOAD_OP_DONT_CARE is a write access (";
-        if (is_color) {
-            ss << "VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT for color attachment";
-        } else {
-            ss << "VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT for depth/stencil attachment";
-        }
-        ss << ").";
-        additional_info.message_end_text = ss.str();
-    }
+std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard,
+                                                                   const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                                                   const std::string& resource_description,
+                                                                   VkAttachmentLoadOp load_op, bool is_color) const {
+    AdditionalMessageInfo additional_info;
+    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
+    additional_info.properties.Add(kPropertyLoadOp, load_op_str);
+    additional_info.hazard_overview = "attachment loadOp access is not synchronized with the attachment layout transition";
+    additional_info.access_action = GetLoadOpActionName(load_op);
+    CheckForLoadOpDontCareInsight(load_op, is_color, additional_info.message_end_text);
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
@@ -560,26 +584,6 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
         key_values.Add(kPropertyOldLayout, old_layout_str);
         key_values.Add(kPropertyNewLayout, new_layout_str);
         AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard, uint32_t subpass,
-                                                                   uint32_t attachment, const char* aspect_name,
-                                                                   VkAttachmentLoadOp load_op, vvl::Func command) const {
-    const auto format =
-        "Hazard %s vs. layout transition in subpass %" PRIu32 " for attachment %" PRIu32 " aspect %s during load with loadOp %s.";
-
-    const char* load_op_str = string_VkAttachmentLoadOp(load_op);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), subpass, attachment, aspect_name, load_op_str);
-
-    if (extra_properties_) {
-        ReportKeyValues key_values;
-        key_values.Add(kPropertyMessageType, "RenderPassLoadOpVsLayoutTransitionError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        key_values.Add(kPropertyLoadOp, load_op_str);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;

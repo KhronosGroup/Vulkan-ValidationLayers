@@ -235,18 +235,18 @@ bool RenderPassAccessContext::ValidateLoadOperation(const CommandBufferAccessCon
                 const VkAttachmentLoadOp load_op = checked_stencil ? ci.stencilLoadOp : ci.loadOp;
                 const auto &sync_state = cb_context.GetSyncState();
                 const Location loc(command);
-                if (hazard.Tag() == kInvalidTag) {
-                    // Hazard vs. ILT
-                    const auto error = sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(hazard, subpass, i,
-                                                                                                          aspect, load_op, command);
+
+                std::stringstream ss;
+                ss << "the " << aspect << " aspect of attachment " << i << " in subpass " << subpass;
+                ss << " (" << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
+                ss << ", loadOp " << string_VkAttachmentLoadOp(load_op) << ")";
+                const std::string resource_description = ss.str();
+
+                if (hazard.Tag() == kInvalidTag) {  // Hazard vs. ILT
+                    const auto error = sync_state.error_messages_.RenderPassLoadOpVsLayoutTransitionError(
+                        hazard, cb_context, command, resource_description, load_op, is_color);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
                 } else {
-                    std::stringstream ss;
-                    ss << aspect << " aspect of attachment " << i << " in subpass " << subpass;
-                    ss << " (" << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
-                    ss << ", loadOp " << string_VkAttachmentLoadOp(load_op) << ")";
-                    const std::string resource_description = ss.str();
-
                     const std::string error = sync_state.error_messages_.RenderPassLoadOpError(
                         hazard, cb_context, command, resource_description, subpass, i, load_op, is_color);
                     skip |= sync_state.SyncError(hazard.Hazard(), rp_state.Handle(), loc, error);
