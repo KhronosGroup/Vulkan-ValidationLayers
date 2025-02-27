@@ -136,7 +136,7 @@ class CommandBuffer : public vvl::CommandBuffer {
 
   private:
     void AllocateResources(const Location &loc);
-    void ResetCBState();
+    void ResetCBState(bool should_destroy);
     bool NeedsPostProcess();
 
     VkDeviceSize GetBdaRangesBufferByteSize() const;

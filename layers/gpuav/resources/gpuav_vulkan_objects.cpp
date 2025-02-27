@@ -207,15 +207,54 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return descriptor.second;
 }
 
-vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &ci,
-                                                  const VmaAllocationCreateInfo &vma_ci) {
-    vko::Buffer buffer(gpuav);
-    const bool success = buffer.Create(loc, &ci, &vma_ci);
-    if (success) {
-        buffers_.emplace_back(buffer);
+vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &buffer_ci,
+                                                  const VmaAllocationCreateInfo &alloc_ci) {
+    assert(buffer_ci.pNext == nullptr);
+    assert(buffer_ci.sharingMode == VK_SHARING_MODE_EXCLUSIVE);
+    assert(alloc_ci.pUserData == nullptr);
+
+    // Try to find a cached and available buffer with comparable requirements
+    for (CachedBuffer &cached_buffer : cached_buffers_) {
+        if (!(cached_buffer.status == CachedBuffer::Status::Available)) {
+            continue;
+        }
+        const bool same_buffer_ci = buffer_ci.flags == cached_buffer.buffer_ci.flags &&
+                                    buffer_ci.size <= cached_buffer.buffer_ci.size &&
+                                    buffer_ci.usage == cached_buffer.buffer_ci.usage;
+
+        const bool same_alloc_ci =
+            alloc_ci.flags == cached_buffer.allocation_ci.flags && alloc_ci.usage == cached_buffer.allocation_ci.usage &&
+            alloc_ci.requiredFlags == cached_buffer.allocation_ci.requiredFlags &&
+            alloc_ci.preferredFlags == cached_buffer.allocation_ci.preferredFlags &&
+            alloc_ci.memoryTypeBits == cached_buffer.allocation_ci.memoryTypeBits &&
+            alloc_ci.pool == cached_buffer.allocation_ci.pool && alloc_ci.priority == cached_buffer.allocation_ci.priority;
+
+        if (same_buffer_ci && same_alloc_ci) {
+            return cached_buffer.buffer;
+        }
     }
 
+    // Did not find a cached buffer, create one, cache it and return its handle
+    Buffer buffer(gpuav);
+    const bool success = buffer.Create(loc, &buffer_ci, &alloc_ci);
+    if (!success) {
+        return buffer;
+    }
+    CachedBuffer cached_buffer = {buffer_ci, alloc_ci, buffer, CachedBuffer::Status::InUse};
+    cached_buffers_.emplace_back(cached_buffer);
+
     return buffer;
+}
+
+void GpuResourcesManager::ReturnResources() {
+    for (auto &[desc_pool, desc_set] : descriptors_) {
+        descriptor_set_manager_.PutBackDescriptorSet(desc_pool, desc_set);
+    }
+    descriptors_.clear();
+
+    for (CachedBuffer &cached_buffer : cached_buffers_) {
+        cached_buffer.status = CachedBuffer::Status::Available;
+    }
 }
 
 void GpuResourcesManager::DestroyResources() {
@@ -224,10 +263,10 @@ void GpuResourcesManager::DestroyResources() {
     }
     descriptors_.clear();
 
-    for (auto &buffer : buffers_) {
-        buffer.Destroy();
+    for (CachedBuffer &cached_buffer : cached_buffers_) {
+        cached_buffer.buffer.Destroy();
     }
-    buffers_.clear();
+    cached_buffers_.clear();
 }
 }  // namespace vko
 }  // namespace gpuav

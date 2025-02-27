@@ -362,21 +362,21 @@ CommandBuffer::~CommandBuffer() { Destroy(); }
 void CommandBuffer::Destroy() {
     {
         auto guard = WriteLock();
-        ResetCBState();
+        ResetCBState(true);
     }
     vvl::CommandBuffer::Destroy();
 }
 
 void CommandBuffer::Reset(const Location &loc) {
     vvl::CommandBuffer::Reset(loc);
-    ResetCBState();
+    ResetCBState(false);
     // TODO: Calling AllocateResources in Reset like so is a kind of a hack,
     // relying on CommandBuffer internal logic to work.
     // Tried to call it in ResetCBState, hang on command buffer mutex :/
     AllocateResources(loc);
 }
 
-void CommandBuffer::ResetCBState() {
+void CommandBuffer::ResetCBState(bool should_destroy) {
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // Free the device memory and descriptor set(s) associated with a command buffer.
@@ -385,8 +385,11 @@ void CommandBuffer::ResetCBState() {
     }
     debug_printf_buffer_infos.clear();
 
-    // Free the device memory and descriptor set(s) associated with a command buffer.
-    gpu_resources_manager.DestroyResources();
+    if (should_destroy) {
+        gpu_resources_manager.DestroyResources();
+    } else {
+        gpu_resources_manager.ReturnResources();
+    }
     per_command_error_loggers.clear();
 
     for (DescriptorCommandBinding &descriptor_command_binding : descriptor_command_bindings) {
