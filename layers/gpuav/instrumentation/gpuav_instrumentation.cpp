@@ -251,7 +251,7 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
 
 void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
                                   const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
-    std::vector<VkWriteDescriptorSet> desc_writes = {};
+    small_vector<VkWriteDescriptorSet, 8> desc_writes = {};
 
     // Error output buffer
     VkDescriptorBufferInfo error_output_desc_buffer_info = {};
