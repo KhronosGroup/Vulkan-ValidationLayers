@@ -402,6 +402,12 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
+std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                     vvl::Func command, const std::string& resource_description) const {
+    // TODO: revisit error message when this function is covered by the tests.
+    return Error(hazard, cb_context, command, resource_description);
+}
+
 static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
     if (load_op == VK_ATTACHMENT_LOAD_OP_LOAD) {
         return "reads";
@@ -619,49 +625,6 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
         // TODO: ensure correct command is used here, currently it's always empty
         // key_values.Add(kPropertyCommand, vvl::String(command));
         exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                          const vvl::ImageView& view, uint32_t attachment,
-                                                          vvl::Func command) const {
-    const auto format = "Hazard %s for %s in %s, Subpass #%d, and pColorAttachments #%d. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(view.Handle()).c_str(),
-                                 validator_.FormatHandle(cb_context.GetCBState().Handle()).c_str(),
-                                 cb_context.GetCBState().GetActiveSubpass(), attachment, access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassColorAttachmentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
-}
-
-std::string ErrorMessages::RenderPassDepthStencilAttachmentError(const HazardResult& hazard,
-                                                                 const CommandBufferAccessContext& cb_context,
-                                                                 const vvl::ImageView& view, bool is_depth,
-                                                                 vvl::Func command) const {
-    const auto format = "Hazard %s for %s in %s, Subpass #%d, and %s part of pDepthStencilAttachment. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), validator_.FormatHandle(view.Handle()).c_str(),
-                                 validator_.FormatHandle(cb_context.GetCBState().Handle()).c_str(),
-                                 cb_context.GetCBState().GetActiveSubpass(), is_depth ? "depth" : "stencil", access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "RenderPassDepthStencilAttachmentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;

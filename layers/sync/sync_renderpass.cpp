@@ -512,17 +512,38 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
 // TODO: SyncError reporting places in this function are not covered by the tests.
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
-    const SyncValidator &sync_state = cb_context.GetSyncState();
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
     const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
     const auto *pipe = last_bound_state.pipeline_state;
-    if (!pipe || pipe->RasterizationDisabled()) return skip;
+
+    if (!pipe || pipe->RasterizationDisabled()) {
+        return skip;
+    }
 
     const auto &list = pipe->fragmentShader_writable_output_location_list;
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
-
     const auto &current_context = CurrentContext();
+    const SyncValidator &sync_state = cb_context.GetSyncState();
+
+    auto report_atachment_hazard = [&sync_state, &cb_context, command](const HazardResult &hazard,
+                                                                       const vvl::ImageView &attachment_view,
+                                                                       std::string_view attachment_description) {
+        const vvl::Image &attachment_image = *attachment_view.image_state;
+        LogObjectList objlist(cb_context.GetCBState().Handle(), attachment_view.Handle(), attachment_image.Handle());
+        const Location loc(command);
+
+        std::stringstream ss;
+        ss << attachment_description;
+        ss << " (" << sync_state.FormatHandle(attachment_view.Handle());
+        ss << ", " << sync_state.FormatHandle(attachment_image.Handle()) << ")";
+        const std::string resource_description = ss.str();
+
+        const std::string error =
+            sync_state.error_messages_.RenderPassAttachmentError(hazard, cb_context, command, resource_description);
+        return sync_state.SyncError(hazard.Hazard(), objlist, loc, error);
+    };
+
     // Subpass's inputAttachment has been done in ValidateDispatchDrawDescriptorSet
     if (subpass.pColorAttachments && subpass.colorAttachmentCount && !list.empty()) {
         for (const auto location : list) {
@@ -536,11 +557,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                 current_context.DetectHazard(view_gen, AttachmentViewGen::Gen::kRenderArea,
                                              SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
             if (hazard.IsHazard()) {
-                const VkImageView view_handle = view_gen.GetViewState()->VkHandle();
-                const Location loc(command);
-                const auto error = sync_state.error_messages_.RenderPassColorAttachmentError(
-                    hazard, cb_context, *view_gen.GetViewState(), location, command);
-                skip |= sync_state.SyncError(hazard.Hazard(), view_handle, loc, error);
+                std::stringstream ss;
+                ss << "color attachment " << location << " in subpass " << cmd_buffer.GetActiveSubpass();
+                const std::string attachment_description = ss.str();
+                skip |= report_atachment_hazard(hazard, *view_gen.GetViewState(), attachment_description);
             }
         }
     }
@@ -568,10 +588,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
-                const Location loc(command);
-                const auto error =
-                    sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state, true, command);
-                skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
+                std::stringstream ss;
+                ss << "depth aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
+                const std::string attachment_description = ss.str();
+                skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }
         }
         if (stencil_write) {
@@ -579,10 +599,10 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
                                                                SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE,
                                                                SyncOrdering::kDepthStencilAttachment);
             if (hazard.IsHazard()) {
-                const Location loc(command);
-                const auto error = sync_state.error_messages_.RenderPassDepthStencilAttachmentError(hazard, cb_context, view_state,
-                                                                                                    false, command);
-                skip |= sync_state.SyncError(hazard.Hazard(), view_state.Handle(), loc, error);
+                std::stringstream ss;
+                ss << "stencil aspect of depth-stencil attachment  in subpass " << cmd_buffer.GetActiveSubpass();
+                const std::string attachment_description = ss.str();
+                skip |= report_atachment_hazard(hazard, view_state, attachment_description);
             }
         }
     }
