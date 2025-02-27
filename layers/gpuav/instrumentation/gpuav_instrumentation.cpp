@@ -183,7 +183,7 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_vertex_input_rate;
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_instance_input_rate;
 
-    vvl::unordered_set<uint32_t> vertex_shader_used_locations;
+    small_vector<uint32_t, 32> vertex_shader_used_locations;
     {
         const ::spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
         if (!vertex_entry_point) {
@@ -191,7 +191,11 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
         }
         for (const ::spirv::StageInterfaceVariable &interface_var : vertex_entry_point->stage_interface_variables) {
             for (const ::spirv::InterfaceSlot &interface_slot : interface_var.interface_slots) {
-                vertex_shader_used_locations.insert(interface_slot.Location());
+                const uint32_t location = interface_slot.Location();
+                if (std::find(vertex_shader_used_locations.begin(), vertex_shader_used_locations.end(), location) ==
+                    vertex_shader_used_locations.end()) {
+                    vertex_shader_used_locations.emplace_back(location);
+                }
             }
         }
     }
@@ -204,7 +208,8 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
         }
 
         for (const auto &[location, attrib] : vertex_binding_desc.locations) {
-            if (vertex_shader_used_locations.find(location) == vertex_shader_used_locations.end()) {
+            if (std::find(vertex_shader_used_locations.begin(), vertex_shader_used_locations.end(), location) ==
+                vertex_shader_used_locations.end()) {
                 continue;
             }
             const VkDeviceSize attribute_size = GetVertexInputFormatSize(attrib.desc.format);
