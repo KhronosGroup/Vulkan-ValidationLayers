@@ -131,8 +131,9 @@ class ErrorMessages {
                                                                      VkImageLayout old_layout, VkImageLayout new_layout,
                                                                      uint32_t store_resolve_subpass) const;
 
-    std::string PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                     uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const;
+    std::string ImagePipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                          vvl::Func command, const std::string& resource_description,
+                                          const SyncImageMemoryBarrier& barrier) const;
 
     std::string WaitEventsError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                                 uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const;
