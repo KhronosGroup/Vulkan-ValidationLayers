@@ -92,6 +92,9 @@ class ErrorMessages {
                                      const std::string& resource_description, VkImageAspectFlagBits aspect,
                                      uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
 
+    std::string RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                          vvl::Func command, const std::string& resource_description) const;
+
     std::string BeginRenderingError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                     const std::string& resource_description, VkAttachmentLoadOp load_op) const;
     std::string EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -137,12 +140,6 @@ class ErrorMessages {
     std::string FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                               const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
                               VkCommandBuffer recorded_handle, vvl::Func command) const;
-
-    std::string RenderPassColorAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                               const vvl::ImageView& view, uint32_t attachment, vvl::Func command) const;
-
-    std::string RenderPassDepthStencilAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                      const vvl::ImageView& view, bool is_depth, vvl::Func command) const;
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,
                              const VulkanTypedHandle& swapchain_handle, uint32_t image_index, const VulkanTypedHandle& image_handle,
