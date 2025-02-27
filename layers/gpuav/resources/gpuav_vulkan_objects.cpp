@@ -145,17 +145,9 @@ void SharedResourcesCache::Clear() {
     shared_validation_resources_map_.clear();
 }
 
-void *Buffer::MapMemory(const Location &loc) const {
-    void *buffer_ptr = nullptr;
-    VkResult result = vmaMapMemory(gpuav.vma_allocator_, allocation, &buffer_ptr);
-    if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, "Unable to map device memory.");
-        return nullptr;
-    }
-    return buffer_ptr;
-}
+void *Buffer::MapMemory(const Location &loc) const { return mapped_ptr; }
 
-void Buffer::UnmapMemory() const { vmaUnmapMemory(gpuav.vma_allocator_, allocation); }
+void Buffer::UnmapMemory() const {}
 
 void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
@@ -188,11 +180,22 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
             return false;
         }
     }
+    if (allocation_create_info->requiredFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        result = vmaMapMemory(gpuav.vma_allocator_, allocation, &mapped_ptr);
+        if (result != VK_SUCCESS) {
+            mapped_ptr = nullptr;
+            gpuav.InternalVmaError(gpuav.device, loc, "Unable to map device memory.");
+            return false;
+        }
+    }
     return true;
 }
 
 void Buffer::Destroy() {
     if (buffer != VK_NULL_HANDLE) {
+        if (mapped_ptr != nullptr) {
+            vmaUnmapMemory(gpuav.vma_allocator_, allocation);
+        }
         vmaDestroyBuffer(gpuav.vma_allocator_, buffer, allocation);
         buffer = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
