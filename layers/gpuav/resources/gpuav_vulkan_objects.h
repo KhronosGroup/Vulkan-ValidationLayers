@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,12 +91,20 @@ class GpuResourcesManager {
     vko::Buffer GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &ci,
                                  const VmaAllocationCreateInfo &vma_ci);
 
+    void ReturnResources();
     void DestroyResources();
 
   private:
     DescriptorSetManager &descriptor_set_manager_;
     std::vector<std::pair<VkDescriptorPool, VkDescriptorSet>> descriptors_;
-    std::vector<vko::Buffer> buffers_;
+    struct CachedBuffer {
+        VkBufferCreateInfo buffer_ci;
+        VmaAllocationCreateInfo allocation_ci;
+        vko::Buffer buffer;
+        enum class Status { Undefined, InUse, Available };
+        Status status = Status::Undefined;
+    };
+    std::vector<CachedBuffer> cached_buffers_;
 };
 
 // Cache a single object of type T. Key is *only* based on typeid(T)
