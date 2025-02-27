@@ -201,10 +201,28 @@ void Buffer::Destroy() {
 }
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
-    std::pair<VkDescriptorPool, VkDescriptorSet> descriptor;
-    descriptor_set_manager_.GetDescriptorSet(&descriptor.first, desc_set_layout, &descriptor.second);
-    descriptors_.emplace_back(descriptor);
-    return descriptor.second;
+    // Try to find a cached and available buffer with comparable requirements
+    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
+        if (!(cached_descriptor.status == CachedStatus::Available)) {
+            continue;
+        }
+
+        if (cached_descriptor.desc_set_layout == desc_set_layout) {
+            cached_descriptor.status = CachedStatus::InUse;
+            return cached_descriptor.desc_set;
+        }
+    }
+
+    CachedDescriptor cached_descriptor;
+    cached_descriptor.status = CachedStatus::InUse;
+    cached_descriptor.desc_set_layout = desc_set_layout;
+    const VkResult result =
+        descriptor_set_manager_.GetDescriptorSet(&cached_descriptor.desc_pool, desc_set_layout, &cached_descriptor.desc_set);
+    if (result != VK_SUCCESS) {
+        return VK_NULL_HANDLE;
+    }
+    cached_descriptors_.emplace_back(cached_descriptor);
+    return cached_descriptor.desc_set;
 }
 
 vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &buffer_ci,
@@ -213,9 +231,9 @@ vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Locati
     assert(buffer_ci.sharingMode == VK_SHARING_MODE_EXCLUSIVE);
     assert(alloc_ci.pUserData == nullptr);
 
-    // Try to find a cached and available buffer with comparable requirements
+    // Try to find a cached and available descriptor created with the same descriptor set layout
     for (CachedBuffer &cached_buffer : cached_buffers_) {
-        if (!(cached_buffer.status == CachedBuffer::Status::Available)) {
+        if (!(cached_buffer.status == CachedStatus::Available)) {
             continue;
         }
         const bool same_buffer_ci = buffer_ci.flags == cached_buffer.buffer_ci.flags &&
@@ -230,6 +248,7 @@ vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Locati
             alloc_ci.pool == cached_buffer.allocation_ci.pool && alloc_ci.priority == cached_buffer.allocation_ci.priority;
 
         if (same_buffer_ci && same_alloc_ci) {
+            cached_buffer.status = CachedStatus::InUse;
             return cached_buffer.buffer;
         }
     }
@@ -240,28 +259,26 @@ vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Locati
     if (!success) {
         return buffer;
     }
-    CachedBuffer cached_buffer = {buffer_ci, alloc_ci, buffer, CachedBuffer::Status::InUse};
+    CachedBuffer cached_buffer = {buffer_ci, alloc_ci, buffer, CachedStatus::InUse};
     cached_buffers_.emplace_back(cached_buffer);
-
     return buffer;
 }
 
 void GpuResourcesManager::ReturnResources() {
-    for (auto &[desc_pool, desc_set] : descriptors_) {
-        descriptor_set_manager_.PutBackDescriptorSet(desc_pool, desc_set);
+    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
+        cached_descriptor.status = CachedStatus::Available;
     }
-    descriptors_.clear();
 
     for (CachedBuffer &cached_buffer : cached_buffers_) {
-        cached_buffer.status = CachedBuffer::Status::Available;
+        cached_buffer.status = CachedStatus::Available;
     }
 }
 
 void GpuResourcesManager::DestroyResources() {
-    for (auto &[desc_pool, desc_set] : descriptors_) {
-        descriptor_set_manager_.PutBackDescriptorSet(desc_pool, desc_set);
+    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
+        descriptor_set_manager_.PutBackDescriptorSet(cached_descriptor.desc_pool, cached_descriptor.desc_set);
     }
-    descriptors_.clear();
+    cached_descriptors_.clear();
 
     for (CachedBuffer &cached_buffer : cached_buffers_) {
         cached_buffer.buffer.Destroy();
