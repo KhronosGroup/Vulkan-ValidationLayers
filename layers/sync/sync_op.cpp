@@ -403,12 +403,13 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
                                                               image_barrier.barrier.src_access_scope,
                                                               image_barrier.subresource_range, AccessContext::kDetectAll);
         if (hazard.IsHazard()) {
-            // PHASE1 TODO -- add tag information to log msg when useful.
+            LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
             const Location loc(command_);
             const auto &sync_state = cb_context.GetSyncState();
-            const auto error = sync_state.error_messages_.PipelineBarrierError(hazard, cb_context, image_barrier.barrier_index,
-                                                                               image_state, command_);
-            skip |= sync_state.SyncError(hazard.Hazard(), image_state.Handle(), loc, error);
+            const std::string resource_description = sync_state.FormatHandle(image_state.Handle());
+            const std::string error = sync_state.error_messages_.ImagePipelineBarrierError(hazard, cb_context, command_,
+                                                                                           resource_description, image_barrier);
+            skip |= sync_state.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
     return skip;

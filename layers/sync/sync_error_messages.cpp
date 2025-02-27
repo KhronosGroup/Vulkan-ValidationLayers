@@ -105,8 +105,10 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
     const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
 
+    // TODO: BOTTOM_OF_PIPE part will go away when syncval switches internally to use NONE/ALL for everything
     const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
-                                         (hazard_info.IsPriorRead() && read_barriers == VK_PIPELINE_STAGE_2_NONE);
+                                         (hazard_info.IsPriorRead() && (read_barriers == VK_PIPELINE_STAGE_2_NONE ||
+                                                                        read_barriers == VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT));
 
     // Brief description of what happened
     ss << string_SyncHazard(hazard_type) << " hazard detected";
@@ -568,23 +570,28 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::PipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
-    const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
-    ReportKeyValues key_values;
+std::string ErrorMessages::ImagePipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                     vvl::Func command, const std::string& resource_description,
+                                                     const SyncImageMemoryBarrier& barrier) const {
+    AdditionalMessageInfo additional_info;
+    additional_info.access_action = "performs image layout transition on the";
 
-    const std::string access_info = cb_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), image_barrier_index,
-                                 validator_.FormatHandle(image.Handle()).c_str(), access_info.c_str());
+    std::stringstream ss;
+    ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
+    ss << "  source accesses = "
+       << FormatSyncAccesses(barrier.barrier.src_access_scope, cb_context.GetQueueFlags(),
+                             cb_context.GetSyncState().enabled_features, cb_context.GetSyncState().extensions, false)
+       << ",\n";
+    ss << "  destination accesses = "
+       << FormatSyncAccesses(barrier.barrier.dst_access_scope, cb_context.GetQueueFlags(),
+                             cb_context.GetSyncState().enabled_features, cb_context.GetSyncState().extensions, false)
+       << ",\n";
+    ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
+    ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.mask_param) << ",\n";
+    ss << "}\n";
+    additional_info.message_end_text = ss.str();
 
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "PipelineBarrierError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
 std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const CommandExecutionContext& exec_context,

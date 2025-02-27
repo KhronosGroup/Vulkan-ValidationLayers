@@ -4867,9 +4867,9 @@ TEST_F(NegativeSyncVal, AvailabilityWithoutVisibilityForBuffer) {
 }
 
 TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
-    TEST_DESCRIPTION("Copy to image and then start image layout transition without waiting for copy to end.");
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    TEST_DESCRIPTION("Copy to image and then start image layout transition without making copy accesses visible");
+    RETURN_IF_SKIP(InitSyncVal());
+
     vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -5482,7 +5482,7 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     m_command_buffer.EndRenderPass();
 
     // SYNC-HAZARD-WRITE-AFTER-READ hazard: transition should synchronize with draw command
-    m_errorMonitor->SetDesiredError("SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ");
+    m_errorMonitor->SetDesiredError("(VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT) at VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT");
     vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
