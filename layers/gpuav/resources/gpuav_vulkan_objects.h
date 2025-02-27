@@ -80,6 +80,7 @@ class Buffer {
     VmaAllocation allocation = VK_NULL_HANDLE;
     // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
     VkDeviceAddress device_address = 0;
+    void *mapped_ptr = nullptr;
 };
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
