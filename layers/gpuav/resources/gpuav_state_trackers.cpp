@@ -412,7 +412,7 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
         error_logging_desc_set_ = VK_NULL_HANDLE;
     }
 
-    if (instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
+    if (should_destroy && instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
         instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     }
