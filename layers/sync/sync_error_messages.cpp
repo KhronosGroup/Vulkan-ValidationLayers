@@ -76,10 +76,9 @@ static const char* string_SyncHazard(SyncHazard hazard) {
 // by the synchronization. If applied synchronization covers at least stage or access component
 // then we can provide more precise message by focusing on the other component.
 static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& access, const SyncAccessFlags& write_barriers,
-                                                     const CommandBufferAccessContext& cb_context) {
-    const auto protected_stage_access_pairs =
-        ConvertSyncAccessesToCompactVkForm(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                           cb_context.GetSyncState().extensions);
+                                                     const CommandExecutionContext& context) {
+    const auto protected_stage_access_pairs = ConvertSyncAccessesToCompactVkForm(
+        write_barriers, context.GetQueueFlags(), context.GetSyncState().enabled_features, context.GetSyncState().extensions);
     bool is_stage_protected = false;
     bool is_access_protected = false;
     for (const auto& protected_stage_access : protected_stage_access_pairs) {
@@ -94,7 +93,7 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& acces
 }
 
 static void FormatCommonMessage(const HazardResult& hazard, const std::string& resouce_description, const vvl::Func command,
-                                const ReportKeyValues& key_values, const CommandBufferAccessContext& cb_context,
+                                const ReportKeyValues& key_values, const CommandExecutionContext& context,
                                 const syncval::AdditionalMessageInfo& additional_info, std::stringstream& ss) {
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
@@ -138,7 +137,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         // Invalid tag for prior access means the same command performed ILT before loadOp access
         ss << "the same command";
     } else {
-        const ReportUsageInfo usage_info = cb_context.GetReportUsageInfo(hazard.TagEx());
+        const ReportUsageInfo usage_info = context.GetReportUsageInfo(hazard.TagEx());
         if (usage_info.command == command) {
             ss << "another " << vvl::String(usage_info.command) << " command";
         } else {
@@ -197,9 +196,9 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         ss << ".";
     } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
         ss << "The current synchronization allows ";
-        ss << FormatSyncAccesses(write_barriers, cb_context.GetQueueFlags(), cb_context.GetSyncState().enabled_features,
-                                 cb_context.GetSyncState().extensions, false);
-        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, cb_context);
+        ss << FormatSyncAccesses(write_barriers, context.GetQueueFlags(), context.GetSyncState().enabled_features,
+                                 context.GetSyncState().extensions, false);
+        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
         if (is_access_protected) {
             ss << " but not at " << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
@@ -234,27 +233,23 @@ ErrorMessages::ErrorMessages(vvl::Device& validator)
       extra_properties_(validator_.syncval_settings.message_extra_properties),
       pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}
 
-void ErrorMessages::AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
-                                                ReportKeyValues& key_values) const {
-    if (validator_.syncval_settings.message_extra_properties) {
-        cb_context.AddUsageRecordExtraProperties(tag, key_values);
-    }
-}
-
-std::string ErrorMessages::Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                                  const std::string& resouce_description, const AdditionalMessageInfo& additional_info) const {
     ReportKeyValues key_values;
-    cb_context.FormatHazard(hazard, key_values);
+    context.FormatHazard(hazard, key_values);
     key_values.Add(kPropertyMessageType, "GeneralError");
     key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     key_values.Add(kPropertyCommand, vvl::String(command));
     for (const auto& kv : additional_info.properties.key_values) {
         key_values.Add(kv.key, kv.value);
     }
-    AddCbContextExtraProperties(cb_context, hazard.Tag(), key_values);
+
+    if (validator_.syncval_settings.message_extra_properties) {
+        context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
+    }
 
     std::stringstream ss;
-    FormatCommonMessage(hazard, resouce_description, command, key_values, cb_context, additional_info, ss);
+    FormatCommonMessage(hazard, resouce_description, command, key_values, context, additional_info, ss);
 
     if (!additional_info.message_end_text.empty()) {
         ss << " " << additional_info.message_end_text;
@@ -570,47 +565,27 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
     return Error(hazard, cb_context, command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::ImagePipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                     vvl::Func command, const std::string& resource_description,
-                                                     const SyncImageMemoryBarrier& barrier) const {
+std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+                                             const std::string& resource_description, const SyncImageMemoryBarrier& barrier) const {
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "performs image layout transition on the";
 
     std::stringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
     ss << "  source accesses = "
-       << FormatSyncAccesses(barrier.barrier.src_access_scope, cb_context.GetQueueFlags(),
-                             cb_context.GetSyncState().enabled_features, cb_context.GetSyncState().extensions, false)
+       << FormatSyncAccesses(barrier.barrier.src_access_scope, context.GetQueueFlags(), context.GetSyncState().enabled_features,
+                             context.GetSyncState().extensions, false)
        << ",\n";
     ss << "  destination accesses = "
-       << FormatSyncAccesses(barrier.barrier.dst_access_scope, cb_context.GetQueueFlags(),
-                             cb_context.GetSyncState().enabled_features, cb_context.GetSyncState().extensions, false)
+       << FormatSyncAccesses(barrier.barrier.dst_access_scope, context.GetQueueFlags(), context.GetSyncState().enabled_features,
+                             context.GetSyncState().extensions, false)
        << ",\n";
     ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
     ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.mask_param) << ",\n";
     ss << "}\n";
     additional_info.message_end_text = ss.str();
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
-}
-
-std::string ErrorMessages::WaitEventsError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
-                                           uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const {
-    const auto format = "Hazard %s for image barrier %" PRIu32 " %s. Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = exec_context.FormatHazard(hazard, key_values);
-    std::string message = Format(format, string_SyncHazard(hazard.Hazard()), image_barrier_index,
-                                 validator_.FormatHandle(image.Handle()).c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "WaitEventsError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+    return Error(hazard, context, command, resource_description, additional_info);
 }
 
 std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,

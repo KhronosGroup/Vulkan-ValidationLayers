@@ -479,6 +479,21 @@ void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag 
     extra_properties.Add(kPropertyResetNo, record.reset_count);
 }
 
+ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
+    if (!access.IsValid()) {
+        return {};
+    }
+    const ResourceUsageRecord &record = *access.record;
+    ReportUsageInfo info;
+    if (record.alt_usage) {
+        info.command = record.alt_usage.GetCommand();
+    } else {
+        info.command = record.command;
+    }
+    return info;
+}
+
 std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
     std::stringstream out;
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);

@@ -56,7 +56,7 @@ class ErrorMessages {
   public:
     explicit ErrorMessages(vvl::Device& validator);
 
-    std::string Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+    std::string Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                       const std::string& resouce_description, const AdditionalMessageInfo& additional_info = {}) const;
 
     std::string BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
@@ -131,12 +131,8 @@ class ErrorMessages {
                                                                      VkImageLayout old_layout, VkImageLayout new_layout,
                                                                      uint32_t store_resolve_subpass) const;
 
-    std::string ImagePipelineBarrierError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                          vvl::Func command, const std::string& resource_description,
-                                          const SyncImageMemoryBarrier& barrier) const;
-
-    std::string WaitEventsError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
-                                uint32_t image_barrier_index, const vvl::Image& image, vvl::Func command) const;
+    std::string ImageBarrierError(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
+                                  const std::string& resource_description, const SyncImageMemoryBarrier& barrier) const;
 
     std::string FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                               const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
@@ -145,10 +141,6 @@ class ErrorMessages {
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,
                              const VulkanTypedHandle& swapchain_handle, uint32_t image_index, const VulkanTypedHandle& image_handle,
                              vvl::Func command) const;
-
-  private:
-    void AddCbContextExtraProperties(const CommandBufferAccessContext& cb_context, ResourceUsageTag tag,
-                                     ReportKeyValues& key_values) const;
 
   private:
     vvl::Device& validator_;

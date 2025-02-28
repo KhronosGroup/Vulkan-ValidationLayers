@@ -213,12 +213,14 @@ class CommandExecutionContext {
     virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
+    virtual ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
     virtual std::string FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const = 0;
     virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
 
     std::string FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
+    VkQueueFlags GetQueueFlags() const { return queue_flags_; }
 
   protected:
     const SyncValidator &sync_state_;
@@ -265,7 +267,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void Reset();
 
-    ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const;
+    ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
     std::string FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
     void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
     std::string FormatUsage(const char *usage_string, const ResourceFirstAccess &access,
@@ -305,9 +307,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void RecordExecutedCommandBuffer(const CommandBufferAccessContext &recorded_context);
     void ResolveExecutedCommandBuffer(const AccessContext &recorded_context, ResourceUsageTag offset);
-
-    // TODO: what about using queue_flags directly from base class?
-    VkQueueFlags GetQueueFlags() const { return cb_state_ ? cb_state_->GetQueueFlags() : 0; }
 
     ExecutionType Type() const override { return kExecuted; }
     size_t GetTagCount() const { return access_log_->size(); }

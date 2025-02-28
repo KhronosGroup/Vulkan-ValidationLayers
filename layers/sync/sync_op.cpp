@@ -405,10 +405,10 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
         if (hazard.IsHazard()) {
             LogObjectList objlist(cb_context.GetCBState().Handle(), image_state.Handle());
             const Location loc(command_);
-            const auto &sync_state = cb_context.GetSyncState();
+            const SyncValidator &sync_state = cb_context.GetSyncState();
             const std::string resource_description = sync_state.FormatHandle(image_state.Handle());
-            const std::string error = sync_state.error_messages_.ImagePipelineBarrierError(hazard, cb_context, command_,
-                                                                                           resource_description, image_barrier);
+            const std::string error =
+                sync_state.error_messages_.ImageBarrierError(hazard, cb_context, command_, resource_description, image_barrier);
             skip |= sync_state.SyncError(hazard.Hazard(), objlist, loc, error);
         }
     }
@@ -639,8 +639,10 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
                     *image_state, subresource_range, sync_event->scope.exec_scope, src_access_scope, queue_id,
                     sync_event->FirstScope(), sync_event->first_scope_tag, AccessContext::DetectOptions::kDetectAll);
                 if (hazard.IsHazard()) {
-                    const auto error = sync_state.error_messages_.WaitEventsError(
-                        hazard, exec_context, image_memory_barrier.barrier_index, *image_state, command_);
+                    LogObjectList objlist(exec_context.Handle(), image_state->Handle());
+                    const std::string resource_description = sync_state.FormatHandle(image_state->Handle());
+                    const std::string error = sync_state.error_messages_.ImageBarrierError(
+                        hazard, exec_context, command_, resource_description, image_memory_barrier);
                     skip |= sync_state.SyncError(hazard.Hazard(), image_state->Handle(), loc, error);
                     break;
                 }
