@@ -99,12 +99,18 @@ class GpuResourcesManager {
     DescriptorSetManager &descriptor_set_manager_;
     enum class CachedStatus { Undefined, InUse, Available };
     struct CachedDescriptor {
-        VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
+        // VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
         VkDescriptorPool desc_pool = VK_NULL_HANDLE;
         VkDescriptorSet desc_set = VK_NULL_HANDLE;
-        CachedStatus status = CachedStatus::Undefined;
+        // CachedStatus status = CachedStatus::Undefined;
     };
-    std::vector<CachedDescriptor> cached_descriptors_;
+    struct LayoutToSets {
+        VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
+        std::vector<CachedDescriptor> cached_descriptors;
+        size_t first_available_desc_set = 0;
+    };
+    std::vector<LayoutToSets> cache_layouts_to_sets_;
+    // std::vector<CachedDescriptor> cached_descriptors_;
 
     struct CachedBuffer {
         VkBufferCreateInfo buffer_ci{};

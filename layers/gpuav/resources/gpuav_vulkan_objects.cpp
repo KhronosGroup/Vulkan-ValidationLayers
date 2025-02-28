@@ -204,28 +204,33 @@ void Buffer::Destroy() {
 }
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {
-    // Try to find a cached and available buffer with comparable requirements
-    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
-        if (!(cached_descriptor.status == CachedStatus::Available)) {
+    // Look for a descriptor set layout matching input,
+    // if found get or add an associated descriptor set
+    for (LayoutToSets &layout_to_sets : cache_layouts_to_sets_) {
+        if (layout_to_sets.desc_set_layout != desc_set_layout) {
             continue;
         }
 
-        if (cached_descriptor.desc_set_layout == desc_set_layout) {
-            cached_descriptor.status = CachedStatus::InUse;
-            return cached_descriptor.desc_set;
+        if (layout_to_sets.first_available_desc_set == layout_to_sets.cached_descriptors.size()) {
+            CachedDescriptor cached_descriptor;
+            const VkResult result = descriptor_set_manager_.GetDescriptorSet(&cached_descriptor.desc_pool, desc_set_layout,
+                                                                             &cached_descriptor.desc_set);
+            if (result != VK_SUCCESS) {
+                return VK_NULL_HANDLE;
+            }
+            layout_to_sets.cached_descriptors.emplace_back(cached_descriptor);
         }
+
+        assert(layout_to_sets.first_available_desc_set < layout_to_sets.cached_descriptors.size());
+        return layout_to_sets.cached_descriptors[layout_to_sets.first_available_desc_set++].desc_set;
     }
 
-    CachedDescriptor cached_descriptor;
-    cached_descriptor.status = CachedStatus::InUse;
-    cached_descriptor.desc_set_layout = desc_set_layout;
-    const VkResult result =
-        descriptor_set_manager_.GetDescriptorSet(&cached_descriptor.desc_pool, desc_set_layout, &cached_descriptor.desc_set);
-    if (result != VK_SUCCESS) {
-        return VK_NULL_HANDLE;
-    }
-    cached_descriptors_.emplace_back(cached_descriptor);
-    return cached_descriptor.desc_set;
+    // Did not find input descriptor set layout,
+    // add a new cache entry and just re-run search
+    LayoutToSets layout_to_sets;
+    layout_to_sets.desc_set_layout = desc_set_layout;
+    cache_layouts_to_sets_.emplace_back(layout_to_sets);
+    return GetManagedDescriptorSet(desc_set_layout);
 }
 
 vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &buffer_ci,
@@ -234,7 +239,7 @@ vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Locati
     assert(buffer_ci.sharingMode == VK_SHARING_MODE_EXCLUSIVE);
     assert(alloc_ci.pUserData == nullptr);
 
-    // Try to find a cached and available descriptor created with the same descriptor set layout
+    // Try to find a cached and available buffer created with equivalent characteristics
     for (CachedBuffer &cached_buffer : cached_buffers_) {
         if (!(cached_buffer.status == CachedStatus::Available)) {
             continue;
@@ -268,8 +273,8 @@ vko::Buffer GpuResourcesManager::GetManagedBuffer(Validator &gpuav, const Locati
 }
 
 void GpuResourcesManager::ReturnResources() {
-    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
-        cached_descriptor.status = CachedStatus::Available;
+    for (LayoutToSets &layout_to_set : cache_layouts_to_sets_) {
+        layout_to_set.first_available_desc_set = 0;
     }
 
     for (CachedBuffer &cached_buffer : cached_buffers_) {
@@ -278,10 +283,13 @@ void GpuResourcesManager::ReturnResources() {
 }
 
 void GpuResourcesManager::DestroyResources() {
-    for (CachedDescriptor &cached_descriptor : cached_descriptors_) {
-        descriptor_set_manager_.PutBackDescriptorSet(cached_descriptor.desc_pool, cached_descriptor.desc_set);
+    for (LayoutToSets &layout_to_set : cache_layouts_to_sets_) {
+        for (CachedDescriptor &cached_descriptor : layout_to_set.cached_descriptors) {
+            descriptor_set_manager_.PutBackDescriptorSet(cached_descriptor.desc_pool, cached_descriptor.desc_set);
+        }
+        layout_to_set.cached_descriptors.clear();
     }
-    cached_descriptors_.clear();
+    cache_layouts_to_sets_.clear();
 
     for (CachedBuffer &cached_buffer : cached_buffers_) {
         cached_buffer.buffer.Destroy();
