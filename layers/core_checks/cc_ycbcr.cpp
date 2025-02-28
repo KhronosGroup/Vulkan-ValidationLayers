@@ -62,8 +62,8 @@ bool CoreChecks::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, co
         // only check for external format inside VK_FORMAT_UNDEFINED check to prevent unnecessary extra errors from no format
         // features being supported
         if (external_format != 0) {
-            auto it = ahb_ext_formats_map.find(external_format);
-            if (it != ahb_ext_formats_map.end()) {
+            auto it = state_tracker->ahb_ext_formats_map.find(external_format);
+            if (it != state_tracker->ahb_ext_formats_map.end()) {
                 format_features = it->second;
             }
         }

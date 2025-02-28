@@ -27,15 +27,14 @@ class CommandBufferAccessContext;
 class HazardResult;
 struct ReportKeyValues;
 class QueueBatchContext;
+class SyncValidator;
 
 namespace vvl {
 class DescriptorSet;
-class Device;
 class Pipeline;
 }  // namespace vvl
 
 namespace syncval {
-
 struct AdditionalMessageInfo {
     ReportKeyValues properties;
 
@@ -54,7 +53,7 @@ struct AdditionalMessageInfo {
 
 class ErrorMessages {
   public:
-    explicit ErrorMessages(vvl::Device& validator);
+    explicit ErrorMessages(SyncValidator& validator);
 
     std::string Error(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                       const std::string& resouce_description, const AdditionalMessageInfo& additional_info = {}) const;
@@ -151,7 +150,7 @@ class ErrorMessages {
                                      ReportKeyValues& key_values) const;
 
   private:
-    vvl::Device& validator_;
+    SyncValidator& validator_;
     const bool& extra_properties_;
     const bool& pretty_print_extra_;
 };
