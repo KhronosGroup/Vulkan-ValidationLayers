@@ -135,8 +135,7 @@ class ErrorMessages {
                                   const std::string& resource_description, const SyncImageMemoryBarrier& barrier) const;
 
     std::string FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
-                              const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
-                              VkCommandBuffer recorded_handle, vvl::Func command) const;
+                              const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const;
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,
                              const VulkanTypedHandle& swapchain_handle, uint32_t image_index, const VulkanTypedHandle& image_handle,

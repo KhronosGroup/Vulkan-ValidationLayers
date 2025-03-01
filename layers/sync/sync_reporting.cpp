@@ -445,15 +445,38 @@ std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, Re
     return out.str();
 }
 
-ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
-    const ResourceUsageRecord &record = (*access_log_)[tag_ex.tag];
+static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider, const ResourceUsageRecord &record,
+                                                    ResourceUsageTagEx tag_ex) {
     ReportUsageInfo info;
     if (record.alt_usage) {
         info.command = record.alt_usage.GetCommand();
     } else {
         info.command = record.command;
+        // Associated resource
+        if (tag_ex.handle_index != vvl::kNoIndex32) {
+            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
+            const auto &handle_records = cb_context->access_context.GetHandleRecords();
+
+            // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
+            // In this case the goal is not to crash, no guarantees that reported information (handle index) makes sense.
+            const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
+            if (valid_handle_index) {
+                info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
+            }
+        }
+        // Debug region name. Empty name means that we are not inside any debug region.
+        if (debug_name_provider) {
+            info.debug_region_name = debug_name_provider->GetDebugRegionName(record);
+        }
     }
+    info.cb = record.cb_state;
     return info;
+}
+
+ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
+    const ResourceUsageRecord &record = (*access_log_)[tag_ex.tag];
+    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
+    return GetReportUsageInfoFromRecord(debug_name_provider, record, tag_ex);
 }
 
 std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
@@ -485,11 +508,13 @@ ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex)
         return {};
     }
     const ResourceUsageRecord &record = *access.record;
-    ReportUsageInfo info;
-    if (record.alt_usage) {
-        info.command = record.alt_usage.GetCommand();
-    } else {
-        info.command = record.command;
+    ReportUsageInfo info = GetReportUsageInfoFromRecord(access.debug_name_provider, record, tag_ex);
+
+    const BatchAccessLog::BatchRecord &batch = *access.batch;
+    if (batch.queue) {
+        info.queue = batch.queue->GetQueueState();
+        info.submit_index = batch.submit_index;
+        info.batch_index = batch.batch_index;
     }
     return info;
 }
@@ -515,5 +540,8 @@ void QueueBatchContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, Repo
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
     if (access.IsValid()) {
         extra_properties.Add(kPropertyBatchTag, access.batch->base_tag);
+        if (access.record->command != vvl::Func::Empty) {
+            extra_properties.Add(kPropertyPriorCommand, vvl::String(access.record->command));
+        }
     }
 }

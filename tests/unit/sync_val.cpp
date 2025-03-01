@@ -5213,11 +5213,9 @@ TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
 
 TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     TEST_DESCRIPTION("Write to the same image from different queues");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
     if (!transfer_queue) {
@@ -5231,9 +5229,6 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     region.imageExtent = {64, 64, 1};
 
-    // Submit from Graphics queue: perform image layout transition (WRITE access).
-    vkt::CommandBuffer cb0(*m_device, m_command_pool);
-    cb0.Begin();
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
     image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
@@ -5243,23 +5238,25 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_barrier.image = image;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
     VkDependencyInfo dep_info = vku::InitStructHelper();
     dep_info.imageMemoryBarrierCount = 1;
     dep_info.pImageMemoryBarriers = &image_barrier;
-    vk::CmdPipelineBarrier2(cb0, &dep_info);
-    cb0.End();
 
-    m_default_queue->Submit2(cb0);
+    // Submit from Graphics queue: perform image layout transition (WRITE access).
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.End();
+    m_default_queue->Submit2(m_command_buffer);
 
     // Submit from Transfer queue: write image data (racing WRITE access)
     vkt::CommandPool transfer_pool(*m_device, transfer_queue->family_index);
-    vkt::CommandBuffer cb1(*m_device, transfer_pool);
-    cb1.Begin();
-    vk::CmdCopyBufferToImage(cb1, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    cb1.End();
-
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+    transfer_cb.Begin();
+    vk::CmdCopyBufferToImage(transfer_cb, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    transfer_cb.End();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-RACING-WRITE");
-    transfer_queue->Submit2(cb1);
+    transfer_queue->Submit2(transfer_cb);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();

@@ -304,7 +304,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     const SyncEventsContext *GetCurrentEventsContext() const override { return &events_context_; }
     const QueueSyncState *GetQueueSyncState() { return queue_state_; }
     QueueId GetQueueId() const override;
-    ExecutionType Type() const override { return kSubmitted; }
     ResourceUsageRange GetTagRange() const { return tag_range_; }
 
     ResourceUsageTag SetupBatchTags(uint32_t tag_count);
