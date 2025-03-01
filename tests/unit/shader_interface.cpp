@@ -1879,7 +1879,8 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirvMaintenance5Compute) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBuffer) {
+// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
     TEST_DESCRIPTION("Regression shaders from https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/5349");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
@@ -2155,7 +2156,8 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBufferArray) {
+// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferArray) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -2202,7 +2204,8 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferArray) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBufferLinkedList) {
+// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferLinkedList) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
@@ -2251,7 +2254,8 @@ TEST_F(NegativeShaderInterface, PhysicalStorageBufferLinkedList) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
+// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
+TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferNested) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);

@@ -1519,7 +1519,8 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     pipe.CreateGraphicsPipeline();
 }
 
-TEST_F(PositiveShaderInterface, PhysicalStorageBufferGlslang3) {
+// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
+TEST_F(PositiveShaderInterface, DISABLED_PhysicalStorageBufferGlslang3) {
     TEST_DESCRIPTION(
         "Taken from glslang spv.bufferhandle3.frag test - just creating the shader is valid, interface is tested elsewhere");
     SetTargetApiVersion(VK_API_VERSION_1_2);
