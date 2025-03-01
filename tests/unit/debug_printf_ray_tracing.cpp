@@ -1098,7 +1098,8 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     debug_buffer.Memory().Unmap();
 }
 
-TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
+TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
     TEST_DESCRIPTION(
         "Test debug printf in a multi entry points shader. 1 ray generation shader, 1 miss shader, 1 closest hit shader");
 
@@ -1186,7 +1187,8 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
     debug_buffer.Memory().Unmap();
 }
 
-TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
+TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTraceRays) {
     TEST_DESCRIPTION(
         "Test debug printf in a multi entry points shader. 2 ray generation shaders, 2 miss shaders, 2 closest hit shaders."
         "Trace rays using vkCmdTraceRaysKHR");
@@ -1269,7 +1271,8 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRays) {
     debug_buffer.Memory().Unmap();
 }
 
-TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndirect) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
+TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTraceRaysIndirect) {
     TEST_DESCRIPTION(
         "Test debug printf in a multi entry points shader. 2 ray generation shaders, 2 miss shaders, 2 closest hit shaders."
         "Trace rays using vkCmdTraceRaysIndirect2KHR");
@@ -1353,7 +1356,8 @@ TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndi
     debug_buffer.Memory().Unmap();
 }
 
-TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader2CmdTraceRaysIndirectDeferredBuild) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
+TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTraceRaysIndirectDeferredBuild) {
     TEST_DESCRIPTION(
         "Test debug printf in a multi entry points shader. 2 ray generation shaders, 2 miss shaders, 2 closest hit shaders."
         "Trace rays using vkCmdTraceRaysIndirect2KHR");

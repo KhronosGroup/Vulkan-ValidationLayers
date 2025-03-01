@@ -785,7 +785,6 @@ TEST_F(PositiveShaderPushConstants, Storage8BitPointers) {
                OpEntryPoint GLCompute %main "main" %result %entryPointParams
                OpExecutionMode %main LocalSize 1 1 1
                OpDecorate %_ptr_PhysicalStorageBuffer_uchar ArrayStride 1
-               OpDecorate %17 AliasedPointer
                OpDecorate %EntryPointParams_std430 Block
                OpMemberDecorate %EntryPointParams_std430 0 Offset 0
                OpDecorate %_runtimearr_int ArrayStride 4
@@ -794,33 +793,29 @@ TEST_F(PositiveShaderPushConstants, Storage8BitPointers) {
                OpDecorate %result Binding 0
                OpDecorate %result DescriptorSet 0
        %void = OpTypeVoid
-         %12 = OpTypeFunction %void
-      %uchar = OpTypeInt 8 0
-%_ptr_PhysicalStorageBuffer_uchar = OpTypePointer PhysicalStorageBuffer %uchar
-%_ptr_Function__ptr_PhysicalStorageBuffer_uchar = OpTypePointer Function %_ptr_PhysicalStorageBuffer_uchar
-%EntryPointParams_std430 = OpTypeStruct %_ptr_PhysicalStorageBuffer_uchar
-%_ptr_PushConstant_EntryPointParams_std430 = OpTypePointer PushConstant %EntryPointParams_std430
+          %3 = OpTypeFunction %void
         %int = OpTypeInt 32 1
       %int_0 = OpConstant %int 0
-%_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar = OpTypePointer PushConstant %_ptr_PhysicalStorageBuffer_uchar
 %_ptr_StorageBuffer_int = OpTypePointer StorageBuffer %int
 %_runtimearr_int = OpTypeRuntimeArray %int
 %RWStructuredBuffer = OpTypeStruct %_runtimearr_int
 %_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
-%entryPointParams = OpVariable %_ptr_PushConstant_EntryPointParams_std430 PushConstant
+      %uchar = OpTypeInt 8 0
+%_ptr_PhysicalStorageBuffer_uchar = OpTypePointer PhysicalStorageBuffer %uchar
+%EntryPointParams_std430 = OpTypeStruct %_ptr_PhysicalStorageBuffer_uchar
+%_ptr_PushConstant_EntryPointParams_std430 = OpTypePointer PushConstant %EntryPointParams_std430
+%_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar = OpTypePointer PushConstant %_ptr_PhysicalStorageBuffer_uchar
      %result = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
-       %main = OpFunction %void None %12
-         %13 = OpLabel
-         %17 = OpVariable %_ptr_Function__ptr_PhysicalStorageBuffer_uchar Function
-         %44 = OpAccessChain %_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar %entryPointParams %int_0
-         %45 = OpLoad %_ptr_PhysicalStorageBuffer_uchar %44
-               OpStore %17 %45
-         %50 = OpAccessChain %_ptr_StorageBuffer_int %result %int_0 %int_0
-         %55 = OpLoad %_ptr_PhysicalStorageBuffer_uchar %44
-         %56 = OpPtrAccessChain %_ptr_PhysicalStorageBuffer_uchar %55 %int_0
-         %57 = OpLoad %uchar %56 Aligned 1
-         %58 = OpSConvert %int %57
-               OpStore %50 %58
+%entryPointParams = OpVariable %_ptr_PushConstant_EntryPointParams_std430 PushConstant
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+          %8 = OpAccessChain %_ptr_StorageBuffer_int %result %int_0 %int_0
+         %19 = OpAccessChain %_ptr_PushConstant__ptr_PhysicalStorageBuffer_uchar %entryPointParams %int_0
+         %20 = OpLoad %_ptr_PhysicalStorageBuffer_uchar %19
+         %21 = OpPtrAccessChain %_ptr_PhysicalStorageBuffer_uchar %20 %int_0
+         %22 = OpLoad %uchar %21 Aligned 1
+         %23 = OpSConvert %int %22
+               OpStore %8 %23
                OpReturn
                OpFunctionEnd
     )";

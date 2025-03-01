@@ -746,7 +746,9 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
+// https://github.com/shader-slang/slang/issues/6508
+// will need to reproduce valid SPIR-V afterwards
+TEST_F(PositiveGpuAVDescriptorPostProcess, DISABLED_DescriptorIndexingSlang) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
@@ -825,7 +827,6 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
          %18 = OpAccessChain %_ptr_StorageBuffer_uint %12 %int_0
   %dataIndex = OpLoad %uint %18
          %25 = OpAccessChain %_ptr_UniformConstant_21 %texture %dataIndex
-         %26 = OpLoad %21 %25
          %27 = OpLoad %21 %25
          %29 = OpLoad %28 %sampler
 %sampledImage = OpSampledImage %32 %27 %29

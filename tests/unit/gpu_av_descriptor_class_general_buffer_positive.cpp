@@ -858,7 +858,6 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
                OpMemberDecorate %RWStructuredBuffer 0 Offset 0
                OpDecorate %foo Binding 0
                OpDecorate %foo DescriptorSet 0
-               OpDecorate %_arr_uint_int_4_0 ArrayStride 4
        %void = OpTypeVoid
           %3 = OpTypeFunction %void
         %int = OpTypeInt 32 1
@@ -875,32 +874,19 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
 %_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
       %int_1 = OpConstant %int 1
 %_ptr_StorageBuffer__Array_std430_uint4 = OpTypePointer StorageBuffer %_Array_std430_uint4
-%_arr_uint_int_4_0 = OpTypeArray %uint %int_4
-         %25 = OpTypeFunction %_Array_std430_uint4 %_arr_uint_int_4_0
      %uint_4 = OpConstant %uint 4
      %uint_5 = OpConstant %uint 5
      %uint_6 = OpConstant %uint 6
      %uint_7 = OpConstant %uint 7
-         %35 = OpConstantComposite %_arr_uint_int_4_0 %uint_4 %uint_5 %uint_6 %uint_7
         %foo = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
        %main = OpFunction %void None %3
           %4 = OpLabel
          %14 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %foo %int_0 %int_0
          %21 = OpAccessChain %_ptr_StorageBuffer__Array_std430_uint4 %14 %int_1
-         %22 = OpFunctionCall %_Array_std430_uint4 %packStorage %35
-               OpStore %21 %22
+         %69 = OpCompositeConstruct %_arr_uint_int_4 %uint_4 %uint_5 %uint_6 %uint_7
+         %55 = OpCompositeConstruct %_Array_std430_uint4 %69
+               OpStore %21 %55
                OpReturn
-               OpFunctionEnd
-%packStorage = OpFunction %_Array_std430_uint4 None %25
-         %26 = OpFunctionParameter %_arr_uint_int_4_0
-         %27 = OpLabel
-         %28 = OpCompositeExtract %uint %26 0
-         %29 = OpCompositeExtract %uint %26 1
-         %30 = OpCompositeExtract %uint %26 2
-         %31 = OpCompositeExtract %uint %26 3
-         %32 = OpCompositeConstruct %_arr_uint_int_4 %28 %29 %30 %31
-         %33 = OpCompositeConstruct %_Array_std430_uint4 %32
-               OpReturnValue %33
                OpFunctionEnd
     )";
     ComputeStorageBufferTest(cs_source, false, 32);
@@ -1068,7 +1054,8 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, StructCopyGLSL) {
+// https://github.com/KhronosGroup/glslang/issues/3892
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DISABLED_StructCopyGLSL) {
     char const *cs_source = R"glsl(
         #version 450
 

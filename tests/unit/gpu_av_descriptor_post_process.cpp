@@ -1350,7 +1350,9 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
+// https://github.com/shader-slang/slang/issues/6508
+// will need to reproduce valid SPIR-V afterwards
+TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_DescriptorIndexingSlang) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
