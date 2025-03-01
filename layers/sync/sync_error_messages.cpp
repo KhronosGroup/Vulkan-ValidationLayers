@@ -122,8 +122,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     } else {
         ss << (hazard_info.IsWrite() ? "writes to" : "reads");
     }
-    ss << " " << resouce_description << ", which ";
-    ss << (hazard_info.IsRacingHazard() ? "is being " : "was previously ");
+    ss << " " << resouce_description << ", which was previously ";
     if (hazard_info.IsPriorWrite()) {
         if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
             ss << "written during an image layout transition initiated by ";
@@ -139,13 +138,15 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     } else {
         const ReportUsageInfo usage_info = context.GetReportUsageInfo(hazard.TagEx());
         if (usage_info.command == command) {
-            ss << "another " << vvl::String(usage_info.command) << " command";
-        } else {
-            ss << vvl::String(usage_info.command);
+            ss << "another ";
         }
-    }
-    if (const auto* debug_region = key_values.FindProperty("debug_region")) {
-        ss << " (debug region: " << *debug_region << ")";
+        ss << vvl::String(usage_info.command);
+        if (const auto* debug_region = key_values.FindProperty("debug_region")) {
+            ss << "[" << *debug_region << "]";
+        }
+        if (usage_info.command == command) {
+            ss << " command";
+        }
     }
     if (!additional_info.brief_description_end_text.empty()) {
         ss << " " << additional_info.brief_description_end_text;
@@ -163,29 +164,39 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         const char* access_type = hazard_info.IsWrite() ? "write" : "read";
         const char* prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
 
+        auto get_special_access_name = [](SyncAccessIndex access) -> const char* {
+            if (access == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
+                return "swapchain image acquire operation";
+            } else if (access == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL) {
+                return "swapchain present operation";
+            } else if (access == SYNC_IMAGE_LAYOUT_TRANSITION) {
+                return "layout transition";
+            } else if (access == SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER) {
+                return "ownership transfer";
+            }
+            return nullptr;
+        };
+
         ss << "No sufficient synchronization is present to ensure that a ";
-        if (access.access_mask != VK_ACCESS_2_NONE) {
+        if (const char* special_access_name = get_special_access_name(access.access_index)) {
+            ss << special_access_name;
+        } else {
+            assert(access.access_mask != VK_ACCESS_2_NONE);
+            assert(access.stage_mask != VK_PIPELINE_STAGE_2_NONE);
             ss << access_type << " (" << string_VkAccessFlagBits2(access.access_mask) << ") at ";
             ss << string_VkPipelineStageFlagBits2(access.stage_mask);
-        } else {
-            if (access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
-                ss << "layout transition";
-            }
         }
 
         ss << " does not conflict with a prior ";
-        if (prior_access.access_mask != VK_ACCESS_2_NONE) {
+        if (const char* special_access_name = get_special_access_name(prior_access.access_index)) {
+            ss << special_access_name;
+        } else {
+            assert(prior_access.access_mask != VK_ACCESS_2_NONE);
+            assert(prior_access.stage_mask != VK_PIPELINE_STAGE_2_NONE);
             ss << prior_access_type;
             if (prior_access.access_mask != access.access_mask) {
                 ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
             }
-        } else {
-            if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
-                ss << "layout transition write";
-            }
-        }
-
-        if (prior_access.stage_mask != VK_PIPELINE_STAGE_2_NONE) {
             ss << " at ";
             if (prior_access.stage_mask == access.stage_mask) {
                 ss << "the same stage";
@@ -589,27 +600,54 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
 }
 
 std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
-                                         const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index,
-                                         VkCommandBuffer recorded_handle, vvl::Func command) const {
-    const auto format = "Hazard %s for entry %" PRIu32 ", %s, %s access info %s. Access info %s.";
-    ReportKeyValues key_values;
+                                         const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const {
+    const ReportUsageInfo report_info = recorded_context.GetReportUsageInfo(hazard.RecordedAccess()->TagEx());
+    const ReportUsageInfo exec_info = exec_context.GetReportUsageInfo(hazard.TagEx());
 
-    const std::string access_info = exec_context.FormatHazard(hazard, key_values);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), command_buffer_index, validator_.FormatHandle(recorded_handle).c_str(),
-               exec_context.ExecutionTypeString(),
-               recorded_context.FormatUsage(exec_context.ExecutionUsageString(), *hazard.RecordedAccess(), key_values).c_str(),
-               access_info.c_str());
+    AdditionalMessageInfo additional_info;
+    additional_info.properties.Add(kPropertyCommandBufferIndex, command_buffer_index);
 
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "SubmitTimeError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        // TODO: ensure correct command is used here, currently it's always empty
-        // key_values.Add(kPropertyCommand, vvl::String(command));
-        exec_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+    std::stringstream ss;
+    ss << vvl::String(report_info.command);
+    if (!report_info.debug_region_name.empty()) {
+        ss << "[" << report_info.debug_region_name << "]";
     }
-    return message;
+    if (exec_info.queue) {
+        ss << " (from " << validator_.FormatHandle(recorded_context.Handle());
+        ss << " submitted on the current ";
+        ss << validator_.FormatHandle(exec_info.queue->Handle()) << ")";
+        additional_info.properties.Add(kPropertySubmitIndex, exec_info.submit_index);
+        additional_info.properties.Add(kPropertyBatchIndex, exec_info.batch_index);
+    } else {
+        ss << " (from the secondary " << validator_.FormatHandle(recorded_context.Handle()) << ")";
+    }
+    additional_info.access_initiator = ss.str();
+
+    std::stringstream ss2;
+    if (exec_context.Handle().type == kVulkanObjectTypeQueue) {
+        if (exec_info.cb) {
+            ss2 << "(from " << validator_.FormatHandle(exec_info.cb->Handle());
+            ss2 << " submitted on " << validator_.FormatHandle(exec_context.Handle()) << ")";
+        } else {  // QueuePresent case (not recorded into command buffer)
+            ss2 << "(submitted on " << validator_.FormatHandle(exec_context.Handle()) << ")";
+        }
+    } else {  // primary command buffer executes secondary one
+        assert(exec_context.Handle().type == kVulkanObjectTypeCommandBuffer);
+        // TODO: distinuish between "native" primary command buffer commands and
+        // command recorded from the secondary command buffers.
+        ss2 << "(from the primary " << validator_.FormatHandle(exec_context.Handle()) << ")";
+    }
+    additional_info.brief_description_end_text = ss2.str();
+
+    if (!report_info.debug_region_name.empty()) {
+        additional_info.properties.Add(kPropertyDebugRegion, report_info.debug_region_name);
+    }
+
+    // Use generic "resource" when resource handle is not specified for some reason (likely just a missing code).
+    // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
+    const std::string resource_description =
+        report_info.resource_handle ? validator_.FormatHandle(report_info.resource_handle) : "resource";
+    return Error(hazard, exec_context, report_info.command, resource_description, additional_info);
 }
 
 std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,

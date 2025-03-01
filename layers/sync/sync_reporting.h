@@ -19,6 +19,7 @@
 
 #include "generated/error_location_helper.h"
 #include "generated/sync_validation_types.h"
+#include "generated/vk_object_types.h"
 
 namespace vvl {
 class CommandBuffer;
@@ -64,6 +65,12 @@ struct ReportKeyValues {
 
 struct ReportUsageInfo {
     vvl::Func command = vvl::Func::Empty;
+    VulkanTypedHandle resource_handle;
+    std::string debug_region_name;
+    const vvl::CommandBuffer *cb = nullptr;
+    const vvl::Queue *queue = nullptr;
+    uint64_t submit_index = 0;
+    uint32_t batch_index = 0;
 };
 
 std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
@@ -79,6 +86,7 @@ inline constexpr const char *kPropertyHazardType = "hazard_type";
 inline constexpr const char *kPropertyCommand = "command";
 inline constexpr const char *kPropertyPriorCommand = "prior_command";
 inline constexpr const char *kPropertyDebugRegion = "debug_region";
+inline constexpr const char *kPropertyCurrentDebugRegion = "current_debug_region";
 inline constexpr const char *kPropertyAccess = "access";
 inline constexpr const char *kPropertyPriorAccess = "prior_access";
 inline constexpr const char *kPropertyReadBarriers = "read_barriers";
@@ -94,6 +102,9 @@ inline constexpr const char *kPropertyDescriptorBinding = "descriptor_binding";
 inline constexpr const char *kPropertyDescriptorArrayElement = "descriptor_array_element";
 inline constexpr const char *kPropertyImageLayout = "image_layout";
 inline constexpr const char *kPropertyImageAspect = "image_aspect";
+inline constexpr const char *kPropertySubmitIndex = "submit_index";
+inline constexpr const char *kPropertyBatchIndex = "batch_index";
+inline constexpr const char *kPropertyCommandBufferIndex = "command_buffer_index";
 
 // debug properties
 inline constexpr const char *kPropertySeqNo = "seq_no";
