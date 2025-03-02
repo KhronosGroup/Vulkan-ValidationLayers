@@ -650,26 +650,12 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     return Error(hazard, exec_context, report_info.command, resource_description, additional_info);
 }
 
-std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, uint32_t present_index,
-                                        const VulkanTypedHandle& swapchain_handle, uint32_t image_index,
-                                        const VulkanTypedHandle& image_handle, vvl::Func command) const {
-    const auto format =
-        "Hazard %s for present pSwapchains[%" PRIu32 "] , swapchain %s, image index %" PRIu32 " %s, Access info %s.";
-    ReportKeyValues key_values;
-
-    const std::string access_info = batch_context.FormatHazard(hazard, key_values);
-    std::string message =
-        Format(format, string_SyncHazard(hazard.Hazard()), present_index, validator_.FormatHandle(swapchain_handle).c_str(),
-               image_index, validator_.FormatHandle(image_handle).c_str(), access_info.c_str());
-
-    if (extra_properties_) {
-        key_values.Add(kPropertyMessageType, "PresentError");
-        key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-        key_values.Add(kPropertyCommand, vvl::String(command));
-        batch_context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
-    }
-    return message;
+std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
+                                        const std::string& resource_description, uint32_t swapchain_index) const {
+    AdditionalMessageInfo additional_info;
+    additional_info.access_action = "presents";
+    additional_info.properties.Add(kPropertySwapchainIndex, swapchain_index);
+    return Error(hazard, batch_context, command, resource_description, additional_info);
 }
 
 }  // namespace syncval
