@@ -732,7 +732,8 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
         if (hazard.IsHazard()) {
             LogObjectList obj_list(cb_state_->Handle(), attachment.view->Handle());
             Location loc = attachment.GetLocation(location, output_location);
-            const auto error = error_messages_.Error(hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view));
+            const std::string error = error_messages_.Error(
+                hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view), "DynamicRenderingAttachmentError");
             skip |= sync_state_.SyncError(hazard.Hazard(), obj_list, loc.dot(vvl::Field::imageView), error);
         }
     }
@@ -755,8 +756,9 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
                 Location loc = attachment.GetLocation(location);
-                const auto error =
-                    error_messages_.Error(hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view));
+                const std::string error =
+                    error_messages_.Error(hazard, *this, location.function, sync_state_.FormatHandle(*attachment.view),
+                                          "DynamicRenderingAttachmentError");
                 skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc.dot(vvl::Field::imageView), error);
             }
         }

@@ -245,10 +245,11 @@ ErrorMessages::ErrorMessages(vvl::Device& validator)
       pretty_print_extra_(validator_.syncval_settings.message_extra_properties_pretty_print) {}
 
 std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
-                                 const std::string& resouce_description, const AdditionalMessageInfo& additional_info) const {
+                                 const std::string& resouce_description, const char* message_type,
+                                 const AdditionalMessageInfo& additional_info) const {
     ReportKeyValues key_values;
     context.FormatHazard(hazard, key_values);
-    key_values.Add(kPropertyMessageType, "GeneralError");
+    key_values.Add(kPropertyMessageType, message_type);
     key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     key_values.Add(kPropertyCommand, vvl::String(command));
     for (const auto& kv : additional_info.properties.key_values) {
@@ -280,7 +281,7 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
     ss << "Buffer access region: (offset = " << range.begin;
     ss << ", size = " << range.end - range.begin << ").";
     additional_info.message_end_text += ss.str();
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "BufferError", additional_info);
 }
 
 std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -294,7 +295,7 @@ std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const C
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "BufferRegionError", additional_info);
 }
 
 std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -312,7 +313,7 @@ std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, const Co
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "ImageRegionError", additional_info);
 }
 
 std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -327,7 +328,7 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, subresource_range_index);
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "ImageSubresourceRangeError", additional_info);
 }
 
 std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -355,7 +356,7 @@ std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, con
     ss << ".";
     additional_info.pre_synchronization_text = ss.str();
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "BufferDescriptorError", additional_info);
 }
 
 std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -387,7 +388,7 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
     ss << ".";
     additional_info.pre_synchronization_text = ss.str();
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "ImageDescriptorError", additional_info);
 }
 
 std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -407,13 +408,13 @@ std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, cons
     additional_info.access_action = "clears";
     additional_info.message_end_text = ss.str();
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "ClearAttachmentError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description) const {
     // TODO: revisit error message when this function is covered by the tests.
-    return Error(hazard, cb_context, command, resource_description);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassAttachmentError");
 }
 
 static const char* GetLoadOpActionName(VkAttachmentLoadOp load_op) {
@@ -449,7 +450,7 @@ std::string ErrorMessages::BeginRenderingError(const HazardResult& hazard, const
     const char* load_op_str = string_VkAttachmentLoadOp(load_op);
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
     additional_info.access_action = GetLoadOpActionName(load_op);
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "BeginRenderingError", additional_info);
 }
 
 std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -459,7 +460,7 @@ std::string ErrorMessages::EndRenderingResolveError(const HazardResult& hazard, 
     const char* resolve_mode_str = string_VkResolveModeFlagBits(resolve_mode);
     additional_info.properties.Add(kPropertyResolveMode, resolve_mode_str);
     additional_info.access_action = resolve_write ? "writes to single sample resolve attachment" : "reads multisample attachment";
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "EndRenderingResolveError", additional_info);
 }
 
 std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -468,7 +469,7 @@ std::string ErrorMessages::EndRenderingStoreError(const HazardResult& hazard, co
     AdditionalMessageInfo additional_info;
     const char* store_op_str = string_VkAttachmentStoreOp(store_op);
     additional_info.properties.Add(kPropertyStoreOp, store_op_str);
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "EndRenderingStoreError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -479,7 +480,7 @@ std::string ErrorMessages::RenderPassLoadOpError(const HazardResult& hazard, con
     additional_info.properties.Add(kPropertyLoadOp, load_op_str);
     additional_info.access_action = GetLoadOpActionName(load_op);
     CheckForLoadOpDontCareInsight(load_op, is_color, additional_info.message_end_text);
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassLoadOpError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardResult& hazard,
@@ -492,13 +493,13 @@ std::string ErrorMessages::RenderPassLoadOpVsLayoutTransitionError(const HazardR
     additional_info.hazard_overview = "attachment loadOp access is not synchronized with the attachment layout transition";
     additional_info.access_action = GetLoadOpActionName(load_op);
     CheckForLoadOpDontCareInsight(load_op, is_color, additional_info.message_end_text);
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassLoadOpVsLayoutTransitionError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassResolveError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                   vvl::Func command, const std::string& resource_description) const {
     // TODO: rework error message and maybe refactor ValidateResolveAction helper when this function is covered by the tests.
-    return Error(hazard, cb_context, command, resource_description);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassResolveError");
 }
 
 // TODO: this one also does not have tests!
@@ -508,7 +509,7 @@ std::string ErrorMessages::RenderPassStoreOpError(const HazardResult& hazard, co
     AdditionalMessageInfo additional_info;
     const char* store_op_str = string_VkAttachmentStoreOp(store_op);
     additional_info.properties.Add(kPropertyStoreOp, store_op_str);
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassStoreOpError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
@@ -521,7 +522,7 @@ std::string ErrorMessages::RenderPassLayoutTransitionError(const HazardResult& h
     additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
     additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
     additional_info.access_action = "performs image layout transition";
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassLayoutTransitionError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
@@ -540,7 +541,8 @@ std::string ErrorMessages::RenderPassLayoutTransitionVsStoreOrResolveError(const
     additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
     additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassLayoutTransitionVsStoreOrResolveError",
+                 additional_info);
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResult& hazard,
@@ -554,7 +556,7 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionError(const HazardResu
     additional_info.properties.Add(kPropertyOldLayout, old_layout_str);
     additional_info.properties.Add(kPropertyNewLayout, new_layout_str);
     additional_info.access_action = "performs final image layout transition";
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassFinalLayoutTransitionError", additional_info);
 }
 
 std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(const HazardResult& hazard,
@@ -573,7 +575,8 @@ std::string ErrorMessages::RenderPassFinalLayoutTransitionVsStoreOrResolveError(
     additional_info.brief_description_end_text = "during store/resolve operation in subpass ";
     additional_info.brief_description_end_text += std::to_string(store_resolve_subpass);
 
-    return Error(hazard, cb_context, command, resource_description, additional_info);
+    return Error(hazard, cb_context, command, resource_description, "RenderPassFinalLayoutTransitionVsStoreOrResolveError",
+                 additional_info);
 }
 
 std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
@@ -596,7 +599,7 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
     ss << "}\n";
     additional_info.message_end_text = ss.str();
 
-    return Error(hazard, context, command, resource_description, additional_info);
+    return Error(hazard, context, command, resource_description, "ImageBarrierError", additional_info);
 }
 
 std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
@@ -647,7 +650,7 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     // TODO: specify resources in EndRenderPass (NegativeSyncVal.QSOBarrierHazard).
     const std::string resource_description =
         report_info.resource_handle ? validator_.FormatHandle(report_info.resource_handle) : "resource";
-    return Error(hazard, exec_context, report_info.command, resource_description, additional_info);
+    return Error(hazard, exec_context, report_info.command, resource_description, "SubmitTimeError", additional_info);
 }
 
 std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
@@ -655,7 +658,12 @@ std::string ErrorMessages::PresentError(const HazardResult& hazard, const QueueB
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "presents";
     additional_info.properties.Add(kPropertySwapchainIndex, swapchain_index);
-    return Error(hazard, batch_context, command, resource_description, additional_info);
+    return Error(hazard, batch_context, command, resource_description, "PresentError", additional_info);
+}
+
+std::string ErrorMessages::VideoError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                      const std::string& resource_description) const {
+    return Error(hazard, cb_context, command, resource_description, "VideoError");
 }
 
 }  // namespace syncval
