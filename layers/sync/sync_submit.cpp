@@ -439,23 +439,28 @@ std::vector<QueueBatchContext::ConstPtr> QueueBatchContext::ResolvePresentWaits(
 
 bool QueueBatchContext::DoQueuePresentValidate(const Location& loc, const PresentedImages& presented_images) {
     bool skip = false;
-
     // Tag the presented images so record doesn't have to know the tagging scheme
-    for (size_t index = 0; index < presented_images.size(); ++index) {
-        const PresentedImage& presented = presented_images[index];
-
-        // Need a copy that can be used as the pseudo-iterator...
+    for (const PresentedImage& presented : presented_images) {
         HazardResult hazard =
             access_context_.DetectHazard(presented.range_gen, SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL);
         if (hazard.IsHazard()) {
-            const auto queue_handle = queue_state_->Handle();
-            const auto swap_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
-            const auto image_handle = vvl::StateObject::Handle(presented.image);
-            const auto error =
-                sync_state_.error_messages_.PresentError(hazard, *this, presented.present_index, swap_handle, presented.image_index,
-                                                         image_handle, vvl::Func::vkQueuePresentKHR);
-            skip |= sync_state_.SyncError(hazard.Hazard(), queue_handle, loc, error);
-            if (skip) break;
+            const VulkanTypedHandle swapchain_handle = vvl::StateObject::Handle(presented.swapchain_state.lock());
+            const VulkanTypedHandle image_handle = vvl::StateObject::Handle(presented.image);
+
+            LogObjectList objlist(queue_state_->Handle(), swapchain_handle, image_handle);
+
+            std::stringstream ss;
+            ss << "swapchain image " << presented.image_index << " (";
+            ss << sync_state_.FormatHandle(image_handle);
+            ss << " from " << sync_state_.FormatHandle(swapchain_handle) << ")";
+            const std::string resource_description = ss.str();
+
+            const std::string error = sync_state_.error_messages_.PresentError(hazard, *this, vvl::Func::vkQueuePresentKHR,
+                                                                               resource_description, presented.present_index);
+            skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
+            if (skip) {
+                break;
+            }
         }
     }
     return skip;

@@ -105,6 +105,7 @@ inline constexpr const char *kPropertyImageAspect = "image_aspect";
 inline constexpr const char *kPropertySubmitIndex = "submit_index";
 inline constexpr const char *kPropertyBatchIndex = "batch_index";
 inline constexpr const char *kPropertyCommandBufferIndex = "command_buffer_index";
+inline constexpr const char *kPropertySwapchainIndex = "swapchain_index";
 
 // debug properties
 inline constexpr const char *kPropertySeqNo = "seq_no";
