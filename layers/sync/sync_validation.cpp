@@ -2442,7 +2442,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
             ss << " ";
             FormatVideoPictureResouce(*this, pDecodeInfo->dstPictureResource, ss);
             const std::string resouce_description = ss.str();
-            const auto error = error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
+            const std::string error =
+                error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resouce_description);
             skip |= SyncError(hazard.Hazard(), dst_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
@@ -2462,8 +2463,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
                 ss << " ";
                 FormatVideoPictureResouce(*this, video_picture, ss);
                 const std::string resouce_description = ss.str();
-                const auto error =
-                    error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
+                const std::string error =
+                    error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
@@ -2485,8 +2486,8 @@ bool SyncValidator::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuff
                     ss << " ";
                     FormatVideoPictureResouce(*this, video_picture, ss);
                     const std::string resouce_description = ss.str();
-                    const auto error =
-                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
+                    const std::string error =
+                        error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
@@ -2577,7 +2578,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
             FormatVideoPictureResouce(*this, pEncodeInfo->srcPictureResource, ss);
             const std::string resouce_description = ss.str();
             // TODO: there are no tests for this error
-            const auto error = error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
+            const std::string error =
+                error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resouce_description);
             skip |= SyncError(hazard.Hazard(), src_resource.image_view_state->Handle(), error_obj.location, error);
         }
     }
@@ -2597,8 +2599,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                 ss << " ";
                 FormatVideoPictureResouce(*this, video_picture, ss);
                 const std::string resouce_description = ss.str();
-                const auto error =
-                    error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resouce_description);
+                const std::string error =
+                    error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resouce_description);
                 skip |= SyncError(hazard.Hazard(), setup_resource.image_view_state->Handle(), error_obj.location, error);
             }
         }
@@ -2620,8 +2622,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                     ss << " ";
                     FormatVideoPictureResouce(*this, video_picture, ss);
                     const std::string resource_description = ss.str();
-                    const auto error =
-                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resource_description);
+                    const std::string error =
+                        error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resource_description);
                     skip |= SyncError(hazard.Hazard(), reference_resource.image_view_state->Handle(), error_obj.location, error);
                 }
             }
@@ -2645,8 +2647,8 @@ bool SyncValidator::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuff
                     ss << " ";
                     FormatVideoQuantizationMap(*this, *quantization_map_info, ss);
                     const std::string resource_description = ss.str();
-                    const auto error =
-                        error_messages_.Error(hazard, *cb_access_context, error_obj.location.function, resource_description);
+                    const std::string error =
+                        error_messages_.VideoError(hazard, *cb_access_context, error_obj.location.function, resource_description);
                     skip |= SyncError(hazard.Hazard(), image_view_state->Handle(), error_obj.location, error);
                 }
             }

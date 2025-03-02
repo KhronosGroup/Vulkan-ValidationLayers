@@ -57,7 +57,8 @@ class ErrorMessages {
     explicit ErrorMessages(vvl::Device& validator);
 
     std::string Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
-                      const std::string& resouce_description, const AdditionalMessageInfo& additional_info = {}) const;
+                      const std::string& resouce_description, const char* message_type,
+                      const AdditionalMessageInfo& additional_info = {}) const;
 
     std::string BufferError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                             const std::string& resource_description, const ResourceAccessRange range,
@@ -139,6 +140,9 @@ class ErrorMessages {
 
     std::string PresentError(const HazardResult& hazard, const QueueBatchContext& batch_context, vvl::Func command,
                              const std::string& resource_description, uint32_t swapchain_index) const;
+
+    std::string VideoError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                           const std::string& resource_description) const;
 
   private:
     vvl::Device& validator_;
