@@ -144,7 +144,7 @@ khronos_validation.enables =
 # Use GPU-AV to do Image Layout checks
 # =====================
 # (Warning - still known to have false positives)
-# Use GPU-AV to detect which descriptors where accessed.
+# Use GPU-AV to detect which descriptors were accessed.
 # Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer
 #khronos_validation.gpuav_image_layout = true
 
