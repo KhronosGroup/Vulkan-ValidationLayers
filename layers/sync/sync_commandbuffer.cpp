@@ -146,15 +146,6 @@ void CommandBufferAccessContext::Reset() {
     dynamic_rendering_info_.reset();
 }
 
-std::string CommandBufferAccessContext::FormatUsage(const char *usage_string, const ResourceFirstAccess &access,
-                                                    ReportKeyValues &key_values) const {
-    std::stringstream out;
-    assert(access.usage_info);
-    out << "(" << usage_string << ": " << access.usage_info->name;
-    out << ", " << FormatUsage(access.TagEx(), key_values) << ")";
-    return out.str();
-}
-
 bool CommandBufferAccessContext::ValidateBeginRendering(const ErrorObject &error_obj,
                                                         syncval_state::BeginRenderingCmdState &cmd_state) const {
     bool skip = false;

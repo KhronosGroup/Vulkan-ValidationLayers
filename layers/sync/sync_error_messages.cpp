@@ -141,7 +141,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
             ss << "another ";
         }
         ss << vvl::String(usage_info.command);
-        if (const auto* debug_region = key_values.FindProperty("debug_region")) {
+        if (const auto* debug_region = key_values.FindProperty(kPropertyPriorDebugRegion)) {
             ss << "[" << *debug_region << "]";
         }
         if (usage_info.command == command) {
