@@ -3669,6 +3669,12 @@ struct AccelerationStructureGeometryInfo {
     ResourceAccessRange vertex_range;
     const vvl::Buffer *index_data = nullptr;
     ResourceAccessRange index_range;
+    const vvl::Buffer *transform_data = nullptr;
+    ResourceAccessRange transform_range;
+    const vvl::Buffer *aabb_data = nullptr;
+    ResourceAccessRange aabb_range;
+    const vvl::Buffer *instance_data = nullptr;
+    ResourceAccessRange instance_range;
 };
 
 static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
@@ -3687,19 +3693,22 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
             return {};
         }
 
-        const auto p_vertex_data = GetSingleBufferFromDeviceAddress(device, triangles.vertexData.deviceAddress);
+        const vvl::Buffer *p_vertex_data = GetSingleBufferFromDeviceAddress(device, triangles.vertexData.deviceAddress);
         if (!p_vertex_data) {
             return {};  // [core validation check]: vertexData must be valid
         }
         AccelerationStructureGeometryInfo geometry_info;
         geometry_info.vertex_data = p_vertex_data;
 
+        const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
+
         if (triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
-            const VkDeviceSize vertex_offset = range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
+            const VkDeviceSize vertex_offset =
+                base_vertex_offset + range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
             const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
             geometry_info.vertex_range = MakeRange(vertex_offset, vertex_data_size);
         } else {
-            const VkDeviceSize vertex_offset = range_info.firstVertex * triangles.vertexStride;
+            const VkDeviceSize vertex_offset = base_vertex_offset + range_info.firstVertex * triangles.vertexStride;
             const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
             const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - vertex_offset;
             geometry_info.vertex_range = MakeRange(vertex_offset, potentially_accessed_vertex_data_size);
@@ -3709,11 +3718,47 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
                 return {};  // [core validation check]: indexData must be good if index type is specified
             }
             geometry_info.index_data = p_index_data;
+            const VkDeviceSize base_index_offset = triangles.indexData.deviceAddress - p_index_data->deviceAddress;
             const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
             const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
-            geometry_info.index_range = MakeRange(range_info.primitiveOffset, index_data_size);
+            geometry_info.index_range = MakeRange(base_index_offset + range_info.primitiveOffset, index_data_size);
+        }
+        // Transform data
+        if (const vvl::Buffer *p_transform_data = GetSingleBufferFromDeviceAddress(device, triangles.transformData.deviceAddress)) {
+            const VkDeviceSize base_offset = triangles.transformData.deviceAddress - p_transform_data->deviceAddress;
+            geometry_info.transform_data = p_transform_data;
+            geometry_info.transform_range = MakeRange(base_offset + range_info.transformOffset, sizeof(VkTransformMatrixKHR));
         }
         return geometry_info;
+    } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
+        const VkAccelerationStructureGeometryAabbsDataKHR &aabbs = geometry.geometry.aabbs;
+        // NOTE: Do not validate when there are gaps in the aabb data.
+        // If it turns out that strided aabbs is a common enough use case, then enable this
+        // validation unconditionally but provide a configuration option to disable the check
+        // for theoretical uses cases that can produce false-positives (and similar considerations
+        // for vertex data).
+        if (aabbs.stride == sizeof(VkAabbPositionsKHR)) {
+            if (const vvl::Buffer *p_aabbs = GetSingleBufferFromDeviceAddress(device, aabbs.data.deviceAddress)) {
+                AccelerationStructureGeometryInfo geometry_info;
+                geometry_info.aabb_data = p_aabbs;
+                const VkDeviceSize base_offset = aabbs.data.deviceAddress - p_aabbs->deviceAddress;
+                const VkDeviceSize aabb_data_size = range_info.primitiveCount * sizeof(VkAabbPositionsKHR);
+                geometry_info.aabb_range = MakeRange(base_offset + range_info.primitiveOffset, aabb_data_size);
+                return geometry_info;
+            }
+        }
+    } else if (geometry.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
+        const VkAccelerationStructureGeometryInstancesDataKHR &instances = geometry.geometry.instances;
+        if (const vvl::Buffer *p_instances = GetSingleBufferFromDeviceAddress(device, instances.data.deviceAddress)) {
+            AccelerationStructureGeometryInfo geometry_info;
+            geometry_info.instance_data = p_instances;
+            const VkDeviceSize base_offset = instances.data.deviceAddress - p_instances->deviceAddress;
+            const VkDeviceSize instance_data_size =
+                range_info.primitiveCount *
+                (instances.arrayOfPointers ? sizeof(VkDeviceAddress) : sizeof(VkAccelerationStructureInstanceKHR));
+            geometry_info.instance_range = MakeRange(base_offset + range_info.primitiveOffset, instance_data_size);
+            return geometry_info;
+        }
     }
     return {};
 }
@@ -3729,7 +3774,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
         // Validate scratch buffer
-        if (const auto p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
+        if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
             // Skip invalid configurations
@@ -3812,7 +3857,10 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 auto hazard = context.DetectHazard(geometry_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ, geometry_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, geometry_data.Handle());
-                    const std::string resource_description = data_description + FormatHandle(geometry_data.Handle());
+                    std::stringstream ss;
+                    ss << data_description << " ";
+                    ss << FormatHandle(geometry_data.Handle());
+                    const std::string resource_description = ss.str();
                     const std::string error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
                                                                           resource_description, geometry_range);
                     return SyncError(hazard.Hazard(), objlist, error_obj.location, error);
@@ -3824,6 +3872,17 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
             }
             if (geometry_info->index_data) {
                 skip |= validate_accel_input_geometry(*geometry_info->index_data, geometry_info->index_range, "index data");
+            }
+            if (geometry_info->transform_data) {
+                skip |=
+                    validate_accel_input_geometry(*geometry_info->transform_data, geometry_info->transform_range, "transform data");
+            }
+            if (geometry_info->aabb_data) {
+                skip |= validate_accel_input_geometry(*geometry_info->aabb_data, geometry_info->aabb_range, "aabb data");
+            }
+            if (geometry_info->instance_data) {
+                skip |=
+                    validate_accel_input_geometry(*geometry_info->instance_data, geometry_info->instance_range, "instance data");
             }
         }
     }
@@ -3902,6 +3961,22 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
                 const ResourceUsageTagEx index_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->index_data->Handle());
                 context.UpdateAccessState(*geometry_info->index_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
                                           SyncOrdering::kNonAttachment, geometry_info->index_range, index_tag_ex);
+            }
+            if (geometry_info->transform_data) {
+                const ResourceUsageTagEx transform_tag_ex =
+                    cb_context.AddCommandHandle(tag, geometry_info->transform_data->Handle());
+                context.UpdateAccessState(*geometry_info->transform_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
+                                          SyncOrdering::kNonAttachment, geometry_info->transform_range, transform_tag_ex);
+            }
+            if (geometry_info->aabb_data) {
+                const ResourceUsageTagEx aabb_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->aabb_data->Handle());
+                context.UpdateAccessState(*geometry_info->aabb_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
+                                          SyncOrdering::kNonAttachment, geometry_info->aabb_range, aabb_tag_ex);
+            }
+            if (geometry_info->instance_data) {
+                const ResourceUsageTagEx instance_tag_ex = cb_context.AddCommandHandle(tag, geometry_info->instance_data->Handle());
+                context.UpdateAccessState(*geometry_info->instance_data, SYNC_ACCELERATION_STRUCTURE_BUILD_SHADER_READ,
+                                          SyncOrdering::kNonAttachment, geometry_info->instance_range, instance_tag_ex);
             }
         }
     }
