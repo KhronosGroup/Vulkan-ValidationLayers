@@ -4145,6 +4145,10 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
         // Stage may not have SPIR-V data (e.g. due to the use of shader module identifier or in Vulkan SC)
         if (!stage.spirv_state) continue;
 
+        // This is being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4194
+        // As a temporary solution, ignore this case to prevent false positives.
+        if (stage.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT) continue;
+
         if (stage.spirv_state->static_data_.has_builtin_layer) {
             const char *vuid = dynamic_rendering ? "VUID-VkGraphicsPipelineCreateInfo-renderPass-06059"
                                                  : "VUID-VkGraphicsPipelineCreateInfo-renderPass-06050";
