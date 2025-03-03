@@ -14,9 +14,23 @@ For those who don't want to build from source, there are few ways to get working
 - For Android, each SDK tag will have binaries to download (example: [vulkan-sdk-1.3.280.0 tag](https://github.com/KhronosGroup/Vulkan-ValidationLayers/releases/tag/vulkan-sdk-1.3.280.0))
 - Every change applied to the main branch runs through GitHub action and will [produce artifacts](https://github.com/KhronosGroup/Vulkan-ValidationLayers/actions?query=branch%3Amain) of the latest commit.
 
-## Adjusting settings
+## Adjusting Settings
 
-See [settings documentation](./docs/settings.md).
+See [documentation](./docs/khronos_validation_layer.md#configuring-the-validation-layer).
+
+## Building From Source
+
+* [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
+* [CONTRIBUTING.md](CONTRIBUTING.md) - Information needed to make a contribution.
+    * [./docs](./docs/) - Details of the Validation Layer source code. **For those wanting to make contributions**
+    * [./tests](./tests) - Information about testing the Validation Layers.
+    * [GOVERNANCE.md](GOVERNANCE.md) - Repository management details.
+
+### Internals
+
+The Validation Layers are broken up as many smaller internal "Validation Objects" each tasked with their own job.
+[Core Checks](./docs/core_checks.md) is what is enabled by default, but there are other validation objects that can be additionally enabled, such as [Synchronization Validation](./docs/syncval_design.md), [GPU Assisted Validation](./docs/gpu_validation.md), and [more](./docs/README.md).
+There are also a few [limitations](./docs/limitations.md) stemming from the Validation layers being a Vulkan layer.
 
 ## Community Assistance
 
@@ -31,20 +45,6 @@ These resources can be helpful to refine your issue, work out an application/dri
 ## Contact Information
 * @KhronosGroup/VVL-CODEOWNERS
 * VVL-CODEOWNERS can also be found on aforementioned Slack channel for direct contact.
-
-## Info
-* [BUILD.md](BUILD.md) - Instructions for building the Validation Layers
-* [KHRONOS_VALIDATION_LAYER.md](docs/khronos_validation_layer.md) - Instructions for configuring the Validation Layers
-* [CONTRIBUTING.md](CONTRIBUTING.md) - Information needed to make a contribution.
-    * [./docs](./docs/) - Details of the Validation Layer source code. **For those wanting to make contributions**
-    * [./tests](./tests) - Information about testing the Validation Layers.
-    * [GOVERNANCE.md](GOVERNANCE.md) - Repository management details.
-
-### Internals
-
-The Validation Layers are broken up as many smaller internal "Validation Objects" each tasked with their own job.
-[Core Checks](./docs/core_checks.md) is what is enabled by default, but there are other validation objects that can be additionally enabled, such as [Synchronization Validation](./docs/syncval_design.md), [GPU Assisted Validation](./docs/gpu_validation.md), and [more](./docs/README.md).
-There are also a few [limitations](./docs/limitations.md) stemming from the Validation layers being a Vulkan layer.
 
 ## Version Tagging Scheme
 
