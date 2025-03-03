@@ -1270,6 +1270,10 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawDualSourceBlend(last_bound_state, vuid);
 
+        if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
+            skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, pipeline, *cb_state.active_render_pass, loc);
+        }
+
         if (pipeline) {
             skip |= ValidateDrawPipeline(last_bound_state, *pipeline, vuid);
         } else {

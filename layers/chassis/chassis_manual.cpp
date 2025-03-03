@@ -41,14 +41,14 @@ static void InstanceExtensionWhitelist(vvl::dispatch::Instance* layer_data, cons
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (extension == vvl::Extension::Empty) {
-            layer_data->LogWarning("UNASSIGNED-CreateInstance-extension-not-found", layer_data->instance,
+            layer_data->LogWarning("WARNING-CreateInstance-extension-not-found", layer_data->instance,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not a known extension string. Please make sure the spelling is correct. (If working on a "
                                    "new extension, the validation code generation needs to be ran with the new vk.xml)",
                                    pCreateInfo->ppEnabledExtensionNames[i]);
         } else if (!IsInstanceExtension(extension)) {
             layer_data->LogWarning(
-                "UNASSIGNED-CreateInstance-extension-wrong-type", layer_data->instance,
+                "WARNING-CreateInstance-extension-wrong-type", layer_data->instance,
                 loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                 "%s is a device extension, not a instance extension. It should be set later during vkCreateDevice() time. (If you "
                 "are trying to enable the device extensions because it has some physical device level info, it is valid to query "
@@ -64,14 +64,14 @@ static void DeviceExtensionWhitelist(vvl::dispatch::Device* layer_data, const Vk
     for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
         vvl::Extension extension = GetExtension(pCreateInfo->ppEnabledExtensionNames[i]);
         if (extension == vvl::Extension::Empty) {
-            layer_data->LogWarning("UNASSIGNED-CreateDevice-extension-not-found", layer_data->device,
+            layer_data->LogWarning("WARNING-CreateDevice-extension-not-found", layer_data->device,
                                    loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                                    "%s is not a known extension string. Please make sure the spelling is correct. (If working on a "
                                    "new extension, the validation code generation needs to be ran with the new vk.xml)",
                                    pCreateInfo->ppEnabledExtensionNames[i]);
         } else if (!IsDeviceExtension(extension)) {
             layer_data->LogWarning(
-                "UNASSIGNED-CreateDevice-extension-wrong-type", layer_data->device,
+                "WARNING-CreateDevice-extension-wrong-type", layer_data->device,
                 loc.dot(vvl::Field::pCreateInfo).dot(vvl::Field::ppEnabledExtensionNames, i),
                 "%s is a instance extension, not a device extension. It should be set before at vkCreateInstance().",
                 pCreateInfo->ppEnabledExtensionNames[i]);
