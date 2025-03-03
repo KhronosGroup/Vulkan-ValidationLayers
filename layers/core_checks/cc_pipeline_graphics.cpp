@@ -3089,26 +3089,30 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
     }
 
     if (pipeline.OwnsSubState(pipeline.fragment_output_state)) {
-        for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
-            const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
-            if (color_format != VK_FORMAT_UNDEFINED) {
-                VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
-                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
-                    (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
-                     (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
-                    skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062", device,
-                        create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, color_index).dot(Field::blendEnable),
-                        "is VK_TRUE.");
-                }
+        // Can remove this if when https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9248 is added
+        if (rendering_struct->pColorAttachmentFormats) {
+            for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
+                const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
+                if (color_format != VK_FORMAT_UNDEFINED) {
+                    VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
+                    if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
+                        (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
+                         (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06062", device,
+                                         create_info_loc.dot(Field::pColorBlendState)
+                                             .dot(Field::pAttachments, color_index)
+                                             .dot(Field::blendEnable),
+                                         "is VK_TRUE.");
+                    }
 
-                if ((format_features &
-                     (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                    skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
-                        create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, color_index),
-                        "(%s) potential format features are %s.", string_VkFormat(color_format),
-                        string_VkFormatFeatureFlags2(format_features).c_str());
+                    if ((format_features &
+                         (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
+                                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo,
+                                                               Field::pColorAttachmentFormats, color_index),
+                                         "(%s) potential format features are %s.", string_VkFormat(color_format),
+                                         string_VkFormatFeatureFlags2(format_features).c_str());
+                    }
                 }
             }
         }
