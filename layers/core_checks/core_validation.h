@@ -2001,7 +2001,7 @@ class CoreChecks : public vvl::Device {
                                          const RecordObject& record_obj) override;
     bool ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                              const VkSubpassFragmentDensityMapOffsetEndInfoQCOM& fdm_offset_end_info,
-                                             const Location& subpass_end_loc) const;
+                                             const Location& end_info_loc) const;
 
     class ViewportScissorInheritanceTracker;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,

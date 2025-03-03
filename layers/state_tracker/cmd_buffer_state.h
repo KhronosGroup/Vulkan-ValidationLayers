@@ -76,6 +76,9 @@ struct AttachmentInfo {
         DepthResolve,
         Stencil,
         StencilResolve,
+        // pNext extended attachment types
+        FragmentDensityMap,
+        FragmentShadingRate,
     };
 
     vvl::ImageView *image_view;
@@ -86,6 +89,12 @@ struct AttachmentInfo {
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }
     bool IsColor() const { return type == Type::Color; }
+    bool IsDepthOrStencil() const {
+        return type == Type::DepthStencil || type == Type::Depth || type == Type::DepthResolve || type == Type::Stencil ||
+               type == Type::StencilResolve;
+    }
+    bool IsFragmentDensityMap() const { return type == Type::FragmentDensityMap; }
+    bool IsFragmentShadingRate() const { return type == Type::FragmentShadingRate; }
 
     std::string Describe(AttachmentSource source, uint32_t index) const;
 };

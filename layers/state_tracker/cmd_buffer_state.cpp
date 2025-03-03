@@ -18,6 +18,7 @@
  * limitations under the License.
  */
 #include "state_tracker/cmd_buffer_state.h"
+#include <vulkan/vulkan_core.h>
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
@@ -63,6 +64,10 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
                 return "Stencil";
             case Type::StencilResolve:
                 return "Stencil Resolve";
+            case Type::FragmentDensityMap:
+                return "Fragment Density Map";
+            case Type::FragmentShadingRate:
+                return "Fragment Shading Rate";
             default:
                 break;
         }
@@ -84,6 +89,10 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
             ss << "pDepthAttachment.imageView";
         } else if (type == Type::StencilResolve) {
             ss << "pStencilAttachment.resolveImageView";
+        } else if (type == Type::FragmentDensityMap) {
+            ss << "pNext<VkRenderingFragmentDensityMapAttachmentInfoEXT>.imageView";
+        } else if (type == Type::FragmentShadingRate) {
+            ss << "pNext<VkRenderingFragmentShadingRateAttachmentInfoKHR>.imageView";
         }
     } else {
         ss << "VkRenderPassCreateInfo::pAttachments[" << index << "] (" << type_string(type) << ")";
@@ -578,6 +587,31 @@ void CommandBuffer::UpdateSubpassAttachments() {
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
             active_subpasses[attachment_index].layout = subpass.pDepthStencilAttachment->layout;
             active_subpasses[attachment_index].aspectMask = subpass.pDepthStencilAttachment->aspectMask;
+        }
+    }
+
+    if (auto rdm_ci =
+            vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(active_render_pass->create_info.pNext)) {
+        const uint32_t attachment_index = rdm_ci->fragmentDensityMapAttachment.attachment;
+        if (attachment_index != VK_ATTACHMENT_UNUSED) {
+            active_attachments[attachment_index].type = AttachmentInfo::Type::FragmentDensityMap;
+            active_subpasses[attachment_index].used = true;
+            active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT;
+            active_subpasses[attachment_index].layout = rdm_ci->fragmentDensityMapAttachment.layout;
+            active_subpasses[attachment_index].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        }
+    }
+
+    if (auto rdr_attachment_ci = vku::FindStructInPNextChain<VkFragmentShadingRateAttachmentInfoKHR>(subpass.pNext)) {
+        if (rdr_attachment_ci->pFragmentShadingRateAttachment) {
+            const uint32_t attachment_index = rdr_attachment_ci->pFragmentShadingRateAttachment->attachment;
+            if (attachment_index != VK_ATTACHMENT_UNUSED) {
+                active_attachments[attachment_index].type = AttachmentInfo::Type::FragmentShadingRate;
+                active_subpasses[attachment_index].used = true;
+                active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+                active_subpasses[attachment_index].layout = rdr_attachment_ci->pFragmentShadingRateAttachment->layout;
+                active_subpasses[attachment_index].aspectMask = rdr_attachment_ci->pFragmentShadingRateAttachment->aspectMask;
+            }
         }
     }
 }
