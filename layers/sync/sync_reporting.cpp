@@ -118,7 +118,7 @@ std::string ReportKeyValues::GetExtraPropertiesSection(bool pretty_print) const 
     }
     const auto sorted = SortKeyValues(key_values);
     std::stringstream ss;
-    ss << "\n[Extra properties]\n";
+    ss << "[Extra properties]\n";
     bool first = true;
     for (const auto &kv : sorted) {
         if (!first) {
