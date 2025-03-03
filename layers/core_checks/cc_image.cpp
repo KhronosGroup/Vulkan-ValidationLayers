@@ -325,7 +325,8 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         }
 
         // Depth/Stencil formats size can't be accurately calculated
-        if (!vkuFormatIsDepthAndStencil(pCreateInfo->format)) {
+        // MipLevel image are hard to calculate (because when it is a non-power of 2) so just ignore
+        if (!vkuFormatIsDepthAndStencil(pCreateInfo->format) && pCreateInfo->mipLevels == 1) {
             const uint64_t texel_count =
                 static_cast<uint64_t>(pCreateInfo->extent.width) * static_cast<uint64_t>(pCreateInfo->extent.height) *
                 static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
@@ -339,11 +340,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             total_size = (total_size + ig_mask) & ~ig_mask;
 
             if (total_size > format_limits.maxResourceSize) {
-                // This is only a best estimate, it is hard to accurately calculate the size when doing things like mip levels
-                skip |= LogWarning("WARNING-Image-InvalidFormatLimitsViolation", device, error_obj.location,
-                                   "resource size exceeds allowable maximum Image resource size = %" PRIu64
-                                   ", maximum resource size = %" PRIu64 " for format %s.",
-                                   total_size, format_limits.maxResourceSize, string_VkFormat(pCreateInfo->format));
+                skip |= LogWarning("WARNING-VkImageCreateInfo-maxResourceSize", device, error_obj.location,
+                                   "will be %" PRIu64 " bytes and the VkImageFormatProperties::maxResourceSize is %" PRIu64
+                                   ".\nThe total was calulated from format %s having a texel size of %" PRIu32
+                                   " bytes with %" PRIu64 " texels and a bufferImageGranularity of %" PRIu64 ".",
+                                   total_size, format_limits.maxResourceSize, string_VkFormat(pCreateInfo->format),
+                                   (uint32_t)vkuFormatTexelSize(pCreateInfo->format), texel_count, image_granularity);
             }
         }
 
