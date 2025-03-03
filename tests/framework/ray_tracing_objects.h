@@ -265,7 +265,7 @@ GeometryKHR GeometrySimpleOnHostIndexedTriangleInfo();
 // Cube centered at position (0,0,0), 2.0f wide
 GeometryKHR GeometryCubeOnDeviceInfo(const vkt::Device& device);
 
-GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device);
+GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device& device, VkBufferUsageFlags additional_geometry_buffer_flags = 0);
 GeometryKHR GeometrySimpleOnHostAABBInfo();
 
 GeometryKHR GeometrySimpleDeviceInstance(const vkt::Device& device, VkAccelerationStructureKHR device_blas);

@@ -190,3 +190,64 @@ TEST_F(PositiveSyncValRayTracing, ReadIndexDataDuringBuild) {
     m_command_buffer.Copy(index_buffer, dst_buffer);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRayTracing, ReadTransformDataDuringBuild) {
+    TEST_DESCRIPTION("Use transform data as a copy source while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& transform_data = triangles_geometry.device_transform_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer dst_buffer(*m_device, transform_data.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Copy(transform_data, dst_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, ReadAABBDataDuringBuild) {
+    TEST_DESCRIPTION("Use AABB data as a copy source while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceAABBInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& aabbs_geometry = blas.GetGeometries()[0].GetAABBs();
+    const vkt::Buffer& aabb_buffer = aabbs_geometry.device_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer dst_buffer(*m_device, aabb_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Copy(aabb_buffer, dst_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, ReadInstanceDataDuringBuild) {
+    TEST_DESCRIPTION("Use instance data as a copy source while it is used by the AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device);
+    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry)));
+    blas->SetupBuild(true);
+    m_command_buffer.Begin();
+    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    const auto& instance = tlas.GetGeometries()[0].GetInstance();
+    tlas.SetupBuild(true);
+    vkt::Buffer dst_buffer(*m_device, instance.buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.Copy(instance.buffer, dst_buffer);
+    m_command_buffer.End();
+}
