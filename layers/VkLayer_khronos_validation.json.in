@@ -426,7 +426,7 @@
                                     "settings": [
                                         {
                                             "key": "syncval_message_extra_properties",
-                                            "label": "Extra key-value properties",
+                                            "label": "Extra properties",
                                             "description": "Append a section of key-value properties to the error message. Useful for filtering errors.",
                                             "type": "BOOL",
                                             "default": false,
