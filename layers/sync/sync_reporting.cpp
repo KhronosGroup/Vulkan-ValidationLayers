@@ -205,7 +205,7 @@ static std::string FormatResourceUsageRecord(const ResourceUsageRecord::Formatte
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
             if (!debug_region_name.empty()) {
                 out << ", debug_region: " << debug_region_name;
-                key_values.Add(kPropertyDebugRegion, debug_region_name);
+                key_values.Add(kPropertyPriorDebugRegion, debug_region_name);
             }
         }
     }
