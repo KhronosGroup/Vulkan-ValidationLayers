@@ -233,7 +233,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
 
     // Give a hint for WAR hazard
     if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
-        ss << " An execution dependency is sufficient to prevent this hazard.";
+        ss << "\nVulkan insight: an execution dependency is sufficient to prevent this hazard.";
     }
 }
 
@@ -264,11 +264,14 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
     FormatCommonMessage(hazard, resouce_description, command, key_values, context, additional_info, ss);
 
     if (!additional_info.message_end_text.empty()) {
-        ss << " " << additional_info.message_end_text;
+        ss << additional_info.message_end_text;
     }
 
     std::string message = ss.str();
     if (extra_properties_) {
+        if (!message.empty() && message.back() != '\n') {
+            message += '\n';
+        }
         message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
@@ -278,42 +281,60 @@ std::string ErrorMessages::BufferError(const HazardResult& hazard, const Command
                                        const std::string& resource_description, const ResourceAccessRange range,
                                        AdditionalMessageInfo additional_info) const {
     std::stringstream ss;
-    ss << "Buffer access region: (offset = " << range.begin;
-    ss << ", size = " << range.end - range.begin << ").";
+    ss << "\nBuffer access region: {\n";
+    ss << "  offset = " << range.begin << "\n";
+    ss << "  size = " << range.end - range.begin << "\n";
+    ss << "}\n";
     additional_info.message_end_text += ss.str();
+
     return Error(hazard, cb_context, command, resource_description, "BufferError", additional_info);
 }
 
-std::string ErrorMessages::BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                             const vvl::Func command, const std::string& resource_description,
-                                             uint32_t region_index, ResourceAccessRange region_range) const {
-    std::stringstream ss;
-    ss << "Buffer copy region: " << region_index << " (offset = " << region_range.begin;
-    ss << ", size = " << region_range.end - region_range.begin << ").";
-
+std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                           const vvl::Func command, const std::string& resource_description, uint32_t region_index,
+                                           ResourceAccessRange range) const {
     AdditionalMessageInfo additional_info;
-    additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    return Error(hazard, cb_context, command, resource_description, "BufferRegionError", additional_info);
+    std::stringstream ss;
+    ss << "\nBuffer copy region " << region_index << ": {\n";
+    ss << "  offset = " << range.begin << ",\n";
+    ss << "  size = " << range.end - range.begin << "\n";
+    ss << "}\n";
+    additional_info.message_end_text = ss.str();
+
+    return Error(hazard, cb_context, command, resource_description, "BufferCopyError", additional_info);
 }
 
-std::string ErrorMessages::ImageRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                            vvl::Func command, const std::string& resource_description, uint32_t region_index,
-                                            const VkOffset3D& offset, const VkExtent3D& extent,
-                                            const VkImageSubresourceLayers& subresource) const {
-    const bool is_blit = IsValueIn(command, {vvl::Func::vkCmdBlitImage, vvl::Func::vkCmdBlitImage2, vvl::Func::vkCmdBlitImage2KHR});
+std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                     vvl::Func command, const std::string& resource_description,
+                                                     uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,
+                                                     const VkImageSubresourceLayers& subresource) const {
+    const char* action = nullptr;
+    const char* message_type = nullptr;
+    if (IsValueIn(command, {vvl::Func::vkCmdBlitImage, vvl::Func::vkCmdBlitImage2, vvl::Func::vkCmdBlitImage2KHR})) {
+        action = "blit";
+        message_type = "ImageBlitError";
+    } else if (IsValueIn(command,
+                         {vvl::Func::vkCmdResolveImage, vvl::Func::vkCmdResolveImage2, vvl::Func::vkCmdResolveImage2KHR})) {
+        action = "resolve";
+        message_type = "ImageResolveError";
+    } else {
+        action = "copy";
+        message_type = "ImageCopyError";
+    }
     std::stringstream ss;
-    ss << "Image " << (is_blit ? "blit" : "copy") << " region: " << region_index;
-    ss << " (offset = {" << string_VkOffset3D(offset) << "}, ";
-    ss << "extent = {" << string_VkExtent3D(extent) << "}, ";
-    ss << "subresource = {" << string_VkImageSubresourceLayers(subresource) << "}).";
+    ss << "\nImage " << action << " region " << region_index << ": {\n";
+    ss << "  offset = {" << string_VkOffset3D(offset) << "},\n";
+    ss << "  extent = {" << string_VkExtent3D(extent) << "},\n";
+    ss << "  subresource = {" << string_VkImageSubresourceLayers(subresource) << "}\n";
+    ss << "}\n";
 
     AdditionalMessageInfo additional_info;
     additional_info.message_end_text = ss.str();
     additional_info.properties.Add(kPropertyRegionIndex, region_index);
 
-    return Error(hazard, cb_context, command, resource_description, "ImageRegionError", additional_info);
+    return Error(hazard, cb_context, command, resource_description, message_type, additional_info);
 }
 
 std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,

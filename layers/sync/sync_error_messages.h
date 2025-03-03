@@ -64,13 +64,13 @@ class ErrorMessages {
                             const std::string& resource_description, const ResourceAccessRange range,
                             AdditionalMessageInfo additional_info = {}) const;
 
-    std::string BufferRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, const vvl::Func command,
-                                  const std::string& resouce_description, uint32_t region_index,
-                                  ResourceAccessRange region_range) const;
+    std::string BufferCopyError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, const vvl::Func command,
+                                const std::string& resouce_description, uint32_t region_index, ResourceAccessRange range) const;
 
-    std::string ImageRegionError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                 const std::string& resource_description, uint32_t region_index, const VkOffset3D& offset,
-                                 const VkExtent3D& extent, const VkImageSubresourceLayers& subresource) const;
+    std::string ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                          vvl::Func command, const std::string& resource_description, uint32_t region_index,
+                                          const VkOffset3D& offset, const VkExtent3D& extent,
+                                          const VkImageSubresourceLayers& subresource) const;
 
     std::string ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                            vvl::Func command, const std::string& resource_description,
