@@ -170,7 +170,10 @@ class small_vector {
         }
     }
 
-    ~small_vector() { clear(); }
+    ~small_vector() {
+        clear();
+        delete[] large_store_;
+    }
 
     bool operator==(const small_vector &rhs) const {
         if (size_ != rhs.size_) return false;
@@ -332,13 +335,14 @@ class small_vector {
         // Since this can't shrink, if we're growing we're newing
         if (new_cap > capacity_) {
             assert(capacity_ >= kSmallCapacity);
-            auto new_store = std::unique_ptr<BackingStore[]>(new BackingStore[new_cap]);
+            auto new_store = new BackingStore[new_cap];
             auto working_store = GetWorkingStore();
             for (size_type i = 0; i < size_; i++) {
                 new (new_store[i].data) value_type(std::move(working_store[i]));
                 working_store[i].~value_type();
             }
-            large_store_ = std::move(new_store);
+            delete[] large_store_;
+            large_store_ = new_store;
             assert(new_cap > kSmallCapacity);
             capacity_ = new_cap;
         }
@@ -371,17 +375,19 @@ class small_vector {
         if (size_ == 0) {
             // shrink resets to small when empty
             capacity_ = kSmallCapacity;
-            large_store_.reset();
+            delete[] large_store_;
+            large_store_ = nullptr;
             UpdateWorkingStore();
         } else if ((capacity_ > kSmallCapacity) && (capacity_ > size_)) {
             auto source = GetWorkingStore();
             // Keep the source from disappearing until the end of the function
-            auto old_store = std::unique_ptr<BackingStore[]>(std::move(large_store_));
+            auto old_store = large_store_;
+            large_store_ = nullptr;
             assert(!large_store_);
             if (size_ < kSmallCapacity) {
                 capacity_ = kSmallCapacity;
             } else {
-                large_store_ = std::unique_ptr<BackingStore[]>(new BackingStore[size_]);
+                large_store_ = new BackingStore[size_];
                 capacity_ = size_;
             }
             UpdateWorkingStore();
@@ -390,6 +396,7 @@ class small_vector {
                 dest[i] = std::move(source[i]);
                 source[i].~value_type();
             }
+            delete[] old_store;
         }
     }
 
@@ -410,13 +417,13 @@ class small_vector {
     inline const_pointer ComputeWorkingStore() const {
         assert(large_store_ || (capacity_ == kSmallCapacity));
 
-        const BackingStore *store = large_store_ ? large_store_.get() : small_store_;
+        const BackingStore *store = large_store_ ? large_store_ : small_store_;
         return &store->object;
     }
     inline pointer ComputeWorkingStore() {
         assert(large_store_ || (capacity_ == kSmallCapacity));
 
-        BackingStore *store = large_store_ ? large_store_.get() : small_store_;
+        BackingStore *store = large_store_ ? large_store_ : small_store_;
         return &store->object;
     }
 
@@ -440,11 +447,13 @@ class small_vector {
         uint8_t data[sizeof(value_type)];
         value_type object;
     };
-    size_type size_;
-    size_type capacity_;
-    BackingStore small_store_[N];
-    std::unique_ptr<BackingStore[]> large_store_;
-    value_type *working_store_;
+    size_type size_ = 0;
+    size_type capacity_ = 0;
+    BackingStore small_store_[N]{};
+    // Even an empty std::unique_ptr can be costly to construct,
+    // so use a raw pointer
+    BackingStore *large_store_ = nullptr;
+    value_type *working_store_ = nullptr;
 
 #ifndef NDEBUG
     void DbgWorkingStoreCheck() const { assert(ComputeWorkingStore() == working_store_); };
@@ -457,7 +466,9 @@ class small_vector {
         assert(other.large_store_);
         assert(other.capacity_ > kSmallCapacity);
         // In move operations, from a small vector with a large store, we can move from it
-        large_store_ = std::move(other.large_store_);
+        delete[] large_store_;
+        large_store_ = other.large_store_;
+        other.large_store_ = nullptr;
         capacity_ = other.capacity_;
         size_ = other.size_;
         UpdateWorkingStore();
