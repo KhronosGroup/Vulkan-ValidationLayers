@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2015-2023 LunarG, Inc. -->
+<!-- Copyright 2015-2025 LunarG, Inc. -->
 
 [![Khronos Vulkan][1]][2]
 
@@ -14,73 +14,65 @@ Any errors in Vulkan usage can result in unexpected behavior or even a crash.  T
 can be used to to assist developers in isolating incorrect usage, and in verifying that applications
 correctly use the API.
 
-**Note:**
-
-* Most *Khronos Validation layer* features can be used simultaneously. However, this could result in noticeable performance degradation. The best practice is to run *Core validation*, *GPU-Assisted validation*, *Synchronization Validation* and *Best practices validation* features individually.
-
-* *Debug Printf functionality* and *GPU-Assisted validation* cannot be run at the same time.
-
 ## Configuring the Validation Layer
 
-For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document. With Vulkan Header 272, `VK_EXT_validation_features` was deprecated and replaced with `VK_EXT_layer_settings` enabling all settings to be controlled programmatically.
+There are 4 ways to configure the settings: `vkconfig`, `application defined`, `vk_layer_settings.txt`, `environment variables`
 
-The Validation Layer settings are documented in detail in the
-[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
+## VkConfig
 
-The Validation Layer can also be enabled and configured using vkconfig. See the [vkconfig](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) documentation for more information.
+We suggest people to use [VkConfig](https://www.lunarg.com/introducing-the-new-vulkan-configurator-vkconfig/).
 
+The GUI comes with the SDK, and takes the `VkLayer_khronos_validation.json` file and does **everything** for you!
 
-## Layer feedback
-The Vulkan Debug Utils extension provides methods of accessing and controlling feedback from the layers:
+## Application Defined
 
-| Extension                 | Description                       |
-| ------------------------ | ---------------------------- |
-|  [VK_EXT_debug_utils](#debugutils)  | allows application control and capture of debug reporting information   |
+The application can now use the `VK_EXT_layer_settings` extension to do everything at `vkCreateInstance` time. (Don't worry, we implement the extension, so it will be supported 100% of the time!).
 
+```c++
+// Example how to turn on verbose mode for DebugPrintf
+const VkBool32 verbose_value = true;
+const VkLayerSettingEXT layer_setting = {"VK_LAYER_KHRONOS_validation", "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &verbose_value};
+VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1, &layer_setting};
 
-### <a name="debugutils"></a>VK\_EXT\_debug\_utils
-The preferred method for an app to control layer logging is via the `VK_EXT_debug_utils` extension.
-Using the `VK_EXT_debug_utils` extension allows an application to register multiple messengers with the layers.
-Each messenger can trigger a message callback when a log message occurs.
-Some messenger callbacks may log the information to a file, others may cause a debug break point or other-application defined behavior.
-An application can create a messenger even when no layers are enabled, but they will only be called for loader and, if implemented, driver events.
-Each message is identified by both a severity level and a message type.
-Severity levels indicate the severity of the message that should be logged including: error, warning, etc.
-Message types indicate the specific type of message including: validation, performance, etc.
-Some layers return a unique message ID string per message as well.
-Using the severity, type, and message ID, an application can easily filter the messages received by their messenger callback.
-
-When reporting an error, the KHRONOS validation layer returns relevant specification information and a link to that information
-in the official Vulkan specification. Layers included in a Vulkan SDK will link to a version of the Vulkan specification
-annotated with valid usage identifiers.
-
-#### Message Types As Reported By VK\_EXT\_debug\_utils flags:
-
-| Type     |    Debug Utils Severity          |    Debug Utils Type          |
-| ---------|----------------------------------|------------------------------|
-| Error | `VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT` | `VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT` |
-| Warn | `VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT` | `VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT` |
-| Perf Warn | `VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT` | `VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT` |
-| Info | `VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT` | `VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT` or `VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT` |
-
-By default, if an app uses the VK_EXT_debug_utils extension and registers a messenger, the validation layer default messenger log callback will not
-execute, as it is considered to be handled by the app. However, using the validation layer callback can be very useful, as it provides a unified log
-that can be easily parsed. On Android, the validation layer default callback can be forced to always execute, and log its contents to logcat, using
-the following system property:
-
-```bash
-adb shell setprop debug.vvl.forcelayerlog 1
+VkInstanceCreateInfo instance_ci = GetYourCreateInfo();
+instance_ci.pNext = &layer_settings_create_info;
 ```
 
-The debug.vvl namespace signifies validation layers, and setting this property forces the validation layer callback to always execute, even if the app registers
-a messenger callback itself. This is especially useful for automation tasks, ensuring that errors can be read in a parseable format.
+## vk_layer_settings.txt
 
-Refer to [VK_EXT_debug_utils](https://www.khronos.org/registry/vulkan/specs/1.3-extensions/html/vkspec.html#VK_EXT_debug_utils)
-in the Vulkan Specification for details on this feature.
+There is info [elsewhere](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) to describe this file, but the short answer is to set the `VK_LAYER_SETTINGS_PATH` like the following:
+
+```bash
+# windows
+set VK_LAYER_SETTINGS_PATH=C:\path\to\vk_layer_settings.txt
+
+# linux
+export VK_LAYER_SETTINGS_PATH=/path/to/vk_layer_settings.txt
+```
+
+and it will set things for you in that file. We have a [default example](../layers/vk_layer_settings.txt) file you can start with.
+
+## Environment Variables
+
+This is done for us via the `vkuCreateLayerSettingSet` call in the [Vulkan-Utility-Libraries](https://github.com/KhronosGroup/Vulkan-Utility-Libraries/).
+
+As an example, in our `VkLayer_khronos_validation.json` file you will find something like `"key": "message_id_filter",`.
+
+From here you just need to adjust it the naming and prefix depending on your platform:
+
+```bash
+# Windows
+set VK_LAYER_MESSAGE_ID_FILTER=VUID-VkInstanceCreateInfo-pNext-pNext
+
+# Linux
+export VK_LAYER_MESSAGE_ID_FILTER=VUID-VkInstanceCreateInfo-pNext-pNext
+
+# Android
+adb setprop debug.vulkan.khronos_validation.message_id_filter=VUID-VkInstanceCreateInfo-pNext-pNext
+```
 
 ## Layer Options
 
+> We suggest using `VkConfig` to discover the options, but the following is generated per SDK version
+
 The options for this layer are specified in VkLayer_khronos_validation.json. The option details are in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html).
-
-
-
