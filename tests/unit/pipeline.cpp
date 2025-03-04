@@ -443,18 +443,6 @@ TEST_F(NegativePipeline, SamplePNextUnknown) {
     CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
 }
 
-TEST_F(NegativePipeline, SamplePNextDisabled) {
-    TEST_DESCRIPTION("Pass valid pNext VkPipelineMultisampleStateCreateInfo, but without extension enabled");
-    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    VkPipelineSampleLocationsStateCreateInfoEXT sample_locations = vku::InitStructHelper();
-    sample_locations.sampleLocationsInfo = vku::InitStructHelper();
-    auto bad_chain = [&sample_locations](CreatePipelineHelper &helper) { helper.ms_ci_.pNext = &sample_locations; };
-    CreatePipelineHelper::OneshotTest(*this, bad_chain, kErrorBit, "VUID-VkPipelineMultisampleStateCreateInfo-pNext-pNext");
-}
-
 TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     TEST_DESCRIPTION("Test creating two pipelines referring to the same subpass but with different rasterization samples count");
 

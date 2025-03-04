@@ -234,37 +234,6 @@ TEST_F(VkLayerTest, SpecLinksExplicit) {
 }
 #endif  // ANNOTATED_SPEC_LINK
 
-TEST_F(VkLayerTest, UsePnextOnlyStructWithoutExtensionEnabled) {
-    TEST_DESCRIPTION(
-        "Validate that using VkPipelineTessellationDomainOriginStateCreateInfo in VkPipelineTessellationStateCreateInfo.pNext "
-        "in a 1.0 context will generate an error message.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_0);
-    AddRequiredFeature(vkt::Feature::tessellationShader);
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj tcs(this, kTessellationControlMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
-    VkShaderObj tes(this, kTessellationEvalMinimalGlsl, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
-    VkShaderObj fs(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
-    VkPipelineInputAssemblyStateCreateInfo iasci{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO, nullptr, 0,
-                                                 VK_PRIMITIVE_TOPOLOGY_PATCH_LIST, VK_FALSE};
-    VkPipelineTessellationDomainOriginStateCreateInfo tessellationDomainOriginStateInfo = {
-        VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_DOMAIN_ORIGIN_STATE_CREATE_INFO, VK_NULL_HANDLE,
-        VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT};
-    VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
-                                               &tessellationDomainOriginStateInfo, 0, 3};
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.pTessellationState = &tsci;
-    pipe.gp_ci_.pInputAssemblyState = &iasci;
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), tcs.GetStageCreateInfo(), tes.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-
-    m_errorMonitor->SetDesiredError("VUID-VkPipelineTessellationStateCreateInfo-pNext-pNext");
-    pipe.CreateGraphicsPipeline();
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkLayerTest, PnextOnlyStructValidation) {
     TEST_DESCRIPTION("See if checks occur on structs ONLY used in pnext chains.");
 
@@ -1221,29 +1190,6 @@ TEST_F(VkLayerTest, DescriptorBufferNoExtension) {
     buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkBufferCreateInfo-None-09499");
     vk::CreateBuffer(*m_device, &buffer_ci, nullptr, &buffer);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkLayerTest, MissingExtensionStruct) {
-    TEST_DESCRIPTION("Don't add extension but use extended structure");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init());
-    if (!DeviceExtensionSupported(VK_KHR_MAINTENANCE_5_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_maintenance5 not supported";
-    }
-
-    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-
-    // added in VK_KHR_maintenance5
-    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
-
-    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
-    buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    buffer_view_ci.range = VK_WHOLE_SIZE;
-    buffer_view_ci.buffer = buffer.handle();
-    m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-pNext-pNext");
-    vkt::BufferView view(*m_device, buffer_view_ci);
     m_errorMonitor->VerifyFound();
 }
 

@@ -632,34 +632,3 @@ TEST_F(VkPortabilitySubsetTest, InstanceCreateEnumerate) {
         vk::DestroyInstance(local_instance, nullptr);
     }
 }
-
-TEST_F(VkPortabilitySubsetTest, FeatureWithoutExtension) {
-    TEST_DESCRIPTION("Make sure can't use portability without VK_KHR_portability_subset");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(Init());
-
-    if (DeviceExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME)) {
-        GTEST_SKIP() << "Test needs no VK_KHR_portability_subset support";
-    }
-
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR feature = vku::InitStructHelper();
-
-    vkt::PhysicalDevice physical_device(Gpu());
-    vkt::QueueCreateInfoArray queue_info(physical_device.queue_properties_);
-    std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
-    auto qci = queue_info.Data();
-    for (uint32_t i = 0; i < queue_info.Size(); ++i) {
-        if (qci[i].queueCount) {
-            create_queue_infos.push_back(qci[i]);
-        }
-    }
-
-    VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&feature);
-    device_create_info.queueCreateInfoCount = queue_info.Size();
-    device_create_info.pQueueCreateInfos = queue_info.Data();
-    VkDevice testDevice;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(Gpu(), &device_create_info, NULL, &testDevice);
-    m_errorMonitor->VerifyFound();
-}

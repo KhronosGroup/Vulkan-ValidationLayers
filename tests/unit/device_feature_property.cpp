@@ -231,27 +231,6 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceFeatures2) {
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    VkPhysicalDeviceFeatures2 pd_features2 = vku::InitStructHelper();
-    m_second_device_ci.pNext = &pd_features2;
-
-    // VUID-VkDeviceCreateInfo-pNext-pNext
-    m_errorMonitor->SetDesiredError("its parent extension VK_KHR_get_physical_device_properties2 has not been enabled");
-    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeDeviceFeatureProperty, VertexAttributeDivisor) {
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    VkPhysicalDeviceVertexAttributeDivisorFeaturesEXT vadf = vku::InitStructHelper();
-    m_second_device_ci.pNext = &vadf;
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan11Features) {
     TEST_DESCRIPTION("Use both VkPhysicalDeviceVulkan11Features mixed with the old struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -375,69 +354,6 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddress) {
     m_second_device_ci.ppEnabledExtensionNames = &extension_names;
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-04748");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceGlobalPriorityQueryFeaturesKHR) {
-    TEST_DESCRIPTION(
-        "VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR has an EXT and KHR extension that can enable it, but we forgot both");
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    if (!DeviceExtensionSupported(VK_KHR_GLOBAL_PRIORITY_EXTENSION_NAME) &&
-        !DeviceExtensionSupported(VK_EXT_GLOBAL_PRIORITY_QUERY_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR not supported";
-    }
-    VkPhysicalDeviceGlobalPriorityQueryFeaturesKHR query_feature = vku::InitStructHelper();
-    query_feature.globalPriorityQuery = VK_TRUE;
-    m_second_device_ci.pNext = &query_feature;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeDeviceFeatureProperty, MissingExtensionPhysicalDeviceFeature) {
-    TEST_DESCRIPTION("Add feature to vkCreateDevice withouth extension");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    if (!DeviceExtensionSupported(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_EXT_astc_decode_mode not supported";
-    }
-    // likely to never be promoted to core
-    VkPhysicalDeviceASTCDecodeFeaturesEXT astc_feature = vku::InitStructHelper();
-    astc_feature.decodeModeSharedExponent = VK_TRUE;
-    m_second_device_ci.pNext = &astc_feature;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeDeviceFeatureProperty, MissingExtensionPromoted) {
-    TEST_DESCRIPTION("Add feature to vkCreateDevice withouth extension (for a promoted extension)");
-    SetTargetApiVersion(VK_API_VERSION_1_2);  // VK_KHR_maintenance4 added in 1.3
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-    if (!DeviceExtensionSupported(VK_KHR_MAINTENANCE_4_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_maintenance4 not supported";
-    }
-    VkPhysicalDeviceMaintenance4Features maintenance4_feature = vku::InitStructHelper();
-    maintenance4_feature.maintenance4 = VK_TRUE;
-    m_second_device_ci.pNext = &maintenance4_feature;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
-    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeDeviceFeatureProperty, Features11WithoutVulkan12) {
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    TEST_DESCRIPTION("VkPhysicalDeviceVulkan11Features was added in Vulkan1.2");
-    RETURN_IF_SKIP(InitDeviceFeatureProperty());
-
-    VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
-    m_second_device_ci.pNext = &features11;
-
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pNext-pNext");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
