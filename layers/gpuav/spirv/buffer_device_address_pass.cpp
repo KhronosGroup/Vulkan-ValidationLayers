@@ -69,6 +69,8 @@ void BufferDeviceAddressPass::Reset() {
     type_length_ = 0;
 }
 
+constexpr bool IsPowerOfTwo(uint32_t x) { return x && !(x & (x - 1)); }
+
 bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
@@ -86,6 +88,10 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
         // Even if they are other Memory Operands the spec says it is ordered by smallest bit first,
         // Luckily |Aligned| is the smallest bit that can have an operand so we know it is here
         alignment_literal_ = inst.Word(alignment_word_index);
+
+        // Aligned 0 was not being validated (https://github.com/KhronosGroup/glslang/issues/3893)
+        // This is nonsense and we should skip (as it should be validated in spirv-val)
+        if (!IsPowerOfTwo(alignment_literal_)) return false;
     } else if (AtomicOperation(opcode)) {
         // Atomics are naturally aligned and by setting this to 1, it will always pass the alignment check
         alignment_literal_ = 1;
