@@ -171,8 +171,6 @@ struct ComputeValidationPipeline {
 };
 
 void FlushValidationCmds(Validator &gpuav, CommandBuffer &cb_state) {
-    VVL_TracyPlot("gpuav::valcmd::FlushValidationCmds", int64_t(cb_state.per_render_pass_validation_commands.size()));
-    VVL_ZoneScoped;
     RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     for (CommandBuffer::ValidationCommandFunc &validation_cmd : cb_state.per_render_pass_validation_commands) {

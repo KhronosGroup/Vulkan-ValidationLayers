@@ -23,6 +23,8 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "state_tracker/descriptor_sets.h"
 
+#include "profiling/profiling.h"
+
 using vvl::DescriptorClass;
 
 namespace gpuav {
@@ -293,6 +295,8 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
         return 0;
     }
 
+    VVL_TracyPlot("Post process buffer size (bytes)", int64_t(buffer_info.size));
+
     void *data = post_process_buffer_.MapMemory(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
@@ -305,6 +309,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 // cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
 // where accessed
 std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const {
+    VVL_ZoneScoped;
     std::vector<DescriptorAccess> descriptor_accesses;
     if (post_process_buffer_.IsDestroyed()) {
         return descriptor_accesses;
