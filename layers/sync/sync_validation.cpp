@@ -3708,10 +3708,10 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
             const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
             geometry_info.vertex_range = MakeRange(vertex_offset, vertex_data_size);
         } else {
-            const VkDeviceSize vertex_offset = base_vertex_offset + range_info.firstVertex * triangles.vertexStride;
+            const VkDeviceSize local_offset = range_info.firstVertex * triangles.vertexStride;
             const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
-            const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - vertex_offset;
-            geometry_info.vertex_range = MakeRange(vertex_offset, potentially_accessed_vertex_data_size);
+            const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - local_offset;
+            geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, potentially_accessed_vertex_data_size);
 
             const auto p_index_data = GetSingleBufferFromDeviceAddress(device, triangles.indexData.deviceAddress);
             if (!p_index_data) {
