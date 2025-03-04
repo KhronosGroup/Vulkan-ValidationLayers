@@ -854,14 +854,36 @@ VkResult Device::CreateGraphicsPipelines(VkDevice device, VkPipelineCache pipeli
                 }
             }
 
+            // We only want to find the case where the user is possibly building non-fragment output libraries
+            bool has_fragment_output_state = true;
+            if (auto lib_info = vku::FindStructInPNextChain<VkGraphicsPipelineLibraryCreateInfoEXT>(pCreateInfos[idx0].pNext)) {
+                has_fragment_output_state = (lib_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) != 0;
+            }
+
+            const VkFormat *original_color_attachment_formats = nullptr;
             auto dynamic_rendering = vku::FindStructInPNextChain<VkPipelineRenderingCreateInfo>(pCreateInfos[idx0].pNext);
             if (dynamic_rendering) {
-                uses_color_attachment = (dynamic_rendering->colorAttachmentCount > 0);
-                uses_depthstencil_attachment = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED ||
-                                                dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
+                if (has_fragment_output_state) {
+                    uses_color_attachment = (dynamic_rendering->colorAttachmentCount > 0);
+                    uses_depthstencil_attachment = (dynamic_rendering->depthAttachmentFormat != VK_FORMAT_UNDEFINED ||
+                                                    dynamic_rendering->stencilAttachmentFormat != VK_FORMAT_UNDEFINED);
+                } else {
+                    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9527
+                    // If this is not a Fragment Output library, we need to make sure this is null for the user (who is allowed to
+                    // have a garbage pointer) Unlike things like uses_color_attachment we can't do this easily in VUL because
+                    // safe_VkGraphicsPipelineCreateInfo calls SafePnextCopy and we have no way to pass the "ignore" info to it We
+                    // will just save the value, make a "safe" Safe Struct, then restore the pointer so the user doesn't notice
+                    original_color_attachment_formats = dynamic_rendering->pColorAttachmentFormats;
+                    const_cast<VkPipelineRenderingCreateInfo *>(dynamic_rendering)->pColorAttachmentFormats = nullptr;
+                }
             }
 
             local_pCreateInfos[idx0].initialize(&pCreateInfos[idx0], uses_color_attachment, uses_depthstencil_attachment);
+
+            if (dynamic_rendering && !has_fragment_output_state) {
+                const_cast<VkPipelineRenderingCreateInfo *>(dynamic_rendering)->pColorAttachmentFormats =
+                    original_color_attachment_formats;
+            }
 
             if (pCreateInfos[idx0].basePipelineHandle) {
                 local_pCreateInfos[idx0].basePipelineHandle = Unwrap(pCreateInfos[idx0].basePipelineHandle);
