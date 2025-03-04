@@ -1060,49 +1060,6 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         if struct.name == 'VkPhysicalDeviceLayeredApiPropertiesListKHR':
             return ""
 
-        if struct.sType and struct.version and all(not x.promotedTo for x in struct.extensions):
-            pNextCheck += f'''
-                if (extensions.api_version < {struct.version.nameApi}) {{
-                    skip |= log.LogError(
-                            pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
-                            "includes a pointer to a VkStructureType ({struct.sType}) which was added in {struct.version.nameApi} but the "
-                            "current effective API version is %s.", StringAPIVersion(extensions.api_version).c_str());
-                }}
-                '''
-
-        elif struct.sType and len(struct.extensions) > 0:
-            extNames = set([x.name for x in struct.extensions])
-
-            # Skip extensions that are not in the target API
-            # This check is needed because parts of the base generator code bypass the
-            # dependency resolution logic in the registry tooling and thus the generator
-            # may attempt to generate code for extensions which are not supported in the
-            # target API variant, thus this check needs to happen even if any specific
-            # target API variant may not specifically need it
-            extNames.intersection(self.vk.extensions.keys())
-            if len(extNames) == 0:
-                return ""
-
-            extNames = sorted(list(extNames)) # make the order deterministic
-
-            # Dependent on enabled extension
-            extension_conditionals = list()
-            for ext_name in extNames:
-                extension = self.vk.extensions[ext_name]
-                extension_conditionals.append( f'(!IsExtEnabled(extensions.{extension.name.lower()}))' )
-            if len(extension_conditionals) == 1 and extension_conditionals[0][0] == '(' and extension_conditionals[0][-1] == ')':
-                extension_conditionals[0] = extension_conditionals[0][1:-1]# strip extraneous parentheses
-
-            extension_check = f'if ({" && ".join(extension_conditionals)}) {{'
-            pNextCheck += f'''
-                    {extension_check}
-                        skip |= log.LogError(
-                            pnext_vuid, error_obj.handle, loc.dot(Field::pNext),
-                            "includes a pointer to a VkStructureType ({struct.sType}), but its parent extension "
-                            "{self.englishJoin(extNames, "or")} has not been enabled.");
-                    }}
-                '''
-
         expr = self.expandStructCode(struct.name, struct.name, 'pNext_loc', 'structure->', '', [], '')
         structValidationSource = self.ScrubStructCode(expr)
         if structValidationSource != '':
