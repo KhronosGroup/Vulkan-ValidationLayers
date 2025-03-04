@@ -23,6 +23,8 @@
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "state_tracker/shader_module.h"
 
+#include "profiling/profiling.h"
+
 namespace gpuav {
 namespace descriptor {
 
@@ -203,6 +205,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 
 // After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
 [[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
+    VVL_ZoneScoped;
     for (uint32_t action_index = 0; action_index < action_command_snapshots.size(); action_index++) {
         const auto &action_command_snapshot = action_command_snapshots[action_index];
         const auto &descriptor_command_binding =

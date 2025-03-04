@@ -485,6 +485,7 @@ bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsDestroye
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
+    VVL_ZoneScoped;
     auto gpuav = static_cast<Validator *>(&dev_data);
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
