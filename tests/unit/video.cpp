@@ -11,7 +11,7 @@
  */
 
 #include "../framework/video_objects.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 class NegativeVideo : public VkVideoLayerTest {};
 

@@ -57,6 +57,7 @@ target_sources(VkLayer_utils PRIVATE
     utils/hash_vk_types.h
     utils/image_layout_utils.h
     utils/image_layout_utils.cpp
+    utils/math_utils.h
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
     utils/ray_tracing_utils.cpp

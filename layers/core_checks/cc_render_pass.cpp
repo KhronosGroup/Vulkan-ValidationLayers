@@ -29,7 +29,7 @@
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,

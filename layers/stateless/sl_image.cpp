@@ -21,7 +21,7 @@
 #include "error_message/error_strings.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 namespace stateless {
 

@@ -17,6 +17,7 @@
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
+#include "utils/math_utils.h"
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
 
@@ -68,8 +69,6 @@ void BufferDeviceAddressPass::Reset() {
     alignment_literal_ = 0;
     type_length_ = 0;
 }
-
-constexpr bool IsPowerOfTwo(uint32_t x) { return x && !(x & (x - 1)); }
 
 bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
     const uint32_t opcode = inst.Opcode();
