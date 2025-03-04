@@ -17,6 +17,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/ray_tracing_objects.h"
+#include "error_message/log_message_type.h"
 
 class PositiveDescriptors : public VkLayerTest {};
 
@@ -1462,4 +1463,32 @@ TEST_F(PositiveDescriptors, WriteDescriptorSetTypeStageMatch) {
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 3;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+}
+
+TEST_F(PositiveDescriptors, AllocateOverDescriptorCount) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+
+    VkDescriptorPoolSize ds_type_counts[2] = {{VK_DESCRIPTOR_TYPE_SAMPLER, 2}, {VK_DESCRIPTOR_TYPE_SAMPLER, 2}};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 3;
+    ds_pool_ci.poolSizeCount = 2;
+    ds_pool_ci.pPoolSizes = ds_type_counts;
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding});
+    dsl_binding.descriptorCount = 2;
+    const vkt::DescriptorSetLayout ds_layout_double(*m_device, {dsl_binding});
+
+    VkDescriptorSet descriptor_sets[3];
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.pSetLayouts = &ds_layout.handle();
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
+    alloc_info.pSetLayouts = &ds_layout_double.handle();
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[2]);  // allocates 2
 }

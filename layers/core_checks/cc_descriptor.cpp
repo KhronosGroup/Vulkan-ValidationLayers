@@ -3363,16 +3363,17 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
     if (!IsExtEnabled(extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (ds_pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
-            skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895", ds_pool_state->Handle(), error_obj.location,
-                             "Unable to allocate %" PRIu32
-                             " descriptorSets from %s"
-                             ". This pool only has %" PRIu32 " descriptorSets remaining.",
+            skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07895", ds_pool_state->Handle(),
+                             allocate_info_loc.dot(Field::descriptorSetCount),
+                             "is %" PRIu32 " which is not enough as %s only has %" PRIu32
+                             " descriptorSets remaining. (With VK_KHR_maintenance1 enabled, the driver will return "
+                             "VK_ERROR_OUT_OF_POOL_MEMORY_KHR in this situation).",
                              pAllocateInfo->descriptorSetCount, FormatHandle(*ds_pool_state).c_str(),
                              ds_pool_state->GetAvailableSets());
         }
         // Determine whether descriptor counts are satisfiable
         for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
-            auto available_count = ds_pool_state->GetAvailableCount(it->first);
+            const uint32_t available_count = ds_pool_state->GetAvailableCount(it->first);
 
             if (ds_data.required_descriptors_by_type.at(it->first) > available_count) {
                 skip |= LogError("VUID-VkDescriptorSetAllocateInfo-apiVersion-07896", ds_pool_state->Handle(), error_obj.location,
@@ -3382,6 +3383,40 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                                  ds_data.required_descriptors_by_type.at(it->first),
                                  string_VkDescriptorType(VkDescriptorType(it->first)), FormatHandle(*ds_pool_state).c_str(),
                                  available_count);
+            }
+        }
+    } else {
+        // Part of VK_KHR_maintenance1 is that the driver will return VK_ERROR_OUT_OF_POOL_MEMORY_KHR when you run out.
+        // What we want to warn about is when the app tried to allocate more sets then there ever was in the pool.
+        // We do this here (instead of PostCallRecordAllocateDescriptorSets) because some drivers will just return VK_SUCCESS
+        // and when people try on another driver, it suddenly fails.
+        if (pAllocateInfo->descriptorSetCount > ds_pool_state->maxSets) {
+            skip |= LogWarning("WARNING-VkDescriptorSetAllocateInfo-maxSet", ds_pool_state->Handle(),
+                               allocate_info_loc.dot(Field::descriptorSetCount),
+                               "(%" PRIu32 ") is larger than the %s maxSets (%" PRIu32
+                               ") so you will likely get VK_ERROR_OUT_OF_POOL_MEMORY_KHR. While this might succeed on some "
+                               "implementations, it will fail on others.",
+                               pAllocateInfo->descriptorSetCount, FormatHandle(*ds_pool_state).c_str(),
+                               ds_pool_state->GetAvailableSets());
+        } else {
+            // Same idea but if they are trying to allocate more descriptors of one type then possible in the whole pool
+            for (auto it = ds_data.required_descriptors_by_type.begin(); it != ds_data.required_descriptors_by_type.end(); ++it) {
+                auto max_iter = ds_pool_state->max_descriptor_type_count.find(it->first);
+                if (max_iter == ds_pool_state->max_descriptor_type_count.end()) continue;
+                const uint32_t max_available_count = max_iter->second;
+                // TODO - consider combining PostCallRecordAllocateDescriptorSets check here (needs more testing)
+                if (max_available_count == 0) continue;
+                const uint32_t attempt_allocate = ds_data.required_descriptors_by_type.at(it->first);
+
+                if (attempt_allocate > max_available_count) {
+                    skip |= LogWarning(
+                        "WARNING-VkDescriptorSetAllocateInfo-descriptorCount", ds_pool_state->Handle(), error_obj.location,
+                        "Trying to allocate %" PRIu32 " of %s descriptors from %s, but this pool only has a total of %" PRIu32
+                        " descriptors for this type so you will likely get VK_ERROR_OUT_OF_POOL_MEMORY_KHR. While this might "
+                        "succeed on some implementations, it will fail on others.",
+                        attempt_allocate, string_VkDescriptorType(VkDescriptorType(it->first)),
+                        FormatHandle(*ds_pool_state).c_str(), max_available_count);
+                }
             }
         }
     }
@@ -3422,10 +3457,10 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
                                                       VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
                                                       vvl::AllocateDescriptorSetsData &ads_state) {
     // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
-    // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY they think they over-allocated, but if they instead allocated type not
-    // avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran out. It was decided
-    // that this deserves to be a Core Validation check
-    if (record_obj.result == VK_ERROR_OUT_OF_POOL_MEMORY && pAllocateInfo) {
+    // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY (or any error) they think they over-allocated, but if they instead
+    // allocated type not avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran
+    // out. It was decided that this deserves to be a Core Validation check
+    if (record_obj.result != VK_SUCCESS && pAllocateInfo) {
         // result type added in VK_KHR_maintenance1
         auto ds_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
         ASSERT_AND_RETURN(ds_pool_state);
@@ -3439,12 +3474,13 @@ void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkD
                 const VkDescriptorType type = ds_layout_state->GetTypeFromIndex(j);
                 if (!ds_pool_state->IsAvailableType(type)) {
                     // This check would be caught by validation if VK_KHR_maintenance1 was not enabled
-                    LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", ds_pool_state->Handle(),
+                    LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", pAllocateInfo->descriptorPool,
                                record_obj.location.dot(Field::pAllocateInfo).dot(Field::pSetLayouts, i),
                                "binding %" PRIu32
-                               " was created with %s but the "
-                               "Descriptor Pool was not created with this type and returned VK_ERROR_OUT_OF_POOL_MEMORY",
-                               j, string_VkDescriptorType(type));
+                               " was created with %s but %s was not created with any VkDescriptorPoolSize::type with %s (This is "
+                               "why it returned %s).",
+                               j, string_VkDescriptorType(type), FormatHandle(pAllocateInfo->descriptorPool).c_str(),
+                               string_VkDescriptorType(type), string_VkResult(record_obj.result));
                 }
             }
         }
@@ -3481,7 +3517,7 @@ bool CoreChecks::PreCallValidateFreeDescriptorSets(VkDevice device, VkDescriptor
     if (!(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT & ds_pool_state->create_info.flags)) {
         // Can't Free from a NON_FREE pool
         skip |= LogError("VUID-vkFreeDescriptorSets-descriptorPool-00312", descriptorPool,
-                         error_obj.location.dot(Field::descriptorPool), "with a pool created with %s.",
+                         error_obj.location.dot(Field::descriptorPool), "was created with %s (missing FREE_DESCRIPTOR_SET_BIT).",
                          string_VkDescriptorPoolCreateFlags(ds_pool_state->create_info.flags).c_str());
     }
     return skip;
