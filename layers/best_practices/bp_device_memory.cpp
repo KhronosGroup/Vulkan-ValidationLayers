@@ -167,7 +167,7 @@ bool BestPractices::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory mem
                                       "Trying to bind %s to a memory block which is fully consumed by the buffer. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller buffers like this should be sub-allocated from "
-                                      "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
+                                      "larger memory blocks. (Current threshold is %" PRIu64 " bytes)",
                                       FormatHandle(buffer).c_str(), memory_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }
@@ -215,7 +215,7 @@ bool BestPractices::ValidateBindImageMemory(VkImage image, VkDeviceMemory memory
                                       "Trying to bind %s to a memory block which is fully consumed by the image. "
                                       "The required size of the allocation is %" PRIu64
                                       ", but smaller images like this should be sub-allocated from "
-                                      "larger memory blocks. (Current threshold is %" PRIu64 " bytes.)",
+                                      "larger memory blocks. (Current threshold is %" PRIu64 " bytes)",
                                       FormatHandle(image).c_str(), memory_state->allocate_info.allocationSize,
                                       kMinDedicatedAllocationSize);
     }

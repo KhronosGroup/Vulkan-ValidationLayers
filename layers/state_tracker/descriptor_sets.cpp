@@ -43,9 +43,9 @@ vvl::DescriptorPool::DescriptorPool(vvl::Device &dev, const VkDescriptorPool han
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),
       maxSets(pCreateInfo->maxSets),
-      maxDescriptorTypeCount(GetMaxTypeCounts(pCreateInfo)),
+      max_descriptor_type_count(GetMaxTypeCounts(pCreateInfo)),
       available_sets_(pCreateInfo->maxSets),
-      available_counts_(maxDescriptorTypeCount),
+      available_counts_(max_descriptor_type_count),
       dev_data_(dev) {}
 
 void vvl::DescriptorPool::Allocate(const VkDescriptorSetAllocateInfo *alloc_info, const VkDescriptorSet *descriptor_sets,
@@ -113,7 +113,7 @@ void vvl::DescriptorPool::Reset() {
     }
     sets_.clear();
     // Reset available count for each type and available sets for this pool
-    available_counts_ = maxDescriptorTypeCount;
+    available_counts_ = max_descriptor_type_count;
     available_sets_ = maxSets;
 }
 

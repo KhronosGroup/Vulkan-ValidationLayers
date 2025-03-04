@@ -88,7 +88,7 @@ class DescriptorPool : public StateObject {
 
     const uint32_t maxSets;  // Max descriptor sets allowed in this pool
     using TypeCountMap = vvl::unordered_map<uint32_t, uint32_t>;
-    const TypeCountMap maxDescriptorTypeCount;  // Max # of descriptors of each type in this pool
+    const TypeCountMap max_descriptor_type_count;  // Max # of descriptors of each type in this pool
 
     uint32_t GetFreedCount() const {
         auto guard = ReadLock();

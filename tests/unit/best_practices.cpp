@@ -1284,11 +1284,11 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 2;
+    ds_type_count.descriptorCount = 8;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
-    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.maxSets = 3;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
@@ -1304,14 +1304,15 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {
     const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
 
     // Try to allocate 2 sets when pool only has 1 set
-    VkDescriptorSet descriptor_sets[2];
+    VkDescriptorSet descriptor_sets[4];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
     m_errorMonitor->SetDesiredWarning("BestPractices-vkAllocateDescriptorSets-EmptyDescriptorPool");
-    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[2]);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1325,11 +1326,11 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
 
     VkDescriptorPoolSize ds_type_count = {};
     ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 1;
+    ds_type_count.descriptorCount = 3;
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.flags = 0;
-    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.maxSets = 4;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
@@ -1345,14 +1346,15 @@ TEST_F(VkBestPracticesLayerTest, OverAllocateTypeFromDescriptorPool) {
     const vkt::DescriptorSetLayout ds_layout_samp(*m_device, {dsl_binding_samp});
 
     // Try to allocate 2 sets when pool only has 1 set
-    VkDescriptorSet descriptor_sets[2];
+    VkDescriptorSet descriptor_sets[4];
     VkDescriptorSetLayout set_layouts[2] = {ds_layout_samp.handle(), ds_layout_samp.handle()};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 2;
     alloc_info.descriptorPool = ds_pool.handle();
     alloc_info.pSetLayouts = set_layouts;
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
     m_errorMonitor->SetDesiredWarning("BestPractices-vkAllocateDescriptorSets-EmptyDescriptorPoolType");
-    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[2]);
     m_errorMonitor->VerifyFound();
 }
 
