@@ -3682,46 +3682,48 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
     const VkAccelerationStructureBuildRangeInfoKHR &range_info) {
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
         const VkAccelerationStructureGeometryTrianglesDataKHR &triangles = geometry.geometry.triangles;
-        const uint32_t vertex_position_size = vkuGetFormatInfo(triangles.vertexFormat).texel_block_size;
-        if (vertex_position_size != triangles.vertexStride) {
-            // NOTE: Do not validate when there are gaps in the vertex positional data (e.g. interleaved vertex attributes).
-            // It's possible to create separate tracking ranges that skip these gaps but it's not practical for real
-            // applications where meshes have many vertices.
-            // The general solution does not take into account regularity in the vertex data - all the gaps can be described
-            // by two numbers: vertex stride and positional attribute size.
-            // The practical solution would be to implement a specialized tracking that uses such compact representation.
-            return {};
-        }
-
-        const vvl::Buffer *p_vertex_data = GetSingleBufferFromDeviceAddress(device, triangles.vertexData.deviceAddress);
-        if (!p_vertex_data) {
-            return {};  // [core validation check]: vertexData must be valid
-        }
         AccelerationStructureGeometryInfo geometry_info;
-        geometry_info.vertex_data = p_vertex_data;
 
-        const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
+        const vvl::Buffer *p_vertex_data = nullptr;
+        // NOTE: Do not validate vertex data when positions interleave with other attributes.
+        // Under current design it's possible to create separate tracking ranges that will skip
+        // the gaps but it's not practical for real world scenarios with complex meshes.
+        // The general solution does not take into account regularity in the vertex data - all the
+        // gaps can be described by two numbers: vertex stride and positional attribute size.
+        // A practical solution is to implement dedicated tracking that exploits this compact representation.
+        const uint32_t vertex_position_size = vkuGetFormatInfo(triangles.vertexFormat).texel_block_size;
+        if (vertex_position_size == triangles.vertexStride) {
+            p_vertex_data = GetSingleBufferFromDeviceAddress(device, triangles.vertexData.deviceAddress);
+        }
 
         if (triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
-            const VkDeviceSize vertex_offset =
-                base_vertex_offset + range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
-            const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
-            geometry_info.vertex_range = MakeRange(vertex_offset, vertex_data_size);
-        } else {
-            const VkDeviceSize local_offset = range_info.firstVertex * triangles.vertexStride;
-            const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
-            const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - local_offset;
-            geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, potentially_accessed_vertex_data_size);
-
-            const auto p_index_data = GetSingleBufferFromDeviceAddress(device, triangles.indexData.deviceAddress);
-            if (!p_index_data) {
-                return {};  // [core validation check]: indexData must be good if index type is specified
+            // Vertex data
+            if (p_vertex_data) {
+                geometry_info.vertex_data = p_vertex_data;
+                const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
+                const VkDeviceSize local_offset = range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
+                const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
+                geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, vertex_data_size);
             }
-            geometry_info.index_data = p_index_data;
-            const VkDeviceSize base_index_offset = triangles.indexData.deviceAddress - p_index_data->deviceAddress;
-            const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
-            const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
-            geometry_info.index_range = MakeRange(base_index_offset + range_info.primitiveOffset, index_data_size);
+        } else {
+            // Vertex data
+            if (p_vertex_data) {
+                geometry_info.vertex_data = p_vertex_data;
+                const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
+                const VkDeviceSize local_offset = range_info.firstVertex * triangles.vertexStride;
+                const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
+                const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - local_offset;
+                geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, potentially_accessed_vertex_data_size);
+            }
+            // Index data
+            const auto p_index_data = GetSingleBufferFromDeviceAddress(device, triangles.indexData.deviceAddress);
+            if (p_index_data) {
+                geometry_info.index_data = p_index_data;
+                const VkDeviceSize base_index_offset = triangles.indexData.deviceAddress - p_index_data->deviceAddress;
+                const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
+                const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
+                geometry_info.index_range = MakeRange(base_index_offset + range_info.primitiveOffset, index_data_size);
+            }
         }
         // Transform data
         if (const vvl::Buffer *p_transform_data = GetSingleBufferFromDeviceAddress(device, triangles.transformData.deviceAddress)) {
