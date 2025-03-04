@@ -370,8 +370,11 @@ class CoreChecks : public vvl::Device {
                                                const ErrorObject& error_obj) const;
     bool ValidateSecondaryCommandBufferState(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& sub_cb_state,
                                              const Location& cb_loc) const;
-    bool ValidateInheritanceInfoFramebuffer(VkCommandBuffer primaryBuffer, const vvl::CommandBuffer& cb_state,
-                                            VkCommandBuffer secondaryBuffer, const vvl::CommandBuffer& sub_cb_state,
+    bool ValidateSecondaryCommandBufferQuery(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& sub_cb_state,
+                                             const Location& cb_loc, const QueryObject* active_occlusion_query) const;
+    bool ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& sub_cb_state,
+                                              const Location& cb_loc) const;
+    bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& sub_cb_state,
                                             const Location& loc) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const Location& loc) const;
     bool ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence,
@@ -2006,6 +2009,14 @@ class CoreChecks : public vvl::Device {
     class ViewportScissorInheritanceTracker;
     bool PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                            const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;
+    bool ValidateCmdExecuteCommandsRenderPass(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+                                              const Location& loc) const;
+    bool ValidateCmdExecuteCommandsRenderPassSecondary(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+                                                       const vvl::CommandBuffer& sub_cb_state, const Location& cb_loc) const;
+    bool ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::CommandBuffer& cb_state,
+                                                             const vvl::CommandBuffer& sub_cb_state,
+                                                             const vvl::RenderPass& secondary_rp_state,
+                                                             const Location& cb_loc) const;
     bool PreCallValidateMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
                                   void** ppData, const ErrorObject& error_obj) const override;
     bool PreCallValidateUnmapMemory(VkDevice device, VkDeviceMemory mememorym, const ErrorObject& error_obj) const override;
