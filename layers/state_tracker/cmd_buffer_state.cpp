@@ -269,7 +269,7 @@ void CommandBuffer::ResetCBState() {
     active_color_attachments_index.clear();
     has_render_pass_striped = false;
     striped_count = 0;
-    activeSubpassContents = VK_SUBPASS_CONTENTS_INLINE;
+    active_subpass_contents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
     rendering_attachments.Reset();
     waitedEvents.clear();
@@ -642,7 +642,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     active_render_pass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     render_area = pRenderPassBegin->renderArea;
     SetActiveSubpass(0);
-    activeSubpassContents = contents;
+    active_subpass_contents = contents;
     renderPassQueries.clear();
 
     // Connect this RP to cmdBuffer
@@ -683,7 +683,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
 void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     RecordCmd(command);
     SetActiveSubpass(GetActiveSubpass() + 1);
-    activeSubpassContents = contents;
+    active_subpass_contents = contents;
     ASSERT_AND_RETURN(active_render_pass);
 
     if (activeFramebuffer) {
@@ -732,9 +732,9 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         striped_count += rp_striped_begin->stripeInfoCount;
     }
 
-    activeSubpassContents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)
-                                 ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
-                                 : VK_SUBPASS_CONTENTS_INLINE);
+    active_subpass_contents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)
+                                   ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
+                                   : VK_SUBPASS_CONTENTS_INLINE);
 
     // Handle flags for dynamic rendering
     if (!hasRenderPassInstance && pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {

@@ -453,7 +453,7 @@ class CommandBuffer : public RefcountedStateObject {
     const VkRenderPassSampleLocationsBeginInfoEXT *sample_locations_begin_info;
     std::vector<SubpassInfo> active_subpasses;
 
-    VkSubpassContents activeSubpassContents;
+    VkSubpassContents active_subpass_contents;
     uint32_t GetActiveSubpass() const { return active_subpass_; }
     void SetActiveSubpass(uint32_t subpass);
     std::optional<VkSampleCountFlagBits> GetActiveSubpassRasterizationSampleCount() const { return active_subpass_sample_count_; }
