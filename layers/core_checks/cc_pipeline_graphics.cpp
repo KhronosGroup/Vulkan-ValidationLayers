@@ -23,7 +23,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"

@@ -37,7 +37,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 #include "spirv-tools/optimizer.hpp"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state, const vvl::Pipeline &pipeline,

@@ -31,7 +31,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
 #include "generated/dispatch_functions.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 struct ImageRegionIntersection {
     VkImageSubresourceLayers subresource = {};

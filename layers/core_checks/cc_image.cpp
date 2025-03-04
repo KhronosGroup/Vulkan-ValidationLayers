@@ -33,7 +33,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "sync/sync_vuid_maps.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;

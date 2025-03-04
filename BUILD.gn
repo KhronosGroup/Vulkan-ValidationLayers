@@ -341,6 +341,7 @@ vvl_sources = [
   "layers/utils/hash_vk_types.h",
   "layers/utils/image_layout_utils.cpp",
   "layers/utils/image_layout_utils.h",
+  "layers/utils/math_utils.h",
   "layers/utils/ray_tracing_utils.cpp",
   "layers/utils/ray_tracing_utils.h",
   "layers/utils/shader_utils.cpp",
