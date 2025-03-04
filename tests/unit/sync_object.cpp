@@ -4917,3 +4917,41 @@ TEST_F(NegativeSyncObject, InvalidBarrierPNext) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncObject, AcquireWithoutRelease) {
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    auto only_transfer_queueFamilyIndex = m_device->TransferOnlyQueueFamily();
+    if (!only_transfer_queueFamilyIndex.has_value()) {
+        GTEST_SKIP() << "Transfer only queue is not supported";
+    }
+
+    vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkBufferMemoryBarrier buffer_memory_barrier = vku::InitStructHelper();
+    buffer_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    buffer_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    buffer_memory_barrier.srcQueueFamilyIndex = only_transfer_queueFamilyIndex.value();
+    buffer_memory_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
+    buffer_memory_barrier.buffer = buffer.handle();
+    buffer_memory_barrier.offset = 0u;
+    buffer_memory_barrier.size = VK_WHOLE_SIZE;
+
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
+                           nullptr, 1u, &buffer_memory_barrier, 0u, nullptr);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSubmits-02207");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit2-commandBuffer-03879");
+    m_default_queue->Submit2(m_command_buffer, vkt::no_fence, true);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
