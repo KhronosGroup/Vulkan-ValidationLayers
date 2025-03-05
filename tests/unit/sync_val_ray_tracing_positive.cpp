@@ -173,6 +173,45 @@ TEST_F(PositiveSyncValRayTracing, ReadVertexDataDuringBuild) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncValRayTracing, WriteVertexDataDuringBuild) {
+    TEST_DESCRIPTION("Write to a vacant region of the vertex data buffer during AS build operation");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    // Build custom vertex data buffer where data region starts at some non-zero offset
+    constexpr std::array vertices = {// Vertex 0
+                                     10.0f, 10.0f, 0.0f,
+                                     // Vertex 1
+                                     -10.0f, 10.0f, 0.0f,
+                                     // Vertex 2
+                                     0.0f, -10.0f, 0.0f};
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer vertex_buffer(*m_device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    auto vertex_buffer_ptr = static_cast<float*>(vertex_buffer.Memory().Map());
+    std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
+    vertex_buffer.Memory().Unmap();
+
+    // Specify offset (4 bytes) so vertex data does not start immediately from the beginning of the buffer.
+    geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1, VK_FORMAT_R32G32B32_SFLOAT,
+                                            3 * sizeof(float), 4);
+
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    blas.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+
+    // Write arbitrary data into the first 4 bytes.
+    // This should not interfere with acceleration structure build accesses that read vertex data
+    vk::CmdFillBuffer(m_command_buffer, blas.GetGeometries()[0].GetTriangles().device_vertex_buffer, 0, 4, 0x42);
+
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncValRayTracing, ReadIndexDataDuringBuild) {
     TEST_DESCRIPTION("Use index buffer as a copy source while it is used by the AS build operation");
     RETURN_IF_SKIP(InitRayTracing());

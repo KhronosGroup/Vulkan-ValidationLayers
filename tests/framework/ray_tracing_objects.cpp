@@ -84,10 +84,11 @@ GeometryKHR &GeometryKHR::SetStride(VkDeviceSize stride) {
 
 GeometryKHR &GeometryKHR::SetTrianglesDeviceVertexBuffer(vkt::Buffer &&vertex_buffer, uint32_t max_vertex,
                                                          VkFormat vertex_format /*= VK_FORMAT_R32G32B32_SFLOAT*/,
-                                                         VkDeviceSize stride /*= 3 * sizeof(float)*/) {
+                                                         VkDeviceSize stride /*= 3 * sizeof(float)*/,
+                                                         VkDeviceSize vertex_buffer_offset /* = 0*/) {
     triangles_.device_vertex_buffer = std::move(vertex_buffer);
     vk_obj_.geometry.triangles.vertexFormat = vertex_format;
-    vk_obj_.geometry.triangles.vertexData.deviceAddress = triangles_.device_vertex_buffer.Address();
+    vk_obj_.geometry.triangles.vertexData.deviceAddress = triangles_.device_vertex_buffer.Address() + vertex_buffer_offset;
     vk_obj_.geometry.triangles.maxVertex = max_vertex;
     vk_obj_.geometry.triangles.vertexStride = stride;
     return *this;
