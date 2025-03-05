@@ -185,6 +185,43 @@ bool Context::ValidateStringArray(const Location &count_loc, const Location &arr
     return skip;
 }
 
+// We decided in https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/9578 that structs in pNext chains are allowed
+// regardless of the extension. pNext structs all are based on a sType/pNext system (VkBaseInStructure/VkBaseOutStructure) and they
+// can be safely ignored.
+//
+// However.. some structs we determined to warn the user because it might produce subtle effects, but this is the edge case, not the
+// normal case.
+bool Context::ValidatePnextStructExtension(const Location &loc, const VkBaseOutStructure *header) const {
+    bool skip = false;
+    switch (header->sType) {
+        case VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO: {
+            auto buffer_flags2_ci = (const VkBufferUsageFlags2CreateInfo *)header;
+            if (buffer_flags2_ci->usage != 0 && !IsExtEnabled(extensions.vk_khr_maintenance5)) {
+                skip |= log.LogWarning(
+                    "WARNING-VkBufferUsageFlags2CreateInfo-Extension", error_obj.handle, loc.dot(Field::pNext),
+                    "points to a VkBufferUsageFlags2CreateInfo struct but VK_KHR_maintenance5 has not been enabled. "
+                    "Without checking for and enabling the extension, you might have a situation where your buffer usage "
+                    "flags are ignored if the driver doesn't support VK_KHR_maintenance5");
+            }
+        } break;
+
+        case VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO: {
+            auto pipeline_flags2_ci = (const VkPipelineCreateFlags2CreateInfo *)header;
+            if (pipeline_flags2_ci->flags != 0 && !IsExtEnabled(extensions.vk_khr_maintenance5)) {
+                skip |= log.LogWarning(
+                    "WARNING-VkPipelineCreateFlags2CreateInfo-Extension", error_obj.handle, loc.dot(Field::pNext),
+                    "points to a VkPipelineCreateFlags2CreateInfo struct but VK_KHR_maintenance5 has not been enabled. "
+                    "Without checking for and enabling the extension, you might have a situation where your buffer usage "
+                    "flags are ignored if the driver doesn't support VK_KHR_maintenance5");
+            }
+        } break;
+
+        default:
+            break;
+    }
+    return skip;
+}
+
 bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count,
                                   const VkStructureType *allowed_types, uint32_t header_version, const char *pnext_vuid,
                                   const char *stype_vuid, const bool is_const_param) const {
@@ -248,6 +285,7 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
                         }
                         // Send Location without pNext field so the pNext() connector can be used
                         skip |= ValidatePnextStructContents(loc, current, pnext_vuid, is_const_param);
+                        skip |= ValidatePnextStructExtension(loc, current);
                         // pNext contents for vkGetPhysicalDeviceProperties2KHR() is no longer checked.
                         if (loc.function == Func::vkGetPhysicalDeviceFeatures2 ||
                             loc.function == Func::vkGetPhysicalDeviceFeatures2KHR || loc.function == Func::vkCreateDevice) {
