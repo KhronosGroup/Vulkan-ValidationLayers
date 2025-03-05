@@ -73,6 +73,7 @@ struct ShaderStageAccesses {
     SyncAccessIndex storage_read;
     SyncAccessIndex storage_write;
     SyncAccessIndex uniform_read;
+    SyncAccessIndex acceleration_structure_read;
 };
 ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_stage);
 
