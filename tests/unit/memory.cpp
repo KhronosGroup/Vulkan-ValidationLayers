@@ -1695,6 +1695,9 @@ TEST_F(NegativeMemory, AllocationBeyondHeapSize) {
     VkPhysicalDeviceMemoryProperties memory_info;
     vk::GetPhysicalDeviceMemoryProperties(Gpu(), &memory_info);
 
+    // This can be triggered due to the extremely large allocation
+    m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-vkAllocateMemory-maxMemoryAllocationSize");
+
     m_errorMonitor->SetDesiredError("VUID-vkAllocateMemory-pAllocateInfo-01713");
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();

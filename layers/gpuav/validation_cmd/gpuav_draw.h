@@ -19,7 +19,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "vulkan/generated/error_location_helper.h"
+#include "generated/error_location_helper.h"
 
 struct Location;
 
