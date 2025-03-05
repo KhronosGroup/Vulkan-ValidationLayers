@@ -2334,6 +2334,9 @@ TEST_F(NegativeDescriptors, DSBufferLimit) {
             continue;
         }
 
+        // This can be triggered due to the extremely large allocation
+        m_errorMonitor->SetAllowedFailureMsg("UNASSIGNED-vkAllocateMemory-maxMemoryAllocationSize");
+
         vkt::DeviceMemory mem(*m_device, mem_alloc);
         if (mem.handle() == VK_NULL_HANDLE) {
             printf("Failed to allocate memory in DSBufferLimitErrors; skipped.\n");

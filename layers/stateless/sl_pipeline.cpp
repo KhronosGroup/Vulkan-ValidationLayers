@@ -1324,8 +1324,6 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkComputePipelineCreateInfo &create_info = pCreateInfos[i];
 
-        skip |= context.ValidateString(create_info_loc.dot(Field::stage).dot(Field::pName),
-                                       "VUID-VkPipelineShaderStageCreateInfo-pName-parameter", create_info.stage.pName);
         auto feedback_struct = vku::FindStructInPNextChain<VkPipelineCreationFeedbackCreateInfo>(create_info.pNext);
         if (feedback_struct) {
             const uint32_t feedback_count = feedback_struct->pipelineStageCreationFeedbackCount;

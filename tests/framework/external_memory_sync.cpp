@@ -19,6 +19,8 @@
 
 // We are trying to query unsupported handle types, which means we will likley trigger *-handleType-parameter VUs
 void IgnoreHandleTypeError(ErrorMonitor *monitor) {
+    monitor->SetAllowedFailureMsg("VUID-VkPhysicalDeviceExternalFenceInfo-handleType-parameter");
+
     monitor->SetAllowedFailureMsg("VUID-VkFenceGetFdInfoKHR-handleType-parameter");
     monitor->SetAllowedFailureMsg("VUID-VkFenceGetWin32HandleInfoKHR-handleType-parameter");
     monitor->SetAllowedFailureMsg("VUID-VkImportFenceFdInfoKHR-handleType-parameter");
