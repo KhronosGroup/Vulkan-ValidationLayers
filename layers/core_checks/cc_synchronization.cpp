@@ -2104,10 +2104,10 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
             const char *vuid = (loc.function == vvl::Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pSubmits-02207"
                                                                           : "VUID-vkQueueSubmit2-commandBuffer-03879";
             skip |= LogError(vuid, cb_state.Handle(), loc,
-                             "in submitted command buffer %s acquiring ownership of (%s), from srcQueueFamilyIndex %" PRIu32
-                             " to dstQueueFamilyIndex %" PRIu32 " has no matching release barrier queued for execution.",
+                             "contains a %s that acquires ownership of %s for destination queue family %" PRIu32
+                             ", but no matching release operation was queued for execution from source queue family %" PRIu32,
                              String(TransferBarrier::BarrierName()), FormatHandle(acquire.handle).c_str(),
-                             acquire.srcQueueFamilyIndex, acquire.dstQueueFamilyIndex);
+                             acquire.dstQueueFamilyIndex, acquire.srcQueueFamilyIndex);
         }
     }
     return skip;
