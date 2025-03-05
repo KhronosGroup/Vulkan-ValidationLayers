@@ -160,12 +160,9 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
             -Wconversion
             -Wimplicit-fallthrough
             -Wstring-conversion
-        )
-
-        if (CMAKE_BUILD_TYPE MATCHES "Debug")
             # When using tools such as lldb, strings will produce "error: summary string parsing error"
-            add_compile_options(-fstandalone-debug)
-        endif()
+            $<$<CONFIG:Debug>:-fstandalone-debug>
+        )
     endif()
 elseif(MSVC)
     add_compile_options(
