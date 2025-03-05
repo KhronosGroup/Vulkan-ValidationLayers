@@ -352,31 +352,40 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
     return Error(hazard, cb_context, command, resource_description, "ImageSubresourceRangeError", additional_info);
 }
 
-std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                                 vvl::Func command, const std::string& resource_description,
-                                                 const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-                                                 VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                                 uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+                                           VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+                                           uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
+                                           const char* resource_type, AdditionalMessageInfo& additional_info,
+                                           std::stringstream& ss) {
     const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
 
-    AdditionalMessageInfo additional_info;
     additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
     additional_info.properties.Add(kPropertyDescriptorBinding, descriptor_binding);
     additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
     additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
 
-    std::stringstream ss;
-    ss << "\nThe buffer is referenced by a ";
-    ss << descriptor_type_str << " descriptor in ";
-    ss << validator_.FormatHandle(descriptor_set);
+    ss << "\nThe " << resource_type << " is referenced by ";
+    ss << descriptor_type_str << " descriptor from ";
+    ss << logger.FormatHandle(descriptor_set);
     ss << ", binding " << descriptor_binding;
     if (descriptor_set.GetDescriptorCountFromBinding(descriptor_binding) > 1) {
         ss << ", array element " << descriptor_array_element;
     }
-    ss << ", " << validator_.FormatHandle(pipeline);
-    ss << ".";
-    additional_info.pre_synchronization_text = ss.str();
+    ss << ", " << logger.FormatHandle(pipeline);
+}
 
+std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                 vvl::Func command, const std::string& resource_description,
+                                                 const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+                                                 VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+                                                 uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+    AdditionalMessageInfo additional_info;
+    std::stringstream ss;
+    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+                                   descriptor_array_element, shader_stage, "buffer", additional_info, ss);
+    ss << ".";
+
+    additional_info.pre_synchronization_text = ss.str();
     return Error(hazard, cb_context, command, resource_description, "BufferDescriptorError", additional_info);
 }
 
@@ -386,30 +395,32 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
                                                 VkDescriptorType descriptor_type, uint32_t descriptor_binding,
                                                 uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
                                                 VkImageLayout image_layout) const {
-    const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
-    const char* image_layout_str = string_VkImageLayout(image_layout);
-
     AdditionalMessageInfo additional_info;
-    additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
-    additional_info.properties.Add(kPropertyDescriptorBinding, descriptor_binding);
-    additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
-    additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
-    additional_info.properties.Add(kPropertyImageLayout, image_layout_str);
+    std::stringstream ss;
+    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+                                   descriptor_array_element, shader_stage, "image", additional_info, ss);
+    ss << ", image layout " << string_VkImageLayout(image_layout) << ".";
+
+    additional_info.pre_synchronization_text = ss.str();
+    additional_info.properties.Add(kPropertyImageLayout, string_VkImageLayout(image_layout));
+    return Error(hazard, cb_context, command, resource_description, "ImageDescriptorError", additional_info);
+}
+
+std::string ErrorMessages::AccelerationStructureDescriptorError(
+    const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+    const std::string& resource_description, const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+    VkDescriptorType descriptor_type, uint32_t descriptor_binding, uint32_t descriptor_array_element,
+    VkShaderStageFlagBits shader_stage) const {
+    AdditionalMessageInfo additional_info;
+    additional_info.access_action = "traces rays against";
 
     std::stringstream ss;
-    ss << "\nThe image is referenced by a ";
-    ss << descriptor_type_str << " descriptor in ";
-    ss << validator_.FormatHandle(descriptor_set);
-    ss << ", binding " << descriptor_binding;
-    if (descriptor_set.GetDescriptorCountFromBinding(descriptor_binding) > 1) {
-        ss << ", array element " << descriptor_array_element;
-    }
-    ss << ", image layout " << string_VkImageLayout(image_layout);
-    ss << ", " << validator_.FormatHandle(pipeline);
+    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+                                   descriptor_array_element, shader_stage, "acceleration structure", additional_info, ss);
     ss << ".";
     additional_info.pre_synchronization_text = ss.str();
 
-    return Error(hazard, cb_context, command, resource_description, "ImageDescriptorError", additional_info);
+    return Error(hazard, cb_context, command, resource_description, "AccelerationStructureDescriptorError", additional_info);
 }
 
 std::string ErrorMessages::ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,

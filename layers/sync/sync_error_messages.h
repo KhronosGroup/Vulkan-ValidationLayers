@@ -89,6 +89,12 @@ class ErrorMessages {
                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                      VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
+    std::string AccelerationStructureDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                     vvl::Func command, const std::string& resource_description,
+                                                     const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
+                                                     VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+                                                     uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const;
+
     std::string ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                      const std::string& resource_description, VkImageAspectFlagBits aspect,
                                      uint32_t clear_rect_index, const VkClearRect& clear_rect) const;
