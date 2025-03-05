@@ -295,6 +295,8 @@ vvl_sources = [
   "layers/stateless/sl_ray_tracing.cpp",
   "layers/stateless/sl_render_pass.cpp",
   "layers/stateless/sl_shader_object.cpp",
+  "layers/stateless/sl_spirv.cpp",
+  "layers/stateless/sl_spirv.h",
   "layers/stateless/sl_synchronization.cpp",
   "layers/stateless/sl_utils.cpp",
   "layers/stateless/sl_vuid_maps.cpp",
