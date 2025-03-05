@@ -16,6 +16,7 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
 struct PositiveSyncValRayTracing : public VkSyncValTest {};
@@ -288,5 +289,73 @@ TEST_F(PositiveSyncValRayTracing, ReadInstanceDataDuringBuild) {
     m_command_buffer.Begin();
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.Copy(instance.buffer, dst_buffer);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
+    TEST_DESCRIPTION("Build TLAS and trace rays");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    // Build BLAS
+    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(
+        *m_device, vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device)));
+    blas->SetupBuild(true);
+    m_command_buffer.Begin();
+    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+
+    // Create TLAS (but not build it yet)
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    tlas.SetupBuild(true);
+
+    // Create compute pipeline
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 0.1, vec3(0,0,1), 1000.0);
+            rayQueryProceedEXT(query);
+        }
+    )glsl";
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    pipeline.CreateComputePipeline();
+    pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.descriptor_set_->UpdateDescriptorSets();
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    barrier.buffer = tlas.GetDstAS()->GetBuffer();
+    barrier.offset = 0;
+    barrier.size = tlas.GetDstAS()->GetBuffer().CreateInfo().size;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
+                              &pipeline.descriptor_set_->set_, 0, nullptr);
+    // Build
+    tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    // Wait
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    // Trace
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
