@@ -57,7 +57,7 @@ bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipel
             uint32_t stage_count = std::min(pCreateInfos[0].stageCount, kCommonMaxGraphicsShaderStages);
             for (uint32_t stage = 0; stage < stage_count; stage++) {
                 if (chassis_state.stateless_data[stage].pipeline_pnext_module) {
-                    skip |= ValidateSpirvStateless(
+                    skip |= stateless_spirv_validator.Validate(
                         *chassis_state.stateless_data[stage].pipeline_pnext_module, chassis_state.stateless_data[stage],
                         create_info_loc.dot(Field::pStages, stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
                 }

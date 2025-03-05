@@ -58,8 +58,9 @@ bool CoreChecks::PreCallValidateCreateComputePipelines(VkDevice device, VkPipeli
         // check the stateless validation in the pNext chain for the first pipeline. (The core issue is because we parse the SPIR-V
         // at state tracking time, and we state track pipelines first)
         if (i == 0 && chassis_state.stateless_data.pipeline_pnext_module) {
-            skip |= ValidateSpirvStateless(*chassis_state.stateless_data.pipeline_pnext_module, chassis_state.stateless_data,
-                                           create_info_loc.dot(Field::stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
+            skip |= stateless_spirv_validator.Validate(
+                *chassis_state.stateless_data.pipeline_pnext_module, chassis_state.stateless_data,
+                create_info_loc.dot(Field::stage).pNext(Struct::VkShaderModuleCreateInfo, Field::pCode));
         }
     }
     return skip;

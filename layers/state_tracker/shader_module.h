@@ -552,13 +552,13 @@ struct EntryPoint {
                                  const AccessChainVariableMap &access_chain_map);
 };
 
-// Info to capture while parsing the SPIR-V, but will only be used by ValidateSpirvStateless and don't need to save after
+// Info to capture while parsing the SPIR-V, but will only be used by SpirvValidator::Validate and don't need to save after
 struct StatelessData {
     // Used if the Shader Module is being passed in VkPipelineShaderStageCreateInfo
     std::shared_ptr<spirv::Module> pipeline_pnext_module;
 
     // These instruction mapping were designed to quickly find the few instructions without having to loop the entire pass
-    // In theory, these could be removed checked during the 2nd pass in ValidateSpirvStateless()
+    // In theory, these could be removed checked during the 2nd pass in SpirvValidator::Validate
     // TODO - Get perf numbers if better to understand if these make sense here
     std::vector<const Instruction *> read_clock_inst;
     std::vector<const Instruction *> atomic_inst;

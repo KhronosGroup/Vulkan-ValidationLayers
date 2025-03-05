@@ -174,7 +174,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             #include <spirv/unified1/spirv.hpp>
             #include "vk_extension_helper.h"
             #include "state_tracker/shader_instruction.h"
-            #include "core_checks/core_validation.h"
+            #include "stateless/sl_spirv.h"
             ''')
 
         #
@@ -351,7 +351,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
         #
         # The main function to validate all the extensions and capabilities
         out.append('''
-            bool CoreChecks::ValidateShaderCapabilitiesAndExtensions(const spirv::Instruction &insn,  const Location& loc) const {
+            bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const spirv::Module& module_state, const spirv::Instruction &insn,  const Location& loc) const {
                 bool skip = false;
                 const bool pipeline = loc.function != vvl::Func::vkCreateShadersEXT;
 
@@ -359,7 +359,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                     // All capabilities are generated so if it is not in the list it is not supported by Vulkan
                     if (GetSpirvCapabilites().count(insn.Word(1)) == 0) {
                         const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08739" : "VUID-VkShaderCreateInfoEXT-pCode-08739";
-                        skip |= LogError(vuid, device, loc,
+                        skip |= LogError(vuid, module_state.handle(), loc,
                             "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.", string_SpvCapability(insn.Word(1)));
                         return skip; // no known capability to validate
                     }
@@ -416,7 +416,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
         out.append('''
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08740" : "VUID-VkShaderCreateInfoEXT-pCode-08740";
-                    skip |= LogError(vuid, device, loc,
+                    skip |= LogError(vuid, module_state.handle(), loc,
                         "SPIR-V Capability %s was declared, but one of the following requirements is required (%s).", string_SpvCapability(insn.Word(1)), SpvCapabilityRequirements(insn.Word(1)));
                 }
 
@@ -424,7 +424,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
                     if ((VK_FALSE == enabled_features.shaderSampleRateInterpolationFunctions) &&
                         (spv::CapabilityInterpolationFunction == insn.Word(1))) {
-                        skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", device, loc,
+                        skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", module_state.handle(), loc,
                                             "SPIR-V (portability error) InterpolationFunction Capability are not supported "
                                             "by this platform");
                     }
@@ -436,13 +436,13 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 if (0 == extension_name.compare(0, spv_prefix.size(), spv_prefix)) {
                     if (GetSpirvExtensions().count(extension_name) == 0) {
                         const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08741" : "VUID-VkShaderCreateInfoEXT-pCode-08741";
-                        skip |= LogError(vuid, device,loc,
+                        skip |= LogError(vuid, module_state.handle(), loc,
                             "SPIR-V Extension %s was declared, but that is not supported by Vulkan.", extension_name.c_str());
                         return skip; // no known extension to validate
                     }
                 } else {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08741" : "VUID-VkShaderCreateInfoEXT-pCode-08741";
-                    skip |= LogError( vuid, device,loc,
+                    skip |= LogError(vuid, module_state.handle(), loc,
                         "SPIR-V Extension %s was declared, but this is not a SPIR-V extension. Please use a SPIR-V"
                         " extension (https://github.com/KhronosGroup/SPIRV-Registry) for OpExtension instructions. Non-SPIR-V extensions can be"
                         " recorded in SPIR-V using the OpSourceExtension instruction.", extension_name.c_str());
@@ -472,7 +472,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
 
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08742" : "VUID-VkShaderCreateInfoEXT-pCode-08742";
-                    skip |= LogError(vuid, device, loc,
+                    skip |= LogError(vuid, module_state.handle(), loc,
                         "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirments(extension_name).c_str());
                 }
             } //spv::OpExtension

@@ -343,6 +343,8 @@ target_sources(vvl PRIVATE
     stateless/sl_ray_tracing.cpp
     stateless/sl_render_pass.cpp
     stateless/sl_shader_object.cpp
+    stateless/sl_spirv.cpp
+    stateless/sl_spirv.h
     stateless/sl_synchronization.cpp
     stateless/sl_utils.cpp
     stateless/sl_vuid_maps.cpp
