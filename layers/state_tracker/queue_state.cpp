@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,8 @@
  */
 #include "state_tracker/queue_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+
+#include "profiling/profiling.h"
 
 void vvl::QueueSubmission::BeginUse() {
     for (SemaphoreInfo &wait : wait_semaphores) {
@@ -260,6 +262,8 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
 }
 
 void vvl::Queue::ThreadFunc() {
+    VVL_TracySetThreadName(__FUNCTION__);
+
     QueueSubmission *submission = nullptr;
 
     // Roll this queue forward, one submission at a time.

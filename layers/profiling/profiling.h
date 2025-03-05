@@ -21,6 +21,7 @@
 #include "tracy/Tracy.hpp"
 #include "tracy/TracyC.h"
 #include "tracy/../client/TracyProfiler.hpp"
+#include "common/TracySystem.hpp"
 
 // Define CPU zones
 #define VVL_ZoneScoped ZoneScoped
@@ -28,6 +29,9 @@
 #define VVL_TracyCZone(zone_name, active) TracyCZone(zone_name, active)
 #define VVL_TracyCZoneEnd(zone_name) TracyCZoneEnd(zone_name)
 #define VVL_TracyCFrameMark TracyCFrameMark
+
+// Thread naming
+#define VVL_TracySetThreadName(name) tracy::SetThreadName(name)
 
 // Print messages
 #define VVL_TracyMessage TracyMessage
@@ -64,6 +68,7 @@
 #define VVL_TracyCZone(zone_name, active)
 #define VVL_TracyCZoneEnd(zone_name)
 #define VVL_TracyCFrameMark
+#define VVL_TracySetThreadName(name)
 #define VVL_TracyMessage
 #define VVL_TracyMessageL
 #define VVL_TracyPlot(name, value)
