@@ -335,17 +335,6 @@ class Instance : public vvl::base::Instance {
     bool CheckPromotedApiAgainstVulkanVersion(VkInstance instance, const Location &loc, const uint32_t promoted_version) const;
     bool CheckPromotedApiAgainstVulkanVersion(VkPhysicalDevice pdev, const Location &loc, const uint32_t promoted_version) const;
 
-    bool SupportedByPdev(const VkPhysicalDevice physical_device, vvl::Extension extension, bool skip_gpdp2 = false) const;
-
-    bool ValidatePnextFeatureStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                            VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
-    bool ValidatePnextStructContents(const Location &loc, const VkBaseOutStructure *header, const char *pnext_vuid,
-                                     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, bool is_const_param = true) const;
-
-    bool ValidateStructPnext(const Location &loc, const void *next, size_t allowed_type_count, const VkStructureType *allowed_types,
-                             uint32_t header_version, const char *pnext_vuid, const char *stype_vuid,
-                             VkPhysicalDevice physicalDevice = VK_NULL_HANDLE, const bool is_const_param = true) const;
-
     template <typename ExtensionState>
     bool ValidateExtensionReqs(const ExtensionState &extensions, const char *vuid, const char *extension_type,
                                vvl::Extension extension, const Location &extension_loc) const;
