@@ -715,7 +715,7 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1};
-    CreateImageViewTest(*this, &ivci);
+    vkt::ImageView view(*m_device, ivci);
 }
 
 TEST_F(PositiveImage, BlitMaintenance8) {
@@ -760,4 +760,108 @@ TEST_F(PositiveImage, BlitMaintenance8) {
     vk::CmdBlitImage(m_command_buffer.handle(), image_2d, image_2d.Layout(), image_3d, image_3d.Layout(), 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_command_buffer.End();
+}
+
+TEST_F(PositiveImage, ImageViewIncompatibleFormat) {
+    TEST_DESCRIPTION("Tests for VUID-VkImageViewCreateInfo-image-01761");
+    // original issue https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2203
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    vkt::Image mutImage(*m_device, image_ci, vkt::set_layout);
+
+    VkImageViewCreateInfo imgViewInfo = vku::InitStructHelper();
+    imgViewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imgViewInfo.subresourceRange.layerCount = 1;
+    imgViewInfo.subresourceRange.baseMipLevel = 0;
+    imgViewInfo.subresourceRange.levelCount = 1;
+    imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imgViewInfo.image = mutImage.handle();
+
+    // With a identical format, there should be no error
+    imgViewInfo.format = image_ci.format;
+    vkt::ImageView image_view(*m_device, imgViewInfo);
+
+    vkt::Image mut_compat_image(*m_device, image_ci);
+
+    imgViewInfo.image = mut_compat_image.handle();
+    imgViewInfo.format = VK_FORMAT_R8_SINT;  // different, but size compatible
+    vkt::ImageView image_view2(*m_device, imgViewInfo);
+}
+
+TEST_F(PositiveImage, BlockTexelViewType) {
+    TEST_DESCRIPTION(
+        "Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT and non-compressed format and ImageView with view type "
+        "VK_IMAGE_VIEW_TYPE_3D.");
+
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
+    image_create_info.format = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
+    image_create_info.extent = {32, 32, 1};
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+
+    VkFormatProperties image_fmt;
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
+    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
+        GTEST_SKIP() << "Image usage and format not compatible on device";
+    }
+    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
+
+    VkImageViewCreateInfo ivci = vku::InitStructHelper();
+    ivci.image = image.handle();
+    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
+    ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
+    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    ivci.subresourceRange.baseMipLevel = 0;
+    ivci.subresourceRange.layerCount = 1;
+    ivci.subresourceRange.baseArrayLayer = 0;
+    ivci.subresourceRange.levelCount = 1;
+
+    vkt::ImageView image_view(*m_device, ivci);
+}
+
+TEST_F(PositiveImage, CornerSampledImageNV) {
+    TEST_DESCRIPTION("Test VK_NV_corner_sampled_image.");
+    AddRequiredExtensions(VK_NV_CORNER_SAMPLED_IMAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cornerSampledImage);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper();
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_create_info.extent.width = 2;
+    image_create_info.extent.height = 1;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_create_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
+
+    {
+        // Valid # of mip levels
+        image_create_info.extent = {7, 7, 1};
+        image_create_info.mipLevels = 3;  // 3 = ceil(log2(7))
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+    }
+    {
+        image_create_info.extent = {8, 8, 1};
+        image_create_info.mipLevels = 3;  // 3 = ceil(log2(8))
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+    }
+    {
+        image_create_info.extent = {9, 9, 1};
+        image_create_info.mipLevels = 3;  // 4 = ceil(log2(9))
+        vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+    }
 }

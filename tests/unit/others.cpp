@@ -486,7 +486,7 @@ TEST_F(VkLayerTest, UnrecognizedValueBadBool) {
 
     // Not VK_TRUE or VK_FALSE
     sampler_info.anisotropyEnable = 3;
-    CreateSamplerTest(*this, &sampler_info, "UNASSIGNED-GeneralParameterError-UnrecognizedBool32");
+    CreateSamplerTest(sampler_info, "UNASSIGNED-GeneralParameterError-UnrecognizedBool32");
 }
 
 TEST_F(VkLayerTest, UnrecognizedValueMaxEnum) {
@@ -816,7 +816,7 @@ TEST_F(VkLayerTest, InvalidImageCreateFlagWithPhysicalDeviceCount) {
         GTEST_SKIP() << "image format is not supported";
     }
 
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-physicalDeviceCount-01421");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-physicalDeviceCount-01421");
 }
 
 TEST_F(VkLayerTest, ZeroBitmask) {

@@ -55,34 +55,34 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     all_queue_count_ = true;
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    VkBufferCreateInfo buffCI = vku::InitStructHelper();
-    buffCI.size = 1024;
-    buffCI.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffCI.queueFamilyIndexCount = 2;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.size = 1024;
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.queueFamilyIndexCount = 2;
     // Introduce failure by specifying invalid queue_family_index
     uint32_t qfi[2];
     qfi[0] = 777;
     qfi[1] = 0;
 
-    buffCI.pQueueFamilyIndices = qfi;
-    buffCI.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
+    buffer_ci.pQueueFamilyIndices = qfi;
+    buffer_ci.sharingMode = VK_SHARING_MODE_CONCURRENT;  // qfi only matters in CONCURRENT mode
 
     // Test for queue family index out of range
-    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     // Test for non-unique QFI in array
     qfi[0] = 0;
-    CreateBufferTest(*this, &buffCI, "VUID-VkBufferCreateInfo-sharingMode-01419");
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-sharingMode-01419");
 
     if (m_device->Physical().queue_properties_.size() > 2) {
         m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSubmits-04626");
 
         // Create buffer shared to queue families 1 and 2, but submitted on queue family 0
-        buffCI.queueFamilyIndexCount = 2;
+        buffer_ci.queueFamilyIndexCount = 2;
         qfi[0] = 1;
         qfi[1] = 2;
         vkt::Buffer ib;
-        ib.init(*m_device, buffCI);
+        ib.init(*m_device, buffer_ci);
 
         m_command_buffer.Begin();
         vk::CmdFillBuffer(m_command_buffer.handle(), ib.handle(), 0, 16, 5);
@@ -120,10 +120,10 @@ TEST_F(NegativeDeviceQueue, FamilyIndexUsage) {
     ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &dev_info, nullptr, &second_device));
 
     // Select Queue family for CONCURRENT buffer that is not owned by device
-    buffCI.queueFamilyIndexCount = 2;
+    buffer_ci.queueFamilyIndexCount = 2;
     qfi[1] = 2;
     VkBuffer buffer = VK_NULL_HANDLE;
-    vk::CreateBuffer(second_device, &buffCI, NULL, &buffer);
+    vk::CreateBuffer(second_device, &buffer_ci, NULL, &buffer);
     vk::DestroyBuffer(second_device, buffer, nullptr);
     vk::DestroyDevice(second_device, nullptr);
 }

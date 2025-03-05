@@ -222,33 +222,33 @@ TEST_F(NegativeWsi, SwapchainImage) {
     // imageType
     image_create_info = good_create_info;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
-    CreateImageTest(*this, &image_create_info, vuid);
+    CreateImageTest(image_create_info, vuid);
 
     // mipLevels
     image_create_info = good_create_info;
     image_create_info.mipLevels = 2;
-    CreateImageTest(*this, &image_create_info, vuid);
+    CreateImageTest(image_create_info, vuid);
 
     // samples
     image_create_info = good_create_info;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
-    CreateImageTest(*this, &image_create_info, vuid);
+    CreateImageTest(image_create_info, vuid);
 
     // tiling
     image_create_info = good_create_info;
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    CreateImageTest(*this, &image_create_info, vuid);
+    CreateImageTest(image_create_info, vuid);
 
     // initialLayout
     image_create_info = good_create_info;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    CreateImageTest(*this, &image_create_info, vuid);
+    CreateImageTest(image_create_info, vuid);
 
     // flags
     if (m_device->Physical().Features().sparseBinding) {
         image_create_info = good_create_info;
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        CreateImageTest(*this, &image_create_info, vuid);
+        CreateImageTest(image_create_info, vuid);
     }
 }
 

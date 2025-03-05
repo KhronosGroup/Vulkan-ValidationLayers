@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ TEST_F(NegativeImageDrm, Basic) {
     drm_format_mod_explicit.pPlaneLayouts = &fake_plane_layout;
 
     // No pNext
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02261");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-tiling-02261");
 
     // Having wrong size, arrayPitch and depthPitch in VkSubresourceLayout
     fake_plane_layout.size = 1;
@@ -71,7 +71,7 @@ TEST_F(NegativeImageDrm, Basic) {
     image_info.pNext = (void *)&drm_format_mod_explicit;
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-size-02267");
     m_errorMonitor->SetDesiredError("VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-arrayPitch-02268");
-    CreateImageTest(*this, &image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
+    CreateImageTest(image_info, "VUID-VkImageDrmFormatModifierExplicitCreateInfoEXT-depthPitch-02269");
 }
 
 TEST_F(NegativeImageDrm, Basic2) {
@@ -136,12 +136,12 @@ TEST_F(NegativeImageDrm, Basic2) {
 
     // Having both in pNext
     drm_format_mod_explicit.pNext = (void *)&drm_format_mod_list;
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02261");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-tiling-02261");
 
     // Only 1 pNext but wrong tiling
     image_info.pNext = (void *)&drm_format_mod_list;
     image_info.tiling = VK_IMAGE_TILING_LINEAR;
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-pNext-02262");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-pNext-02262");
 }
 
 TEST_F(NegativeImageDrm, ImageFormatInfo) {
@@ -289,7 +289,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
 
     m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-subresourceRange-09594");
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-02278");
+    CreateImageViewTest(ivci, "VUID-VkImageSubresourceRange-aspectMask-02278");
 }
 
 TEST_F(NegativeImageDrm, MutableFormat) {
@@ -316,12 +316,12 @@ TEST_F(NegativeImageDrm, MutableFormat) {
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02353");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-tiling-02353");
 
     VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
     format_list.viewFormatCount = 0;
     mod_list.pNext = &format_list;
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-tiling-02353");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-tiling-02353");
 }
 
 TEST_F(NegativeImageDrm, CompressionControl) {
@@ -349,7 +349,7 @@ TEST_F(NegativeImageDrm, CompressionControl) {
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    CreateImageTest(*this, &image_info, "VUID-VkImageCreateInfo-pNext-06746");
+    CreateImageTest(image_info, "VUID-VkImageCreateInfo-pNext-06746");
 }
 
 TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {

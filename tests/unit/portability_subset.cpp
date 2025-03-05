@@ -95,13 +95,13 @@ TEST_F(NegativePortabilitySubset, Image) {
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ci.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-imageView2DOn3DImage-04459");
+    CreateImageTest(ci, "VUID-VkImageCreateInfo-imageView2DOn3DImage-04459");
 
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.flags = 0;
     ci.samples = VK_SAMPLE_COUNT_2_BIT;
     ci.arrayLayers = 2;
-    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-multisampleArrayImage-04460");
+    CreateImageTest(ci, "VUID-VkImageCreateInfo-multisampleArrayImage-04460");
 }
 
 TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
@@ -141,14 +141,14 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
     ci.components.b = VK_COMPONENT_SWIZZLE_R;
     ci.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
     ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465");
+    CreateImageViewTest(ci, "VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465");
 
     // Verify using VK_COMPONENT_SWIZZLE_R/G/B/A works when imageViewFormatSwizzle == VK_FALSE
     ci.components.r = VK_COMPONENT_SWIZZLE_R;
     ci.components.g = VK_COMPONENT_SWIZZLE_G;
     ci.components.b = VK_COMPONENT_SWIZZLE_B;
     ci.components.a = VK_COMPONENT_SWIZZLE_A;
-    CreateImageViewTest(*this, &ci);
+    vkt::ImageView image_view(*m_device, ci);
 }
 
 TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount) {
@@ -191,7 +191,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount)
     // Format might not be supported
     // TODO - Need to figure out which format is supported that hits 04466
     m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-None-02273");
-    CreateImageViewTest(*this, &ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
+    CreateImageViewTest(ci, "VUID-VkImageViewCreateInfo-imageViewFormatReinterpretation-04466");
 }
 
 TEST_F(NegativePortabilitySubset, Sampler) {
@@ -208,7 +208,7 @@ TEST_F(NegativePortabilitySubset, Sampler) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.mipLodBias = 1.0f;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-samplerMipLodBias-04467");
 }
 
 TEST_F(NegativePortabilitySubset, TriangleFans) {

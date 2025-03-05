@@ -3119,7 +3119,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     if ((format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
         image_create_info.flags = VK_IMAGE_CREATE_SAMPLE_LOCATIONS_COMPATIBLE_DEPTH_BIT_EXT;
         image_create_info.format = VK_FORMAT_S8_UINT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-01533");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-01533");
     }
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());

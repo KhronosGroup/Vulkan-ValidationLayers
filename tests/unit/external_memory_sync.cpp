@@ -35,7 +35,7 @@ TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&external_memory_info);
     buffer_create_info.size = 1024;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
 
     IgnoreHandleTypeError(m_errorMonitor);
     // Get all exportable handle types supported by the platform.
@@ -58,7 +58,7 @@ TEST_F(NegativeExternalMemorySync, CreateBufferIncompatibleHandleTypes) {
     // Main test case. Handle types are supported but not compatible with each other
     if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
         external_memory_info.handleTypes = supported_handle_types;
-        CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-pNext-00920");
     }
 }
 
@@ -83,7 +83,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
 
     // Get all exportable handle types supported by the platform.
     VkExternalMemoryHandleTypeFlags supported_handle_types = 0;
@@ -114,7 +114,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypes) {
     // Main test case. Handle types are supported but not compatible with each other
     if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
         external_memory_info.handleTypes = supported_handle_types;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-00990");
     }
 }
 
@@ -159,7 +159,7 @@ TEST_F(NegativeExternalMemorySync, CreateImageIncompatibleHandleTypesNV) {
     // Main test case. Handle types are supported but not compatible with each other
     if ((supported_handle_types & any_compatible_group) != supported_handle_types) {
         external_memory_info.handleTypes = supported_handle_types;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-00991");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-00991");
     }
 }
 
@@ -1542,7 +1542,7 @@ TEST_F(NegativeExternalMemorySync, MemoryAndMemoryNV) {
     }
     external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryFeatureFlagBitsNV>(supported_types_nv);
     external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-00988");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-00988");
 }
 
 TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
@@ -1570,7 +1570,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
     const auto supported_types = FindSupportedExternalMemoryHandleTypes(Gpu(), ici, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT);
     if (supported_types) {
         external_mem.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBits>(supported_types);
-        CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-01443");
+        CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-01443");
     }
     if (IsExtensionsEnabled(VK_NV_EXTERNAL_MEMORY_EXTENSION_NAME)) {
         VkExternalMemoryImageCreateInfoNV external_mem_nv = vku::InitStructHelper();
@@ -1579,7 +1579,7 @@ TEST_F(NegativeExternalMemorySync, MemoryImageLayout) {
         if (supported_types_nv) {
             external_mem_nv.handleTypes = LeastSignificantFlag<VkExternalMemoryHandleTypeFlagBitsNV>(supported_types_nv);
             ici.pNext = &external_mem_nv;
-            CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-01443");
+            CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-01443");
         }
     }
 }
@@ -2777,21 +2777,21 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     ici.tiling = VK_IMAGE_TILING_LINEAR;
     ici.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     ici.pNext = &metal_object_create_info;
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06783");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-06783");
 
     VkImportMetalTextureInfoEXT import_metal_texture_info = vku::InitStructHelper();
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
     ici.pNext = &import_metal_texture_info;
     ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06784");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-06784");
 
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_1_BIT;
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06785");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-06785");
 
     ici.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     import_metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
-    CreateImageTest(*this, &ici, "VUID-VkImageCreateInfo-pNext-06786");
+    CreateImageTest(ici, "VUID-VkImageCreateInfo-pNext-06786");
 
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 1024;
@@ -2803,7 +2803,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
     buff_view_ci.pNext = &metal_object_create_info;
-    CreateBufferViewTest(*this, &buff_view_ci, {"VUID-VkBufferViewCreateInfo-pNext-06782"});
+    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-pNext-06782");
 
     vkt::Image image_obj(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
@@ -2815,7 +2815,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.pNext = &metal_object_create_info;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-pNext-06787");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-pNext-06787");
 
     VkSemaphoreCreateInfo sem_info = vku::InitStructHelper();
     sem_info.pNext = &metal_object_create_info;

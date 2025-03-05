@@ -246,56 +246,34 @@ VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, 
     return return_format;
 }
 
-void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *create_info, const std::string &code) {
-    if (code.length()) {
-        test.Monitor().SetDesiredError(code.c_str());
-    }
-
-    vkt::Sampler sampler(*test.DeviceObj(), *create_info);
-
-    if (code.length()) {
-        test.Monitor().VerifyFound();
-    }
+void VkLayerTest::CreateSamplerTest(const VkSamplerCreateInfo &create_info, const char *vuid) {
+    Monitor().SetDesiredError(vuid);
+    vkt::Sampler sampler(*m_device, create_info);
+    Monitor().VerifyFound();
 }
 
-void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *create_info, const std::string &code) {
-    if (code.length()) {
-        test.Monitor().SetDesiredError(code.c_str());
-    }
-    vkt::Buffer buffer(*test.DeviceObj(), *create_info, vkt::no_mem);
-    if (code.length()) {
-        test.Monitor().VerifyFound();
-    }
+void VkLayerTest::CreateBufferTest(const VkBufferCreateInfo &create_info, const char *vuid) {
+    Monitor().SetDesiredError(vuid);
+    vkt::Buffer buffer(*m_device, create_info, vkt::no_mem);
+    Monitor().VerifyFound();
 }
 
-void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *create_info, const std::string &code) {
-    if (code.length()) {
-        test.Monitor().SetDesiredError(code.c_str());
-    }
-    vkt::Image image(*test.DeviceObj(), *create_info, vkt::no_mem);
-    if (code.length()) {
-        test.Monitor().VerifyFound();
-    }
+void VkLayerTest::CreateImageTest(const VkImageCreateInfo &create_info, const char *vuid) {
+    Monitor().SetDesiredError(vuid);
+    vkt::Image image(*m_device, create_info, vkt::no_mem);
+    Monitor().VerifyFound();
 }
 
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *create_info, const std::vector<std::string> &codes) {
-    if (codes.size()) {
-        std::for_each(codes.begin(), codes.end(), [&](const std::string &s) { test.Monitor().SetDesiredError(s.c_str()); });
-    }
-    vkt::BufferView view(*test.DeviceObj(), *create_info);
-    if (codes.size()) {
-        test.Monitor().VerifyFound();
-    }
+void VkLayerTest::CreateBufferViewTest(const VkBufferViewCreateInfo &create_info, const char *vuid) {
+    Monitor().SetDesiredError(vuid);
+    vkt::BufferView view(*m_device, create_info);
+    Monitor().VerifyFound();
 }
 
-void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *create_info, const std::string &code) {
-    if (code.length()) {
-        test.Monitor().SetDesiredError(code.c_str());
-    }
-    vkt::ImageView view(*test.DeviceObj(), *create_info);
-    if (code.length()) {
-        test.Monitor().VerifyFound();
-    }
+void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo &create_info, const char *vuid) {
+    Monitor().SetDesiredError(vuid);
+    vkt::ImageView view(*m_device, create_info);
+    Monitor().VerifyFound();
 }
 
 VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
