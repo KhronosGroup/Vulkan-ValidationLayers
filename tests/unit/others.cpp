@@ -1424,3 +1424,47 @@ TEST_F(VkLayerTest, UnrecognizedEnumExtension) {
     vkt::Image image(*m_device, 4, 4, 1, VK_FORMAT_A4B4G4R4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, MissingExtensionBufferUsageFlags2CreateInfo) {
+    TEST_DESCRIPTION("Use VkBufferUsageFlags2CreateInfo without the extension");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    // added in VK_KHR_maintenance5
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_ci.usage = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
+    buffer_ci.size = 64;
+    {
+        m_errorMonitor->SetDesiredWarning("WARNING-VkBufferUsageFlags2CreateInfo-Extension");
+        vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+        m_errorMonitor->VerifyFound();
+    }
+
+    buffer_ci.pNext = nullptr;
+    vkt::Buffer good_buffer(*m_device, buffer_ci, vkt::no_mem);
+    VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    buffer_view_ci.range = VK_WHOLE_SIZE;
+    buffer_view_ci.buffer = good_buffer;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkBufferUsageFlags2CreateInfo-Extension");
+    vkt::BufferView view(*m_device, buffer_view_ci);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(VkLayerTest, MissingExtensionPipelineCreateFlags2) {
+    TEST_DESCRIPTION("Use VkPipelineCreateFlags2 without the extension");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    // added in VK_KHR_maintenance5
+    VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
+    flags2.flags = VK_PIPELINE_CREATE_2_DISABLE_OPTIMIZATION_BIT;
+
+    CreateComputePipelineHelper pipe(*this, &flags2);
+    m_errorMonitor->SetDesiredWarning("WARNING-VkPipelineCreateFlags2CreateInfo-Extension");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
