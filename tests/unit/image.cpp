@@ -45,7 +45,7 @@ TEST_F(NegativeImage, UsageBits) {
     dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     // Create a view with depth / stencil aspect for image with different usage
-    CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-image-04441");
+    CreateImageViewTest(dsvci, "VUID-VkImageViewCreateInfo-image-04441");
 
     // Initialize buffer with TRANSFER_DST usage
     vkt::Buffer buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -962,7 +962,7 @@ TEST_F(NegativeImage, Array2DImageType) {
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00950");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-00950");
 }
 
 TEST_F(NegativeImage, View2DImageType) {
@@ -974,7 +974,7 @@ TEST_F(NegativeImage, View2DImageType) {
     // Trigger check by setting imagecreateflags to 2d_array_compat and imageType to 2D
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image_ci.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-07755");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-07755");
 }
 
 TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
@@ -1009,7 +1009,7 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_2D
     image_ci.imageType = VK_IMAGE_TYPE_2D;
@@ -1028,14 +1028,14 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Change VkImageViewCreateInfo to different mismatched viewType
     ivci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     ivci.subresourceRange.layerCount = 6;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01003");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01003");
 
     // Test mismatch detection for image of type VK_IMAGE_TYPE_3D
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -1054,16 +1054,16 @@ TEST_F(NegativeImage, ImageViewBreaksParameterCompatibilityRequirements) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Test for error message
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
 
     // Change VkImageViewCreateInfo to different mismatched viewType
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
 
     // Test for error message
     if (maintenance1_support) {
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-06728");
+        CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-06728");
     } else {
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
+        CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-subResourceRange-01021");
     }
 
     // Check if the device can make the image required for this test case.
@@ -1162,7 +1162,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
         ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
         // Test for error message
-        CreateImageViewTest(*this, &ivci, optimal_error_codes[i]);
+        CreateImageViewTest(ivci, optimal_error_codes[i].c_str());
     }
 
     // Test for VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT.  Needs special formats
@@ -1205,7 +1205,7 @@ TEST_F(NegativeImage, ImageViewFormatFeatureMismatch) {
     // This extra VU checked is because depth formats are only compatible with themselves
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-01761");
     // Test for error message
-    CreateImageViewTest(*this, &ivci, optimal_error_codes[i]);
+    CreateImageViewTest(ivci, optimal_error_codes[i].c_str());
 }
 
 TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
@@ -1252,7 +1252,7 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // ImageView creation should fail because view format doesn't support all the underlying image's usages
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-usage-02275");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-usage-02275");
 
     // Add a chained VkImageViewUsageCreateInfo to override original image usage bits, removing storage
     VkImageViewUsageCreateInfo usage_ci = vku::InitStructHelper();
@@ -1261,15 +1261,15 @@ TEST_F(NegativeImage, ImageViewUsageCreateInfo) {
     ivci.pNext = &usage_ci;
 
     // ImageView should now succeed without error
-    CreateImageViewTest(*this, &ivci);
+    vkt::ImageView image_view(*m_device, ivci);
 
     // Try a zero usage field
     usage_ci.usage = 0;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
+    CreateImageViewTest(ivci, "VUID-VkImageViewUsageCreateInfo-usage-requiredbitmask");
 
     // Try an illegal bit in usage field
     usage_ci.usage = 0x10000000 | VK_IMAGE_USAGE_SAMPLED_BIT;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
+    CreateImageViewTest(ivci, "VUID-VkImageViewUsageCreateInfo-usage-parameter");
 }
 
 TEST_F(NegativeImage, ImageViewNoSeparateStencilUsage) {
@@ -1313,7 +1313,7 @@ TEST_F(NegativeImage, ImageViewNoSeparateStencilUsage) {
     image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // Extra flag
 
     // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
 }
 
 TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
@@ -1359,7 +1359,7 @@ TEST_F(NegativeImage, ImageViewStencilUsageCreateInfo) {
     image_view_usage_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;  // Extra flag
 
     // VkImageViewUsageCreateInfo::usage must not include any bits that were not set in VkImageCreateInfo::usage
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-pNext-02662");
 
     VkImageStencilUsageCreateInfo image_stencil_create_info = vku::InitStructHelper();
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -1419,7 +1419,7 @@ TEST_F(NegativeImage, ImageViewNoMemoryBoundToImage) {
     image_view_create_info.subresourceRange.levelCount = 1;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    CreateImageViewTest(*this, &image_view_create_info,
+    CreateImageViewTest(image_view_create_info,
                         " used with no memory bound. Memory should be bound by calling vkBindImageMemory().");
     vk::DestroyImage(device(), image, NULL);
 }
@@ -1442,7 +1442,7 @@ TEST_F(NegativeImage, ImageViewAspect) {
     // Cause an error by setting an invalid image aspect
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_METADATA_BIT;
 
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-subresourceRange-09594");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-subresourceRange-09594");
 }
 
 TEST_F(NegativeImage, GetImageSubresourceLayout) {
@@ -1676,7 +1676,7 @@ TEST_F(NegativeImage, UndefinedFormat) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-01975");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-01975");
 }
 
 TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
@@ -1709,7 +1709,7 @@ TEST_F(NegativeImage, ImageViewFormatMismatchUnrelated) {
     imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     // Can't use depth format for view into color image - Expect INVALID_FORMAT
-    CreateImageViewTest(*this, &imgViewInfo,
+    CreateImageViewTest(imgViewInfo,
                         "Formats MUST be IDENTICAL unless VK_IMAGE_CREATE_MUTABLE_FORMAT BIT was set on image creation.");
 }
 
@@ -1742,7 +1742,7 @@ TEST_F(NegativeImage, ImageViewNoMutableFormatBit) {
 
     // Same compatibility class but no MUTABLE_FORMAT bit - Expect
     // VIEW_CREATE_ERROR
-    CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01762");
+    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01762");
 }
 
 TEST_F(NegativeImage, ImageViewDifferentClass) {
@@ -1766,7 +1766,7 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
     imgViewInfo.subresourceRange.levelCount = 1;
     imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imgViewInfo.image = mutImage.handle();
-    CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
+    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
 
     // Use CUBE_ARRAY without feature enabled
     {
@@ -1778,7 +1778,7 @@ TEST_F(NegativeImage, ImageViewDifferentClass) {
         imgViewInfo.format = VK_FORMAT_R8_UINT;  // compatiable format
         imgViewInfo.image = cubeImage.handle();
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-viewType-02961");
-        CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
+        CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-viewType-01004");
     }
 }
 
@@ -1804,7 +1804,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
     }
 
     // Try baseMipLevel >= image.mipLevels without VK_REMAINING_MIP_LEVELS
@@ -1813,7 +1813,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-subresourceRange-01718");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
     }
 
     // Try levelCount = 0
@@ -1821,7 +1821,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageSubresourceRange-levelCount-01720");
+        CreateImageViewTest(img_view_info, "VUID-VkImageSubresourceRange-levelCount-01720");
     }
 
     // Try baseMipLevel + levelCount > image.mipLevels
@@ -1829,7 +1829,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01718");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01718");
     }
 
     // Try baseArrayLayer >= image.arrayLayers with VK_REMAINING_ARRAY_LAYERS
@@ -1837,7 +1837,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
     }
 
     // Try baseArrayLayer >= image.arrayLayers without VK_REMAINING_ARRAY_LAYERS
@@ -1846,7 +1846,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-subresourceRange-06725");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
     }
 
     // Try layerCount = 0
@@ -1854,7 +1854,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageSubresourceRange-layerCount-01721");
+        CreateImageViewTest(img_view_info, "VUID-VkImageSubresourceRange-layerCount-01721");
     }
 
     // Try baseArrayLayer + layerCount > image.arrayLayers
@@ -1862,7 +1862,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRange) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
         VkImageViewCreateInfo img_view_info = img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
     }
 }
 
@@ -1898,25 +1898,25 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeCubeArray) {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 6};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02960");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-viewType-02960");
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 12, VK_REMAINING_ARRAY_LAYERS};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 6, VK_REMAINING_ARRAY_LAYERS};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02962");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-viewType-02962");
     }
 
     {
@@ -1924,28 +1924,28 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeCubeArray) {
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 13};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02961");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-viewType-02961");
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 6, VK_REMAINING_ARRAY_LAYERS};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     {
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 11, VK_REMAINING_ARRAY_LAYERS};
         VkImageViewCreateInfo img_view_info = cube_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-viewType-02963");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-viewType-02963");
     }
 }
 
@@ -1978,7 +1978,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // all mips
     {
@@ -1986,7 +1986,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // too many mips
     {
@@ -1994,7 +1994,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01718");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01718");
     }
     // invalid base mip
     {
@@ -2003,7 +2003,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-subresourceRange-01718");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-01478");
     }
     // too many layers
     {
@@ -2012,7 +2012,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-imageViewType-04973");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
     }
     // invalid base layer
     {
@@ -2021,7 +2021,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-subresourceRange-06725");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-image-06724");
     }
     // 2D views
     // first mip, first layer
@@ -2030,7 +2030,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // all mips, first layer (invalid)
     {
@@ -2038,7 +2038,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
     }
     // first mip, all layers (invalid)
     {
@@ -2046,7 +2046,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-imageViewType-04973");
     }
     // mip 3, 8 layers (invalid)
     {
@@ -2055,7 +2055,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-imageViewType-04973");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
     }
     // mip 3, layer 7 (invalid)
     {
@@ -2064,7 +2064,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-02724");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
     }
     // 2D array views
     // first mip, first layer
@@ -2073,7 +2073,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // all mips, first layer (invalid)
     {
@@ -2081,7 +2081,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-image-04970");
     }
     // first mip, all layers
     {
@@ -2089,7 +2089,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // mip 3, layer 0
     {
@@ -2097,7 +2097,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info);
+        vkt::ImageView view(*m_device, img_view_info);
     }
     // mip 3, 8 layers (invalid)
     {
@@ -2105,7 +2105,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         VkImageViewCreateInfo img_view_info = volume_img_view_info_template;
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
     }
     // mip 3, layer 7 (invalid)
     {
@@ -2114,7 +2114,7 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
         img_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         img_view_info.subresourceRange = range;
         m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-02724");
-        CreateImageViewTest(*this, &img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
+        CreateImageViewTest(img_view_info, "VUID-VkImageViewCreateInfo-subresourceRange-02725");
     }
 
     // Checking sparse flags are not set
@@ -2171,53 +2171,6 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
     image_view_ci.subresourceRange.levelCount = 1;
     image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    // Sanity checks
-    {
-        image_view_ci.subresourceRange.baseArrayLayer = 0;
-        image_view_ci.subresourceRange.layerCount = 1;
-
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
-        image_view_ci.image = image_1d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_ci.image = image_2d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        if (image_3d_array.handle() != VK_NULL_HANDLE) {
-            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-            image_view_ci.image = image_3d_array.handle();
-            CreateImageViewTest(*this, &image_view_ci);
-        }
-
-        image_view_ci.subresourceRange.baseArrayLayer = 1;
-        image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
-        image_view_ci.image = image_1d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_ci.image = image_2d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        if (image_3d_array.handle() != VK_NULL_HANDLE) {
-            image_view_ci.subresourceRange.baseArrayLayer = 0;
-            image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-            image_view_ci.image = image_3d_array.handle();
-            CreateImageViewTest(*this, &image_view_ci);
-        }
-
-        image_view_ci.subresourceRange.baseArrayLayer = 0;
-        image_view_ci.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
-        image_view_ci.image = image_1d.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        image_view_ci.image = image_2d.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-        image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-        image_view_ci.image = image_3d.handle();
-        CreateImageViewTest(*this, &image_view_ci);
-    }
-
     // layerCount is not 1 as imageView is not an array type
     {
         image_view_ci.subresourceRange.baseArrayLayer = 0;
@@ -2225,17 +2178,17 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
 
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
         image_view_ci.image = image_1d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+        CreateImageViewTest(image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
 
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.image = image_2d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+        CreateImageViewTest(image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
 
         if (image_3d_array.handle() != VK_NULL_HANDLE) {
             image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_3D;
             image_view_ci.image = image_3d_array.handle();
             m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-subresourceRange-06725");
-            CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
+            CreateImageViewTest(image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04973");
         }
     }
 
@@ -2246,11 +2199,11 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
 
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
         image_view_ci.image = image_1d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+        CreateImageViewTest(image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
 
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.image = image_2d_array.handle();
-        CreateImageViewTest(*this, &image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
+        CreateImageViewTest(image_view_ci, "VUID-VkImageViewCreateInfo-imageViewType-04974");
     }
 }
 
@@ -2270,33 +2223,33 @@ TEST_F(NegativeImage, ImageMisc) {
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.imageType = VK_IMAGE_TYPE_3D;
         image_ci.extent = {4, 4, 4};
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // always has 4 samples support
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         image_ci.arrayLayers = 6;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // always has 4 samples support
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // always has 4 samples support
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.mipLevels = 2;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
         image_ci.mipLevels = 1;
         image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02257");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02257");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -2304,7 +2257,7 @@ TEST_F(NegativeImage, ImageMisc) {
         image_ci.mipLevels = 2;
         image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-02259");
 
         image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -2313,35 +2266,35 @@ TEST_F(NegativeImage, ImageMisc) {
         image_ci.flags = VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT;
         image_ci.tiling = VK_IMAGE_TILING_LINEAR;
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-flags-parameter");
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-02259");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-02259");
     }
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         image_ci.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00963");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00963");
 
         image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00966");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00966");
 
         image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
         image_ci.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-usage-00963");
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00966");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00966");
     }
 
     {
         VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-00969");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-00969");
     }
 
     // InitialLayout not VK_IMAGE_LAYOUT_UNDEFINED or VK_IMAGE_LAYOUT_PREDEFINED
     {
         VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-initialLayout-00993");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-initialLayout-00993");
     }
 
     // Storage usage can't be multisample if feature not set
@@ -2351,7 +2304,7 @@ TEST_F(NegativeImage, ImageMisc) {
         VkImageCreateInfo image_ci = safe_image_ci;
         image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
         image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
-        CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00968");
+        CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00968");
     }
 }
 
@@ -2400,52 +2353,52 @@ TEST_F(NegativeImage, ImageMinLimits) {
     {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.mipLevels = 0;
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-mipLevels-00947");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-mipLevels-00947");
     }
 
     {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.arrayLayers = 0;
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-arrayLayers-00948");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-arrayLayers-00948");
     }
 
     {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         bad_image_ci.arrayLayers = 5;  // arrayLayers must be greater than or equal to 6
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-flags-08866");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-flags-08866");
 
         bad_image_ci.arrayLayers = 6;
         bad_image_ci.extent = {64, 63, 1};  // extent.width and extent.height must be equal
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-flags-08865");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-flags-08865");
     }
 
     {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.imageType = VK_IMAGE_TYPE_1D;
         bad_image_ci.extent = {64, 2, 1};
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00956");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-imageType-00956");
 
         bad_image_ci.imageType = VK_IMAGE_TYPE_1D;
         bad_image_ci.extent = {64, 1, 2};
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00956");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-imageType-00956");
 
         bad_image_ci.imageType = VK_IMAGE_TYPE_2D;
         bad_image_ci.extent = {64, 64, 2};
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00957");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-imageType-00957");
 
         bad_image_ci.imageType = VK_IMAGE_TYPE_2D;
         bad_image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
         bad_image_ci.arrayLayers = 6;
         bad_image_ci.extent = {64, 64, 2};
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00957");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-imageType-00957");
     }
 
     {
         VkImageCreateInfo bad_image_ci = safe_image_ci;
         bad_image_ci.imageType = VK_IMAGE_TYPE_3D;
         bad_image_ci.arrayLayers = 2;
-        CreateImageTest(*this, &bad_image_ci, "VUID-VkImageCreateInfo-imageType-00961");
+        CreateImageTest(bad_image_ci, "VUID-VkImageCreateInfo-imageType-00961");
     }
 }
 
@@ -2455,11 +2408,11 @@ TEST_F(NegativeImage, MaxLimitsMipLevelsAndExtent) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.extent = {8, 8, 1};
     image_ci.mipLevels = 4 + 1;  // 4 = log2(8) + 1
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
 
     image_ci.extent = {8, 15, 1};
     image_ci.mipLevels = 4 + 1;  // 4 = floor(log2(15)) + 1
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-mipLevels-00958");
 }
 
 TEST_F(NegativeImage, MaxLimitsMipLevels) {
@@ -2478,7 +2431,7 @@ TEST_F(NegativeImage, MaxLimitsMipLevels) {
 
         VkImageFormatProperties img_limits;
         if (VK_SUCCESS == GPDIFPHelper(Gpu(), &image_ci, &img_limits) && img_limits.maxMipLevels == 1) {
-            CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
+            CreateImageTest(image_ci, "VUID-VkImageCreateInfo-mipLevels-02255");
             return;  // end test
         }
     }
@@ -2498,7 +2451,7 @@ TEST_F(NegativeImage, MaxLimitsArrayLayers) {
         GTEST_SKIP() << "VkImageFormatProperties::maxArrayLayers is already UINT32_MAX; skipping part of test";
     }
     image_ci.arrayLayers = img_limits.maxArrayLayers + 1;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-arrayLayers-02256");
 }
 
 TEST_F(NegativeImage, MaxLimitsSamples) {
@@ -2515,7 +2468,7 @@ TEST_F(NegativeImage, MaxLimitsSamples) {
             image_ci.samples = samples;
             VkImageFormatProperties img_limits;
             if (VK_SUCCESS == GPDIFPHelper(Gpu(), &image_ci, &img_limits) && !(img_limits.sampleCounts & samples)) {
-                CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-samples-02258");
+                CreateImageTest(image_ci, "VUID-VkImageCreateInfo-samples-02258");
                 return;  // end test
             }
         }
@@ -2534,13 +2487,13 @@ TEST_F(NegativeImage, MaxLimitsExtent) {
     ASSERT_EQ(VK_SUCCESS, GPDIFPHelper(Gpu(), &image_ci, &img_limits));
 
     image_ci.extent = {img_limits.maxExtent.width + 1, 1, 1};
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02252");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-extent-02252");
 
     image_ci.extent = {1, img_limits.maxExtent.height + 1, 1};
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02253");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-extent-02253");
 
     image_ci.extent = {1, 1, img_limits.maxExtent.depth + 1};
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-extent-02254");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-extent-02254");
 }
 
 TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
@@ -2561,7 +2514,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferWidth) {
     if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02252");
     }
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00964");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00964");
 }
 
 TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
@@ -2583,7 +2536,7 @@ TEST_F(NegativeImage, MaxLimitsFramebufferHeight) {
     if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02253");
     }
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-usage-00965");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-usage-00965");
 }
 
 TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
@@ -2629,7 +2582,7 @@ TEST_F(NegativeImage, DepthStencilImageViewWithColorAspectBit) {
     image_view_create_info.subresourceRange.layerCount = 1;
     image_view_create_info.subresourceRange.levelCount = 1;
     image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT;
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewCreateInfo-subresourceRange-09594");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewCreateInfo-subresourceRange-09594");
 }
 
 TEST_F(NegativeImage, CornerSampledImageNV) {
@@ -2652,45 +2605,31 @@ TEST_F(NegativeImage, CornerSampledImageNV) {
     image_create_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
 
     // image type must be 2D or 3D
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02050");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02050");
 
     // cube/depth not supported
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.extent.height = 2;
     image_create_info.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02051");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02051");
 
     image_create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
 
     // 2D width/height must be > 1
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.extent.height = 1;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02052");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02052");
 
     // 3D width/height/depth must be > 1
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
     image_create_info.extent.height = 2;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02053");
-
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-
-    // Valid # of mip levels
-    image_create_info.extent = {7, 7, 1};
-    image_create_info.mipLevels = 3;  // 3 = ceil(log2(7))
-    CreateImageTest(*this, &image_create_info);
-
-    image_create_info.extent = {8, 8, 1};
-    image_create_info.mipLevels = 3;  // 3 = ceil(log2(8))
-    CreateImageTest(*this, &image_create_info);
-
-    image_create_info.extent = {9, 9, 1};
-    image_create_info.mipLevels = 3;  // 4 = ceil(log2(9))
-    CreateImageTest(*this, &image_create_info);
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02053");
 
     // Invalid # of mip levels
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.extent = {8, 8, 1};
     image_create_info.mipLevels = 4;  // 3 = ceil(log2(8))
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-mipLevels-00958");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-mipLevels-00958");
 }
 
 TEST_F(NegativeImage, Stencil) {
@@ -2733,7 +2672,7 @@ TEST_F(NegativeImage, Stencil) {
     vk::GetPhysicalDeviceImageFormatProperties2KHR(m_device->Physical().handle(), &image_format_info2, &image_format_properties2);
     m_errorMonitor->VerifyFound();
     // test vkCreateImage as well for this case
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
+    CreateImageTest(image_create_info, "VUID-VkImageStencilUsageCreateInfo-stencilUsage-02539");
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo with
     // VK_IMAGE_USAGE_STORAGE_BIT and the multisampled storage images feature
@@ -2742,7 +2681,7 @@ TEST_F(NegativeImage, Stencil) {
     image_create_info.extent = {64, 64, 1};
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02538");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02538");
 
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -2750,28 +2689,28 @@ TEST_F(NegativeImage, Stencil) {
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
     // must also include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02795");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02795");
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo, usage does not include
     // VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
     // must also not include VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02796");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02796");
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo, usage includes
     // VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
     // must also include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
     image_create_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_STORAGE_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02797");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02797");
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo, usage does not include
     // VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT, so VkImageStencilUsageCreateInfo::stencilUsage
     // must also not include VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02798");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02798");
 }
 
 TEST_F(NegativeImage, StencilLimits) {
@@ -2804,14 +2743,14 @@ TEST_F(NegativeImage, StencilLimits) {
     image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     image_create_info.extent = {dev_limits.maxFramebufferWidth + 1, 64, 1};
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-Format-02536");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-Format-02536");
 
     // depth-stencil format image with VkImageStencilUsageCreateInfo with
     // VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT set cannot have image height exceeding device maximum
     image_create_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     image_create_info.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
     image_stencil_create_info.stencilUsage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-format-02537");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-format-02537");
 }
 
 TEST_F(NegativeImage, AstcDecodeMode) {
@@ -2841,17 +2780,17 @@ TEST_F(NegativeImage, AstcDecodeMode) {
 
     // image view format is not ASTC
 
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-format-04084");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-format-04084");
 
     // Non-valid decodeMode
     image_view_create_info.image = astc_image.handle();
     image_view_create_info.format = ldr_format;
     astc_decode_mode.decodeMode = ldr_format;
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02230");
 
     // decodeModeSharedExponent not enabled
     astc_decode_mode.decodeMode = VK_FORMAT_E5B9G9R9_UFLOAT_PACK32;
-    CreateImageViewTest(*this, &image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231");
+    CreateImageViewTest(image_view_create_info, "VUID-VkImageViewASTCDecodeModeEXT-decodeMode-02231");
 }
 
 TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
@@ -2875,17 +2814,7 @@ TEST_F(NegativeImage, ImageViewIncompatibleFormat) {
     // The Image's format is non-planar and incompatible with the ImageView's format, which should trigger
     // VUID-VkImageViewCreateInfo-image-01761
     imgViewInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
-    CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
-
-    // With a identical format, there should be no error
-    imgViewInfo.format = image_ci.format;
-    CreateImageViewTest(*this, &imgViewInfo, {});
-
-    vkt::Image mut_compat_image(*m_device, image_ci);
-
-    imgViewInfo.image = mut_compat_image.handle();
-    imgViewInfo.format = VK_FORMAT_R8_SINT;  // different, but size compatible
-    CreateImageViewTest(*this, &imgViewInfo, {});
+    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
 }
 
 TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
@@ -2909,7 +2838,7 @@ TEST_F(NegativeImage, ImageViewIncompatibleDepthFormat) {
     imgViewInfo.image = mutImage.handle();
     // "Each depth/stencil format is only compatible with itself."
     imgViewInfo.format = depthOnlyFormat;
-    CreateImageViewTest(*this, &imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
+    CreateImageViewTest(imgViewInfo, "VUID-VkImageViewCreateInfo-image-01761");
 }
 
 TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
@@ -2930,7 +2859,7 @@ TEST_F(NegativeImage, ImageViewMissingYcbcrConversion) {
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    CreateImageViewTest(*this, &view_info, "VUID-VkImageViewCreateInfo-format-06415");
+    CreateImageViewTest(view_info, "VUID-VkImageViewCreateInfo-format-06415");
 }
 
 TEST_F(NegativeImage, ImageFormatList) {
@@ -2951,7 +2880,7 @@ TEST_F(NegativeImage, ImageFormatList) {
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     // Not all 4 formats are compatible
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-pNext-06722");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-pNext-06722");
 
     // Should work with only first 3 in array
     formatList.viewFormatCount = 3;
@@ -2968,7 +2897,7 @@ TEST_F(NegativeImage, ImageFormatList) {
 
     // Can't use 2 or higher formats if no mutable flag
     image_ci.flags = 0;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-04738");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-04738");
 
     // Make sure no error if 1 format
     formatList.viewFormatCount = 1;
@@ -2986,14 +2915,14 @@ TEST_F(NegativeImage, ImageFormatList) {
     // Not in format list
     imageViewInfo.format = VK_FORMAT_R8_SNORM;
     m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-image-01761");
-    CreateImageViewTest(*this, &imageViewInfo, "VUID-VkImageViewCreateInfo-pNext-01585");
+    CreateImageViewTest(imageViewInfo, "VUID-VkImageViewCreateInfo-pNext-01585");
 
     imageViewInfo.format = VK_FORMAT_R8G8B8A8_SNORM;
-    CreateImageViewTest(*this, &imageViewInfo, {});
+    vkt::ImageView image_view(*m_device, imageViewInfo);
 
     // If viewFormatCount is zero should not hit VUID 01585
     imageViewInfo.image = mutableImageZero.handle();
-    CreateImageViewTest(*this, &imageViewInfo, {});
+    vkt::ImageView image_view2(*m_device, imageViewInfo);
 }
 
 TEST_F(NegativeImage, ImageFormatListEnum) {
@@ -3008,7 +2937,7 @@ TEST_F(NegativeImage, ImageFormatListEnum) {
     image_ci.pNext = &formatList;
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
-    CreateImageTest(*this, &image_ci, "VUID-VkImageFormatListCreateInfo-pViewFormats-parameter");
+    CreateImageTest(image_ci, "VUID-VkImageFormatListCreateInfo-pViewFormats-parameter");
 }
 
 TEST_F(NegativeImage, ImageFormatListFormat) {
@@ -3023,7 +2952,7 @@ TEST_F(NegativeImage, ImageFormatListFormat) {
     image_ci.pNext = &formatList;
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
-    CreateImageTest(*this, &image_ci, "VUID-VkImageFormatListCreateInfo-viewFormatCount-09540");
+    CreateImageTest(image_ci, "VUID-VkImageFormatListCreateInfo-viewFormatCount-09540");
 }
 
 TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
@@ -3052,7 +2981,7 @@ TEST_F(NegativeImage, ImageFormatListSizeCompatible) {
 
     // The second image in the list should NOT be size-compatible (64-bit)
     formatList.viewFormatCount = 2;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-pNext-06722");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-pNext-06722");
 }
 
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
@@ -3070,7 +2999,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFormat) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }
 
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01572");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-01572");
 }
 
 TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
@@ -3088,7 +3017,7 @@ TEST_F(NegativeImage, BlockTextImageViewCompatibleFlag) {
         GTEST_SKIP() << "Image format not valid for format, type, tiling, usage and flags combination.";
     }
 
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01573");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-01573");
 }
 
 TEST_F(NegativeImage, SparseResidencyAliased) {
@@ -3100,7 +3029,7 @@ TEST_F(NegativeImage, SparseResidencyAliased) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_ALIASED_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-flags-00969");
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-flags-01924");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-flags-01924");
 }
 
 TEST_F(NegativeImage, SparseResidencyLinear) {
@@ -3112,7 +3041,7 @@ TEST_F(NegativeImage, SparseResidencyLinear) {
     VkImageCreateInfo image_ci = DefaultImageInfo();
     image_ci.tiling = VK_IMAGE_TILING_LINEAR;
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-tiling-04121");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-tiling-04121");
 }
 
 TEST_F(NegativeImage, DisjointWithoutAlias) {
@@ -3123,7 +3052,7 @@ TEST_F(NegativeImage, DisjointWithoutAlias) {
     image_ci.flags = VK_IMAGE_CREATE_DISJOINT_BIT;
     // some devices fail query on this image
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-format-01577");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-format-01577");
 }
 
 TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
@@ -3296,15 +3225,15 @@ TEST_F(NegativeImage, BlockTexelViewLevelOrLayerCount) {
 
     ivci.subresourceRange.layerCount = 1;
     ivci.subresourceRange.levelCount = 4;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-07072");
 
     ivci.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-07072");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-07072");
 
     // Test for error message
     ivci.subresourceRange.layerCount = 2;
     ivci.subresourceRange.levelCount = 1;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-09487");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-09487");
 }
 
 TEST_F(NegativeImage, BlockTexelViewCompatibleMultipleLayers) {
@@ -3347,7 +3276,7 @@ TEST_F(NegativeImage, BlockTexelViewCompatibleMultipleLayers) {
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     ivci.subresourceRange.levelCount = 1;
     ivci.subresourceRange.layerCount = 2;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-09487");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-09487");
 }
 
 TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
@@ -3437,45 +3366,6 @@ TEST_F(NegativeImage, BindIMageMemoryDeviceGroupInfo) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeImage, BlockTexelViewType) {
-    TEST_DESCRIPTION(
-        "Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT and non-compressed format and ImageView with view type "
-        "VK_IMAGE_VIEW_TYPE_3D.");
-
-    AddRequiredExtensions(VK_KHR_MAINTENANCE_2_EXTENSION_NAME);
-    RETURN_IF_SKIP(Init());
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.flags = VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT | VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-    image_create_info.imageType = VK_IMAGE_TYPE_3D;
-    image_create_info.format = VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-    image_create_info.extent = {32, 32, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-
-    VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
-    if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
-        GTEST_SKIP() << "Image usage and format not compatible on device";
-    }
-    vkt::Image image(*m_device, image_create_info, vkt::set_layout);
-
-    VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
-    ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
-    ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
-    ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    ivci.subresourceRange.baseMipLevel = 0;
-    ivci.subresourceRange.layerCount = 1;
-    ivci.subresourceRange.baseArrayLayer = 0;
-    ivci.subresourceRange.levelCount = 1;
-
-    // Test for no error message, as VUID was removed
-    CreateImageViewTest(*this, &ivci);
-}
-
 TEST_F(NegativeImage, BlockTexelViewFormat) {
     TEST_DESCRIPTION("Create Image with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT with non compatible formats.");
 
@@ -3509,13 +3399,13 @@ TEST_F(NegativeImage, BlockTexelViewFormat) {
     ivci.subresourceRange.levelCount = 1;
 
     ivci.format = VK_FORMAT_R8G8B8A8_UNORM;  // 32-bit block size
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01583");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01583");
 
     ivci.format = VK_FORMAT_BC1_RGB_SRGB_BLOCK;  // 64-bit block size, but not same format class
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-01583");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-01583");
 
     ivci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;  // 64-bit block size, and same format class
-    CreateImageViewTest(*this, &ivci);
+    vkt::ImageView image_view(*m_device, ivci);
 }
 
 TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
@@ -3568,7 +3458,7 @@ TEST_F(NegativeImage, ImageSubresourceRangeAspectMask) {
     ivci.subresourceRange.baseArrayLayer = 0;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT;
 
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageSubresourceRange-aspectMask-01670");
+    CreateImageViewTest(ivci, "VUID-VkImageSubresourceRange-aspectMask-01670");
 }
 
 TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
@@ -3597,7 +3487,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
     {
         ci.queueFamilyIndexCount = 2;
         ci.pQueueFamilyIndices = nullptr;
-        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-00941");
+        CreateImageTest(ci, "VUID-VkImageCreateInfo-sharingMode-00941");
     }
 
     // queueFamilyIndexCount must be greater than 1
@@ -3605,7 +3495,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
         ci.queueFamilyIndexCount = 1;
         const uint32_t queue_family = 0;
         ci.pQueueFamilyIndices = &queue_family;
-        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-00942");
+        CreateImageTest(ci, "VUID-VkImageCreateInfo-sharingMode-00942");
     }
 
     // Each element of pQueueFamilyIndices must be unique
@@ -3613,7 +3503,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
         const std::array queue_families = {0U, 0U};
         ci.queueFamilyIndexCount = size32(queue_families);
         ci.pQueueFamilyIndices = queue_families.data();
-        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-01420");
+        CreateImageTest(ci, "VUID-VkImageCreateInfo-sharingMode-01420");
     }
 
     // Each element of pQueueFamilyIndices must be less than pQueueFamilyPropertyCount returned by either
@@ -3626,7 +3516,7 @@ TEST_F(NegativeImage, CreateImageSharingModeConcurrentQueueFamilies) {
         ci.queueFamilyIndexCount = size32(queue_families);
         ci.pQueueFamilyIndices = queue_families.data();
 
-        CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-sharingMode-01420");
+        CreateImageTest(ci, "VUID-VkImageCreateInfo-sharingMode-01420");
     }
 }
 
@@ -3727,7 +3617,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     image_ci.flags = 0;
     vkt::Image image_3d_no_flag(*m_device, image_ci, vkt::set_layout);
     view_ci.image = image_3d_no_flag.handle();
-    CreateImageViewTest(*this, &view_ci, "VUID-VkImageViewCreateInfo-image-06728");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-image-06728");
 
     const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
     view_ci.subresourceRange = range;
@@ -3735,7 +3625,7 @@ TEST_F(NegativeImage, Image2DViewOf3D) {
     view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-06723");
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-image-06724");
-    CreateImageViewTest(*this, &view_ci, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
+    CreateImageViewTest(view_ci, "VUID-VkImageViewCreateInfo-subresourceRange-06725");
 }
 
 TEST_F(NegativeImage, Image2DViewOf3DFeature) {
@@ -3819,7 +3709,7 @@ TEST_F(NegativeImage, ImageViewMinLod) {
     ivml.minLod = 4.0;
     ivci.pNext = &ivml;
 
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456");
+    CreateImageViewTest(ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06456");
     ivml.minLod = 1.0;
     vkt::ImageView image_view(*m_device, ivci);
 
@@ -3853,7 +3743,7 @@ TEST_F(NegativeImage, ImageViewMinLodFeature) {
     ivml.minLod = 1.0;
     ivci.pNext = &ivml;
 
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455");
+    CreateImageViewTest(ivci, "VUID-VkImageViewMinLodCreateInfoEXT-minLod-06455");
 }
 
 TEST_F(NegativeImage, ColorWthDepthAspect) {
@@ -3895,7 +3785,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
                                                                VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_LINEAR);
         image_create_info.pNext = &compression_control;
 
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCompressionControlEXT-flags-06747");
+        CreateImageTest(image_create_info, "VUID-VkImageCompressionControlEXT-flags-06747");
     }
 
     // Explicit Fixed Rate
@@ -3908,7 +3798,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
                                                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         image_create_info.pNext = &compression_control;
 
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCompressionControlEXT-flags-06748");
+        CreateImageTest(image_create_info, "VUID-VkImageCompressionControlEXT-flags-06748");
     }
 
     // Image creation lambda
@@ -4515,32 +4405,32 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     sci.flags = VK_SAMPLER_CREATE_IMAGE_PROCESSING_BIT_QCOM;
 
     // vkCreateSampler - expect success
-    CreateSamplerTest(*this, &sci, "");
+    vkt::Sampler good_sampler(*m_device, sci);
     auto sci_bad = sci;
 
     // vkCreateSampler - expect failure
     sci_bad.minFilter = VK_FILTER_LINEAR;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06964");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06964");
     sci_bad.minFilter = sci.minFilter;
 
     sci_bad.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06965");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06965");
     sci_bad.mipmapMode = sci.mipmapMode;
 
     sci_bad.maxLod = 1.0f;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06966");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06966");
     sci_bad.maxLod = sci.maxLod;
 
     sci_bad.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06967");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06967");
     sci_bad.addressModeU = sci.addressModeU;
 
     sci_bad.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06968");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06968");
     sci_bad.borderColor = sci.borderColor;
 
     sci_bad.compareEnable = VK_TRUE;  // disallowed
-    CreateSamplerTest(*this, &sci_bad, "VUID-VkSamplerCreateInfo-flags-06970");
+    CreateSamplerTest(sci_bad, "VUID-VkSamplerCreateInfo-flags-06970");
     sci_bad.compareEnable = sci.compareEnable;
 
     vkt::Sampler sampler(*m_device, sci);
@@ -4598,25 +4488,25 @@ TEST_F(NegativeImage, ImageViewTextureSampleWeighted) {
     // vkCreateImage - expect failure
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-pNext-06956 ");
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-pNext-06957 ");
-    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06959");
+    CreateImageViewTest(ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06959");
     ivswci_bad.filterSize.height = ivswci.filterSize.height;
 
     ivswci_bad.filterSize.width = image_proc_properties.maxWeightFilterDimension.width + 1;
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-pNext-06955");
-    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06958");
+    CreateImageViewTest(ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterSize-06958");
     ivswci_bad.filterSize.width = ivswci.filterSize.width;
 
     ivswci_bad.filterCenter.x = ivswci.filterSize.width;
     ivswci_bad.filterCenter.y = ivswci.filterSize.height;
     m_errorMonitor->SetDesiredError("VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06960");
-    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961");
+    CreateImageViewTest(ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-filterCenter-06961");
     ivswci_bad.filterCenter.x = ivswci.filterCenter.x;
     ivswci_bad.filterCenter.y = ivswci.filterCenter.y;
 
     ivswci_bad.numPhases = image_proc_properties.maxWeightFilterPhases + 1;
     m_errorMonitor->SetDesiredError("VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06962");
     m_errorMonitor->SetDesiredError("VUID-VkImageViewCreateInfo-pNext-06954");
-    CreateImageViewTest(*this, &ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06963");
+    CreateImageViewTest(ivci_bad, "VUID-VkImageViewSampleWeightCreateInfoQCOM-numPhases-06963");
     ivswci_bad.filterSize.width = ivswci.filterSize.width;
 
     vkt::ImageView weight_image_view(*m_device, ivci);
@@ -4676,11 +4566,11 @@ TEST_F(NegativeImage, CubeCompatibleMustBeImageType2D) {
     ci.extent.width = 1;
     ci.extent.height = 1;
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-08866");
-    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
+    CreateImageTest(ci, "VUID-VkImageCreateInfo-flags-00949");
 
     ci.imageType = VK_IMAGE_TYPE_3D;
     m_errorMonitor->SetUnexpectedError("VUID-VkImageCreateInfo-flags-08866");
-    CreateImageTest(*this, &ci, "VUID-VkImageCreateInfo-flags-00949");
+    CreateImageTest(ci, "VUID-VkImageCreateInfo-flags-00949");
 }
 
 TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {

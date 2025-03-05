@@ -83,7 +83,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     buff_view_ci.range = VK_WHOLE_SIZE;
     buff_view_ci.buffer = buffer.handle();
     buff_view_ci.offset = minTexelBufferOffsetAlignment + block_size;
-    CreateBufferViewTest(*this, &buff_view_ci, {});
+    vkt::BufferView buffer_view(*m_device, buff_view_ci);
 }
 
 // The two PerfGetBufferAddress tests are intended to be used locally to monitor performance of the internal address -> buffer map
@@ -220,7 +220,7 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
-    CreateBufferViewTest(*this, &buffer_view_ci, {});
+    vkt::BufferView buffer_view(*m_device, buffer_view_ci);
 }
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
@@ -239,7 +239,7 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
     buffer_view_ci.buffer = buffer.handle();
-    CreateBufferViewTest(*this, &buffer_view_ci, {});
+    vkt::BufferView buffer_view(*m_device, buffer_view_ci);
 }
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
@@ -255,11 +255,11 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Ignore) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = 32;
     buffer_ci.usage = VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT;
-    CreateBufferTest(*this, &buffer_ci, {});
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     buffer_ci.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR |
                       VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT;
-    CreateBufferTest(*this, &buffer_ci, {});
+    vkt::Buffer buffer2(*m_device, buffer_ci, vkt::no_mem);
 }
 
 TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
@@ -275,8 +275,8 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Usage) {
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_ci.size = 32;
     buffer_ci.usage = 0;
-    CreateBufferTest(*this, &buffer_ci, {});
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
     buffer_ci.usage = 0xBAD0000;
-    CreateBufferTest(*this, &buffer_ci, {});
+    vkt::Buffer buffer2(*m_device, buffer_ci, vkt::no_mem);
 }

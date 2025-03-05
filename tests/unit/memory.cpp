@@ -1494,13 +1494,13 @@ TEST_F(NegativeMemory, BufferDeviceAddressEXT) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
     VkBufferDeviceAddressCreateInfoEXT addr_ci = vku::InitStructHelper();
     addr_ci.deviceAddress = 1;
     buffer_create_info.pNext = &addr_ci;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-deviceAddress-02604");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-deviceAddress-02604");
 
     buffer_create_info.pNext = nullptr;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
@@ -1561,13 +1561,13 @@ TEST_F(NegativeMemory, BufferDeviceAddressKHR) {
     buffer_create_info.size = sizeof(uint32_t);
     buffer_create_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     buffer_create_info.flags = VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-03338");
 
     buffer_create_info.flags = 0;
     VkBufferOpaqueCaptureAddressCreateInfo addr_ci = vku::InitStructHelper();
     addr_ci.opaqueCaptureAddress = 1;
     buffer_create_info.pNext = &addr_ci;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-opaqueCaptureAddress-03337");
 
     buffer_create_info.pNext = nullptr;
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);

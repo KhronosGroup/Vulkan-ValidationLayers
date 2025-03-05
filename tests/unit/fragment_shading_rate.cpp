@@ -502,45 +502,45 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     // min max filters must match
     sampler_info.minFilter = VK_FILTER_LINEAR;
     sampler_info.magFilter = VK_FILTER_NEAREST;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02574");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02574");
     sampler_info.minFilter = sampler_info_ref.minFilter;
     sampler_info.magFilter = sampler_info_ref.magFilter;
 
     // mipmapMode must be SAMPLER_MIPMAP_MODE_NEAREST
     sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02575");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02575");
     sampler_info.mipmapMode = sampler_info_ref.mipmapMode;
 
     // minLod and maxLod must be 0.0
     sampler_info.minLod = 1.0;
     sampler_info.maxLod = 1.0;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02576");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02576");
     sampler_info.minLod = sampler_info_ref.minLod;
     sampler_info.maxLod = sampler_info_ref.maxLod;
 
     // addressMode must be CLAMP_TO_EDGE or CLAMP_TO_BORDER
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
     sampler_info.addressModeU = sampler_info_ref.addressModeU;
 
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02577");
     sampler_info.addressModeV = sampler_info_ref.addressModeV;
 
     // some features cannot be enabled for subsampled samplers
     if (features2.features.samplerAnisotropy == VK_TRUE) {
         sampler_info.anisotropyEnable = VK_TRUE;
-        CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
+        CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02578");
         sampler_info.anisotropyEnable = sampler_info_ref.anisotropyEnable;
         sampler_info.anisotropyEnable = VK_FALSE;
     }
 
     sampler_info.compareEnable = VK_TRUE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02579");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02579");
     sampler_info.compareEnable = sampler_info_ref.compareEnable;
 
     sampler_info.unnormalizedCoordinates = VK_TRUE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-flags-02580");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-flags-02580");
     sampler_info.unnormalizedCoordinates = sampler_info_ref.unnormalizedCoordinates;
 
     // Test image parameters
@@ -561,37 +561,37 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
     // only VK_IMAGE_TYPE_2D is supported
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
     image_create_info.extent.height = 1;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02557");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02557");
 
     // only VK_SAMPLE_COUNT_1_BIT is supported
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-samples-02558");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-samples-02558");
 
     // tiling must be VK_IMAGE_TILING_OPTIMAL
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02565");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02565");
 
     // only 2D
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.imageType = VK_IMAGE_TYPE_1D;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02566");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02566");
 
     // no cube maps
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.extent.height = 64;
     image_create_info.arrayLayers = 6;
     image_create_info.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02567");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02567");
 
     // mipLevels must be 1
     image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
     image_create_info.arrayLayers = 1;
     image_create_info.mipLevels = 2;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-02568");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-02568");
 
     // Test image view parameters
 
@@ -618,19 +618,19 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
         vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
         ivci.image = image.handle();
-        CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-04116");
+        CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-flags-04116");
     }
 
     if (fdm2Supported) {
         if (!density_map2_features.fragmentDensityMapDeferred) {
             ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT;
             ivci.image = densityImage.handle();
-            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-03567");
+            CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-flags-03567");
         } else {
             ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DEFERRED_BIT_EXT;
             ivci.flags |= VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT;
             ivci.image = densityImage.handle();
-            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-03568");
+            CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-flags-03568");
         }
         if (density_map2_properties.maxSubsampledArrayLayers < properties2.properties.limits.maxImageArrayLayers) {
             image_create_info.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
@@ -641,7 +641,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapEnabled) {
             ivci.flags = 0;
             ivci.subresourceRange.layerCount = density_map2_properties.maxSubsampledArrayLayers + 1;
             m_errorMonitor->SetUnexpectedError("VUID-VkImageViewCreateInfo-imageViewType-04973");
-            CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-image-03569");
+            CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-image-03569");
         }
     }
 }
@@ -679,7 +679,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapDisabled) {
 
     // Flags must not be set if the feature is not enabled
     ivci.flags = VK_IMAGE_VIEW_CREATE_FRAGMENT_DENSITY_MAP_DYNAMIC_BIT_EXT;
-    CreateImageViewTest(*this, &ivci, "VUID-VkImageViewCreateInfo-flags-02572");
+    CreateImageViewTest(ivci, "VUID-VkImageViewCreateInfo-flags-02572");
 }
 
 TEST_F(NegativeFragmentShadingRate, FragmentDensityMapReferenceAttachment) {
@@ -1208,7 +1208,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     }
 
     // Create a view with the fragment shading rate attachment usage, but that doesn't support it
-    CreateImageViewTest(*this, &createinfo, "VUID-VkImageViewCreateInfo-usage-04550");
+    CreateImageViewTest(createinfo, "VUID-VkImageViewCreateInfo-usage-04550");
 
     VkPhysicalDeviceFragmentShadingRatePropertiesKHR fsrProperties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(fsrProperties);
@@ -1227,7 +1227,7 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
             createinfo.format = VK_FORMAT_R8_UINT;
             createinfo.subresourceRange.layerCount = 2;
             createinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            CreateImageViewTest(*this, &createinfo, "VUID-VkImageViewCreateInfo-usage-04551");
+            CreateImageViewTest(createinfo, "VUID-VkImageViewCreateInfo-usage-04551");
         }
     }
 }
@@ -2424,20 +2424,20 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateImageNV) {
 
     // image type must be 2D
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-02082");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-02082");
 
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.arrayLayers = 6;
 
     // must be single sample
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-samples-02083");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-samples-02083");
 
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
 
     // tiling must be optimal
     image_create_info.tiling = VK_IMAGE_TILING_LINEAR;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-shadingRateImage-07727");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-shadingRateImage-07727");
 
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
@@ -2779,13 +2779,13 @@ TEST_F(NegativeFragmentShadingRate, ImageMaxLimitsQCOM) {
     if (dev_limits.maxFramebufferWidth + 1 > img_limits.maxExtent.width) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02252");
     }
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06514");
 
     image_ci.extent = {64, dev_limits.maxFramebufferHeight + 1, 1};
     if (dev_limits.maxFramebufferHeight + 1 > img_limits.maxExtent.height) {
         m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-extent-02253");
     }
-    CreateImageTest(*this, &image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515");
+    CreateImageTest(image_ci, "VUID-VkImageCreateInfo-fragmentDensityMapOffset-06515");
 }
 
 TEST_F(NegativeFragmentShadingRate, Framebuffer) {

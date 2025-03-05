@@ -201,6 +201,13 @@ class VkLayerTest : public VkLayerTestBase {
     }
     APIVersion DeviceValidationVersion() const;
 
+    // Helpers to quickly create a Handle and check it gives a certain VU error
+    void CreateSamplerTest(const VkSamplerCreateInfo &create_info, const char *vuid);
+    void CreateBufferTest(const VkBufferCreateInfo &create_info, const char *vuid);
+    void CreateImageTest(const VkImageCreateInfo &create_info, const char *vuid);
+    void CreateBufferViewTest(const VkBufferViewCreateInfo &create_info, const char *vuid);
+    void CreateImageViewTest(const VkImageViewCreateInfo &create_info, const char *vuid);
+
   protected:
     void SetTargetApiVersion(APIVersion target_api_version);
     bool LoadDeviceProfileLayer(
@@ -459,15 +466,5 @@ VkFormat FindFormatWithoutFeatures(VkPhysicalDevice gpu, VkImageTiling tiling,
                                    VkFormatFeatureFlags undesired_features = vvl::kU32Max);
 
 VkFormat FindFormatWithoutFeatures2(VkPhysicalDevice gpu, VkImageTiling tiling, VkFormatFeatureFlags2 undesired_features);
-
-void CreateSamplerTest(VkLayerTest &test, const VkSamplerCreateInfo *pCreateInfo, const std::string &code = "");
-
-void CreateBufferTest(VkLayerTest &test, const VkBufferCreateInfo *pCreateInfo, const std::string &code = "");
-
-void CreateImageTest(VkLayerTest &test, const VkImageCreateInfo *pCreateInfo, const std::string &code = "");
-
-void CreateBufferViewTest(VkLayerTest &test, const VkBufferViewCreateInfo *pCreateInfo, const std::vector<std::string> &codes);
-
-void CreateImageViewTest(VkLayerTest &test, const VkImageViewCreateInfo *pCreateInfo, const std::string &code = "");
 
 void PrintAndroid(const char *c);

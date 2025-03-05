@@ -94,7 +94,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-01887");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-01887");
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
@@ -106,7 +106,7 @@ TEST_F(NegativeProtectedMemory, Submit) {
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.arrayLayers = 1;
     image_create_info.mipLevels = 1;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-01890");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-01890");
 
     // Try to find memory with protected bit in it at all
     VkDeviceMemory memory_protected = VK_NULL_HANDLE;
@@ -161,7 +161,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
     if (sparse_support == true) {
-        CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-None-01888");
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-None-01888");
     }
 
     // Create actual protected and unprotected buffers
@@ -183,7 +183,7 @@ TEST_F(NegativeProtectedMemory, Memory) {
     image_create_info.mipLevels = 1;
 
     if (sparse_support == true) {
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-None-01891");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-None-01891");
     }
 
     // Create actual protected and unprotected images
@@ -1164,7 +1164,7 @@ TEST_F(NegativeProtectedMemory, Usage) {
     buffer_create_info.flags = VK_BUFFER_CREATE_PROTECTED_BIT;
     buffer_create_info.size = 4096;
     buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    CreateBufferTest(*this, &buffer_create_info, "VUID-VkBufferCreateInfo-flags-09641");
+    CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-09641");
 }
 
 TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {

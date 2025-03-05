@@ -25,20 +25,20 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
     AddRequiredFeature(vkt::Feature::sparseResidencyImage2D);
     RETURN_IF_SKIP(Init());
 
-    VkBufferCreateInfo buf_info = vku::InitStructHelper();
-    buf_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    buf_info.size = 2048;
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    buffer_create_info.size = 2048;
 
     if (m_device->Physical().Features().sparseResidencyBuffer) {
-        buf_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
-        CreateBufferTest(*this, &buf_info, "VUID-VkBufferCreateInfo-flags-00918");
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_RESIDENCY_BIT;
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-00918");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyBuffer feature";
     }
 
     if (m_device->Physical().Features().sparseResidencyAliased) {
-        buf_info.flags = VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
-        CreateBufferTest(*this, &buf_info, "VUID-VkBufferCreateInfo-flags-00918");
+        buffer_create_info.flags = VK_BUFFER_CREATE_SPARSE_ALIASED_BIT;
+        CreateBufferTest(buffer_create_info, "VUID-VkBufferCreateInfo-flags-00918");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyAliased feature";
     }
@@ -58,14 +58,14 @@ TEST_F(NegativeSparseImage, BindingImageBufferCreate) {
 
     if (m_device->Physical().Features().sparseResidencyImage2D) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-00987");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-00987");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyImage2D feature";
     }
 
     if (m_device->Physical().Features().sparseResidencyAliased) {
         image_create_info.flags = VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-00987");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-00987");
     } else {
         GTEST_SKIP() << "Test requires unsupported sparseResidencyAliased feature";
     }
@@ -93,17 +93,17 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedTypes) {
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 1D image w/ sparse residency is an error
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00970");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00970");
 
     // 2D image w/ sparse residency when feature isn't available
     image_create_info.imageType = VK_IMAGE_TYPE_2D;
     image_create_info.extent.height = 64;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00971");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00971");
 
     // 3D image w/ sparse residency when feature isn't available
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
     image_create_info.extent.depth = 8;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00972");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00972");
 }
 
 TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
@@ -128,21 +128,21 @@ TEST_F(NegativeSparseImage, ResidencyImageCreateUnsupportedSamples) {
     image_create_info.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
 
     // 2D image w/ sparse residency and linear tiling is an error
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-tiling-04121");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-tiling-04121");
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
 
     // Multi-sample image w/ sparse residency when feature isn't available (4 flavors)
     image_create_info.samples = VK_SAMPLE_COUNT_2_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00973");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00973");
 
     image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00974");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00974");
 
     image_create_info.samples = VK_SAMPLE_COUNT_8_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00975");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00975");
 
     image_create_info.samples = VK_SAMPLE_COUNT_16_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-imageType-00976");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-imageType-00976");
 }
 
 TEST_F(NegativeSparseImage, ResidencyFlag) {
@@ -206,7 +206,7 @@ TEST_F(NegativeSparseImage, ImageUsageBits) {
     image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_create_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     image_create_info.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-None-01925");
+    CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-None-01925");
 }
 
 TEST_F(NegativeSparseImage, MemoryBindOffset) {

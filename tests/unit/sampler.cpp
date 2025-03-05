@@ -28,7 +28,7 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled) {
     // Set the modes to cause the error
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
     // Prior to 1.2 we get the implicit VU
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-parameter");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-parameter");
 }
 
 TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
@@ -39,7 +39,7 @@ TEST_F(NegativeSampler, MirrorClampToEdgeNotEnabled12) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01079");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01079");
 }
 
 TEST_F(NegativeSampler, AnisotropyFeatureDisabled) {
@@ -65,12 +65,12 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
 
     // maxAnisotropy out-of-bounds low.
     sampler_info.maxAnisotropy = NearestSmaller(1.0F);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-anisotropyEnable-01071");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-anisotropyEnable-01071");
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
     // maxAnisotropy out-of-bounds high.
     sampler_info.maxAnisotropy = NearestGreater(m_device->Physical().limits_.maxSamplerAnisotropy);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-anisotropyEnable-01071");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-anisotropyEnable-01071");
     sampler_info.maxAnisotropy = sampler_info_ref.maxAnisotropy;
 
     // Both anisotropy and unnormalized coords enabled
@@ -78,7 +78,7 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabled) {
     // If unnormalizedCoordinates is VK_TRUE, minLod and maxLod must be zero
     sampler_info.minLod = 0;
     sampler_info.maxLod = 0;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01076");
     sampler_info.unnormalizedCoordinates = sampler_info_ref.unnormalizedCoordinates;
 }
 
@@ -95,11 +95,11 @@ TEST_F(NegativeSampler, AnisotropyFeatureEnabledCubic) {
 
     sampler_info.minFilter = VK_FILTER_CUBIC_IMG;
     sampler_info.magFilter = VK_FILTER_NEAREST;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
 
     sampler_info.minFilter = VK_FILTER_NEAREST;
     sampler_info.magFilter = VK_FILTER_CUBIC_IMG;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-magFilter-01081");
 }
 
 TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
@@ -115,21 +115,21 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
     // min and mag filters must be the same
     sampler_info.minFilter = VK_FILTER_NEAREST;
     sampler_info.magFilter = VK_FILTER_LINEAR;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072");
     std::swap(sampler_info.minFilter, sampler_info.magFilter);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01072");
     sampler_info = sampler_info_ref;
 
     // mipmapMode must be NEAREST
     sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01073");
     sampler_info = sampler_info_ref;
 
     // minlod and maxlod must be zero
     sampler_info.maxLod = 3.14159f;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074");
     sampler_info.minLod = 2.71828f;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01074");
     sampler_info = sampler_info_ref;
 
     // addressModeU and addressModeV must both be CLAMP_TO_EDGE or CLAMP_TO_BORDER
@@ -146,7 +146,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
                 (vmode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE && vmode != VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER)) {
                 sampler_info.addressModeU = umode;
                 sampler_info.addressModeV = vmode;
-                CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075");
+                CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01075");
             }
         }
     }
@@ -158,7 +158,7 @@ TEST_F(NegativeSampler, UnnormalizedCoordinatesEnabled) {
 
     // compareEnable must be VK_FALSE
     sampler_info.compareEnable = VK_TRUE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-unnormalizedCoordinates-01077");
     sampler_info = sampler_info_ref;
 }
 
@@ -173,13 +173,13 @@ TEST_F(NegativeSampler, BasicUsage) {
     // Mix up Lod values
     sampler_info.minLod = 4.0f;
     sampler_info.maxLod = 1.0f;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-maxLod-01973");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-maxLod-01973");
     sampler_info.minLod = sampler_info_ref.minLod;
     sampler_info.maxLod = sampler_info_ref.maxLod;
 
     // Larger mipLodBias than max limit
     sampler_info.mipLodBias = NearestGreater(m_device->Physical().limits_.maxSamplerLodBias);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-mipLodBias-01069");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-mipLodBias-01069");
     sampler_info.mipLodBias = sampler_info_ref.mipLodBias;
 }
 
@@ -754,12 +754,12 @@ TEST_F(NegativeSampler, FilterMinmax) {
 
     // Wrong mode with a YCbCr Conversion used
     reduction_info.pNext = &ycbcr_info;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-None-01647");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-None-01647");
 
     // Wrong mode with compareEnable
     reduction_info.pNext = nullptr;
     sampler_info.compareEnable = VK_TRUE;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01423");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01423");
 
     vk::DestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
 }
@@ -774,17 +774,17 @@ TEST_F(NegativeSampler, CustomBorderColor) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
     // No SCBCCreateInfo in pNext
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-borderColor-04011");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-borderColor-04011");
 
     VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
     custom_color_cinfo.format = VK_FORMAT_R32_SFLOAT;
     sampler_info.pNext = &custom_color_cinfo;
     // Format mismatch
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-07605");
 
     custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
     // Format undefined with no customBorderColorWithoutFormat
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCustomBorderColorCreateInfoEXT-format-04014");
 
     custom_color_cinfo.format = VK_FORMAT_R8G8B8A8_UINT;
     vkt::Sampler sampler(*m_device, sampler_info);
@@ -1733,7 +1733,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
 
     auto sampler_ci = SafeSaneSamplerCreateInfo();
     sampler_ci.pNext = &sampler_reduction_mode_ci;
-    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-pNext-06726");
+    CreateSamplerTest(sampler_ci, "VUID-VkSamplerCreateInfo-pNext-06726");
 }
 
 TEST_F(NegativeSampler, ReductionModeCubicIMG) {
@@ -1746,7 +1746,7 @@ TEST_F(NegativeSampler, ReductionModeCubicIMG) {
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MAX;
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper(&sampler_reduction_mode_ci);
     sampler_ci.magFilter = VK_FILTER_CUBIC_EXT;
-    CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-07911");
+    CreateSamplerTest(sampler_ci, "VUID-VkSamplerCreateInfo-magFilter-07911");
 }
 
 TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
@@ -1759,7 +1759,7 @@ TEST_F(NegativeSampler, NonSeamlessCubeMapNotEnabled) {
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.flags = VK_SAMPLER_CREATE_NON_SEAMLESS_CUBE_MAP_BIT_EXT;
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-nonSeamlessCubeMap-06788");
 }
 
 TEST_F(NegativeSampler, BorderColorSwizzle) {
@@ -1787,7 +1787,7 @@ TEST_F(NegativeSampler, BorderColorValue) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     sampler_info.borderColor = static_cast<VkBorderColor>(0xFFFFBAD0);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01078");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-addressModeU-01078");
 }
 
 TEST_F(NegativeSampler, CompareOpValue) {
@@ -1796,7 +1796,7 @@ TEST_F(NegativeSampler, CompareOpValue) {
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
     sampler_info.compareEnable = VK_TRUE;
     sampler_info.compareOp = static_cast<VkCompareOp>(0xFFFFBAD0);
-    CreateSamplerTest(*this, &sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01080");
+    CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01080");
 }
 
 TEST_F(NegativeSampler, CustomBorderColorsFeature) {

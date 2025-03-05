@@ -415,7 +415,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
 
         buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-flags-08099");
+        CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-flags-08099");
 
         buffer_ci.flags = 0;
 
@@ -424,11 +424,11 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         }
         buffer_ci.usage =
             VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08101");
+        CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-08101");
 
         buffer_ci.pNext = &ocddci;
         buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-        CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-pNext-08100");
+        CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-pNext-08100");
     }
 
     {
@@ -445,11 +445,11 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         image_create_info.format = VK_FORMAT_D32_SFLOAT;
         image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
         image_create_info.pNext = &ocddci;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-flags-08104");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-flags-08104");
 
         image_create_info.pNext = &ocddci;
         image_create_info.flags &= ~VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-        CreateImageTest(*this, &image_create_info, "VUID-VkImageCreateInfo-pNext-08105");
+        CreateImageTest(image_create_info, "VUID-VkImageCreateInfo-pNext-08105");
     }
 
     {
@@ -464,22 +464,22 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
         dsvci.subresourceRange.baseMipLevel = 0;
         dsvci.subresourceRange.levelCount = 1;
         dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-flags-08106");
+        CreateImageViewTest(dsvci, "VUID-VkImageViewCreateInfo-flags-08106");
 
         dsvci.pNext = &ocddci;
         dsvci.flags &= ~VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-        CreateImageViewTest(*this, &dsvci, "VUID-VkImageViewCreateInfo-pNext-08107");
+        CreateImageViewTest(dsvci, "VUID-VkImageViewCreateInfo-pNext-08107");
     }
 
     {
         auto sampler_ci = SafeSaneSamplerCreateInfo();
         sampler_ci.flags |= VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
 
-        CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-flags-08110");
+        CreateSamplerTest(sampler_ci, "VUID-VkSamplerCreateInfo-flags-08110");
 
         sampler_ci.pNext = &ocddci;
         sampler_ci.flags &= ~VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;
-        CreateSamplerTest(*this, &sampler_ci, "VUID-VkSamplerCreateInfo-pNext-08111");
+        CreateSamplerTest(sampler_ci, "VUID-VkSamplerCreateInfo-pNext-08111");
     }
 }
 
@@ -1491,15 +1491,15 @@ TEST_F(NegativeDescriptorBuffer, SetBufferAddressSpaceLimits) {
     buffer_ci.size = descriptor_buffer_properties.descriptorBufferAddressSpaceSize + 1;
 
     buffer_ci.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08097");
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-08097");
 
     buffer_ci.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
 
     m_errorMonitor->SetDesiredError("VUID-VkBufferCreateInfo-usage-08097");
     buffer_ci.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
                       VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    CreateBufferTest(*this, &buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
+    CreateBufferTest(buffer_ci, "VUID-VkBufferCreateInfo-usage-08098");
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5826
