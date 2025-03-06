@@ -280,7 +280,8 @@ static inline uint32_t GetTexelBufferFormatSize(VkFormat format) {
     return vkuFormatTexelBlockSize(format);
 }
 
-bool AreFormatsSizeCompatible(VkFormat a, VkFormat b);
+bool AreFormatsSizeCompatible(VkFormat a, VkFormat b,
+                              VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
 std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b);
 
 static const VkShaderStageFlags kShaderStageAllGraphics =

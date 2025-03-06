@@ -3240,7 +3240,7 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenance8AspectMask) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8DepthStencil) {
+TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8DepthStencil) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::maintenance8);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
@@ -3290,7 +3290,7 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8DepthStencil) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8Compatible) {
+TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8Compatible) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredFeature(vkt::Feature::maintenance8);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
@@ -3331,6 +3331,53 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenacne8Compatible) {
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     vk::CmdCopyImage(m_command_buffer.handle(), depth_image, VK_IMAGE_LAYOUT_GENERAL, color_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &copy_region);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeCopyBufferImage, CopyColorToStencilMaintenanc8Compatible) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9588");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Add Transfer support for all used formats
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_R8G8B8A8_UNORM features not supported";
+    } else if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                           VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required VK_FORMAT_D32_SFLOAT_S8_UINT features not supported";
+    }
+
+    vkt::Image color_image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image ds_image(*m_device, 128, 128, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {64, 64, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcSubresource-10211");
+    vk::CmdCopyImage(m_command_buffer.handle(), color_image, VK_IMAGE_LAYOUT_GENERAL, ds_image, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01548");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcSubresource-10212");
+    copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+    copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    vk::CmdCopyImage(m_command_buffer.handle(), ds_image, VK_IMAGE_LAYOUT_GENERAL, color_image, VK_IMAGE_LAYOUT_GENERAL, 1,
                      &copy_region);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
