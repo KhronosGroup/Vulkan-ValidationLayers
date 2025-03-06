@@ -202,16 +202,20 @@ bool DescriptorValidator::ValidateBindingDynamic(const spirv::ResourceInterfaceV
             skip |= ValidateDescriptorsDynamic(resource_variable, static_cast<const BufferBinding &>(binding), index);
             break;
         case DescriptorClass::ImageSampler: {
-            auto &imgs_binding = static_cast<ImageSamplerBinding &>(binding);
-            auto &descriptor = imgs_binding.descriptors[index];
-            descriptor.UpdateDrawState(cb_state);
-            skip |= ValidateDescriptorsDynamic(resource_variable, imgs_binding, index);
+            auto &img_sampler_binding = static_cast<ImageSamplerBinding &>(binding);
+            if (dev_state.gpuav_settings.validate_image_layout) {
+                auto &descriptor = img_sampler_binding.descriptors[index];
+                descriptor.UpdateImageLayoutDrawState(cb_state);
+            }
+            skip |= ValidateDescriptorsDynamic(resource_variable, img_sampler_binding, index);
             break;
         }
         case DescriptorClass::Image: {
             auto &img_binding = static_cast<ImageBinding &>(binding);
-            auto &descriptor = img_binding.descriptors[index];
-            descriptor.UpdateDrawState(cb_state);
+            if (dev_state.gpuav_settings.validate_image_layout) {
+                auto &descriptor = img_binding.descriptors[index];
+                descriptor.UpdateImageLayoutDrawState(cb_state);
+            }
             skip |= ValidateDescriptorsDynamic(resource_variable, img_binding, index);
             break;
         }
