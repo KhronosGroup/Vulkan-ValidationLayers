@@ -205,9 +205,7 @@ class CoreChecks : public vvl::Device {
 
     CoreChecks(vvl::dispatch::Device* dev, core::Instance* instance_vo)
         : BaseClass(dev, instance_vo, LayerObjectTypeCoreValidation),
-          stateless_spirv_validator(dev->debug_report, api_version, extensions, phys_dev_props, phys_dev_props_core11,
-                                    phys_dev_props_core12, phys_dev_props_core13, phys_dev_props_core14, phys_dev_ext_props,
-                                    enabled_features, has_format_feature2) {}
+          stateless_spirv_validator(dev->debug_report, dev->stateless_device_data) {}
 
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;

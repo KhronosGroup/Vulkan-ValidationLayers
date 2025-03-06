@@ -472,7 +472,12 @@ class Device : public vvl::base::Device {
 
   public:
     Device(vvl::dispatch::Device* dev, Instance* instance, LayerObjectTypeId type)
-        : BaseClass(dev, instance, type), instance_state(instance) {
+        : BaseClass(dev, instance, type),
+          instance_state(instance),
+          has_format_feature2(dev->stateless_device_data.has_format_feature2),
+          has_robust_image_access(dev->stateless_device_data.has_robust_image_access),
+          has_robust_image_access2(dev->stateless_device_data.has_robust_image_access2),
+          has_robust_buffer_access2(dev->stateless_device_data.has_robust_buffer_access2) {
         physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
     }
     ~Device();
@@ -1872,15 +1877,15 @@ class Device : public vvl::base::Device {
 
     // Some extensions/features changes the behavior of the app/layers/spec if present.
     // So it needs its own special boolean unlike the enabled_fatures.
-    bool has_format_feature2;  // VK_KHR_format_feature_flags2
+    const bool has_format_feature2;  // VK_KHR_format_feature_flags2
     // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions
     // Enabling the other robustness features can reduce performance on GPU, so just the
     // support is needed to check
-    bool has_robust_image_access;  // VK_EXT_image_robustness
+    const bool has_robust_image_access;  // VK_EXT_image_robustness
     // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
     // // need to only be supported, not enabled
-    bool has_robust_image_access2;   // VK_EXT_robustness2
-    bool has_robust_buffer_access2;  // VK_EXT_robustness2
+    const bool has_robust_image_access2;   // VK_EXT_robustness2
+    const bool has_robust_buffer_access2;  // VK_EXT_robustness2
 
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;
     std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_properties_khr;
