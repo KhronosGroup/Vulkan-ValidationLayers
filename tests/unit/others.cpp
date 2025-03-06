@@ -82,6 +82,7 @@ TEST_F(VkLayerTest, VuidHashStability) {
     ASSERT_TRUE(hash_util::VuidHash("VUID-FragDepth-FragDepth-04213") == 0x840af838);
     ASSERT_TRUE(hash_util::VuidHash("VUID-RayTmaxKHR-RayTmaxKHR-04349") == 0x8e67514c);
     ASSERT_TRUE(hash_util::VuidHash("VUID-RuntimeSpirv-SubgroupUniformControlFlowKHR-06379") == 0x2f574188);
+    ASSERT_TRUE(hash_util::VuidHash("VVL-DEBUG-PRINTF") == 0x4fe1fef9);
 }
 
 TEST_F(VkLayerTest, RequiredParameter) {

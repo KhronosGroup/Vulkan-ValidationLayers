@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-<!-- Copyright 2020-2024 LunarG, Inc. -->
-<!-- Copyright 2020-2024 Valve Corporation -->
+<!-- Copyright 2020-2025 LunarG, Inc. -->
+<!-- Copyright 2020-2025 Valve Corporation -->
 [![Khronos Vulkan][1]][2]
 
 [1]: https://vulkan.lunarg.com/img/Vulkan_100px_Dec16.png "https://www.khronos.org/vulkan/"
@@ -16,42 +16,47 @@ supported within RenderDoc in a way that allows for per-invocation inspection of
 This article describes how to instrument your GLSL or HLSL shaders with Debug Printf and how to
 inspect and debug with them in RenderDoc, using vkconfig, or with environment variables.
 
-## Configuring Debug Printf in Validation Layer
+## Turning on Debug Printf in Validation Layer
 
-For an overview of how to configure layers, refer to the [Layers Overview and Configuration](https://vulkan.lunarg.com/doc/sdk/latest/windows/layer_configuration.html) document.
+We suggest to use Vulkan Configurator (`VkConfig`) to enable DebugPrintf
 
-The Debug Printf settings are managed by configuring the Validation Layer. These settings are described in the
-[VK_LAYER_KHRONOS_validation](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html#user-content-layer-details) document.
+For those who "just need to quick use it" there is a `VK_LAYER_PRINTF_ONLY_PRESET` environment variable that will turn on DebugPrintf and turn off all of the other validation logic.
 
-Debug Printf settings can also be managed using the [Vulkan Configurator](https://vulkan.lunarg.com/doc/sdk/latest/windows/vkconfig.html) included with the Vulkan SDK.
+```bash
+# Windows
+set VK_LAYER_PRINTF_ONLY_PRESET=1
 
-For those who "just need to quick use it" there is also a `set VK_LAYER_PRINTF_ONLY_PRESET=1` environment variable that will turn on DebugPrintf and turn off all of the other validation logic.
+# Linux
+export VK_LAYER_PRINTF_ONLY_PRESET=1
 
-### Settings
+# Android
+adb setprop debug.vulkan.khronos_validation.printf_only_preset=1
+```
 
-> All settings are found in Vulkan Configurator (`VkConfig`)
->
-> Even if you use `VK_LAYER_PRINTF_ONLY_PRESET` you need to set those settings yourself as desired
+## Settings
 
-There are currently 3 environment variables that are used for settings in Debug Printf
+The following are the various DebugPrintf settings (listed as environment variables, but work like all other settings).
 
+> All settings also found in `VkConfig`
+
+- `VK_LAYER_PRINTF_ENABLE` will turn on DebugPrintf alongside the other validation
+    - `VK_LAYER_PRINTF_ENABLE=1` turn on
 - `VK_LAYER_PRINTF_TO_STDOUT` will print to `stdout` **instead** of the normal Debug Callback
     - `VK_LAYER_PRINTF_TO_STDOUT=1` turn on
-    - `VK_LAYER_PRINTF_TO_STDOUT=0` turn off
 - `VK_LAYER_PRINTF_VERBOSE` will print extra information (pipeline, shader, command, etc)
     - `VK_LAYER_PRINTF_VERBOSE=1` turn on
-    - `VK_LAYER_PRINTF_VERBOSE=0` turn off
 - `VK_LAYER_PRINTF_BUFFER_SIZE` size of the buffer used to store Printf messages (buffer is shared across all calls in a single `vkQueueSubmit`).
     - Default: 1024 bytes
     - `set VK_LAYER_PRINTF_BUFFER_SIZE=4096` (example of making it larger)
 
 ## Using Debug Printf in GLSL Shaders
 
-To use Debug Printf in GLSL shaders, you need to enable the GL_EXT_debug_printf extension.
-Then add debugPrintfEXT calls at the locations in your shader where you want to print
+To use Debug Printf in GLSL shaders, you need to enable the `GL_EXT_debug_printf` extension.
+Then add `debugPrintfEXT()` calls at the locations in your shader where you want to print
 messages and/or values
 Here is a very simple example ([Try Online](https://godbolt.org/z/MnYGj8azM)):
-```
+
+```glsl
 #version 450
 #extension GL_EXT_debug_printf : enable
 void main() {
@@ -59,101 +64,57 @@ void main() {
     debugPrintfEXT("My float is %f", myfloat);
 }
 ```
-Then use `glslangValidator` to generate SPIR-V to use in `vkCreateShaderModule`.
-`glslangvalidator --target-env vulkan1.2 -e main -o shader.vert.spv shader.vert` would be one
-example of compiling shader.vert
 
-Note that every time this shader is executed, `My float is 3.141500` will be printed. If this were
-in a vertex shader and a triangle was drawn, it would be printed 3 times.
+`glslang` will automatically add the DebugPrintf instructions
 
-## Using Debug Printf in HLSL Shaders
+## Using Debug Printf in HLSL and Slang Shaders
 
-In HLSL, debug printf can be invoked as follows ([Try Online](https://godbolt.org/z/3ThznsdK8)):
-```
+In HLSL and Slang, debug printf can be invoked as follows ([Try Online](https://godbolt.org/z/3ThznsdK8)):
+
+```glsl
 void main() {
     float myfloat = 3.1415;
     printf("My float is %f", myfloat);
 }
 ```
-Use `glslangValidator` or `dxc` to generate SPIR-V for this shader.
-For instance:
-- `glslangValidator.exe -D --target-env vulkan1.2 -e main -o shader.vert.spv shader.vert`
-- `dxc.exe -spirv -E main -T ps_6_0 -fspv-target-env=vulkan1.2 shader.vert -Fo shader.vert.spv`
 
-## Using Debug Printf in SPIR-V Shaders
+Both `dxc` and `slangc` will automatically add the DebugPrintf instructions
 
-Normally, developers will use a high-level language like HLSL or GLSL to generate SPIR-V.
-However, in some cases, developers may wish to insert Debug Printfs directly into SPIR-V
+## Recommendations
 
-To execute debug printfs in a SPIR-V shader, a developer will need the following two
-instructions specified:
+If you print every time a shader is executed you can easily get millions of things trying to print. It is recommended to use built-ins to limit what is printed
 
+```glsl
+// Vertex Shader
+if (gl_VertexIndex == 0) {
+    debugPrintfEXT("Only print for a single vertex shader invocation\n");
+}
+
+// Fragment Shader
+if (gl_FragCoord.x > 0.0 && gl_FragCoord.x < 0.1 &&
+    gl_FragCoord.y > 0.0 && gl_FragCoord.y < 0.1) {
+    debugPrintfEXT("Only print for a few fragment shader invocation\n");
+}
+
+// Compute Shader
+if (gl_LocalInvocationIndex == 0) {
+    debugPrintfEXT("Only print for a single compute invocation\n");
+}
 ```
-OpExtension "SPV_KHR_non_semantic_info"
-%N0 = OpExtInstImport NonSemantic.DebugPrintf
-```
-
-Debug printf operations can then be specified in any function with the following instruction:
-`%NN = OpExtInst %void %N0 1 %N1 %N2 %N3` ...
-where:
-* `N0` is the result id of the OpExtInstImport NonSemantic.DebugPrintf
-* `1` is the opcode of the DebugPrintf instruction in NonSemantic.DebugPrintf
-* `N1` is the result of an OpString containing the format for the debug printf
-* `N2`, `N3`, ... are result ids of scalar and vector values to be printed
-* `NN` is the result id of the debug printf operation. This value is undefined.
-
-> `OpExtInstImport` of any `NonSemantic*` is properly supported with the `VK_KHR_shader_non_semantic_info` device extension. Some older compiler stacks might not handle these unknown instructions well, some will ignore it as desired.
 
 ## Debug Printf Output
-The strings resulting from a Debug Printf will, by default, be sent to the debug callback
-which is either specified by the app, or by default sent to stdout.
-They are sent at the `VK_DEBUG_REPORT_INFORMATION_BIT_EXT` or `VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT`
-level.
 
-## Debug Printf messages in RenderDoc
+DebugPrintf error message are returned as `VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT`
 
-As of RenderDoc release 1.14, Debug Printf statements can be added to shaders, and debug
-printf messages will be received and logged in the Event Browser window.
+For your custom callback, you can look for `0x4fe1fef9` in `VkDebugUtilsMessengerCallbackDataEXT::messageIdNumber` as the magic hash if it is a Debug Printf message
 
-Using the debugmarker sample from Sascha Willems' Vulkan samples repository:
+The Validation Layers will try and turn on `info` level messages when using DebugPrintf so the message is found
 
-1. Capture a frame:
-![Rd Frame](images/rd_frame.png)
+The `VkDebugUtilsMessengerCallbackDataEXT::pMessage` will contain the location and on a newline print out the error message such as:
 
-2. Edit the shader:
-- Add `#extension GL_EXT_debug_printf : enable` to beginning of shader
-- Add `debugPrintfEXT("Position = %v4f", pos);` to shader after pos definition
-- Hit Refresh
-
-![Refresh](images/refresh.png)
-
-The vkCmdDrawIndexed in question now has 51 messages.
-
-3. Click on msg(s) to see Debug Printf output per draw:
-![Values](images/values.png)
-
-## Debug Printf messages from Validation Layers via VkConfig (Vulkan Configurator)
-
-Here's an example of adding a Debug Printf statement to the shader in the `vkcube` demo (from
-the `Vulkan-Tools` repository), and then using `VkConfig` to enable Debug Printf, launch vkcube,
-and see the Debug Printf output.
-1. Add Debug Printf to the vkcube demo:
- - Add `VK_KHR_shader_non_semantic_info` to cube's `CreateDevice` function
- - Add extension and `debugPrintfEXT` call to the shader
- - Use `glslangvalidator` to compile the new shader
- - (Offscreen) Rebuild vkcube
-
-![Add Dbpf](images/add_dbpf.png)
-
-2. Configure `VkConfig` to enable Debug Printf
- - Set Shader Printf Preset
- - Set the executable path to the vkcube demo and add --c 1 to the command line to render one frame
- - Click the "Launch" button
-
-![Vkconfig Setup](images/vkconfig_setup.png)
-
-3. See the Debug Printf output in Launcher window:
-![Vkconfig Result](images/vkconfig_result.png)
+> vkQueueSubmit(): pSubmits[0] DebugPrintf:
+>
+> x == 100
 
 ### Debug Printf Format String
 
@@ -184,6 +145,76 @@ Would print **"Here's a vector of floats 1.20, 2.20, 3.20, 4.20"**
 
 `debugPrintfEXT("Unsigned long as decimal %lu and as hex 0x%lx", bigvar, bigvar);`
 Would print **"Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001"**
+
+
+## Debug Printf messages in RenderDoc
+
+As of RenderDoc release 1.14, Debug Printf statements can be added to shaders, and debug
+printf messages will be received and logged in the Event Browser window.
+
+Using the debugmarker sample from Sascha Willems' Vulkan samples repository:
+
+1. Capture a frame:
+![Rd Frame](images/rd_frame.png)
+
+2. Edit the shader:
+- Add `#extension GL_EXT_debug_printf : enable` to beginning of shader
+- Add `debugPrintfEXT("Position = %v4f", pos);` to shader after pos definition
+- Hit Refresh
+
+![Refresh](images/refresh.png)
+
+The vkCmdDrawIndexed in question now has 51 messages.
+
+3. Click on msg(s) to see Debug Printf output per draw:
+![Values](images/values.png)
+
+## Using Debug Printf in SPIR-V Shaders
+
+Normally, developers will use a high-level language like HLSL or GLSL to generate SPIR-V.
+However, in some cases, developers may wish to insert Debug Printfs directly into SPIR-V
+
+To execute debug printfs in a SPIR-V shader, a developer will need the following two
+instructions specified:
+
+```
+OpExtension "SPV_KHR_non_semantic_info"
+%N0 = OpExtInstImport NonSemantic.DebugPrintf
+```
+
+Debug printf operations can then be specified in any function with the following instruction:
+`%NN = OpExtInst %void %N0 1 %N1 %N2 %N3` ...
+where:
+* `N0` is the result id of the OpExtInstImport NonSemantic.DebugPrintf
+* `1` is the opcode of the DebugPrintf instruction in NonSemantic.DebugPrintf
+* `N1` is the result of an OpString containing the format for the debug printf
+* `N2`, `N3`, ... are result ids of scalar and vector values to be printed
+* `NN` is the result id of the debug printf operation. This value is undefined.
+
+> `OpExtInstImport` of any `NonSemantic*` is properly supported with the `VK_KHR_shader_non_semantic_info` device extension. Some older compiler stacks might not handle these unknown instructions well, some will ignore it as desired.
+
+## Debug Printf messages from Validation Layers via VkConfig (Vulkan Configurator)
+
+Here's an example of adding a Debug Printf statement to the shader in the `vkcube` demo (from
+the `Vulkan-Tools` repository), and then using `VkConfig` to enable Debug Printf, launch vkcube,
+and see the Debug Printf output.
+1. Add Debug Printf to the vkcube demo:
+ - Add `VK_KHR_shader_non_semantic_info` to cube's `CreateDevice` function
+ - Add extension and `debugPrintfEXT` call to the shader
+ - Use `glslangvalidator` to compile the new shader
+ - (Offscreen) Rebuild vkcube
+
+![Add Dbpf](images/add_dbpf.png)
+
+2. Configure `VkConfig` to enable Debug Printf
+ - Set Shader Printf Preset
+ - Set the executable path to the vkcube demo and add --c 1 to the command line to render one frame
+ - Click the "Launch" button
+
+![Vkconfig Setup](images/vkconfig_setup.png)
+
+3. See the Debug Printf output in Launcher window:
+![Vkconfig Result](images/vkconfig_result.png)
 
 ### Limitations
 * Debug Printf consumes a descriptor set. If your application uses every last
