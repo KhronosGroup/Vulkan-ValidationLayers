@@ -619,9 +619,10 @@ bool CoreChecks::ValidateDescriptorSetLayoutBindingFlags(const VkDescriptorSetLa
         if (flags_info->pBindingFlags[i] & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
             if (binding_info.binding != max_binding) {
                 skip |= LogError("VUID-VkDescriptorSetLayoutBindingFlagsCreateInfo-pBindingFlags-03004", device, binding_flags_loc,
-                                 "includes VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT "
-                                 "but %" PRIu32 " is the largest value of all the bindings.",
-                                 binding_info.binding);
+                                 "(binding %" PRIu32
+                                 ") includes VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT "
+                                 "but can only be on the last binding element (binding %" PRIu32 ").",
+                                 binding_info.binding, max_binding);
             }
 
             if (!enabled_features.descriptorBindingVariableDescriptorCount) {
