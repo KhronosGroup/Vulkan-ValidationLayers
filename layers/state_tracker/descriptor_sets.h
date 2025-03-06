@@ -995,7 +995,7 @@ class DescriptorSet : public StateObject {
         return DescriptorIterator<ConstBindingIterator>(*this, binding, index);
     }
 
-    bool ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const;
+    bool ValidateBindingOnGPU(const DescriptorBinding &binding, const spirv::ResourceInterfaceVariable &variable) const;
 
   protected:
     union AnyBinding {
