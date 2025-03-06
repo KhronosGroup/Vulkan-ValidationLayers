@@ -341,16 +341,15 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
                 std::cout << "VVL-DEBUG-PRINTF " << shader_message.str() << '\n' << debug_info_message;
             } else {
                 LogObjectList objlist(queue, command_buffer);
-                gpuav.LogInfo("VVL-DEBUG-PRINTF", objlist, loc, "%s\n%s", shader_message.str().c_str(), debug_info_message.c_str());
+                gpuav.LogInfo("VVL-DEBUG-PRINTF", objlist, loc, "DebugPrintf:\n%s\n%s", shader_message.str().c_str(),
+                              debug_info_message.c_str());
             }
 
         } else {
             if (use_stdout) {
                 std::cout << shader_message.str();
             } else {
-                // LogInfo will print out a lot of extra information (Object handles, VUID, hash, etc)
-                // If the user doesn't set "verbose", but wants to use the debug callback, we should limit it to the bare minimum
-                gpuav.debug_report->LogMessage(kInformationBit, "VVL-DEBUG-PRINTF", {}, loc, shader_message.str());
+                gpuav.LogInfo("VVL-DEBUG-PRINTF", gpuav.device, loc, "DebugPrintf:\n%s", shader_message.str().c_str());
             }
         }
         output_record_i += debug_record->size;
