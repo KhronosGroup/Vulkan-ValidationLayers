@@ -967,3 +967,68 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, ZeroBindingDescriptor) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9553");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        // Using descriptor aliasing: same binding for sampler2D and sampler2DArray.
+        layout(set = 0, binding = 0) uniform sampler2D uPlanetTextures[];
+        layout(set = 0, binding = 0) uniform sampler2DArray uPlanetArrayTextures[];
+
+        layout(set = 0, binding = 1) uniform UBO {
+            uint index;
+        };
+
+        void main() {
+            vec4 color1 = texture(uPlanetTextures[index], vec2(0));
+            vec4 color2 = texture(uPlanetArrayTextures[index + 1], vec3(0));
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    *buffer_ptr = 0;
+    buffer.Memory().Unmap();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    vkt::Image image_array(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view_array = image_array.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view_array, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}

@@ -569,8 +569,21 @@ std::vector<ResourceInterfaceVariable> EntryPoint::GetResourceInterfaceVariables
         // see vkspec.html#interfaces-resources-descset
         if (storage_class == spv::StorageClassUniform || storage_class == spv::StorageClassUniformConstant ||
             storage_class == spv::StorageClassStorageBuffer) {
-            variables.emplace_back(module_state, entrypoint, insn, image_access_map, access_chain_map, variable_access_map,
-                                   debug_name_map);
+            auto& new_variable = variables.emplace_back(module_state, entrypoint, insn, image_access_map, access_chain_map,
+                                                        variable_access_map, debug_name_map);
+
+            // While creating it, look if 2 variables are aliased
+            // This is not an ideal looping, but it only for cases were we need to move to GPU-AV so can rule out many cases where
+            // this loop is not required
+            if (new_variable.array_length > 1 && !new_variable.is_runtime_descriptor_array) {
+                for (ResourceInterfaceVariable& variable : variables) {
+                    if (variable.id != new_variable.id && variable.decorations.set == new_variable.decorations.set &&
+                        variable.decorations.binding == new_variable.decorations.binding) {
+                        variable.is_aliased = true;
+                        new_variable.is_aliased = true;
+                    }
+                }
+            }
         } else if (storage_class == spv::StorageClassPushConstant) {
             entrypoint.push_constant_variable =
                 std::make_shared<PushConstantVariable>(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map);
@@ -2016,10 +2029,11 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                                                      const VariableAccessMap& variable_access_map,
                                                      const DebugNameMap& debug_name_map)
     : VariableBase(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map),
-      array_length(0),
+      array_length(0),  // updated in FindBaseType
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
+      is_aliased(false),  // Need to find all before we can update this
       is_storage_buffer(IsStorageBuffer(*this)) {
     // to make sure no padding in-between the struct produce noise and force same data to become a different hash
     info = {};  // will be cleared with c++11 initialization

@@ -845,9 +845,7 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
             return result;
         }
 
-        if (descriptor_set.ValidateBindingOnGPU(*binding, resource_variable.is_runtime_descriptor_array)) {
-            continue;
-        }
+        if (descriptor_set.ValidateBindingOnGPU(*binding, resource_variable)) continue;
 
         result |= desc_val.ValidateBindingStatic(resource_variable, *binding);
     }

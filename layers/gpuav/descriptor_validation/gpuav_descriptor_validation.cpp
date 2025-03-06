@@ -272,10 +272,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 if (!resource_variable) continue;
 
                 // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
-                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding,
-                                                                resource_variable->is_runtime_descriptor_array)) {
-                    continue;
-                }
+                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, *resource_variable)) continue;
 
                 context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
             }

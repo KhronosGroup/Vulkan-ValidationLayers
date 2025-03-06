@@ -409,6 +409,9 @@ struct ResourceInterfaceVariable : public VariableBase {
     // True if the Resource variable itself is runtime descriptor array
     // Online example to showcase various arrays we do/don't care about here https://godbolt.org/z/h9jhsKaPn
     bool is_runtime_descriptor_array;
+    // True if this variable points to the same binding/set as another variable
+    // This is only possible for descriptor arrays
+    bool is_aliased;
 
     // All info regarding what will be validated from requirements imposed by the pipeline on a descriptor. These
     // can't be checked at pipeline creation time as they depend on the Image or ImageView bound.
