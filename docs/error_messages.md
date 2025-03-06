@@ -178,3 +178,7 @@ export VK_LAYER_LOG_FILENAME=/tmp/vvl_errors.txt
 adb setprop debug.vulkan.khronos_validation.debug_action=VK_DBG_LAYER_ACTION_LOG_MSG
 adb setprop debug.vulkan.khronos_validation.log_filename=/data/local/tmp/vvl_errors.txt
 ```
+
+# Additional information
+
+Synchronization validation detects memory hazards and has custom error conventions. Additional information about SyncVal errors can be found in the [Synchronization Validation Messages](./syncval_usage.md#synchronization-validation-messages) document.
