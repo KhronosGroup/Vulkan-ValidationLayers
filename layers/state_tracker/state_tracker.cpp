@@ -48,14 +48,18 @@
 namespace vvl {
 Device::~Device() { DestroyObjectMaps(); }
 
-VkDeviceAddress Device::GetBufferDeviceAddressHelper(VkBuffer buffer) const {
+VkDeviceAddress Device::GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions *exts = nullptr) const {
+    // GPU-AV needs to pass in the modified extensions, since it may turn on BDA on its own
+    if (!exts) {
+        exts = &extensions;
+    }
     VkBufferDeviceAddressInfo address_info = vku::InitStructHelper();
     address_info.buffer = buffer;
 
     if (api_version >= VK_API_VERSION_1_2) {
         return DispatchGetBufferDeviceAddress(device, &address_info);
     } else {
-        if (IsExtEnabled(extensions.vk_khr_buffer_device_address)) {
+        if (IsExtEnabled(exts->vk_khr_buffer_device_address)) {
             return DispatchGetBufferDeviceAddressKHR(device, &address_info);
         } else {
             return 0;
