@@ -160,13 +160,14 @@ class small_vector {
     }
 
     small_vector(size_type size, const value_type &value = value_type()) : size_(0), capacity_(N), working_store_(GetSmallStore()) {
-        reserve(size);
-        auto dest = GetWorkingStore();
-        for (size_type i = 0; i < size; i++) {
-            new (dest) value_type(value);
-            ++dest;
+        if (size > 0) {
+            reserve(size);
+            auto dest = GetWorkingStore();
+            for (size_type i = 0; i < size; i++) {
+                new (&dest[i]) value_type(value);
+            }
+            size_ = size;
         }
-        size_ = size;
     }
 
     ~small_vector() { clear(); }
