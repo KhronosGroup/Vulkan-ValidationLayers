@@ -345,8 +345,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
         }
         vo->PreCallRecordCreateDevice(gpu, pCreateInfo, pAllocator, pDevice, record_obj, &modified_create_info);
     }
-    // Recalculate enabled_features based on any changes made
-    GetEnabledDeviceFeatures(modified_create_info.ptr(), &device_dispatch->enabled_features, device_dispatch->api_version);
 
     VkResult result = fpCreateDevice(gpu, reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info), pAllocator, pDevice);
     if (result != VK_SUCCESS) {
@@ -354,9 +352,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateDevice(VkPhysicalDevice gpu, const VkDevice
     }
     record_obj.result = result;
     device_dispatch->device = *pDevice;
-    // Save local info in device object
-    device_dispatch->extensions = DeviceExtensions(instance_dispatch->extensions, device_dispatch->api_version,
-                                                   reinterpret_cast<VkDeviceCreateInfo*>(&modified_create_info));
+
     layer_init_device_dispatch_table(*pDevice, &device_dispatch->device_dispatch_table, fpGetDeviceProcAddr);
 
     instance_dispatch->debug_report->device_created++;

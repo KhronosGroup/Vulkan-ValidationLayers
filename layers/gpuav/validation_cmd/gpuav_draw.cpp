@@ -425,7 +425,7 @@ void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
         return;
     }
 
-    if (!gpuav.enabled_features.shaderInt64) {
+    if (!gpuav.modified_features.shaderInt64) {
         return;
     }
 
