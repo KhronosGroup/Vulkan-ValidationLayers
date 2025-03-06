@@ -303,12 +303,7 @@ void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatu
 }
 
 VkLayerTest::VkLayerTest() {
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     m_instance_extension_names.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-#else
-    m_instance_extension_names.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-#endif
-
     instance_layers_.push_back(kValidationLayerName);
 
     if (InstanceLayerSupported("VK_LAYER_LUNARG_device_profile_api")) {

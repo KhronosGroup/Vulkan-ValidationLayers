@@ -190,9 +190,10 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     callback_data.objectCount = static_cast<uint32_t>(object_name_infos.size());
     callback_data.pObjects = object_name_infos.data();
 
+    // The text format is more minimal and will have other information in the callback, the JSON is designed to contain everything
     std::string full_message = message_format_settings.json
                                    ? CreateMessageJson(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message)
-                                   : CreateMessageText(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message);
+                                   : CreateMessageText(loc, vuid_text, main_message);
 
     const auto callback_list = &debug_callback_list;
     // We only output to default callbacks if there are no non-default callbacks
@@ -241,70 +242,15 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     return bail;
 }
 
-std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &loc,
-                                           const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos,
-                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string &main_message) {
+std::string DebugReport::CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message) {
     std::ostringstream oss;
 
 #if defined(BUILD_SELF_VVL)
-    oss << "Self ";  // How we know if the error is from Self Validation when debugging GPU-AV
+    oss << "[Self Validation] ";  // How we know if the error is from Self Validation when debugging GPU-AV
 #endif
 
     if (message_format_settings.display_application_name && !message_format_settings.application_name.empty()) {
         oss << "[AppName: " << message_format_settings.application_name << "] ";
-    }
-
-    // User can get this from VkDebugUtilsMessageSeverityFlagBitsEXT if desired
-    if (message_format_settings.verbose) {
-        if (msg_flags & kErrorBit) {
-            oss << "Validation Error: ";
-        } else if (msg_flags & kWarningBit) {
-            oss << "Validation Warning: ";
-        } else if (msg_flags & kPerformanceWarningBit) {
-            oss << "Validation Performance Warning: ";
-        } else if (msg_flags & kInformationBit) {
-            oss << "Validation Information: ";
-        } else if (msg_flags & kVerboseBit) {
-            oss << "Verbose Information: ";
-        }
-    }
-
-    if (!vuid_text.empty()) {
-        oss << "[ " << vuid_text << " ]";
-    }
-
-    // User can get these from VkDebugUtilsMessengerCallbackDataEXT::pObjects if desired
-    if (message_format_settings.verbose) {
-        if (!object_name_infos.empty()) {
-            oss << " Objects: ";
-        }
-        for (uint32_t i = 0; i < object_name_infos.size(); i++) {
-            const VkDebugUtilsObjectNameInfoEXT &src_object = object_name_infos[i];
-            if (0 != src_object.objectHandle) {
-                oss << string_VkObjectTypeHandleName(src_object.objectType) << " ";
-                if (!debug_stable_messages) {
-                    oss << "0x" << std::hex << src_object.objectHandle;
-                }
-                if (src_object.pObjectName) {
-                    oss << "[" << src_object.pObjectName << "]";
-                }
-            } else {
-                oss << string_VkObjectTypeHandleName(src_object.objectType) << " VK_NULL_HANDLE";
-            }
-
-            if (i + 1 != object_name_infos.size()) {
-                oss << ", ";
-            }
-        }
-
-        oss << " | MessageID = 0x" << std::hex << vuid_hash;
-    }
-
-    // Add a new line to seperate everything from the start of the "real" error message
-    if (message_format_settings.verbose) {
-        oss << "\n";
-    } else {
-        oss << " ";
     }
 
     oss << loc.Message() << " " << main_message;
@@ -344,14 +290,7 @@ std::string DebugReport::CreateMessageText(VkFlags msg_flags, const Location &lo
                 oss << '\n';
             }
 
-            oss << "The Vulkan spec states: " << spec_text;
-
-            // Spec link can always be found searching the VUID.
-            // But regardless of "verbose" setting, print the spec text as sometimes the error message in the layer is designed to
-            // complement it.
-            if (message_format_settings.verbose) {
-                oss << " (" << spec_url_base << spec_url_section << "#" << vuid_text << ")";
-            }
+            oss << "The Vulkan spec states: " << spec_text << " (" << spec_url_base << spec_url_section << "#" << vuid_text << ")";
         }
     }
 
@@ -797,74 +736,66 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerBreakCallback([[maybe_unused]] VkDebugUt
     return false;
 }
 
-static void PrintMessageSeverity(VkFlags vk_flags, char *msg_flags) {
-    bool separator = false;
+static std::string CreateDefaultCallbackMessage(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                                                VkDebugUtilsMessageTypeFlagsEXT message_type,
+                                                const VkDebugUtilsMessengerCallbackDataEXT &callback_data) {
+    std::ostringstream oss;
 
-    msg_flags[0] = 0;
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
-        strcat(msg_flags, "VERBOSE");
-        separator = true;
+    // The callback is in JSON (this is the only way the first char is '{')
+    // If the user enables JSON, we only will print out JSON.
+    if (callback_data.pMessage[0] == '{') {
+        oss << callback_data.pMessage << '\n';
+        return oss.str();
     }
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-        if (separator) strcat(msg_flags, ",");
-        strcat(msg_flags, "INFO");
-        separator = true;
-    }
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        if (separator) strcat(msg_flags, ",");
-        strcat(msg_flags, "WARN");
-        separator = true;
-    }
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        if (separator) strcat(msg_flags, ",");
-        strcat(msg_flags, "ERROR");
-    }
-}
 
-static void PrintMessageType(VkFlags vk_flags, char *msg_flags) {
-    bool separator = false;
+    if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        oss << "Validation Error: ";
+    } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+            oss << "Validation Performance Warning: ";
+        } else {
+            oss << "Validation Warning: ";
+        }
+    } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        oss << "Validation Information: ";
+    } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        oss << "Verbose Information: ";
+    }
 
-    msg_flags[0] = 0;
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) {
-        strcat(msg_flags, "GEN");
-        separator = true;
+    oss << "[ " << callback_data.pMessageIdName << " ] | MessageID = 0x" << std::hex << callback_data.messageIdNumber << '\n';
+
+    oss << callback_data.pMessage << '\n';
+
+    if (callback_data.objectCount > 0) {
+        oss << "    Objects: " << callback_data.objectCount << '\n';
+        for (uint32_t i = 0; i < callback_data.objectCount; i++) {
+            const auto &debug_object = callback_data.pObjects[i];
+            oss << "        [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
+            if (debug_object.objectHandle) {
+                oss << " 0x" << std::hex << debug_object.objectHandle;
+            } else {
+                oss << " VK_NULL_HANDLE";
+            }
+            if (debug_object.pObjectName) {
+                oss << "[" << debug_object.pObjectName << "]";
+            }
+            oss << '\n';
+        }
     }
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        if (separator) strcat(msg_flags, ",");
-        strcat(msg_flags, "SPEC");
-        separator = true;
-    }
-    if (vk_flags & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
-        if (separator) strcat(msg_flags, ",");
-        strcat(msg_flags, "PERF");
-    }
+
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
+    oss << '\n';  // provide space between consecutive errors
+#endif
+
+    return oss.str();
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL MessengerLogCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                                                     VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
-    std::ostringstream msg_buffer;
-    char msg_severity[8];  // larget word is "VERBOSE\0"
-    char msg_type[8];
+    const std::string msg_buffer_str = CreateDefaultCallbackMessage(message_severity, message_type, *callback_data);
 
-    PrintMessageSeverity(message_severity, msg_severity);
-    PrintMessageType(message_type, msg_type);
-
-    msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
-               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
-    if (callback_data->objectCount > 0) {
-        msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
-    }
-    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
-        msg_buffer << "        [" << obj << "] " << std::hex << std::showbase
-                   << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
-                   << callback_data->pObjects[obj].objectType
-                   << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
-                   << '\n';
-    }
-
-    const std::string msg_buffer_str = msg_buffer.str();
-
+    // By default we are really just printing to stdout
     // Even if this is stdout, we still want to print for android
     // VVL testing (and probably other systems now) call freopen() to map stdout to dedicated file
     fprintf((FILE *)user_data, "%s", msg_buffer_str.c_str());
@@ -891,28 +822,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL MessengerWin32DebugOutputMsg(VkDebugUtilsMessageS
                                                             VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                             const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
                                                             [[maybe_unused]] void *user_data) {
-    std::ostringstream msg_buffer;
-    char msg_severity[8];  // larget word is "VERBOSE\0"
-    char msg_type[8];
-
-    PrintMessageSeverity(message_severity, msg_severity);
-    PrintMessageType(message_type, msg_type);
-
-    msg_buffer << callback_data->pMessageIdName << "(" << msg_severity << " / " << msg_type
-               << "): msgNum: " << callback_data->messageIdNumber << " - " << callback_data->pMessage << '\n';
-    if (callback_data->objectCount > 0) {
-        msg_buffer << "    Objects: " << callback_data->objectCount << '\n';
-    }
-
-    for (uint32_t obj = 0; obj < callback_data->objectCount; ++obj) {
-        msg_buffer << "       [" << obj << "]  " << std::hex << std::showbase
-                   << HandleToUint64(callback_data->pObjects[obj].objectHandle) << ", type: " << std::dec << std::noshowbase
-                   << callback_data->pObjects[obj].objectType
-                   << ", name: " << (callback_data->pObjects[obj].pObjectName ? callback_data->pObjects[obj].pObjectName : "NULL")
-                   << '\n';
-    }
-    const std::string tmp = msg_buffer.str();
-    [[maybe_unused]] const char *cstr = tmp.c_str();
+    const std::string msg_buffer_str = CreateDefaultCallbackMessage(message_severity, message_type, *callback_data);
+    [[maybe_unused]] const char *cstr = msg_buffer_str.c_str();
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     OutputDebugString(cstr);

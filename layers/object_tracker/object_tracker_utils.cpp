@@ -399,8 +399,8 @@ bool Instance::ReportLeakedObjects(VulkanObjectType object_type, const std::stri
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
         const LogObjectList objlist(instance, ObjTrackStateTypedHandle(*object_info));
-        skip |= LogError(error_code, objlist, loc, "OBJ ERROR : For %s, %s has not been destroyed.", FormatHandle(instance).c_str(),
-                         FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
+        skip |= LogError(error_code, objlist, loc, "Object Tracking - For %s, %s has not been destroyed.",
+                         FormatHandle(instance).c_str(), FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
     }
     return skip;
 }
@@ -413,8 +413,8 @@ bool Device::ReportLeakedObjects(VulkanObjectType object_type, const std::string
     for (const auto &item : snapshot) {
         const auto object_info = item.second;
         const LogObjectList objlist(device, ObjTrackStateTypedHandle(*object_info));
-        skip |= LogError(error_code, objlist, loc, "OBJ ERROR : For %s, %s has not been destroyed.", FormatHandle(device).c_str(),
-                         FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
+        skip |= LogError(error_code, objlist, loc, "Object Tracking - For %s, %s has not been destroyed.",
+                         FormatHandle(device).c_str(), FormatHandle(ObjTrackStateTypedHandle(*object_info)).c_str());
     }
     return skip;
 }
