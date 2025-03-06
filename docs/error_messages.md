@@ -9,9 +9,7 @@ There are 2 options
 1. Use the default callback (provided by the validation layers)
 2. Use a custom callback (more details below)
 
-By default, the Validation Layers will format the message for you, but it is possible for the user to provide their own `PFN_vkDebugUtilsMessengerCallbackEXT` and parse the data from `VkDebugUtilsMessengerCallbackDataEXT` in a way they prefer.
-
-The default error message will look like:
+By default, the Validation Layers will format the `VkDebugUtilsMessengerCallbackDataEXT` struct for you and print to the following to the OS-dependent standard output (`stdout`, `logcat`, `OutputDebugString`, etc):
 
 > Validation Error: [ VUID-vkCmdSetScissor-firstScissor-00593 ] | MessageID = 0x603fac6b
 >
@@ -19,16 +17,14 @@ The default error message will look like:
 >
 > The Vulkan spec states: If the multiViewport feature is not enabled, firstScissor must be 0 (https://docs.vulkan.org/spec/latest/chapters/fragops.html#VUID-vkCmdSetScissor-firstScissor-00593)
 >
->     Objects: 1
->         [0] VkCommandBuffer 0x5c11921d2d10
+> Objects: 1
+>    [0] VkCommandBuffer 0x5c11921d2d10
 >
 > (new line)
 
-
 Here we see a few things, listed in the order they appear
 
-1. The message severity
-    - (error, warning, etc)
+1. The message severity (error, warning, etc)
 2. The [VUID](https://github.com/KhronosGroup/Vulkan-Guide/blob/main/chapters/validation_overview.adoc#valid-usage-id-vuid)
 3. Message ID
     - This is just a hash of the VUID used internally to detect if the message duplication rate was hit
@@ -42,6 +38,62 @@ Here we see a few things, listed in the order they appear
 9. List of Objects
     - Contain handle type, hex value, and optional debug util name
 10. There is a new line under to allow for easy seperation of multiple error messages
+
+# Custom Callback
+
+For those who want to handle the callback to format the message the way they want, here is how the `VkDebugUtilsMessengerCallbackDataEXT` is laid out
+
+```c++
+// VkDebugUtilsMessengerCallbackDataEXT
+const char*                           pMessageIdName;  // VUID
+int32_t                               messageIdNumber; // Hash of the VUID
+const char*                           pMessage;        // The "main message" (includes the spec text on seperate line)
+
+// Debug Objects that Validaiton will print for you in a default callback
+uint32_t                              queueLabelCount;
+const VkDebugUtilsLabelEXT*           pQueueLabels;
+uint32_t                              cmdBufLabelCount;
+const VkDebugUtilsLabelEXT*           pCmdBufLabels;
+uint32_t                              objectCount;
+const VkDebugUtilsObjectNameInfoEXT*  pObjects;
+```
+
+The following is an example of how one could do their custom callback
+
+```c++
+VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                       VkDebugUtilsMessageTypeFlagsEXT message_type,
+                       const VkDebugUtilsMessengerCallbackDataEXT *callback_data) {
+
+    // Other layers might also be trying to report via the callback, so can filter using the type
+    bool is_validation = messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+
+    // Only report Errors and Warnings
+    bool is_error = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    bool is_warning = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    if (is_error || is_warning) {
+        std::cout << "Validation " << (is_error ? "Error:" : "Warning:");
+        std::cout << " [ " << pCallbackData->pMessageIdName << " ]\n";
+        std::cout << pCallbackData->pMessage;
+
+        for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
+            std::cout << '\n';
+            if (pCallbackData->pObjects[i].objectHandle) {
+                std::cout << "    Object Handle [" << i << "] = " << " 0x" << std::hex << pCallbackData->pObjects[i].objectHandle;
+            }
+            if (pCallbackData->pObjects[i].pObjectName) {
+                std::cout << "[" << pCallbackData->pObjects[i].pObjectName << "]";
+            }
+        }
+    }
+    std::cout << '\n';
+
+    // Return false to move on and still call the function to the driver
+    return VK_FALSE;
+    // Return true to have validation skip passing down the call to the driver
+    return VK_TRUE;
+};
+```
 
 # JSON Error Format
 
@@ -103,58 +155,6 @@ export VK_LAYER_MESSAGE_FORMAT_JSON=1
 
 # Android
 adb setprop debug.vulkan.khronos_validation.message_format_json=1
-```
-
-# Custom Callback
-
-For those who want to handle the callback to format the message the way they want, here is how the `VkDebugUtilsMessengerCallbackDataEXT` is laid out
-
-```c++
-// VkDebugUtilsMessengerCallbackDataEXT
-const char*                           pMessageIdName;  // VUID
-int32_t                               messageIdNumber; // Hash of the VUID
-const char*                           pMessage;        // The "main message" (includes the spec text on seperate line)
-
-// Debug Objects that Validaiton will print for you in a default callback
-uint32_t                              queueLabelCount;
-const VkDebugUtilsLabelEXT*           pQueueLabels;
-uint32_t                              cmdBufLabelCount;
-const VkDebugUtilsLabelEXT*           pCmdBufLabels;
-uint32_t                              objectCount;
-const VkDebugUtilsObjectNameInfoEXT*  pObjects;
-```
-
-The following is an example of how one could do their custom callback
-
-```c++
-VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                       VkDebugUtilsMessageTypeFlagsEXT,
-                       const VkDebugUtilsMessengerCallbackDataEXT *callback_data) {
-    // Only report Errors and Warnings
-    bool is_error = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    bool is_warning = messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-    if (is_error || is_warning) {
-        std::cout << "Validation " << (is_error ? "Error:" : "Warning:");
-        std::cout << " [ " << pCallbackData->pMessageIdName << " ]\n";
-        std::cout << pCallbackData->pMessage;
-
-        for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
-            std::cout << '\n';
-            if (pCallbackData->pObjects[i].objectHandle) {
-                std::cout << "    Object Handle [" << i << "] = " << " 0x" << std::hex << pCallbackData->pObjects[i].objectHandle;
-            }
-            if (pCallbackData->pObjects[i].pObjectName) {
-                std::cout << "[" << pCallbackData->pObjects[i].pObjectName << "]";
-            }
-        }
-    }
-    std::cout << '\n';
-
-    // Return false to move on and still call the function to the driver
-    return VK_FALSE;
-    // Return true to have validation skip passing down the call to the driver
-    return VK_TRUE;
-};
 ```
 
 # Logging to a file
