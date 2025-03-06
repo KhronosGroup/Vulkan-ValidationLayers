@@ -22,7 +22,7 @@ Once we start having bindless (or dynamic array) of descriptor, it is important 
 We create a buffer that hold information about each descriptor and when the GPU is ran, we quickly just mark what has been access. The instrumented GLSL would look like
 
 ```glsl
-inst_post_process_descriptor_index(0 /*binding*/, 1 /*binding*/, index);
+inst_post_process_descriptor_index(0 /*set*/, 1 /*binding*/, index);
 descriptor_b[index].data = 0;
 ```
 
