@@ -175,7 +175,6 @@ struct Location;
 
 struct MessageFormatSettings {
     bool json = false;
-    bool verbose = true;  // ignored if JSON is used
     bool display_application_name = false;
     std::string application_name;
 };
@@ -245,9 +244,7 @@ class DebugReport {
     bool UpdateLogMsgCounts(int32_t vuid_hash) const;
     bool LogMsgEnabled(uint32_t vuid_hash, VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
                        VkDebugUtilsMessageTypeFlagsEXT msg_type);
-    std::string CreateMessageText(VkFlags msg_flags, const Location &loc,
-                                  const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos, const uint32_t vuid_hash,
-                                  std::string_view vuid_text, const std::string &main_message);
+    std::string CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message);
     std::string CreateMessageJson(VkFlags msg_flags, const Location &loc,
                                   const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos, const uint32_t vuid_hash,
                                   std::string_view vuid_text, const std::string &main_message);
