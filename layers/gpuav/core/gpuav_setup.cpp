@@ -63,7 +63,7 @@ std::shared_ptr<vvl::AccelerationStructureKHR> Validator::CreateAccelerationStru
         if (buf_state->deviceAddress != 0) {
             buffer_address = buf_state->deviceAddress;
         } else if (buf_state->Binding()) {
-            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle());
+            buffer_address = GetBufferDeviceAddressHelper(buf_state->VkHandle(), &modified_extensions);
         }
     }
     return std::make_shared<AccelerationStructureKHR>(handle, create_info, std::move(buf_state), buffer_address, *desc_heap_);
@@ -377,7 +377,7 @@ void Validator::InitSettings(const Location &loc) {
     std::array<setting::Setting *, 4> all_settings = {&buffer_device_address, &ray_query, &buffer_copies, &buffer_content};
 
     for (auto &setting_object : all_settings) {
-        if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(enabled_features)) {
+        if (setting_object->IsEnabled(gpuav_settings) && !setting_object->HasRequiredFeatures(modified_features)) {
             setting_object->Disable(gpuav_settings);
             InternalWarning(device, loc, setting_object->DisableMessage().c_str());
         }

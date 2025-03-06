@@ -71,30 +71,33 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
-    // Check hard requirements for GPU-AV (after BaseClass::FinishDeviceSetup has set enabled_features)
-    if (!enabled_features.fragmentStoresAndAtomics) {
+    // Update feature and extension state based on changes made to the create info
+    GetEnabledDeviceFeatures(pCreateInfo, &modified_features, api_version);
+    modified_extensions = DeviceExtensions(extensions, api_version, pCreateInfo);
+
+    if (!modified_features.fragmentStoresAndAtomics) {
         InternalError(
             device, loc,
             "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow writting out data inside the fragment shader.");
         return;
     }
-    if (!enabled_features.vertexPipelineStoresAndAtomics) {
+    if (!modified_features.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc,
                       "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
                       "vertex shader.");
         return;
     }
-    if (!enabled_features.timelineSemaphore) {
+    if (!modified_features.timelineSemaphore) {
         InternalError(device, loc,
                       "GPU Shader Instrumentation requires timelineSemaphore to manage when command buffers are submitted at queue "
                       "submit time.");
         return;
     }
-    if (!enabled_features.bufferDeviceAddress) {
+    if (!modified_features.bufferDeviceAddress) {
         InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage writting out of the shader.");
         return;
     }
-    if (enabled_features.vulkanMemoryModel && !enabled_features.vulkanMemoryModelDeviceScope) {
+    if (modified_features.vulkanMemoryModel && !modified_features.vulkanMemoryModelDeviceScope) {
         InternalError(device, loc,
                       "GPU Shader Instrumentation requires vulkanMemoryModelDeviceScope feature (if vulkanMemoryModel is enabled) "
                       "to let us call atomicAdd to the output buffer.");
@@ -1179,7 +1182,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.support_non_semantic_info = IsExtEnabled(extensions.vk_khr_shader_non_semantic_info);
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
-    spirv::Module module(input_spirv, debug_report, module_settings, enabled_features,
+    spirv::Module module(input_spirv, debug_report, module_settings, modified_features,
                          instrumentation_dsl.set_index_to_bindings_layout_lut);
 
     bool modified = false;

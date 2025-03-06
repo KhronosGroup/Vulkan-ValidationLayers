@@ -229,6 +229,11 @@ class GpuShaderInstrumentor : public vvl::Device {
 
     std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
 
+    // Keep track of changes made to the enabled extensions and features separately so
+    // that they don't influence other parts of validation.
+    DeviceExtensions modified_extensions;
+    DeviceFeatures modified_features;
+
   private:
     void Cleanup();
     // These are objects used to inject our descriptor set into the command buffer
