@@ -731,7 +731,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7932
 TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     TEST_DESCRIPTION("Make sure the binding from the correct set it detected");
-    SetTargetApiVersion(VK_API_VERSION_1_1);
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::imageCubeArray);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
@@ -1121,6 +1122,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -1167,7 +1170,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     char const *vs_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; };
-        layout(set = 1, binding = 0) buffer foo_1 { int b; };
+        layout(set = 1, binding = 0) readonly buffer foo_1 { int b; };
         void main() {
             a = b;
         }
@@ -1252,6 +1255,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitRenderTarget();
 
@@ -1298,7 +1303,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     char const *vs_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; };
-        layout(set = 1, binding = 0) buffer foo_1 { int b; };
+        layout(set = 1, binding = 0) readonly buffer foo_1 { int b; };
         void main() {
             a = b;
         }
@@ -1375,6 +1380,8 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     AddRequiredFeature(vkt::Feature::descriptorBindingStorageBufferUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
     InitDynamicRenderTarget();
 
@@ -1419,7 +1426,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     char const *vs_source_2 = R"glsl(
         #version 450
         layout(set = 0, binding = 0) buffer foo_0 { int a; };
-        layout(set = 1, binding = 0) buffer foo_1 { int b; };
+        layout(set = 1, binding = 0) readonly buffer foo_1 { int b; };
         void main() {
             a = b;
         }
@@ -2585,6 +2592,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, StorageImage) {
 
 TEST_F(PositiveGpuAVDescriptorIndexing, DestroyedPipelineLayout) {
     RETURN_IF_SKIP(InitGpuAvFramework());
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

@@ -99,7 +99,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Basic) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
-
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -383,6 +383,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ObjectUniformBufferTooSmall) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -432,6 +433,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLRead) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -478,6 +480,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLRead) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -561,6 +564,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     TEST_DESCRIPTION("Make sure GPL works when shader modules are not inlined at pipeline creation time");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -761,6 +765,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Matrix) {
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Geometry) {
     TEST_DESCRIPTION("Basic Geometry shader test");
     AddRequiredFeature(vkt::Feature::geometryShader);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -930,6 +935,8 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DISABLED_TessellationEvaluatio
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
