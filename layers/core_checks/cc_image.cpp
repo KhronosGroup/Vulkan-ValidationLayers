@@ -2322,7 +2322,7 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
                     string_VkFormat(view_format),
                     string_LayerCount(image_state.create_info, pCreateInfo->subresourceRange).c_str());
             }
-            if (!AreFormatsSizeCompatible(view_format, image_format)) {
+            if (!AreFormatsSizeCompatible(view_format, image_format, aspect_mask)) {
                 skip |= LogError("VUID-VkImageViewCreateInfo-image-01583", pCreateInfo->image, create_info_loc.dot(Field::image),
                                  "was created with VK_IMAGE_CREATE_BLOCK_TEXEL_VIEW_COMPATIBLE_BIT bit and "
                                  "format (%s), but the uncompressed image view format (%s) is not size compatible. %s",

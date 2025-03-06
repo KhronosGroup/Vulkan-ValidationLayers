@@ -109,7 +109,7 @@ bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
 }
 
 // Implements the vkspec.html#formats-size-compatibility section of the spec
-bool AreFormatsSizeCompatible(VkFormat a, VkFormat b) {
+bool AreFormatsSizeCompatible(VkFormat a, VkFormat b, VkImageAspectFlags aspect_mask) {
     const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
     const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
     if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
@@ -119,9 +119,9 @@ bool AreFormatsSizeCompatible(VkFormat a, VkFormat b) {
     const bool is_a_depth_stencil = vkuFormatIsDepthOrStencil(a);
     const bool is_b_depth_stencil = vkuFormatIsDepthOrStencil(b);
     if (is_a_depth_stencil && !is_b_depth_stencil) {
-        return vkuFormatIsDepthStencilWithColorSizeCompatible(b, a);
+        return vkuFormatIsDepthStencilWithColorSizeCompatible(b, a, aspect_mask);
     } else if (!is_a_depth_stencil && is_b_depth_stencil) {
-        return vkuFormatIsDepthStencilWithColorSizeCompatible(a, b);
+        return vkuFormatIsDepthStencilWithColorSizeCompatible(a, b, aspect_mask);
     } else if (is_a_depth_stencil && is_b_depth_stencil) {
         return a == b;
     }

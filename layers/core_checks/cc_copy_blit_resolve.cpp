@@ -1650,6 +1650,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                     string_VkImageAspectFlags(dst_aspect).c_str());
             }
 
+            // If the aspect is wrong, it will be caught elsewhere, so use the default
             if (!AreFormatsSizeCompatible(dst_format, src_format)) {
                 vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-01548" : "VUID-vkCmdCopyImage-srcImage-01548";
                 skip |=
@@ -1733,7 +1734,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  "is VK_IMAGE_ASPECT_COLOR_BIT but dstSubresource.aspectMask contains both Depth and Stencil (%s).",
                                  string_VkImageAspectFlags(dst_aspect).c_str());
                 } else if (dst_aspect == VK_IMAGE_ASPECT_DEPTH_BIT || dst_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
-                    if (!vkuFormatIsDepthStencilWithColorSizeCompatible(src_format, dst_format)) {
+                    if (!vkuFormatIsDepthStencilWithColorSizeCompatible(src_format, dst_format, dst_aspect)) {
                         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-10211" : "VUID-vkCmdCopyImage-srcSubresource-10211";
                         skip |= LogError(vuid, all_objlist, src_subresource_loc.dot(Field::aspectMask),
                                          "is VK_IMAGE_ASPECT_COLOR_BIT and dstSubresource.aspectMask is %s, but the src color "
@@ -1753,10 +1754,10 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                  "is VK_IMAGE_ASPECT_COLOR_BIT but srcSubresource.aspectMask contains both Depth and Stencil (%s).",
                                  string_VkImageAspectFlags(src_aspect).c_str());
                 } else if (src_aspect == VK_IMAGE_ASPECT_DEPTH_BIT || src_aspect == VK_IMAGE_ASPECT_STENCIL_BIT) {
-                    if (!vkuFormatIsDepthStencilWithColorSizeCompatible(dst_format, src_format)) {
+                    if (!vkuFormatIsDepthStencilWithColorSizeCompatible(dst_format, src_format, src_aspect)) {
                         vuid = is_2 ? "VUID-VkCopyImageInfo2-srcSubresource-10212" : "VUID-vkCmdCopyImage-srcSubresource-10212";
                         skip |= LogError(vuid, all_objlist, dst_subresource_loc.dot(Field::aspectMask),
-                                         "is VK_IMAGE_ASPECT_COLOR_BIT and srcSubresource.aspectMask is (%s), but the src "
+                                         "is VK_IMAGE_ASPECT_COLOR_BIT and srcSubresource.aspectMask is %s, but the src "
                                          "depth/stencil format (%s) is not "
                                          "compatible with the dst color format (%s).",
                                          string_VkImageAspectFlags(dst_aspect).c_str(), string_VkFormat(src_format),
