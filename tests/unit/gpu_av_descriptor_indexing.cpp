@@ -85,7 +85,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
 
-        layout(set = 0, binding = 1) buffer foo { vec4 val; } colors[];
+        layout(set = 0, binding = 1) readonly buffer foo { vec4 val; } colors[];
         layout(location = 0) out vec4 uFragColor;
         layout(location = 0) in flat uint index;
         void main(){
@@ -693,7 +693,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
         #version 450
         #extension GL_EXT_nonuniform_qualifier : enable
         layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
-        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+        layout(set = 0, binding = 1) readonly buffer bfoo { vec4 val; } adds[];
         layout(triangles, equal_spacing, cw) in;
         void main() {
             gl_Position = adds[uniform_index_buffer.index].val;
@@ -816,7 +816,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
         layout(triangle_strip, max_vertices=3) out;
         layout(location=0) in VertexData { vec4 x; } gs_in[];
         layout(std140, set = 0, binding = 0) uniform ufoo { uint index; } uniform_index_buffer;
-        layout(set = 0, binding = 1) buffer bfoo { vec4 val; } adds[];
+        layout(set = 0, binding = 1) readonly buffer bfoo { vec4 val; } adds[];
         void main() {
            gl_Position = gs_in[0].x + adds[uniform_index_buffer.index].val.x;
            EmitVertex();
@@ -1285,8 +1285,8 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
         #version 450
         layout(location=0) out vec4 color;
         layout(set=0, binding=0) uniform foo0 { float x0; } bar0;
-        layout(set=0, binding=1) buffer  foo1 { float x1; } bar1;
-        layout(set=0, binding=2) buffer  foo2 { float x2; } bar2;
+        layout(set=0, binding=1) readonly buffer  foo1 { float x1; } bar1;
+        layout(set=0, binding=2) readonly buffer  foo2 { float x2; } bar2;
         void main(){
            color = vec4(bar0.x0 + bar1.x1 + bar2.x2);
         }
@@ -3171,6 +3171,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetch) {
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, ConstantArrayOOBBuffer) {
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();

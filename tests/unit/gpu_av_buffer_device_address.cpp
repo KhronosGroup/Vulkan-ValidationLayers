@@ -1558,6 +1558,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9018");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(
@@ -1622,6 +1623,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
 TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(
@@ -1671,6 +1673,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
 TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(
@@ -1770,6 +1773,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
     TEST_DESCRIPTION("Use BDA of the Value operand of Atomics");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(
@@ -1821,6 +1825,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
     TEST_DESCRIPTION("Use BDA of the Pointer operand of Atomics");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(
@@ -1870,6 +1875,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
 TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModelDeviceScope);
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
     char const *shader_source = R"glsl(

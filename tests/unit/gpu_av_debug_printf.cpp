@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+ * Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  * Copyright (c) 2024 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -183,6 +183,7 @@ TEST_F(NegativeGpuAVDebugPrintf, BasicLayerSettingsPrintfPreset) {
 TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
     TEST_DESCRIPTION("Make sure graphics flow works");
 
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -231,6 +232,7 @@ TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
 TEST_F(NegativeGpuAVDebugPrintf, GPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
@@ -277,6 +279,7 @@ TEST_F(NegativeGpuAVDebugPrintf, GPL) {
 TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
@@ -325,6 +328,7 @@ TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
 
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();

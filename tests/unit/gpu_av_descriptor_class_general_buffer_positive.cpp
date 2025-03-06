@@ -50,6 +50,7 @@ void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *sha
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Basic) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -129,6 +130,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPL) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::nullDescriptor);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -209,6 +211,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     TEST_DESCRIPTION("Make sure GPL works when shader modules are not inlined at pipeline creation time with valid GPU-AV code");
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
 
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -352,7 +355,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
 
     static const char vertshader[] = R"glsl(
         #version 450
-        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
         const vec2 vertices[3] = vec2[](
             vec2(-1.0, -1.0),
             vec2(1.0, -1.0),
@@ -379,7 +382,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
 
     static const char frag_shader[] = R"glsl(
         #version 450
-        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
         layout(location = 0) out vec4 c_out;
         void main() {
             c_out = vec4(1.0);
@@ -428,6 +431,8 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint) {
     TEST_DESCRIPTION("Same as negative test, but buffer are large enough");
 
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
@@ -749,6 +754,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
     TEST_DESCRIPTION("OOB errors should not occur with robustness turned on");
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
