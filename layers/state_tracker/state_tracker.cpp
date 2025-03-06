@@ -4381,8 +4381,12 @@ void Device::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo 
                 uint32_t type_index = static_cast<uint32_t>(binding_layout->descriptorType);
                 uint32_t descriptor_count = binding_layout->descriptorCount;
                 if (count_allocate_info && i < count_allocate_info->descriptorSetCount) {
-                    descriptor_count = count_allocate_info->pDescriptorCounts[i];
+                    // Only binding will have this flag
+                    if (layout->GetDescriptorBindingFlagsFromIndex(j) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+                        descriptor_count = count_allocate_info->pDescriptorCounts[i];
+                    }
                 }
+
                 ds_data.required_descriptors_by_type[type_index] += descriptor_count;
             }
         }

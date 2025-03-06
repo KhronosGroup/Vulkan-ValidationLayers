@@ -225,6 +225,48 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorCount2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, AllocateOverDescriptorCountVariableAllocate) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::descriptorBindingVariableDescriptorCount);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorBindingFlags binding_flags = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_create_info = vku::InitStructHelper();
+    flags_create_info.bindingCount = 1;
+    flags_create_info.pBindingFlags = &binding_flags;
+
+    VkDescriptorSetLayoutBinding bindings = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 32, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper(&flags_create_info);
+    ds_layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    ds_layout_ci.bindingCount = 1;
+    ds_layout_ci.pBindings = &bindings;
+    vkt::DescriptorSetLayout ds_layout(*m_device, ds_layout_ci);
+
+    VkDescriptorPoolSize pool_sizes = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8};
+    VkDescriptorPoolCreateInfo dspci = vku::InitStructHelper();
+    dspci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    dspci.poolSizeCount = 1;
+    dspci.pPoolSizes = &pool_sizes;
+    dspci.maxSets = 1;
+    vkt::DescriptorPool pool(*m_device, dspci);
+
+    uint32_t desc_counts = 10;
+    VkDescriptorSetVariableDescriptorCountAllocateInfo variable_count = vku::InitStructHelper();
+    variable_count.descriptorSetCount = 1;
+    variable_count.pDescriptorCounts = &desc_counts;
+
+    VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&variable_count);
+    ds_alloc_info.descriptorPool = pool;
+    ds_alloc_info.descriptorSetCount = 1;
+    ds_alloc_info.pSetLayouts = &ds_layout.handle();
+
+    VkDescriptorSet ds = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAllocateInfo-descriptorCount");
+    vk::AllocateDescriptorSets(device(), &ds_alloc_info, &ds);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, FreeDescriptorFromOneShotPool) {
     RETURN_IF_SKIP(Init());
 
