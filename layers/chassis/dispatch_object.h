@@ -68,6 +68,10 @@ namespace base {
 class Instance;
 class Device;
 }  // namespace base
+namespace dispatch {
+class Instance;
+class Device;
+}  // namespace dispatch
 
 // Device extension properties -- storing properties gathered from VkPhysicalDeviceProperties2::pNext chain
 // TODO: this could be defined and initialized via generated code
@@ -114,6 +118,43 @@ struct DeviceExtensionProperties {
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif
+};
+
+// This object holds all static state for the device (device properties, enabled extensions/features, etc.)
+// It is initialized atomically in the constructor based on the provided physical device and device create info
+// and then used by all downstream users (state tracker, stateless SPIR-V validator, etc.).
+class StatelessDeviceData {
+  public:
+    StatelessDeviceData(vvl::dispatch::Instance* instance, VkPhysicalDevice physical_device, const VkDeviceCreateInfo* pCreateInfo);
+
+    APIVersion api_version;
+
+    // Mutable, because the chassis will patch these after PreCallRecordCreateDevice
+    mutable DeviceExtensions extensions{};
+    mutable DeviceFeatures enabled_features{};
+
+    VkPhysicalDeviceMemoryProperties phys_dev_mem_props{};
+    VkPhysicalDeviceProperties phys_dev_props{};
+    VkPhysicalDeviceVulkan11Properties phys_dev_props_core11{};
+    VkPhysicalDeviceVulkan12Properties phys_dev_props_core12{};
+    VkPhysicalDeviceVulkan13Properties phys_dev_props_core13{};
+    VkPhysicalDeviceVulkan14Properties phys_dev_props_core14{};
+    // To store the 2 lists from VkPhysicalDeviceHostImageCopyProperties
+    std::vector<VkImageLayout> host_image_copy_props_copy_src_layouts{};
+    std::vector<VkImageLayout> host_imape_copy_props_copy_dst_layouts{};
+    DeviceExtensionProperties phys_dev_ext_props = {};
+
+    // Some extensions/features changes the behavior of the app/layers/spec if present.
+    // So it needs its own special boolean unlike the enabled_fatures.
+    bool has_format_feature2;  // VK_KHR_format_feature_flags2
+    // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions
+    // Enabling the other robustness features can reduce performance on GPU, so just the
+    // support is needed to check
+    bool has_robust_image_access;  // VK_EXT_image_robustness
+    // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
+    // // need to only be supported, not enabled
+    bool has_robust_image_access2;   // VK_EXT_robustness2
+    bool has_robust_buffer_access2;  // VK_EXT_robustness2
 };
 
 namespace dispatch {
@@ -274,20 +315,24 @@ class Device : public HandleWrapper {
     Settings& settings;
     Instance* dispatch_instance;
 
-    APIVersion api_version;
-    DeviceExtensions extensions{};
-    DeviceFeatures enabled_features{};
+    const StatelessDeviceData stateless_device_data;
 
-    VkPhysicalDeviceMemoryProperties phys_dev_mem_props{};
-    VkPhysicalDeviceProperties phys_dev_props{};
-    VkPhysicalDeviceVulkan11Properties phys_dev_props_core11{};
-    VkPhysicalDeviceVulkan12Properties phys_dev_props_core12{};
-    VkPhysicalDeviceVulkan13Properties phys_dev_props_core13{};
-    VkPhysicalDeviceVulkan14Properties phys_dev_props_core14{};
+    const APIVersion api_version;
+
+    // Non-const, because the chassis will patch these after PreCallRecordCreateDevice
+    DeviceExtensions& extensions;
+    DeviceFeatures& enabled_features;
+
+    const VkPhysicalDeviceMemoryProperties& phys_dev_mem_props;
+    const VkPhysicalDeviceProperties& phys_dev_props;
+    const VkPhysicalDeviceVulkan11Properties& phys_dev_props_core11;
+    const VkPhysicalDeviceVulkan12Properties& phys_dev_props_core12;
+    const VkPhysicalDeviceVulkan13Properties& phys_dev_props_core13;
+    const VkPhysicalDeviceVulkan14Properties& phys_dev_props_core14;
     // To store the 2 lists from VkPhysicalDeviceHostImageCopyProperties
-    std::vector<VkImageLayout> host_image_copy_props_copy_src_layouts{};
-    std::vector<VkImageLayout> host_imape_copy_props_copy_dst_layouts{};
-    DeviceExtensionProperties phys_dev_ext_props = {};
+    const std::vector<VkImageLayout>& host_image_copy_props_copy_src_layouts;
+    const std::vector<VkImageLayout>& host_imape_copy_props_copy_dst_layouts;
+    const DeviceExtensionProperties& phys_dev_ext_props;
 
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device = VK_NULL_HANDLE;

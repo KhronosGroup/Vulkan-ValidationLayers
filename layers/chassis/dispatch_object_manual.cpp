@@ -28,265 +28,17 @@
 #define DISPATCH_MAX_STACK_ALLOCATIONS 32
 
 namespace vvl {
-namespace dispatch {
 
-static std::shared_mutex dispatch_lock;
-
-std::atomic<uint64_t> HandleWrapper::global_unique_id{1};
-vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> HandleWrapper::unique_id_mapping;
-bool HandleWrapper::wrap_handles{true};
-
-// Generally we expect to get the same device and instance, so we keep them handy
-static std::shared_mutex instance_mutex;
-static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
-
-static std::shared_mutex device_mutex;
-static vvl::unordered_map<void *, std::unique_ptr<Device>> device_data;
-static std::atomic<Device *> last_used_device = nullptr;
-
-static Instance *GetInstanceFromKey(void *key) {
-    ReadLockGuard lock(instance_mutex);
-    return instance_data[key].get();
-}
-
-Instance *GetData(VkInstance instance) { return GetInstanceFromKey(GetDispatchKey(instance)); }
-
-Instance *GetData(VkPhysicalDevice pd) { return GetInstanceFromKey(GetDispatchKey(pd)); }
-
-void SetData(VkInstance instance, std::unique_ptr<Instance> &&data) {
-    void *key = GetDispatchKey(instance);
-    WriteLockGuard lock(instance_mutex);
-    instance_data[key] = std::move(data);
-}
-
-void FreeData(void *key, VkInstance instance) {
-    WriteLockGuard lock(instance_mutex);
-    instance_data.erase(key);
-}
-
-static Device *GetDeviceFromKey(void *key) {
-    Device *last_device = last_used_device.load();
-    if (last_device && GetDispatchKey(last_device->device) == key) {
-        return last_device;
-    }
-    ReadLockGuard lock(device_mutex);
-    last_device = device_data[key].get();
-    last_used_device.store(last_device);
-    return last_device;
-}
-
-Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
-
-Device *GetData(VkQueue queue) { return GetDeviceFromKey(GetDispatchKey(queue)); }
-
-Device *GetData(VkCommandBuffer cb) { return GetDeviceFromKey(GetDispatchKey(cb)); }
-
-void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
-    void *key = GetDispatchKey(device);
-    WriteLockGuard lock(device_mutex);
-    device_data[key] = std::move(data);
-}
-
-void FreeData(void *key, VkDevice device) {
-    last_used_device.store(nullptr);
-    WriteLockGuard lock(device_mutex);
-    device_data.erase(key);
-}
-
-void FreeAllData() {
-    {
-        last_used_device.store(nullptr);
-        WriteLockGuard lock(device_mutex);
-        device_data.clear();
-    }
-    {
-        WriteLockGuard lock(instance_mutex);
-        instance_data.clear();
-    }
-}
-
-HandleWrapper::HandleWrapper(DebugReport *dr) : Logger(dr) {}
-HandleWrapper::~HandleWrapper() {}
-
-Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new DebugReport) {
-    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
-    api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
-                                      VK_API_VERSION_MINOR(specified_version), 0);
-
-    InstanceExtensions instance_extensions(specified_version, pCreateInfo);
-    extensions = DeviceExtensions(instance_extensions, api_version);
-
-    debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
-    ActivateInstanceDebugCallbacks(debug_report);
-
-    ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
-                                                      pCreateInfo,
-                                                      settings.enabled,
-                                                      settings.disabled,
-                                                      debug_report,
-                                                      &settings.global_settings,
-                                                      &settings.gpuav_settings,
-                                                      &settings.syncval_settings};
-    ProcessConfigAndEnvSettings(&config_and_env_settings_data);
-
-    if (settings.disabled[handle_wrapping]) {
-        wrap_handles = false;
-    }
-
-    // create all enabled validation, which is API specific
-    InitValidationObjects();
-
-    for (auto &vo : object_dispatch) {
-        vo->dispatch_instance_ = this;
-        vo->CopyDispatchState();
-    }
-}
-
-Instance::~Instance() {
-    vku::FreePnextChain(debug_report->instance_pnext_chain);
-    delete debug_report;
-}
-
-VkResult Instance::GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                         VkDisplayPropertiesKHR *pProperties) {
-    VkResult result = instance_dispatch_table.GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
-    if (!wrap_handles) return result;
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].display = MaybeWrapDisplay(pProperties[idx0].display);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                          VkDisplayProperties2KHR *pProperties) {
-    VkResult result = instance_dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
-    if (!wrap_handles) return result;
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].displayProperties.display = MaybeWrapDisplay(pProperties[idx0].displayProperties.display);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                              VkDisplayPlanePropertiesKHR *pProperties) {
-    VkResult result =
-        instance_dispatch_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
-    if (!wrap_handles) return result;
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            VkDisplayKHR &opt_display = pProperties[idx0].currentDisplay;
-            if (opt_display) opt_display = MaybeWrapDisplay(opt_display);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
-                                                               VkDisplayPlaneProperties2KHR *pProperties) {
-    VkResult result =
-        instance_dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
-    if (!wrap_handles) return result;
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            VkDisplayKHR &opt_display = pProperties[idx0].displayPlaneProperties.currentDisplay;
-            if (opt_display) opt_display = MaybeWrapDisplay(opt_display);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
-                                                       uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
-    VkResult result =
-        instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
-        if (!wrap_handles) return result;
-        for (uint32_t i = 0; i < *pDisplayCount; ++i) {
-            if (pDisplays[i]) pDisplays[i] = MaybeWrapDisplay(pDisplays[i]);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount,
-                                               VkDisplayModePropertiesKHR *pProperties) {
-    if (!wrap_handles)
-        return instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
-    display = Unwrap(display);
-
-    VkResult result = instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].displayMode = WrapNew(pProperties[idx0].displayMode);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount,
-                                                VkDisplayModeProperties2KHR *pProperties) {
-    if (!wrap_handles)
-        return instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
-    display = Unwrap(display);
-
-    VkResult result = instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
-    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
-        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
-            pProperties[idx0].displayModeProperties.displayMode = WrapNew(pProperties[idx0].displayModeProperties.displayMode);
-        }
-    }
-    return result;
-}
-
-VkResult Instance::GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
-                                                      VkPhysicalDeviceToolPropertiesEXT *pToolProperties) {
-    VkResult result = VK_SUCCESS;
-    if (instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT == nullptr) {
-        // This layer is the terminator. Set pToolCount to zero.
-        *pToolCount = 0;
-    } else {
-        result = instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
-    }
-
-    return result;
-}
-
-VkResult Instance::GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
-                                                   VkPhysicalDeviceToolProperties *pToolProperties) {
-    VkResult result = VK_SUCCESS;
-    if (instance_dispatch_table.GetPhysicalDeviceToolProperties == nullptr) {
-        // This layer is the terminator. Set pToolCount to zero.
-        *pToolCount = 0;
-    } else {
-        result = instance_dispatch_table.GetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
-    }
-
-    return result;
-}
-
-base::Instance *Instance::GetValidationObject(LayerObjectTypeId object_type) const {
-    for (auto &validation_object : object_dispatch) {
-        if (validation_object->container_type == object_type) {
-            return validation_object.get();
-        }
-    }
-    return nullptr;
-}
-
-Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo)
-    : HandleWrapper(instance->debug_report), settings(instance->settings), dispatch_instance(instance), physical_device(gpu) {
+StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPhysicalDevice physical_device,
+                                         const VkDeviceCreateInfo *pCreateInfo) {
     // Get physical device limits for device
     VkPhysicalDeviceProperties device_properties = {};
-    dispatch_instance->instance_dispatch_table.GetPhysicalDeviceProperties(gpu, &device_properties);
+    instance->instance_dispatch_table.GetPhysicalDeviceProperties(physical_device, &device_properties);
 
     // Setup the validation tables based on the application API version from the instance and the capabilities of the device driver
-    api_version = std::min(APIVersion(device_properties.apiVersion), dispatch_instance->api_version);
+    api_version = std::min(APIVersion(device_properties.apiVersion), instance->api_version);
 
-    extensions = DeviceExtensions(dispatch_instance->extensions, api_version, pCreateInfo);
+    extensions = DeviceExtensions(instance->extensions, api_version, pCreateInfo);
     GetEnabledDeviceFeatures(pCreateInfo, &enabled_features, api_version);
 
     instance->GetPhysicalDeviceMemoryProperties(physical_device, &phys_dev_mem_props);
@@ -685,6 +437,312 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
                                              &phys_dev_ext_props.android_format_resolve_props);
 #endif
 
+    {
+        uint32_t n_props = 0;
+        std::vector<VkExtensionProperties> props;
+        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, NULL);
+        props.resize(n_props);
+        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, props.data());
+
+        unordered_set<Extension> phys_dev_extensions;
+        for (const auto &ext_prop : props) {
+            phys_dev_extensions.insert(GetExtension(ext_prop.extensionName));
+        }
+
+        // Even if VK_KHR_format_feature_flags2 is available, we need to have
+        // a path to grab that information from the physical device. This
+        // requires to have VK_KHR_get_physical_device_properties2 enabled or
+        // Vulkan 1.1 (which made this core).
+        has_format_feature2 =
+            (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
+            phys_dev_extensions.find(Extension::_VK_KHR_format_feature_flags2) != phys_dev_extensions.end();
+
+        // feature is required if 1.3 or extension is supported
+        has_robust_image_access =
+            (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
+            phys_dev_extensions.find(Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
+
+        if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2) &&
+            phys_dev_extensions.find(Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            has_robust_image_access2 = robustness_2_features.robustImageAccess2;
+            has_robust_buffer_access2 = robustness_2_features.robustBufferAccess2;
+        } else {
+            has_robust_image_access2 = false;
+            has_robust_buffer_access2 = false;
+        }
+    }
+}
+
+namespace dispatch {
+
+static std::shared_mutex dispatch_lock;
+
+std::atomic<uint64_t> HandleWrapper::global_unique_id{1};
+vvl::concurrent_unordered_map<uint64_t, uint64_t, 4, HashedUint64> HandleWrapper::unique_id_mapping;
+bool HandleWrapper::wrap_handles{true};
+
+// Generally we expect to get the same device and instance, so we keep them handy
+static std::shared_mutex instance_mutex;
+static vvl::unordered_map<void *, std::unique_ptr<Instance>> instance_data;
+
+static std::shared_mutex device_mutex;
+static vvl::unordered_map<void *, std::unique_ptr<Device>> device_data;
+static std::atomic<Device *> last_used_device = nullptr;
+
+static Instance *GetInstanceFromKey(void *key) {
+    ReadLockGuard lock(instance_mutex);
+    return instance_data[key].get();
+}
+
+Instance *GetData(VkInstance instance) { return GetInstanceFromKey(GetDispatchKey(instance)); }
+
+Instance *GetData(VkPhysicalDevice pd) { return GetInstanceFromKey(GetDispatchKey(pd)); }
+
+void SetData(VkInstance instance, std::unique_ptr<Instance> &&data) {
+    void *key = GetDispatchKey(instance);
+    WriteLockGuard lock(instance_mutex);
+    instance_data[key] = std::move(data);
+}
+
+void FreeData(void *key, VkInstance instance) {
+    WriteLockGuard lock(instance_mutex);
+    instance_data.erase(key);
+}
+
+static Device *GetDeviceFromKey(void *key) {
+    Device *last_device = last_used_device.load();
+    if (last_device && GetDispatchKey(last_device->device) == key) {
+        return last_device;
+    }
+    ReadLockGuard lock(device_mutex);
+    last_device = device_data[key].get();
+    last_used_device.store(last_device);
+    return last_device;
+}
+
+Device *GetData(VkDevice device) { return GetDeviceFromKey(GetDispatchKey(device)); }
+
+Device *GetData(VkQueue queue) { return GetDeviceFromKey(GetDispatchKey(queue)); }
+
+Device *GetData(VkCommandBuffer cb) { return GetDeviceFromKey(GetDispatchKey(cb)); }
+
+void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
+    void *key = GetDispatchKey(device);
+    WriteLockGuard lock(device_mutex);
+    device_data[key] = std::move(data);
+}
+
+void FreeData(void *key, VkDevice device) {
+    last_used_device.store(nullptr);
+    WriteLockGuard lock(device_mutex);
+    device_data.erase(key);
+}
+
+void FreeAllData() {
+    {
+        last_used_device.store(nullptr);
+        WriteLockGuard lock(device_mutex);
+        device_data.clear();
+    }
+    {
+        WriteLockGuard lock(instance_mutex);
+        instance_data.clear();
+    }
+}
+
+HandleWrapper::HandleWrapper(DebugReport *dr) : Logger(dr) {}
+HandleWrapper::~HandleWrapper() {}
+
+Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new DebugReport) {
+    uint32_t specified_version = (pCreateInfo->pApplicationInfo ? pCreateInfo->pApplicationInfo->apiVersion : VK_API_VERSION_1_0);
+    api_version = VK_MAKE_API_VERSION(VK_API_VERSION_VARIANT(specified_version), VK_API_VERSION_MAJOR(specified_version),
+                                      VK_API_VERSION_MINOR(specified_version), 0);
+
+    InstanceExtensions instance_extensions(specified_version, pCreateInfo);
+    extensions = DeviceExtensions(instance_extensions, api_version);
+
+    debug_report->instance_pnext_chain = vku::SafePnextCopy(pCreateInfo->pNext);
+    ActivateInstanceDebugCallbacks(debug_report);
+
+    ConfigAndEnvSettings config_and_env_settings_data{OBJECT_LAYER_DESCRIPTION,
+                                                      pCreateInfo,
+                                                      settings.enabled,
+                                                      settings.disabled,
+                                                      debug_report,
+                                                      &settings.global_settings,
+                                                      &settings.gpuav_settings,
+                                                      &settings.syncval_settings};
+    ProcessConfigAndEnvSettings(&config_and_env_settings_data);
+
+    if (settings.disabled[handle_wrapping]) {
+        wrap_handles = false;
+    }
+
+    // create all enabled validation, which is API specific
+    InitValidationObjects();
+
+    for (auto &vo : object_dispatch) {
+        vo->dispatch_instance_ = this;
+        vo->CopyDispatchState();
+    }
+}
+
+Instance::~Instance() {
+    vku::FreePnextChain(debug_report->instance_pnext_chain);
+    delete debug_report;
+}
+
+VkResult Instance::GetPhysicalDeviceDisplayPropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                         VkDisplayPropertiesKHR *pProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceDisplayPropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    if (!wrap_handles) return result;
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].display = MaybeWrapDisplay(pProperties[idx0].display);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceDisplayProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                          VkDisplayProperties2KHR *pProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceDisplayProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    if (!wrap_handles) return result;
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayProperties.display = MaybeWrapDisplay(pProperties[idx0].displayProperties.display);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceDisplayPlanePropertiesKHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                              VkDisplayPlanePropertiesKHR *pProperties) {
+    VkResult result =
+        instance_dispatch_table.GetPhysicalDeviceDisplayPlanePropertiesKHR(physicalDevice, pPropertyCount, pProperties);
+    if (!wrap_handles) return result;
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            VkDisplayKHR &opt_display = pProperties[idx0].currentDisplay;
+            if (opt_display) opt_display = MaybeWrapDisplay(opt_display);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceDisplayPlaneProperties2KHR(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
+                                                               VkDisplayPlaneProperties2KHR *pProperties) {
+    VkResult result =
+        instance_dispatch_table.GetPhysicalDeviceDisplayPlaneProperties2KHR(physicalDevice, pPropertyCount, pProperties);
+    if (!wrap_handles) return result;
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            VkDisplayKHR &opt_display = pProperties[idx0].displayPlaneProperties.currentDisplay;
+            if (opt_display) opt_display = MaybeWrapDisplay(opt_display);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetDisplayPlaneSupportedDisplaysKHR(VkPhysicalDevice physicalDevice, uint32_t planeIndex,
+                                                       uint32_t *pDisplayCount, VkDisplayKHR *pDisplays) {
+    VkResult result =
+        instance_dispatch_table.GetDisplayPlaneSupportedDisplaysKHR(physicalDevice, planeIndex, pDisplayCount, pDisplays);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pDisplays) {
+        if (!wrap_handles) return result;
+        for (uint32_t i = 0; i < *pDisplayCount; ++i) {
+            if (pDisplays[i]) pDisplays[i] = MaybeWrapDisplay(pDisplays[i]);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetDisplayModePropertiesKHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount,
+                                               VkDisplayModePropertiesKHR *pProperties) {
+    if (!wrap_handles)
+        return instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+    display = Unwrap(display);
+
+    VkResult result = instance_dispatch_table.GetDisplayModePropertiesKHR(physicalDevice, display, pPropertyCount, pProperties);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayMode = WrapNew(pProperties[idx0].displayMode);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetDisplayModeProperties2KHR(VkPhysicalDevice physicalDevice, VkDisplayKHR display, uint32_t *pPropertyCount,
+                                                VkDisplayModeProperties2KHR *pProperties) {
+    if (!wrap_handles)
+        return instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    display = Unwrap(display);
+
+    VkResult result = instance_dispatch_table.GetDisplayModeProperties2KHR(physicalDevice, display, pPropertyCount, pProperties);
+    if ((result == VK_SUCCESS || result == VK_INCOMPLETE) && pProperties) {
+        for (uint32_t idx0 = 0; idx0 < *pPropertyCount; ++idx0) {
+            pProperties[idx0].displayModeProperties.displayMode = WrapNew(pProperties[idx0].displayModeProperties.displayMode);
+        }
+    }
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceToolPropertiesEXT(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                      VkPhysicalDeviceToolPropertiesEXT *pToolProperties) {
+    VkResult result = VK_SUCCESS;
+    if (instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT == nullptr) {
+        // This layer is the terminator. Set pToolCount to zero.
+        *pToolCount = 0;
+    } else {
+        result = instance_dispatch_table.GetPhysicalDeviceToolPropertiesEXT(physicalDevice, pToolCount, pToolProperties);
+    }
+
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceToolProperties(VkPhysicalDevice physicalDevice, uint32_t *pToolCount,
+                                                   VkPhysicalDeviceToolProperties *pToolProperties) {
+    VkResult result = VK_SUCCESS;
+    if (instance_dispatch_table.GetPhysicalDeviceToolProperties == nullptr) {
+        // This layer is the terminator. Set pToolCount to zero.
+        *pToolCount = 0;
+    } else {
+        result = instance_dispatch_table.GetPhysicalDeviceToolProperties(physicalDevice, pToolCount, pToolProperties);
+    }
+
+    return result;
+}
+
+base::Instance *Instance::GetValidationObject(LayerObjectTypeId object_type) const {
+    for (auto &validation_object : object_dispatch) {
+        if (validation_object->container_type == object_type) {
+            return validation_object.get();
+        }
+    }
+    return nullptr;
+}
+
+Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInfo *pCreateInfo)
+    : HandleWrapper(instance->debug_report),
+      settings(instance->settings),
+      dispatch_instance(instance),
+      stateless_device_data(instance, gpu, pCreateInfo),
+      api_version(stateless_device_data.api_version),
+      extensions(stateless_device_data.extensions),
+      enabled_features(stateless_device_data.enabled_features),
+      phys_dev_mem_props(stateless_device_data.phys_dev_mem_props),
+      phys_dev_props(stateless_device_data.phys_dev_props),
+      phys_dev_props_core11(stateless_device_data.phys_dev_props_core11),
+      phys_dev_props_core12(stateless_device_data.phys_dev_props_core12),
+      phys_dev_props_core13(stateless_device_data.phys_dev_props_core13),
+      phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
+      host_image_copy_props_copy_src_layouts(stateless_device_data.host_image_copy_props_copy_src_layouts),
+      host_imape_copy_props_copy_dst_layouts(stateless_device_data.host_imape_copy_props_copy_dst_layouts),
+      phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
+      physical_device(gpu) {
     InitValidationObjects();
     InitObjectDispatchVectors();
     for (auto &vo : object_dispatch) {

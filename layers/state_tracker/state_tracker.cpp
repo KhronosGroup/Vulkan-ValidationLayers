@@ -725,44 +725,6 @@ void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Loca
         physical_device_count = 1;
     }
 
-    {
-        uint32_t n_props = 0;
-        std::vector<VkExtensionProperties> props;
-        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, NULL);
-        props.resize(n_props);
-        DispatchEnumerateDeviceExtensionProperties(physical_device, NULL, &n_props, props.data());
-
-        unordered_set<Extension> phys_dev_extensions;
-        for (const auto &ext_prop : props) {
-            phys_dev_extensions.insert(GetExtension(ext_prop.extensionName));
-        }
-
-        // Even if VK_KHR_format_feature_flags2 is available, we need to have
-        // a path to grab that information from the physical device. This
-        // requires to have VK_KHR_get_physical_device_properties2 enabled or
-        // Vulkan 1.1 (which made this core).
-        has_format_feature2 =
-            (api_version >= VK_API_VERSION_1_1 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(Extension::_VK_KHR_format_feature_flags2) != phys_dev_extensions.end();
-
-        // feature is required if 1.3 or extension is supported
-        has_robust_image_access =
-            (api_version >= VK_API_VERSION_1_3 || IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)) &&
-            phys_dev_extensions.find(Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
-
-        if (IsExtEnabled(extensions.vk_khr_get_physical_device_properties2) &&
-            phys_dev_extensions.find(Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
-            VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
-            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
-            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
-            has_robust_image_access2 = robustness_2_features.robustImageAccess2;
-            has_robust_buffer_access2 = robustness_2_features.robustBufferAccess2;
-        } else {
-            has_robust_image_access2 = false;
-            has_robust_buffer_access2 = false;
-        }
-    }
-
     // Store queue family data
     if (pCreateInfo->pQueueCreateInfos != nullptr) {
         uint32_t num_queue_families = 0;
