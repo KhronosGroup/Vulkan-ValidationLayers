@@ -112,13 +112,8 @@ class ErrorMonitor {
     void MonitorReset();
     std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(mutex_); }
 
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkDebugUtilsMessengerEXT debug_obj_ = VK_NULL_HANDLE;
     VkDebugUtilsMessengerCreateInfoEXT debug_create_info_{};
-#else
-    VkDebugReportCallbackEXT debug_obj_ = VK_NULL_HANDLE;
-    VkDebugReportCallbackCreateInfoEXT debug_create_info_{};
-#endif
 
     VkFlags message_flags_{};
     std::vector<std::string> failure_message_strings_;

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,11 @@
 #include "test_common.h"
 #include "error_message/log_message_type.h"
 #include "generated/vk_function_pointers.h"
+#include "generated/vk_object_types.h"
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
-// Note. VK_EXT_debug_report is deprecated by the VK_EXT_debug_utils extension.
-// However, we still support this old extension due to CI running old Android devices.
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugReportFlagsEXT message_flags, VkDebugReportObjectTypeEXT, uint64_t,
-                                                    size_t, int32_t, const char *, const char *message, void *user_data) {
-    auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
-
-    if (message_flags & error_monitor->GetMessageFlags()) {
-        return error_monitor->CheckForDesiredMsg("", message);
-    }
-    return VK_FALSE;
-}
-#else
+#include <android/log.h>  // For __android_log_print()
+#endif
 
 static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMessageSeverityFlagBitsEXT da_severity,
                                                                 VkDebugUtilsMessageTypeFlagsEXT da_type) {
@@ -54,24 +45,67 @@ static inline LogMessageTypeFlags DebugAnnotFlagsToMsgTypeFlags(VkDebugUtilsMess
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-                                                    VkDebugUtilsMessageTypeFlagsEXT message_types,
+                                                    VkDebugUtilsMessageTypeFlagsEXT message_type,
                                                     const VkDebugUtilsMessengerCallbackDataEXT *callback_data, void *user_data) {
-    const auto message_flags = DebugAnnotFlagsToMsgTypeFlags(message_severity, message_types);
+    const auto message_flags = DebugAnnotFlagsToMsgTypeFlags(message_severity, message_type);
     const char *vuid = callback_data->pMessageIdName;
-    const char *message = callback_data->pMessage;
     auto *error_monitor = reinterpret_cast<ErrorMonitor *>(user_data);
 
+    // mimic CreateDefaultCallbackMessage we do for default callback so
+    // (while this is a bad 'copy-and-paste' the format of the default callback *should* not be changing often)
+    std::ostringstream oss;
+    // The callback is in JSON (this is the only way the first char is '{')
+    if (callback_data->pMessage[0] == '{') {
+        oss << callback_data->pMessage << '\n';
+    } else {
+        if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+            oss << "Validation Error: ";
+        } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+            if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) {
+                oss << "Validation Performance Warning: ";
+            } else {
+                oss << "Validation Warning: ";
+            }
+        } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+            oss << "Validation Information: ";
+        } else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+            oss << "Verbose Information: ";
+        }
+
+        oss << "[ " << callback_data->pMessageIdName << " ] | MessageID = 0x" << std::hex << callback_data->messageIdNumber << '\n';
+        oss << callback_data->pMessage << '\n';
+
+        if (callback_data->objectCount > 0) {
+            oss << "    Objects: " << callback_data->objectCount << '\n';
+            for (uint32_t i = 0; i < callback_data->objectCount; i++) {
+                const auto &debug_object = callback_data->pObjects[i];
+                oss << "        [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
+                if (debug_object.objectHandle) {
+                    oss << " 0x" << std::hex << debug_object.objectHandle;
+                } else {
+                    oss << " VK_NULL_HANDLE";
+                }
+                if (debug_object.pObjectName) {
+                    oss << "[" << debug_object.pObjectName << "]";
+                }
+                oss << '\n';
+            }
+        }
+#ifndef VK_USE_PLATFORM_ANDROID_KHR
+        oss << '\n';  // provide space between consecutive errors
+#endif
+    }
+    std::string error_message = oss.str();
+
     if (message_flags & error_monitor->GetMessageFlags()) {
-        return error_monitor->CheckForDesiredMsg(vuid, message);
+        return error_monitor->CheckForDesiredMsg(vuid, error_message.c_str());
     }
     return VK_FALSE;
 }
-#endif
 
 ErrorMonitor::ErrorMonitor(bool print_all_errors) : print_all_errors_(print_all_errors) {
     MonitorReset();
     ExpectSuccess(kErrorBit);
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     debug_create_info_ = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
                           nullptr,
                           0,
@@ -80,26 +114,14 @@ ErrorMonitor::ErrorMonitor(bool print_all_errors) : print_all_errors_(print_all_
                           VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
                           &DebugCallback,
                           this};
-#else
-    debug_create_info_ = {VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT, nullptr,
-                          VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                              VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_INFORMATION_BIT_EXT |
-                              VK_DEBUG_REPORT_DEBUG_BIT_EXT,
-                          &DebugCallback, this};
-#endif
 }
 
 void ErrorMonitor::CreateCallback(VkInstance instance) noexcept {
     assert(instance);
     assert(!debug_obj_);
 
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     assert(vk::CreateDebugUtilsMessengerEXT != nullptr);
     const VkResult result = vk::CreateDebugUtilsMessengerEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
-#else
-    assert(vk::CreateDebugReportCallbackEXT != nullptr);
-    const VkResult result = vk::CreateDebugReportCallbackEXT(instance, &debug_create_info_, nullptr, &debug_obj_);
-#endif
     if (result != VK_SUCCESS) {
         assert(false);
         debug_obj_ = VK_NULL_HANDLE;
@@ -110,11 +132,7 @@ void ErrorMonitor::DestroyCallback(VkInstance instance) noexcept {
     assert(instance);
     assert(debug_obj_);  // valid to call with null object, but probably bug
 
-#if !defined(VK_USE_PLATFORM_ANDROID_KHR)
     vk::DestroyDebugUtilsMessengerEXT(instance, debug_obj_, nullptr);
-#else
-    vk::DestroyDebugReportCallbackEXT(instance, debug_obj_, nullptr);
-#endif
     debug_obj_ = VK_NULL_HANDLE;
 }
 
@@ -247,7 +265,11 @@ VkBool32 ErrorMonitor::CheckForDesiredMsg(const char *vuid, const char *const ms
     bool found_expected = false;
 
     if (print_all_errors_) {
-        std::cout << error_string << "\n\n";
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+        __android_log_print(ANDROID_LOG_INFO, "VulkanLayerValidationTests", "%s", msg_string);
+#else
+        std::cout << error_string;
+#endif
     }
 
     if (IgnoreMessage(error_string)) {
@@ -366,7 +388,6 @@ bool ErrorMonitor::IgnoreMessage(std::string const &msg) const {
 }
 
 bool ErrorMonitor::VuidAndMessage::Search(const char *vuid_, std::string_view msg) const {
-#ifndef VK_USE_PLATFORM_ANDROID_KHR
     assert(msg_type != VuidAndMessage::Undefined);
     const bool vuid_compare = !vuid.empty() ? (vuid == vuid_) : true;
     switch (msg_type) {
@@ -377,20 +398,6 @@ bool ErrorMonitor::VuidAndMessage::Search(const char *vuid_, std::string_view ms
         default:
             return false;
     }
-#else
-    // With VK_EXT_debug_report, VUID is in msg
-    (void)vuid_;
-    assert(msg_type != VuidAndMessage::Undefined);
-    const bool vuid_compare = !vuid.empty() ? msg.find(vuid) != std::string::npos : true;
-    switch (msg_type) {
-        case ErrorMonitor::VuidAndMessage::String:
-            return vuid_compare && msg.find(msg_string) != std::string::npos;
-        case ErrorMonitor::VuidAndMessage::Regex:
-            return vuid_compare && std::regex_search(msg.data(), msg_regex);
-        default:
-            return false;
-    }
-#endif
 }
 
 bool ErrorMonitor::VuidAndMessage::SearchUndesiredRegex(std::string_view msg) const {
