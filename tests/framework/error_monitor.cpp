@@ -76,10 +76,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityF
         oss << callback_data->pMessage << '\n';
 
         if (callback_data->objectCount > 0) {
-            oss << "    Objects: " << callback_data->objectCount << '\n';
+            oss << "Objects: " << callback_data->objectCount << '\n';
             for (uint32_t i = 0; i < callback_data->objectCount; i++) {
                 const auto &debug_object = callback_data->pObjects[i];
-                oss << "        [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
+                oss << "    [" << i << "] " << string_VkObjectTypeHandleName(debug_object.objectType);
                 if (debug_object.objectHandle) {
                     oss << " 0x" << std::hex << debug_object.objectHandle;
                 } else {
