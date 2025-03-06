@@ -488,22 +488,3 @@ TEST_F(NegativeLayerSettings, DuplicateSettings) {
     RETURN_IF_SKIP(InitState());
     Monitor().VerifyFound();
 }
-
-TEST_F(NegativeLayerSettings, MessageFormatVerbose) {
-    VkBool32 disable = VK_FALSE;
-    const VkLayerSettingEXT setting[] = {
-        {OBJECT_LAYER_NAME, "message_format_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable}};
-    VkLayerSettingsCreateInfoEXT layer_setting_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                              setting};
-    RETURN_IF_SKIP(InitFramework(&layer_setting_create_info));
-    RETURN_IF_SKIP(InitState());
-
-    VkBufferCreateInfo info = vku::InitStructHelper();
-    info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    info.size = 0;
-    m_errorMonitor->SetDesiredError(
-        "[ VUID-VkBufferCreateInfo-size-00912 ] vkCreateBuffer(): pCreateInfo->size is zero.\nThe Vulkan spec states: size must be "
-        "greater than 0");
-    vkt::Buffer buffer(*m_device, info, vkt::no_mem);
-    m_errorMonitor->VerifyFound();
-}

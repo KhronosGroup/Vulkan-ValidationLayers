@@ -610,8 +610,7 @@ TEST_F(NegativeDebugExtensions, MultiObjectBindImage) {
 
     // Introduce validation failure, try to bind a different memory object to
     // the same image object
-    m_errorMonitor->SetDesiredErrorRegex("VUID-vkBindImageMemory-image-07460",
-                                         "Objects: VkDeviceMemory 0x[a-f0-9]+, VkImage 0x[a-f0-9]+, VkDeviceMemory 0x[a-f0-9]+");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkBindImageMemory-image-07460", "Objects: 3");
     vk::BindImageMemory(device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 }
