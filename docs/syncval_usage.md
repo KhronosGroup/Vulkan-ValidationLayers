@@ -156,67 +156,48 @@ On Windows, Synchronization Validation can be run using just vkconfig and the de
 
 ### Synchronization Validation Messages
 
-All synchronization error messages begin with SYNC-&lt;hazard name>.  The message body is constructed:
+A synchronization validation error message describes a race condition by identifying two memory accesses that caused the hazard and the state of applied synchronization.
 
+Error message example:
 
+> vkCmdExecuteCommands(): WRITE_AFTER_READ hazard detected. vkCmdCopyImage (from the secondary VkCommandBuffer 0x1fb2f224d40) writes to VkImage 0xf56c9b0000000004, which was previously read by another vkCmdCopyImage command (from the primary VkCommandBuffer 0x1fb245f4200).
+>
+> No sufficient synchronization is present to ensure that a write (VK_ACCESS_2_TRANSFER_WRITE_BIT) at VK_PIPELINE_STAGE_2_COPY_BIT does not conflict with a prior read (VK_ACCESS_2_TRANSFER_READ_BIT) at the same stage.
+>
+> Vulkan insight: an execution dependency is sufficient to prevent this hazard.
+
+The error message usually includes the following:
+* The Vulkan API function that triggered the synchronization error
+* A brief description of the type of race condition (e.g., WRITE_AFTER_WRITE)
+* The commands that performed memory accesses and the resource involved (e.g., vkCmdCopyBuffer and vkCmdDispatch accessing the same VkImage)
+* Synchronization details: pipeline stages, access types, and applied synchronization
+* In some cases, a "Vulkan insight" section at the end of the error message may provide additional information related to the current error
+
+Unlike core validation error messages, where each message is identified by a VUID, synchronization validation primarily detects a single type of error: a race condition between two memory accesses. There are limitless ways to produce a race condition (combinations of command pairs and different synchronization methods), which is why race condition scenarios are not identified by VUIDs.
+
+To suppress or filter synchronization validation error messages, one can use the optional `Extra properties` section. Extra properties contain key-value pairs that help identify the error message and are presented in a more structured format compared to the main error message, making parsing easier. 
+
+One of the benefits of parsing `Extra properties` rather than the main error message is that the former is more stable and changes less frequently. This creates a nice separation: on one side, we can take every opportunity to improve the error message wording while keeping the Extra properties values unchanged in most cases, so suppression and filtering logic does not need to be updated.
+
+Example of error message with extra properties enabled:
+> vkQueueSubmit(): WRITE_AFTER_WRITE hazard detected. vkCmdEndRenderPass (from VkCommandBuffer  submitted on the current VkQueue ) writes to resource, which was previously written by vkCmdClearColorImage (from VkCommandBuffer  submitted on VkQueue ). 
+>
+>The current synchronization allows VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT accesses at VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, but to prevent this hazard, it must allow VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT accesses at VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT.
 ```
-<cmd name>: Hazard <hazard name> <command specific details> Access info (<...>)
+[Extra properties]
+message_type = SubmitTimeError
+hazard_type = WRITE_AFTER_WRITE
+prior_access = VK_PIPELINE_STAGE_2_CLEAR_BIT(VK_ACCESS_2_TRANSFER_WRITE_BIT)
+write_barriers = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT(VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT)
+command = vkCmdEndRenderPass
+prior_command = vkCmdClearColorImage
+command_buffer_index = 1
+submit_index = 2
+batch_index = 0
+batch_tag = 5
 ```
 
-
-Command specific details typically include the specifics of the access within the current command. The Access info is common to all Synchronization Validation error messages. 
-
-<table>
-  <tr>
-   <td><strong>Field</strong>
-   </td>
-   <td><strong>Description</strong>
-   </td>
-  </tr>
-  <tr>
-   <td><code>usage</code>
-   </td>
-   <td>The stage/access of the current command
-   </td>
-  </tr>
-  <tr>
-   <td><code>prior_usage</code>
-   </td>
-   <td>The stage/access of the previous (hazarded) use
-   </td>
-  </tr>
-  <tr>
-   <td><code>read_barrier</code>
-   </td>
-   <td>For read <code>usage</code>, the list of stages with execution barriers between <code>prior_usage</code> and <code>usage</code>
-   </td>
-  </tr>
-  <tr>
-   <td><code>write_barrier</code>
-   </td>
-   <td>For write <code>usage</code>, the list of stage/access (in <code>usage</code> format) with memory barriers between <code>prior_usage</code> and <code>usage</code>
-   </td>
-  </tr>
-  <tr>
-   <td><code>command</code>
-   </td>
-   <td>The command that performed <code>prior_usage</code>
-   </td>
-  </tr>
-  <tr>
-   <td><code>seq_no</code>
-   </td>
-   <td>The zero based index of <code>command</code> within the command buffer
-   </td>
-  </tr>
-  <tr>
-   <td><code>reset_no</code>
-   </td>
-   <td>the reset count of the command buffer <code>command</code> is recorded to
-   </td>
-  </tr>
-</table>
-
+Extra properties can be enabled in Vulkan Configurator or by using `khronos_validation.syncval_message_extra_properties` validation layer setting.
 
 ### Frequently Found Issues
 
