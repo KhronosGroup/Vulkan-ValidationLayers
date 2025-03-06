@@ -62,6 +62,9 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     if (!features.rayTracingMaintenance1) {
         result |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
     }
+    if (!features.micromap) {
+        result |= VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
+    }
     return result;
 }
 

@@ -1785,6 +1785,7 @@ TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::micromap);
     RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();

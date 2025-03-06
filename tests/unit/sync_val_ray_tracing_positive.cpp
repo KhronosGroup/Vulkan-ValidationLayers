@@ -359,3 +359,37 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRayTracing, WriteIndexDataThenBuild) {
+    TEST_DESCRIPTION("Test that a barrier protects index data writes from subsequent acceleration structure build accesses");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    auto blas = vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry));
+    const auto& triangles_geometry = blas.GetGeometries()[0].GetTriangles();
+    const vkt::Buffer& index_buffer = triangles_geometry.device_index_buffer;
+    blas.SetupBuild(true);
+
+    vkt::Buffer src_buffer(*m_device, index_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+    barrier.buffer = index_buffer;
+    barrier.offset = 0;
+    barrier.size = index_buffer.CreateInfo().size;
+
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &barrier;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(src_buffer, index_buffer);
+    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+}
