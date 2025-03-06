@@ -688,7 +688,7 @@ struct LastBound {
         std::vector<uint32_t> dynamic_offsets;
         PipelineLayoutCompatId compat_id_for_set{0};
 
-        // Cache most recently validated descriptor state for ValidateActionState/UpdateDrawState
+        // Cache most recently validated descriptor state for ValidateActionState/UpdateImageLayoutDrawState
         const vvl::DescriptorSet *validated_set{nullptr};
         uint64_t validated_set_change_count{~0ULL};
         uint64_t validated_set_image_layout_change_count{~0ULL};

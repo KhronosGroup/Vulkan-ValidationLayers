@@ -683,15 +683,13 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
 // Set cb_state to this set and this set to cb_state.
 // Add the bindings of the descriptor
 // Set the layout based on the current descriptor layout (will mask subsequent layer mismatch errors)
-// TODO: Modify the UpdateDrawState virtural functions to *only* set initial layout and not change layouts
+// TODO: Modify the UpdateImageLayoutDrawState virtural functions to *only* set initial layout and not change layouts
 // Prereq: This should be called for a set that has been confirmed to be active for the given cb_state, meaning it's going
 //   to be used in a draw by the given cb_state
-void vvl::DescriptorSet::UpdateDrawStates(vvl::Device *device_data, vvl::CommandBuffer &cb_state,
-                                          const BindingVariableMap &binding_req_map) {
-    // Descriptor UpdateDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
-    if (device_data->disabled[image_layout_validation]) {
-        return;
-    }
+void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::Device *device_data, vvl::CommandBuffer &cb_state,
+                                                     const BindingVariableMap &binding_req_map) {
+    // Descriptor UpdateImageLayoutDrawState only call image layout validation callbacks. If it is disabled, skip the entire loop.
+    if (device_data->disabled[image_layout_validation]) return;
 
     // For the active slots, use set# to look up descriptorSet from boundDescriptorSets, and bind all of that descriptor set's
     // resources
@@ -707,21 +705,21 @@ void vvl::DescriptorSet::UpdateDrawStates(vvl::Device *device_data, vvl::Command
             case DescriptorClass::Image: {
                 auto *image_binding = static_cast<ImageBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(cb_state);
+                    image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
                 }
                 break;
             }
             case DescriptorClass::ImageSampler: {
                 auto *image_binding = static_cast<ImageSamplerBinding *>(binding);
                 for (uint32_t i = 0; i < image_binding->count; ++i) {
-                    image_binding->descriptors[i].UpdateDrawState(cb_state);
+                    image_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
                 }
                 break;
             }
             case DescriptorClass::Mutable: {
                 auto *mutable_binding = static_cast<MutableBinding *>(binding);
                 for (uint32_t i = 0; i < mutable_binding->count; ++i) {
-                    mutable_binding->descriptors[i].UpdateDrawState(cb_state);
+                    mutable_binding->descriptors[i].UpdateImageLayoutDrawState(cb_state);
                 }
                 break;
             }
@@ -881,10 +879,9 @@ void vvl::ImageDescriptor::CopyUpdate(DescriptorSet &set_state, const vvl::Devic
     UpdateKnownValidView(is_bindless);
 }
 
-void vvl::ImageDescriptor::UpdateDrawState(vvl::CommandBuffer &cb_state) {
+void vvl::ImageDescriptor::UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) {
     // Add binding for image
-    auto iv_state = GetImageViewState();
-    if (iv_state) {
+    if (auto iv_state = GetImageViewState()) {
         cb_state.SetImageViewInitialLayout(*iv_state, image_layout_);
     }
 }
@@ -1290,7 +1287,7 @@ VkDeviceSize vvl::MutableDescriptor::GetEffectiveRange() const {
     }
 }
 
-void vvl::MutableDescriptor::UpdateDrawState(vvl::CommandBuffer &cb_state) {
+void vvl::MutableDescriptor::UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) {
     const vvl::DescriptorClass active_class = ActiveClass();
     if (active_class == DescriptorClass::Image || active_class == DescriptorClass::ImageSampler) {
         if (image_view_state_) {

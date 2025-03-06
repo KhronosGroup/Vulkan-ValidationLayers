@@ -1266,7 +1266,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
                 }
 
                 // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateDrawStates(&dev_data, *this, binding_req_map);
+                descriptor_set->UpdateImageLayoutDrawStates(&dev_data, *this, binding_req_map);
 
                 ds_slot.validated_set = descriptor_set.get();
                 ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();

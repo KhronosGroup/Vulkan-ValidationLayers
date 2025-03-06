@@ -415,7 +415,7 @@ class Descriptor {
     virtual bool AddParent(StateObject *state_object) { return false; }
     virtual void RemoveParent(StateObject *state_object) {}
 
-    virtual void UpdateDrawState(vvl::CommandBuffer &cb_state) {}
+    virtual void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) {}
 
     // return true if resources used by this descriptor are destroyed or otherwise missing
     virtual bool Invalid() const { return false; }
@@ -468,7 +468,7 @@ class ImageDescriptor : public Descriptor {
                      bool is_bindless) override;
     void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
                     VkDescriptorType type) override;
-    void UpdateDrawState(vvl::CommandBuffer &cb_state) override;
+    void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) override;
     VkImageView GetImageView() const;
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
     vvl::ImageView *GetImageViewState() { return image_view_state_.get(); }
@@ -632,7 +632,7 @@ class MutableDescriptor : public Descriptor {
         return acc_khr != VK_NULL_HANDLE;
     }
 
-    void UpdateDrawState(vvl::CommandBuffer &cb_state) override;
+    void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) override;
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
@@ -841,7 +841,7 @@ class DescriptorSet : public StateObject {
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };
     // Bind given cmd_buffer to this descriptor set and
     // update CB image layout map with image/imagesampler descriptor image layouts
-    void UpdateDrawStates(Device *, vvl::CommandBuffer &cb_state, const BindingVariableMap &);
+    void UpdateImageLayoutDrawStates(Device *, vvl::CommandBuffer &cb_state, const BindingVariableMap &);
 
     // For a particular binding, get the global index
     const IndexRange GetGlobalIndexRangeFromBinding(const uint32_t binding, bool actual_length = false) const {
