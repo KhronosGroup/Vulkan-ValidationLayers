@@ -71,10 +71,11 @@ WriteLockGuard GpuShaderInstrumentor::WriteLock() {
 void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
 
-    // Update feature and extension state based on changes made to the create info
+    // Update feature and extension state based on changes made to the create info.
     GetEnabledDeviceFeatures(pCreateInfo, &modified_features, api_version);
     modified_extensions = DeviceExtensions(extensions, api_version, pCreateInfo);
 
+    // Check hard requirements for GPU-AV against what we enabled.
     if (!modified_features.fragmentStoresAndAtomics) {
         InternalError(
             device, loc,
