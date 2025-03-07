@@ -486,7 +486,10 @@ void Module::LinkFunction(const LinkInfo& info) {
             // for simplicity, just create a new constant for things other than 32-bit OpConstant as there are rarely-to-none
             // composite/null/true/false constants in linked functions. The extra logic to try and find them is much larger and cost
             // time failing most the searches.
-            if (opcode == spv::OpConstant) {
+            //
+            // If length is 5, it is a 64-bit constant, which we don't care about
+            // (we want lenght of 4 as that means it is 32-bit)
+            if (opcode == spv::OpConstant && new_inst->Length() == 4) {
                 const uint32_t constant_value = new_inst->Word(3);
                 if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
                     constant = type_manager_.FindConstantInt32(type.Id(), constant_value);
@@ -497,6 +500,10 @@ void Module::LinkFunction(const LinkInfo& info) {
                 // Replace LinkConstants
                 if (constant_value == glsl::kLinkShaderId) {
                     new_inst->UpdateWord(3, settings_.shader_id);
+                } else if (constant_value == glsl::kLinkRootNodeAddressLow) {
+                    new_inst->UpdateWord(3, static_cast<uint32_t>(settings_.root_node_address & 0xFFFFFFFF));
+                } else if (constant_value == glsl::kLinkRootNodeAddressHigh) {
+                    new_inst->UpdateWord(3, static_cast<uint32_t>(settings_.root_node_address >> 32));
                 }
             }
 
