@@ -19,6 +19,7 @@
 
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
+#include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/descriptor_sets.h"
@@ -57,40 +58,45 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                          phys_dev_props_core11.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
 
-    if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
-        const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
-            pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
-        if (vertex_input_divisor_state && phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
-            for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
-                if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
-                    skip |= LogError(vuid.vertex_input_09461, objlist, loc,
-                                     "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32
-                                     "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
-                                     ", but supportsNonZeroFirstInstance is VK_FALSE.",
-                                     i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
-                    break;  // only report first instance of the error
+    // supportsNonZeroFirstInstance was added from the EXT to KHR (not 1.4) version of VK_KHR_vertex_attribute_divisor
+    // If not using the KHR or 1.4 version, we don't check for these VUs
+    if (IsExtEnabled(extensions.vk_khr_vertex_attribute_divisor)) {
+        if (pipeline_state && pipeline_state->GraphicsCreateInfo().pVertexInputState) {
+            const auto *vertex_input_divisor_state = vku::FindStructInPNextChain<VkPipelineVertexInputDivisorStateCreateInfo>(
+                pipeline_state->GraphicsCreateInfo().pVertexInputState->pNext);
+            if (vertex_input_divisor_state && phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE &&
+                firstInstance != 0u) {
+                for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
+                    if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
+                        const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
+                        skip |= LogError(vuid.vertex_input_09461, objlist, loc,
+                                         "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32
+                                         "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
+                                         ", but supportsNonZeroFirstInstance is VK_FALSE.",
+                                         i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
+                        break;  // only report first instance of the error
+                    }
                 }
             }
         }
-    }
 
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
-            for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
-                const auto &desc = binding_state.second.desc;
-                if (desc.divisor != 1u) {
-                    LogObjectList objlist(cb_state.Handle());
-                    if (pipeline_state) {
-                        objlist.add(pipeline_state->Handle());
+        if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+            if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+                phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
+                for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
+                    const auto &desc = binding_state.second.desc;
+                    if (desc.divisor != 1u) {
+                        LogObjectList objlist(cb_state.Handle());
+                        if (pipeline_state) {
+                            objlist.add(pipeline_state->Handle());
+                        }
+                        skip |= LogError(vuid.vertex_input_09462, objlist, loc,
+                                         "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
+                                         ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
+                                         " and supportsNonZeroFirstInstance is VK_FALSE.",
+                                         binding_state.second.index, desc.binding, desc.divisor, firstInstance);
+                        break;
                     }
-                    skip |= LogError(vuid.vertex_input_09462, objlist, loc,
-                                     "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
-                                     ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
-                                     " and supportsNonZeroFirstInstance is VK_FALSE.",
-                                     binding_state.second.index, desc.binding, desc.divisor, firstInstance);
-                    break;
                 }
             }
         }
