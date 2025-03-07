@@ -129,9 +129,8 @@ class StatelessDeviceData {
 
     APIVersion api_version;
 
-    // Mutable, because the chassis will patch these after PreCallRecordCreateDevice
-    mutable DeviceExtensions extensions{};
-    mutable DeviceFeatures enabled_features{};
+    DeviceExtensions extensions{};
+    DeviceFeatures enabled_features{};
 
     VkPhysicalDeviceMemoryProperties phys_dev_mem_props{};
     VkPhysicalDeviceProperties phys_dev_props{};
@@ -319,9 +318,8 @@ class Device : public HandleWrapper {
 
     const APIVersion api_version;
 
-    // Non-const, because the chassis will patch these after PreCallRecordCreateDevice
-    DeviceExtensions& extensions;
-    DeviceFeatures& enabled_features;
+    const DeviceExtensions& extensions;
+    const DeviceFeatures& enabled_features;
 
     const VkPhysicalDeviceMemoryProperties& phys_dev_mem_props;
     const VkPhysicalDeviceProperties& phys_dev_props;
