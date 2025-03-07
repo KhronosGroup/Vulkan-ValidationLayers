@@ -1723,6 +1723,7 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::diagnosticsConfig), structure->diagnosticsConfig);
             }
         } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceCudaKernelLaunchFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV: {  // Covers
@@ -1733,6 +1734,7 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::cudaKernelLaunchFeatures), structure->cudaKernelLaunchFeatures);
             }
         } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceDescriptorBufferFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: {  // Covers
@@ -2925,6 +2927,7 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeRobustness), structure->vertexAttributeRobustness);
             }
         } break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {  // Covers
@@ -2935,6 +2938,7 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::presentMetering), structure->presentMetering);
             }
         } break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
@@ -6948,8 +6952,10 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkSetPresentConfigNV structure members  -- Covers VUID-VkSetPresentConfigNV-sType-sType
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkWriteDescriptorSetAccelerationStructureKHR structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR: {  // Covers
@@ -11493,7 +11499,8 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
         if (pCreateInfo->pDependencies != nullptr) {
             for (uint32_t dependencyIndex = 0; dependencyIndex < pCreateInfo->dependencyCount; ++dependencyIndex) {
                 [[maybe_unused]] const Location pDependencies_loc = pCreateInfo_loc.dot(Field::pDependencies, dependencyIndex);
-                constexpr std::array allowed_structs_VkSubpassDependency2 = {VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};
+                constexpr std::array allowed_structs_VkSubpassDependency2 = {VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+                                                                             VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR};
 
                 skip |= context.ValidateStructPnext(pDependencies_loc, pCreateInfo->pDependencies[dependencyIndex].pNext,
                                                     allowed_structs_VkSubpassDependency2.size(),
@@ -21132,6 +21139,7 @@ bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType obje
     return skip;
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool Device::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                                const ErrorObject& error_obj) const {
@@ -21252,6 +21260,7 @@ bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer,
     }
     return skip;
 }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,

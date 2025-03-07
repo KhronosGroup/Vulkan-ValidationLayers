@@ -6269,6 +6269,7 @@ void Device::PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objec
     PostCallRecordGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, record_obj);
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void Device::PreCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                              const RecordObject& record_obj) {
@@ -6345,6 +6346,7 @@ void Device::PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
     FinishReadObject(commandBuffer, record_obj.location);
 }
 
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                 const RecordObject& record_obj) {

@@ -3362,6 +3362,7 @@ static inline void DispatchGetPrivateDataEXT(VkDevice device, VkObjectType objec
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 static inline VkResult DispatchCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
@@ -3395,6 +3396,7 @@ static inline void DispatchCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
 }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
 static inline void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {

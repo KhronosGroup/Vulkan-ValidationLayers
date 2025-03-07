@@ -631,12 +631,14 @@ extern PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
 extern PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
 extern PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
 extern PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 extern PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
 extern PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
 extern PFN_vkCreateCudaFunctionNV CreateCudaFunctionNV;
 extern PFN_vkDestroyCudaModuleNV DestroyCudaModuleNV;
 extern PFN_vkDestroyCudaFunctionNV DestroyCudaFunctionNV;
 extern PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 extern PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT

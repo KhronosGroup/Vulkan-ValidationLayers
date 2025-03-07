@@ -1820,6 +1820,7 @@ void BestPractices::PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectTyp
     PostCallRecordSetPrivateData(device, objectType, objectHandle, privateDataSlot, data, record_obj);
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void BestPractices::PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                      const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                                      const RecordObject& record_obj) {
@@ -1839,6 +1840,7 @@ void BestPractices::PostCallRecordCreateCudaFunctionNV(VkDevice device, const Vk
     BaseClass::PostCallRecordCreateCudaFunctionNV(device, pCreateInfo, pAllocator, pFunction, record_obj);
     bp_state::LogResult(*this, device, record_obj);
 }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 void BestPractices::PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device,
                                                                           const VkBufferCaptureDescriptorDataInfoEXT* pInfo,

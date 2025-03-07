@@ -2233,6 +2233,7 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkDeviceDiagnosticsConfigCreateInfoNV *>(header);
             break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -2243,6 +2244,7 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceCudaKernelLaunchPropertiesNV *>(header);
             break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3300,6 +3302,7 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT *>(header);
             break;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
@@ -3310,6 +3313,7 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(header);
             break;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

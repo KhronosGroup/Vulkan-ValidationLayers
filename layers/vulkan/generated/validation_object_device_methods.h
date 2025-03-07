@@ -4252,6 +4252,7 @@ virtual void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType object
                                             VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                              VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) {}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 virtual bool PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                                const ErrorObject& error_obj) const {
@@ -4306,6 +4307,7 @@ virtual void PreCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, c
                                                 const RecordObject& record_obj) {}
 virtual void PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                                  const RecordObject& record_obj) {}
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 virtual bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                   const ErrorObject& error_obj) const {

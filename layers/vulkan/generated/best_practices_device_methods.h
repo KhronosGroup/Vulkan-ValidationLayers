@@ -590,6 +590,7 @@ void PostCallRecordCreatePrivateDataSlotEXT(VkDevice device, const VkPrivateData
 void PostCallRecordSetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                      VkPrivateDataSlot privateDataSlot, uint64_t data, const RecordObject& record_obj) override;
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void PostCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                       const RecordObject& record_obj) override;
@@ -601,6 +602,7 @@ void PostCallRecordCreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCre
                                         const VkAllocationCallbacks* pAllocator, VkCudaFunctionNV* pFunction,
                                         const RecordObject& record_obj) override;
 
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 void PostCallRecordGetBufferOpaqueCaptureDescriptorDataEXT(VkDevice device, const VkBufferCaptureDescriptorDataInfoEXT* pInfo,
                                                            void* pData, const RecordObject& record_obj) override;
 

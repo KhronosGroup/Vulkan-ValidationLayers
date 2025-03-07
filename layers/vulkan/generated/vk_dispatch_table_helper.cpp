@@ -1006,6 +1006,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubSetPrivateDataEXT(VkDevice, VkObjectTy
     return VK_SUCCESS;
 }
 static VKAPI_ATTR void VKAPI_CALL StubGetPrivateDataEXT(VkDevice, VkObjectType, uint64_t, VkPrivateDataSlot, uint64_t*) {}
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateCudaModuleNV(VkDevice, const VkCudaModuleCreateInfoNV*,
                                                              const VkAllocationCallbacks*, VkCudaModuleNV*) {
     return VK_SUCCESS;
@@ -1018,6 +1019,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubCreateCudaFunctionNV(VkDevice, const V
 static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaModuleNV(VkDevice, VkCudaModuleNV, const VkAllocationCallbacks*) {}
 static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaFunctionNV(VkDevice, VkCudaFunctionNV, const VkAllocationCallbacks*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCudaLaunchKernelNV(VkCommandBuffer, const VkCudaLaunchInfoNV*) {}
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static VKAPI_ATTR void VKAPI_CALL StubExportMetalObjectsEXT(VkDevice, VkExportMetalObjectsInfoEXT*) {}
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -3580,6 +3582,7 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->GetPrivateDataEXT == nullptr) {
         table->GetPrivateDataEXT = (PFN_vkGetPrivateDataEXT)StubGetPrivateDataEXT;
     }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)gpa(device, "vkCreateCudaModuleNV");
     if (table->CreateCudaModuleNV == nullptr) {
         table->CreateCudaModuleNV = (PFN_vkCreateCudaModuleNV)StubCreateCudaModuleNV;
@@ -3604,6 +3607,7 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdCudaLaunchKernelNV == nullptr) {
         table->CmdCudaLaunchKernelNV = (PFN_vkCmdCudaLaunchKernelNV)StubCmdCudaLaunchKernelNV;
     }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     table->ExportMetalObjectsEXT = (PFN_vkExportMetalObjectsEXT)gpa(device, "vkExportMetalObjectsEXT");
     if (table->ExportMetalObjectsEXT == nullptr) {

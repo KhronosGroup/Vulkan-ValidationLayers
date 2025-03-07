@@ -1065,6 +1065,7 @@ template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeIndirectCommandsLayoutNV> {
     typedef VkIndirectCommandsLayoutNV Type;
 };
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 template <>
 struct VkHandleInfo<VkCudaModuleNV> {
@@ -1089,6 +1090,7 @@ template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeCudaFunctionNV> {
     typedef VkCudaFunctionNV Type;
 };
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 template <>
 struct VkHandleInfo<VkAccelerationStructureKHR> {
