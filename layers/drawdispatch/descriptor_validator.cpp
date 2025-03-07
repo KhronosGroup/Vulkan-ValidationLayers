@@ -402,12 +402,24 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
                 << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
                 << dev_state.FormatHandle(image_view) << " format (" << string_VkFormat(image_view_ci.format)
-                << "). Any loads or stores with the variable will produce undefined values.";
+                << "). Any loads or stores with the variable will produce undefined values to the whole imamge (not just the texel "
+                   "being accessed).";
             if (vkuFormatCompatibilityClass(image_view_ci.format) ==
                 vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
-                msg << " While the formats are compatible, Storage Images must exactly match. Two ways to resolve this are\n";
-                msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.image_format)
-                    << " and swizzle the values in the shader to match the desired results.\n";
+                msg << " While the formats are compatible, Storage Images must exactly match. Few ways to resolve this are\n";
+                if (vkuFormatComponentCount(image_view_ci.format) == vkuFormatComponentCount(resource_variable.info.image_format)) {
+                    msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.image_format)
+                        << " and swizzle the values in the shader to match the desired results.\n";
+                } else {
+                    const char *suggested_format = string_SpirvImageFormat(image_view_ci.format);
+                    if (strncmp(suggested_format, "Unknown", 7) != 0) {
+                        msg << "1. Change your shader to use " << suggested_format << " instead as that matches "
+                            << string_VkFormat(image_view_ci.format) << "\n";
+                    } else {
+                        msg << "1. Find an SPIR-V Image format that can be mapped to a desired VkImageView format "
+                               "https://docs.vulkan.org/spec/latest/appendices/spirvenv.html#spirvenv-image-formats\n";
+                    }
+                }
                 msg << "2. Use the Unknown format in your shader (will need the widely supported "
                        "shaderStorageImageWriteWithoutFormat feature)";
             }
@@ -968,11 +980,23 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
             << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
             << dev_state.FormatHandle(buffer_view) << " format (" << string_VkFormat(buffer_view_format)
-            << "). Any loads or stores with the variable will produce undefined values.";
+            << ").Any loads or stores with the variable will produce undefined values to the whole imamge (not just the texel "
+               "being accessed).";
         if (vkuFormatCompatibilityClass(buffer_view_format) == vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
-            msg << " While the formats are compatible, Texel Buffers must exactly match. Two ways to resolve this are\n";
-            msg << "1. Set your ImageView to " << string_VkFormat(resource_variable.info.image_format)
-                << " and swizzle the values in the shader to match the desired results.\n";
+            msg << " While the formats are compatible, Texel Buffers must exactly match. Few ways to resolve this are\n";
+            if (vkuFormatComponentCount(buffer_view_format) == vkuFormatComponentCount(resource_variable.info.image_format)) {
+                msg << "1. Set your BuffereView to " << string_VkFormat(resource_variable.info.image_format)
+                    << " and swizzle the values in the shader to match the desired results.\n";
+            } else {
+                const char *suggested_format = string_SpirvImageFormat(buffer_view_format);
+                if (strncmp(suggested_format, "Unknown", 7) != 0) {
+                    msg << "1. Change your shader to use " << suggested_format << " instead as that matches "
+                        << string_VkFormat(buffer_view_format) << "\n";
+                } else {
+                    msg << "1. Find an SPIR-V Image format that can be mapped to a desired VkBuffereView format "
+                           "https://docs.vulkan.org/spec/latest/appendices/spirvenv.html#spirvenv-image-formats\n";
+                }
+            }
             msg << "2. Use the Unknown format in your shader";
         }
         msg << "\nSpec information at https://docs.vulkan.org/spec/latest/chapters/textures.html#textures-format-validation";
