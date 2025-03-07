@@ -1336,3 +1336,44 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupHandles) {
                                            sbt_host_storage.data());
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
+    TEST_DESCRIPTION("Call GetRayTracingShaderGroupStackSizeKHR on with an incorrect VkShaderGroupShaderKHR");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
+    rt_pipe_lib.InitLibraryInfo();
+    rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.Build();
+
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.InitLibraryInfo();
+    rt_pipe.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    rt_pipe.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    rt_pipe.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    rt_pipe.GetDescriptorSet().UpdateDescriptorSets();
+
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib);
+    rt_pipe.Build();
+
+    m_errorMonitor->SetDesiredErrorRegex(
+        "VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609",
+        "is VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR but the corresponding shader in shader group 1 is VK_SHADER_UNUSED_KHR");
+    const VkDeviceSize stack_size =
+        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe.Handle(), 1, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+    (void)stack_size;
+    m_errorMonitor->VerifyFound();
+}
