@@ -2695,3 +2695,26 @@ TEST_F(NegativeShaderSpirv, ShaderTileImageDisabled) {
         m_errorMonitor->VerifyFound();
     }
 }
+
+TEST_F(NegativeShaderSpirv, ShaderViewportIndexLayerEXT) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9601");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::shaderOutputViewportIndex);
+    // missing shaderOutputLayer, need both features
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
+
+    // 1.1 target env will produce old ShaderViewportIndexLayerEXT version
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
+    m_errorMonitor->VerifyFound();
+}
