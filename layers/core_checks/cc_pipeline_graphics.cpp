@@ -695,13 +695,17 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
             frag_shader_info.flags =
                 (pipeline.FragmentShaderPipelineLayoutState()) ? pipeline.FragmentShaderPipelineLayoutState()->CreateFlags() : 0;
             frag_shader_info.layout = pipeline.FragmentShaderPipelineLayoutState().get();
-            frag_shader_info.ms_state = pipeline.fragment_shader_state->ms_state.get()->ptr();
+            if (pipeline.fragment_shader_state->ms_state) {
+                frag_shader_info.ms_state = pipeline.fragment_shader_state->ms_state.get()->ptr();
+            }
             frag_shader_info.shading_rate_state =
                 vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(pipeline_ci.pNext);
         }
         if (gpl_info->flags & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
             frag_output_info.init = GPLInitType::gpl_flags;
-            frag_output_info.ms_state = pipeline.fragment_output_state->ms_state.get()->ptr();
+            if (pipeline.fragment_output_state->ms_state) {
+                frag_output_info.ms_state = pipeline.fragment_output_state->ms_state.get()->ptr();
+            }
         }
     }
 
@@ -730,13 +734,17 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     frag_shader_info.flags = layout_state->CreateFlags();
                     frag_shader_info.layout = layout_state.get();
                 }
-                frag_shader_info.ms_state = lib->fragment_shader_state->ms_state.get()->ptr();
+                if (lib->fragment_shader_state->ms_state) {
+                    frag_shader_info.ms_state = lib->fragment_shader_state->ms_state.get()->ptr();
+                }
                 frag_shader_info.shading_rate_state =
                     vku::FindStructInPNextChain<VkPipelineFragmentShadingRateStateCreateInfoKHR>(lib_ci.pNext);
             }
             if (lib->graphics_lib_type & VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT) {
                 frag_output_info.init = GPLInitType::link_libraries;
-                frag_output_info.ms_state = lib->fragment_output_state->ms_state.get()->ptr();
+                if (lib->fragment_output_state->ms_state) {
+                    frag_output_info.ms_state = lib->fragment_output_state->ms_state.get()->ptr();
+                }
             }
         }
     }
