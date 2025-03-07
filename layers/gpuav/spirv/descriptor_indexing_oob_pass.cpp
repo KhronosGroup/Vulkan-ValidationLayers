@@ -298,6 +298,20 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         return false;
     }
 
+    if (module_.settings_.unsafe_mode) {
+        auto variable_found_it = instrumented_table_.find(variable_id);
+        if (variable_found_it == instrumented_table_.end()) {
+            instrumented_table_[variable_id] = {descriptor_index_id_};
+        } else {
+            vvl::unordered_set<uint32_t>& descriptor_index_set = variable_found_it->second;
+            if (descriptor_index_set.find(descriptor_index_id_) != descriptor_index_set.end()) {
+                return false;  // Already instrumented, can skip
+            } else {
+                descriptor_index_set.emplace(descriptor_index_id_);
+            }
+        }
+    }
+
     // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors at the same time
     // TODO - This is currently 95% the same logic as above, find a way to combine it
     if (sampler_load_inst && sampler_load_inst->Opcode() == spv::OpLoad) {

@@ -567,6 +567,20 @@
                             "platforms": [ "WINDOWS", "LINUX" ],
                             "settings": [
                                 {
+                                    "key": "gpuav_unsafe_mode",
+                                    "label": "Unsafe Mode",
+                                    "description": "Normally GPU-AV will try and prevent crashing, but with unsafe mode, it will be much faster to validate, but might not stop a crash",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "gpuav_enable", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "gpuav_shader_instrumentation",
                                     "label": "Shader instrumentation",
                                     "description": "Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.",

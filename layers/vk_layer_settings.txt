@@ -65,6 +65,11 @@ khronos_validation.enables =
 
 # Shader instrumentation
 # =====================
+# Normally GPU-AV will try and prevent crashing, but with unsafe mode, it will be much faster to validate, but might not stop a crash
+#khronos_validation.gpuav_unsafe_mode = true
+
+# Shader instrumentation
+# =====================
 # Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries.
 # Warning: will considerably slow down shader executions
 #khronos_validation.gpuav_shader_instrumentation = true
