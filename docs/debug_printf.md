@@ -18,9 +18,9 @@ inspect and debug with them in RenderDoc, using vkconfig, or with environment va
 
 ## Turning on Debug Printf in Validation Layer
 
-We suggest to use Vulkan Configurator (`VkConfig`) to enable DebugPrintf
+We suggest to use Vulkan Configurator (`VkConfig`) to enable Debug Printf
 
-For those who "just need to quick use it" there is a `VK_LAYER_PRINTF_ONLY_PRESET` environment variable that will turn on DebugPrintf and turn off all of the other validation logic.
+For those who "just need to quick use it" there is a `VK_LAYER_PRINTF_ONLY_PRESET` environment variable that will turn on Debug Printf and turn off all of the other validation logic.
 
 ```bash
 # Windows
@@ -35,11 +35,11 @@ adb setprop debug.vulkan.khronos_validation.printf_only_preset=1
 
 ## Settings
 
-The following are the various DebugPrintf settings (listed as environment variables, but work like all other settings).
+The following are the various Debug Printf settings (listed as environment variables, but work like all other settings).
 
 > All settings also found in `VkConfig`
 
-- `VK_LAYER_PRINTF_ENABLE` will turn on DebugPrintf alongside the other validation
+- `VK_LAYER_PRINTF_ENABLE` will turn on Debug Printf alongside the other validation
     - `VK_LAYER_PRINTF_ENABLE=1` turn on
 - `VK_LAYER_PRINTF_TO_STDOUT` will print to `stdout` **instead** of the normal Debug Callback
     - `VK_LAYER_PRINTF_TO_STDOUT=1` turn on
@@ -65,11 +65,11 @@ void main() {
 }
 ```
 
-`glslang` will automatically add the DebugPrintf instructions
+`glslang` will automatically add the Debug Printf instructions
 
 ## Using Debug Printf in HLSL and Slang Shaders
 
-In HLSL and Slang, debug printf can be invoked as follows ([Try Online](https://godbolt.org/z/3ThznsdK8)):
+In HLSL and Slang, Debug Printf can be invoked as follows ([Try Online](https://godbolt.org/z/3ThznsdK8)):
 
 ```glsl
 void main() {
@@ -78,7 +78,7 @@ void main() {
 }
 ```
 
-Both `dxc` and `slangc` will automatically add the DebugPrintf instructions
+Both `dxc` and `slangc` will automatically add the Debug Printf instructions
 
 ## Recommendations
 
@@ -104,15 +104,15 @@ if (gl_LocalInvocationIndex == 0) {
 
 ## Debug Printf Output
 
-DebugPrintf error message are returned as `VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT`
+Debug Printf error message are returned as `VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT`
 
 For your custom callback, you can look for `0x4fe1fef9` in `VkDebugUtilsMessengerCallbackDataEXT::messageIdNumber` as the magic hash if it is a Debug Printf message
 
-The Validation Layers will try and turn on `info` level messages when using DebugPrintf so the message is found
+The Validation Layers will try to turn on `info` level messages when using Debug Printf so the message is found
 
 The `VkDebugUtilsMessengerCallbackDataEXT::pMessage` will contain the location and on a newline print out the error message such as:
 
-> vkQueueSubmit(): pSubmits[0] DebugPrintf:
+> vkQueueSubmit(): pSubmits[0] Debug Printf:
 >
 > x == 100
 
@@ -174,7 +174,7 @@ The vkCmdDrawIndexed in question now has 51 messages.
 Normally, developers will use a high-level language like HLSL or GLSL to generate SPIR-V.
 However, in some cases, developers may wish to insert Debug Printfs directly into SPIR-V
 
-To execute debug printfs in a SPIR-V shader, a developer will need the following two
+To execute Debug Printf in a SPIR-V shader, a developer will need the following two
 instructions specified:
 
 ```
@@ -182,14 +182,14 @@ OpExtension "SPV_KHR_non_semantic_info"
 %N0 = OpExtInstImport NonSemantic.DebugPrintf
 ```
 
-Debug printf operations can then be specified in any function with the following instruction:
+Debug Printf operations can then be specified in any function with the following instruction:
 `%NN = OpExtInst %void %N0 1 %N1 %N2 %N3` ...
 where:
-* `N0` is the result id of the OpExtInstImport NonSemantic.DebugPrintf
-* `1` is the opcode of the DebugPrintf instruction in NonSemantic.DebugPrintf
-* `N1` is the result of an OpString containing the format for the debug printf
+* `N0` is the result id of the `OpExtInstImport NonSemantic.DebugPrintf`
+* `1` is the opcode of the Debug Printf instruction in `NonSemantic.DebugPrintf`
+* `N1` is the result of an OpString containing the format for the Debug Printf
 * `N2`, `N3`, ... are result ids of scalar and vector values to be printed
-* `NN` is the result id of the debug printf operation. This value is undefined.
+* `NN` is the result id of the Debug Printf operation. This value is undefined.
 
 > `OpExtInstImport` of any `NonSemantic*` is properly supported with the `VK_KHR_shader_non_semantic_info` device extension. Some older compiler stacks might not handle these unknown instructions well, some will ignore it as desired.
 
