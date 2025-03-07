@@ -1127,6 +1127,7 @@ bool PreCallValidateSetPrivateDataEXT(VkDevice device, VkObjectType objectType, 
 bool PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                       VkPrivateDataSlot privateDataSlot, uint64_t* pData,
                                       const ErrorObject& error_obj) const override;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 bool PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                        const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                        const ErrorObject& error_obj) const override;
@@ -1141,6 +1142,7 @@ bool PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV func
                                           const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                           const ErrorObject& error_obj) const override;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                           const ErrorObject& error_obj) const override;

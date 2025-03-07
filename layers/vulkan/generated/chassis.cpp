@@ -24931,6 +24931,7 @@ VKAPI_ATTR void VKAPI_CALL GetPrivateDataEXT(VkDevice device, VkObjectType objec
     }
 }
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 VKAPI_ATTR VkResult VKAPI_CALL CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                                   const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
     VVL_ZoneScoped;
@@ -25207,6 +25208,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
     }
 }
 
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
     VVL_ZoneScoped;
@@ -33621,12 +33623,14 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkDestroyPrivateDataSlotEXT", {kFuncTypeDev, (void*)DestroyPrivateDataSlotEXT}},
         {"vkSetPrivateDataEXT", {kFuncTypeDev, (void*)SetPrivateDataEXT}},
         {"vkGetPrivateDataEXT", {kFuncTypeDev, (void*)GetPrivateDataEXT}},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         {"vkCreateCudaModuleNV", {kFuncTypeDev, (void*)CreateCudaModuleNV}},
         {"vkGetCudaModuleCacheNV", {kFuncTypeDev, (void*)GetCudaModuleCacheNV}},
         {"vkCreateCudaFunctionNV", {kFuncTypeDev, (void*)CreateCudaFunctionNV}},
         {"vkDestroyCudaModuleNV", {kFuncTypeDev, (void*)DestroyCudaModuleNV}},
         {"vkDestroyCudaFunctionNV", {kFuncTypeDev, (void*)DestroyCudaFunctionNV}},
         {"vkCmdCudaLaunchKernelNV", {kFuncTypeDev, (void*)CmdCudaLaunchKernelNV}},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT

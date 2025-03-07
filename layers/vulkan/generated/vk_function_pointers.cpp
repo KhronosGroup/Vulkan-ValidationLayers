@@ -668,12 +668,14 @@ PFN_vkCreatePrivateDataSlotEXT CreatePrivateDataSlotEXT;
 PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
 PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
 PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
 PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
 PFN_vkCreateCudaFunctionNV CreateCudaFunctionNV;
 PFN_vkDestroyCudaModuleNV DestroyCudaModuleNV;
 PFN_vkDestroyCudaFunctionNV DestroyCudaFunctionNV;
 PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -2198,6 +2200,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 GetPrivateDataEXT = reinterpret_cast<PFN_vkGetPrivateDataEXT>(GetDeviceProcAddr(device, "vkGetPrivateDataEXT"));
             }
         },
+#ifdef VK_ENABLE_BETA_EXTENSIONS
         {
             "VK_NV_cuda_kernel_launch", [](VkInstance , VkDevice device) {
                 CreateCudaModuleNV = reinterpret_cast<PFN_vkCreateCudaModuleNV>(GetDeviceProcAddr(device, "vkCreateCudaModuleNV"));
@@ -2208,6 +2211,7 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
                 CmdCudaLaunchKernelNV = reinterpret_cast<PFN_vkCmdCudaLaunchKernelNV>(GetDeviceProcAddr(device, "vkCmdCudaLaunchKernelNV"));
             }
         },
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_metal_objects", [](VkInstance , VkDevice device) {
@@ -2969,12 +2973,14 @@ void ResetAllExtensions() {
     DestroyPrivateDataSlotEXT = nullptr;
     SetPrivateDataEXT = nullptr;
     GetPrivateDataEXT = nullptr;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     CreateCudaModuleNV = nullptr;
     GetCudaModuleCacheNV = nullptr;
     CreateCudaFunctionNV = nullptr;
     DestroyCudaModuleNV = nullptr;
     DestroyCudaFunctionNV = nullptr;
     CmdCudaLaunchKernelNV = nullptr;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ExportMetalObjectsEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT

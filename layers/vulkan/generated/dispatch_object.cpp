@@ -6753,6 +6753,7 @@ void Device::GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_
     }
     device_dispatch_table.GetPrivateDataEXT(device, objectType, objectHandle, privateDataSlot, pData);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 VkResult Device::CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                     const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule) {
@@ -6824,6 +6825,7 @@ void Device::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLa
     }
     device_dispatch_table.CmdCudaLaunchKernelNV(commandBuffer, (const VkCudaLaunchInfoNV*)local_pLaunchInfo);
 }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
 void Device::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);

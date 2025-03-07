@@ -6325,6 +6325,7 @@ bool Device::PreCallValidateGetPrivateDataEXT(VkDevice device, VkObjectType obje
                                               const ErrorObject& error_obj) const {
     return PreCallValidateGetPrivateData(device, objectType, objectHandle, privateDataSlot, pData, error_obj);
 }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
 // vkCreateCudaModuleNV:
 // Checked by chassis: device: "VUID-vkCreateCudaModuleNV-device-parameter"
@@ -6415,6 +6416,7 @@ bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer,
 
     return skip;
 }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 #endif  // VK_USE_PLATFORM_METAL_EXT
 

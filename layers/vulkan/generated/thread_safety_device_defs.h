@@ -59,8 +59,10 @@ Counter<VkValidationCacheEXT> c_VkValidationCacheEXT;
 Counter<VkAccelerationStructureNV> c_VkAccelerationStructureNV;
 Counter<VkPerformanceConfigurationINTEL> c_VkPerformanceConfigurationINTEL;
 Counter<VkIndirectCommandsLayoutNV> c_VkIndirectCommandsLayoutNV;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 Counter<VkCudaModuleNV> c_VkCudaModuleNV;
 Counter<VkCudaFunctionNV> c_VkCudaFunctionNV;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 Counter<VkAccelerationStructureKHR> c_VkAccelerationStructureKHR;
 #ifdef VK_USE_PLATFORM_FUCHSIA
 Counter<VkBufferCollectionFUCHSIA> c_VkBufferCollectionFUCHSIA;
@@ -113,8 +115,10 @@ WRAPPER(VkValidationCacheEXT)
 WRAPPER(VkAccelerationStructureNV)
 WRAPPER(VkPerformanceConfigurationINTEL)
 WRAPPER(VkIndirectCommandsLayoutNV)
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkCudaModuleNV)
 WRAPPER(VkCudaFunctionNV)
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 WRAPPER(VkAccelerationStructureKHR)
 #ifdef VK_USE_PLATFORM_FUCHSIA
 WRAPPER(VkBufferCollectionFUCHSIA)
@@ -172,8 +176,10 @@ void InitCounters() {
     c_VkAccelerationStructureNV.Init(kVulkanObjectTypeAccelerationStructureNV, this);
     c_VkPerformanceConfigurationINTEL.Init(kVulkanObjectTypePerformanceConfigurationINTEL, this);
     c_VkIndirectCommandsLayoutNV.Init(kVulkanObjectTypeIndirectCommandsLayoutNV, this);
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     c_VkCudaModuleNV.Init(kVulkanObjectTypeCudaModuleNV, this);
     c_VkCudaFunctionNV.Init(kVulkanObjectTypeCudaFunctionNV, this);
+#endif  // VK_ENABLE_BETA_EXTENSIONS
     c_VkAccelerationStructureKHR.Init(kVulkanObjectTypeAccelerationStructureKHR, this);
 #ifdef VK_USE_PLATFORM_FUCHSIA
     c_VkBufferCollectionFUCHSIA.Init(kVulkanObjectTypeBufferCollectionFUCHSIA, this);
@@ -3177,6 +3183,7 @@ void PreCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, ui
 void PostCallRecordGetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle,
                                      VkPrivateDataSlot privateDataSlot, uint64_t* pData, const RecordObject& record_obj) override;
 
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 void PreCallRecordCreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkCudaModuleNV* pModule,
                                      const RecordObject& record_obj) override;
@@ -3217,6 +3224,7 @@ void PreCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkC
 void PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                          const RecordObject& record_obj) override;
 
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                         const RecordObject& record_obj) override;

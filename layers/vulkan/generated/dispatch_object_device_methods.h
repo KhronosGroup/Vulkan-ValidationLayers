@@ -722,6 +722,7 @@ VkResult SetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t ob
                            uint64_t data);
 void GetPrivateDataEXT(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot,
                        uint64_t* pData);
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 VkResult CreateCudaModuleNV(VkDevice device, const VkCudaModuleCreateInfoNV* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                             VkCudaModuleNV* pModule);
 VkResult GetCudaModuleCacheNV(VkDevice device, VkCudaModuleNV module, size_t* pCacheSize, void* pCacheData);
@@ -730,6 +731,7 @@ VkResult CreateCudaFunctionNV(VkDevice device, const VkCudaFunctionCreateInfoNV*
 void DestroyCudaModuleNV(VkDevice device, VkCudaModuleNV module, const VkAllocationCallbacks* pAllocator);
 void DestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV function, const VkAllocationCallbacks* pAllocator);
 void CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo);
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo);
 #endif  // VK_USE_PLATFORM_METAL_EXT

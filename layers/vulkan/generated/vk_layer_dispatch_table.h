@@ -645,12 +645,14 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkDestroyPrivateDataSlotEXT DestroyPrivateDataSlotEXT;
     PFN_vkSetPrivateDataEXT SetPrivateDataEXT;
     PFN_vkGetPrivateDataEXT GetPrivateDataEXT;
+#ifdef VK_ENABLE_BETA_EXTENSIONS
     PFN_vkCreateCudaModuleNV CreateCudaModuleNV;
     PFN_vkGetCudaModuleCacheNV GetCudaModuleCacheNV;
     PFN_vkCreateCudaFunctionNV CreateCudaFunctionNV;
     PFN_vkDestroyCudaModuleNV DestroyCudaModuleNV;
     PFN_vkDestroyCudaFunctionNV DestroyCudaFunctionNV;
     PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_USE_PLATFORM_METAL_EXT
     PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT

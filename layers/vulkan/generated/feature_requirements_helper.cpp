@@ -971,6 +971,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->selectableCubicWeights, "VkPhysicalDeviceCubicWeightsFeaturesQCOM::selectableCubicWeights"};
         }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         case Feature::cudaKernelLaunchFeatures: {
             auto vk_struct = const_cast<VkPhysicalDeviceCudaKernelLaunchFeaturesNV *>(
@@ -986,6 +987,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->cudaKernelLaunchFeatures, "VkPhysicalDeviceCudaKernelLaunchFeaturesNV::cudaKernelLaunchFeatures"};
         }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         case Feature::customBorderColorWithoutFormat: {
             auto vk_struct = const_cast<VkPhysicalDeviceCustomBorderColorFeaturesEXT *>(
@@ -4739,6 +4741,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->presentId, "VkPhysicalDevicePresentIdFeaturesKHR::presentId"};
         }
+#ifdef VK_ENABLE_BETA_EXTENSIONS
 
         case Feature::presentMetering: {
             auto vk_struct = const_cast<VkPhysicalDevicePresentMeteringFeaturesNV *>(
@@ -4754,6 +4757,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->presentMetering, "VkPhysicalDevicePresentMeteringFeaturesNV::presentMetering"};
         }
+#endif  // VK_ENABLE_BETA_EXTENSIONS
 
         case Feature::presentModeFifoLatestReady: {
             auto vk_struct = const_cast<VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT *>(

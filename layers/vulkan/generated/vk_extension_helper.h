@@ -1366,7 +1366,9 @@ struct DeviceExtensions : public InstanceExtensions {
                                                                     {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_QCOM_render_pass_store_ops, Info(&DeviceExtensions::vk_qcom_render_pass_store_ops, {})},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_NV_cuda_kernel_launch, Info(&DeviceExtensions::vk_nv_cuda_kernel_launch, {})},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_NV_low_latency, Info(&DeviceExtensions::vk_nv_low_latency, {})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {vvl::Extension::_VK_EXT_metal_objects, Info(&DeviceExtensions::vk_ext_metal_objects, {})},
@@ -1752,7 +1754,9 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness,
                   {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+#ifdef VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_NV_present_metering, Info(&DeviceExtensions::vk_nv_present_metering, {})},
+#endif  // VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},

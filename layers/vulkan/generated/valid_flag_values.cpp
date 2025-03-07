@@ -70,7 +70,7 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_fragment_shading_rate, vvl::Extension::_VK_NV_shading_rate_image};
                 }
             }
-            if (value & (VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_NV | VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_NV)) {
+            if (value & (VK_ACCESS_COMMAND_PREPROCESS_READ_BIT_EXT | VK_ACCESS_COMMAND_PREPROCESS_WRITE_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_nv_device_generated_commands) &&
                     !IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
                     return {vvl::Extension::_VK_NV_device_generated_commands, vvl::Extension::_VK_EXT_device_generated_commands};
@@ -300,15 +300,15 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_fragment_shading_rate, vvl::Extension::_VK_NV_shading_rate_image};
                 }
             }
-            if (value & (VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_NV)) {
-                if (!IsExtEnabled(extensions.vk_nv_device_generated_commands) &&
-                    !IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
-                    return {vvl::Extension::_VK_NV_device_generated_commands, vvl::Extension::_VK_EXT_device_generated_commands};
-                }
-            }
             if (value & (VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT | VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_nv_mesh_shader) && !IsExtEnabled(extensions.vk_ext_mesh_shader)) {
                     return {vvl::Extension::_VK_NV_mesh_shader, vvl::Extension::_VK_EXT_mesh_shader};
+                }
+            }
+            if (value & (VK_PIPELINE_STAGE_COMMAND_PREPROCESS_BIT_EXT)) {
+                if (!IsExtEnabled(extensions.vk_nv_device_generated_commands) &&
+                    !IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
+                    return {vvl::Extension::_VK_NV_device_generated_commands, vvl::Extension::_VK_EXT_device_generated_commands};
                 }
             }
             return {};
