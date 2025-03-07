@@ -86,7 +86,7 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
     // guarantee that 64 bits is enough, but practically it's unlikely for an
     // implementation to support more than 32 bits for samplemask.
     assert(phys_dev_ext_props.shading_rate_image_props.shadingRateMaxCoarseSamples <= 64);
-    uint64_t sample_locations_mask = 0;
+    std::bitset<64> sample_locations_mask = 0;
     for (uint32_t i = 0; i < order.sampleLocationCount; ++i) {
         const VkCoarseSampleLocationNV *sample_loc = &order.pSampleLocations[i];
         if (sample_loc->pixelX >= sample_order_info->width) {
@@ -108,10 +108,13 @@ bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV
         }
         uint32_t idx =
             sample_loc->sample + order.sampleCount * (sample_loc->pixelX + sample_order_info->width * sample_loc->pixelY);
-        sample_locations_mask |= 1ULL << idx;
+        // Account for idx being greater than or equal to 64 to prevent undefined behavior
+        if (idx < sample_locations_mask.size()) {
+            sample_locations_mask[idx] = 1;
+        }
     }
 
-    uint64_t expected_mask = (order.sampleLocationCount == 64) ? ~0ULL : ((1ULL << order.sampleLocationCount) - 1);
+    std::bitset<64> expected_mask = (order.sampleLocationCount == 64) ? ~0ULL : ((1ULL << order.sampleLocationCount) - 1);
     if (sample_locations_mask != expected_mask) {
         skip |= LogError(
             "VUID-VkCoarseSampleOrderCustomNV-pSampleLocations-02077", device, order_loc,
