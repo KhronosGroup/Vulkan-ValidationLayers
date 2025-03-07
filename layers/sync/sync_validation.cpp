@@ -1468,7 +1468,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
         auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
         if (hazard.IsHazard()) {
             const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-            const std::string resource_description = "dispatch parameters " + FormatHandle(buffer);
+            const std::string resource_description = "indirect " + FormatHandle(buffer);
             const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
             skip |= SyncError(hazard.Hazard(), objlist, loc, error);
         }
@@ -1478,7 +1478,7 @@ bool SyncValidator::ValidateIndirectBuffer(const CommandBufferAccessContext &cb_
             auto hazard = context.DetectHazard(*buf_state, SYNC_DRAW_INDIRECT_INDIRECT_COMMAND_READ, range);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(cb_context.GetCBState().Handle(), buf_state->Handle());
-                const std::string resource_description = "dispatch parameters " + FormatHandle(buffer);
+                const std::string resource_description = "indirect " + FormatHandle(buffer);
                 const auto error = error_messages_.BufferError(hazard, cb_context, loc.function, resource_description, range);
                 skip |= SyncError(hazard.Hazard(), objlist, loc, error);
                 break;
@@ -1908,8 +1908,8 @@ bool SyncValidator::PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuf
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(
-                    hazard, *cb_access_context, error_obj.location.function, FormatHandle(image), range_index, range);
+                const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,
+                                                                   FormatHandle(image), range_index, range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -1962,8 +1962,8 @@ bool SyncValidator::PreCallValidateCmdClearDepthStencilImage(VkCommandBuffer com
             auto hazard = context->DetectHazard(*image_state, SYNC_CLEAR_TRANSFER_WRITE, range, false);
             if (hazard.IsHazard()) {
                 const LogObjectList objlist(commandBuffer, image);
-                const auto error = error_messages_.ImageSubresourceRangeError(
-                    hazard, *cb_access_context, error_obj.location.function, FormatHandle(image), range_index, range);
+                const auto error = error_messages_.ImageClearError(hazard, *cb_access_context, error_obj.location.function,
+                                                                   FormatHandle(image), range_index, range);
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }

@@ -196,6 +196,8 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
             ss << prior_access_type;
             if (prior_access.access_mask != access.access_mask) {
                 ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
+            } else {
+                ss << " of the same type";
             }
             ss << " at ";
             if (prior_access.stage_mask == access.stage_mask) {
@@ -209,25 +211,23 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         ss << "The current synchronization allows ";
         ss << FormatSyncAccesses(write_barriers, context.GetQueueFlags(), context.GetSyncState().enabled_features,
                                  context.GetSyncState().extensions, false);
+        ss << ", but to prevent this hazard, ";
         auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
         if (is_access_protected) {
-            ss << " but not at " << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+            ss << "it must allow these accesses at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+        } else if (access.access_mask != VK_ACCESS_2_NONE) {
+            ss << "it must allow ";
+            ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
         } else {
-            ss << ", but to prevent this hazard, ";
-
-            if (access.access_mask != VK_ACCESS_2_NONE) {
-                ss << "it must allow ";
-                ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
-                ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
-            } else {
-                // TODO: analyse exact form of synchronization is needed or specific options to use
-                ss << "it must protect layout transition accesses.";
-            }
+            // TODO: analyse exact form of synchronization is needed or specific options to use
+            ss << "it must protect layout transition accesses.";
         }
     } else {  // WAR hazard
-        ss << "The current synchronization waits at ";
+        ss << "The current synchronization defines the destination stage mask as ";
         ss << string_VkPipelineStageFlags2(read_barriers);
-        ss << ", but to prevent this hazard, it must wait at ";
+        ss << ", but to prevent this hazard, it must include ";
         ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
     }
 
@@ -337,13 +337,14 @@ std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard,
     return Error(hazard, cb_context, command, resource_description, message_type, additional_info);
 }
 
-std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+std::string ErrorMessages::ImageClearError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                       vvl::Func command, const std::string& resource_description,
                                                       uint32_t subresource_range_index,
                                                       const VkImageSubresourceRange& subresource_range) const {
     std::stringstream ss;
-    ss << "Image clear range: index = " << subresource_range_index;
-    ss << ", subresource range = {" << string_VkImageSubresourceRange(subresource_range) << "}.";
+    ss << "\nImage clear subresource range " << subresource_range_index << ": {\n";
+    ss << "  " << string_VkImageSubresourceRange(subresource_range) << "\n";
+    ss << "}\n";
 
     AdditionalMessageInfo additional_info;
     additional_info.message_end_text = ss.str();
@@ -352,11 +353,11 @@ std::string ErrorMessages::ImageSubresourceRangeError(const HazardResult& hazard
     return Error(hazard, cb_context, command, resource_description, "ImageSubresourceRangeError", additional_info);
 }
 
-static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-                                           VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                           uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
-                                           const char* resource_type, AdditionalMessageInfo& additional_info,
-                                           std::stringstream& ss) {
+static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& pipeline, uint32_t descriptor_set_number,
+                                           const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                           uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                           VkShaderStageFlagBits shader_stage, const char* resource_type,
+                                           AdditionalMessageInfo& additional_info, std::stringstream& ss) {
     const char* descriptor_type_str = string_VkDescriptorType(descriptor_type);
 
     additional_info.properties.Add(kPropertyDescriptorType, descriptor_type_str);
@@ -364,24 +365,24 @@ static void PrepareCommonDescriptorMessage(Logger& logger, const vvl::Pipeline& 
     additional_info.properties.Add(kPropertyDescriptorArrayElement, descriptor_array_element);
     additional_info.access_initiator = std::string("Shader stage ") + string_VkShaderStageFlagBits(shader_stage);
 
-    ss << "\nThe " << resource_type << " is referenced by ";
-    ss << descriptor_type_str << " descriptor from ";
-    ss << logger.FormatHandle(descriptor_set);
-    ss << ", binding " << descriptor_binding;
+    ss << "\nThe " << resource_type << " is referenced by descriptor binding " << descriptor_binding;
+    ss << " (" << descriptor_type_str << ")";
     if (descriptor_set.GetDescriptorCountFromBinding(descriptor_binding) > 1) {
         ss << ", array element " << descriptor_array_element;
     }
+    ss << " from descriptor set " << descriptor_set_number << " (" << logger.FormatHandle(descriptor_set) << ")";
     ss << ", " << logger.FormatHandle(pipeline);
 }
 
 std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                  vvl::Func command, const std::string& resource_description,
-                                                 const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-                                                 VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                                 uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
+                                                 const vvl::Pipeline& pipeline, uint32_t set_number,
+                                                 const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                                 uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                                 VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
     std::stringstream ss;
-    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+    PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "buffer", additional_info, ss);
     ss << ".";
 
@@ -391,13 +392,13 @@ std::string ErrorMessages::BufferDescriptorError(const HazardResult& hazard, con
 
 std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                 vvl::Func command, const std::string& resource_description,
-                                                const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-                                                VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                                uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage,
-                                                VkImageLayout image_layout) const {
+                                                const vvl::Pipeline& pipeline, uint32_t set_number,
+                                                const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                                uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                                VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const {
     AdditionalMessageInfo additional_info;
     std::stringstream ss;
-    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+    PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "image", additional_info, ss);
     ss << ", image layout " << string_VkImageLayout(image_layout) << ".";
 
@@ -408,14 +409,14 @@ std::string ErrorMessages::ImageDescriptorError(const HazardResult& hazard, cons
 
 std::string ErrorMessages::AccelerationStructureDescriptorError(
     const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-    const std::string& resource_description, const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-    VkDescriptorType descriptor_type, uint32_t descriptor_binding, uint32_t descriptor_array_element,
-    VkShaderStageFlagBits shader_stage) const {
+    const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
+    const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type, uint32_t descriptor_binding,
+    uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const {
     AdditionalMessageInfo additional_info;
     additional_info.access_action = "traces rays against";
 
     std::stringstream ss;
-    PrepareCommonDescriptorMessage(validator_, pipeline, descriptor_set, descriptor_type, descriptor_binding,
+    PrepareCommonDescriptorMessage(validator_, pipeline, set_number, descriptor_set, descriptor_type, descriptor_binding,
                                    descriptor_array_element, shader_stage, "acceleration structure", additional_info, ss);
     ss << ".";
     additional_info.pre_synchronization_text = ss.str();
