@@ -516,19 +516,8 @@ bool CoreChecks::ValidateFsOutputsAgainstRenderPass(const spirv::Module &module_
         const VkAttachmentDescription2 *attachment = attachment_info.attachment;
         const spirv::StageInterfaceVariable *output = attachment_info.output;
         if (attachment && !output) {
-            const auto &attachment_states = pipeline.AttachmentStates();
-            if (location < attachment_states.size() && attachment_states[location].colorWriteMask != 0) {
-                skip |= LogUndefinedValue(
-                    "Undefined-Value-ShaderInputNotProduced", module_state.handle(), create_info_loc,
-                    "Inside the fragment shader, the output Locaiton %" PRIu32
-                    " was never written to. This means anything future VkSubpassDescription::pColorAttachments[%" PRIu32
-                    "] will have undefined values written to it. The pipeline was created with "
-                    "pColorBlendState->pAttachments[%" PRIu32 "].colorWriteMask set to 0x%" PRIx32
-                    " so setting it to zero is one way to prevent undefined values overriding your color attachment.\nSpec "
-                    "information at "
-                    "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput",
-                    location, location, location, attachment_states[location].colorWriteMask);
-            }
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+            // Need to understand when undefined or not
         } else if (!attachment && output) {
             // With alphaToCoverage, the write is not "discarded" as the alpha mask is still updated
             if (!alpha_to_coverage_enabled || location != 0) {
@@ -606,34 +595,8 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
         const spirv::StageInterfaceVariable *output = attachment_info.output;
 
         if (has_attachment && !output) {
-            const auto image_view_state = Get<vvl::ImageView>(attachment_info.rendering_attachment_info->imageView);
-            const VkColorComponentFlags color_write_mask = last_bound_state.GetColorWriteMask(location);
-            if (color_write_mask != 0) {
-                std::ostringstream msg;
-                msg << "Inside the fragment shader, the output Locaiton " << location
-                    << " was never written to. This means the bound VkRenderingInfo::pColorAttachments[" << location
-                    << "].imageView (" << FormatHandle(attachment_info.rendering_attachment_info->imageView)
-                    << ") will have undefined values written to it. ";
-                if (last_bound_state.pipeline_state) {
-                    msg << "The pipeline was created with pColorBlendState->pAttachments[" << location
-                        << "].colorWriteMask set to ";
-                } else {
-                    msg << "The last call to vkCmdSetColorWriteMaskEXT for attachment " << location
-                        << " set the colorWriteMask to ";
-                }
-                msg << "0x" << std::hex << (uint32_t)color_write_mask
-                    << " so setting it to zero is one way to prevent undefined values overriding your color attachment";
-                if (color_attachment_count > 1) {
-                    msg << " (this will require independentBlend, which is basically supported everywhere, to have some "
-                           "attachments "
-                           "have different colorWriteMask)";
-                }
-                msg << ".\nSpec information at "
-                       "https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-fragmentoutput";
-                const LogObjectList objlist = last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                skip |= LogUndefinedValue("Undefined-Value-ShaderInputNotProduced-DynamicRendering", objlist, loc, "%s",
-                                          msg.str().c_str());
-            }
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+            // Need to understand when undefined or not
         } else if (!has_attachment && output) {
             // With alphaToCoverage, the write is not "discarded" as the alpha mask is still updated
             if (!last_bound_state.IsAlphaToCoverage() || location != 0) {

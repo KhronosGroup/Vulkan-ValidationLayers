@@ -1665,7 +1665,8 @@ TEST_F(NegativeShaderInterface, PackingInsideArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
-TEST_F(NegativeShaderInterface, FragmentOutputNotWritten) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
     TEST_DESCRIPTION(
         "Test that an error is produced for a fragment shader which does not provide an output for one of the pipeline's color "
         "attachments");
@@ -1679,12 +1680,13 @@ TEST_F(NegativeShaderInterface, FragmentOutputNotWritten) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.cb_attachments_.colorWriteMask = 0xf;  // all components
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRendering) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRendering) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
@@ -1706,14 +1708,15 @@ TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRendering) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRenderingShaderObject) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenDynamicRenderingShaderObject) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
@@ -1731,7 +1734,7 @@ TEST_F(NegativeShaderInterface, FragmentOutputNotWrittenDynamicRenderingShaderOb
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     VkColorComponentFlags color_write_mask = 0xf;  // all
     vk::CmdSetColorWriteMaskEXT(m_command_buffer.handle(), 0, 1, &color_write_mask);
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
@@ -1774,7 +1777,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArray) {
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blends;
     pipe.gp_ci_.renderPass = rp.Handle();
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -1827,7 +1830,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArrayDynamicRen
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
@@ -2178,7 +2181,8 @@ TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, MultipleFragmentAttachment) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachment) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923");
     RETURN_IF_SKIP(Init());
 
@@ -2221,12 +2225,13 @@ TEST_F(NegativeShaderInterface, MultipleFragmentAttachment) {
     pipe.cb_ci_.attachmentCount = 3;
     pipe.cb_ci_.pAttachments = color_blends;
     pipe.gp_ci_.renderPass = rp.Handle();
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderInterface, MultipleFragmentAttachmentDynamicRendering) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
+TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachmentDynamicRendering) {
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(Init());
@@ -2278,7 +2283,7 @@ TEST_F(NegativeShaderInterface, MultipleFragmentAttachmentDynamicRendering) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderInputNotProduced-DynamicRendering");
+    m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced-DynamicRendering");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();
