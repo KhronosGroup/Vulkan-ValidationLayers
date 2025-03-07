@@ -928,3 +928,5 @@ TEST_F(NegativeShaderStorageImage, FormatComponentWidthMismatch) {
 }
 
 TEST_F(NegativeShaderStorageImage, FormatCompatibleMismatch) { FormatComponentMismatchTest("Rgba8", VK_FORMAT_B8G8R8A8_UNORM); }
+
+TEST_F(NegativeShaderStorageImage, FormatCompatibleNonSwizzle) { FormatComponentMismatchTest("R32f", VK_FORMAT_R16G16_UNORM); }
