@@ -403,8 +403,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
                             LogObjectList objlist(cb_state_->Handle(), img_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.ImageDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*img_view_state), *pipe, *descriptor_set,
-                                descriptor_type, variable.decorations.binding, index, stage_state.GetStage(), image_layout);
+                                hazard, *this, loc.function, sync_state_.FormatHandle(*img_view_state), *pipe,
+                                variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
+                                stage_state.GetStage(), image_layout);
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -421,8 +422,9 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
                             LogObjectList objlist(cb_state_->Handle(), buf_view_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_view_state), *pipe, *descriptor_set,
-                                descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
+                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_view_state), *pipe,
+                                variable.decorations.set, *descriptor_set, descriptor_type, variable.decorations.binding, index,
+                                stage_state.GetStage());
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -447,8 +449,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         if (hazard.IsHazard() && !sync_state_.SupressedBoundDescriptorWAW(hazard)) {
                             LogObjectList objlist(cb_state_->Handle(), buf_state->Handle(), pipe->Handle());
                             const auto error = error_messages_.BufferDescriptorError(
-                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_state), *pipe, *descriptor_set,
-                                descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
+                                hazard, *this, loc.function, sync_state_.FormatHandle(*buf_state), *pipe, variable.decorations.set,
+                                *descriptor_set, descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;
@@ -470,8 +472,8 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                             LogObjectList objlist(cb_state_->Handle(), accel->buffer_state->Handle(), pipe->Handle());
                             const std::string resource_description = sync_state_.FormatHandle(accel->Handle());
                             const std::string error = error_messages_.AccelerationStructureDescriptorError(
-                                hazard, *this, loc.function, resource_description, *pipe, *descriptor_set, descriptor_type,
-                                variable.decorations.binding, index, stage_state.GetStage());
+                                hazard, *this, loc.function, resource_description, *pipe, variable.decorations.set, *descriptor_set,
+                                descriptor_type, variable.decorations.binding, index, stage_state.GetStage());
                             skip |= sync_state_.SyncError(hazard.Hazard(), objlist, loc, error);
                         }
                         break;

@@ -72,28 +72,28 @@ class ErrorMessages {
                                           const VkOffset3D& offset, const VkExtent3D& extent,
                                           const VkImageSubresourceLayers& subresource) const;
 
-    std::string ImageSubresourceRangeError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
-                                           vvl::Func command, const std::string& resource_description,
-                                           uint32_t subresource_range_index,
-                                           const VkImageSubresourceRange& subresource_range) const;
+    std::string ImageClearError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
+                                const std::string& resource_description, uint32_t subresource_range_index,
+                                const VkImageSubresourceRange& subresource_range) const;
 
     std::string BufferDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                      const std::string& resource_description, const vvl::Pipeline& pipeline,
+                                      const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
                                       const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                       uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                       VkShaderStageFlagBits shader_stage) const;
 
     std::string ImageDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
-                                     const std::string& resource_description, const vvl::Pipeline& pipeline,
+                                     const std::string& resource_description, const vvl::Pipeline& pipeline, uint32_t set_number,
                                      const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
                                      uint32_t descriptor_binding, uint32_t descriptor_array_element,
                                      VkShaderStageFlagBits shader_stage, VkImageLayout image_layout) const;
 
     std::string AccelerationStructureDescriptorError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description,
-                                                     const vvl::Pipeline& pipeline, const vvl::DescriptorSet& descriptor_set,
-                                                     VkDescriptorType descriptor_type, uint32_t descriptor_binding,
-                                                     uint32_t descriptor_array_element, VkShaderStageFlagBits shader_stage) const;
+                                                     const vvl::Pipeline& pipeline, uint32_t set_number,
+                                                     const vvl::DescriptorSet& descriptor_set, VkDescriptorType descriptor_type,
+                                                     uint32_t descriptor_binding, uint32_t descriptor_array_element,
+                                                     VkShaderStageFlagBits shader_stage) const;
 
     std::string ClearAttachmentError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context, vvl::Func command,
                                      const std::string& resource_description, VkImageAspectFlagBits aspect,
