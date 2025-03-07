@@ -2096,8 +2096,11 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
         }
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
-            const vvl::SamplerDescriptor &desc = (const vvl::SamplerDescriptor &)*iter;
-            if (desc.IsImmutableSampler() && !is_push_descriptor) {
+            const vvl::SamplerDescriptor *desc = dynamic_cast<const vvl::SamplerDescriptor *>(&(*iter));
+            if (desc == nullptr) {
+                break;
+            }
+            if (desc->IsImmutableSampler() && !is_push_descriptor) {
                 skip |=
                     LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, write_loc.dot(Field::descriptorType),
                              "is VK_DESCRIPTOR_TYPE_SAMPLER but can't update the immutable sampler from %s.",
