@@ -611,6 +611,13 @@ bool CoreChecks::ValidateDrawDynamicRenderingFsOutputs(const LastBound &last_bou
                                           location, location, null_image_view ? " (imageView is VK_NULL_HANDLE)" : "");
             }
         } else if (has_attachment && output) {
+            if (last_bound_state.cb_state.rendering_attachments.set_color_indexes ||
+                last_bound_state.cb_state.rendering_attachments.set_color_locations) {
+                // TODO - Handle VK_KHR_dynamic_rendering_local_read
+                // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8887
+                continue;
+            }
+
             const auto image_view_state = Get<vvl::ImageView>(attachment_info.rendering_attachment_info->imageView);
             const uint32_t attachment_type = spirv::GetFormatType(image_view_state->create_info.format);
 
