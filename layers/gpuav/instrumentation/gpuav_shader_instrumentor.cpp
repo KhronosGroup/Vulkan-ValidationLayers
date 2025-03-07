@@ -1178,6 +1178,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
     module_settings.shader_id = unique_shader_id;
     module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
+    module_settings.unsafe_mode = gpuav_settings.unsafe_mode;
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     module_settings.support_non_semantic_info = IsExtEnabled(extensions.vk_khr_shader_non_semantic_info);

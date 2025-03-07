@@ -188,6 +188,7 @@ const char *VK_LAYER_PRINTF_BUFFER_SIZE = "printf_buffer_size";
 // GPU-AV
 // ---
 const char *VK_LAYER_GPUAV_ENABLE = "gpuav_enable";
+const char *VK_LAYER_GPUAV_UNSAFE_MODE = "gpuav_unsafe_mode";
 const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char *VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_WARN_ON_ROBUST_OOB = "gpuav_warn_on_robust_oob";
@@ -587,6 +588,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
         } else if (strcmp(VK_LAYER_GPUAV_ENABLE, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_UNSAFE_MODE, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
@@ -1036,6 +1039,10 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     }
 
     GpuAVSettings &gpuav_settings = *settings_data->gpuav_settings;
+    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_UNSAFE_MODE)) {
+        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_UNSAFE_MODE, gpuav_settings.unsafe_mode);
+    }
+
     bool shader_instrumentation_enabled = true;
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION)) {
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_SHADER_INSTRUMENTATION, shader_instrumentation_enabled);
