@@ -12,6 +12,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <spirv-tools/libspirv.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
@@ -221,6 +222,27 @@ TEST_F(PositiveShaderSpirv, CapabilityExtension2of2) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.CreateGraphicsPipeline();
+}
+
+TEST_F(PositiveShaderSpirv, ShaderViewportIndexLayerEXT) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9601");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::multiViewport);
+    AddRequiredFeature(vkt::Feature::shaderOutputViewportIndex);
+    AddRequiredFeature(vkt::Feature::shaderOutputLayer);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_ARB_shader_viewport_layer_array : enable
+        void main() {
+            gl_ViewportIndex = 1;
+        }
+    )glsl";
+
+    // 1.1 target env will produce old ShaderViewportIndexLayerEXT version
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_1);
 }
 
 TEST_F(PositiveShaderSpirv, ShaderDrawParametersWithoutFeature) {

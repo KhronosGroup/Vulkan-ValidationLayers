@@ -1256,19 +1256,20 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
     const bool pipeline = loc.function != vvl::Func::vkCreateShadersEXT;
 
     if (insn.Opcode() == spv::OpCapability) {
+        const uint32_t insn_capability = insn.Word(1);
         // All capabilities are generated so if it is not in the list it is not supported by Vulkan
-        if (GetSpirvCapabilites().count(insn.Word(1)) == 0) {
+        if (GetSpirvCapabilites().count(insn_capability) == 0) {
             const char* vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08739" : "VUID-VkShaderCreateInfoEXT-pCode-08739";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V has Capability (%s) declared, but this is not supported by Vulkan.",
-                             string_SpvCapability(insn.Word(1)));
+                             string_SpvCapability(insn_capability));
             return skip;  // no known capability to validate
         }
 
         // Each capability has one or more requirements to check
         // Only one item has to be satisfied and an error only occurs
         // when all are not satisfied
-        auto caps = GetSpirvCapabilites().equal_range(insn.Word(1));
+        auto caps = GetSpirvCapabilites().equal_range(insn_capability);
         bool has_support = false;
         for (auto it = caps.first; (it != caps.second) && (has_support == false); ++it) {
             if (it->second.version) {
@@ -1287,7 +1288,7 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
                 }
             } else if (it->second.property) {
                 // support is or'ed as only one has to be supported (if applicable)
-                switch (insn.Word(1)) {
+                switch (insn_capability) {
                     case spv::CapabilityDenormFlushToZero:
                         has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat16 & VK_TRUE) != 0);
                         has_support |= ((phys_dev_props_core12.shaderDenormFlushToZeroFloat32 & VK_TRUE) != 0);
@@ -1350,17 +1351,24 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
             }
         }
 
+        if (!has_support && insn_capability == spv::CapabilityShaderViewportIndexLayerEXT) {
+            // special case (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9601)
+            if (enabled_features.shaderOutputLayer && enabled_features.shaderOutputViewportIndex) {
+                has_support = true;
+            }
+        }
+
         if (has_support == false) {
             const char* vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08740" : "VUID-VkShaderCreateInfoEXT-pCode-08740";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V Capability %s was declared, but one of the following requirements is required (%s).",
-                             string_SpvCapability(insn.Word(1)), SpvCapabilityRequirements(insn.Word(1)));
+                             string_SpvCapability(insn_capability), SpvCapabilityRequirements(insn_capability));
         }
 
         // Portability checks
         if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
             if ((VK_FALSE == enabled_features.shaderSampleRateInterpolationFunctions) &&
-                (spv::CapabilityInterpolationFunction == insn.Word(1))) {
+                (spv::CapabilityInterpolationFunction == insn_capability)) {
                 skip |= LogError("VUID-RuntimeSpirv-shaderSampleRateInterpolationFunctions-06325", module_state.handle(), loc,
                                  "SPIR-V (portability error) InterpolationFunction Capability are not supported "
                                  "by this platform");
