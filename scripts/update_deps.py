@@ -510,6 +510,13 @@ class GoodRepo(object):
             if platform.system() != 'Windows':
                 os.environ['LDFLAGS'] = '-fsanitize=address'
 
+        # Optionally build dependencies with UBSAN enabled
+        if self._args.ubsan:
+            cmake_cmd.append('-D CMAKE_CXX_FLAGS=-fsanitize=undefined -fno-sanitize=enum')
+            cmake_cmd.append('-D CMAKE_C_FLAGS=-fsanitize=undefined')
+            cmake_cmd.append('-D ENABLE_RTTI=ON')
+            os.environ['LDFLAGS'] = '-fsanitize=undefined'
+
         # Use the CMake -A option to select the platform architecture
         # without needing a Visual Studio generator.
         if platform.system() == 'Windows' and self._args.generator != "Ninja":
@@ -747,6 +754,12 @@ def main():
         dest='asan',
         action='store_true',
         help="Build dependencies with ASAN enabled",
+        default=False)
+    parser.add_argument(
+        '--ubsan',
+        dest='ubsan',
+        action='store_true',
+        help="Build dependencies with UBSAN enabled",
         default=False)
 
     args = parser.parse_args()

@@ -58,6 +58,10 @@ if (UPDATE_DEPS)
         list(APPEND update_dep_command "--asan")
     endif()
 
+    if (VVL_ENABLE_UBSAN)
+        list(APPEND update_dep_command "--ubsan")
+    endif()
+
     if (NOT BUILD_TESTS)
         list(APPEND update_dep_command "--optional=tests")
     endif()

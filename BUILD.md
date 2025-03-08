@@ -330,6 +330,10 @@ export CXXFLAGS=-fsanitize=address
 export LDFLAGS=-fsanitize=address
 ```
 
+[UBSAN (Undefined Behavior Sanitization)](https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html) has become a part of our CI process to ensure high quality code.
+
+For simplicity use `-D VVL_ENABLE_UBSAN=ON` to enable this sanitization method.
+
 [TSAN (Thread Sanitization)](https://clang.llvm.org/docs/ThreadSanitizer.html) has become a part of our CI process to detect data race bugs.
 
 ```bash

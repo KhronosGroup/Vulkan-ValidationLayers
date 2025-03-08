@@ -176,6 +176,9 @@ def RunVVLTests(args):
 
     lvt_env = dict(os.environ)
 
+    # Needed for undefined behavior sanitizor to actually cause program to fail.
+    lvt_env['UBSAN_OPTIONS'] = 'abort_on_error=1:halt_on_error=1'
+
     # Because we installed everything to CI_INSTALL_DIR all the libraries/json files are in pre-determined locations
     # defined by GNUInstallDirs. This makes setting VK_LAYER_PATH and other environment variables trivial/robust.
     if common_ci.IsWindows():
