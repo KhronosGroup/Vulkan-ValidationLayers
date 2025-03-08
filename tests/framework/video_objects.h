@@ -1403,7 +1403,9 @@ class VideoDecodeInfo : public VideoOpParams<VkVideoDecodeInfoKHR> {
 
                 codec_info_.decode_av1.std_picture_info = {};
                 // We will simply use the DPB slot index as the VBI slot index for the purposes of testing
-                codec_info_.decode_av1.std_picture_info.refresh_frame_flags = static_cast<uint8_t>(1 << slot_index);
+                if (slot_index >= 0) {
+                    codec_info_.decode_av1.std_picture_info.refresh_frame_flags = static_cast<uint8_t>(1 << slot_index);
+                }
 
                 reconstructed_.pNext = &codec_info_.decode_av1.setup_slot_info;
 
