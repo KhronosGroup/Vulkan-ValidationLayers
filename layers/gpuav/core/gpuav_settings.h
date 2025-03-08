@@ -20,6 +20,8 @@
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
 struct GpuAVSettings {
+    bool unsafe_mode = false;
+
     bool warn_on_robust_oob = true;
     uint32_t max_bda_in_use = 10000;
     bool select_instrumented_shaders = false;
