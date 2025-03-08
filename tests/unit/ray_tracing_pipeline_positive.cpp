@@ -200,9 +200,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
 }
 
 TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
-    TEST_DESCRIPTION(
-        "Regression test for issue 6282: make sure that when validating vkGetRayTracingCaptureReplayShaderGroupHandlesKHR on a "
-        "pipeline created using pipeline libraries, the total shader group count is computed using info from the libraries.");
+    TEST_DESCRIPTION("Iterating over a ray tracing pipeline's shader groups should take into account associated libraries");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
