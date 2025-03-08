@@ -453,6 +453,10 @@ static bool IgnoreColorAttachments(const Device &state_data, Pipeline &pipe_stat
 }
 
 static bool UsesShaderModuleId(const Pipeline &pipe_state) {
+    if (pipe_state.shader_stages_ci.data() == nullptr) {
+        return false;
+    }
+
     for (const auto &stage_ci : pipe_state.shader_stages_ci) {
         // if using GPL, can have null pStages
         if (stage_ci.ptr()) {
