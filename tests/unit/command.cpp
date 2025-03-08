@@ -1678,7 +1678,6 @@ TEST_F(NegativeCommand, MultiDraw) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiEXT-drawCount-09628");
     vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT) + 1);
     m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798", 2);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-09629");
     vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT) + 1, 0);
     m_errorMonitor->VerifyFound();

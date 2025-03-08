@@ -273,17 +273,24 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
+    bool invalid_stride = false;
     if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-09629", stride,
-                                                Struct::VkMultiDrawIndexedInfoEXT, sizeof(VkMultiDrawIndexedInfoEXT),
-                                                error_obj.location);
+        invalid_stride = ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-09629", stride,
+                                                         Struct::VkMultiDrawIndexedInfoEXT, sizeof(VkMultiDrawIndexedInfoEXT),
+                                                         error_obj.location);
     }
+    skip |= invalid_stride;
 
     // only index into pIndexInfo if we know parameters are sane
     if (drawCount != 0 && !pIndexInfo) {
         skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::drawCount), "is %" PRIu32 " but pIndexInfo is NULL.", drawCount);
     } else {
+        // Continuing on from this point invokes undefined behavior due to invalid stride size.
+        if (invalid_stride) {
+            return skip;
+        }
+
         const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
         for (uint32_t i = 0; i < drawCount; i++) {
             const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
