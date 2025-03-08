@@ -733,7 +733,8 @@ struct LastBound {
     bool IsShadingRateImageEnable() const;
     bool IsViewportWScalingEnable() const;
     bool IsPrimitiveRestartEnable() const;
-    bool IsAlphaToCoverage() const;
+    bool IsAlphaToCoverageEnable() const;
+    bool IsAlphaToOneEnable() const;
     VkCoverageModulationModeNV GetCoverageModulationMode() const;
 
     bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;

@@ -5207,6 +5207,7 @@ void Device::PostCallRecordCmdSetAlphaToOneEnableEXT(VkCommandBuffer commandBuff
                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
+    cb_state->dynamic_state_value.alpha_to_one_enable = alphaToOneEnable;
 }
 
 void Device::PostCallRecordCmdSetLogicOpEnableEXT(VkCommandBuffer commandBuffer, VkBool32 logicOpEnable,

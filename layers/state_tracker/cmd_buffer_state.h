@@ -275,6 +275,8 @@ class CommandBuffer : public RefcountedStateObject {
         bool depth_clamp_enable = false;
         // VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT
         bool alpha_to_coverage_enable;
+        // VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT
+        bool alpha_to_one_enable;
         // VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT
         bool logic_op_enable;
         // VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR
