@@ -6914,3 +6914,26 @@ TEST_F(NegativeShaderObject, VertAndMeshShaderBothNotBound) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObject, LineRasterization) {
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::smoothLines);
+    AddRequiredFeature(vkt::Feature::alphaToOne);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitRenderTarget();
+    CreateMinimalShaders();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT});
+    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
+    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetLineRasterizationModeEXT(m_command_buffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10608");
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
