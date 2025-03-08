@@ -149,6 +149,18 @@ if (VVL_ENABLE_ASAN)
     endif()
 endif()
 
+option(VVL_ENABLE_UBSAN "Use undefined behavior sanitization")
+if (VVL_ENABLE_UBSAN)
+    if (NOT MSVC)
+        add_compile_options(-fsanitize=undefined)
+        add_link_options(-fsanitize=undefined)
+
+        # VVL's test-suites deliberately use invalid enum values.
+        # This creates a lot of false positives.
+        add_compile_options(-fno-sanitize=enum)
+    endif()
+endif()
+
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
     add_compile_options(
         -Wall

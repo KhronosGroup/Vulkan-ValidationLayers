@@ -142,6 +142,28 @@ jobs:
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
+  linux-ubsan:
+    needs: check_vvl
+    runs-on: ubuntu-24.04
+    name: "linux (undefined behavior sanitizer)"
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lukka/get-cmake@latest
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: linux-ubsan
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: python scripts/tests.py --build --config debug --cmake='-DVVL_ENABLE_UBSAN=ON'
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+      - name: Test Max Profile
+        run: python scripts/tests.py --test
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+
   # Ensure we can build on an older Ubuntu distro with an older version of CMake.
   linux_back_compat:
     needs: check_vvl
