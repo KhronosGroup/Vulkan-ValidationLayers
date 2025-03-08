@@ -287,6 +287,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDraw-None-07635";
         image_layout_09600                       = "VUID-vkCmdDraw-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDraw-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDraw-None-10608";
     }
 };
 
@@ -555,6 +556,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMultiEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMultiEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMultiEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMultiEXT-None-10608";
     }
 };
 
@@ -824,6 +826,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndexed-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndexed-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndexed-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndexed-None-10608";
     }
 };
 
@@ -1093,6 +1096,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMultiIndexedEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMultiIndexedEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMultiIndexedEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMultiIndexedEXT-None-10608";
     }
 };
 
@@ -1360,6 +1364,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndirect-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndirect-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndirect-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndirect-None-10608";
     }
 };
 
@@ -1628,6 +1633,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndexedIndirect-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndexedIndirect-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndexedIndirect-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndexedIndirect-None-10608";
     }
 };
 
@@ -1997,6 +2003,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndirectCount-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndirectCount-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndirectCount-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndirectCount-None-10608";
     }
 };
 
@@ -2268,6 +2275,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndexedIndirectCount-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndexedIndirectCount-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndexedIndirectCount-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndexedIndirectCount-None-10608";
     }
 };
 
@@ -2715,6 +2723,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksNV-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksNV-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksNV-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksNV-None-10608";
     }
 };
 
@@ -2965,6 +2974,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksIndirectNV-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksIndirectNV-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksIndirectNV-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-10608";
     }
 };
 
@@ -3218,6 +3228,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-10608";
     }
 };
 
@@ -3465,6 +3476,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksEXT-None-10608";
     }
 };
 
@@ -3715,6 +3727,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-10608";
     }
 };
 
@@ -3968,6 +3981,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-10608";
     }
 };
 
@@ -4235,6 +4249,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         color_blend_advanced_07635               = "VUID-vkCmdDrawIndirectByteCountEXT-None-07635";
         image_layout_09600                       = "VUID-vkCmdDrawIndirectByteCountEXT-None-09600";
         rendering_contents_10582                 = "VUID-vkCmdDrawIndirectByteCountEXT-flags-10582";
+        line_rasterization_10608                 = "VUID-vkCmdDrawIndirectByteCountEXT-None-10608";
     }
 };
 

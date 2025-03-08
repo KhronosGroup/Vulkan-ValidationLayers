@@ -1201,7 +1201,7 @@ bool LastBound::IsPrimitiveRestartEnable() const {
     return false;
 }
 
-bool LastBound::IsAlphaToCoverage() const {
+bool LastBound::IsAlphaToCoverageEnable() const {
     if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.alpha_to_coverage_enable;
@@ -1209,6 +1209,19 @@ bool LastBound::IsAlphaToCoverage() const {
     } else {
         if (auto ms_state = pipeline_state->MultisampleState()) {
             return ms_state->alphaToCoverageEnable == VK_TRUE;
+        }
+    }
+    return false;
+}
+
+bool LastBound::IsAlphaToOneEnable() const {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.alpha_to_one_enable;
+        }
+    } else {
+        if (auto ms_state = pipeline_state->MultisampleState()) {
+            return ms_state->alphaToOneEnable == VK_TRUE;
         }
     }
     return false;

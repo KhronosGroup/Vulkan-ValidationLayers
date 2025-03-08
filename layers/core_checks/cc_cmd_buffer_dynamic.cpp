@@ -1267,6 +1267,23 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
     }
 
+    if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) &&
+        (cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM ||
+         cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)) {
+        bool alphaToCoverageEnable = last_bound_state.IsAlphaToCoverageEnable();
+        bool alphaToOneEnable = last_bound_state.IsAlphaToOneEnable();
+        bool sampleShadingEnable =
+            pipeline_state && pipeline_state->MultisampleState() && pipeline_state->MultisampleState()->sampleShadingEnable;
+        if (alphaToCoverageEnable || alphaToOneEnable || sampleShadingEnable) {
+            skip |= LogError(vuid.line_rasterization_10608, cb_state.Handle(), vuid.loc(),
+                             "lineRasterizationMode is %s, but alphaToCoverageEnable (%s), alphaToOneEnable (%s) and "
+                             "sampleShadingEnable (%s) are not all VK_FALSE.",
+                             string_VkLineRasterizationMode(cb_state.dynamic_state_value.line_rasterization_mode),
+                             alphaToCoverageEnable ? "VK_TRUE" : "VK_FALSE", alphaToOneEnable ? "VK_TRUE" : "VK_FALSE",
+                             sampleShadingEnable ? "VK_TRUE" : "VK_FALSE");
+        }
+    }
+
     return skip;
 }
 
