@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,4 +197,41 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     void* out_buffer = malloc(buffer_size);
     vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
     free(out_buffer);
+}
+
+TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
+    TEST_DESCRIPTION("Iterating over a ray tracing pipeline's shader groups should take into account associated libraries");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_PIPELINE_LIBRARY_GROUP_HANDLES_EXTENSION_NAME);
+
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::pipelineLibraryGroupHandles);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline rt_pipe_lib(*this, m_device);
+    rt_pipe_lib.InitLibraryInfo();
+    rt_pipe_lib.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.AddGlslMissShader(kRayTracingMinimalGlsl);
+    rt_pipe_lib.Build();
+
+    vkt::rt::Pipeline rt_pipe(*this, m_device);
+    rt_pipe.InitLibraryInfo();
+    rt_pipe.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    rt_pipe.CreateDescriptorSet();
+    vkt::as::BuildGeometryInfoKHR tlas(vkt::as::blueprint::BuildOnDeviceTopLevel(*m_device, *m_default_queue, m_command_buffer));
+    rt_pipe.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    rt_pipe.GetDescriptorSet().UpdateDescriptorSets();
+
+    rt_pipe.SetGlslRayGenShader(kRayTracingMinimalGlsl);
+    rt_pipe.AddLibrary(rt_pipe_lib);
+    rt_pipe.Build();
+
+    const VkDeviceSize stack_size =
+        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe.Handle(), 1, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    (void)stack_size;
 }

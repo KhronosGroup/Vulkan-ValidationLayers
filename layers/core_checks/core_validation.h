@@ -2311,9 +2311,6 @@ class CoreChecks : public vvl::Device {
                                                                    uint32_t firstQuery,
                                                                    const ErrorObject& error_obj) const override;
 
-    // Calculates the total number of shader groups taking libraries into account.
-    uint32_t CalcTotalShaderGroupCount(const vvl::Pipeline& pipeline) const;
-
     bool PreCallValidateGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                            uint32_t groupCount, size_t dataSize, void* pData,
                                                            const ErrorObject& error_obj) const override;
