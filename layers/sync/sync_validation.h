@@ -29,9 +29,9 @@
 
 namespace syncval {
 // sync validation has no instance-level functionality
-class Instance : public vvl::Instance {
+class Instance : public vvl::InstanceProxy {
   public:
-    Instance(vvl::dispatch::Instance *dispatch) : vvl::Instance(dispatch, LayerObjectTypeSyncValidation) {}
+    Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceProxy(dispatch, LayerObjectTypeSyncValidation) {}
 };
 }  // namespace syncval
 
@@ -40,8 +40,8 @@ VALSTATETRACK_DERIVED_STATE_OBJECT(VkImageView, syncval_state::ImageViewState, v
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkCommandBuffer, syncval_state::CommandBuffer, vvl::CommandBuffer)
 VALSTATETRACK_DERIVED_STATE_OBJECT(VkSwapchainKHR, syncval_state::Swapchain, vvl::Swapchain)
 
-class SyncValidator : public vvl::Device, public SyncStageAccess {
-    using BaseClass = vvl::Device;
+class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
+    using BaseClass = vvl::DeviceProxy;
 
   public:
     using ImageState = syncval_state::ImageState;
@@ -130,6 +130,7 @@ class SyncValidator : public vvl::Device, public SyncStageAccess {
     std::vector<QueueBatchContext::ConstPtr> GetLastPendingBatches(std::function<bool(const QueueBatchContext::ConstPtr &)> filter) const;
     void ClearPending() const;
 
+#if 0
     std::shared_ptr<vvl::CommandBuffer> CreateCmdBufferState(VkCommandBuffer handle,
                                                              const VkCommandBufferAllocateInfo *allocate_info,
                                                              const vvl::CommandPool *cmd_pool) override;
@@ -144,6 +145,7 @@ class SyncValidator : public vvl::Device, public SyncStageAccess {
                                                          const VkImageViewCreateInfo *create_info,
                                                          VkFormatFeatureFlags2 format_features,
                                                          const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props) final;
+#endif
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,

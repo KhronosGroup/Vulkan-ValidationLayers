@@ -48,47 +48,50 @@ namespace vvl {
 namespace dispatch {
 
 void Device::InitObjectDispatchVectors() {
-#define BUILD_DISPATCH_VECTOR(name)                                                                                       \
-    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
-                                typeid(&stateless::Device::name), typeid(&object_lifetimes::Device::name),                \
-                                typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&SyncValidator::name));
+#define BUILD_DISPATCH_VECTOR(name)                                                                                               \
+    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&vvl::Device::name),                  \
+                                typeid(&threadsafety::Device::name), typeid(&stateless::Device::name),                            \
+                                typeid(&object_lifetimes::Device::name), typeid(&CoreChecks::name), typeid(&BestPractices::name), \
+                                typeid(&gpuav::Validator::name), typeid(&SyncValidator::name));
 
-    auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& tt_typeid,
-                                              const std::type_info& tpv_typeid, const std::type_info& tot_typeid,
-                                              const std::type_info& tcv_typeid, const std::type_info& tbp_typeid,
-                                              const std::type_info& tga_typeid, const std::type_info& tsv_typeid) {
-        for (auto& vo : this->object_dispatch) {
-            auto* item = vo.get();
-            auto intercept_vector = &this->intercept_vectors[id];
-            switch (item->container_type) {
-                case LayerObjectTypeThreading:
-                    if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeParameterValidation:
-                    if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeObjectTracker:
-                    if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeCoreValidation:
-                    if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeBestPractices:
-                    if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeGpuAssisted:
-                    if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeSyncValidation:
-                    if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                default:
-                    /* Chassis codegen needs to be updated for unknown validation object type */
-                    assert(0);
+    auto init_object_dispatch_vector =
+        [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& st_typeid, const std::type_info& tt_typeid,
+               const std::type_info& tpv_typeid, const std::type_info& tot_typeid, const std::type_info& tcv_typeid,
+               const std::type_info& tbp_typeid, const std::type_info& tga_typeid, const std::type_info& tsv_typeid) {
+            for (auto& vo : this->object_dispatch) {
+                auto* item = vo.get();
+                auto intercept_vector = &this->intercept_vectors[id];
+                switch (item->container_type) {
+                    case LayerObjectTypeThreading:
+                        if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeStateTracker:
+                        if (tt_typeid != st_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeParameterValidation:
+                        if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeObjectTracker:
+                        if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeCoreValidation:
+                        if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeBestPractices:
+                        if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeGpuAssisted:
+                        if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    case LayerObjectTypeSyncValidation:
+                        if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+                    default:
+                        /* Chassis codegen needs to be updated for unknown validation object type */
+                        assert(0);
+                }
             }
-        }
-    };
+        };
 
     intercept_vectors.resize(InterceptIdCount);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceQueue);
