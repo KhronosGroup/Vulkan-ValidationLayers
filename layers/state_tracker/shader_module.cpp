@@ -2016,7 +2016,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                                                      const VariableAccessMap& variable_access_map,
                                                      const DebugNameMap& debug_name_map)
     : VariableBase(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map),
-      array_length(0),
+      array_length(0),  // updated in FindBaseType (if array is found)
       is_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),

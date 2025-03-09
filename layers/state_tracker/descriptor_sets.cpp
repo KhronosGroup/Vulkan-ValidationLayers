@@ -698,9 +698,10 @@ void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::Device *device_data, v
         ASSERT_AND_CONTINUE(binding);
 
         // core validation doesn't handle descriptor indexing, that is only done by GPU-AV
-        if (ValidateBindingOnGPU(*binding, binding_req_pair.second.variable->is_runtime_descriptor_array)) {
+        if (ValidateBindingOnGPU(*binding, *binding_req_pair.second.variable)) {
             continue;
         }
+
         switch (binding->descriptor_class) {
             case DescriptorClass::Image: {
                 auto *image_binding = static_cast<ImageBinding *>(binding);
@@ -730,13 +731,23 @@ void vvl::DescriptorSet::UpdateImageLayoutDrawStates(vvl::Device *device_data, v
 }
 
 // This is used to decide if we should validate the Descirptors on the CPU or GPU-AV
-bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding &binding, bool is_runtime_descriptor_array) const {
+bool vvl::DescriptorSet::ValidateBindingOnGPU(const DescriptorBinding &binding,
+                                              const spirv::ResourceInterfaceVariable &variable) const {
     // Some applications (notably Doom Eternal) might have large non-bindless descriptors attached (basically doing Descriptor
     // Indexing without the extension). Trying to loop through these on the CPU will bring FPS down by over 50% so we make use of
     // the post processing to detect which descriptors were actually accessed
     static constexpr uint32_t max_descriptor_on_cpu = 1024;
-    return GetNonInlineDescriptorCount() > max_descriptor_on_cpu || IsBindless(binding.binding_flags) ||
-           is_runtime_descriptor_array;
+    if (GetNonInlineDescriptorCount() > max_descriptor_on_cpu) {
+        // If too much CPU work
+        return true;
+    } else if (IsBindless(binding.binding_flags)) {
+        // If flags allow descriptor to be "bindless" (can be invalid up until submit time)
+        return true;
+    } else if (variable.is_runtime_descriptor_array) {
+        // We don't know where OOB is on the CPU
+        return true;
+    }
+    return false;
 }
 
 // Helper template to change shared pointer members of a Descriptor, while
