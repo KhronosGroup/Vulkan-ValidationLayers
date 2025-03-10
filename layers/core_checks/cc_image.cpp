@@ -490,26 +490,28 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                                  string_VkSharingMode(swapchain_state->create_info.imageSharingMode),
                                  string_VkSharingMode(pCreateInfo->sharingMode));
             }
-            if (pCreateInfo->queueFamilyIndexCount != swapchain_state->create_info.queueFamilyIndexCount) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with queueFamilyIndexCount %" PRIu32
-                                 " which doesn't match pCreateInfo->queueFamilyIndexCount %" PRIu32 ".",
-                                 swapchain_state->create_info.queueFamilyIndexCount, pCreateInfo->queueFamilyIndexCount);
-            } else {
-                for (uint32_t i = 0; i < pCreateInfo->queueFamilyIndexCount; ++i) {
-                    bool found = false;
-                    for (uint32_t j = 0; j < pCreateInfo->queueFamilyIndexCount; ++j) {
-                        if (pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
-                            found = true;
-                            break;
+            if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
+                if (pCreateInfo->queueFamilyIndexCount != swapchain_state->create_info.queueFamilyIndexCount) {
+                    skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                     "was created with queueFamilyIndexCount %" PRIu32
+                                     " which doesn't match pCreateInfo->queueFamilyIndexCount %" PRIu32 ".",
+                                     swapchain_state->create_info.queueFamilyIndexCount, pCreateInfo->queueFamilyIndexCount);
+                } else {
+                    for (uint32_t i = 0; i < pCreateInfo->queueFamilyIndexCount; ++i) {
+                        bool found = false;
+                        for (uint32_t j = 0; j < pCreateInfo->queueFamilyIndexCount; ++j) {
+                            if (pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
+                                found = true;
+                                break;
+                            }
                         }
-                    }
-                    if (!found) {
-                        skip |=
-                            LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                     "was created with pQueueFamilyIndices containing index %" PRIu32
-                                     " which is not included in pCreateInfo->pQueueFamilyIndices.",
-                                     i);
+                        if (!found) {
+                            skip |= LogError(vuid, device,
+                                             create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                             "was created with pQueueFamilyIndices containing index %" PRIu32
+                                             " which is not included in pCreateInfo->pQueueFamilyIndices.",
+                                             i);
+                        }
                     }
                 }
             }
