@@ -597,7 +597,7 @@ class Device : public vvl::base::Device {
         return found_it->second;
     }
 
-    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer) const;
+    VkDeviceAddress GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions* exts) const;
 
     // From the spec:
     // If multiple VkBuffer objects are bound to overlapping ranges of VkDeviceMemory, implementations may return

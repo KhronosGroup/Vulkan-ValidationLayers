@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,7 +182,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
 
     if (buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
         // After creating the buffer, get the address right away
-        device_address = gpuav.GetBufferDeviceAddressHelper(buffer);
+        device_address = gpuav.GetBufferDeviceAddressHelper(buffer, &gpuav.modified_extensions);
         if (device_address == 0) {
             gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
             return false;

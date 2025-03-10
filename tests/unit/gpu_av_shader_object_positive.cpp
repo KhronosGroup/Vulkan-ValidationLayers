@@ -31,6 +31,7 @@ TEST_F(PositiveGpuAVShaderObject, SelectInstrumentedShaders) {
     InitBasicShaderObject();
 
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     const VkBool32 value = true;
     const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
                                        &value};

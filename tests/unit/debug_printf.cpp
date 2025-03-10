@@ -1480,11 +1480,9 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
 TEST_F(NegativeDebugPrintf, GPLInt64) {
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
-    if (!m_device->Physical().Features().shaderInt64) {
-        GTEST_SKIP() << "shaderInt64 not supported";
-    }
     InitRenderTarget();
 
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
@@ -1601,7 +1599,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     static const char vert_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
-        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
         const vec2 vertices[3] = vec2[](
             vec2(-1.0, -1.0),
             vec2(1.0, -1.0),
@@ -1619,7 +1617,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
     static const char frag_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
-        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
         layout(location = 0) out vec4 c_out;
         void main() {
             c_out = vec4(1.0);
@@ -1702,7 +1700,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     static const char vertshader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
-        layout(set = 0, binding = 0) buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
+        layout(set = 0, binding = 0) readonly buffer Input { uint u_buffer[]; } v_in; // texel_buffer[4]
         const vec2 vertices[3] = vec2[](
             vec2(-1.0, -1.0),
             vec2(1.0, -1.0),
@@ -1731,7 +1729,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     static const char frag_shader[] = R"glsl(
         #version 450
         #extension GL_EXT_debug_printf : enable
-        layout(set = 1, binding = 0) buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
+        layout(set = 1, binding = 0) readonly buffer Input { uint u_buffer[]; } f_in; // texel_buffer[4]
         layout(location = 0) out vec4 c_out;
         void main() {
             c_out = vec4(1.0);
