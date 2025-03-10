@@ -60,6 +60,11 @@ class InjectConditionalFunctionPass : public Pass {
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall
     virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
+
+    // If the shader has a 'imageArray[]' the OpVariable will point to 'imageArray' then we only need to check (in unsafe mode) each
+    // index into it once to see if the descriptor is valid or not . We marks which variables were already instrumented
+    // < Variable ID, [descriptor index IDs accessed with this variable >
+    vvl::unordered_map<uint32_t, vvl::unordered_set<uint32_t>> block_instrumented_table_;
 };
 
 }  // namespace spirv

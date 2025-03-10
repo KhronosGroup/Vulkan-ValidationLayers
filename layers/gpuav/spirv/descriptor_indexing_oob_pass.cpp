@@ -299,9 +299,9 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     }
 
     if (module_.settings_.unsafe_mode) {
-        auto variable_found_it = instrumented_table_.find(variable_id);
-        if (variable_found_it == instrumented_table_.end()) {
-            instrumented_table_[variable_id] = {descriptor_index_id_};
+        auto variable_found_it = block_instrumented_table_.find(variable_id);
+        if (variable_found_it == block_instrumented_table_.end()) {
+            block_instrumented_table_[variable_id] = {descriptor_index_id_};
         } else {
             vvl::unordered_set<uint32_t>& descriptor_index_set = variable_found_it->second;
             if (descriptor_index_set.find(descriptor_index_id_) != descriptor_index_set.end()) {
