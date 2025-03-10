@@ -43,6 +43,7 @@ struct Settings {
     // This allows anything to be set in the GLSL for the set value, as we change it at runtime
     uint32_t output_buffer_descriptor_set;
     // Reduce amount of work so compiling the pipeline/shader is quicker
+    // This is a global setting for all passes
     bool unsafe_mode;
     // Used to help debug
     bool print_debug_info;

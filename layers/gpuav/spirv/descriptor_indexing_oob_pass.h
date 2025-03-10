@@ -52,8 +52,8 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     uint32_t sampler_descriptor_index_id_ = 0;
 
     // If the shader has a 'imageArray[]' the OpVariable will point to 'imageArray' then we only need to check (in unsafe mode) each
-    // index into it once to see if the descriptor is valid or not < Variable ID, [descriptor index IDs accessed with this variable]
-    // > Marks which variables were already instrumented
+    // index into it once to see if the descriptor is valid or not . We marks which variables were already instrumented
+    // < Variable ID, [descriptor index IDs accessed with this variable >
     vvl::unordered_map<uint32_t, vvl::unordered_set<uint32_t>> instrumented_table_;
 
     // < original ID, new CopyObject ID >

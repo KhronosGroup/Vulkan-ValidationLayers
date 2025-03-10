@@ -197,7 +197,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
     return function.stage_info_id_;
 }
 
-const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) {
+const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) const {
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&
             spv::Decoration(annotation->Word(2)) == decoration) {
@@ -207,7 +207,7 @@ const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) 
     return nullptr;
 }
 
-const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) {
+const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const {
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpMemberDecorate && annotation->Word(1) == id && annotation->Word(2) == member_index &&
             spv::Decoration(annotation->Word(3)) == decoration) {
@@ -220,7 +220,7 @@ const Instruction* Pass::GetMemberDecoration(uint32_t id, uint32_t member_index,
 // In an ideal world, this would be baked into the Type class when we construct it. The core issue is OpTypeMatrix size can be
 // different depending where it is used. Because of this, we need to have a higher level view what is going on in order to correctly
 // figure out the size of a given type.
-uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) {
+uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool col_major, bool in_matrix) const {
     const Type& type = *module_.type_manager_.FindTypeById(type_id);
     switch (type.spv_type_) {
         case SpvType::kPointer:

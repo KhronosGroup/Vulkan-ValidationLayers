@@ -1011,6 +1011,68 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
     m_default_queue->Wait();
 }
 
+// Disabled as this is a perf testing test, not much value in normal CI
+TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
+    TEST_DESCRIPTION("Touching every part of a SSBO");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // Will look like
+    // layout(set = 0, binding = 0) buffer SSBO {
+    //     float a;
+    //     vec4 m[32];
+    // };
+    // void main() {
+    //     vec4 b = vec4(1.0, 2.0, 1.0, 2.0);
+    //     // Note - This is generated as 4 seperate OpLoads here
+    //     a += dot(vec4(m[0].x, m[0].y, m[0].z, m[0].w), b);
+    //     a += dot(vec4(m[31].x, m[31].y, m[31].z, m[31].w), b);
+    // }
+    const uint32_t array_count = 2;
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO {
+            float a;
+            vec4 m[)glsl";
+    cs_source << array_count << "];\n};\n";
+    cs_source << R"glsl(
+        void main() {
+            vec4 b = vec4(1.0, 2.0, 1.0, 2.0);
+    )glsl";
+
+    for (uint32_t i = 0; i < array_count; i++) {
+        cs_source << "a += dot(vec4(m[" << i << "].x, m[" << i << "].y, m[" << i << "].z, m[" << i << "].w), b);\n";
+    }
+    cs_source << "\n}";
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8377");
     SetTargetApiVersion(VK_API_VERSION_1_2);

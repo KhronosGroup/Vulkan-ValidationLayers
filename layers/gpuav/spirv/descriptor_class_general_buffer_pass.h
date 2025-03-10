@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "containers/custom_containers.h"
 #include "pass.h"
 
 namespace gpuav {
@@ -31,12 +32,16 @@ class DescriptorClassGeneralBufferPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, bool pre_pass);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data);
     void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
+
+    // Finds the offset into the SSBO/UBO
+    uint32_t GetOffsetByAccessChain(uint32_t descriptor_id, bool is_descriptor_array,
+                                    std::vector<const Instruction*>& access_chain_insts) const;
 
     // List of OpAccessChains fom the Store/Load down to the OpVariable
     // The front() will be closet to the exact spot accesssed
@@ -50,6 +55,19 @@ class DescriptorClassGeneralBufferPass : public Pass {
     uint32_t descriptor_binding_ = 0;
     uint32_t descriptor_index_id_ = 0;  // index input the descriptor array
     uint32_t descriptor_offset_id_ = 0;
+
+    // If robustBufferAccess is turned on, we can use that to ensure the hardware will handle OOB accesses (in this case it is very
+    // "safe" actually)
+    uint32_t unsafe_mode_;
+    // If there is a shader like
+    //    if (x)
+    //        ssbo.data[6] = 0;
+    //    else
+    //        ssbo.data[8] = 0;
+    // We don't know which will actually execute, but by definition a Block must execute from start to finish
+    //
+    // < Descriptor SSA ID, Highest offset >
+    vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map_;
 };
 
 }  // namespace spirv
