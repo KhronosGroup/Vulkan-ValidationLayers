@@ -2076,3 +2076,62 @@ TEST_F(PositiveWsi, CreateSwapchainImagesWithConcurrentSharingMode) {
     image_create_info.pQueueFamilyIndices = queue_family_indices;
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 }
+
+TEST_F(PositiveWsi, CreateSwapchainImagesWithExclusiveSharingMode) {
+    TEST_DESCRIPTION("Create images from swapchain with exclusive sharing mode");
+
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed to run this test";
+    }
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    uint32_t queue_family_indices[] = {m_default_queue->family_index, m_second_queue->family_index};
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &surface_caps);
+
+    VkImageFormatProperties img_format_props;
+    vk::GetPhysicalDeviceImageFormatProperties(Gpu(), m_surface_formats[0].format, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                                               VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_format_props);
+    VkExtent2D img_ext = {std::min(m_surface_capabilities.maxImageExtent.width, img_format_props.maxExtent.width),
+                          std::min(m_surface_capabilities.maxImageExtent.height, img_format_props.maxExtent.height)};
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = img_ext;
+    swapchain_ci.imageArrayLayers = 1u;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.queueFamilyIndexCount = 1u;
+    swapchain_ci.pQueueFamilyIndices = queue_family_indices;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+
+    VkImageSwapchainCreateInfoKHR image_swapchain_ci = vku::InitStructHelper();
+    image_swapchain_ci.swapchain = swapchain.handle();
+
+    VkImageCreateInfo image_create_info = vku::InitStructHelper(&image_swapchain_ci);
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.format = swapchain_ci.imageFormat;
+    image_create_info.extent.width = swapchain_ci.imageExtent.width;
+    image_create_info.extent.height = swapchain_ci.imageExtent.height;
+    image_create_info.extent.depth = 1u;
+    image_create_info.mipLevels = 1u;
+    image_create_info.arrayLayers = 1u;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.queueFamilyIndexCount = 1u;
+    image_create_info.pQueueFamilyIndices = queue_family_indices;
+    vkt::Image image(*m_device, image_create_info, vkt::no_mem);
+}
