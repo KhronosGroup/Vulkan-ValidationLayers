@@ -1083,6 +1083,41 @@ TEST_F(NegativeVideoEncode, RateControlStateMismatchNotDefault) {
     m_device->Wait();
 }
 
+TEST_F(NegativeVideoEncode, RateControlDisabledStateMismatch) {
+    TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - A case where rate control state specified as disabled");
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config =
+        GetConfig(GetConfigsWithRateControl(GetConfigsEncode(), VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR));
+
+    if (!config) {
+        GTEST_SKIP() << "Test requires video encode support with rate control disabled";
+    }
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    auto rc_info = VideoEncodeRateControlInfo(config);
+    rc_info->rateControlMode = VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DISABLED_BIT_KHR;
+
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin().RateControl(rc_info));
+    cb.ControlVideoCoding(context.Control().Reset().RateControl(rc_info));
+    cb.EndVideoCoding(context.End());
+    cb.End();
+
+    /* Should be VK_VIDEO_ENCODE_RATE_CONTROL_MODE_DEFAULT_KHR at first,
+     * and then be set through ControlVideoCoding for the disabled bit.
+     */
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-pBeginInfo-08254");
+    context.Queue().Submit(cb);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
+}
+
 TEST_F(NegativeVideoEncode, RateControlStateMismatch) {
     TEST_DESCRIPTION("vkCmdBeginVideoCodingKHR - rate control state specified does not match current configuration");
 
