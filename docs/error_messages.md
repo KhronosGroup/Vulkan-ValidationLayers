@@ -181,4 +181,4 @@ adb setprop debug.vulkan.khronos_validation.log_filename=/data/local/tmp/vvl_err
 
 # Additional information
 
-Synchronization validation detects memory hazards and has custom error conventions. Additional information about SyncVal errors can be found in the [Synchronization Validation Messages](./syncval_usage.md#synchronization-validation-messages) document.
+Synchronization validation detects memory hazards and has custom error conventions. Additional information about SyncVal errors can be found in the [Synchronization Validation Messages](./synchronization_usage.md#synchronization-validation-messages) document.
