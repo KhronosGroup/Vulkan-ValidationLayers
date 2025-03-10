@@ -21,9 +21,11 @@
 #include "cc_state_tracker.h"
 #include "core_validation.h"
 
+#if 0
 core::CommandBuffer::CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
                                    const vvl::CommandPool* pool)
     : vvl::CommandBuffer(core, handle, allocate_info, pool) {}
+#endif
 
 // Much of the data stored in vvl::CommandBuffer is only used by core validation, and is
 // set up by Record calls in class CoreChecks. Because both the state tracker and
@@ -54,6 +56,7 @@ void core::CommandBuffer::RecordWaitEvents(vvl::Func command, uint32_t eventCoun
         });
 }
 
+#if 0
 std::shared_ptr<vvl::CommandBuffer> CoreChecks::CreateCmdBufferState(VkCommandBuffer handle,
                                                                      const VkCommandBufferAllocateInfo* allocate_info,
                                                                      const vvl::CommandPool* pool) {
@@ -65,6 +68,7 @@ core::Queue::Queue(vvl::Device& dev_data, VkQueue handle, uint32_t family_index,
                    const vvl::Device& error_logger)
     : vvl::Queue(dev_data, handle, family_index, queue_index, flags, queue_family_properties),
       queue_submission_validator_(error_logger) {}
+#endif
 
 void core::Queue::Retire(vvl::QueueSubmission& submission) {
     // Call validation before parent call. Validation needs initial submission state (Retire updates state)
@@ -73,9 +77,11 @@ void core::Queue::Retire(vvl::QueueSubmission& submission) {
     vvl::Queue::Retire(submission);
 }
 
+#if 0
 std::shared_ptr<vvl::Queue> CoreChecks::CreateQueue(VkQueue handle, uint32_t family_index, uint32_t queue_index,
                                                     VkDeviceQueueCreateFlags flags,
                                                     const VkQueueFamilyProperties& queue_family_properties) {
     return std::static_pointer_cast<vvl::Queue>(
         std::make_shared<core::Queue>(*this, handle, family_index, queue_index, flags, queue_family_properties, *this));
 }
+#endif

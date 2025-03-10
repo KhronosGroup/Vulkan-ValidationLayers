@@ -160,7 +160,7 @@ struct SharedTraceRaysValidationResources final {
         shader_group_handle_size_aligned = shader_group_size_aligned;
 
         // Retrieve SBT address
-        const VkDeviceAddress sbt_address = gpuav.GetBufferDeviceAddressHelper(sbt_buffer);
+        const VkDeviceAddress sbt_address = gpuav.state_tracker->GetBufferDeviceAddressHelper(sbt_buffer);
         assert(sbt_address != 0);
         if (sbt_address == 0) {
             gpuav.InternalError(gpuav.device, loc, "Retrieved SBT buffer device address is null.");

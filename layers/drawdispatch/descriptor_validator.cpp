@@ -114,7 +114,7 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
     return ss.str();
 }
 
-DescriptorValidator::DescriptorValidator(vvl::Device &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
+DescriptorValidator::DescriptorValidator(vvl::DeviceProxy &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
                                          uint32_t set_index, VkFramebuffer framebuffer, const Location &loc)
     : dev_state(dev),
       cb_state(cb_state),
@@ -525,7 +525,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // When KHR_format_feature_flags2 is supported, the read/write without
     // format support is reported per format rather than a single physical
     // device feature.
-    if (dev_state.has_format_feature2) {
+    if (dev_state.state_tracker->has_format_feature2) {
         const VkFormatFeatureFlags2 format_features = image_view_state->format_features;
 
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
@@ -1038,7 +1038,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
     // When KHR_format_feature_flags2 is supported, the read/write without
     // format support is reported per format rather than a single physical
     // device feature.
-    if (dev_state.has_format_feature2) {
+    if (dev_state.state_tracker->has_format_feature2) {
         if (descriptor_type == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
             if ((resource_variable.info.is_read_without_format) &&
                 !(buffer_format_features & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR)) {

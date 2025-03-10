@@ -182,7 +182,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
 
     if (buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
         // After creating the buffer, get the address right away
-        device_address = gpuav.GetBufferDeviceAddressHelper(buffer);
+        device_address = gpuav.state_tracker->GetBufferDeviceAddressHelper(buffer);
         if (device_address == 0) {
             gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
             return false;
