@@ -145,9 +145,7 @@ void SharedResourcesCache::Clear() {
     shared_validation_resources_map_.clear();
 }
 
-void *Buffer::MapMemory(const Location &loc) const { return mapped_ptr; }
-
-void Buffer::UnmapMemory() const {}
+void *Buffer::GetMappedPtr(const Location &loc) const { return mapped_ptr; }
 
 void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
