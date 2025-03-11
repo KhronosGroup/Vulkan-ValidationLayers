@@ -212,3 +212,44 @@ TEST_F(PositiveSubpass, DISABLED_InputAttachmentMissingSpecConstant) {
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
+
+TEST_F(PositiveSubpass, AccessFlags3) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkMemoryBarrierAccessFlags3KHR memory_barrier_access_flags = vku::InitStructHelper();
+    memory_barrier_access_flags.srcAccessMask3 = VK_ACCESS_3_NONE_KHR;
+    memory_barrier_access_flags.dstAccessMask3 = VK_ACCESS_3_NONE_KHR;
+
+    VkMemoryBarrier2 memory_barrier = vku::InitStructHelper(&memory_barrier_access_flags);
+
+    VkSubpassDependency2 subpass_dependency = vku::InitStructHelper(&memory_barrier);
+    subpass_dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    VkAttachmentDescription2 attach_desc = vku::InitStructHelper();
+    attach_desc.format = VK_FORMAT_R32_UINT;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkAttachmentReference2 reference = vku::InitStructHelper();
+    reference.attachment = 0;
+    reference.layout = VK_IMAGE_LAYOUT_GENERAL;
+    reference.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    VkSubpassDescription2 subpass = vku::InitStructHelper();
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.viewMask = 0;
+    subpass.inputAttachmentCount = 1;
+    subpass.pInputAttachments = &reference;
+
+    auto rpci2 =
+        vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 1u, &subpass_dependency, 0u, nullptr);
+
+    PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
+}
