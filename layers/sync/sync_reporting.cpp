@@ -20,23 +20,6 @@
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
 
-void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss) {
-    ss << "{";
-    ss << logger.FormatHandle(video_picture.imageViewBinding);
-    ss << ", codedOffset (" << string_VkOffset2D(video_picture.codedOffset) << ")";
-    ss << ", codedExtent (" << string_VkExtent2D(video_picture.codedExtent) << ")";
-    ss << ", baseArrayLayer = " << video_picture.baseArrayLayer;
-    ss << "}";
-}
-
-void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
-                                std::stringstream &ss) {
-    ss << "{";
-    ss << logger.FormatHandle(quantization_map.quantizationMap);
-    ss << ", quantizationMapExtent (" << string_VkExtent2D(quantization_map.quantizationMapExtent) << ")";
-    ss << "}";
-}
-
 void ReportKeyValues::Add(std::string_view key, std::string_view value) {
     key_values.emplace_back(KeyValue{std::string(key), std::string(value)});
 }
@@ -118,21 +101,6 @@ const std::string *ReportKeyValues::FindProperty(const std::string &key) const {
     return nullptr;
 }
 
-void FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter, ReportKeyValues &key_values) {
-    const ResourceUsageRecord &record = formatter.record;
-    if (record.alt_usage) {
-        record.alt_usage.Formatter(formatter.sync_state);
-    } else {
-        // Report debug region name. Empty name means that we are not inside any debug region.
-        if (formatter.debug_name_provider) {
-            const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
-            if (!debug_region_name.empty()) {
-                key_values.Add(kPropertyPriorDebugRegion, debug_region_name);
-            }
-        }
-    }
-}
-
 static bool IsHazardVsRead(SyncHazard hazard) {
     bool vs_read = false;
     switch (hazard) {
@@ -190,13 +158,12 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFla
 }
 
 std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
-    const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags, const DeviceFeatures &features,
-    const DeviceExtensions &device_extensions) {
+    const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags) {
     if (sync_accesses.none()) {
         return {};
     }
 
-    const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(features, device_extensions);
+    const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(device.enabled_features, device.extensions);
     const VkPipelineStageFlags2 all_transfer_expand_bits = kAllTransferExpandBits & ~disabled_stages;
 
     // Build stage -> accesses mapping. OR-merge accesses that happen on the same stage.
@@ -254,7 +221,7 @@ std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccesse
             all_supported_accesses &= ~VK_ACCESS_2_SHADER_WRITE_BIT;
             // Remove unsupported accesses, otherwise the access mask won't be detected as the one that covers ALL accesses
             // TODO: ideally this should be integrated into utilities logic (need to revisit all use cases)
-            if (!IsExtEnabled(device_extensions.vk_ext_blend_operation_advanced)) {
+            if (!IsExtEnabled(device.extensions.vk_ext_blend_operation_advanced)) {
                 all_supported_accesses &= ~VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
             }
             if (accesses == all_supported_accesses) {
@@ -281,11 +248,9 @@ std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccesse
     return result;
 }
 
-std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
-                               const DeviceFeatures &features, const DeviceExtensions &device_extensions,
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property) {
-    const auto report_accesses =
-        ConvertSyncAccessesToCompactVkForm(sync_accesses, allowed_queue_flags, features, device_extensions);
+    const auto report_accesses = ConvertSyncAccessesToCompactVkForm(sync_accesses, device, allowed_queue_flags);
     if (report_accesses.empty()) {
         return "0";
     }
@@ -325,28 +290,26 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
            ")";
 }
 
-static void FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags, const DeviceFeatures &features,
-                              const DeviceExtensions &device_extensions, ReportKeyValues &key_values) {
+void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+                         ReportKeyValues &key_values) {
+    const HazardResult::HazardState &hazard = hazard_result.State();
     const auto &usage_info = GetSyncAccessInfos()[hazard.access_index];
     const auto &prior_usage_info = GetSyncAccessInfos()[hazard.prior_access_index];
+
     if (!hazard.recorded_access.get()) {
         key_values.Add(kPropertyAccess, FormatAccessProperty(usage_info));
     }
     key_values.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
+
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
         key_values.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
-        const std::string property_barriers_str = FormatSyncAccesses(barriers, queue_flags, features, device_extensions, true);
+        const std::string property_barriers_str = FormatSyncAccesses(barriers, device, allowed_queue_flags, true);
         key_values.Add(kPropertyWriteBarriers, property_barriers_str);
     }
-}
-
-void CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
-    FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.extensions, key_values);
-    FormatUsage(hazard.TagEx(), key_values);
 }
 
 static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider, const ResourceUsageRecord &record,
@@ -384,25 +347,31 @@ ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagE
     return GetReportUsageInfoFromRecord(debug_name_provider, record, tag_ex);
 }
 
-void CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
+std::string CommandBufferAccessContext::GetDebugRegionName(ResourceUsageTagEx tag_ex) const {
     // TODO: should not happen? investiage and potentially remove
     if (tag_ex.tag >= access_log_->size()) {
-        return;
+        return {};
     }
     const auto &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    FormatResourceUsageRecord(record.Formatter(sync_state_, debug_name_provider, tag_ex.handle_index), extra_properties);
+    if (!debug_name_provider) {
+        return {};
+    }
+    return debug_name_provider->GetDebugRegionName(record);
 }
 
-void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
-    if (tag >= access_log_->size()) return;
-    const ResourceUsageRecord &record = (*access_log_)[tag];
-    extra_properties.Add(kPropertyPriorCommand, vvl::String(record.command));
-    extra_properties.Add(kPropertySeqNo, record.seq_num);
-    if (record.sub_command != 0) {
-        extra_properties.Add(kPropertySubCmd, record.sub_command);
+void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const {
+    // TODO: should never happen? investigate this and potentially remove
+    if (tag >= access_log_->size()) {
+        return;
     }
-    extra_properties.Add(kPropertyResetNo, record.reset_count);
+    const ResourceUsageRecord &record = (*access_log_)[tag];
+    properties.Add(kPropertyPriorCommand, vvl::String(record.command));
+    properties.Add(kPropertySeqNo, record.seq_num);
+    if (record.sub_command != 0) {
+        properties.Add(kPropertySubCmd, record.sub_command);
+    }
+    properties.Add(kPropertyResetNo, record.reset_count);
 }
 
 ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
@@ -422,20 +391,40 @@ ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex)
     return info;
 }
 
-void QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
+std::string QueueBatchContext::GetDebugRegionName(ResourceUsageTagEx tag_ex) const {
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
+    if (!access.IsValid()) {
+        return {};
+    }
+    if (!access.debug_name_provider) {
+        return {};
+    }
+    return access.debug_name_provider->GetDebugRegionName(*access.record);
+}
+
+void QueueBatchContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const {
+    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
     if (access.IsValid()) {
-        const ResourceUsageRecord &record = *access.record;
-        FormatResourceUsageRecord(record.Formatter(sync_state_, access.debug_name_provider, tag_ex.handle_index), extra_properties);
+        properties.Add(kPropertyBatchTag, access.batch->base_tag);
+        if (access.record->command != vvl::Func::Empty) {
+            properties.Add(kPropertyPriorCommand, vvl::String(access.record->command));
+        }
     }
 }
 
-void QueueBatchContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
-    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
-    if (access.IsValid()) {
-        extra_properties.Add(kPropertyBatchTag, access.batch->base_tag);
-        if (access.record->command != vvl::Func::Empty) {
-            extra_properties.Add(kPropertyPriorCommand, vvl::String(access.record->command));
-        }
-    }
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss) {
+    ss << "{";
+    ss << logger.FormatHandle(video_picture.imageViewBinding);
+    ss << ", codedOffset (" << string_VkOffset2D(video_picture.codedOffset) << ")";
+    ss << ", codedExtent (" << string_VkExtent2D(video_picture.codedExtent) << ")";
+    ss << ", baseArrayLayer = " << video_picture.baseArrayLayer;
+    ss << "}";
+}
+
+void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
+                                std::stringstream &ss) {
+    ss << "{";
+    ss << logger.FormatHandle(quantization_map.quantizationMap);
+    ss << ", quantizationMapExtent (" << string_VkExtent2D(quantization_map.quantizationMapExtent) << ")";
+    ss << "}";
 }

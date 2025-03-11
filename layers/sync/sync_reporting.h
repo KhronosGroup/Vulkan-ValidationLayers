@@ -23,19 +23,12 @@
 
 namespace vvl {
 class CommandBuffer;
-class StateObject;
-class Image;
+class Device;
 class Queue;
 }  // namespace vvl
+class HazardResult;
 class Logger;
-class DebugReport;
-class SyncValidator;
-struct DeviceFeatures;
-struct DeviceExtensions;
 
-void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
-void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
-                                std::stringstream &ss);
 struct ReportKeyValues {
     struct KeyValue {
         std::string key;
@@ -60,13 +53,18 @@ struct ReportUsageInfo {
     uint32_t batch_index = 0;
 };
 
-std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
-    const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags, const DeviceFeatures &features,
-    const DeviceExtensions &device_extensions);
+void GetAccessProperties(const HazardResult &hazard, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+                         ReportKeyValues &key_values);
 
-std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, VkQueueFlags allowed_queue_flags,
-                               const DeviceFeatures &features, const DeviceExtensions &device_extensions,
+std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
+    const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags);
+
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);
+
+void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
+void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
+                                std::stringstream &ss);
 
 inline constexpr const char *kPropertyMessageType = "message_type";
 inline constexpr const char *kPropertyHazardType = "hazard_type";

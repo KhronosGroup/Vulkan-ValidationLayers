@@ -37,15 +37,6 @@ class AlternateResourceUsage {
         virtual ~RecordBase() {}
     };
 
-    struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const AlternateResourceUsage &usage_)
-            : sync_state(sync_state_), usage(usage_) {}
-        const SyncValidator &sync_state;
-        const AlternateResourceUsage &usage;
-    };
-
-    FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); };
-
     vvl::Func GetCommand() const { return record_->GetCommand(); }
     AlternateResourceUsage() = default;
     AlternateResourceUsage(const RecordBase &record) : record_(record.MakeRecord()) {}
@@ -124,20 +115,6 @@ struct ResourceCmdUsageRecord {
 struct DebugNameProvider;
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
-    struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_,
-                       const DebugNameProvider *debug_name_provider_, uint32_t handle_index)
-            : sync_state(sync_state_), record(record_), debug_name_provider(debug_name_provider_), handle_index(handle_index) {}
-        const SyncValidator &sync_state;
-        const ResourceUsageRecord &record;
-        const DebugNameProvider *debug_name_provider;
-        uint32_t handle_index;
-    };
-    FormatterState Formatter(const SyncValidator &sync_state, const DebugNameProvider *debug_name_provider,
-                             uint32_t handle_index) const {
-        return FormatterState(sync_state, *this, debug_name_provider, handle_index);
-    }
-
     AlternateResourceUsage alt_usage;
 
     ResourceUsageRecord() = default;
@@ -171,10 +148,10 @@ class CommandExecutionContext {
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
-    virtual void FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const = 0;
-    virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
+    virtual std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const = 0;
 
-    void FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
+    virtual void AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const = 0;
+
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -225,8 +202,8 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void Reset();
 
     ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    void FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
-    void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
+    std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const override;
+    void AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
