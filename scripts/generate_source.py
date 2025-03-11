@@ -432,6 +432,8 @@ def main(argv):
         'instrumentation_buffer_device_address_comp.cpp',
         'instrumentation_descriptor_indexing_oob_bindless_comp.h',
         'instrumentation_descriptor_indexing_oob_bindless_comp.cpp',
+        'instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.h',
+        'instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.cpp',
         'instrumentation_descriptor_indexing_oob_non_bindless_comp.h',
         'instrumentation_descriptor_indexing_oob_non_bindless_comp.cpp',
         'instrumentation_descriptor_class_general_buffer_comp.h',

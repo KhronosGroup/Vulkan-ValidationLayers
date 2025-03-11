@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include "generated/instrumentation_descriptor_indexing_oob_bindless_comp.h"
+#include "generated/instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.h"
 #include "generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 
@@ -32,17 +33,43 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
     static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
                                           instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
                                           "inst_descriptor_indexing_oob_bindless"};
+
+    static LinkInfo link_info_bindless_combined_image_sampler = {
+        instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
+        instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size, 0,
+        "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
+
     static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
                                               instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
                                               "inst_descriptor_indexing_oob_non_bindless"};
 
-    if (link_function_id == 0) {
-        link_function_id = module_.TakeNextId();
-        LinkInfo& link_info = module_.has_bindless_descriptors_ ? link_info_bindless : link_info_non_bindless;
-        link_info.function_id = link_function_id;
-        module_.link_info_.push_back(link_info);
+    uint32_t link_id = 0;
+    if (!module_.has_bindless_descriptors_) {
+        if (link_function_id_non_bindless_ == 0) {
+            link_function_id_non_bindless_ = module_.TakeNextId();
+            LinkInfo& link_info = link_info_non_bindless;
+            link_info.function_id = link_function_id_non_bindless_;
+            module_.link_info_.push_back(link_info);
+        }
+        link_id = link_function_id_non_bindless_;
+    } else if (is_combined_image_sampler_) {
+        if (link_function_id_bindless_combined_image_sampler_ == 0) {
+            link_function_id_bindless_combined_image_sampler_ = module_.TakeNextId();
+            LinkInfo& link_info = link_info_bindless_combined_image_sampler;
+            link_info.function_id = link_function_id_bindless_combined_image_sampler_;
+            module_.link_info_.push_back(link_info);
+        }
+        link_id = link_function_id_bindless_combined_image_sampler_;
+    } else {
+        if (link_function_id_bindless_ == 0) {
+            link_function_id_bindless_ = module_.TakeNextId();
+            LinkInfo& link_info = link_info_bindless;
+            link_info.function_id = link_function_id_bindless_;
+            module_.link_info_.push_back(link_info);
+        }
+        link_id = link_function_id_bindless_;
     }
-    return link_function_id;
+    return link_id;
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
@@ -128,6 +155,7 @@ void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&) { block_instrumented
 void DescriptorIndexingOOBPass::Reset() {
     var_inst_ = nullptr;
     sampler_var_inst_ = nullptr;
+    is_combined_image_sampler_ = false;
     image_inst_ = nullptr;
     target_instruction_ = nullptr;
     descriptor_set_ = 0;
@@ -244,6 +272,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
                 sampler_load_inst = function.FindInstruction(load_inst->Operand(1));
             }
         }
+
+        // If we can't find a seperate sampler, and non sampled images are check elsewhere, we know this is actually a combined
+        // image sampler
+        is_combined_image_sampler_ = sampler_load_inst == nullptr;
+
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
             return false;  // TODO: Handle additional possibilities?
         }
