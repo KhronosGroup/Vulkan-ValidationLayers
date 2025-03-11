@@ -12011,6 +12011,7 @@ bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent 
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdSetEvent2(commandBuffer, event, pDependencyInfo, context);
     return skip;
 }
 
@@ -12202,6 +12203,7 @@ bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, context);
     return skip;
 }
 
@@ -12357,6 +12359,7 @@ bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, c
             }
         }
     }
+    if (!skip) skip |= manual_PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, context);
     return skip;
 }
 
