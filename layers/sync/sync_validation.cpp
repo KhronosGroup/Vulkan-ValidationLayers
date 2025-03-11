@@ -3024,10 +3024,10 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
             const auto subcommand = ResourceUsageRecord::SubcommandType::kIndex;
             if (cb_index == 0) {
                 ResourceUsageTag cb_tag = cb_context->NextCommandTag(record_obj.location.function, subcommand);
-                cb_context->AddCommandHandle(cb_tag, recorded_cb->Handle(), cb_index);
+                cb_context->AddCommandHandleIndexed(cb_tag, recorded_cb->Handle(), cb_index);
             } else {
                 ResourceUsageTag cb_tag = cb_context->NextSubcommandTag(record_obj.location.function, subcommand);
-                cb_context->AddSubcommandHandle(cb_tag, recorded_cb->Handle(), cb_index);
+                cb_context->AddSubcommandHandleIndexed(cb_tag, recorded_cb->Handle(), cb_index);
             }
             cb_context->RecordExecutedCommandBuffer(recorded_cb->access_context);
         }

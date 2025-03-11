@@ -648,29 +648,9 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
 QueueBatchContext::PresentResourceRecord::Base_::Record QueueBatchContext::PresentResourceRecord::MakeRecord() const {
     return std::make_unique<PresentResourceRecord>(presented_);
 }
-std::ostream& QueueBatchContext::PresentResourceRecord::Format(std::ostream& out, const SyncValidator& sync_state) const {
-    out << "vkQueuePresentKHR ";
-    out << "present_tag:" << presented_.tag;
-    out << ", pSwapchains[" << presented_.present_index << "]";
-    out << ": " << FormatStateObject(SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get()));
-    out << ", image_index: " << presented_.image_index;
-    out << FormatStateObject(SyncNodeFormatter(sync_state, presented_.image.get()));
-
-    return out;
-}
 
 QueueBatchContext::AcquireResourceRecord::Base_::Record QueueBatchContext::AcquireResourceRecord::MakeRecord() const {
     return std::make_unique<AcquireResourceRecord>(presented_, acquire_tag_, command_);
-}
-
-std::ostream& QueueBatchContext::AcquireResourceRecord::Format(std::ostream& out, const SyncValidator& sync_state) const {
-    out << vvl::String(command_) << " ";
-    out << "aquire_tag:" << acquire_tag_;
-    out << ": " << FormatStateObject(SyncNodeFormatter(sync_state, presented_.swapchain_state.lock().get()));
-    out << ", image_index: " << presented_.image_index;
-    out << FormatStateObject(SyncNodeFormatter(sync_state, presented_.image.get()));
-
-    return out;
 }
 
 std::vector<QueueBatchContext::ConstPtr> SyncValidator::GetLastBatches(

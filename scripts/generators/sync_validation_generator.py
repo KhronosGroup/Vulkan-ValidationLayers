@@ -204,7 +204,7 @@ struct SyncAccessInfo {{
 }};
 
 // Array of text names and component masks for each stage/access index
-const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& syncAccessInfoByAccessIndex();
+const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& GetSyncAccessInfos();
 
 ''')
 
@@ -251,9 +251,9 @@ const vvl::unordered_map<VkPipelineStageFlagBits2, VkPipelineStageFlags2>& syncL
             #include "sync_validation_types.h"
             ''')
 
-        # syncAccessInfoByAccessIndex
+        # GetSyncAccessInfos
         out.append('// clang-format off\n')
-        out.append(f'const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& syncAccessInfoByAccessIndex() {{\n')
+        out.append(f'const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}>& GetSyncAccessInfos() {{\n')
         out.append(f'static const std::array<SyncAccessInfo, {len(self.stageAccessCombo)}> variable = {{ {{\n')
         for stageAccess in self.stageAccessCombo:
             out.append(f'''    {{

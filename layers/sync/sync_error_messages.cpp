@@ -98,8 +98,8 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
-    const SyncAccessInfo& access = syncAccessInfoByAccessIndex()[hazard.State().access_index];
-    const SyncAccessInfo& prior_access = syncAccessInfoByAccessIndex()[hazard.State().prior_access_index];
+    const SyncAccessInfo& access = GetSyncAccessInfos()[hazard.State().access_index];
+    const SyncAccessInfo& prior_access = GetSyncAccessInfos()[hazard.State().prior_access_index];
 
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
     const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);

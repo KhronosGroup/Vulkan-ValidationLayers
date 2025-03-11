@@ -33,7 +33,6 @@ class AlternateResourceUsage {
     struct RecordBase {
         using Record = std::unique_ptr<RecordBase>;
         virtual Record MakeRecord() const = 0;
-        virtual std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const = 0;
         virtual vvl::Func GetCommand() const = 0;
         virtual ~RecordBase() {}
     };
@@ -47,7 +46,6 @@ class AlternateResourceUsage {
 
     FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); };
 
-    std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const { return record_->Format(out, sync_state); };
     vvl::Func GetCommand() const { return record_->GetCommand(); }
     AlternateResourceUsage() = default;
     AlternateResourceUsage(const RecordBase &record) : record_(record.MakeRecord()) {}
@@ -71,23 +69,6 @@ class AlternateResourceUsage {
     RecordBase::Record record_;
 };
 
-inline std::ostream &operator<<(std::ostream &out, const AlternateResourceUsage::FormatterState &formatter) {
-    formatter.usage.Format(out, formatter.sync_state);
-    return out;
-}
-
-template <typename State, typename T>
-struct FormatterImpl {
-    using That = T;
-    friend T;
-    const State &state;
-    const That &that;
-
-  private:
-    // Only intended to be invoke with from That method
-    FormatterImpl(const State &state_, const That &that_) : state(state_), that(that_) {}
-};
-
 // Vulkan handle and associated information.
 // Command buffer context stores array of handles that are referenced by the tagged commands.
 // VulkanTypedHandle is stored in unpacked form to avoid structure padding gaps.
@@ -107,8 +88,6 @@ struct HandleRecord {
         typed_handle.type = type;
         return typed_handle;
     }
-    using FormatterState = FormatterImpl<SyncValidator, HandleRecord>;
-    FormatterState Formatter(const SyncValidator &sync_state) const { return FormatterState(sync_state, *this); }
 };
 
 struct ResourceCmdUsageRecord {
@@ -146,22 +125,17 @@ struct DebugNameProvider;
 
 struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     struct FormatterState {
-        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_, const vvl::CommandBuffer *cb_state_,
+        FormatterState(const SyncValidator &sync_state_, const ResourceUsageRecord &record_,
                        const DebugNameProvider *debug_name_provider_, uint32_t handle_index)
-            : sync_state(sync_state_),
-              record(record_),
-              ex_cb_state(cb_state_),
-              debug_name_provider(debug_name_provider_),
-              handle_index(handle_index) {}
+            : sync_state(sync_state_), record(record_), debug_name_provider(debug_name_provider_), handle_index(handle_index) {}
         const SyncValidator &sync_state;
         const ResourceUsageRecord &record;
-        const vvl::CommandBuffer *ex_cb_state;
         const DebugNameProvider *debug_name_provider;
         uint32_t handle_index;
     };
-    FormatterState Formatter(const SyncValidator &sync_state, const vvl::CommandBuffer *ex_cb_state,
-                             const DebugNameProvider *debug_name_provider, uint32_t handle_index) const {
-        return FormatterState(sync_state, *this, ex_cb_state, debug_name_provider, handle_index);
+    FormatterState Formatter(const SyncValidator &sync_state, const DebugNameProvider *debug_name_provider,
+                             uint32_t handle_index) const {
+        return FormatterState(sync_state, *this, debug_name_provider, handle_index);
     }
 
     AlternateResourceUsage alt_usage;
@@ -197,10 +171,10 @@ class CommandExecutionContext {
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
-    virtual std::string FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const = 0;
+    virtual void FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const = 0;
     virtual void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const = 0;
 
-    std::string FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
+    void FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const;
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
     VkQueueFlags GetQueueFlags() const { return queue_flags_; }
@@ -251,7 +225,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void Reset();
 
     ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    std::string FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
+    void FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
     void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
@@ -301,12 +275,12 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
                                     ResourceUsageRecord::SubcommandType subcommand = ResourceUsageRecord::SubcommandType::kNone);
     ResourceUsageTag NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand);
 
-    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
-                                        uint32_t index = vvl::kNoIndex32);
+    ResourceUsageTagEx AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle);
+    ResourceUsageTagEx AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
 
     // Default subcommand behavior is that it references the same handles as the main command.
     // The following method allows to set subcommand handles independently of the main command.
-    void AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index = vvl::kNoIndex32);
+    void AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index);
 
     const std::vector<HandleRecord> &GetHandleRecords() const { return handles_; }
 

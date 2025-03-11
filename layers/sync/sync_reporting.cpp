@@ -37,34 +37,6 @@ void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantiz
     ss << "}";
 }
 
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state)
-    : debug_report(sync_state.debug_report), node(cb_state), label("command_buffer") {}
-
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image)
-    : debug_report(sync_state.debug_report), node(image), label("image") {}
-
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state)
-    : debug_report(sync_state.debug_report), node(q_state), label("queue") {}
-
-SyncNodeFormatter::SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_)
-    : debug_report(sync_state.debug_report), node(state_object), label(label_) {}
-
-std::string FormatStateObject(const SyncNodeFormatter &formatter) {
-    std::stringstream out;
-    if (formatter.label) {
-        out << formatter.label << ": ";
-    }
-    if (formatter.node) {
-        out << formatter.debug_report->FormatHandle(*formatter.node).c_str();
-        if (formatter.node->Destroyed()) {
-            out << " (destroyed)";
-        }
-    } else {
-        out << "null handle";
-    }
-    return out.str();
-}
-
 void ReportKeyValues::Add(std::string_view key, std::string_view value) {
     key_values.emplace_back(KeyValue{std::string(key), std::string(value)});
 }
@@ -146,70 +118,19 @@ const std::string *ReportKeyValues::FindProperty(const std::string &key) const {
     return nullptr;
 }
 
-static std::string FormatHandleRecord(const HandleRecord::FormatterState &formatter) {
-    std::stringstream out;
-    const HandleRecord &handle = formatter.that;
-    bool labeled = false;
-
-    // Hardcode possible options in order not to store string per HandleRecord object.
-    // If more general solution is needed the preference should be to store const char*
-    // literal (8 bytes on 64 bit) instead of std::string which, even if empty,
-    // can occupy 40 bytes, as was observed in one implementation. HandleRecord is memory
-    // sensitive object (there can be a lot of instances).
-    if (handle.type == kVulkanObjectTypeRenderPass) {
-        out << "renderpass";
-        labeled = true;
-    } else if (handle.type == kVulkanObjectTypeCommandBuffer && handle.IsIndexed()) {
-        out << "pCommandBuffers";
-        labeled = true;
-    }
-
-    if (handle.IsIndexed()) {
-        out << "[" << handle.index << "]";
-        labeled = true;
-    }
-    if (labeled) {
-        out << ": ";
-    }
-    out << formatter.state.FormatHandle(handle.TypedHandle());
-    return out.str();
-}
-
-static std::string FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter, ReportKeyValues &key_values) {
-    std::stringstream out;
+void FormatResourceUsageRecord(const ResourceUsageRecord::FormatterState &formatter, ReportKeyValues &key_values) {
     const ResourceUsageRecord &record = formatter.record;
     if (record.alt_usage) {
-        out << record.alt_usage.Formatter(formatter.sync_state);
+        record.alt_usage.Formatter(formatter.sync_state);
     } else {
-        out << "command: " << vvl::String(record.command);
-        // Note: ex_cb_state set to null forces output of record.cb_state
-        if (!formatter.ex_cb_state || (formatter.ex_cb_state != record.cb_state)) {
-            out << ", " << FormatStateObject(SyncNodeFormatter(formatter.sync_state, record.cb_state));
-        }
-
-        // Associated resource
-        if (formatter.handle_index != vvl::kNoIndex32) {
-            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
-            const auto handle_records = cb_context->access_context.GetHandleRecords();
-
-            // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
-            // In this case the goal is not to crash, no guarantees that reported information (handle index) makes sense.
-            const bool valid_handle_index = formatter.handle_index < handle_records.size();
-
-            if (valid_handle_index) {
-                out << ", resource: " << FormatHandleRecord(handle_records[formatter.handle_index].Formatter(formatter.sync_state));
-            }
-        }
         // Report debug region name. Empty name means that we are not inside any debug region.
         if (formatter.debug_name_provider) {
             const std::string debug_region_name = formatter.debug_name_provider->GetDebugRegionName(record);
             if (!debug_region_name.empty()) {
-                out << ", debug_region: " << debug_region_name;
                 key_values.Add(kPropertyPriorDebugRegion, debug_region_name);
             }
         }
     }
-    return out.str();
 }
 
 static bool IsHazardVsRead(SyncHazard hazard) {
@@ -242,7 +163,7 @@ static VkPipelineStageFlags2 GetAllowedStages(VkQueueFlags queue_flags, VkPipeli
 
 static SyncAccessFlags FilterSyncAccessesByAllowedVkStages(const SyncAccessFlags &accesses, VkPipelineStageFlags2 allowed_stages) {
     SyncAccessFlags filtered_accesses = accesses;
-    const auto &access_infos = syncAccessInfoByAccessIndex();
+    const auto &access_infos = GetSyncAccessInfos();
     for (size_t i = 0; i < access_infos.size(); i++) {
         const SyncAccessInfo &access_info = access_infos[i];
         const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
@@ -255,7 +176,7 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkStages(const SyncAccessFlags
 
 static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFlags &accesses, VkAccessFlags2 allowed_vk_accesses) {
     SyncAccessFlags filtered_accesses = accesses;
-    const auto &access_infos = syncAccessInfoByAccessIndex();
+    const auto &access_infos = GetSyncAccessInfos();
     for (size_t i = 0; i < access_infos.size(); i++) {
         const SyncAccessInfo &access_info = access_infos[i];
         if (filtered_accesses[i]) {
@@ -300,7 +221,7 @@ std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccesse
         } else {
             for (size_t i = 0; i < filtered_accesses.size(); i++) {
                 if (filtered_accesses[i]) {
-                    const SyncAccessInfo &info = syncAccessInfoByAccessIndex()[i];
+                    const SyncAccessInfo &info = GetSyncAccessInfos()[i];
                     stage_to_accesses[info.stage_mask] |= info.access_mask;
                 }
             }
@@ -404,45 +325,28 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
            ")";
 }
 
-static std::string FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags,
-                                     const DeviceFeatures &features, const DeviceExtensions &device_extensions,
-                                     ReportKeyValues &key_values) {
-    std::stringstream out;
-    assert(hazard.access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
-    assert(hazard.prior_access_index < static_cast<SyncAccessIndex>(syncAccessInfoByAccessIndex().size()));
-    const auto &usage_info = syncAccessInfoByAccessIndex()[hazard.access_index];
-    const auto &prior_usage_info = syncAccessInfoByAccessIndex()[hazard.prior_access_index];
-    out << "(";
+static void FormatHazardState(const HazardResult::HazardState &hazard, VkQueueFlags queue_flags, const DeviceFeatures &features,
+                              const DeviceExtensions &device_extensions, ReportKeyValues &key_values) {
+    const auto &usage_info = GetSyncAccessInfos()[hazard.access_index];
+    const auto &prior_usage_info = GetSyncAccessInfos()[hazard.prior_access_index];
     if (!hazard.recorded_access.get()) {
-        // if we have a recorded usage the usage is reported from the recorded contexts point of view
-        out << "usage: " << usage_info.name << ", ";
         key_values.Add(kPropertyAccess, FormatAccessProperty(usage_info));
     }
-    out << "prior_usage: " << prior_usage_info.name;
     key_values.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
-        out << ", read_barriers: " << barriers_str;
         key_values.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
-
-        const std::string message_barriers_str = FormatSyncAccesses(barriers, queue_flags, features, device_extensions, false);
-        out << ", write_barriers: " << message_barriers_str;
-
         const std::string property_barriers_str = FormatSyncAccesses(barriers, queue_flags, features, device_extensions, true);
         key_values.Add(kPropertyWriteBarriers, property_barriers_str);
     }
-    return out.str();
 }
 
-std::string CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
-    std::stringstream out;
-    assert(hazard.IsHazard());
-    out << FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.extensions, key_values);
-    out << ", " << FormatUsage(hazard.TagEx(), key_values) << ")";
-    return out.str();
+void CommandExecutionContext::FormatHazard(const HazardResult &hazard, ReportKeyValues &key_values) const {
+    FormatHazardState(hazard.State(), queue_flags_, sync_state_.enabled_features, sync_state_.extensions, key_values);
+    FormatUsage(hazard.TagEx(), key_values);
 }
 
 static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider, const ResourceUsageRecord &record,
@@ -462,6 +366,7 @@ static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *deb
             const bool valid_handle_index = tag_ex.handle_index < handle_records.size();
             if (valid_handle_index) {
                 info.resource_handle = handle_records[tag_ex.handle_index].TypedHandle();
+                // TODO: also extract optional index or get rid of index
             }
         }
         // Debug region name. Empty name means that we are not inside any debug region.
@@ -479,16 +384,14 @@ ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagE
     return GetReportUsageInfoFromRecord(debug_name_provider, record, tag_ex);
 }
 
-std::string CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
-    if (tag_ex.tag >= access_log_->size()) return std::string();
-
-    std::stringstream out;
-    assert(tag_ex.tag < access_log_->size());
+void CommandBufferAccessContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
+    // TODO: should not happen? investiage and potentially remove
+    if (tag_ex.tag >= access_log_->size()) {
+        return;
+    }
     const auto &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    out << FormatResourceUsageRecord(record.Formatter(sync_state_, cb_state_, debug_name_provider, tag_ex.handle_index),
-                                     extra_properties);
-    return out.str();
+    FormatResourceUsageRecord(record.Formatter(sync_state_, debug_name_provider, tag_ex.handle_index), extra_properties);
 }
 
 void CommandBufferAccessContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {
@@ -519,21 +422,12 @@ ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex)
     return info;
 }
 
-std::string QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
-    std::stringstream out;
+void QueueBatchContext::FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const {
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
     if (access.IsValid()) {
-        const BatchAccessLog::BatchRecord &batch = *access.batch;
         const ResourceUsageRecord &record = *access.record;
-        if (batch.queue) {
-            // Queue and Batch information (for enqueued operations)
-            out << FormatStateObject(SyncNodeFormatter(sync_state_, batch.queue->GetQueueState()));
-            out << ", submit: " << batch.submit_index << ", batch: " << batch.batch_index << ", ";
-        }
-        out << FormatResourceUsageRecord(record.Formatter(sync_state_, nullptr, access.debug_name_provider, tag_ex.handle_index),
-                                         extra_properties);
+        FormatResourceUsageRecord(record.Formatter(sync_state_, access.debug_name_provider, tag_ex.handle_index), extra_properties);
     }
-    return out.str();
 }
 
 void QueueBatchContext::AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const {

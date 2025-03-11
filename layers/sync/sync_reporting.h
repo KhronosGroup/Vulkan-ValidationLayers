@@ -36,19 +36,6 @@ struct DeviceExtensions;
 void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
                                 std::stringstream &ss);
-
-struct SyncNodeFormatter {
-    const DebugReport *debug_report;
-    const vvl::StateObject *node;
-    const char *label;
-
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::CommandBuffer *cb_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Image *image);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::Queue *q_state);
-    SyncNodeFormatter(const SyncValidator &sync_state, const vvl::StateObject *state_object, const char *label_ = nullptr);
-};
-std::string FormatStateObject(const SyncNodeFormatter &formatter);
-
 struct ReportKeyValues {
     struct KeyValue {
         std::string key;
