@@ -382,7 +382,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
 
         const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
             GetVertexAttributeFetchLimits(cb_state);
-        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer.MapMemory(loc);
+        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer.GetMappedPtr(loc);
         if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
             vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
             vertex_attribute_fetch_limits_buffer_ptr[1] =
@@ -400,7 +400,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
             vertex_attribute_fetch_limits_buffer_ptr[3] = std::numeric_limits<uint32_t>::max();
         }
 
-        vertex_attribute_fetch_limits_buffer.UnmapMemory();
         out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
             vertex_attribute_fetch_limit_vertex_input_rate;
         out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =

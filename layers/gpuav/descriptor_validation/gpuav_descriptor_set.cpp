@@ -219,7 +219,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
         return 0;
     }
 
-    auto data = (glsl::DescriptorState *)input_buffer_.MapMemory(loc);
+    auto data = (glsl::DescriptorState *)input_buffer_.GetMappedPtr(loc);
 
     uint32_t index = 0;
     for (uint32_t i = 0; i < bindings_.size(); i++) {
@@ -256,7 +256,6 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
     input_buffer_.FlushAllocation(loc);
-    input_buffer_.UnmapMemory();
 
     return input_buffer_.Address();
 }
@@ -297,11 +296,10 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 
     VVL_TracyPlot("Post process buffer size (bytes)", int64_t(buffer_info.size));
 
-    void *data = post_process_buffer_.MapMemory(loc);
+    void *data = post_process_buffer_.GetMappedPtr(loc);
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     post_process_buffer_.FlushAllocation(loc);
-    post_process_buffer_.UnmapMemory();
 
     return post_process_buffer_.Address();
 }
@@ -315,7 +313,7 @@ std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Locatio
         return descriptor_accesses;
     }
 
-    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.MapMemory(loc);
+    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr(loc);
     post_process_buffer_.InvalidateAllocation(loc);
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
@@ -330,7 +328,6 @@ std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Locatio
         }
     }
 
-    post_process_buffer_.UnmapMemory();
     return descriptor_accesses;
 }
 
@@ -368,13 +365,12 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
         return;
     }
 
-    gpu_heap_state_ = (uint32_t *)buffer_.MapMemory(loc);
+    gpu_heap_state_ = (uint32_t *)buffer_.GetMappedPtr(loc);
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
 }
 
 DescriptorHeap::~DescriptorHeap() {
     if (max_descriptors_ > 0) {
-        buffer_.UnmapMemory();
         buffer_.Destroy();
         gpu_heap_state_ = nullptr;
     }

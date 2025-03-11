@@ -60,8 +60,7 @@ class Buffer {
     // Warps VMA calls to simplify error reporting.
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
 
-    [[nodiscard]] void *MapMemory(const Location &loc) const;
-    void UnmapMemory() const;
+    [[nodiscard]] void *GetMappedPtr(const Location &loc) const;
     void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
     void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 

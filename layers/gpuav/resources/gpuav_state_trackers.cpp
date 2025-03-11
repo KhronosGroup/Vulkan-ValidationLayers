@@ -148,14 +148,13 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
         return false;
     }
 
-    auto output_buffer_ptr = (uint32_t *)error_output_buffer.MapMemory(loc);
+    auto output_buffer_ptr = (uint32_t *)error_output_buffer.GetMappedPtr(loc);
 
     memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
     if (gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
         output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
     }
 
-    error_output_buffer.UnmapMemory();
     return true;
 }
 
@@ -311,7 +310,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     // Update buffer device address table
     // ---
-    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.MapMemory(loc);
+    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.GetMappedPtr(loc);
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
@@ -343,7 +342,6 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // ---
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     bda_ranges_snapshot_.FlushAllocation(loc);
-    bda_ranges_snapshot_.UnmapMemory();
     bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
 
     return true;
@@ -429,9 +427,8 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
-    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.MapMemory(loc);
+    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.GetMappedPtr(loc);
     std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
-    cmd_errors_counts_buffer_.UnmapMemory();
 }
 
 void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
@@ -490,9 +487,8 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
-        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.MapMemory(loc);
+        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.GetMappedPtr(loc);
         debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
-        printf_buffer_info.output_mem_buffer.UnmapMemory();
     }
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -504,7 +500,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
 
     bool skip = false;
     {
-        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_.MapMemory(loc);
+        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_.GetMappedPtr(loc);
 
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.
@@ -544,7 +540,6 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
                    glsl::kErrorBufferByteSize - cst::stream_output_data_offset * sizeof(uint32_t));
         }
         error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
-        error_output_buffer_.UnmapMemory();
     }
 
     ClearCmdErrorsCountsBuffer(loc);
