@@ -1196,8 +1196,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         modified |= oob_pass.Run();
 
         // Depending on the DescriptorClass, will add dedicated check
-        spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
-        modified |= general_buffer_pass.Run();
+        if (!modified_features.robustBufferAccess) {
+            // This check is for catching OOB in a UBO/SSBO which is caught with robustBufferAccess
+            spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
+            modified |= general_buffer_pass.Run();
+        }
         spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
         modified |= texel_buffer_pass.Run();
     }

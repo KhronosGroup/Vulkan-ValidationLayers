@@ -609,25 +609,7 @@
                                                     { "key": "gpuav_enable", "value": true },
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_warn_on_robust_oob",
-                                                    "label": "Generate warning on out of bounds accesses even if buffer robustness is enabled",
-                                                    "description": "Warn on out of bounds accesses even if robustness is enabled",
-                                                    "type": "BOOL",
-                                                    "default": true,
-                                                    "platforms": [ "WINDOWS", "LINUX" ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            { "key": "gpuav_enable", "value": true },
-                                                            { "key": "gpuav_shader_instrumentation", "value": true },
-                                                            { "key": "gpuav_descriptor_checks", "value": true }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
+                                            }
                                         },
                                         {
                                             "key": "gpuav_buffer_address_oob",
@@ -825,6 +807,20 @@
                                     "key": "gpuav_image_layout",
                                     "label": "Image Layout",
                                     "description": "(Warning - still known to have false positives) Use GPU-AV to detect which descriptors where accessed. Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "gpuav_enable", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "key": "gpuav_force_on_robustness",
+                                    "label": "Force robustness on behalf of the user",
+                                    "description": "When robustness is enabled, GPU-AV will skip checks already covered by robustness",
                                     "type": "BOOL",
                                     "default": false,
                                     "platforms": [ "WINDOWS", "LINUX" ],

@@ -57,7 +57,7 @@ TEST_F(PositiveLayerSettings, AllSettings) {
         {OBJECT_LAYER_NAME, "gpuav_enable", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_shader_instrumentation", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
-        {OBJECT_LAYER_NAME, "gpuav_warn_on_robust_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
+        {OBJECT_LAYER_NAME, "gpuav_force_on_robustness", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},
         {OBJECT_LAYER_NAME, "gpuav_max_buffer_device_addresses", VK_LAYER_SETTING_TYPE_UINT32_EXT, 1, &one_k},
         {OBJECT_LAYER_NAME, "gpuav_validate_ray_query", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &disable},

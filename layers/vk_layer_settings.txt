@@ -79,10 +79,10 @@ khronos_validation.enables =
 # Enable descriptor indexing and buffer out of bounds checking
 #khronos_validation.gpuav_descriptor_checks = true
 
-# Generate warning on out of bounds accesses even if buffer robustness is enabled
+# Force robustness on behalf of the user
 # =====================
-# Warn on out of bounds accesses even if robustness is enabled
-#khronos_validation.gpuav_warn_on_robust_oob = true
+# When robustness is enabled, GPU-AV will skip checks already covered by robustness
+#khronos_validation.gpuav_force_on_robustness = true
 
 # Out of bounds buffer device addresses
 # =====================

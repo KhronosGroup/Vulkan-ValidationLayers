@@ -63,31 +63,37 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
     {
         const VkPhysicalDeviceFeatures &supported_features = features_2.features;
 
-        VkPhysicalDeviceFeatures *enabled_features = const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
-        if (!enabled_features) {
-            if (auto *enabled_features_2 = const_cast<VkPhysicalDeviceFeatures2 *>(
+        VkPhysicalDeviceFeatures *modified_features =
+            const_cast<VkPhysicalDeviceFeatures *>(modified_create_info->pEnabledFeatures);
+        if (!modified_features) {
+            if (auto *modified_features_2 = const_cast<VkPhysicalDeviceFeatures2 *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(modified_create_info->pNext))) {
-                enabled_features = &enabled_features_2->features;
+                modified_features = &modified_features_2->features;
             } else {
                 // The user has no VkPhysicalDeviceFeatures, so we are adding it for them
-                enabled_features = new VkPhysicalDeviceFeatures;
-                memset(enabled_features, 0, sizeof(VkPhysicalDeviceFeatures));
-                modified_create_info->pEnabledFeatures = enabled_features;
+                modified_features = new VkPhysicalDeviceFeatures;
+                memset(modified_features, 0, sizeof(VkPhysicalDeviceFeatures));
+                modified_create_info->pEnabledFeatures = modified_features;
             }
         }
 
-        if (enabled_features) {
-            if (supported_features.fragmentStoresAndAtomics && !enabled_features->fragmentStoresAndAtomics) {
+        if (modified_features) {
+            if (supported_features.fragmentStoresAndAtomics && !modified_features->fragmentStoresAndAtomics) {
                 InternalWarning(instance, loc, "Forcing fragmentStoresAndAtomics to VK_TRUE");
-                enabled_features->fragmentStoresAndAtomics = VK_TRUE;
+                modified_features->fragmentStoresAndAtomics = VK_TRUE;
             }
-            if (supported_features.vertexPipelineStoresAndAtomics && !enabled_features->vertexPipelineStoresAndAtomics) {
+            if (supported_features.vertexPipelineStoresAndAtomics && !modified_features->vertexPipelineStoresAndAtomics) {
                 InternalWarning(instance, loc, "Forcing vertexPipelineStoresAndAtomics to VK_TRUE");
-                enabled_features->vertexPipelineStoresAndAtomics = VK_TRUE;
+                modified_features->vertexPipelineStoresAndAtomics = VK_TRUE;
             }
-            if (supported_features.shaderInt64 && !enabled_features->shaderInt64) {
+            if (supported_features.shaderInt64 && !modified_features->shaderInt64) {
                 InternalWarning(instance, loc, "Forcing shaderInt64 to VK_TRUE");
-                enabled_features->shaderInt64 = VK_TRUE;
+                modified_features->shaderInt64 = VK_TRUE;
+            }
+            if (gpuav_settings.force_on_robustness && supported_features.robustBufferAccess &&
+                !modified_features->robustBufferAccess) {
+                InternalWarning(instance, loc, "Forcing robustBufferAccess to VK_TRUE");
+                modified_features->shaderInt64 = VK_TRUE;
             }
         }
     }
