@@ -123,6 +123,8 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
+void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&) { block_instrumented_table_.clear(); }
+
 void DescriptorIndexingOOBPass::Reset() {
     var_inst_ = nullptr;
     sampler_var_inst_ = nullptr;

@@ -40,8 +40,8 @@ class DescriptorClassGeneralBufferPass : public Pass {
     uint32_t GetLinkFunctionId();
 
     // Finds the offset into the SSBO/UBO
-    uint32_t GetOffsetByAccessChain(uint32_t descriptor_id, bool is_descriptor_array,
-                                    std::vector<const Instruction*>& access_chain_insts) const;
+    uint32_t FindLastByteOffset(uint32_t descriptor_id, bool is_descriptor_array,
+                                const std::vector<const Instruction*>& access_chain_insts) const;
 
     // List of OpAccessChains fom the Store/Load down to the OpVariable
     // The front() will be closet to the exact spot accesssed
@@ -66,7 +66,7 @@ class DescriptorClassGeneralBufferPass : public Pass {
     //        ssbo.data[8] = 0;
     // We don't know which will actually execute, but by definition a Block must execute from start to finish
     //
-    // < Descriptor SSA ID, Highest offset >
+    // < Descriptor SSA ID, Highest offset byte that will be accessed >
     vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map_;
 };
 

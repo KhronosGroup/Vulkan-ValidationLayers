@@ -569,7 +569,7 @@
                                 {
                                     "key": "gpuav_unsafe_mode",
                                     "label": "Unsafe Mode",
-                                    "description": "Normally GPU-AV will try and prevent crashing, but with unsafe mode, it will be much faster to validate, but might not stop a crash",
+                                    "description": "Normally GPU-AV will try to prevent crashes, but with unsafe mode, it will be much faster to validate, but might not stop a crash",
                                     "type": "BOOL",
                                     "default": false,
                                     "platforms": [ "WINDOWS", "LINUX" ],
