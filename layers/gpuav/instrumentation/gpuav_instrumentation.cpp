@@ -573,15 +573,12 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
     const uint32_t descriptor_binding_index =
         !cb_state.descriptor_command_bindings.empty() ? uint32_t(cb_state.descriptor_command_bindings.size()) - 1 : vvl::kU32Max;
 
-    const bool uses_robustness = (gpuav.enabled_features.robustBufferAccess || gpuav.enabled_features.robustBufferAccess2 ||
-                                  (last_bound.pipeline_state && last_bound.pipeline_state->uses_pipeline_robustness));
-
     const uint32_t last_label_command_i =
         !cb_state.GetLabelCommands().empty() ? uint32_t(cb_state.GetLabelCommands().size() - 1) : vvl::kU32Max;
 
     CommandBuffer::ErrorLoggerFunc error_logger =
         [loc, descriptor_binding_index, descriptor_binding_list = &cb_state.descriptor_command_bindings, bind_point,
-         last_label_command_i, operation_index, uses_shader_object, uses_robustness,
+         last_label_command_i, operation_index, uses_shader_object,
          instrumentation_error_blob](Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
                                      const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
             bool skip = false;
@@ -592,7 +589,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer 
                                             last_label_command_i, operation_index, error_record,
                                             descriptor_command_binding ? descriptor_command_binding->bound_descriptor_sets
                                                                        : std::vector<std::shared_ptr<DescriptorSet>>(),
-                                            bind_point, uses_shader_object, uses_robustness, loc);
+                                            bind_point, uses_shader_object, loc);
             return skip;
         };
 
@@ -656,7 +653,7 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
                                          std::string &out_vuid_msg,
                                          const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets, const Location &loc,
-                                         bool uses_shader_object, bool &out_oob_access) {
+                                         bool uses_shader_object) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
@@ -715,10 +712,9 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
 
 bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
                                    std::string &out_vuid_msg, const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
-                                   const Location &loc, bool uses_shader_object, bool &out_oob_access) {
+                                   const Location &loc, bool uses_shader_object) {
     using namespace glsl;
     bool error_found = true;
-    out_oob_access = true;
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
 
@@ -775,7 +771,6 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
 
         default:
             error_found = false;
-            out_oob_access = false;
             assert(false);  // other OOB checks are not implemented yet
     }
 
@@ -783,14 +778,12 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     return error_found;
 }
 
-bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg,
-                                       bool &out_oob_access) {
+bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string &out_error_msg, std::string &out_vuid_msg) {
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
     switch (error_record[kHeaderErrorSubCodeOffset]) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
-            out_oob_access = true;
             const char *access_type = error_record[kInstBuffAddrAccessOpcodeOffset] == spv::OpStore ? "written" : "read";
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << error_record[kInstBuffAddrAccessByteSizeOffset] << " bytes " << access_type
@@ -1012,8 +1005,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
                              const std::vector<std::string> &initial_label_stack, uint32_t label_command_i,
                              uint32_t operation_index, const uint32_t *error_record,
                              const std::vector<std::shared_ptr<DescriptorSet>> &descriptor_sets,
-                             VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, bool uses_robustness,
-                             const Location &loc) {
+                             VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, const Location &loc) {
     // The second word in the debug output buffer is the number of words that would have
     // been written by the shader instrumentation, if there was enough room in the buffer we provided.
     // The number of words actually written by the shaders is determined by the size of the buffer
@@ -1026,19 +1018,18 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
 
     std::string error_msg;
     std::string vuid_msg;
-    bool oob_access = false;
     bool error_found = false;
     switch (error_record[glsl::kHeaderErrorGroupOffset]) {
         case glsl::kErrorGroupInstDescriptorIndexingOOB:
             error_found = LogMessageInstDescriptorIndexingOOB(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
-                                                              uses_shader_object, oob_access);
+                                                              uses_shader_object);
             break;
         case glsl::kErrorGroupInstDescriptorClass:
-            error_found = LogMessageInstDescriptorClass(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
-                                                        uses_shader_object, oob_access);
+            error_found =
+                LogMessageInstDescriptorClass(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc, uses_shader_object);
             break;
         case glsl::kErrorGroupInstBufferDeviceAddress:
-            error_found = LogMessageInstBufferDeviceAddress(error_record, error_msg, vuid_msg, oob_access);
+            error_found = LogMessageInstBufferDeviceAddress(error_record, error_msg, vuid_msg);
             break;
         case glsl::kErrorGroupInstRayQuery:
             error_found = LogMessageInstRayQuery(error_record, error_msg, vuid_msg);
@@ -1068,15 +1059,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBuffer &cb_state, co
             error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
             instrumented_shader, shader_id, pipeline_bind_point, operation_index);
 
-        if (uses_robustness && oob_access) {
-            if (gpuav.gpuav_settings.warn_on_robust_oob) {
-                gpuav.LogWarning(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(),
-                                 debug_info_message.c_str());
-            }
-        } else {
-            gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(),
-                           debug_info_message.c_str());
-        }
+        gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
     }
 
     return error_found;
