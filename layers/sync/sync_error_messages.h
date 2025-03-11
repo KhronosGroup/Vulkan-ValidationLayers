@@ -17,16 +17,16 @@
 
 #pragma once
 
-#include "sync/sync_renderpass.h"  // DynamicRenderingInfo::Attachment
+#include "sync/sync_common.h"
 #include "sync/sync_reporting.h"
-
 #include <vulkan/vulkan.h>
 #include <string>
 
 class CommandBufferAccessContext;
+class CommandExecutionContext;
 class HazardResult;
-struct ReportKeyValues;
 class QueueBatchContext;
+struct SyncImageMemoryBarrier;
 
 namespace vvl {
 class DescriptorSet;
@@ -37,7 +37,7 @@ class Pipeline;
 namespace syncval {
 
 struct AdditionalMessageInfo {
-    ReportKeyValues properties;
+    ReportProperties properties;
 
     // When we need something more complex than vvl::Func
     std::string access_initiator;

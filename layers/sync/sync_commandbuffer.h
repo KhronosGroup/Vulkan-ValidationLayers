@@ -20,7 +20,7 @@
 #include "sync/sync_reporting.h"
 #include "state_tracker/cmd_buffer_state.h"
 
-struct ReportKeyValues;
+struct ReportProperties;
 class SyncValidator;
 
 namespace syncval {
@@ -150,7 +150,7 @@ class CommandExecutionContext {
     virtual ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
     virtual std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const = 0;
 
-    virtual void AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const = 0;
+    virtual void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const = 0;
 
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
@@ -203,7 +203,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
     std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const override;
-    void AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const override;
+    void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }

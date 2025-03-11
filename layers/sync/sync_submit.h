@@ -295,7 +295,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
 
     ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
     std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const override;
-    void AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const override;
+    void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_access_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_access_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
