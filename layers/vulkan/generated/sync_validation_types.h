@@ -331,7 +331,7 @@ struct SyncAccessInfo {
 };
 
 // Array of text names and component masks for each stage/access index
-const std::array<SyncAccessInfo, 139>& syncAccessInfoByAccessIndex();
+const std::array<SyncAccessInfo, 139>& GetSyncAccessInfos();
 
 // Constants defining the mask of all read and write access states
 static const SyncAccessFlags syncAccessReadMask = ( //  Mask of all read accesses

@@ -264,7 +264,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         Base_::Record MakeRecord() const override;
         ~PresentResourceRecord() override {}
         PresentResourceRecord(const PresentedImageRecord &presented) : presented_(presented) {}
-        std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
         vvl::Func GetCommand() const override { return vvl::Func::vkQueuePresentKHR; }
 
       private:
@@ -277,7 +276,6 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
         Base_::Record MakeRecord() const override;
         AcquireResourceRecord(const PresentedImageRecord &presented, ResourceUsageTag tag, vvl::Func command)
             : presented_(presented), acquire_tag_(tag), command_(command) {}
-        std::ostream &Format(std::ostream &out, const SyncValidator &sync_state) const override;
         vvl::Func GetCommand() const override { return command_; }
 
       private:
@@ -296,7 +294,7 @@ class QueueBatchContext : public CommandExecutionContext, public std::enable_sha
     void Trim();
 
     ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    std::string FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
+    void FormatUsage(ResourceUsageTagEx tag_ex, ReportKeyValues &extra_properties) const override;
     void AddUsageRecordExtraProperties(ResourceUsageTag tag, ReportKeyValues &extra_properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_access_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_access_context_; }

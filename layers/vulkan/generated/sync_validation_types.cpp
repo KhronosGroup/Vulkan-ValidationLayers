@@ -23,7 +23,7 @@
 
 #include "sync_validation_types.h"
 // clang-format off
-const std::array<SyncAccessInfo, 139>& syncAccessInfoByAccessIndex() {
+const std::array<SyncAccessInfo, 139>& GetSyncAccessInfos() {
 static const std::array<SyncAccessInfo, 139> variable = { {
     {
         "SYNC_ACCESS_INDEX_NONE",

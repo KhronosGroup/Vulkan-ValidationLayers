@@ -1147,8 +1147,12 @@ uint32_t CommandBufferAccessContext::AddHandle(const VulkanTypedHandle &typed_ha
     return handle_index;
 }
 
-ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
-                                                                uint32_t index) {
+ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle) {
+    return AddCommandHandleIndexed(tag, typed_handle, vvl::kNoIndex32);
+}
+
+ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
+                                                                       uint32_t index) {
     assert(tag < access_log_->size());
     const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
@@ -1166,7 +1170,8 @@ ResourceUsageTagEx CommandBufferAccessContext::AddCommandHandle(ResourceUsageTag
     return {tag, handle_index};
 }
 
-void CommandBufferAccessContext::AddSubcommandHandle(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle, uint32_t index) {
+void CommandBufferAccessContext::AddSubcommandHandleIndexed(ResourceUsageTag tag, const VulkanTypedHandle &typed_handle,
+                                                            uint32_t index) {
     assert(tag < access_log_->size());
     const uint32_t handle_index = AddHandle(typed_handle, index);
     // TODO: the following range check is not needed. Test and remove.
