@@ -39,7 +39,8 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexing
 } gpuav;
 
 // Unlike the non-bindless version, bindless needs to check for Uninitialized and Destroyed descriptors.
-bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stage_info, const uint desc_set,
+// This version includes an extra check for Combined Image Samplers
+bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint inst_num, const uvec4 stage_info, const uint desc_set,
                               const uint binding, const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
     uint param_0 = binding_layout_size;
@@ -69,6 +70,25 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stag
         if (is_valid) {
             error = kErrorSubCodeDescriptorIndexingDestroyed;
             break;
+        }
+
+        // If dealing with a combined image sampler, need to check the sampler as well
+        uint desc_type = (descriptor_set_type.data[binding_layout_index].x & ~kNullDescriptor) >> kDescBitShift;
+        if (desc_type == kImageSamplerDesc) {
+            // check sampler
+            desc_id = descriptor_set_type.data[binding_layout_index].y;
+            if (desc_id == 0u) {
+                error = kErrorSubCodeDescriptorIndexingUninitialized;
+                break;
+            }
+            // check that the resource is still valid
+            desc_index = desc_id / 32;
+            desc_bit = 1 << (desc_id & 31);
+            is_valid = (gpuav.initialized_status.data[desc_index] & desc_bit) == 0;
+            if (is_valid) {
+                error = kErrorSubCodeDescriptorIndexingDestroyed;
+                break;
+            }
         }
     } while (false);
 

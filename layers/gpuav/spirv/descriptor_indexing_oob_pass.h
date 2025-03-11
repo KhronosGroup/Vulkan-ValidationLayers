@@ -33,7 +33,9 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
     void Reset() final;
 
-    uint32_t link_function_id = 0;
+    uint32_t link_function_id_bindless_ = 0;
+    uint32_t link_function_id_bindless_combined_image_sampler_ = 0;
+    uint32_t link_function_id_non_bindless_ = 0;
     uint32_t GetLinkFunctionId();
 
     const Instruction* var_inst_ = nullptr;
@@ -43,6 +45,7 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     uint32_t descriptor_binding_ = 0;
     uint32_t descriptor_index_id_ = 0;
 
+    bool is_combined_image_sampler_ = false;
     // Duplicate values if dealing with SAMPLED_IMAGE and SAMPLER together
     const Instruction* sampler_var_inst_ = nullptr;
     uint32_t sampler_descriptor_set_ = 0;
