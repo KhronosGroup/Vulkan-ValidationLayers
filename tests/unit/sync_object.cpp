@@ -4955,3 +4955,46 @@ TEST_F(NegativeSyncObject, AcquireWithoutRelease) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncObject, AccessFlags3) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 1u, VK_FORMAT_B8G8R8A8_UNORM,
+                                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_TILING_OPTIMAL);
+    vkt::Image image(*m_device, image_ci);
+
+    VkMemoryBarrierAccessFlags3KHR memory_barrier_access_flags1 = vku::InitStructHelper();
+    memory_barrier_access_flags1.srcAccessMask3 = VK_ACCESS_3_NONE_KHR;
+    memory_barrier_access_flags1.dstAccessMask3 = VK_ACCESS_3_NONE_KHR;
+
+    VkMemoryBarrierAccessFlags3KHR memory_barrier_access_flags2 = vku::InitStructHelper(&memory_barrier_access_flags1);
+    memory_barrier_access_flags2.srcAccessMask3 = VK_ACCESS_3_NONE_KHR;
+    memory_barrier_access_flags2.dstAccessMask3 = VK_ACCESS_3_NONE_KHR;
+
+    VkMemoryBarrier2 memory_barrier = vku::InitStructHelper(&memory_barrier_access_flags2);
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1u;
+    dependency_info.pMemoryBarriers = &memory_barrier;
+
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDependencyInfo-pMemoryBarriers-10605");
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    memory_barrier.pNext = &image_ci;
+    m_errorMonitor->SetDesiredError("VUID-VkDependencyInfo-pMemoryBarriers-10606");
+    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
