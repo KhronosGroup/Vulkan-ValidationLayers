@@ -20,15 +20,7 @@
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
 
-void ReportKeyValues::Add(std::string_view key, std::string_view value) {
-    key_values.emplace_back(KeyValue{std::string(key), std::string(value)});
-}
-
-void ReportKeyValues::Add(std::string_view key, uint64_t value) {
-    key_values.emplace_back(KeyValue{std::string(key), std::to_string(value)});
-}
-
-static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_values) {
+static auto SortKeyValues(const std::vector<ReportProperties::NameValue> &name_values) {
     auto get_sort_order = [](const std::string &key) -> uint32_t {
         // message_type goes first
         if (key == kPropertyMessageType) {
@@ -52,10 +44,10 @@ static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_valu
         // everything else
         return 3;
     };
-    auto sorted = key_values;
+    auto sorted = name_values;
     std::stable_sort(sorted.begin(), sorted.end(), [&get_sort_order](const auto &a, const auto &b) {
-        const uint32_t a_order = get_sort_order(a.key);
-        const uint32_t b_order = get_sort_order(b.key);
+        const uint32_t a_order = get_sort_order(a.name);
+        const uint32_t b_order = get_sort_order(b.name);
         // Sort ordering groups
         if (a_order != b_order) {
             return a_order < b_order;
@@ -67,38 +59,44 @@ static auto SortKeyValues(const std::vector<ReportKeyValues::KeyValue> &key_valu
     return sorted;
 }
 
-std::string ReportKeyValues::GetExtraPropertiesSection(bool pretty_print) const {
-    if (key_values.empty()) {
-        return {};
-    }
-    const auto sorted = SortKeyValues(key_values);
-    std::stringstream ss;
-    ss << "[Extra properties]\n";
-    bool first = true;
-    for (const auto &kv : sorted) {
-        if (!first) {
-            ss << "\n";
-        }
-        first = false;
-
-        const uint32_t pretty_print_alignment = 18;
-        uint32_t extra_space_count = 0;
-        if (pretty_print && kv.key.length() < pretty_print_alignment) {
-            extra_space_count = pretty_print_alignment - (uint32_t)kv.key.length();
-        }
-
-        ss << kv.key << std::string(extra_space_count, ' ') << " = " << kv.value;
-    }
-    return ss.str();
+void ReportProperties::Add(std::string_view property_name, std::string_view value) {
+    name_values.emplace_back(NameValue{std::string(property_name), std::string(value)});
 }
 
-const std::string *ReportKeyValues::FindProperty(const std::string &key) const {
-    for (const auto &property : key_values) {
-        if (property.key == key) {
+void ReportProperties::Add(std::string_view property_name, uint64_t value) {
+    name_values.emplace_back(NameValue{std::string(property_name), std::to_string(value)});
+}
+
+const std::string *ReportProperties::FindProperty(std::string_view property_name) const {
+    for (const auto &property : name_values) {
+        if (property.name == property_name) {
             return &property.value;
         }
     }
     return nullptr;
+}
+
+std::string ReportProperties::GetExtraPropertiesSection(bool pretty_print) const {
+    if (name_values.empty()) {
+        return {};
+    }
+    const uint32_t pretty_print_alignment = 18;
+    const auto sorted = SortKeyValues(name_values);
+    std::stringstream ss;
+    ss << "[Extra properties]\n";
+    bool first = true;
+    for (const NameValue &property : sorted) {
+        if (!first) {
+            ss << "\n";
+        }
+        first = false;
+        uint32_t extra_space_count = 0;
+        if (pretty_print && property.name.length() < pretty_print_alignment) {
+            extra_space_count = pretty_print_alignment - (uint32_t)property.name.length();
+        }
+        ss << property.name << std::string(extra_space_count, ' ') << " = " << property.value;
+    }
+    return ss.str();
 }
 
 static bool IsHazardVsRead(SyncHazard hazard) {
@@ -291,24 +289,24 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
 }
 
 void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
-                         ReportKeyValues &key_values) {
+                         ReportProperties &properties) {
     const HazardResult::HazardState &hazard = hazard_result.State();
     const auto &usage_info = GetSyncAccessInfos()[hazard.access_index];
     const auto &prior_usage_info = GetSyncAccessInfos()[hazard.prior_access_index];
 
     if (!hazard.recorded_access.get()) {
-        key_values.Add(kPropertyAccess, FormatAccessProperty(usage_info));
+        properties.Add(kPropertyAccess, FormatAccessProperty(usage_info));
     }
-    key_values.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
+    properties.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
 
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
         const std::string barriers_str = string_VkPipelineStageFlags2(barriers);
-        key_values.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
+        properties.Add(kPropertyReadBarriers, barriers ? barriers_str : "0");
     } else {
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
         const std::string property_barriers_str = FormatSyncAccesses(barriers, device, allowed_queue_flags, true);
-        key_values.Add(kPropertyWriteBarriers, property_barriers_str);
+        properties.Add(kPropertyWriteBarriers, property_barriers_str);
     }
 }
 
@@ -360,7 +358,7 @@ std::string CommandBufferAccessContext::GetDebugRegionName(ResourceUsageTagEx ta
     return debug_name_provider->GetDebugRegionName(record);
 }
 
-void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const {
+void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
     // TODO: should never happen? investigate this and potentially remove
     if (tag >= access_log_->size()) {
         return;
@@ -402,7 +400,7 @@ std::string QueueBatchContext::GetDebugRegionName(ResourceUsageTagEx tag_ex) con
     return access.debug_name_provider->GetDebugRegionName(*access.record);
 }
 
-void QueueBatchContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportKeyValues &properties) const {
+void QueueBatchContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
     if (access.IsValid()) {
         properties.Add(kPropertyBatchTag, access.batch->base_tag);

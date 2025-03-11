@@ -29,18 +29,17 @@ class Queue;
 class HazardResult;
 class Logger;
 
-struct ReportKeyValues {
-    struct KeyValue {
-        std::string key;
+struct ReportProperties {
+    struct NameValue {
+        std::string name;
         std::string value;
     };
-    std::vector<KeyValue> key_values;
+    std::vector<NameValue> name_values;
 
-    void Add(std::string_view key, std::string_view value);
-    void Add(std::string_view key, uint64_t value);
-
+    void Add(std::string_view property_name, std::string_view value);
+    void Add(std::string_view property_name, uint64_t value);
+    const std::string *FindProperty(std::string_view property_name) const;
     std::string GetExtraPropertiesSection(bool pretty_print) const;
-    const std::string *FindProperty(const std::string &key) const;
 };
 
 struct ReportUsageInfo {
@@ -54,7 +53,7 @@ struct ReportUsageInfo {
 };
 
 void GetAccessProperties(const HazardResult &hazard, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
-                         ReportKeyValues &key_values);
+                         ReportProperties &properties);
 
 std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
     const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags);

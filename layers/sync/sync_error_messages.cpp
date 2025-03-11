@@ -18,17 +18,13 @@
 #include "sync/sync_error_messages.h"
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_image.h"
-#include "sync/sync_reporting.h"
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
-#include "utils/text_utils.h"
-using text::Format;
 
 #include <cassert>
 #include <cinttypes>
-#include <cstdarg>
 #include <sstream>
 
 static const char* string_SyncHazard(SyncHazard hazard) {
@@ -93,7 +89,7 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& acces
 }
 
 static void FormatCommonMessage(const HazardResult& hazard, const std::string& resouce_description, const vvl::Func command,
-                                const ReportKeyValues& key_values, const CommandExecutionContext& context,
+                                const ReportProperties& properties, const CommandExecutionContext& context,
                                 const syncval::AdditionalMessageInfo& additional_info, std::stringstream& ss) {
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
@@ -141,7 +137,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
             ss << "another ";
         }
         ss << vvl::String(usage_info.command);
-        if (const auto* debug_region = key_values.FindProperty(kPropertyPriorDebugRegion)) {
+        if (const auto* debug_region = properties.FindProperty(kPropertyPriorDebugRegion)) {
             ss << "[" << *debug_region << "]";
         }
         if (usage_info.command == command) {
@@ -246,25 +242,25 @@ ErrorMessages::ErrorMessages(vvl::Device& validator)
 std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                                  const std::string& resouce_description, const char* message_type,
                                  const AdditionalMessageInfo& additional_info) const {
-    ReportKeyValues key_values;
+    ReportProperties properties;
 
-    GetAccessProperties(hazard, validator_, context.GetQueueFlags(), key_values);
+    GetAccessProperties(hazard, validator_, context.GetQueueFlags(), properties);
 
     if (auto debug_region_name = context.GetDebugRegionName(hazard.TagEx()); !debug_region_name.empty()) {
-        key_values.Add(kPropertyPriorDebugRegion, debug_region_name);
+        properties.Add(kPropertyPriorDebugRegion, debug_region_name);
     }
 
-    key_values.Add(kPropertyMessageType, message_type);
-    key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-    key_values.Add(kPropertyCommand, vvl::String(command));
+    properties.Add(kPropertyMessageType, message_type);
+    properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    properties.Add(kPropertyCommand, vvl::String(command));
 
-    for (const auto& kv : additional_info.properties.key_values) {
-        key_values.Add(kv.key, kv.value);
+    for (const auto& property : additional_info.properties.name_values) {
+        properties.Add(property.name, property.value);
     }
-    context.AddUsageRecordProperties(hazard.Tag(), key_values);
+    context.AddUsageRecordProperties(hazard.Tag(), properties);
 
     std::stringstream ss;
-    FormatCommonMessage(hazard, resouce_description, command, key_values, context, additional_info, ss);
+    FormatCommonMessage(hazard, resouce_description, command, properties, context, additional_info, ss);
 
     if (!additional_info.message_end_text.empty()) {
         ss << additional_info.message_end_text;
@@ -275,7 +271,7 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
         if (!message.empty() && message.back() != '\n') {
             message += '\n';
         }
-        message += key_values.GetExtraPropertiesSection(pretty_print_extra_);
+        message += properties.GetExtraPropertiesSection(pretty_print_extra_);
     }
     return message;
 }
