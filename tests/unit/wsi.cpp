@@ -4399,3 +4399,71 @@ TEST_F(NegativeWsi, UnsupportedCompositeAlpha) {
     vkt::Swapchain swapchain(*m_device, swapchain_ci);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeWsi, SwapchainUseAfterDestroy) {
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &surface_caps);
+
+    for (uint32_t i = 0; i < 2; ++i) {
+        VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+        swapchain_ci.surface = m_surface.Handle();
+        swapchain_ci.minImageCount = surface_caps.minImageCount;
+        swapchain_ci.imageFormat = m_surface_formats[0].format;
+        swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+        swapchain_ci.imageExtent = surface_caps.minImageExtent;
+        swapchain_ci.imageArrayLayers = 1u;
+        swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+        swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+        swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+        vkt::Swapchain swapchain1(*m_device, swapchain_ci);
+
+        std::vector<VkImage> images = swapchain1.GetImages();
+
+        vkt::Fence fence(*m_device);
+        uint32_t imageIndex = swapchain1.AcquireNextImage(fence, kWaitTimeout);
+        vk::WaitForFences(device(), 1u, &fence.handle(), VK_FALSE, kWaitTimeout);
+
+        VkSwapchainKHR swapchain_1_handle = swapchain1.handle();
+
+        vkt::Swapchain swapchain2;
+        if (i == 0) {
+            vk::DeviceWaitIdle(*m_device);
+            swapchain1.destroy();
+            swapchain2.Init(*m_device, swapchain_ci);
+        } else {
+            swapchain_ci.oldSwapchain = swapchain_1_handle;
+            swapchain2.Init(*m_device, swapchain_ci);
+            swapchain1.destroy();
+        }
+
+        VkPresentInfoKHR present = vku::InitStructHelper();
+        present.swapchainCount = 1;
+        present.pSwapchains = &swapchain_1_handle;
+        present.pImageIndices = &imageIndex;
+
+        m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pSwapchains-parameter");
+        vk::QueuePresentKHR(*m_default_queue, &present);
+        m_errorMonitor->VerifyFound();
+
+        present.pSwapchains = &swapchain2.handle();
+        m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
+        vk::QueuePresentKHR(*m_default_queue, &present);
+        m_errorMonitor->VerifyFound();
+
+        std::vector<VkImage> images2 = swapchain2.GetImages();
+        VkSwapchainKHR swapchain_2_handle = swapchain2.handle();
+        swapchain2.destroy();
+
+        vkt::Fence fence2(*m_device);
+        uint32_t image_index = 0;
+        m_errorMonitor->SetDesiredError("VUID-vkAcquireNextImageKHR-swapchain-parameter");
+        vk::AcquireNextImageKHR(device(), swapchain_2_handle, kWaitTimeout, VK_NULL_HANDLE, fence2.handle(), &image_index);
+        m_errorMonitor->VerifyFound();
+    }
+}
