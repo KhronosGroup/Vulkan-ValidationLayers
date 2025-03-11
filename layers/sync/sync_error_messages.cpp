@@ -77,8 +77,8 @@ static const char* string_SyncHazard(SyncHazard hazard) {
 // then we can provide more precise message by focusing on the other component.
 static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo& access, const SyncAccessFlags& write_barriers,
                                                      const CommandExecutionContext& context) {
-    const auto protected_stage_access_pairs = ConvertSyncAccessesToCompactVkForm(
-        write_barriers, context.GetQueueFlags(), context.GetSyncState().enabled_features, context.GetSyncState().extensions);
+    const auto protected_stage_access_pairs =
+        ConvertSyncAccessesToCompactVkForm(write_barriers, context.GetSyncState(), context.GetQueueFlags());
     bool is_stage_protected = false;
     bool is_access_protected = false;
     for (const auto& protected_stage_access : protected_stage_access_pairs) {
@@ -209,8 +209,7 @@ static void FormatCommonMessage(const HazardResult& hazard, const std::string& r
         ss << ".";
     } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
         ss << "The current synchronization allows ";
-        ss << FormatSyncAccesses(write_barriers, context.GetQueueFlags(), context.GetSyncState().enabled_features,
-                                 context.GetSyncState().extensions, false);
+        ss << FormatSyncAccesses(write_barriers, context.GetSyncState(), context.GetQueueFlags(), false);
         ss << ", but to prevent this hazard, ";
         auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
         if (is_access_protected) {
@@ -248,17 +247,21 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
                                  const std::string& resouce_description, const char* message_type,
                                  const AdditionalMessageInfo& additional_info) const {
     ReportKeyValues key_values;
-    context.FormatHazard(hazard, key_values);
+
+    GetAccessProperties(hazard, validator_, context.GetQueueFlags(), key_values);
+
+    if (auto debug_region_name = context.GetDebugRegionName(hazard.TagEx()); !debug_region_name.empty()) {
+        key_values.Add(kPropertyPriorDebugRegion, debug_region_name);
+    }
+
     key_values.Add(kPropertyMessageType, message_type);
     key_values.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
     key_values.Add(kPropertyCommand, vvl::String(command));
+
     for (const auto& kv : additional_info.properties.key_values) {
         key_values.Add(kv.key, kv.value);
     }
-
-    if (validator_.syncval_settings.message_extra_properties) {
-        context.AddUsageRecordExtraProperties(hazard.Tag(), key_values);
-    }
+    context.AddUsageRecordProperties(hazard.Tag(), key_values);
 
     std::stringstream ss;
     FormatCommonMessage(hazard, resouce_description, command, key_values, context, additional_info, ss);
@@ -620,13 +623,9 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
     std::stringstream ss;
     ss << "\npImageMemoryBarriers[" << barrier.barrier_index << "]: {\n";
     ss << "  source accesses = "
-       << FormatSyncAccesses(barrier.barrier.src_access_scope, context.GetQueueFlags(), context.GetSyncState().enabled_features,
-                             context.GetSyncState().extensions, false)
-       << ",\n";
+       << FormatSyncAccesses(barrier.barrier.src_access_scope, context.GetSyncState(), context.GetQueueFlags(), false) << ",\n";
     ss << "  destination accesses = "
-       << FormatSyncAccesses(barrier.barrier.dst_access_scope, context.GetQueueFlags(), context.GetSyncState().enabled_features,
-                             context.GetSyncState().extensions, false)
-       << ",\n";
+       << FormatSyncAccesses(barrier.barrier.dst_access_scope, context.GetSyncState(), context.GetQueueFlags(), false) << ",\n";
     ss << "  srcStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.src_exec_scope.mask_param) << ",\n";
     ss << "  dstStageMask = " << string_VkPipelineStageFlags2(barrier.barrier.dst_exec_scope.mask_param) << ",\n";
     ss << "}\n";
