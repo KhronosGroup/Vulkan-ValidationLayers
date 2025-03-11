@@ -30,7 +30,9 @@ namespace gpuav {
 namespace spirv {
 
 DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module)
-    : Pass(module), unsafe_mode_(module.settings_.unsafe_mode || module.enabled_features_.robustBufferAccess) {
+    : Pass(module),
+      // robustBufferAccess safety to got into unsafe mode to improve performance
+      unsafe_mode_(module.settings_.unsafe_mode || module.enabled_features_.robustBufferAccess) {
     module.use_bda_ = true;
 }
 
@@ -48,12 +50,22 @@ uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-// Finds how much offset into the SSBO/UBO the instruction will make
+// Finds the offset into the SSBO/UBO an instruction would access
 // If it is a non-constant value, will return zero to indicate its a runtime value
-uint32_t DescriptorClassGeneralBufferPass::GetOffsetByAccessChain(uint32_t descriptor_id, bool is_descriptor_array,
-                                                                  std::vector<const Instruction*>& access_chain_insts) const {
+//
+// If shader looks for 'a' in a descriptor like
+//
+// struct X {
+//    uint a;
+//    uint b;
+// }
+//
+// it will return `3` because it covers [0, 3] bytes of the descriptor
+// (This matches the GetLastByte() check)
+uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descriptor_id, bool is_descriptor_array,
+                                                              const std::vector<const Instruction*>& access_chain_insts) const {
     assert(!access_chain_insts.empty());
-    uint32_t total_offset = 0;
+    uint32_t last_byte_offset = 0;
     const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
     uint32_t ac_word_index = reset_ac_word;
 
@@ -75,6 +87,7 @@ uint32_t DescriptorClassGeneralBufferPass::GetOffsetByAccessChain(uint32_t descr
     }
 
     uint32_t current_type_id = descriptor_id;
+    // Walk down access chains to build up the offset
     while (access_chain_iter != access_chain_insts.rend()) {
         const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
         const Constant* index_constant = module_.type_manager_.FindConstantById(ac_index_id);
@@ -133,11 +146,10 @@ uint32_t DescriptorClassGeneralBufferPass::GetOffsetByAccessChain(uint32_t descr
             case SpvType::kStruct: {
                 // Get buffer byte offset for the referenced member
                 current_offset = GetMemberDecoration(current_type_id, constant_value, spv::DecorationOffset)->Word(4);
-                ;
 
                 // Look for matrix stride for this member if there is one. The matrix
                 // stride is not on the matrix type, but in a OpMemberDecorate on the
-                // enclosing struct type at the member index. If none found, reset
+                // enclosing struct type at the member index. If none is found, reset
                 // stride to 0.
                 const Instruction* decoration_matrix_stride =
                     GetMemberDecoration(current_type_id, constant_value, spv::DecorationMatrixStride);
@@ -154,7 +166,7 @@ uint32_t DescriptorClassGeneralBufferPass::GetOffsetByAccessChain(uint32_t descr
             } break;
         }
 
-        total_offset += current_offset;
+        last_byte_offset += current_offset;
 
         ac_word_index++;
         if (ac_word_index >= (*access_chain_iter)->Length()) {
@@ -166,9 +178,9 @@ uint32_t DescriptorClassGeneralBufferPass::GetOffsetByAccessChain(uint32_t descr
     // Add in offset of last byte of referenced object
     const uint32_t accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
     const uint32_t last_byte_index = accessed_type_size - 1;
-    total_offset += last_byte_index;
+    last_byte_offset += last_byte_index;
 
-    return total_offset;
+    return last_byte_offset;
 }
 
 uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
@@ -287,7 +299,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     if (unsafe_mode_) {
-        const uint32_t offset = GetOffsetByAccessChain(descriptor_id, is_descriptor_array, access_chain_insts_);
+        const uint32_t offset = FindLastByteOffset(descriptor_id, is_descriptor_array, access_chain_insts_);
         // If no offset, its dynamic and ignore completly
         if (offset != 0) {
             if (pre_pass) {

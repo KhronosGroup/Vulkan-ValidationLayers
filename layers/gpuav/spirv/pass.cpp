@@ -311,8 +311,8 @@ uint32_t Pass::FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride, bool c
 // Find outermost buffer type and its access chain index.
 // Because access chains indexes can be runtime values, we need to build arithmetic logic in the SPIR-V to get the runtime value of
 // the indexing
-uint32_t Pass::GetLastByte(const Type& descriptor_type, std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
-                           InstructionIt* inst_it) {
+uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts,
+                           BasicBlock& block, InstructionIt* inst_it) {
     assert(!access_chain_insts.empty());
     uint32_t current_type_id = 0;
     const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
