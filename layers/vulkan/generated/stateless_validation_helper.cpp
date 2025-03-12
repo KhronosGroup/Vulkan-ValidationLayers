@@ -18727,7 +18727,6 @@ bool Device::PreCallValidateSetDebugUtilsObjectNameEXT(VkDevice device, const Vk
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pNameInfo), pNameInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
                                        true, "VUID-vkSetDebugUtilsObjectNameEXT-pNameInfo-parameter",
                                        "VUID-VkDebugUtilsObjectNameInfoEXT-sType-sType");
@@ -18745,7 +18744,6 @@ bool Device::PreCallValidateSetDebugUtilsObjectTagEXT(VkDevice device, const VkD
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pTagInfo), pTagInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_TAG_INFO_EXT, true,
                                        "VUID-vkSetDebugUtilsObjectTagEXT-pTagInfo-parameter",
                                        "VUID-VkDebugUtilsObjectTagInfoEXT-sType-sType");
@@ -18770,7 +18768,6 @@ bool Device::PreCallValidateQueueBeginDebugUtilsLabelEXT(VkQueue queue, const Vk
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkQueueBeginDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -18789,7 +18786,6 @@ bool Device::PreCallValidateQueueEndDebugUtilsLabelEXT(VkQueue queue, const Erro
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -18799,7 +18795,6 @@ bool Device::PreCallValidateQueueInsertDebugUtilsLabelEXT(VkQueue queue, const V
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkQueueInsertDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -18819,7 +18814,6 @@ bool Device::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBu
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkCmdBeginDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -18838,7 +18832,6 @@ bool Device::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuff
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     // No xml-driven validation
     return skip;
 }
@@ -18848,7 +18841,6 @@ bool Device::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandB
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(loc.dot(Field::pLabelInfo), pLabelInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT, true,
                                        "VUID-vkCmdInsertDebugUtilsLabelEXT-pLabelInfo-parameter",
                                        "VUID-VkDebugUtilsLabelEXT-sType-sType");
@@ -18871,7 +18863,6 @@ bool Instance::PreCallValidateCreateDebugUtilsMessengerEXT(VkInstance instance,
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT, true,
         "VUID-vkCreateDebugUtilsMessengerEXT-pCreateInfo-parameter", "VUID-VkDebugUtilsMessengerCreateInfoEXT-sType-sType");
@@ -18910,7 +18901,6 @@ bool Instance::PreCallValidateDestroyDebugUtilsMessengerEXT(VkInstance instance,
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -18926,7 +18916,6 @@ bool Instance::PreCallValidateSubmitDebugUtilsMessageEXT(VkInstance instance,
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
-    if (!IsExtEnabled(extensions.vk_ext_debug_utils)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_debug_utils});
     skip |= context.ValidateFlags(loc.dot(Field::messageSeverity), vvl::FlagBitmask::VkDebugUtilsMessageSeverityFlagBitsEXT,
                                   AllVkDebugUtilsMessageSeverityFlagBitsEXT, messageSeverity, kRequiredSingleBit,
                                   "VUID-vkSubmitDebugUtilsMessageEXT-messageSeverity-parameter",

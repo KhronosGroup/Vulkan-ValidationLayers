@@ -281,6 +281,22 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             'VkIndirectExecutionSetPipelineInfoEXT', # VkIndirectExecutionSetShaderInfoEXT is done manually
         ]
 
+        # These functions entrypoints we as VVL expose
+        self.layerExtensionFunctions = [
+            # VK_EXT_debug_utils
+            'vkCmdBeginDebugUtilsLabelEXT',
+            'vkCmdEndDebugUtilsLabelEXT',
+            'vkCmdInsertDebugUtilsLabelEXT',
+            'vkCreateDebugUtilsMessengerEXT',
+            'vkDestroyDebugUtilsMessengerEXT',
+            'vkQueueBeginDebugUtilsLabelEXT',
+            'vkQueueEndDebugUtilsLabelEXT',
+            'vkQueueInsertDebugUtilsLabelEXT',
+            'vkSetDebugUtilsObjectNameEXT',
+            'vkSetDebugUtilsObjectTagEXT',
+            'vkSubmitDebugUtilsMessageEXT',
+        ]
+
         # Map of structs type names to generated validation code for that struct type
         self.validatedStructs = dict()
         # Map of flags typenames
@@ -523,7 +539,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
 
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
-            if command.extensions and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
+            if command.extensions and command.name not in self.layerExtensionFunctions and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
                 cExpression =  []
                 outExpression =  []
                 for extension in command.extensions:
