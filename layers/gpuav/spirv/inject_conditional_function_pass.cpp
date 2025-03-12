@@ -156,12 +156,11 @@ bool InjectConditionalFunctionPass::Instrument() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->GetPositionIndex();
+                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 block_it = InjectFunction(function.get(), block_it, inst_it, injection_data, meta);
-                Reset();
                 meta.Reset();
                 // will start searching again from newly split merge block
                 block_it--;

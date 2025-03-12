@@ -110,7 +110,7 @@ uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descripto
             } break;
             case SpvType::kMatrix: {
                 if (matrix_stride == 0) {
-                    module_.InternalError(Name(), "GetOffset is missing matrix stride");
+                    module_.InternalError(Name(), "FindLastByteOffset is missing matrix stride");
                 }
                 in_matrix = true;
                 uint32_t vec_type_id = current_type->inst_.Operand(0);
@@ -162,7 +162,7 @@ uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descripto
                 current_type_id = current_type->inst_.Operand(constant_value);  // Get element type for next step
             } break;
             default: {
-                module_.InternalError(Name(), "GetLastByte has unexpected non-composite type");
+                module_.InternalError(Name(), "FindLastByteOffset has unexpected non-composite type");
             } break;
         }
 
@@ -209,8 +209,6 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
     return function_result;
 }
 
-void DescriptorClassGeneralBufferPass::Reset() { target_instruction_ = nullptr; }
-
 bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                InstructionMeta& meta, bool pre_pass) {
     const uint32_t opcode = inst.Opcode();
@@ -223,6 +221,9 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     if (!next_access_chain || next_access_chain->Opcode() != spv::OpAccessChain) {
         return false;
     }
+
+    // Since things can fail after building up this vector, we need to clear it here before starting to add more to it
+    meta.access_chain_insts.clear();
 
     const Variable* variable = nullptr;
     // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
@@ -314,7 +315,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     // Save information to be used to make the Function
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
 
     return true;
 }
@@ -341,7 +342,6 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                     // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                     if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, true)) continue;
-                    Reset();
                     meta.Reset();
                 }
             }
@@ -359,13 +359,12 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->GetPositionIndex();
+                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
                 CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
-                Reset();
                 meta.Reset();
             }
         }

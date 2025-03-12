@@ -40,13 +40,13 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
 uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                                      const InstructionMeta& meta) {
     // Convert reference pointer to uint64
-    const uint32_t pointer_id = target_instruction_->Operand(0);
+    const uint32_t pointer_id = meta.target_instruction->Operand(0);
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
     const uint32_t convert_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
-    const uint32_t opcode = target_instruction_->Opcode();
+    const uint32_t opcode = meta.target_instruction->Opcode();
     const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(opcode);
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
@@ -63,8 +63,6 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
     return function_result;
 }
-
-void BufferDeviceAddressPass::Reset() { target_instruction_ = nullptr; }
 
 bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
@@ -128,7 +126,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     }
 
     // Save information to be used to make the Function
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
     meta.type_length = module_.type_manager_.TypeLength(*accessed_type);
     return true;
 }

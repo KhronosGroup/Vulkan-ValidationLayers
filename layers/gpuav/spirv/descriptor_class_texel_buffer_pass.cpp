@@ -46,10 +46,10 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
-    const uint32_t opcode = target_instruction_->Opcode();
+    const uint32_t opcode = meta.target_instruction->Opcode();
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
-    if (target_instruction_->Length() > image_operand_position) {
-        const uint32_t image_operand_word = target_instruction_->Word(image_operand_position);
+    if (meta.target_instruction->Length() > image_operand_position) {
+        const uint32_t image_operand_word = meta.target_instruction->Word(image_operand_position);
         if ((image_operand_word & (spv::ImageOperandsConstOffsetMask | spv::ImageOperandsOffsetMask)) != 0) {
             // TODO - Add support if there are image operands (like offset)
         }
@@ -57,7 +57,7 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
 
     // Use the imageFetch() parameter to decide the offset
     // TODO - This assumes no depth/arrayed/ms from RequiresInstrumentation
-    const uint32_t descriptor_offset_id = CastToUint32(target_instruction_->Operand(1), block, inst_it);
+    const uint32_t descriptor_offset_id = CastToUint32(meta.target_instruction->Operand(1), block, inst_it);
 
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
@@ -74,8 +74,6 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
 
     return function_result;
 }
-
-void DescriptorClassTexelBufferPass::Reset() { target_instruction_ = nullptr; }
 
 bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                              InstructionMeta& meta) {
@@ -162,7 +160,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     }
 
     // Save information to be used to make the Function
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
 
     return true;
 }
@@ -195,13 +193,12 @@ bool DescriptorClassTexelBufferPass::Instrument() {
                 // Add any debug information to pass into the function call
                 InjectionData injection_data;
                 injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = target_instruction_->GetPositionIndex();
+                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
                 CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
-                Reset();
                 meta.Reset();
             }
         }

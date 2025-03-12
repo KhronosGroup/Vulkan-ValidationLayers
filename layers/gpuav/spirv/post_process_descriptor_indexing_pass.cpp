@@ -160,12 +160,10 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         return false;
     }
 
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
 
     return true;
 }
-
-void PostProcessDescriptorIndexingPass::Reset() { target_instruction_ = nullptr; }
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
     InstructionMeta meta;
@@ -183,7 +181,6 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                 instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it, meta);
-                Reset();
                 meta.Reset();
             }
         }

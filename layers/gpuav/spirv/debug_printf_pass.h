@@ -34,15 +34,33 @@ class DebugPrintfPass : public Pass {
     void PrintDebugInfo() const final;
 
   private:
-    bool RequiresInstrumentation(const Instruction& inst);
-    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it);
-    void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
-                              InstructionIt* inst_it);
-    void CreateDescriptorSet();
-    void CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id);
-    void Reset() final;
+    // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
+    struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
 
-    bool Validate(const Function& current_function);
+        void Reset() { target_instruction = nullptr; }
+    };
+
+    // Once we want to create a function, we need to gather temporary data while building the parameters
+    struct ParamMeta {
+        // Used to detect where 64-bit floats are
+        uint32_t double_bitmask = 0;
+        // Used to detect where signed ints are 8 or 16 bits
+        uint32_t signed_8_bitmask = 0;
+        uint32_t signed_16_bitmask = 0;
+        // Count number of parameters the CPU will need to print out
+        // This expands vectors and accounts for 64-bit parameters
+        uint32_t expanded_parameter_count = 0;
+    };
+
+    bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
+    void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
+                              InstructionIt* inst_it, ParamMeta& p_meta);
+    uint32_t CreateDescriptorSet();
+    void CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id, uint32_t output_buffer_variable_id);
+
+    bool Validate(const Function& current_function, const InstructionMeta& meta);
 
     // for debugging instrumented shaders
     std::vector<InternalOnlyDebugPrintf>& intenral_only_debug_printf_;
@@ -53,17 +71,6 @@ class DebugPrintfPass : public Pass {
     // <number of arguments in the function call, function id>
     vvl::unordered_map<uint32_t, uint32_t> function_id_map_;
     uint32_t GetLinkFunctionId(uint32_t argument_count);
-
-    uint32_t output_buffer_variable_id_ = 0;
-
-    // Used to detect where 64-bit floats are
-    uint32_t double_bitmask_ = 0;
-    // Used to detect where signed ints are 8 or 16 bits
-    uint32_t signed_8_bitmask_ = 0;
-    uint32_t signed_16_bitmask_ = 0;
-    // Count number of parameters the CPU will need to print out
-    // This expands vectors and accounts for 64-bit parameters
-    uint32_t expanded_parameter_count_ = 0;
 };
 
 }  // namespace spirv

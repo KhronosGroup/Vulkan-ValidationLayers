@@ -79,18 +79,18 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     if (meta.image_inst) {
-        const uint32_t opcode = target_instruction_->Opcode();
+        const uint32_t opcode = meta.target_instruction->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
             // "All OpSampledImage instructions must be in the same block in which their Result <id> are consumed"
             // the simple way around this is to add a OpCopyObject to be consumed by the target instruction
-            uint32_t image_id = target_instruction_->Operand(0);
+            uint32_t image_id = meta.target_instruction->Operand(0);
             const Instruction* sampled_image_inst = block.function_.FindInstruction(image_id);
             // TODO - Add tests to understand what else can be here other then OpSampledImage
             if (sampled_image_inst->Opcode() == spv::OpSampledImage) {
                 const uint32_t type_id = sampled_image_inst->TypeId();
                 const uint32_t copy_id = module_.TakeNextId();
-                const_cast<Instruction*>(target_instruction_)->ReplaceOperandId(image_id, copy_id);
+                const_cast<Instruction*>(meta.target_instruction)->ReplaceOperandId(image_id, copy_id);
 
                 // incase the OpSampledImage is shared, copy the previous OpCopyObject
                 auto copied = copy_object_map_.find(image_id);
@@ -152,8 +152,6 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
 }
 
 void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&) { block_instrumented_table_.clear(); }
-
-void DescriptorIndexingOOBPass::Reset() { target_instruction_ = nullptr; }
 
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
@@ -389,7 +387,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         }
     }
     // Save information to be used to make the Function
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
 
     return true;
 }

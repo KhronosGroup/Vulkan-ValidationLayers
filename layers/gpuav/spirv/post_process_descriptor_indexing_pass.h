@@ -33,12 +33,14 @@ class PostProcessDescriptorIndexingPass : public Pass {
   private:
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
         uint32_t descriptor_set = 0;
         uint32_t descriptor_binding = 0;
         uint32_t descriptor_index_id = 0;
         uint32_t variable_id = 0;
 
         void Reset() {
+            target_instruction = nullptr;
             descriptor_set = 0;
             descriptor_binding = 0;
             descriptor_index_id = 0;
@@ -48,7 +50,6 @@ class PostProcessDescriptorIndexingPass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
-    void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();

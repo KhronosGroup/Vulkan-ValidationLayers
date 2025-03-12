@@ -35,7 +35,6 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) final;
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                 const InstructionMeta& meta) final;
-    void Reset() final;
 
     uint32_t link_function_id_bindless_ = 0;
     uint32_t link_function_id_bindless_combined_image_sampler_ = 0;
