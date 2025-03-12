@@ -218,8 +218,6 @@ vvl_sources = [
   "layers/gpuav/spirv/module.h",
   "layers/gpuav/spirv/inject_conditional_function_pass.cpp",
   "layers/gpuav/spirv/inject_conditional_function_pass.h",
-  "layers/gpuav/spirv/inject_function_pass.cpp",
-  "layers/gpuav/spirv/inject_function_pass.h",
   "layers/gpuav/spirv/pass.cpp",
   "layers/gpuav/spirv/pass.h",
   "layers/gpuav/spirv/ray_query_pass.cpp",
