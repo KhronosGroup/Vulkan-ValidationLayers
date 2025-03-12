@@ -28,8 +28,9 @@ class RayQueryPass : public InjectConditionalFunctionPass {
     void PrintDebugInfo() const final;
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst) final;
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) final;
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) final;
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
+                                const InstructionMeta& meta) final;
     void Reset() final;
 
     uint32_t link_function_id = 0;

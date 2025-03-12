@@ -184,15 +184,16 @@ uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descripto
 }
 
 uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                              const InjectionData& injection_data) {
-    assert(!access_chain_insts_.empty());
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+                                                              const InjectionData& injection_data, const InstructionMeta& meta) {
+    assert(!meta.access_chain_insts.empty());
+    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
-    descriptor_offset_id_ = GetLastByte(*descriptor_type_, access_chain_insts_, block, inst_it);  // Get Last Byte Index
+    const uint32_t descriptor_offset_id =
+        GetLastByte(*meta.descriptor_type, meta.access_chain_insts, block, inst_it);  // Get Last Byte Index
 
-    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t function_result = module_.TakeNextId();
@@ -202,22 +203,16 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_offset.Id()},
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
         inst_it);
 
     return function_result;
 }
 
-void DescriptorClassGeneralBufferPass::Reset() {
-    descriptor_type_ = nullptr;
-    target_instruction_ = nullptr;
-    descriptor_set_ = 0;
-    descriptor_binding_ = 0;
-    descriptor_index_id_ = 0;
-    descriptor_offset_id_ = 0;
-}
+void DescriptorClassGeneralBufferPass::Reset() { target_instruction_ = nullptr; }
 
-bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst, bool pre_pass) {
+bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
+                                                               InstructionMeta& meta, bool pre_pass) {
     const uint32_t opcode = inst.Opcode();
 
     if (!IsValueIn(spv::Op(opcode), {spv::OpLoad, spv::OpStore, spv::OpAtomicStore, spv::OpAtomicLoad, spv::OpAtomicExchange})) {
@@ -228,12 +223,11 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     if (!next_access_chain || next_access_chain->Opcode() != spv::OpAccessChain) {
         return false;
     }
-    access_chain_insts_.clear();  // only clear right before we know we will need again
 
     const Variable* variable = nullptr;
     // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
     while (next_access_chain && next_access_chain->Opcode() == spv::OpAccessChain) {
-        access_chain_insts_.push_back(next_access_chain);
+        meta.access_chain_insts.push_back(next_access_chain);
         const uint32_t access_chain_base_id = next_access_chain->Operand(0);
         variable = module_.type_manager_.FindVariableById(access_chain_base_id);
         if (variable) {
@@ -250,13 +244,13 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    descriptor_type_ = variable->PointerType(module_.type_manager_);
-    if (!descriptor_type_ || descriptor_type_->spv_type_ == SpvType::kRuntimeArray) {
+    meta.descriptor_type = variable->PointerType(module_.type_manager_);
+    if (!meta.descriptor_type || meta.descriptor_type->spv_type_ == SpvType::kRuntimeArray) {
         return false;  // TODO - Currently we mark these as "bindless"
     }
 
-    const bool is_descriptor_array = descriptor_type_->IsArray();
-    const uint32_t descriptor_id = is_descriptor_array ? descriptor_type_->inst_.Operand(0) : descriptor_type_->Id();
+    const bool is_descriptor_array = meta.descriptor_type->IsArray();
+    const uint32_t descriptor_id = is_descriptor_array ? meta.descriptor_type->inst_.Operand(0) : meta.descriptor_type->Id();
 
     // Check for deprecated storage block form
     if (storage_class == spv::StorageClassUniform) {
@@ -272,34 +266,34 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     // Grab front() as it will be the "final" type we access
-    const Type* value_type = module_.type_manager_.FindValueTypeById(access_chain_insts_.front()->TypeId());
+    const Type* value_type = module_.type_manager_.FindValueTypeById(meta.access_chain_insts.front()->TypeId());
     if (!value_type) return false;
 
     if (is_descriptor_array) {
         // Because you can't have 2D array of descriptors, the first index of the last accessChain is the descriptor index
-        descriptor_index_id_ = access_chain_insts_.back()->Operand(1);
+        meta.descriptor_index_id = meta.access_chain_insts.back()->Operand(1);
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
-        descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+        meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable->Id()) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                descriptor_set_ = annotation->Word(3);
+                meta.descriptor_set = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {
-                descriptor_binding_ = annotation->Word(3);
+                meta.descriptor_binding = annotation->Word(3);
             }
         }
     }
 
-    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
 
     if (unsafe_mode_) {
-        const uint32_t offset = FindLastByteOffset(descriptor_id, is_descriptor_array, access_chain_insts_);
+        const uint32_t offset = FindLastByteOffset(descriptor_id, is_descriptor_array, meta.access_chain_insts);
         // If no offset, its dynamic and ignore completly
         if (offset != 0) {
             if (pre_pass) {
@@ -331,6 +325,7 @@ void DescriptorClassGeneralBufferPass::PrintDebugInfo() const {
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassGeneralBufferPass::Instrument() {
+    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -345,14 +340,15 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 // Do here before we inject instructions into the block list below
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                     // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                    if (!RequiresInstrumentation(*function, *(inst_it->get()), true)) continue;
+                    if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, true)) continue;
                     Reset();
+                    meta.Reset();
                 }
             }
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), false)) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, false)) continue;
 
                 if (module_.settings_.max_instrumentations_count != 0 &&
                     instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
@@ -368,8 +364,9 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
-                CreateFunctionCall(**block_it, &inst_it, injection_data);
+                CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
                 Reset();
+                meta.Reset();
             }
         }
     }

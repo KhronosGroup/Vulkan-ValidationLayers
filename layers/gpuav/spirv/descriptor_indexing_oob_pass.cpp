@@ -28,7 +28,7 @@ namespace gpuav {
 namespace spirv {
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
+uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sampler) {
     // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
     static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
                                           instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
@@ -52,7 +52,7 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
             module_.link_info_.push_back(link_info);
         }
         link_id = link_function_id_non_bindless_;
-    } else if (is_combined_image_sampler_) {
+    } else if (is_combined_image_sampler) {
         if (link_function_id_bindless_combined_image_sampler_ == 0) {
             link_function_id_bindless_combined_image_sampler_ = module_.TakeNextId();
             LinkInfo& link_info = link_info_bindless_combined_image_sampler;
@@ -73,12 +73,12 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId() {
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                       const InjectionData& injection_data) {
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+                                                       const InjectionData& injection_data, const InstructionMeta& meta) {
+    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
-    if (image_inst_) {
+    if (meta.image_inst) {
         const uint32_t opcode = target_instruction_->Opcode();
         if (opcode != spv::OpImageRead && opcode != spv::OpImageFetch && opcode != spv::OpImageWrite) {
             // if not a direct read/write/fetch, will be a OpSampledImage
@@ -106,12 +106,12 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
         }
     }
 
-    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
     uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
+    const uint32_t function_def = GetLinkFunctionId(meta.is_combined_image_sampler);
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(
@@ -124,16 +124,17 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     //     bool valid_image = inst_descriptor_indexing_oob(image);
     //     bool valid_sampler = inst_descriptor_indexing_oob(sampler);
     //     bool valid_both = image_valid && sampler_valid;
-    if (sampler_var_inst_) {
+    if (meta.sampler_var_inst) {
         const uint32_t valid_image = function_result;
         const uint32_t valid_sampler = module_.TakeNextId();
 
-        const Constant& sampler_set_constant = module_.type_manager_.GetConstantUInt32(sampler_descriptor_set_);
-        const Constant& sampler_binding_constant = module_.type_manager_.GetConstantUInt32(sampler_descriptor_binding_);
-        const uint32_t sampler_descriptor_index_id = CastToUint32(sampler_descriptor_index_id_, block, inst_it);  // might be int32
+        const Constant& sampler_set_constant = module_.type_manager_.GetConstantUInt32(meta.sampler_descriptor_set);
+        const Constant& sampler_binding_constant = module_.type_manager_.GetConstantUInt32(meta.sampler_descriptor_binding);
+        const uint32_t sampler_descriptor_index_id =
+            CastToUint32(meta.sampler_descriptor_index_id, block, inst_it);  // might be int32
 
         BindingLayout sampler_binding_layout =
-            module_.set_index_to_bindings_layout_lut_[sampler_descriptor_set_][sampler_descriptor_binding_];
+            module_.set_index_to_bindings_layout_lut_[meta.sampler_descriptor_set][meta.sampler_descriptor_binding];
         const Constant& sampler_binding_layout_size = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.count);
         const Constant& sampler_binding_layout_offset = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.start);
 
@@ -152,18 +153,9 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
 
 void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&) { block_instrumented_table_.clear(); }
 
-void DescriptorIndexingOOBPass::Reset() {
-    var_inst_ = nullptr;
-    sampler_var_inst_ = nullptr;
-    is_combined_image_sampler_ = false;
-    image_inst_ = nullptr;
-    target_instruction_ = nullptr;
-    descriptor_set_ = 0;
-    descriptor_binding_ = 0;
-    descriptor_index_id_ = 0;
-}
+void DescriptorIndexingOOBPass::Reset() { target_instruction_ = nullptr; }
 
-bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     bool array_found = false;
@@ -187,7 +179,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         if (!variable) {
             return false;
         }
-        var_inst_ = &variable->inst_;
+        meta.var_inst = &variable->inst_;
 
         const Type* pointer_type = variable->PointerType(module_.type_manager_);
         if (!pointer_type) {
@@ -198,10 +190,10 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         const bool non_empty_access_chain = access_chain_inst && access_chain_inst->Length() >= 5;
         if (pointer_type->IsArray() && non_empty_access_chain) {
             array_found = true;
-            descriptor_index_id_ = access_chain_inst->Operand(1);
+            meta.descriptor_index_id = access_chain_inst->Operand(1);
         } else {
             // There is no array of this descriptor, so we essentially have an array of 1
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else if (opcode == spv::OpLoad || opcode == spv::OpStore || AtomicOperation(opcode)) {
         // Buffer and Buffer Atomics and Storage Images
@@ -221,7 +213,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;
         }
 
-        var_inst_ = &variable->inst_;
+        meta.var_inst = &variable->inst_;
 
         const uint32_t storage_class = variable->StorageClass();
         if (storage_class == spv::StorageClassUniformConstant) {
@@ -240,10 +232,10 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 
         if (pointer_type->IsArray()) {
             array_found = true;
-            descriptor_index_id_ = access_chain_inst->Operand(1);
+            meta.descriptor_index_id = access_chain_inst->Operand(1);
         } else {
             // There is no array of this descriptor, so we essentially have an array of 1
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     } else {
         // sampled image (non-atomic)
@@ -263,8 +255,8 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             return false;  // Don't deal with the access directly
         }
 
-        image_inst_ = function.FindInstruction(inst.Word(image_word));
-        const Instruction* load_inst = image_inst_;
+        meta.image_inst = function.FindInstruction(inst.Word(image_word));
+        const Instruction* load_inst = meta.image_inst;
         while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
                              load_inst->Opcode() == spv::OpCopyObject)) {
             load_inst = function.FindInstruction(load_inst->Operand(0));
@@ -275,39 +267,39 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 
         // If we can't find a seperate sampler, and non sampled images are check elsewhere, we know this is actually a combined
         // image sampler
-        is_combined_image_sampler_ = sampler_load_inst == nullptr;
+        meta.is_combined_image_sampler = sampler_load_inst == nullptr;
 
         if (!load_inst || load_inst->Opcode() != spv::OpLoad) {
             return false;  // TODO: Handle additional possibilities?
         }
 
-        var_inst_ = function.FindInstruction(load_inst->Operand(0));
-        if (!var_inst_) {
+        meta.var_inst = function.FindInstruction(load_inst->Operand(0));
+        if (!meta.var_inst) {
             // can be a global variable
             const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
-            var_inst_ = global_var ? &global_var->inst_ : nullptr;
+            meta.var_inst = global_var ? &global_var->inst_ : nullptr;
         }
-        if (!var_inst_ || (var_inst_->Opcode() != spv::OpAccessChain && var_inst_->Opcode() != spv::OpVariable)) {
+        if (!meta.var_inst || (meta.var_inst->Opcode() != spv::OpAccessChain && meta.var_inst->Opcode() != spv::OpVariable)) {
             return false;
         }
 
-        if (var_inst_->Opcode() == spv::OpAccessChain) {
+        if (meta.var_inst->Opcode() == spv::OpAccessChain) {
             array_found = true;
-            descriptor_index_id_ = var_inst_->Operand(1);
+            meta.descriptor_index_id = meta.var_inst->Operand(1);
 
-            if (var_inst_->Length() > 5) {
+            if (meta.var_inst->Length() > 5) {
                 module_.InternalError(Name(), "OpAccessChain has more than 1 indexes");
                 return false;
             }
 
-            const Variable* variable = module_.type_manager_.FindVariableById(var_inst_->Operand(0));
+            const Variable* variable = module_.type_manager_.FindVariableById(meta.var_inst->Operand(0));
             if (!variable) {
                 module_.InternalError(Name(), "OpAccessChain base is not a variable");
                 return false;
             }
-            var_inst_ = &variable->inst_;
+            meta.var_inst = &variable->inst_;
         } else {
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     }
 
@@ -316,19 +308,19 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         return false;
     }
 
-    assert(var_inst_);
-    uint32_t variable_id = var_inst_->ResultId();
+    assert(meta.var_inst);
+    uint32_t variable_id = meta.var_inst->ResultId();
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                descriptor_set_ = annotation->Word(3);
+                meta.descriptor_set = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {
-                descriptor_binding_ = annotation->Word(3);
+                meta.descriptor_binding = annotation->Word(3);
             }
         }
     }
 
-    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -336,13 +328,13 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     if (module_.settings_.unsafe_mode) {
         auto variable_found_it = block_instrumented_table_.find(variable_id);
         if (variable_found_it == block_instrumented_table_.end()) {
-            block_instrumented_table_[variable_id] = {descriptor_index_id_};
+            block_instrumented_table_[variable_id] = {meta.descriptor_index_id};
         } else {
             vvl::unordered_set<uint32_t>& descriptor_index_set = variable_found_it->second;
-            if (descriptor_index_set.find(descriptor_index_id_) != descriptor_index_set.end()) {
+            if (descriptor_index_set.find(meta.descriptor_index_id) != descriptor_index_set.end()) {
                 return false;  // Already instrumented, can skip
             } else {
-                descriptor_index_set.emplace(descriptor_index_id_);
+                descriptor_index_set.emplace(meta.descriptor_index_id);
             }
         }
     }
@@ -350,48 +342,48 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors at the same time
     // TODO - This is currently 95% the same logic as above, find a way to combine it
     if (sampler_load_inst && sampler_load_inst->Opcode() == spv::OpLoad) {
-        sampler_var_inst_ = function.FindInstruction(sampler_load_inst->Operand(0));
-        if (!sampler_var_inst_) {
+        meta.sampler_var_inst = function.FindInstruction(sampler_load_inst->Operand(0));
+        if (!meta.sampler_var_inst) {
             // can be a global variable
             const Variable* global_var = module_.type_manager_.FindVariableById(sampler_load_inst->Operand(0));
-            sampler_var_inst_ = global_var ? &global_var->inst_ : nullptr;
+            meta.sampler_var_inst = global_var ? &global_var->inst_ : nullptr;
         }
-        if (!sampler_var_inst_ ||
-            (sampler_var_inst_->Opcode() != spv::OpAccessChain && sampler_var_inst_->Opcode() != spv::OpVariable)) {
+        if (!meta.sampler_var_inst ||
+            (meta.sampler_var_inst->Opcode() != spv::OpAccessChain && meta.sampler_var_inst->Opcode() != spv::OpVariable)) {
             return false;
         }
 
-        if (sampler_var_inst_->Opcode() == spv::OpAccessChain) {
+        if (meta.sampler_var_inst->Opcode() == spv::OpAccessChain) {
             array_found = true;
-            sampler_descriptor_index_id_ = sampler_var_inst_->Operand(1);
+            meta.sampler_descriptor_index_id = meta.sampler_var_inst->Operand(1);
 
-            if (sampler_var_inst_->Length() > 5) {
+            if (meta.sampler_var_inst->Length() > 5) {
                 module_.InternalError(Name(), "Sampler OpAccessChain has more than 1 indexes");
                 return false;
             }
 
-            const Variable* variable = module_.type_manager_.FindVariableById(sampler_var_inst_->Operand(0));
+            const Variable* variable = module_.type_manager_.FindVariableById(meta.sampler_var_inst->Operand(0));
             if (!variable) {
                 module_.InternalError(Name(), "Sampler OpAccessChain base is not a variable");
                 return false;
             }
-            sampler_var_inst_ = &variable->inst_;
+            meta.sampler_var_inst = &variable->inst_;
         } else {
-            sampler_descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.sampler_descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
 
-        variable_id = sampler_var_inst_->ResultId();
+        variable_id = meta.sampler_var_inst->ResultId();
         for (const auto& annotation : module_.annotations_) {
             if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
                 if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                    sampler_descriptor_set_ = annotation->Word(3);
+                    meta.sampler_descriptor_set = annotation->Word(3);
                 } else if (annotation->Word(2) == spv::DecorationBinding) {
-                    sampler_descriptor_binding_ = annotation->Word(3);
+                    meta.sampler_descriptor_binding = annotation->Word(3);
                 }
             }
         }
 
-        if (sampler_descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
+        if (meta.sampler_descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
             module_.InternalWarning(Name(), "Sampler Tried to use a descriptor slot over the current max limit");
             return false;
         }

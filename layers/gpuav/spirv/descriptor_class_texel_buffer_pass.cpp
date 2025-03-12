@@ -40,11 +40,11 @@ uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() {
 }
 
 uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                            const InjectionData& injection_data) {
-    assert(access_chain_inst_ && var_inst_);
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+                                                            const InjectionData& injection_data, const InstructionMeta& meta) {
+    assert(meta.access_chain_inst && meta.var_inst);
+    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t opcode = target_instruction_->Opcode();
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(opcode);
@@ -57,9 +57,9 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
 
     // Use the imageFetch() parameter to decide the offset
     // TODO - This assumes no depth/arrayed/ms from RequiresInstrumentation
-    descriptor_offset_id_ = CastToUint32(target_instruction_->Operand(1), block, inst_it);
+    const uint32_t descriptor_offset_id = CastToUint32(target_instruction_->Operand(1), block, inst_it);
 
-    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
     const uint32_t function_result = module_.TakeNextId();
@@ -69,23 +69,16 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id_, binding_layout_offset.Id()},
+         binding_constant.Id(), descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
         inst_it);
 
     return function_result;
 }
 
-void DescriptorClassTexelBufferPass::Reset() {
-    access_chain_inst_ = nullptr;
-    var_inst_ = nullptr;
-    target_instruction_ = nullptr;
-    descriptor_set_ = 0;
-    descriptor_binding_ = 0;
-    descriptor_index_id_ = 0;
-    descriptor_offset_id_ = 0;
-}
+void DescriptorClassTexelBufferPass::Reset() { target_instruction_ = nullptr; }
 
-bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
+                                                             InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     if (opcode != spv::OpImageFetch && opcode != spv::OpImageWrite && opcode != spv::OpImageRead) {
@@ -93,9 +86,9 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     }
     const uint32_t image_word = OpcodeImageAccessPosition(opcode);
 
-    image_inst_ = function.FindInstruction(inst.Word(image_word));
-    if (!image_inst_) return false;
-    const Type* image_type = module_.type_manager_.FindTypeById(image_inst_->TypeId());
+    meta.image_inst = function.FindInstruction(inst.Word(image_word));
+    if (!meta.image_inst) return false;
+    const Type* image_type = module_.type_manager_.FindTypeById(meta.image_inst->TypeId());
     if (!image_type) return false;
 
     const uint32_t dim = image_type->inst_.Operand(1);
@@ -111,7 +104,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     }
 
     // walk down to get the actual load
-    const Instruction* load_inst = image_inst_;
+    const Instruction* load_inst = meta.image_inst;
     while (load_inst && (load_inst->Opcode() == spv::OpSampledImage || load_inst->Opcode() == spv::OpImage ||
                          load_inst->Opcode() == spv::OpCopyObject)) {
         load_inst = function.FindInstruction(load_inst->Operand(0));
@@ -120,50 +113,50 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
         return false;  // TODO: Handle additional possibilities?
     }
 
-    var_inst_ = function.FindInstruction(load_inst->Operand(0));
-    if (!var_inst_) {
+    meta.var_inst = function.FindInstruction(load_inst->Operand(0));
+    if (!meta.var_inst) {
         // can be a global variable
         const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
-        var_inst_ = global_var ? &global_var->inst_ : nullptr;
+        meta.var_inst = global_var ? &global_var->inst_ : nullptr;
     }
-    if (!var_inst_ || (var_inst_->Opcode() != spv::OpAccessChain && var_inst_->Opcode() != spv::OpVariable)) {
+    if (!meta.var_inst || (meta.var_inst->Opcode() != spv::OpAccessChain && meta.var_inst->Opcode() != spv::OpVariable)) {
         return false;
     }
 
     // If OpVariable, access_chain_inst_ is never checked because it should be a direct image access
-    access_chain_inst_ = var_inst_;
+    meta.access_chain_inst = meta.var_inst;
 
-    if (var_inst_->Opcode() == spv::OpAccessChain) {
-        descriptor_index_id_ = var_inst_->Operand(1);
+    if (meta.var_inst->Opcode() == spv::OpAccessChain) {
+        meta.descriptor_index_id = meta.var_inst->Operand(1);
 
-        if (var_inst_->Length() > 5) {
+        if (meta.var_inst->Length() > 5) {
             module_.InternalError(Name(), "OpAccessChain has more than 1 indexes. 2D Texel Buffers not supported");
             return false;
         }
 
-        const Variable* variable = module_.type_manager_.FindVariableById(var_inst_->Operand(0));
+        const Variable* variable = module_.type_manager_.FindVariableById(meta.var_inst->Operand(0));
         if (!variable) {
             module_.InternalError(Name(), "OpAccessChain base is not a variable");
             return false;
         }
-        var_inst_ = &variable->inst_;
+        meta.var_inst = &variable->inst_;
     } else {
         // There is no array of this descriptor, so we essentially have an array of 1
-        descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+        meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
     }
 
-    uint32_t variable_id = var_inst_->ResultId();
+    uint32_t variable_id = meta.var_inst->ResultId();
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                descriptor_set_ = annotation->Word(3);
+                meta.descriptor_set = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {
-                descriptor_binding_ = annotation->Word(3);
+                meta.descriptor_binding = annotation->Word(3);
             }
         }
     }
 
-    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -180,6 +173,7 @@ void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassTexelBufferPass::Instrument() {
+    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -190,7 +184,7 @@ bool DescriptorClassTexelBufferPass::Instrument() {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
                 if (module_.settings_.max_instrumentations_count != 0 &&
                     instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
@@ -206,8 +200,9 @@ bool DescriptorClassTexelBufferPass::Instrument() {
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
-                CreateFunctionCall(**block_it, &inst_it, injection_data);
+                CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
                 Reset();
+                meta.Reset();
             }
         }
     }
