@@ -188,7 +188,6 @@ jobs:
       - run: cmake --build build
       - run: cmake --install build --prefix /tmp
 
-
   linuxUpload:
     needs: linux
     if: github.ref == 'refs/heads/main'
@@ -201,14 +200,16 @@ jobs:
         with:
           key: linux-upload-ccache
       - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
-      - run: python scripts/tests.py --build --config release
+      - run: cmake -S. -B build -D BUILD_WERROR=ON -D UPDATE_DEPS=ON -D CMAKE_BUILD_TYPE=Release
+      - run: cmake --build build
+      - run: cmake --install build --prefix /tmp --strip
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
       - uses: actions/upload-artifact@v4
         with:
           name: Validation_Layers_Linux_64
-          path: /home/runner/work/Vulkan-ValidationLayers/Vulkan-ValidationLayers/build-ci/install/lib/libVkLayer_khronos_validation.so
+          path: /tmp/lib/libVkLayer_khronos_validation.so
           retention-days: 3
 
   androidOnLinux:
@@ -255,17 +256,25 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            build-ci/external/glslang/build/install
-            build-ci/external/googltest/build/install
-            build-ci/external/mimalloc/build/install
-            build-ci/external/robin-hood-hashing/build/install
-            build-ci/external/SPIRV-Headers/build/install
-            build-ci/external/SPIRV-Tools/build/install
-            build-ci/external/Vulkan-Headers/build/install
-            build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/googltest/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/robin-hood-hashing/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
           key: windows-dependencies-${{ matrix.arch }}-${{ hashfiles('scripts/known_good.json') }}
-      - name: Build
-        run: python3 scripts/tests.py --build --config debug --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+      - run: |
+         cmake -S. -B build `
+         -D BUILD_WERROR=ON `
+         -D UPDATE_DEPS=ON `
+         -D CMAKE_BUILD_TYPE=Debug `
+         -D BUILD_TESTS=ON `
+         -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
+         -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
+      - run: cmake --build build
+      - run: cmake --install build --prefix ${{ github.workspace }}/install
 
   windowsUpload:
     needs: windows
@@ -284,21 +293,28 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            build-ci/external/glslang/build/install
-            build-ci/external/googltest/build/install
-            build-ci/external/mimalloc/build/install
-            build-ci/external/robin-hood-hashing/build/install
-            build-ci/external/SPIRV-Headers/build/install
-            build-ci/external/SPIRV-Tools/build/install
-            build-ci/external/Vulkan-Headers/build/install
-            build-ci/external/Vulkan-Utility-Libraries/build/install
+            ${{ github.workspace }}/external/glslang/build/install
+            ${{ github.workspace }}/external/googltest/build/install
+            ${{ github.workspace }}/external/mimalloc/build/install
+            ${{ github.workspace }}/external/robin-hood-hashing/build/install
+            ${{ github.workspace }}/external/SPIRV-Headers/build/install
+            ${{ github.workspace }}/external/SPIRV-Tools/build/install
+            ${{ github.workspace }}/external/Vulkan-Headers/build/install
+            ${{ github.workspace }}/external/Vulkan-Utility-Libraries/build/install
           key: windows-dependencies-release-amd64-${{ hashfiles('scripts/known_good.json') }}
-      - name: Build
-        run: python3 scripts/tests.py --build --config release --cmake='-DUPDATE_DEPS_SKIP_EXISTING_INSTALL=ON'
+      - run: |
+         cmake -S. -B build `
+          -D BUILD_WERROR=ON `
+          -D UPDATE_DEPS=ON `
+          -D CMAKE_BUILD_TYPE=Release `
+          -D UPDATE_DEPS_SKIP_EXISTING_INSTALL=ON `
+          -D UPDATE_DEPS_DIR=${{ github.workspace }}/external
+      - run: cmake --build build
+      - run: cmake --install build --prefix ${{ github.workspace }}/install
       - uses: actions/upload-artifact@v4
         with:
           name: Validation_Layers_Windows_64
-          path: D:\\a\\Vulkan-ValidationLayers\\Vulkan-ValidationLayers\\build-ci/install/bin/VkLayer_khronos_validation.dll
+          path: ${{ github.workspace }}/install/bin/VkLayer_khronos_validation.dll
           retention-days: 3
 
   android:
