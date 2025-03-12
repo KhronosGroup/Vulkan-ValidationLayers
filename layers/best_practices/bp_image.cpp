@@ -138,12 +138,12 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
 void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, Func command, vvl::ImageView* view,
                                            IMAGE_SUBRESOURCE_USAGE_BP usage) {
     if (view) {
-        auto image_state = std::static_pointer_cast<bp_state::Image>(view->image_state);
+        auto image_state = std::static_pointer_cast<vvl::Image>(view->image_state);
         QueueValidateImage(funcs, command, image_state, usage, view->normalized_subresource_range);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
@@ -161,7 +161,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
     const uint32_t max_layers = state->create_info.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
@@ -171,7 +171,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<bp_state::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     funcs.emplace_back(
         [this, command, state, usage, array_layer, mip_level](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
@@ -180,7 +180,7 @@ void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std:
         });
 }
 
-void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+void BestPractices::ValidateImageInQueueArmImg(Func command, const vvl::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                                IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
     const Location loc(command);
@@ -253,13 +253,14 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const bp_state::Ima
     }
 }
 
-void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, bp_state::Image& state,
+void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, vvl::Image& image,
                                          IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     auto queue_family = qs.queue_family_index;
-    auto last_usage = state.UpdateUsage(array_layer, mip_level, usage, queue_family);
+    auto& sub_state = bp_state::SubState(image);
+    auto last_usage = sub_state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (state.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
+    if (image.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
         // if UNDEFINED then first use/acquisition of subresource
         if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined
@@ -269,7 +270,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 Location loc(command);
                 LogWarning(
-                    "BestPractices-ConcurrentUsageOfExclusiveImage", state.Handle(), loc,
+                    "BestPractices-ConcurrentUsageOfExclusiveImage", image.Handle(), loc,
                     "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32 ") of image is used on queue family index %" PRIu32
                     " after being used on "
                     "queue family index %" PRIu32
@@ -290,17 +291,25 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
-        ValidateImageInQueueArmImg(command, state, last_usage.type, usage, array_layer, mip_level);
+        ValidateImageInQueueArmImg(command, image, last_usage.type, usage, array_layer, mip_level);
     }
 }
 
 std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
                                                             VkFormatFeatureFlags2 features) {
-    return std::make_shared<bp_state::Image>(*this, handle, create_info, features);
+    auto image = BaseClass::CreateImageState(handle, create_info, features);
+    if (image) {
+        image->SetSubState(container_type, std::make_unique<bp_state::ImageSubState>(*image));
+    }
+    return image;
 }
 
 std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
                                                             VkSwapchainKHR swapchain, uint32_t swapchain_index,
                                                             VkFormatFeatureFlags2 features) {
-    return std::make_shared<bp_state::Image>(*this, handle, create_info, swapchain, swapchain_index, features);
+    auto image = BaseClass::CreateImageState(handle, create_info, swapchain, swapchain_index, features);
+    if (image) {
+        image->SetSubState(container_type, std::make_unique<bp_state::ImageSubState>(*image));
+    }
+    return image;
 }

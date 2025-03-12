@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,20 +23,20 @@
 
 namespace gpuav {
 class Validator;
-class CommandBuffer;
+class CommandBufferSubState;
 
 class RestorablePipelineState {
   public:
-    RestorablePipelineState(CommandBuffer& cb_state, VkPipelineBindPoint bind_point) : cb_state_(cb_state) {
+    RestorablePipelineState(CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point) : cb_state_(cb_state) {
         Create(cb_state, bind_point);
     }
     ~RestorablePipelineState() { Restore(); }
 
   private:
-    void Create(CommandBuffer& cb_state, VkPipelineBindPoint bind_point);
+    void Create(CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point);
     void Restore() const;
 
-    CommandBuffer& cb_state_;
+    CommandBufferSubState& cb_state_;
     const vku::safe_VkRenderingInfo* rendering_info_ = nullptr;
     VkPipelineBindPoint pipeline_bind_point_ = VK_PIPELINE_BIND_POINT_MAX_ENUM;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
@@ -49,7 +49,7 @@ class RestorablePipelineState {
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
 
-void BindErrorLoggingDescSet(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint bind_point,
+void BindErrorLoggingDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                              VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index);
 
 }  // namespace gpuav

@@ -30,103 +30,8 @@
 
 namespace gpuav {
 
-Buffer::Buffer(vvl::Device &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_)
-    : vvl::Buffer(dev_data, buff, pCreateInfo),
-      desc_heap(desc_heap_),
-      id(desc_heap.NextId(VulkanTypedHandle(buff, kVulkanObjectTypeBuffer))) {}
-
-void Buffer::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::Buffer::Destroy();
-}
-
-void Buffer::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::Buffer::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-                       VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_)
-    : vvl::BufferView(bf, bv, ci, buf_ff),
-      desc_heap(desc_heap_),
-      id(desc_heap.NextId(VulkanTypedHandle(bv, kVulkanObjectTypeBufferView))) {}
-
-void BufferView::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::BufferView::Destroy();
-}
-
-void BufferView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::BufferView::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-                     VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,
-                     DescriptorHeap &desc_heap_)
-    : vvl::ImageView(image_state, iv, ci, ff, cubic_props),
-      desc_heap(desc_heap_),
-      id(desc_heap.NextId(VulkanTypedHandle(iv, kVulkanObjectTypeImageView))) {}
-
-void ImageView::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::ImageView::Destroy();
-}
-
-void ImageView::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::ImageView::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-Sampler::Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_)
-    : vvl::Sampler(s, pci), desc_heap(desc_heap_), id(desc_heap.NextId(VulkanTypedHandle(s, kVulkanObjectTypeSampler))) {}
-
-void Sampler::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::Sampler::Destroy();
-}
-
-void Sampler::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::Sampler::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-AccelerationStructureKHR::AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                                                   std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress buffer_address,
-                                                   DescriptorHeap &desc_heap_)
-    : vvl::AccelerationStructureKHR(as, ci, std::move(buf_state), buffer_address),
-      desc_heap(desc_heap_),
-      id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureKHR))) {}
-
-void AccelerationStructureKHR::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::AccelerationStructureKHR::Destroy();
-}
-
-void AccelerationStructureKHR::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::AccelerationStructureKHR::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-AccelerationStructureNV::AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as,
-                                                 const VkAccelerationStructureCreateInfoNV *ci, DescriptorHeap &desc_heap_)
-    : vvl::AccelerationStructureNV(device, as, ci),
-      desc_heap(desc_heap_),
-      id(desc_heap.NextId(VulkanTypedHandle(as, kVulkanObjectTypeAccelerationStructureNV))) {}
-
-void AccelerationStructureNV::Destroy() {
-    desc_heap.DeleteId(id);
-    vvl::AccelerationStructureNV::Destroy();
-}
-
-void AccelerationStructureNV::NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) {
-    desc_heap.DeleteId(id);
-    vvl::AccelerationStructureNV::NotifyInvalidate(invalid_nodes, unlink);
-}
-
-CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
-                             const vvl::CommandPool *pool)
-    : vvl::CommandBuffer(gpuav, handle, pCreateInfo, pool),
+CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
+    : vvl::CommandBufferSubState(cb),
       gpu_resources_manager(*gpuav.desc_set_manager_),
       state_(gpuav),
       error_output_buffer_(gpuav),
@@ -135,6 +40,8 @@ CommandBuffer::CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkC
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
+
+CommandBufferSubState::~CommandBufferSubState() {}
 
 static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_buffer, vko::Buffer &error_output_buffer,
                                     const Location &loc) {
@@ -157,27 +64,25 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     return true;
 }
 
-void CommandBuffer::AllocateResources(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
-
+void CommandBufferSubState::AllocateResources(const Location &loc) {
     VkResult result = VK_SUCCESS;
 
     // Instrumentation descriptor set layout
     if (instrumentation_desc_set_layout_ == VK_NULL_HANDLE) {
-        assert(!gpuav->instrumentation_bindings_.empty());
+        assert(!state_.instrumentation_bindings_.empty());
         VkDescriptorSetLayoutCreateInfo instrumentation_desc_set_layout_ci = vku::InitStructHelper();
-        instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(gpuav->instrumentation_bindings_.size());
-        instrumentation_desc_set_layout_ci.pBindings = gpuav->instrumentation_bindings_.data();
-        result = DispatchCreateDescriptorSetLayout(gpuav->device, &instrumentation_desc_set_layout_ci, nullptr,
+        instrumentation_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(state_.instrumentation_bindings_.size());
+        instrumentation_desc_set_layout_ci.pBindings = state_.instrumentation_bindings_.data();
+        result = DispatchCreateDescriptorSetLayout(state_.device, &instrumentation_desc_set_layout_ci, nullptr,
                                                    &instrumentation_desc_set_layout_);
         if (result != VK_SUCCESS) {
-            gpuav->InternalError(gpuav->device, loc, "Unable to create instrumentation descriptor set layout.");
+            state_.InternalError(state_.device, loc, "Unable to create instrumentation descriptor set layout.");
             return;
         }
     }
 
     // Error output buffer
-    if (!AllocateErrorLogsBuffer(*gpuav, VkHandle(), error_output_buffer_, loc)) {
+    if (!AllocateErrorLogsBuffer(state_, VkHandle(), error_output_buffer_, loc)) {
         return;
     }
 
@@ -195,11 +100,11 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         }
 
         cmd_errors_counts_buffer_.Clear();
-        if (gpuav->aborted_) return;
+        if (state_.aborted_) return;
     }
 
     // BDA snapshot
-    if (gpuav->gpuav_settings.shader_instrumentation.buffer_device_address) {
+    if (state_.gpuav_settings.shader_instrumentation.buffer_device_address) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
@@ -230,20 +135,20 @@ void CommandBuffer::AllocateResources(const Location &loc) {
             VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
             validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
             validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
-            result = DispatchCreateDescriptorSetLayout(gpuav->device, &validation_cmd_desc_set_layout_ci, nullptr,
+            result = DispatchCreateDescriptorSetLayout(state_.device, &validation_cmd_desc_set_layout_ci, nullptr,
                                                        &error_logging_desc_set_layout_);
             if (result != VK_SUCCESS) {
-                gpuav->InternalError(gpuav->device, loc, "Unable to create descriptor set layout used for validation commands.");
+                state_.InternalError(state_.device, loc, "Unable to create descriptor set layout used for validation commands.");
                 return;
             }
         }
 
         assert(validation_cmd_desc_pool_ == VK_NULL_HANDLE);
         assert(error_logging_desc_set_ == VK_NULL_HANDLE);
-        result = gpuav->desc_set_manager_->GetDescriptorSet(&validation_cmd_desc_pool_, error_logging_desc_set_layout_,
+        result = state_.desc_set_manager_->GetDescriptorSet(&validation_cmd_desc_pool_, error_logging_desc_set_layout_,
                                                             &error_logging_desc_set_);
         if (result != VK_SUCCESS) {
-            gpuav->InternalError(gpuav->device, loc, "Unable to create descriptor set used for validation commands.");
+            state_.InternalError(state_.device, loc, "Unable to create descriptor set used for validation commands.");
             return;
         }
 
@@ -266,8 +171,8 @@ void CommandBuffer::AllocateResources(const Location &loc) {
 
         VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
 
-        assert(!gpuav->indices_buffer_.IsDestroyed());
-        cmd_indices_buffer_desc_info.buffer = gpuav->indices_buffer_.VkHandle();
+        assert(!state_.indices_buffer_.IsDestroyed());
+        cmd_indices_buffer_desc_info.buffer = state_.indices_buffer_.VkHandle();
         cmd_indices_buffer_desc_info.offset = 0;
         cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
 
@@ -293,17 +198,15 @@ void CommandBuffer::AllocateResources(const Location &loc) {
         validation_cmd_descriptor_writes[3].pBufferInfo = &cmd_errors_count_buffer_desc_info;
         validation_cmd_descriptor_writes[3].dstSet = GetErrorLoggingDescSet();
 
-        DispatchUpdateDescriptorSets(gpuav->device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
+        DispatchUpdateDescriptorSets(state_.device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
                                      validation_cmd_descriptor_writes.data(), 0, NULL);
     }
 }
 
-bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
-
+bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
     // By supplying a "date"
-    if (!gpuav->gpuav_settings.shader_instrumentation.buffer_device_address ||
-        bda_ranges_snapshot_version_ == gpuav->buffer_device_address_ranges_version) {
+    if (!state_.gpuav_settings.shader_instrumentation.buffer_device_address ||
+        bda_ranges_snapshot_version_ == state_.buffer_device_address_ranges_version) {
         return true;
     }
 
@@ -324,16 +227,16 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
     auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 1);
     const auto [ranges_to_update_count, total_address_ranges_count] =
-        gpuav->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
+        state_.GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     bda_table_ptr[0] = ranges_to_update_count;
 
-    if (total_address_ranges_count > size_t(gpuav->gpuav_settings.max_bda_in_use)) {
+    if (total_address_ranges_count > size_t(state_.gpuav_settings.max_bda_in_use)) {
         std::ostringstream problem_string;
         problem_string << "Number of buffer device addresses ranges in use (" << total_address_ranges_count
                        << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
-                       << gpuav->gpuav_settings.max_bda_in_use
+                       << state_.gpuav_settings.max_bda_in_use
                        << "). Truncating buffer device address table could result in invalid validation.";
-        gpuav->InternalError(gpuav->device, loc, problem_string.str().c_str());
+        state_.InternalError(state_.device, loc, problem_string.str().c_str());
         return false;
     }
 
@@ -341,31 +244,21 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
     // ---
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
     bda_ranges_snapshot_.FlushAllocation(loc);
-    bda_ranges_snapshot_version_ = gpuav->buffer_device_address_ranges_version;
+    bda_ranges_snapshot_version_ = state_.buffer_device_address_ranges_version;
 
     return true;
 }
 
-VkDeviceSize CommandBuffer::GetBdaRangesBufferByteSize() const {
-    auto gpuav = static_cast<Validator *>(&dev_data);
-    return (1                                           // 1 QWORD for the number of address ranges
-            + 2 * gpuav->gpuav_settings.max_bda_in_use  // 2 QWORDS per address range
+VkDeviceSize CommandBufferSubState::GetBdaRangesBufferByteSize() const {
+    return (1                                           // 2 QWORD for the number of address ranges
+            + 2 * state_.gpuav_settings.max_bda_in_use  // 2 QWORDS per address range
             ) *
            8;
 }
 
-CommandBuffer::~CommandBuffer() { Destroy(); }
+void CommandBufferSubState::Destroy() { ResetCBState(true); }
 
-void CommandBuffer::Destroy() {
-    {
-        auto guard = WriteLock();
-        ResetCBState(true);
-    }
-    vvl::CommandBuffer::Destroy();
-}
-
-void CommandBuffer::Reset(const Location &loc) {
-    vvl::CommandBuffer::Reset(loc);
+void CommandBufferSubState::Reset(const Location &loc) {
     ResetCBState(false);
     // TODO: Calling AllocateResources in Reset like so is a kind of a hack,
     // relying on CommandBuffer internal logic to work.
@@ -373,9 +266,7 @@ void CommandBuffer::Reset(const Location &loc) {
     AllocateResources(loc);
 }
 
-void CommandBuffer::ResetCBState(bool should_destroy) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
-
+void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
         printf_buffer_info.output_mem_buffer.Destroy();
@@ -404,18 +295,18 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
     bda_ranges_snapshot_version_ = 0;
 
     if (validation_cmd_desc_pool_ != VK_NULL_HANDLE && error_logging_desc_set_ != VK_NULL_HANDLE) {
-        gpuav->desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, error_logging_desc_set_);
+        state_.desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, error_logging_desc_set_);
         validation_cmd_desc_pool_ = VK_NULL_HANDLE;
         error_logging_desc_set_ = VK_NULL_HANDLE;
     }
 
     if (should_destroy && instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav->device, instrumentation_desc_set_layout_, nullptr);
+        DispatchDestroyDescriptorSetLayout(state_.device, instrumentation_desc_set_layout_, nullptr);
         instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
     if (error_logging_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav->device, error_logging_desc_set_layout_, nullptr);
+        DispatchDestroyDescriptorSetLayout(state_.device, error_logging_desc_set_layout_, nullptr);
         error_logging_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
@@ -425,7 +316,7 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
     action_command_count = 0;
 }
 
-void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
+void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     action_command_count++;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
@@ -436,11 +327,11 @@ void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     }
 }
 
-std::string CommandBuffer::GetDebugLabelRegion(uint32_t label_command_i,
-                                               const std::vector<std::string> &initial_label_stack) const {
+std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
+                                                       const std::vector<std::string> &initial_label_stack) const {
     std::string debug_region_name;
     if (label_command_i != vvl::kU32Max) {
-        debug_region_name = GetDebugRegionName(GetLabelCommands(), label_command_i, initial_label_stack);
+        debug_region_name = base.GetDebugRegionName(base.GetLabelCommands(), label_command_i, initial_label_stack);
     } else {
         // label_command_i == vvl::kU32Max => when the instrumented command was recorded,
         // no debug label region was yet opened in the corresponding command buffer,
@@ -456,10 +347,8 @@ std::string CommandBuffer::GetDebugLabelRegion(uint32_t label_command_i,
     return debug_region_name;
 }
 
-bool CommandBuffer::PreProcess(const Location &loc) {
-    auto gpuav = static_cast<Validator *>(&dev_data);
-
-    bool succeeded = descriptor::UpdateDescriptorStateSSBO(*gpuav, *this, loc);
+bool CommandBufferSubState::PreProcess(const Location &loc) {
+    bool succeeded = descriptor::UpdateDescriptorStateSSBO(state_, *this, loc);
     if (!succeeded) {
         return false;
     }
@@ -469,20 +358,19 @@ bool CommandBuffer::PreProcess(const Location &loc) {
         return false;
     }
 
-    return !per_command_error_loggers.empty() || has_build_as_cmd;
+    return !per_command_error_loggers.empty() || base.has_build_as_cmd;
 }
 
-bool CommandBuffer::NeedsPostProcess() { return !error_output_buffer_.IsDestroyed(); }
+bool CommandBufferSubState::NeedsPostProcess() { return !error_output_buffer_.IsDestroyed(); }
 
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
-void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
+void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
     VVL_ZoneScoped;
-    auto gpuav = static_cast<Validator *>(&dev_data);
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
         auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.GetMappedPtr();
-        debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
+        debug_printf::AnalyzeAndGenerateMessage(state_, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
     }
 
     // CommandBuffer::Destroy can happen on an other thread,
@@ -519,7 +407,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                skip |= error_logger(*gpuav, *this, error_record_ptr, objlist, initial_label_stack);
+                skip |= error_logger(state_, *this, error_record_ptr, objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;
@@ -537,12 +425,12 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
     }
 
     cmd_errors_counts_buffer_.Clear();
-    if (gpuav->aborted_) return;
+    if (state_.aborted_) return;
 
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
     bool gpuav_success = false;
-    if (!skip && gpuav->gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
+    if (!skip && state_.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
         gpuav_success = ValidateBindlessDescriptorSets(loc);
     }
 
@@ -551,11 +439,9 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
     }
 }
 
-Queue::Queue(Validator &gpuav, VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-             const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr)
-    : vvl::Queue(gpuav, q, family_index, queue_index, flags, queueFamilyProperties), state_(gpuav), timeline_khr_(timeline_khr) {}
+QueueSubState::QueueSubState(Validator &gpuav, vvl::Queue &q) : vvl::QueueSubState(q), state_(gpuav), timeline_khr_(false) {}
 
-Queue::~Queue() {
+QueueSubState::~QueueSubState() {
     if (barrier_command_buffer_) {
         DispatchFreeCommandBuffers(state_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
         barrier_command_buffer_ = VK_NULL_HANDLE;
@@ -572,15 +458,15 @@ Queue::~Queue() {
 
 // Submit a memory barrier on graphics queues.
 // Lazy-create and record the needed command buffer.
-void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
+void QueueSubState::SubmitBarrier(const Location &loc, uint64_t seq) {
     if (barrier_command_pool_ == VK_NULL_HANDLE) {
         VkResult result = VK_SUCCESS;
 
         VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
-        pool_create_info.queueFamilyIndex = queue_family_index;
+        pool_create_info.queueFamilyIndex = base.queue_family_index;
         result = DispatchCreateCommandPool(state_.device, &pool_create_info, nullptr, &barrier_command_pool_);
         if (result != VK_SUCCESS) {
-            state_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create command pool for barrier CB.");
+            state_.InternalError(VkHandle(), loc, "Unable to create command pool for barrier CB.");
             barrier_command_pool_ = VK_NULL_HANDLE;
             return;
         }
@@ -591,7 +477,7 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         result = DispatchAllocateCommandBuffers(state_.device, &buffer_alloc_info, &barrier_command_buffer_);
         if (result != VK_SUCCESS) {
-            state_.InternalError(vvl::Queue::VkHandle(), loc, "Unable to create barrier command buffer.");
+            state_.InternalError(VkHandle(), loc, "Unable to create barrier command buffer.");
             DispatchDestroyCommandPool(state_.device, barrier_command_pool_, nullptr);
             barrier_command_pool_ = VK_NULL_HANDLE;
             barrier_command_buffer_ = VK_NULL_HANDLE;
@@ -642,37 +528,34 @@ void Queue::SubmitBarrier(const Location &loc, uint64_t seq) {
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = &barrier_sem_;
 
-        DispatchQueueSubmit(vvl::Queue::VkHandle(), 1, &submit_info, VK_NULL_HANDLE);
+        DispatchQueueSubmit(VkHandle(), 1, &submit_info, VK_NULL_HANDLE);
     }
 }
 
-vvl::PreSubmitResult Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
+void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
     for (const auto &submission : submissions) {
         auto loc = submission.loc.Get();
         for (auto &cb_submission : submission.cb_submissions) {
-            auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb_submission.cb);
-            auto guard = gpu_cb->ReadLock();
-            gpu_cb->PreProcess(loc);
-            for (auto *secondary_cb : gpu_cb->linkedCommandBuffers) {
+            auto guard = cb_submission.cb->ReadLock();
+            auto &gpu_cb = SubState(*cb_submission.cb);
+            gpu_cb.PreProcess(loc);
+            for (auto *secondary_cb : gpu_cb.base.linkedCommandBuffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
-                auto *secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                secondary_gpu_cb->PreProcess(loc);
+                auto &secondary_gpu_cb = SubState(*secondary_cb);
+                secondary_gpu_cb.PreProcess(loc);
             }
         }
     }
-    return vvl::Queue::PreSubmit(std::move(submissions));
 }
 
-void Queue::PostSubmit(vvl::QueueSubmission &submission) {
-    vvl::Queue::PostSubmit(submission);
+void QueueSubState::PostSubmit(vvl::QueueSubmission &submission) {
     if (submission.end_batch) {
         auto loc = submission.loc.Get();
         SubmitBarrier(loc, submission.seq);
     }
 }
 
-void Queue::Retire(vvl::QueueSubmission &submission) {
-    vvl::Queue::Retire(submission);
+void QueueSubState::Retire(vvl::QueueSubmission &submission) {
     if (submission.loc.Get().function == vvl::Func::vkQueuePresentKHR) {
         // Present batch does not have any GPU-AV work to post process, skip it.
         // This is also needed for correctness. QueuePresent does not have a PostSubmit call
@@ -694,14 +577,14 @@ void Queue::Retire(vvl::QueueSubmission &submission) {
 
         for (std::vector<vvl::CommandBufferSubmission> &cb_submissions : retiring_) {
             for (vvl::CommandBufferSubmission &cb_submission : cb_submissions) {
-                auto gpu_cb = std::static_pointer_cast<CommandBuffer>(cb_submission.cb);
-                auto guard = gpu_cb->WriteLock();
+                auto guard = cb_submission.cb->WriteLock();
+                auto &gpu_cb = SubState(*cb_submission.cb);
                 auto loc = submission.loc.Get();
-                gpu_cb->PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
-                for (vvl::CommandBuffer *secondary_cb : gpu_cb->linkedCommandBuffers) {
-                    auto secondary_gpu_cb = static_cast<CommandBuffer *>(secondary_cb);
-                    auto secondary_guard = secondary_gpu_cb->WriteLock();
-                    secondary_gpu_cb->PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
+                gpu_cb.PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
+                for (vvl::CommandBuffer *secondary_cb : gpu_cb.base.linkedCommandBuffers) {
+                    auto secondary_guard = secondary_cb->WriteLock();
+                    auto &secondary_gpu_cb = SubState(*secondary_cb);
+                    secondary_gpu_cb.PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
                 }
             }
         }

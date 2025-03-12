@@ -23,17 +23,15 @@
 struct SubpassDependencyGraphNode;
 
 namespace vvl {
-class Buffer;
-class VideoSession;
-class VideoPictureResource;
 class Bindable;
+class Buffer;
 class Event;
+class Image;
+class ImageView;
+class VideoPictureResource;
+class VideoSession;
 }  // namespace vvl
 
-namespace syncval_state {
-class ImageState;
-class ImageViewState;
-}  // namespace syncval_state
 bool SimpleBinding(const vvl::Bindable &bindable);
 VkDeviceSize ResourceBaseAddress(const vvl::Buffer &buffer);
 
@@ -228,16 +226,16 @@ struct SubpassBarrierTrackback {
 class AttachmentViewGen {
   public:
     enum Gen { kViewSubresource = 0, kRenderArea = 1, kDepthOnlyRenderArea = 2, kStencilOnlyRenderArea = 3, kGenSize = 4 };
-    AttachmentViewGen(const syncval_state::ImageViewState *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
+    AttachmentViewGen(const vvl::ImageView *image_view, const VkOffset3D &offset, const VkExtent3D &extent);
     AttachmentViewGen(const AttachmentViewGen &other) = default;
     AttachmentViewGen(AttachmentViewGen &&other) = default;
-    const syncval_state::ImageViewState *GetViewState() const { return view_; }
+    const vvl::ImageView *GetViewState() const { return view_; }
     const std::optional<ImageRangeGen> &GetRangeGen(Gen type) const;
     bool IsValid() const { return gen_store_[Gen::kViewSubresource].has_value(); }
     Gen GetDepthStencilRenderAreaGenType(bool depth_op, bool stencil_op) const;
 
   private:
-    const syncval_state::ImageViewState *view_ = nullptr;
+    const vvl::ImageView *view_ = nullptr;
     std::array<std::optional<ImageRangeGen>, Gen::kGenSize> gen_store_;
 };
 
@@ -245,8 +243,6 @@ using AttachmentViewGenVector = std::vector<AttachmentViewGen>;
 
 class AccessContext {
   public:
-    using ImageState = syncval_state::ImageState;
-    using ImageViewState = syncval_state::ImageViewState;
     using ScopeMap = ResourceAccessRangeMap;
     enum DetectOptions : uint32_t {
         kDetectPrevious = 1U << 0,
@@ -257,28 +253,28 @@ class AccessContext {
     using TrackBack = SubpassBarrierTrackback<AccessContext>;
 
     HazardResult DetectHazard(const vvl::Buffer &buffer, SyncAccessIndex access_index, const ResourceAccessRange &range) const;
-    HazardResult DetectHazard(const ImageState &image, SyncAccessIndex current_usage,
+    HazardResult DetectHazard(const vvl::Image &image, SyncAccessIndex current_usage,
                               const VkImageSubresourceRange &subresource_range, bool is_depth_sliced) const;
-    HazardResult DetectHazard(const ImageViewState &image_view, SyncAccessIndex current_usage) const;
+    HazardResult DetectHazard(const vvl::ImageView &image_view, SyncAccessIndex current_usage) const;
     HazardResult DetectHazard(const ImageRangeGen &ref_range_gen, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
-    HazardResult DetectHazard(const ImageViewState &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
+    HazardResult DetectHazard(const vvl::ImageView &image_view, const VkOffset3D &offset, const VkExtent3D &extent,
                               SyncAccessIndex current_usage, SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule) const;
     HazardResult DetectHazard(const vvl::VideoSession &vs_state, const vvl::VideoPictureResource &resource,
                               SyncAccessIndex current_usage) const;
-    HazardResult DetectHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
+    HazardResult DetectHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset,
                               const VkExtent3D &extent, bool is_depth_sliced, SyncAccessIndex current_usage,
                               SyncOrdering ordering_rule = SyncOrdering::kOrderingNone) const;
 
-    HazardResult DetectImageBarrierHazard(const ImageState &image, const VkImageSubresourceRange &subresource_range,
+    HazardResult DetectImageBarrierHazard(const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                                           VkPipelineStageFlags2 src_exec_scope, const SyncAccessFlags &src_access_scope,
                                           QueueId queue_id, const ScopeMap &scope_map, ResourceUsageTag scope_tag,
                                           DetectOptions options) const;
     HazardResult DetectImageBarrierHazard(const AttachmentViewGen &attachment_view, const SyncBarrier &barrier,
                                           DetectOptions options) const;
-    HazardResult DetectImageBarrierHazard(const ImageState &image, VkPipelineStageFlags2 src_exec_scope,
+    HazardResult DetectImageBarrierHazard(const vvl::Image &image, VkPipelineStageFlags2 src_exec_scope,
                                           const SyncAccessFlags &src_access_scope, const VkImageSubresourceRange &subresource_range,
                                           DetectOptions options) const;
     HazardResult DetectSubpassTransitionHazard(const TrackBack &track_back, const AttachmentViewGen &attach_view) const;
@@ -309,16 +305,16 @@ class AccessContext {
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageState &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const ResourceUsageTag &tag);
-    void UpdateAccessState(const ImageState &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::Image &image, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkImageSubresourceRange &subresource_range, const VkOffset3D &offset, const VkExtent3D &extent,
                            ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type, SyncAccessIndex current_usage,
                            SyncOrdering ordering_rule, ResourceUsageTag tag);
-    void UpdateAccessState(const ImageViewState &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const VkOffset3D &offset, const VkExtent3D &extent, ResourceUsageTagEx tag_ex);
-    void UpdateAccessState(const ImageViewState &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
+    void UpdateAccessState(const vvl::ImageView &image_view, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
     void UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            ResourceUsageTagEx tag_ex);
@@ -431,11 +427,11 @@ class AccessContext {
     HazardResult DetectHazard(Detector &detector, const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
                               DetectOptions options) const;
     template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const ImageState &image, const VkImageSubresourceRange &subresource_range,
+    HazardResult DetectHazard(Detector &detector, const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                               const VkOffset3D &offset, const VkExtent3D &extent, bool is_depth_sliced,
                               DetectOptions options) const;
     template <typename Detector>
-    HazardResult DetectHazard(Detector &detector, const ImageState &image, const VkImageSubresourceRange &subresource_range,
+    HazardResult DetectHazard(Detector &detector, const vvl::Image &image, const VkImageSubresourceRange &subresource_range,
                               bool is_depth_sliced, DetectOptions options) const;
 
     template <typename Detector>

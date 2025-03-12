@@ -35,18 +35,7 @@
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_layer_dispatch_table.h"
-
-// Layer object type identifiers
-enum LayerObjectTypeId {
-    LayerObjectTypeThreading,            // Instance or device threading layer object
-    LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
-    LayerObjectTypeObjectTracker,        // Instance or device object tracker layer object
-    LayerObjectTypeCoreValidation,       // Instance or device core validation layer object
-    LayerObjectTypeBestPractices,        // Instance or device best practices layer object
-    LayerObjectTypeGpuAssisted,          // Instance or device gpu assisted validation layer object
-    LayerObjectTypeSyncValidation,       // Instance or device synchronization validation layer object
-    LayerObjectTypeMaxEnum,              // Max enum count
-};
+#include "layer_object_id.h"
 
 // To avoid re-hashing unique ids on each use, we precompute the hash and store the
 // hash's LSBs in the high 24 bits.

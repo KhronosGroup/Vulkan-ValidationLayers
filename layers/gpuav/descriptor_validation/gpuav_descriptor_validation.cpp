@@ -28,7 +28,8 @@
 namespace gpuav {
 namespace descriptor {
 
-void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, const LastBound &last_bound, const Location &loc) {
+void PreCallActionCommandPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
+                                     const Location &loc) {
     // Can hit if current action command doesn't use any descriptor
     if (cb_state.descriptor_command_bindings.empty()) {
         return;
@@ -55,17 +56,18 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
     }
 }
 
-void PreCallActionCommand(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point, const Location &loc) {
+void PreCallActionCommand(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint pipeline_bind_point,
+                          const Location &loc) {
     // Currently this is only for updating the binding_req_map which is used for post processing only
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto const &last_bound = cb_state.lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.base.lastBound[lv_bind_point];
 
     PreCallActionCommandPostProcess(gpuav, cb_state, last_bound, loc);
 }
 
-void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state, const LastBound &last_bound,
+void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                        DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
@@ -93,12 +95,11 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
-        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = bound_descriptor_set->GetPostProcessBuffer(gpuav, loc);
+        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = SubState(*ds_slot.ds_state).GetPostProcessBuffer(gpuav, loc);
     }
 }
 
-void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_state, const LastBound &last_bound,
+void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                             DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) return;
 
@@ -128,15 +129,14 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBuffer &cb_
             continue;  // can have gaps in descriptor sets
         }
 
-        auto bound_descriptor_set = static_cast<DescriptorSet *>(ds_slot.ds_state.get());
         // If update after bind, wait until we process things in UpdateDescriptorStateSSBO()
-        if (!bound_descriptor_set->IsUpdateAfterBind()) {
-            ssbo_buffer_ptr->descriptor_set_types[i] = bound_descriptor_set->GetTypeAddress(gpuav, loc);
+        if (!ds_slot.ds_state->IsUpdateAfterBind()) {
+            ssbo_buffer_ptr->descriptor_set_types[i] = SubState(*ds_slot.ds_state).GetTypeAddress(gpuav, loc);
         }
     }
 }
 
-void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelineBindPoint pipeline_bind_point,
+void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing &&
         !gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
@@ -144,7 +144,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
     }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto const &last_bound = cb_state.lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.base.lastBound[lv_bind_point];
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     if (number_of_sets == 0) {
@@ -163,8 +163,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         if (!ds_slot.ds_state) {
             continue;  // can have gaps in descriptor sets
         }
-        std::shared_ptr<DescriptorSet> bound_descriptor_set = std::static_pointer_cast<DescriptorSet>(ds_slot.ds_state);
-        descriptor_command_binding.bound_descriptor_sets.emplace_back(std::move(bound_descriptor_set));
+        descriptor_command_binding.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
     }
 
     UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_command_binding, loc);
@@ -174,15 +173,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
-[[nodiscard]] bool UpdateDescriptorStateSSBO(Validator &gpuav, CommandBuffer &cb_state, const Location &loc) {
+[[nodiscard]] bool UpdateDescriptorStateSSBO(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc) {
     const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.descriptor_checks;
     if (!need_descriptor_checks) return true;
 
     for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
         auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_buffer.GetMappedPtr();
         for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
-            DescriptorSet &ds_state = *descriptor_command_binding.bound_descriptor_sets[i];
-            ssbo_buffer_ptr->descriptor_set_types[i] = ds_state.GetTypeAddress(gpuav, loc);
+            auto &substate = SubState(*descriptor_command_binding.bound_descriptor_sets[i]);
+            ssbo_buffer_ptr->descriptor_set_types[i] = substate.GetTypeAddress(gpuav, loc);
         }
     }
     return true;
@@ -190,7 +189,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 }  // namespace descriptor
 
 // After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
-[[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
+[[nodiscard]] bool CommandBufferSubState::ValidateBindlessDescriptorSets(const Location &loc) {
     VVL_ZoneScoped;
     for (uint32_t action_index = 0; action_index < action_command_snapshots.size(); action_index++) {
         const auto &action_command_snapshot = action_command_snapshots[action_index];
@@ -208,15 +207,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         // For each descriptor set ...
         for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
             auto &bound_descriptor_set = descriptor_command_binding.bound_descriptor_sets[set_index];
-
+            auto &substate = SubState(*bound_descriptor_set);
             if (validated_desc_sets.count(bound_descriptor_set->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
                 continue;
             }
 
-            if (!bound_descriptor_set->HasPostProcessBuffer()) {
-                if (!bound_descriptor_set->CanPostProcess()) {
+            if (!substate.HasPostProcessBuffer()) {
+                if (!substate.CanPostProcess()) {
                     continue;  // hit a dummy object used as a placeholder
                 }
 
@@ -224,17 +223,17 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 error << "In CommandBuffer::ValidateBindlessDescriptorSets, action_command_snapshots[" << action_index
                       << "].descriptor_command_binding.bound_descriptor_sets[" << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
-                auto gpuav = static_cast<Validator *>(&dev_data);
+                auto gpuav = static_cast<Validator *>(&base.dev_data);
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
                 return false;
             }
             validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
 
-            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
+            vvl::DescriptorValidator context(state_, base, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              action_command_snapshot.shader_handle, draw_loc);
 
             std::vector<DescriptorAccess> descriptor_accesses =
-                bound_descriptor_set->GetDescriptorAccesses(loc, set_index, action_command_snapshot.entry_points);
+                substate.GetDescriptorAccesses(loc, set_index, action_command_snapshot.entry_points);
             for (const auto &descriptor_access : descriptor_accesses) {
                 auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
                 ASSERT_AND_CONTINUE(descriptor_binding);

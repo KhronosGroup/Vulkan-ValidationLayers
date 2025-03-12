@@ -136,7 +136,7 @@ struct SharedCopyBufferToImageValidationResources final {
     }
 };
 
-void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
+void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
                                        const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info) {
     if (!gpuav.gpuav_settings.validate_buffer_copies) {
         return;
@@ -300,9 +300,10 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
     const uint32_t group_count_x = max_texels_count_in_regions / 64 + uint32_t(max_texels_count_in_regions % 64 > 0);
     DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                      Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
-                                                      const LogObjectList &objlist, const std::vector<std::string> &) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
+                                                              Validator &gpuav, const CommandBufferSubState &,
+                                                              const uint32_t *error_record, const LogObjectList &objlist,
+                                                              const std::vector<std::string> &) {
         bool skip = false;
 
         using namespace glsl;

@@ -56,6 +56,9 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
     if (!submissions.empty()) {
         submissions.back().end_batch = true;
     }
+    for (auto &item : sub_states_) {
+        item.second->PreSubmit(submissions);
+    }
     PreSubmitResult result;
     for (QueueSubmission &submission : submissions) {
         for (CommandBufferSubmission &cb_submission : submission.cb_submissions) {
@@ -65,7 +68,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
                 secondary_cmd_buffer->IncrementResources();
             }
             cb_submission.cb->IncrementResources();
-            cb_submission.cb->Submit(VkHandle(), submission.perf_submit_pass, submission.loc.Get());
+            cb_submission.cb->Submit(*this, submission.perf_submit_pass, submission.loc.Get());
         }
         // seq_ is atomic so we don't need a lock until updating the deque below.
         // Note that this relies on the external synchonization requirements for the
@@ -193,6 +196,9 @@ void vvl::Queue::Destroy() {
         dead_thread->join();
         dead_thread.reset();
     }
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
     StateObject::Destroy();
 }
 
@@ -200,6 +206,12 @@ void vvl::Queue::PostSubmit() {
     auto guard = Lock();
     if (!submissions_.empty()) {
         PostSubmit(submissions_.back());
+    }
+}
+
+void vvl::Queue::PostSubmit(QueueSubmission &submission) {
+    for (auto &item : sub_states_) {
+        item.second->PostSubmit(submission);
     }
 }
 
@@ -241,6 +253,9 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
         }
         return false;
     };
+    for (auto &item : sub_states_) {
+        item.second->Retire(submission);
+    }
     submission.EndUse();
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);

@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@
 struct Location;
 
 namespace gpuav {
-class CommandBuffer;
+class CommandBufferSubState;
 class Validator;
 
-void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state,
+void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
                                        const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info);
 
 }  // namespace gpuav

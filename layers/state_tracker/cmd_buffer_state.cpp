@@ -24,6 +24,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/queue_state.h"
 #include "utils/vk_layer_utils.h"
 
 static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
@@ -331,6 +332,9 @@ void CommandBuffer::Reset(const Location &loc) {
     ResetCBState();
     // Remove reverse command buffer links.
     Invalidate(true);
+    for (auto &item : sub_states_) {
+        item.second->Reset(loc);
+    }
 }
 
 // Track which resources are in-flight by atomically incrementing their "in_use" count
@@ -362,6 +366,10 @@ void CommandBuffer::Destroy() {
         auto guard = WriteLock();
         ResetCBState();
     }
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
+    sub_states_.clear();
     StateObject::Destroy();
 }
 
@@ -407,6 +415,9 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
             }
             broken_bindings.emplace(invalid_nodes[0]->Handle(), log_list);
         }
+    }
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
     }
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
@@ -1503,7 +1514,12 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
     }
 }
 
-void CommandBuffer::RecordCmd(Func command) { command_count++; }
+void CommandBuffer::RecordCmd(Func command) {
+    command_count++;
+    for (auto &item : sub_states_) {
+        item.second->RecordCmd(command);
+    }
+}
 
 void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     RecordCmd(command);
@@ -1573,6 +1589,9 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
 void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
                                      VkPipelineStageFlags2KHR src_stage_mask) {
     RecordCmd(command);
+    for (auto &item : sub_states_) {
+        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask);
+    }
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data.disabled[command_buffer_state]) {
             auto event_state = dev_data.Get<vvl::Event>(pEvents[i]);
@@ -1634,7 +1653,11 @@ void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR 
     EndQuery(query_obj);
 }
 
-void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Location &loc) {
+void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {
+    for (auto& func : queue_submit_functions) {
+        func(queue_state, *this);
+    }
+
     // Update vvl::QueryPool with a query state at the end of the command buffer.
     // Ultimately, it tracks the final query state for the entire submission.
     {
@@ -1662,7 +1685,7 @@ void CommandBuffer::Submit(VkQueue queue, uint32_t perf_submit_pass, const Locat
             auto event_state = dev_data.Get<vvl::Event>(event);
             event_state->signaled = info.signal;
             event_state->signal_src_stage_mask = info.src_stage_mask;
-            event_state->signaling_queue = queue;
+            event_state->signaling_queue = queue_state.VkHandle();
         }
     }
 

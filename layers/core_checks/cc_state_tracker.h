@@ -28,22 +28,19 @@ namespace core {
 // CommandBuffer is over 3 times larger than the next largest state object struct, but the majority of the state is only used in
 // CoreChecks. This state object is used by everyone else (best practice, sync val, GPU-AV, etc). For this reason, we have
 // CommandBuffer object only for core and keep only the most basic items in the parent class
-class CommandBuffer : public vvl::CommandBuffer {
+class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    CommandBuffer(CoreChecks& core, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* pCreateInfo,
-                  const vvl::CommandPool* cmd_pool);
+    explicit CommandBufferSubState(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
 };
 
 // Override Retire to validate submissions in the order defined by synchronization
-class Queue : public vvl::Queue {
+class QueueSubState : public vvl::QueueSubState {
   public:
-    Queue(vvl::Device& dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties& queue_family_properties, const vvl::Device& error_logger);
+    QueueSubState(Logger& logger, vvl::Queue& q);
 
-  private:
     void Retire(vvl::QueueSubmission&) override;
 
   private:

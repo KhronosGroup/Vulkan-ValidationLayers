@@ -255,11 +255,9 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
-            auto cb = GetWrite<bp_state::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
-            for (auto& func : cb->queue_submit_functions) {
-                func(*queue_state, *cb);
-            }
-            cb->num_submits++;
+            auto cb = GetWrite<vvl::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
+            auto& sub_state = bp_state::SubState(*cb);
+            sub_state.num_submits++;
         }
     }
 }
@@ -272,7 +270,7 @@ struct EventValidator {
 
     EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
 
-    bool ValidateSubmittedCbSignalingState(const bp_state::CommandBuffer& cb, const Location& cb_loc) {
+    bool ValidateSubmittedCbSignalingState(const bp_state::CommandBufferSubState& cb, const Location& cb_loc) {
         bool skip = false;
         for (const auto& [event, info] : cb.event_signaling_state) {
             if (info.first_state_change_is_signal) {
@@ -323,9 +321,10 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
                     "is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit);
         }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
-            if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
                 const Location cb_loc = submit_loc.dot(vvl::Field::pCommandBuffers, cb_index);
-                skip |= event_validator.ValidateSubmittedCbSignalingState(*cb_state, cb_loc);
+                const auto& sub_state = bp_state::SubState(*cb_state);
+                skip |= event_validator.ValidateSubmittedCbSignalingState(sub_state, cb_loc);
             }
         }
     }
@@ -351,10 +350,11 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
                                             pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
         }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferInfoCount; cb_index++) {
-            if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
                 const Location infos_loc = submit_loc.dot(vvl::Field::pCommandBufferInfos, cb_index);
                 const Location cb_loc = infos_loc.dot(vvl::Field::commandBuffer);
-                skip |= event_validator.ValidateSubmittedCbSignalingState(*cb_state, cb_loc);
+                const auto& sub_state = bp_state::SubState(*cb_state);
+                skip |= event_validator.ValidateSubmittedCbSignalingState(sub_state, cb_loc);
             }
         }
     }

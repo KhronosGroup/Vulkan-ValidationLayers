@@ -1157,12 +1157,6 @@ void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
                 auto sparse_binding = bind_info.pImageOpaqueBinds[j].pBinds[k];
                 auto memory_state = Get<DeviceMemory>(sparse_binding.memory);
                 if (auto image_state = Get<Image>(bind_info.pImageOpaqueBinds[j].image)) {
-                    // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-09432
-                    if (!image_state->fragment_encoder) {
-                        image_state->fragment_encoder =
-                            std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
-                    }
                     image_state->BindMemory(image_state.get(), memory_state, sparse_binding.memoryOffset,
                                             sparse_binding.resourceOffset, sparse_binding.size);
                 }
@@ -1176,12 +1170,6 @@ void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
                 VkDeviceSize offset = sparse_binding.offset.z * sparse_binding.offset.y * sparse_binding.offset.x * 4;
                 auto memory_state = Get<DeviceMemory>(sparse_binding.memory);
                 if (auto image_state = Get<Image>(bind_info.pImageBinds[j].image)) {
-                    // An Android special image cannot get VkSubresourceLayout until the image binds a memory.
-                    // See: VUID-vkGetImageSubresourceLayout-image-09432
-                    if (!image_state->fragment_encoder) {
-                        image_state->fragment_encoder =
-                            std::make_unique<const subresource_adapter::ImageRangeEncoder>(*image_state);
-                    }
                     image_state->BindMemory(image_state.get(), memory_state, sparse_binding.memoryOffset, offset, size);
                 }
             }
@@ -3288,10 +3276,6 @@ void Device::UpdateBindImageMemoryState(const VkBindImageMemoryInfo &bind_info) 
     auto image_state = Get<Image>(bind_info.image);
     if (!image_state) return;
 
-    // An Android sepcial image cannot get VkSubresourceLayout until the image binds a memory.
-    // See: VUID-vkGetImageSubresourceLayout-image-09432
-    image_state->fragment_encoder =
-        std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*image_state));
     const auto swapchain_info = vku::FindStructInPNextChain<VkBindImageMemorySwapchainInfoKHR>(bind_info.pNext);
     if (swapchain_info) {
         if (auto swapchain = Get<Swapchain>(swapchain_info->swapchain)) {
