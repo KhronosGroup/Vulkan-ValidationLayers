@@ -1033,7 +1033,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                                                  : "VUID-vkBindBufferMemory-bufferDeviceAddress-03339";
             skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
                              "was created with the VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT bit set, "
-                             "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set.");
+                             "memory must have been allocated with the VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT bit set%s.",
+                             chained_flags_struct ? "" : " (Need to add VkMemoryAllocateFlagsInfo to VkMemoryAllocateInfo::pNext)");
         }
         const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
         if (buffer_state->create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) {
