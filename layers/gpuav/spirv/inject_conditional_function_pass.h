@@ -56,6 +56,8 @@ class InjectConditionalFunctionPass : public Pass {
     // InjectConditionalFunctionPass to have each class manage their looping of functions/blocks so they can only use their own
     // variables
     struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
+
         // BufferDeviceAddressPass
         // ---
         uint32_t alignment_literal = 0;
@@ -76,6 +78,8 @@ class InjectConditionalFunctionPass : public Pass {
         uint32_t sampler_descriptor_index_id = 0;
 
         void Reset() {
+            target_instruction = nullptr;
+
             alignment_literal = 0;
             type_length = 0;
 

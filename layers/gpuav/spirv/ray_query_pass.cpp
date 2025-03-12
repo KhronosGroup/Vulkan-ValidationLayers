@@ -36,16 +36,16 @@ uint32_t RayQueryPass::GetLinkFunctionId() {
 }
 
 uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                          const InstructionMeta&) {
+                                          const InstructionMeta& meta) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    const uint32_t ray_flags_id = target_instruction_->Operand(2);
-    const uint32_t ray_origin_id = target_instruction_->Operand(4);
-    const uint32_t ray_tmin_id = target_instruction_->Operand(5);
-    const uint32_t ray_direction_id = target_instruction_->Operand(6);
-    const uint32_t ray_tmax_id = target_instruction_->Operand(7);
+    const uint32_t ray_flags_id = meta.target_instruction->Operand(2);
+    const uint32_t ray_origin_id = meta.target_instruction->Operand(4);
+    const uint32_t ray_tmin_id = meta.target_instruction->Operand(5);
+    const uint32_t ray_direction_id = meta.target_instruction->Operand(6);
+    const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
 
     block.CreateInstruction(spv::OpFunctionCall,
                             {bool_type, function_result, function_def, injection_data.inst_position_id,
@@ -55,15 +55,13 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
     return function_result;
 }
 
-void RayQueryPass::Reset() { target_instruction_ = nullptr; }
-
-bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta&) {
+bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     (void)function;
     const uint32_t opcode = inst.Opcode();
     if (opcode != spv::OpRayQueryInitializeKHR) {
         return false;
     }
-    target_instruction_ = &inst;
+    meta.target_instruction = &inst;
     return true;
 }
 

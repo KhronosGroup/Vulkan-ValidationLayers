@@ -53,7 +53,6 @@ bool VertexAttributeFetchOob::Instrument() {
 
             BasicBlock& first_block = *function->blocks_[0];
             InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();
-            target_instruction_ = first_injectable_instruction->get();
 
             const uint32_t stage_info_id = GetStageInfo(*function, function->blocks_.begin(), first_injectable_instruction);
 

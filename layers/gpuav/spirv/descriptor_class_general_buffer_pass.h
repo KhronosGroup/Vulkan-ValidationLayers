@@ -34,6 +34,8 @@ class DescriptorClassGeneralBufferPass : public Pass {
   private:
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
+
         uint32_t descriptor_set = 0;
         uint32_t descriptor_binding = 0;
         uint32_t descriptor_index_id = 0;  // index input the descriptor array
@@ -48,18 +50,17 @@ class DescriptorClassGeneralBufferPass : public Pass {
         std::vector<const Instruction*> access_chain_insts;
 
         void Reset() {
+            target_instruction = nullptr;
             descriptor_set = 0;
             descriptor_binding = 0;
             descriptor_index_id = 0;
             descriptor_type = nullptr;
-            access_chain_insts.clear();
         }
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta, bool pre_pass);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                 const InstructionMeta& meta);
-    void Reset() final;
 
     uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();

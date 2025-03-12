@@ -65,11 +65,14 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
 
 // To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
 // reference it each time
-uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it) {
+uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& out_inst_it) {
     // Cached so only need to compute this once
     if (function.stage_info_id_ != 0) {
         return function.stage_info_id_;
     }
+
+    // Save original for later to restore
+    const Instruction& target_instruction = *out_inst_it->get();
 
     BasicBlock& block = function.GetFirstBlock();
     InstructionIt inst_it = block.GetFirstInjectableInstrution();
@@ -191,7 +194,7 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
     // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the target
     // instruction was also in the first block, so need to regain it for the caller
     if ((*target_block_it)->GetLabelId() == block.GetLabelId()) {
-        target_inst_it = FindTargetInstruction(block);
+        out_inst_it = FindTargetInstruction(block, target_instruction);
     }
 
     return function.stage_info_id_;
@@ -537,13 +540,13 @@ uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_
     return new_id;  // Return an id to the Uint equivalent.
 }
 
-InstructionIt Pass::FindTargetInstruction(BasicBlock& block) const {
-    const uint32_t target_id = target_instruction_->ResultId();
+InstructionIt Pass::FindTargetInstruction(BasicBlock& block, const Instruction& target_instruction) const {
+    const uint32_t target_id = target_instruction.ResultId();
     for (auto inst_it = block.instructions_.begin(); inst_it != block.instructions_.end(); ++inst_it) {
         // This has to re-loop the entire block to find the instruction, using the ResultID, we can quickly compare
         if ((*inst_it)->ResultId() == target_id) {
             // Things like OpStore will have a result id of zero, so need to do deep instruction comparison
-            if (*(*inst_it) == *target_instruction_) {
+            if (*(*inst_it) == target_instruction) {
                 return inst_it;
             }
         }

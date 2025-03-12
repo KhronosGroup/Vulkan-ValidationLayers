@@ -49,7 +49,7 @@ class Pass {
     const Variable& GetBuiltinVariable(uint32_t built_in);
 
     // Returns the ID for OpCompositeConstruct it creates
-    uint32_t GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& target_inst_it);
+    uint32_t GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& out_inst_it);
 
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration) const;
     const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const;
@@ -66,13 +66,9 @@ class Pass {
     Pass(Module& module) : module_(module) {}
     Module& module_;
 
-    // clear values between instrumented instructions
-    virtual void Reset() = 0;
-
     // As various things are modifiying the instruction streams, we need to get back to where we were.
     // (normally set in the RequiresInstrumentation call)
-    const Instruction* target_instruction_ = nullptr;
-    InstructionIt FindTargetInstruction(BasicBlock& block) const;
+    InstructionIt FindTargetInstruction(BasicBlock& block, const Instruction& target_instruction) const;
 
     uint32_t instrumentations_count_ = 0;
 };
