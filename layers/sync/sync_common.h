@@ -45,8 +45,11 @@ constexpr static QueueId kQueueIdInvalid = QueueId(vvl::kU32Max);
 constexpr static QueueId kQueueAny = kQueueIdInvalid - 1;
 
 using ResourceUsageTag = size_t;
-constexpr static ResourceUsageTag kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
-constexpr static ResourceUsageTag kInvalidTag = kMaxIndex;
+
+// TODO: in the current implementation invalid tag is used not only as initial value
+// but also in some other scenarios (e.g. error reporting classifies layout transition
+// based on tag validity). Clarify when tag can be invalid and document this.
+constexpr static ResourceUsageTag kInvalidTag = std::numeric_limits<ResourceUsageTag>::max();
 
 using ResourceUsageRange = vvl::range<ResourceUsageTag>;
 using ResourceAddress = VkDeviceSize;

@@ -127,6 +127,16 @@ struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     ResourceUsageRecord &operator=(const ResourceUsageRecord &other) = default;
 };
 
+struct ResourceUsageInfo {
+    vvl::Func command = vvl::Func::Empty;
+    VulkanTypedHandle resource_handle;
+    std::string debug_region_name;
+    const vvl::CommandBuffer *cb = nullptr;
+    const vvl::Queue *queue = nullptr;
+    uint64_t submit_index = 0;
+    uint32_t batch_index = 0;
+};
+
 // Provides debug region name for the specified access log command.
 // If empty name is returned it means the command is not inside debug region.
 struct DebugNameProvider {
@@ -147,9 +157,7 @@ class CommandExecutionContext {
     virtual const SyncEventsContext *GetCurrentEventsContext() const = 0;
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
-    virtual ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
-    virtual std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const = 0;
-
+    virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
     virtual void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const = 0;
 
     bool ValidForSyncOps() const;
@@ -201,8 +209,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 
     void Reset();
 
-    ReportUsageInfo GetReportUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    std::string GetDebugRegionName(ResourceUsageTagEx tag_ex) const override;
+    ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
     void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }

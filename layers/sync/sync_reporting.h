@@ -26,6 +26,7 @@ class CommandBuffer;
 class Device;
 class Queue;
 }  // namespace vvl
+class CommandExecutionContext;
 class HazardResult;
 class Logger;
 
@@ -42,25 +43,33 @@ struct ReportProperties {
     std::string GetExtraPropertiesSection(bool pretty_print) const;
 };
 
-struct ReportUsageInfo {
-    vvl::Func command = vvl::Func::Empty;
-    VulkanTypedHandle resource_handle;
-    std::string debug_region_name;
-    const vvl::CommandBuffer *cb = nullptr;
-    const vvl::Queue *queue = nullptr;
-    uint64_t submit_index = 0;
-    uint32_t batch_index = 0;
+struct AdditionalMessageInfo {
+    // These are message-specific properties. They are combined with common message properties.
+    ReportProperties properties;
+
+    // When we need something more complex than vvl::Func
+    std::string access_initiator;
+
+    // Replaces standard "writes to"/"reads" access wording.
+    // For example, "clears" for a clear operation might be more specific than a write
+    std::string access_action;
+
+    std::string hazard_overview;
+    std::string brief_description_end_text;
+    std::string pre_synchronization_text;
+    std::string message_end_text;
 };
 
-void GetAccessProperties(const HazardResult &hazard, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
-                         ReportProperties &properties);
+ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const vvl::Device &device,
+                                           const CommandExecutionContext &context, vvl::Func command, const char *message_type,
+                                           const AdditionalMessageInfo &additional_info);
 
-std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
-    const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags);
+std::string FormatErrorMessage(const HazardResult &hazard, const std::string &resouce_description, vvl::Func command,
+                               const ReportProperties &properties, const CommandExecutionContext &context,
+                               const AdditionalMessageInfo &additional_info);
 
 std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);
-
 void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
                                 std::stringstream &ss);

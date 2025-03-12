@@ -20,6 +20,47 @@
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
 
+static const char *string_SyncHazard(SyncHazard hazard) {
+    switch (hazard) {
+        case SyncHazard::NONE:
+            return "NONE";
+        case SyncHazard::READ_AFTER_WRITE:
+            return "READ_AFTER_WRITE";
+        case SyncHazard::WRITE_AFTER_READ:
+            return "WRITE_AFTER_READ";
+        case SyncHazard::WRITE_AFTER_WRITE:
+            return "WRITE_AFTER_WRITE";
+        case SyncHazard::READ_RACING_WRITE:
+            return "READ_RACING_WRITE";
+        case SyncHazard::WRITE_RACING_WRITE:
+            return "WRITE_RACING_WRITE";
+        case SyncHazard::WRITE_RACING_READ:
+            return "WRITE_RACING_READ";
+        case SyncHazard::READ_AFTER_PRESENT:
+            return "READ_AFTER_PRESENT";
+        case SyncHazard::WRITE_AFTER_PRESENT:
+            return "WRITE_AFTER_PRESENT";
+        case SyncHazard::PRESENT_AFTER_WRITE:
+            return "PRESENT_AFTER_WRITE";
+        case SyncHazard::PRESENT_AFTER_READ:
+            return "PRESENT_AFTER_READ";
+        default:
+            assert(0);
+            return "INVALID HAZARD";
+    }
+}
+
+static bool IsHazardVsRead(SyncHazard hazard) {
+    switch (hazard) {
+        case SyncHazard::WRITE_AFTER_READ:
+        case SyncHazard::WRITE_RACING_READ:
+        case SyncHazard::PRESENT_AFTER_READ:
+            return true;
+        default:
+            return false;
+    }
+}
+
 static auto SortKeyValues(const std::vector<ReportProperties::NameValue> &name_values) {
     auto get_sort_order = [](const std::string &key) -> uint32_t {
         // message_type goes first
@@ -99,24 +140,6 @@ std::string ReportProperties::GetExtraPropertiesSection(bool pretty_print) const
     return ss.str();
 }
 
-static bool IsHazardVsRead(SyncHazard hazard) {
-    bool vs_read = false;
-    switch (hazard) {
-        case SyncHazard::WRITE_AFTER_READ:
-            vs_read = true;
-            break;
-        case SyncHazard::WRITE_RACING_READ:
-            vs_read = true;
-            break;
-        case SyncHazard::PRESENT_AFTER_READ:
-            vs_read = true;
-            break;
-        default:
-            break;
-    }
-    return vs_read;
-}
-
 static VkPipelineStageFlags2 GetAllowedStages(VkQueueFlags queue_flags, VkPipelineStageFlagBits2 disabled_stages) {
     VkPipelineStageFlags2 allowed_stages = 0;
     for (const auto &[queue_flag, stages] : syncAllCommandStagesByQueueFlags()) {
@@ -155,7 +178,7 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFla
     return filtered_accesses;
 }
 
-std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
+static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
     const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags) {
     if (sync_accesses.none()) {
         return {};
@@ -288,8 +311,8 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
            ")";
 }
 
-void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
-                         ReportProperties &properties) {
+static void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+                                ReportProperties &properties) {
     const HazardResult::HazardState &hazard = hazard_result.State();
     const auto &usage_info = GetSyncAccessInfos()[hazard.access_index];
     const auto &prior_usage_info = GetSyncAccessInfos()[hazard.prior_access_index];
@@ -310,9 +333,205 @@ void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &d
     }
 }
 
-static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider, const ResourceUsageRecord &record,
+ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const vvl::Device &device,
+                                           const CommandExecutionContext &context, vvl::Func command, const char *message_type,
+                                           const AdditionalMessageInfo &additional_info) {
+    ReportProperties properties;
+
+    GetAccessProperties(hazard, device, context.GetQueueFlags(), properties);
+
+    if (hazard.Tag() != kInvalidTag) {
+        ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
+        if (!prior_usage_info.debug_region_name.empty()) {
+            properties.Add(kPropertyPriorDebugRegion, prior_usage_info.debug_region_name);
+        }
+    }
+
+    properties.Add(kPropertyMessageType, message_type);
+    properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    properties.Add(kPropertyCommand, vvl::String(command));
+
+    for (const auto &property : additional_info.properties.name_values) {
+        properties.Add(property.name, property.value);
+    }
+    context.AddUsageRecordProperties(hazard.Tag(), properties);
+    return properties;
+}
+
+// Given that access is hazardous, we check if at least stage or access part of it is covered
+// by the synchronization. If applied synchronization covers at least stage or access component
+// then we can provide more precise message by focusing on the other component.
+static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo &access, const SyncAccessFlags &write_barriers,
+                                                     const CommandExecutionContext &context) {
+    const auto protected_stage_access_pairs =
+        ConvertSyncAccessesToCompactVkForm(write_barriers, context.GetSyncState(), context.GetQueueFlags());
+    bool is_stage_protected = false;
+    bool is_access_protected = false;
+    for (const auto &protected_stage_access : protected_stage_access_pairs) {
+        if (protected_stage_access.first & access.stage_mask) {
+            is_stage_protected = true;
+        }
+        if (protected_stage_access.second & access.access_mask) {
+            is_access_protected = true;
+        }
+    }
+    return std::make_pair(is_stage_protected, is_access_protected);
+}
+
+std::string FormatErrorMessage(const HazardResult &hazard, const std::string &resouce_description, vvl::Func command,
+                               const ReportProperties &properties, const CommandExecutionContext &context,
+                               const AdditionalMessageInfo &additional_info) {
+    const SyncHazard hazard_type = hazard.Hazard();
+    const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
+
+    const SyncAccessInfo &access = GetSyncAccessInfos()[hazard.State().access_index];
+    const SyncAccessInfo &prior_access = GetSyncAccessInfos()[hazard.State().prior_access_index];
+
+    const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
+    const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
+
+    // TODO: BOTTOM_OF_PIPE part will go away when syncval switches internally to use NONE/ALL for everything
+    const bool missing_synchronization = (hazard_info.IsPriorWrite() && write_barriers.none()) ||
+                                         (hazard_info.IsPriorRead() && (read_barriers == VK_PIPELINE_STAGE_2_NONE ||
+                                                                        read_barriers == VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT));
+
+    std::stringstream ss;
+
+    // Brief description of what happened
+    ss << string_SyncHazard(hazard_type) << " hazard detected";
+    if (!additional_info.hazard_overview.empty()) {
+        ss << ": " << additional_info.hazard_overview;
+    }
+    ss << ". ";
+    ss << (additional_info.access_initiator.empty() ? vvl::String(command) : additional_info.access_initiator);
+    ss << " ";
+    if (!additional_info.access_action.empty()) {
+        ss << additional_info.access_action;
+    } else {
+        ss << (hazard_info.IsWrite() ? "writes to" : "reads");
+    }
+    ss << " " << resouce_description << ", which was previously ";
+    if (hazard_info.IsPriorWrite()) {
+        if (prior_access.access_index == SYNC_IMAGE_LAYOUT_TRANSITION) {
+            ss << "written during an image layout transition initiated by ";
+        } else {
+            ss << "written by ";
+        }
+    } else {
+        ss << "read by ";
+    }
+    if (hazard.Tag() == kInvalidTag) {
+        // Invalid tag for prior access means the same command performed ILT before loadOp access
+        ss << "the same command";
+    } else {
+        const ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
+        if (prior_usage_info.command == command) {
+            ss << "another ";
+        }
+        ss << vvl::String(prior_usage_info.command);
+        if (const auto *debug_region = properties.FindProperty(kPropertyPriorDebugRegion)) {
+            ss << "[" << *debug_region << "]";
+        }
+        if (prior_usage_info.command == command) {
+            ss << " command";
+        }
+    }
+    if (!additional_info.brief_description_end_text.empty()) {
+        ss << " " << additional_info.brief_description_end_text;
+    }
+    ss << ". ";
+
+    // Additional information before synchronization section.
+    if (!additional_info.pre_synchronization_text.empty()) {
+        ss << additional_info.pre_synchronization_text;
+    }
+
+    // Synchronization information
+    ss << "\n";
+    if (missing_synchronization) {
+        const char *access_type = hazard_info.IsWrite() ? "write" : "read";
+        const char *prior_access_type = hazard_info.IsPriorWrite() ? "write" : "read";
+
+        auto get_special_access_name = [](SyncAccessIndex access) -> const char * {
+            if (access == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL) {
+                return "swapchain image acquire operation";
+            } else if (access == SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_PRESENTED_SYNCVAL) {
+                return "swapchain present operation";
+            } else if (access == SYNC_IMAGE_LAYOUT_TRANSITION) {
+                return "layout transition";
+            } else if (access == SYNC_QUEUE_FAMILY_OWNERSHIP_TRANSFER) {
+                return "ownership transfer";
+            }
+            return nullptr;
+        };
+
+        ss << "No sufficient synchronization is present to ensure that a ";
+        if (const char *special_access_name = get_special_access_name(access.access_index)) {
+            ss << special_access_name;
+        } else {
+            assert(access.access_mask != VK_ACCESS_2_NONE);
+            assert(access.stage_mask != VK_PIPELINE_STAGE_2_NONE);
+            ss << access_type << " (" << string_VkAccessFlagBits2(access.access_mask) << ") at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask);
+        }
+
+        ss << " does not conflict with a prior ";
+        if (const char *special_access_name = get_special_access_name(prior_access.access_index)) {
+            ss << special_access_name;
+        } else {
+            assert(prior_access.access_mask != VK_ACCESS_2_NONE);
+            assert(prior_access.stage_mask != VK_PIPELINE_STAGE_2_NONE);
+            ss << prior_access_type;
+            if (prior_access.access_mask != access.access_mask) {
+                ss << " (" << string_VkAccessFlags2(prior_access.access_mask) << ")";
+            } else {
+                ss << " of the same type";
+            }
+            ss << " at ";
+            if (prior_access.stage_mask == access.stage_mask) {
+                ss << "the same stage";
+            } else {
+                ss << string_VkPipelineStageFlagBits2(prior_access.stage_mask);
+            }
+        }
+        ss << ".";
+    } else if (hazard_info.IsPriorWrite()) {  // RAW/WAW hazards
+        ss << "The current synchronization allows ";
+        ss << FormatSyncAccesses(write_barriers, context.GetSyncState(), context.GetQueueFlags(), false);
+        ss << ", but to prevent this hazard, ";
+        auto [is_stage_protected, is_access_protected] = GetPartialProtectedInfo(access, write_barriers, context);
+        if (is_access_protected) {
+            ss << "it must allow these accesses at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+        } else if (access.access_mask != VK_ACCESS_2_NONE) {
+            ss << "it must allow ";
+            ss << string_VkAccessFlagBits2(access.access_mask) << " accesses at ";
+            ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+        } else {
+            // TODO: analyse exact form of synchronization is needed or specific options to use
+            ss << "it must protect layout transition accesses.";
+        }
+    } else {  // WAR hazard
+        ss << "The current synchronization defines the destination stage mask as ";
+        ss << string_VkPipelineStageFlags2(read_barriers);
+        ss << ", but to prevent this hazard, it must include ";
+        ss << string_VkPipelineStageFlagBits2(access.stage_mask) << ".";
+    }
+
+    // Give a hint for WAR hazard
+    if (IsValueIn(hazard_type, {WRITE_AFTER_READ, WRITE_RACING_READ, PRESENT_AFTER_READ})) {
+        ss << "\nVulkan insight: an execution dependency is sufficient to prevent this hazard.";
+    }
+
+    if (!additional_info.message_end_text.empty()) {
+        ss << additional_info.message_end_text;
+    }
+    return ss.str();
+}
+
+static ResourceUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider, const ResourceUsageRecord &record,
                                                     ResourceUsageTagEx tag_ex) {
-    ReportUsageInfo info;
+    ResourceUsageInfo info;
     if (record.alt_usage) {
         info.command = record.alt_usage.GetCommand();
     } else {
@@ -339,23 +558,10 @@ static ReportUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *deb
     return info;
 }
 
-ReportUsageInfo CommandBufferAccessContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
+ResourceUsageInfo CommandBufferAccessContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
     const ResourceUsageRecord &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
     return GetReportUsageInfoFromRecord(debug_name_provider, record, tag_ex);
-}
-
-std::string CommandBufferAccessContext::GetDebugRegionName(ResourceUsageTagEx tag_ex) const {
-    // TODO: should not happen? investiage and potentially remove
-    if (tag_ex.tag >= access_log_->size()) {
-        return {};
-    }
-    const auto &record = (*access_log_)[tag_ex.tag];
-    const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    if (!debug_name_provider) {
-        return {};
-    }
-    return debug_name_provider->GetDebugRegionName(record);
 }
 
 void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
@@ -372,13 +578,13 @@ void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, 
     properties.Add(kPropertyResetNo, record.reset_count);
 }
 
-ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex) const {
+ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
     BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
     if (!access.IsValid()) {
         return {};
     }
     const ResourceUsageRecord &record = *access.record;
-    ReportUsageInfo info = GetReportUsageInfoFromRecord(access.debug_name_provider, record, tag_ex);
+    ResourceUsageInfo info = GetReportUsageInfoFromRecord(access.debug_name_provider, record, tag_ex);
 
     const BatchAccessLog::BatchRecord &batch = *access.batch;
     if (batch.queue) {
@@ -387,17 +593,6 @@ ReportUsageInfo QueueBatchContext::GetReportUsageInfo(ResourceUsageTagEx tag_ex)
         info.batch_index = batch.batch_index;
     }
     return info;
-}
-
-std::string QueueBatchContext::GetDebugRegionName(ResourceUsageTagEx tag_ex) const {
-    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag_ex.tag);
-    if (!access.IsValid()) {
-        return {};
-    }
-    if (!access.debug_name_provider) {
-        return {};
-    }
-    return access.debug_name_provider->GetDebugRegionName(*access.record);
 }
 
 void QueueBatchContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
