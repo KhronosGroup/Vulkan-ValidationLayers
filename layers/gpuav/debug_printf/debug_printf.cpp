@@ -69,10 +69,11 @@ struct Substring {
     bool needs_value = false;  // if value from buffer needed to print arguments
     NumericType type = NumericTypeUnknown;
     bool is_64_bit = false;
+    bool is_pointer = false;
 };
 
 static std::vector<Substring> ParseFormatString(const std::string &format_string) {
-    const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', '\0'};
+    const char types[] = {'d', 'i', 'o', 'u', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', 'v', 'p', '\0'};
     std::vector<Substring> parsed_strings;
     size_t pos = 0;
     size_t begin = 0;
@@ -145,6 +146,11 @@ static std::vector<Substring> ParseFormatString(const std::string &format_string
                     substring.is_64_bit = true;
                     pos++;  // Save long size
                 }
+                if (format_string[pos] == 'p') {
+                    substring.is_64_bit = true;
+                    substring.is_pointer = true;
+                }
+
                 substring.string = format_string.substr(begin, pos - begin + 1);
                 substring.type = NumericTypeLookup(format_string[pos]);
                 parsed_strings.emplace_back(substring);

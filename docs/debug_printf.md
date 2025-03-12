@@ -124,6 +124,8 @@ Format for specifier is "%"*precision* <d, i, o, u, x, X, a, A, e, E, f, F, g, G
 
 Format for vector specifier is "%"*precision*"v" [2, 3, or 4] [specifiers list above]
 
+Format for pointers (`PhysicalStorageBuffer`) is "%p"
+
 - The vector value separator is ", "
 - "%%" will print as "%"
 - No length modifiers.  Everything except ul, lu, and lx is 32 bits, and ul and lx values are printed in hex
