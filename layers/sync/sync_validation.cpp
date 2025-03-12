@@ -3799,7 +3799,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 ss << " (" << Location(vvl::Func::Empty, vvl::Field::srcAccelerationStructure).Fields() << ")";
                 const std::string resource_description = ss.str();
 
-                syncval::AdditionalMessageInfo additional_info;
+                AdditionalMessageInfo additional_info;
                 additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.srcAccelerationStructure) + ". ";
 
                 const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
@@ -3819,7 +3819,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
                 ss << " (" << Location(vvl::Func::Empty, vvl::Field::dstAccelerationStructure).Fields() << ")";
                 const std::string resource_description = ss.str();
 
-                syncval::AdditionalMessageInfo additional_info;
+                AdditionalMessageInfo additional_info;
                 additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.dstAccelerationStructure) + ". ";
 
                 const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
