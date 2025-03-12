@@ -93,7 +93,7 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             if (gpuav_settings.force_on_robustness && supported_features.robustBufferAccess &&
                 !modified_features->robustBufferAccess) {
                 InternalWarning(instance, loc, "Forcing robustBufferAccess to VK_TRUE");
-                modified_features->shaderInt64 = VK_TRUE;
+                modified_features->robustBufferAccess = VK_TRUE;
             }
         }
     }
