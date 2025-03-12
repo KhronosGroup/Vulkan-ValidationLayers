@@ -59,8 +59,8 @@ class Pass {
                          InstructionIt* inst_it);
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
-    uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
-    uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it);
+    uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
+    uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
 
   protected:
     Pass(Module& module) : module_(module) {}

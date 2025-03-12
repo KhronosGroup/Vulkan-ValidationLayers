@@ -38,16 +38,17 @@ uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it) {
+void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it,
+                                                           const InstructionMeta& meta) {
     BasicBlock& block = **block_it;
 
-    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(descriptor_set_);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(descriptor_binding_);
-    const uint32_t descriptor_index_id = CastToUint32(descriptor_index_id_, block, inst_it);  // might be int32
+    const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
+    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
+    const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
-    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[descriptor_set_][descriptor_binding_];
+    BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
-    const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(variable_id_);
+    const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(meta.variable_id);
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
@@ -59,7 +60,8 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
                             inst_it);
 }
 
-bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
+                                                                InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -87,10 +89,10 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
 
         const Type* pointer_type = variable->PointerType(module_.type_manager_);
         if (pointer_type->IsArray()) {
-            descriptor_index_id_ = access_chain_inst->Operand(1);
+            meta.descriptor_index_id = access_chain_inst->Operand(1);
         } else {
             // There is no array of this descriptor, so we essentially have an array of 1
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
 
     } else {
@@ -123,7 +125,7 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         }
 
         if (var_inst->Opcode() == spv::OpAccessChain) {
-            descriptor_index_id_ = var_inst->Operand(1);
+            meta.descriptor_index_id = var_inst->Operand(1);
 
             if (var_inst->Length() > 5) {
                 module_.InternalError(Name(), "OpAccessChain has more than 1 indexes");
@@ -137,23 +139,23 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             }
             var_inst = &variable->inst_;
         } else {
-            descriptor_index_id_ = module_.type_manager_.GetConstantZeroUint32().Id();
+            meta.descriptor_index_id = module_.type_manager_.GetConstantZeroUint32().Id();
         }
     }
 
     assert(var_inst);
-    variable_id_ = var_inst->ResultId();
+    meta.variable_id = var_inst->ResultId();
     for (const auto& annotation : module_.annotations_) {
-        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == variable_id_) {
+        if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == meta.variable_id) {
             if (annotation->Word(2) == spv::DecorationDescriptorSet) {
-                descriptor_set_ = annotation->Word(3);
+                meta.descriptor_set = annotation->Word(3);
             } else if (annotation->Word(2) == spv::DecorationBinding) {
-                descriptor_binding_ = annotation->Word(3);
+                meta.descriptor_binding = annotation->Word(3);
             }
         }
     }
 
-    if (descriptor_set_ >= glsl::kDebugInputBindlessMaxDescSets) {
+    if (meta.descriptor_set >= glsl::kDebugInputBindlessMaxDescSets) {
         module_.InternalWarning(Name(), "Tried to use a descriptor slot over the current max limit");
         return false;
     }
@@ -163,21 +165,16 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
     return true;
 }
 
-void PostProcessDescriptorIndexingPass::Reset() {
-    target_instruction_ = nullptr;
-    descriptor_set_ = 0;
-    descriptor_binding_ = 0;
-    descriptor_index_id_ = 0;
-    variable_id_ = 0;
-}
+void PostProcessDescriptorIndexingPass::Reset() { target_instruction_ = nullptr; }
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
+    InstructionMeta meta;
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
                 if (module_.settings_.max_instrumentations_count != 0 &&
                     instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
@@ -185,8 +182,9 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                 }
                 instrumentations_count_++;
 
-                CreateFunctionCall(block_it, &inst_it);
+                CreateFunctionCall(block_it, &inst_it, meta);
                 Reset();
+                meta.Reset();
             }
         }
     }

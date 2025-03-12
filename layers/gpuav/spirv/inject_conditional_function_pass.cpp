@@ -22,7 +22,7 @@ namespace spirv {
 InjectConditionalFunctionPass::InjectConditionalFunctionPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
-                                                           const InjectionData& injection_data) {
+                                                           const InjectionData& injection_data, const InstructionMeta& meta) {
     // We turn the block into 4 separate blocks
     block_it = function->InsertNewBlock(block_it);
     block_it = function->InsertNewBlock(block_it);
@@ -104,17 +104,16 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
     // Go back to original Block and add function call and branch from the bool result
-    const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data);
+    const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data, meta);
 
     original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
-
-    Reset();
 
     return block_it;
 }
 
 bool InjectConditionalFunctionPass::Instrument() {
+    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -127,7 +126,7 @@ bool InjectConditionalFunctionPass::Instrument() {
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()))) {
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler
@@ -161,7 +160,9 @@ bool InjectConditionalFunctionPass::Instrument() {
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 
-                block_it = InjectFunction(function.get(), block_it, inst_it, injection_data);
+                block_it = InjectFunction(function.get(), block_it, inst_it, injection_data, meta);
+                Reset();
+                meta.Reset();
                 // will start searching again from newly split merge block
                 block_it--;
                 break;

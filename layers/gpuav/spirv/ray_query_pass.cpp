@@ -35,7 +35,8 @@ uint32_t RayQueryPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) {
+uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
+                                          const InstructionMeta&) {
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
@@ -56,7 +57,7 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
 
 void RayQueryPass::Reset() { target_instruction_ = nullptr; }
 
-bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta&) {
     (void)function;
     const uint32_t opcode = inst.Opcode();
     if (opcode != spv::OpRayQueryInitializeKHR) {

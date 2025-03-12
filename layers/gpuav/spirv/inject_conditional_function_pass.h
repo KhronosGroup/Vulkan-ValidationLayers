@@ -51,15 +51,57 @@ class InjectConditionalFunctionPass : public Pass {
   protected:
     InjectConditionalFunctionPass(Module& module);
 
+    // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
+    // TODO - Currently this is shared between the various children parents of InjectConditionalFunctionPass and we should refactor
+    // InjectConditionalFunctionPass to have each class manage their looping of functions/blocks so they can only use their own
+    // variables
+    struct InstructionMeta {
+        // BufferDeviceAddressPass
+        // ---
+        uint32_t alignment_literal = 0;
+        uint32_t type_length = 0;
+
+        // DescriptorIndexingOOBPass
+        // ---
+        const Instruction* var_inst = nullptr;
+        const Instruction* image_inst = nullptr;
+        uint32_t descriptor_set = 0;
+        uint32_t descriptor_binding = 0;
+        uint32_t descriptor_index_id = 0;
+        bool is_combined_image_sampler = false;
+        // Duplicate values if dealing with SAMPLED_IMAGE and SAMPLER together
+        const Instruction* sampler_var_inst = nullptr;
+        uint32_t sampler_descriptor_set = 0;
+        uint32_t sampler_descriptor_binding = 0;
+        uint32_t sampler_descriptor_index_id = 0;
+
+        void Reset() {
+            alignment_literal = 0;
+            type_length = 0;
+
+            var_inst = nullptr;
+            image_inst = nullptr;
+            descriptor_set = 0;
+            descriptor_binding = 0;
+            descriptor_index_id = 0;
+            is_combined_image_sampler = false;
+            sampler_var_inst = nullptr;
+            sampler_descriptor_set = 0;
+            sampler_descriptor_binding = 0;
+            sampler_descriptor_index_id = 0;
+        }
+    };
+
     BasicBlockIt InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
-                                const InjectionData& injection_data);
+                                const InjectionData& injection_data, const InstructionMeta& meta);
 
     // Each pass decides if the instruction should needs to have its function check injected
-    virtual bool RequiresInstrumentation(const Function& function, const Instruction& inst) = 0;
+    virtual bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) = 0;
     // A callback from the function injection logic.
     // Each pass creates a OpFunctionCall and returns its result id.
     // If |inst_it| is not null, it will update it to instruction post OpFunctionCall
-    virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data) = 0;
+    virtual uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
+                                        const InstructionMeta& meta) = 0;
 
     // Optional notification that a new block is being passed
     virtual void NewBlock(const BasicBlock&){};

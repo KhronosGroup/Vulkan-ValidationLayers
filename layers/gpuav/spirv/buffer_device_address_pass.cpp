@@ -37,19 +37,19 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
     return link_function_id;
 }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                     const InjectionData& injection_data) {
+uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
+                                                     const InstructionMeta& meta) {
     // Convert reference pointer to uint64
     const uint32_t pointer_id = target_instruction_->Operand(0);
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
     const uint32_t convert_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
 
-    const Constant& length_constant = module_.type_manager_.GetConstantUInt32(type_length_);
+    const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
     const uint32_t opcode = target_instruction_->Opcode();
     const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(opcode);
 
-    const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(alignment_literal_);
+    const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
@@ -64,13 +64,9 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     return function_result;
 }
 
-void BufferDeviceAddressPass::Reset() {
-    target_instruction_ = nullptr;
-    alignment_literal_ = 0;
-    type_length_ = 0;
-}
+void BufferDeviceAddressPass::Reset() { target_instruction_ = nullptr; }
 
-bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst) {
+bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
     if (opcode == spv::OpLoad || opcode == spv::OpStore) {
         // We only care if there is an Aligned Memory Operands
@@ -86,14 +82,14 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
         }
         // Even if they are other Memory Operands the spec says it is ordered by smallest bit first,
         // Luckily |Aligned| is the smallest bit that can have an operand so we know it is here
-        alignment_literal_ = inst.Word(alignment_word_index);
+        meta.alignment_literal = inst.Word(alignment_word_index);
 
         // Aligned 0 was not being validated (https://github.com/KhronosGroup/glslang/issues/3893)
         // This is nonsense and we should skip (as it should be validated in spirv-val)
-        if (!IsPowerOfTwo(alignment_literal_)) return false;
+        if (!IsPowerOfTwo(meta.alignment_literal)) return false;
     } else if (AtomicOperation(opcode)) {
         // Atomics are naturally aligned and by setting this to 1, it will always pass the alignment check
-        alignment_literal_ = 1;
+        meta.alignment_literal = 1;
     } else {
         return false;
     }
@@ -133,7 +129,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 
     // Save information to be used to make the Function
     target_instruction_ = &inst;
-    type_length_ = module_.type_manager_.TypeLength(*accessed_type);
+    meta.type_length = module_.type_manager_.TypeLength(*accessed_type);
     return true;
 }
 

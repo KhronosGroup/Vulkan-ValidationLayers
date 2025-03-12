@@ -476,7 +476,7 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
 }
 
 // Generate code to convert integer id to 32bit, if needed.
-uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) {
+uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Find type doing the indexing into the access chain
     const Type* type = nullptr;
     const Constant* constant = module_.type_manager_.FindConstantById(id);
@@ -508,7 +508,7 @@ uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_i
 }
 
 // Generate code to cast integer it to 32bit unsigned, if needed.
-uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) {
+uint32_t Pass::CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Convert value to 32-bit if necessary
     uint32_t int32_id = ConvertTo32(id, block, inst_it);
 
