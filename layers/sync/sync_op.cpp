@@ -212,7 +212,8 @@ void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId 
     for (const SyncImageMemoryBarrier &barrier : barriers) {
         ApplyBarrierFunctor update_action(
             PipelineBarrierOp(queue_id, barrier.barrier, barrier.layout_transition, barrier.handle_index));
-        auto range_gen = barrier.image->MakeImageRangeGen(barrier.subresource_range, false);
+        const auto &sub_state = syncval_state::SubState(*barrier.image);
+        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, false);
         access_context->UpdateMemoryAccessState(update_action, range_gen);
     }
 }
@@ -260,7 +261,8 @@ void ApplyBarriers(const std::vector<SyncImageMemoryBarrier> &barriers, QueueId 
         ApplyBarrierFunctor update_action(
             WaitEventBarrierOp(queue_id, sync_event.first_scope_tag, sync_barrier, barrier.layout_transition));
 
-        ImageRangeGen range_gen = barrier.image->MakeImageRangeGen(barrier.subresource_range, false);
+        const auto &sub_state = syncval_state::SubState(*barrier.image);
+        auto range_gen = sub_state.MakeImageRangeGen(barrier.subresource_range, false);
         EventImageRangeGenerator filtered_range_gen(sync_event.FirstScope(), range_gen);
 
         access_context->UpdateMemoryAccessState(update_action, filtered_range_gen);
@@ -334,7 +336,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const 
                                          uint32_t barrier_count, const VkImageMemoryBarrier *barriers) {
     image_memory_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
-        if (auto image = sync_state.Get<syncval_state::ImageState>(barrier.image)) {
+        if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
             auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
@@ -349,7 +351,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueu
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
-        auto image = sync_state.Get<syncval_state::ImageState>(barrier.image);
+        auto image = sync_state.Get<vvl::Image>(barrier.image);
         if (image) {
             auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
@@ -398,7 +400,7 @@ bool SyncOpPipelineBarrier::Validate(const CommandBufferAccessContext &cb_contex
         if (!image_barrier.layout_transition) {
             continue;
         }
-        const syncval_state::ImageState &image_state = *image_barrier.image;
+        const vvl::Image &image_state = *image_barrier.image;
         const auto hazard = context->DetectImageBarrierHazard(image_state, image_barrier.barrier.src_exec_scope.exec_scope,
                                                               image_barrier.barrier.src_access_scope,
                                                               image_barrier.subresource_range, AccessContext::kDetectAll);
@@ -993,7 +995,7 @@ SyncOpBeginRenderPass::SyncOpBeginRenderPass(vvl::Func command, const SyncValida
             // Note that this a safe to presist as long as shared_attachments is not cleared
             attachments_.reserve(shared_attachments_.size());
             for (const auto &attachment : shared_attachments_) {
-                attachments_.emplace_back(static_cast<const syncval_state::ImageViewState *>(attachment.get()));
+                attachments_.emplace_back(attachment.get());
             }
         }
         if (pSubpassBeginInfo) {

@@ -55,6 +55,9 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
     if (!submissions.empty()) {
         submissions.back().end_batch = true;
     }
+    for (auto &item : substates) {
+        item.second->PreSubmit(submissions);
+    }
     PreSubmitResult result;
     for (QueueSubmission &submission : submissions) {
         for (CommandBufferSubmission &cb_submission : submission.cb_submissions) {
@@ -192,6 +195,9 @@ void vvl::Queue::Destroy() {
         dead_thread->join();
         dead_thread.reset();
     }
+    for (auto &item : substates) {
+        item.second->Destroy();
+    }
     StateObject::Destroy();
 }
 
@@ -199,6 +205,12 @@ void vvl::Queue::PostSubmit() {
     auto guard = Lock();
     if (!submissions_.empty()) {
         PostSubmit(submissions_.back());
+    }
+}
+
+void vvl::Queue::PostSubmit(QueueSubmission &submission) {
+    for (auto &item : substates) {
+        item.second->PostSubmit(submission);
     }
 }
 
@@ -240,6 +252,9 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
         }
         return false;
     };
+    for (auto &item : substates) {
+        item.second->Retire(submission);
+    }
     submission.EndUse();
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);

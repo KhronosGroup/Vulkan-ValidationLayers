@@ -52,7 +52,7 @@ static bool IsClearColorZeroOrOne(VkFormat format, const std::array<uint32_t, 4>
     return is_one || is_zero;
 }
 
-void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, VkCompareOp new_depth_compare_op,
+void BestPractices::RecordSetDepthTestState(bp_state::CommandBufferSubState& cb_state, VkCompareOp new_depth_compare_op,
                                             bool new_depth_test_enable) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -75,7 +75,7 @@ void BestPractices::RecordSetDepthTestState(bp_state::CommandBuffer& cb_state, V
     cb_state.nv.depth_test_enable = new_depth_test_enable;
 }
 
-void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cb_state, VkImage depth_attachment,
+void BestPractices::RecordBindZcullScope(bp_state::CommandBufferSubState& cb_state, VkImage depth_attachment,
                                          const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -104,13 +104,13 @@ void BestPractices::RecordBindZcullScope(bp_state::CommandBuffer& cb_state, VkIm
     cb_state.nv.zcull_scope.tree = &tree;
 }
 
-void BestPractices::RecordUnbindZcullScope(bp_state::CommandBuffer& cb_state) {
+void BestPractices::RecordUnbindZcullScope(bp_state::CommandBufferSubState& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     RecordBindZcullScope(cb_state, VK_NULL_HANDLE, VkImageSubresourceRange{});
 }
 
-void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBuffer& cb_state) {
+void BestPractices::RecordResetScopeZcullDirection(bp_state::CommandBufferSubState& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     auto& scope = cb_state.nv.zcull_scope;
@@ -133,7 +133,7 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
     }
 }
 
-void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
+void BestPractices::RecordResetZcullDirection(bp_state::CommandBufferSubState& cb_state, VkImage depth_image,
                                               const VkImageSubresourceRange& subresource_range) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -155,14 +155,14 @@ void BestPractices::RecordResetZcullDirection(bp_state::CommandBuffer& cb_state,
     });
 }
 
-void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBuffer& cb_state, ZcullDirection mode) {
+void BestPractices::RecordSetScopeZcullDirection(bp_state::CommandBufferSubState& cb_state, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     auto& scope = cb_state.nv.zcull_scope;
     RecordSetZcullDirection(cb_state, scope.image, scope.range, mode);
 }
 
-void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cb_state, VkImage depth_image,
+void BestPractices::RecordSetZcullDirection(bp_state::CommandBufferSubState& cb_state, VkImage depth_image,
                                             const VkImageSubresourceRange& subresource_range, ZcullDirection mode) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
@@ -180,7 +180,7 @@ void BestPractices::RecordSetZcullDirection(bp_state::CommandBuffer& cb_state, V
     });
 }
 
-void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cb_state) {
+void BestPractices::RecordZcullDraw(bp_state::CommandBufferSubState& cb_state) {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     // Add one draw to each subresource depending on the current Z-cull direction
@@ -207,7 +207,7 @@ void BestPractices::RecordZcullDraw(bp_state::CommandBuffer& cb_state) {
     });
 }
 
-bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cb_state, const Location& loc) const {
+bool BestPractices::ValidateZcullScope(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const {
     assert(VendorCheckEnabled(kBPVendorNVIDIA));
 
     bool skip = false;
@@ -220,7 +220,7 @@ bool BestPractices::ValidateZcullScope(const bp_state::CommandBuffer& cb_state, 
     return skip;
 }
 
-bool BestPractices::ValidateZcull(const bp_state::CommandBuffer& cb_state, VkImage image,
+bool BestPractices::ValidateZcull(const bp_state::CommandBufferSubState& cb_state, VkImage image,
                                   const VkImageSubresourceRange& subresource_range, const Location& loc) const {
     bool skip = false;
 

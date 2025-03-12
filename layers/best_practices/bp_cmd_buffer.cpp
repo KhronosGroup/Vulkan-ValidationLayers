@@ -61,12 +61,12 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
                                                     const RecordObject& record_obj) {
     BaseClass::PreCallRecordBeginCommandBuffer(commandBuffer, pBeginInfo, record_obj);
 
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     // reset
-    cb_state->num_submits = 0;
-    cb_state->uses_vertex_buffer = false;
-    cb_state->small_indexed_draw_call_count = 0;
+    sub_state.num_submits = 0;
+    sub_state.uses_vertex_buffer = false;
+    sub_state.small_indexed_draw_call_count = 0;
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
@@ -92,8 +92,9 @@ bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuf
         }
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        if (cb_state->num_submits == 1 && !is_one_time_submit) {
+        auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+        const auto& sub_state = bp_state::SubState(*cb_state);
+        if (sub_state.num_submits == 1 && !is_one_time_submit) {
             skip |= LogPerformanceWarning("BestPractices-NVIDIA-vkBeginCommandBuffer-one-time-submit", device,
                                           error_obj.location.dot(Field::pBeginInfo).dot(Field::flags),
                                           "(%s) doesn't have VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT set "
@@ -164,10 +165,11 @@ void BestPractices::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBu
                                                        const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
 
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        RecordSetDepthTestState(*cb_state, depthCompareOp, cb_state->nv.depth_test_enable);
+        RecordSetDepthTestState(sub_state, depthCompareOp, sub_state.nv.depth_test_enable);
     }
 }
 
@@ -180,10 +182,10 @@ void BestPractices::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandB
                                                         const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
 
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        RecordSetDepthTestState(*cb_state, cb_state->nv.depth_compare_op, depthTestEnable != VK_FALSE);
+        auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
+        RecordSetDepthTestState(sub_state, sub_state.nv.depth_compare_op, depthTestEnable != VK_FALSE);
     }
 }
 
@@ -199,8 +201,8 @@ struct EventValidator {
 
     EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
 
-    bool ValidateSecondaryCbSignalingState(const bp_state::CommandBuffer& primary_cb, const bp_state::CommandBuffer& secondary_cb,
-                                           const Location& secondary_cb_loc) {
+    bool ValidateSecondaryCbSignalingState(const bp_state::CommandBufferSubState& primary_cb,
+                                           const bp_state::CommandBufferSubState& secondary_cb, const Location& secondary_cb_loc) {
         bool skip = false;
         for (const auto& [event, signaling_info] : secondary_cb.event_signaling_state) {
             if (signaling_info.first_state_change_is_signal) {
@@ -235,18 +237,20 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
                                                       const VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
     EventValidator event_validator(*this);
-    const auto primary = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    const auto primary = GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto& primary_sub_state = bp_state::SubState(*primary);
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        const auto secondary_cb = GetRead<bp_state::CommandBuffer>(pCommandBuffers[i]);
+        const auto secondary_cb = GetRead<vvl::CommandBuffer>(pCommandBuffers[i]);
         if (secondary_cb == nullptr) {
             continue;
         }
+        const auto& secondary_sub_state = bp_state::SubState(*secondary_cb);
         const Location& cb_loc = error_obj.location.dot(Field::pCommandBuffers, i);
-        const auto& secondary = secondary_cb->render_pass_state;
+        const auto& secondary = secondary_sub_state.render_pass_state;
         for (auto& clear : secondary.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(*primary, uint32_t(clear.rects.size()), clear.rects.data())) {
-                skip |=
-                    ValidateClearAttachment(*primary, clear.framebufferAttachment, clear.colorAttachment, clear.aspects, cb_loc);
+            if (ClearAttachmentsIsFullClear(primary_sub_state, uint32_t(clear.rects.size()), clear.rects.data())) {
+                skip |= ValidateClearAttachment(primary_sub_state, clear.framebufferAttachment, clear.colorAttachment,
+                                                clear.aspects, cb_loc);
             }
         }
 
@@ -262,7 +266,7 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
                                    FormatHandle(pCommandBuffers[i]).c_str(), FormatHandle(commandBuffer).c_str());
             }
         }
-        skip |= event_validator.ValidateSecondaryCbSignalingState(*primary, *secondary_cb, cb_loc);
+        skip |= event_validator.ValidateSecondaryCbSignalingState(primary_sub_state, secondary_sub_state, cb_loc);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
@@ -279,38 +283,41 @@ void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     BaseClass::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
 
-    auto primary = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto primary = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (!primary) {
         return;
     }
+    auto& primary_sub_state = bp_state::SubState(*primary);
 
     for (uint32_t i = 0; i < commandBufferCount; i++) {
-        auto secondary = GetWrite<bp_state::CommandBuffer>(pCommandBuffers[i]);
+        auto secondary = GetWrite<vvl::CommandBuffer>(pCommandBuffers[i]);
         if (!secondary) {
             continue;
         }
+        auto& secondary_sub_state = bp_state::SubState(*secondary);
 
-        for (auto& early_clear : secondary->render_pass_state.earlyClearAttachments) {
-            if (ClearAttachmentsIsFullClear(*primary, uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
-                RecordAttachmentClearAttachments(*primary, early_clear.framebufferAttachment, early_clear.colorAttachment,
+        for (auto& early_clear : secondary_sub_state.render_pass_state.earlyClearAttachments) {
+            if (ClearAttachmentsIsFullClear(primary_sub_state, uint32_t(early_clear.rects.size()), early_clear.rects.data())) {
+                RecordAttachmentClearAttachments(primary_sub_state, early_clear.framebufferAttachment, early_clear.colorAttachment,
                                                  early_clear.aspects, uint32_t(early_clear.rects.size()), early_clear.rects.data());
             } else {
-                RecordAttachmentAccess(*primary, early_clear.framebufferAttachment, early_clear.aspects);
+                RecordAttachmentAccess(primary_sub_state, early_clear.framebufferAttachment, early_clear.aspects);
             }
         }
 
-        for (auto& touch : secondary->render_pass_state.touchesAttachments) {
-            RecordAttachmentAccess(*primary, touch.framebufferAttachment, touch.aspects);
+        for (auto& touch : secondary_sub_state.render_pass_state.touchesAttachments) {
+            RecordAttachmentAccess(primary_sub_state, touch.framebufferAttachment, touch.aspects);
         }
 
-        primary->render_pass_state.numDrawCallsDepthEqualCompare += secondary->render_pass_state.numDrawCallsDepthEqualCompare;
-        primary->render_pass_state.numDrawCallsDepthOnly += secondary->render_pass_state.numDrawCallsDepthOnly;
+        primary_sub_state.render_pass_state.numDrawCallsDepthEqualCompare +=
+            secondary_sub_state.render_pass_state.numDrawCallsDepthEqualCompare;
+        primary_sub_state.render_pass_state.numDrawCallsDepthOnly += secondary_sub_state.render_pass_state.numDrawCallsDepthOnly;
 
-        for (const auto& [event, secondary_info] : secondary->event_signaling_state) {
-            if (auto* primary_info = vvl::Find(primary->event_signaling_state, event)) {
+        for (const auto& [event, secondary_info] : secondary_sub_state.event_signaling_state) {
+            if (auto* primary_info = vvl::Find(primary_sub_state.event_signaling_state, event)) {
                 primary_info->signaled = secondary_info.signaled;
             } else {
-                primary->event_signaling_state.emplace(event, secondary_info);
+                primary_sub_state.event_signaling_state.emplace(event, secondary_info);
             }
         }
     }

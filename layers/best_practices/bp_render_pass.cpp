@@ -314,10 +314,11 @@ bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
     BaseClass::PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
 
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
-        RecordCmdEndRenderingCommon(*cb_state, *rp_state);
+        RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
     // Add Deferred Queue
@@ -330,10 +331,11 @@ void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer,
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassInfo,
                                                    const RecordObject& record_obj) {
     BaseClass::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
-        RecordCmdEndRenderingCommon(*cb_state, *rp_state);
+        RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
     // Add Deferred Queue
@@ -350,10 +352,11 @@ void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuf
 
 void BestPractices::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
     BaseClass::PreCallRecordCmdEndRendering(commandBuffer, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
-        RecordCmdEndRenderingCommon(*cb_state, *rp_state);
+        RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 }
 
@@ -364,8 +367,9 @@ void BestPractices::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffe
 void BestPractices::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                     const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    RecordCmdBeginRenderingCommon(*cb_state, nullptr, pRenderingInfo);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
+    RecordCmdBeginRenderingCommon(sub_state, nullptr, pRenderingInfo);
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
@@ -376,8 +380,9 @@ void BestPractices::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBu
 void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                  const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    RecordCmdNextSubpass(*cb_state);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
+    RecordCmdNextSubpass(sub_state);
     auto rp = cb_state->active_render_pass.get();
     ASSERT_AND_RETURN(rp);
 
@@ -394,14 +399,15 @@ void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, 
         if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
             const VkImage depth_image = depth_image_view->image_state->VkHandle();
             const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
-            RecordBindZcullScope(*cb_state, depth_image, subresource_range);
+            RecordBindZcullScope(sub_state, depth_image, subresource_range);
         } else {
-            RecordUnbindZcullScope(*cb_state);
+            RecordUnbindZcullScope(sub_state);
         }
     }
 }
 
-void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin) {
+void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb_state,
+                                             const VkRenderPassBeginInfo* pRenderPassBegin) {
     if (!pRenderPassBegin) return;
 
     auto rp_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
@@ -447,7 +453,7 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, 
             }
         }
 
-        QueueValidateImageView(cb_state.queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
+        QueueValidateImageView(cb_state.base.queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
     }
 
     // Check store ops
@@ -484,14 +490,15 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, 
             }
         }
 
-        QueueValidateImageView(cb_state.queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(),
+        QueueValidateImageView(cb_state.base.queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(),
                                usage);
     }
 }
 
-void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin,
+void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBufferSubState& cb_state,
+                                                  const VkRenderPassBeginInfo* pRenderPassBegin,
                                                   const VkRenderingInfo* pRenderingInfo) {
-    auto rp_state = cb_state.active_render_pass.get();
+    auto rp_state = cb_state.base.active_render_pass.get();
     ASSERT_AND_RETURN(rp_state);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
@@ -526,7 +533,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
                         const uint32_t attachment_index = depth_attachment->attachment;
                         if (attachment_index != VK_ATTACHMENT_UNUSED) {
                             load_op.emplace(rp_state->create_info.pAttachments[attachment_index].loadOp);
-                            depth_image_view = cb_state.active_attachments[attachment_index].image_view;
+                            depth_image_view = cb_state.base.active_attachments[attachment_index].image_view;
                         }
                     }
                 }
@@ -558,7 +565,7 @@ void BestPractices::RecordCmdBeginRenderingCommon(bp_state::CommandBuffer& cb_st
     }
 }
 
-void BestPractices::RecordCmdEndRenderingCommon(bp_state::CommandBuffer& cb_state, const vvl::RenderPass& rp_state) {
+void BestPractices::RecordCmdEndRenderingCommon(bp_state::CommandBufferSubState& cb_state, const vvl::RenderPass& rp_state) {
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         std::optional<VkAttachmentStoreOp> store_op;
 
@@ -616,13 +623,14 @@ void BestPractices::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuff
 void BestPractices::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                                   const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    RecordCmdNextSubpass(*cb_state);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
+    RecordCmdNextSubpass(sub_state);
 }
 
-void BestPractices::RecordCmdNextSubpass(bp_state::CommandBuffer& cb_state) {
+void BestPractices::RecordCmdNextSubpass(bp_state::CommandBufferSubState& cb_state) {
     // Spec states that after NextSubpass all resources should be rebound
-    if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled) {
+    if (cb_state.base.active_render_pass && cb_state.base.active_render_pass->has_multiview_enabled) {
         cb_state.UnbindResources();
     }
 }
@@ -644,10 +652,11 @@ void BestPractices::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBu
     PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
-void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_state, const VkRenderPassBeginInfo* pRenderPassBegin) {
+void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb_state,
+                                                 const VkRenderPassBeginInfo* pRenderPassBegin) {
     // Reset the renderpass state
     // TODO - move this logic to the Render Pass state as cb->has_draw_cmd should stay true for lifetime of command buffer
-    cb_state.has_draw_cmd = false;
+    cb_state.base.has_draw_cmd = false;
     auto& render_pass_state = cb_state.render_pass_state;
     render_pass_state.touchesAttachments.clear();
     render_pass_state.earlyClearAttachments.clear();
@@ -670,7 +679,7 @@ void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_sta
             if (rp_state->create_info.pSubpasses[i].colorAttachmentCount > 0) render_pass_state.colorAttachment = true;
         }
         // Spec states that after BeginRenderPass all resources should be rebound
-        if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled) {
+        if (cb_state.base.active_render_pass && cb_state.base.active_render_pass->has_multiview_enabled) {
             cb_state.UnbindResources();
         }
     }
@@ -679,19 +688,21 @@ void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBuffer& cb_sta
 void BestPractices::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                      VkSubpassContents contents, const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    PostRecordCmdBeginRenderPass(*cb_state, pRenderPassBegin);
-    RecordCmdBeginRenderingCommon(*cb_state, pRenderPassBegin, nullptr);
-    RecordCmdBeginRenderPass(*cb_state, pRenderPassBegin);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
+    PostRecordCmdBeginRenderPass(sub_state, pRenderPassBegin);
+    RecordCmdBeginRenderingCommon(sub_state, pRenderPassBegin, nullptr);
+    RecordCmdBeginRenderPass(sub_state, pRenderPassBegin);
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                       const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {
     BaseClass::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-    auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-    PostRecordCmdBeginRenderPass(*cb_state, pRenderPassBegin);
-    RecordCmdBeginRenderingCommon(*cb_state, pRenderPassBegin, nullptr);
-    RecordCmdBeginRenderPass(*cb_state, pRenderPassBegin);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
+    PostRecordCmdBeginRenderPass(sub_state, pRenderPassBegin);
+    RecordCmdBeginRenderingCommon(sub_state, pRenderPassBegin, nullptr);
+    RecordCmdBeginRenderPass(sub_state, pRenderPassBegin);
 }
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer,
@@ -705,8 +716,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuff
                                                      const ErrorObject& error_obj) const {
     bool skip = ValidateCmdEndRenderPass(commandBuffer, error_obj.location);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        skip |= ValidateZcullScope(*cb_state, error_obj.location);
+        const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
+        skip |= ValidateZcullScope(sub_state, error_obj.location);
     }
     return skip;
 }
@@ -719,8 +731,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass2KHR(VkCommandBuffer commandB
 bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = ValidateCmdEndRenderPass(commandBuffer, error_obj.location);
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        skip |= ValidateZcullScope(*cb_state, error_obj.location);
+        const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
+        skip |= ValidateZcullScope(sub_state, error_obj.location);
     }
     return skip;
 }
@@ -728,8 +741,9 @@ bool BestPractices::PreCallValidateCmdEndRenderPass(VkCommandBuffer commandBuffe
 bool BestPractices::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
     bool skip = false;
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        const auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
-        skip |= ValidateZcullScope(*cb_state, error_obj.location);
+        const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
+        skip |= ValidateZcullScope(sub_state, error_obj.location);
     }
     return skip;
 }
@@ -740,9 +754,10 @@ bool BestPractices::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuf
 
 bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const Location& loc) const {
     bool skip = false;
-    const auto cmd = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    const auto cmd = GetRead<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cmd);
 
-    auto& render_pass_state = cmd->render_pass_state;
+    auto& render_pass_state = sub_state.render_pass_state;
 
     // Does the number of draw calls classified as depth only surpass the vendor limit for a specified vendor
     const bool depth_only_arm = render_pass_state.numDrawCallsDepthEqualCompare >= kDepthPrePassNumDrawCallsArm &&
@@ -830,7 +845,8 @@ bool BestPractices::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, cons
     return skip;
 }
 
-void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment, VkImageAspectFlags aspects) {
+void BestPractices::RecordAttachmentAccess(bp_state::CommandBufferSubState& cb_state, uint32_t fb_attachment,
+                                           VkImageAspectFlags aspects) {
     auto& rp_state = cb_state.render_pass_state;
     // Called when we have a partial clear attachment, or a normal draw call which accesses an attachment.
     auto itr =
@@ -844,7 +860,7 @@ void BestPractices::RecordAttachmentAccess(bp_state::CommandBuffer& cb_state, ui
     }
 }
 
-void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cb_state, uint32_t fb_attachment,
+void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBufferSubState& cb_state, uint32_t fb_attachment,
                                                      uint32_t color_attachment, VkImageAspectFlags aspects, uint32_t rectCount,
                                                      const VkClearRect* pRects) {
     auto& rp_state = cb_state.render_pass_state;
@@ -866,7 +882,7 @@ void BestPractices::RecordAttachmentClearAttachments(bp_state::CommandBuffer& cb
         return;
     }
 
-    if (cb_state.IsSecondary()) {
+    if (cb_state.base.IsSecondary()) {
         // The first command might be a clear, but might not be the first in the render pass, defer any checks until
         // CmdExecuteCommands.
         rp_state.earlyClearAttachments.push_back(

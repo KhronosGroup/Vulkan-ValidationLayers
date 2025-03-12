@@ -27,11 +27,10 @@
 #include "containers/custom_containers.h"
 #include "generated/dynamic_state_helper.h"
 
-class CoreChecks;
-
 namespace vvl {
 class Bindable;
 class Buffer;
+class CommandBufferSubState;
 class Device;
 class Framebuffer;
 class RenderPass;
@@ -163,7 +162,7 @@ struct LabelCommand {
     std::string label_name;  // used when begin == true
 };
 
-class CommandBuffer : public RefcountedStateObject {
+class CommandBuffer : public RefcountedStateObject, public SubStateManager<CommandBufferSubState> {
     using Func = vvl::Func;
   public:
     using ImageLayoutMap = vvl::unordered_map<VkImage, std::shared_ptr<ImageLayoutRegistry>>;
@@ -587,7 +586,7 @@ class CommandBuffer : public RefcountedStateObject {
         RemoveChild(base);
     }
 
-    virtual void Reset(const Location &loc);
+    void Reset(const Location &loc);
 
     void IncrementResources();
 
@@ -666,14 +665,13 @@ class CommandBuffer : public RefcountedStateObject {
     void UpdateTraceRayCmd(Func command);
     void UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point);
 
-    virtual void RecordCmd(Func command);
+    void RecordCmd(Func command);
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
     void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
-    virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                  VkPipelineStageFlags2KHR src_stage_mask);
+    void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask);
     void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
 
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
@@ -747,6 +745,26 @@ class CommandBuffer : public RefcountedStateObject {
     void UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin);
     void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info);
     void UnbindResources();
+};
+
+class CommandBufferSubState {
+  public:
+    explicit CommandBufferSubState(CommandBuffer &cb) : base(cb) {}
+    CommandBufferSubState(const CommandBufferSubState &) = delete;
+    CommandBufferSubState &operator=(const CommandBufferSubState &) = delete;
+    virtual ~CommandBufferSubState() {}
+    virtual void Destroy() {}
+
+    virtual void Reset(const Location &loc) {}
+    virtual void RecordCmd(Func command) {}
+    virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
+                                  VkPipelineStageFlags2KHR src_stage_mask) {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    VulkanTypedHandle Handle() const { return base.Handle(); }
+    VkCommandBuffer VkHandle() const { return base.VkHandle(); }
+
+    CommandBuffer &base;
 };
 
 }  // namespace vvl
