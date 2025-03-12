@@ -27,14 +27,16 @@ class SyncValidator;
 
 using BatchContextPtr = std::shared_ptr<QueueBatchContext>;
 using BatchContextConstPtr = std::shared_ptr<const QueueBatchContext>;
-using CommandBufferConstPtr = std::shared_ptr<const syncval_state::CommandBuffer>;
 
 namespace vvl {
+class CommandBuffer;
 class Semaphore;
 }  // namespace vvl
 
+using CommandBufferConstPtr = std::shared_ptr<const vvl::CommandBuffer>;
+
 struct AcquiredImage {
-    std::shared_ptr<const syncval_state::ImageState> image;
+    std::shared_ptr<const vvl::Image> image;
     subresource_adapter::ImageRangeGenerator generator;
     ResourceUsageTag present_tag;
     ResourceUsageTag acquire_tag;
@@ -145,8 +147,8 @@ struct PresentedImageRecord {
     ResourceUsageTag tag;  // the global tag at presentation
     uint32_t image_index;
     uint32_t present_index;
-    std::weak_ptr<const syncval_state::Swapchain> swapchain_state;
-    std::shared_ptr<const syncval_state::ImageState> image;
+    std::weak_ptr<vvl::Swapchain> swapchain_state;
+    std::shared_ptr<const vvl::Image> image;
 };
 
 struct PresentedImage : public PresentedImageRecord {
@@ -155,10 +157,10 @@ struct PresentedImage : public PresentedImageRecord {
 
     PresentedImage() = default;
     void UpdateMemoryAccess(SyncAccessIndex usage, ResourceUsageTag tag, AccessContext &access_context) const;
-    PresentedImage(const SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
+    PresentedImage(SyncValidator &sync_state, std::shared_ptr<QueueBatchContext> batch, VkSwapchainKHR swapchain,
                    uint32_t image_index, uint32_t present_index, ResourceUsageTag present_tag_);
     // For non-previsously presented images..
-    PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index);
+    PresentedImage(std::shared_ptr<vvl::Swapchain> &&swapchain, uint32_t at_index);
     bool Invalid() const;
     void ExportToSwapchain(SyncValidator &);
     void SetImage(uint32_t at_index);

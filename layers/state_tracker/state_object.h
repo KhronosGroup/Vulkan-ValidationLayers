@@ -23,8 +23,10 @@
 #include "utils/vk_layer_utils.h"
 #include "generated/vk_object_types.h"
 #include "error_message/logging.h"
+#include "chassis/layer_object_id.h"
 
 #include <atomic>
+#include <map>
 
 // Intentionally ignore VulkanTypedHandle::node, it is optional
 inline bool operator==(const VulkanTypedHandle &a, const VulkanTypedHandle &b) noexcept {
@@ -143,4 +145,34 @@ class RefcountedStateObject : public StateObject {
 
     const VulkanTypedHandle* InUse() const override { return ((in_use_.load() > 0) || StateObject::InUse()) ? &Handle() : nullptr; }
 };
+
+template <typename T>
+class SubStateManager {
+  public:
+    void SetSubState(LayerObjectTypeId id, std::unique_ptr<T> &&substate) { substates.emplace(id, std::move(substate)); }
+
+    T *SubState(LayerObjectTypeId id) { return substates[id].get(); }
+    const T *SubState(LayerObjectTypeId id) const {
+        auto iter = substates.find(id);
+        return iter != substates.end() ? iter->second.get() : nullptr;
+    }
+
+    template <typename SubState>
+    void ForEach(std::function<void(const SubState &s)> fn) const {
+        for (const auto &entry : substates) {
+            fn(*entry.second);
+        }
+    }
+
+    template <typename State>
+    void ForEach(std::function<void(State &s)> fn) {
+        for (const auto &entry : substates) {
+            fn(*entry.second);
+        }
+    }
+
+  protected:
+    std::map<LayerObjectTypeId, std::unique_ptr<T>> substates;
+};
+
 } // namespace vvl

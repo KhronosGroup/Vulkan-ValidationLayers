@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,41 +25,41 @@ struct Location;
 
 namespace gpuav {
 class Validator;
-class CommandBuffer;
+class CommandBufferSubState;
 
 namespace valcmd {
 
-void FlushValidationCmds(Validator &gpuav, CommandBuffer &cb_state);
+void FlushValidationCmds(Validator &gpuav, CommandBufferSubState &cb_state);
 
 template <typename IndirectCommand>
-void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer draw_buffer,
                    VkDeviceSize draw_buffer_offset, uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
                    const char *vuid);
 
 template <>
-void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
-                                          VkDeviceSize draw_buffer_offset, uint32_t draw_count, VkBuffer count_buffer,
-                                          VkDeviceSize count_buffer_offset, const char *vuid);
+void FirstInstance<VkDrawIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
+                                          VkBuffer draw_buffer, VkDeviceSize draw_buffer_offset, uint32_t draw_count,
+                                          VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid);
 template <>
-void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBuffer &cb_state, const Location &loc,
+void FirstInstance<VkDrawIndexedIndirectCommand>(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc,
                                                  VkBuffer draw_buffer, VkDeviceSize draw_buffer_offset, uint32_t draw_count,
                                                  VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid);
 
-void FirstInstance(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer draw_buffer,
                    VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, vvl::Struct draw_indirect_struct_name,
                    uint32_t first_instance_member_pos, uint32_t draw_count, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
                    const char *vuid);
 
-void CountBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer draw_buffer,
                  VkDeviceSize draw_buffer_offset, uint32_t draw_indirect_struct_byte_size, vvl::Struct draw_indirect_struct_name,
                  uint32_t draw_cmds_byte_stride, VkBuffer count_buffer, VkDeviceSize count_buffer_offset,
                  const char *vuid_max_draw_count);
 
-void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer draw_buffer,
                       VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, VkBuffer count_buffer,
                       VkDeviceSize count_buffer_offset, uint32_t draw_count);
 
-void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, const Location &loc, VkBuffer draw_buffer,
+void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer draw_buffer,
                                     VkDeviceSize draw_buffer_offset, uint32_t draw_cmds_byte_stride, uint32_t draw_count,
                                     VkBuffer count_buffer, VkDeviceSize count_buffer_offset, const char *vuid_oob_index);
 
