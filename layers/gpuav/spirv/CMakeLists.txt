@@ -45,8 +45,6 @@ target_sources(gpu_av_spirv PRIVATE
     type_manager.cpp
     inject_conditional_function_pass.h
     inject_conditional_function_pass.cpp
-    inject_function_pass.h
-    inject_function_pass.cpp
     pass.h
     pass.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
