@@ -48,7 +48,7 @@ struct DebugPrintfBufferInfo {
           action_command_index(action_command_index){};
 };
 
-class CommandBuffer : public vvl::CommandBuffer {
+class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     // One item per vkCmdBindDescriptorSet() called
     // We really need this information at the draw/dispatch/action, but assume most apps will either
@@ -72,9 +72,8 @@ class CommandBuffer : public vvl::CommandBuffer {
     uint32_t trace_rays_index = 0;
     uint32_t action_command_count = 0;
 
-    CommandBuffer(Validator &gpuav, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *pCreateInfo,
-                  const vvl::CommandPool *pool);
-    ~CommandBuffer();
+    CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
+    ~CommandBufferSubState();
 
     bool PreProcess(const Location &loc);
     void PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
@@ -122,12 +121,12 @@ class CommandBuffer : public vvl::CommandBuffer {
     vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const CommandBuffer &cb_state, const uint32_t *error_record,
+        stdext::inplace_function<bool(Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack),
                                  280 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
 
-    using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBuffer &cb_state), 192>;
+    using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb_state), 192>;
 
     std::vector<ValidationCommandFunc> per_render_pass_validation_commands;
 
@@ -159,17 +158,21 @@ class CommandBuffer : public vvl::CommandBuffer {
     uint32_t bda_ranges_snapshot_version_ = 0;
 };
 
-class Queue : public vvl::Queue {
+static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
+    return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class QueueSubState : public vvl::QueueSubState {
   public:
-    Queue(Validator &gpuav, VkQueue q, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
-          const VkQueueFamilyProperties &queueFamilyProperties, bool timeline_khr);
-    virtual ~Queue();
+    QueueSubState(Validator &gpuav, vvl::Queue &q);
+    virtual ~QueueSubState();
+
+    void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
+    void PostSubmit(vvl::QueueSubmission &) override;
+    void Retire(vvl::QueueSubmission &) override;
 
   protected:
-    vvl::PreSubmitResult PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) override;
-    void PostSubmit(vvl::QueueSubmission &) override;
     void SubmitBarrier(const Location &loc, uint64_t seq);
-    void Retire(vvl::QueueSubmission &) override;
 
     Validator &state_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
@@ -177,77 +180,6 @@ class Queue : public vvl::Queue {
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
     std::deque<std::vector<vvl::CommandBufferSubmission>> retiring_;
     const bool timeline_khr_;
-};
-
-class Buffer : public vvl::Buffer {
-  public:
-    Buffer(vvl::Device &dev_data, VkBuffer buff, const VkBufferCreateInfo *pCreateInfo, DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
-};
-
-class BufferView : public vvl::BufferView {
-  public:
-    BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView bv, const VkBufferViewCreateInfo *ci,
-               VkFormatFeatureFlags2KHR buf_ff, DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
-};
-
-class ImageView : public vvl::ImageView {
-  public:
-    ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView iv, const VkImageViewCreateInfo *ci,
-              VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props,
-              DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
-};
-
-class Sampler : public vvl::Sampler {
-  public:
-    Sampler(const VkSampler s, const VkSamplerCreateInfo *pci, DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
-};
-
-class AccelerationStructureKHR : public vvl::AccelerationStructureKHR {
-  public:
-    AccelerationStructureKHR(VkAccelerationStructureKHR as, const VkAccelerationStructureCreateInfoKHR *ci,
-                             std::shared_ptr<vvl::Buffer> &&buf_state, VkDeviceAddress buffer_address, DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
-};
-
-class AccelerationStructureNV : public vvl::AccelerationStructureNV {
-  public:
-    AccelerationStructureNV(VkDevice device, VkAccelerationStructureNV as, const VkAccelerationStructureCreateInfoNV *ci,
-                            DescriptorHeap &desc_heap_);
-
-    void Destroy() final;
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) final;
-
-    DescriptorHeap &desc_heap;
-    const DescriptorId id;
 };
 
 }  // namespace gpuav

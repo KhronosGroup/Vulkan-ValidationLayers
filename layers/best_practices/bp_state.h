@@ -28,18 +28,10 @@
 class BestPractices;
 
 namespace bp_state {
-class Image : public vvl::Image {
-  public:
-    Image(const vvl::Device& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, create_info, features) {
-        SetupUsages();
-    }
 
-    Image(const vvl::Device& dev_data, VkImage handle, const VkImageCreateInfo* create_info, VkSwapchainKHR swapchain,
-          uint32_t swapchain_index, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, create_info, swapchain, swapchain_index, features) {
-        SetupUsages();
-    }
+class ImageSubState : public vvl::ImageSubState {
+  public:
+    explicit ImageSubState(vvl::Image& img) : vvl::ImageSubState(img) { SetupUsages(); }
 
     struct Usage {
         IMAGE_SUBRESOURCE_USAGE_BP type;
@@ -65,9 +57,9 @@ class Image : public vvl::Image {
 
   private:
     void SetupUsages() {
-        usages_.resize(create_info.arrayLayers);
+        usages_.resize(base.create_info.arrayLayers);
         for (auto& mip_vec : usages_) {
-            mip_vec.resize(create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
+            mip_vec.resize(base.create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
         }
     }
     // A 2d vector for all the array layers and mip levels.
@@ -77,6 +69,14 @@ class Image : public vvl::Image {
     // second/uint32_t is last queue family usage
     std::vector<std::vector<Usage>> usages_;
 };
+
+static inline ImageSubState& SubState(vvl::Image& img) {
+    return *static_cast<ImageSubState*>(img.SubState(LayerObjectTypeBestPractices));
+}
+
+static inline const ImageSubState& SubState(const vvl::Image& img) {
+    return *static_cast<const ImageSubState*>(img.SubState(LayerObjectTypeBestPractices));
+}
 
 struct AttachmentInfo {
     uint32_t framebufferAttachment;
@@ -151,10 +151,9 @@ struct CommandBufferStateNV {
     bool depth_test_enable = false;
 };
 
-class CommandBuffer : public vvl::CommandBuffer {
+class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    CommandBuffer(BestPractices& bp, VkCommandBuffer handle, const VkCommandBufferAllocateInfo* allocate_info,
-                  const vvl::CommandPool* pool);
+    explicit CommandBufferSubState(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
 
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
@@ -181,5 +180,13 @@ class CommandBuffer : public vvl::CommandBuffer {
     };
     vvl::unordered_map<VkEvent, SignalingInfo> event_signaling_state;
 };
+
+static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {
+    return *static_cast<CommandBufferSubState*>(cb.SubState(LayerObjectTypeBestPractices));
+}
+
+static inline const CommandBufferSubState& SubState(const vvl::CommandBuffer& cb) {
+    return *static_cast<const CommandBufferSubState*>(cb.SubState(LayerObjectTypeBestPractices));
+}
 
 }  // namespace bp_state

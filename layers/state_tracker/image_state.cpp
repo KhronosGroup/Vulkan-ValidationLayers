@@ -198,7 +198,6 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
-      fragment_encoder(nullptr),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -241,12 +240,9 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
-      fragment_encoder(nullptr),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
-    fragment_encoder =
-        std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 
     tracker_.emplace<BindableNoMemoryTracker>(requirements.data());
     SetMemoryTracker(&std::get<BindableNoMemoryTracker>(tracker_));
@@ -258,8 +254,6 @@ void Image::Destroy() {
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
     // entry could get put into vvl::CommandBuffer::aliased_image_layout_map.
     //
-    // NOTE: the fragment_encoder should not be cleaned-up in case a semaphore to an acquired image is being processed
-    //       after the swapchain is waited, and the range generation needs an intact encoder.
     if (bind_swapchain) {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;

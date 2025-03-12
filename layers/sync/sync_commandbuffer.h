@@ -212,7 +212,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     RenderPassAccessContext *GetCurrentRenderPassContext() { return current_renderpass_context_; }
     const RenderPassAccessContext *GetCurrentRenderPassContext() const { return current_renderpass_context_; }
     ResourceUsageTag RecordBeginRenderPass(vvl::Func command, const vvl::RenderPass &rp_state, const VkRect2D &render_area,
-                                           const std::vector<const syncval_state::ImageViewState *> &attachment_views);
+                                           const std::vector<const vvl::ImageView *> &attachment_views);
 
     bool ValidateBeginRendering(const ErrorObject &error_obj, syncval_state::BeginRenderingCmdState &cmd_state) const;
     void RecordBeginRendering(syncval_state::BeginRenderingCmdState &cmd_state, const RecordObject &record_obj);
@@ -292,7 +292,7 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void RecordSyncOp(SyncOpPointer &&sync_op);
 
     struct ClearAttachmentInfo {
-        const syncval_state::ImageViewState &attachment_view;
+        const vvl::ImageView &attachment_view;
         VkImageAspectFlags aspects_to_clear = 0;
         VkImageSubresourceRange subresource_range{};
     };
@@ -338,17 +338,30 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
 };
 
 namespace syncval_state {
-class CommandBuffer : public vvl::CommandBuffer {
+class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     CommandBufferAccessContext access_context;
 
-    CommandBuffer(SyncValidator &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
-                  const vvl::CommandPool *pool);
-    ~CommandBuffer() { Destroy(); }
+    CommandBufferSubState(SyncValidator &dev, vvl::CommandBuffer &cb);
 
     void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     void Destroy() override;
     void Reset(const Location &loc) override;
 };
+
+static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
+    return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation));
+}
+static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb) {
+    return *static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation));
+}
+
+static inline CommandBufferAccessContext *AccessContext(vvl::CommandBuffer &cb) {
+    return &static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+}
+static inline const CommandBufferAccessContext *AccessContext(const vvl::CommandBuffer &cb) {
+    return &static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeSyncValidation))->access_context;
+}
+
 }  // namespace syncval_state

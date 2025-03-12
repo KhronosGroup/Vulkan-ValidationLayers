@@ -143,8 +143,8 @@ struct SharedDispatchValidationResources final {
     }
 };
 
-void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, CommandBuffer &cb_state, VkBuffer indirect_buffer,
-                                      VkDeviceSize indirect_offset) {
+void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
+                                      VkBuffer indirect_buffer, VkDeviceSize indirect_offset) {
     if (!gpuav.gpuav_settings.validate_indirect_dispatches_buffers) {
         return;
     }
@@ -155,7 +155,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     // or DEVICE_LOST resulting from the invalid call will prevent preceding validation errors from being reported.
 
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE);
-    auto const &last_bound = cb_state.lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.base.lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound.pipeline_state;
     const bool use_shader_objects = pipeline_state == nullptr;
 
@@ -204,8 +204,9 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
                                   glsl::kDiagPerCmdDescriptorSet, 1, &indirect_buffer_desc_set, 0, nullptr);
     DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const CommandBuffer &, const uint32_t *error_record,
-                                                        const LogObjectList &objlist, const std::vector<std::string> &) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const CommandBufferSubState &,
+                                                                const uint32_t *error_record, const LogObjectList &objlist,
+                                                                const std::vector<std::string> &) {
         bool skip = false;
         using namespace glsl;
 

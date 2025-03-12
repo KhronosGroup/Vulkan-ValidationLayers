@@ -159,10 +159,7 @@ std::optional<SignalInfo> SignalsUpdate::OnTimelineWait(VkSemaphore semaphore, u
     return resolving_signal;  // empty result if it is a wait-before-signal
 }
 
-syncval_state::Swapchain::Swapchain(vvl::Device& dev_data, const VkSwapchainCreateInfoKHR* pCreateInfo, VkSwapchainKHR handle)
-    : vvl::Swapchain(dev_data, pCreateInfo, handle) {}
-
-void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_image) {
+void syncval_state::SwapchainSubState::RecordPresentedImage(PresentedImage&& presented_image) {
     // All presented images are stored within the swapchain until the are reaquired.
     const uint32_t image_index = presented_image.image_index;
     if (image_index >= presented.size()) presented.resize(image_index + 1);
@@ -172,18 +169,18 @@ void syncval_state::Swapchain::RecordPresentedImage(PresentedImage&& presented_i
 }
 
 // We move from the presented images array 1) so we don't copy shared_ptr, and 2) to mark it acquired
-PresentedImage syncval_state::Swapchain::MovePresentedImage(uint32_t image_index) {
+PresentedImage syncval_state::SwapchainSubState::MovePresentedImage(uint32_t image_index) {
     if (presented.size() <= image_index) presented.resize(image_index + 1);
     PresentedImage ret_val = std::move(presented[image_index]);
     if (ret_val.Invalid()) {
         // If this is the first time the image has been acquired, then it's valid to have no present record, so we create one
         // Note: It's also possible this is an invalid acquire... but that's CoreChecks/Parameter validation's job to report
-        ret_val = PresentedImage(static_cast<const syncval_state::Swapchain*>(this)->shared_from_this(), image_index);
+        ret_val = PresentedImage(base.shared_from_this(), image_index);
     }
     return ret_val;
 }
 
-void syncval_state::Swapchain::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
+void syncval_state::SwapchainSubState::GetPresentBatches(std::vector<QueueBatchContext::Ptr>& batches) const {
     for (const auto& presented_image : presented) {
         if (presented_image.batch) {
             batches.push_back(presented_image.batch);
@@ -622,15 +619,14 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
     uint32_t tag_count = 0;
     for (const auto& cb : command_buffers) {
         if (!cb) continue;
-        tag_count += static_cast<uint32_t>(cb->access_context.GetTagCount());
+        tag_count += static_cast<uint32_t>(syncval_state::SubState(*cb).access_context.GetTagCount());
     }
     batch.base_tag = SetupBatchTags(tag_count);
 
     for (size_t index = 0; index < command_buffers.size(); index++) {
-        const auto& cb = command_buffers[index];
-        if (!cb) continue;
+        const auto& cb = syncval_state::SubState(*command_buffers[index]);
         // Validate and resolve command buffers that has tagged commands
-        const CommandBufferAccessContext& access_context = cb->access_context;
+        const CommandBufferAccessContext& access_context = cb.access_context;
         if (access_context.GetTagCount() > 0) {
             skip |= ReplayState(*this, access_context, error_obj, uint32_t(index), batch.base_tag).ValidateFirstUse();
             // The barriers have already been applied in ValidatFirstUse
@@ -639,7 +635,7 @@ bool QueueBatchContext::ValidateSubmit(const std::vector<CommandBufferConstPtr>&
             batch.base_tag += access_context.GetTagCount();
         }
         // Apply debug label commands
-        vvl::CommandBuffer::ReplayLabelCommands(cb->GetLabelCommands(), current_label_stack);
+        vvl::CommandBuffer::ReplayLabelCommands(cb.base.GetLabelCommands(), current_label_stack);
         batch.cb_index++;
     }
     return skip;
@@ -847,14 +843,14 @@ BatchAccessLog::CBSubmitLog::CBSubmitLog(const BatchRecord& batch, const Command
                                          const std::vector<std::string>& initial_label_stack)
     : batch_(batch), cbs_(cb.GetCBReferencesShared()), log_(cb.GetAccessLogShared()), initial_label_stack_(initial_label_stack) {}
 
-PresentedImage::PresentedImage(const SyncValidator& sync_state, QueueBatchContext::Ptr batch_, VkSwapchainKHR swapchain,
+PresentedImage::PresentedImage(SyncValidator& sync_state, QueueBatchContext::Ptr batch_, VkSwapchainKHR swapchain,
                                uint32_t image_index_, uint32_t present_index_, ResourceUsageTag tag_)
-    : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<syncval_state::Swapchain>(swapchain), {}},
+    : PresentedImageRecord{tag_, image_index_, present_index_, sync_state.Get<vvl::Swapchain>(swapchain), {}},
       batch(std::move(batch_)) {
     SetImage(image_index_);
 }
 
-PresentedImage::PresentedImage(std::shared_ptr<const syncval_state::Swapchain> swapchain, uint32_t at_index) : PresentedImage() {
+PresentedImage::PresentedImage(std::shared_ptr<vvl::Swapchain>&& swapchain, uint32_t at_index) : PresentedImage() {
     swapchain_state = std::move(swapchain);
     tag = kInvalidTag;
     SetImage(at_index);
@@ -867,8 +863,8 @@ void PresentedImage::ExportToSwapchain(SyncValidator&) {  // Include this argume
     // If the swapchain is dead just ignore the present
     auto swap_lock = swapchain_state.lock();
     if (vvl::StateObject::Invalid(swap_lock)) return;
-    auto swap = std::const_pointer_cast<syncval_state::Swapchain>(swap_lock);
-    swap->RecordPresentedImage(std::move(*this));
+    auto& sub_state = syncval_state::SubState(*swap_lock);
+    sub_state.RecordPresentedImage(std::move(*this));
 }
 
 void PresentedImage::SetImage(uint32_t at_index) {
@@ -876,12 +872,14 @@ void PresentedImage::SetImage(uint32_t at_index) {
 
     auto swap_lock = swapchain_state.lock();
     if (vvl::StateObject::Invalid(swap_lock)) return;
-    image = std::static_pointer_cast<const syncval_state::ImageState>(swap_lock->GetSwapChainImageShared(image_index));
+
+    image = std::static_pointer_cast<const vvl::Image>(swap_lock->GetSwapChainImageShared(image_index));
     if (Invalid()) {
         range_gen = ImageRangeGen();
     } else {
         // For valid images create the type/range_gen to used to scope the semaphore operations
-        range_gen = image->MakeImageRangeGen(image->full_range, false);
+        const auto& sub_state = syncval_state::SubState(*image);
+        range_gen = sub_state.MakeImageRangeGen(image->full_range, false);
     }
 }
 

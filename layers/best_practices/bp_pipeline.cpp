@@ -416,8 +416,9 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
     if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         // check for depth/blend state tracking
         if (auto pipeline_state = Get<vvl::Pipeline>(pipeline)) {
-            auto cb_state = GetWrite<bp_state::CommandBuffer>(commandBuffer);
-            auto& render_pass_state = cb_state->render_pass_state;
+            auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+            auto& sub_state = bp_state::SubState(*cb_state);
+            auto& render_pass_state = sub_state.render_pass_state;
 
             render_pass_state.nextDrawTouchesAttachments = GetAttachmentAccess(*pipeline_state);
             render_pass_state.drawTouchAttachments = true;
@@ -452,7 +453,7 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
 
             if (VendorCheckEnabled(kBPVendorNVIDIA)) {
                 using TessGeometryMeshState = bp_state::CommandBufferStateNV::TessGeometryMesh::State;
-                auto& tgm = cb_state->nv.tess_geometry_mesh;
+                auto& tgm = sub_state.nv.tess_geometry_mesh;
 
                 // Make sure the message is only signaled once per command buffer
                 tgm.threshold_signaled = tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA;
@@ -481,11 +482,11 @@ void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer,
                         std::find(dynamic_state_begin, dynamic_state_end, VK_DYNAMIC_STATE_DEPTH_COMPARE_OP) != dynamic_state_end;
 
                     if (!dynamic_depth_test_enable) {
-                        RecordSetDepthTestState(*cb_state, cb_state->nv.depth_compare_op,
+                        RecordSetDepthTestState(sub_state, sub_state.nv.depth_compare_op,
                                                 depth_stencil_state->depthTestEnable != VK_FALSE);
                     }
                     if (!dynamic_depth_func) {
-                        RecordSetDepthTestState(*cb_state, depth_stencil_state->depthCompareOp, cb_state->nv.depth_test_enable);
+                        RecordSetDepthTestState(sub_state, depth_stencil_state->depthCompareOp, sub_state.nv.depth_test_enable);
                     }
                 }
             }
@@ -624,8 +625,9 @@ bool BestPractices::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer
         }
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto cb_state = Get<bp_state::CommandBuffer>(commandBuffer);
-        const auto& tgm = cb_state->nv.tess_geometry_mesh;
+        auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+        auto& sub_state = bp_state::SubState(*cb_state);
+        const auto& tgm = sub_state.nv.tess_geometry_mesh;
         if (tgm.num_switches >= kNumBindPipelineTessGeometryMeshSwitchesThresholdNVIDIA && !tgm.threshold_signaled) {
             LogPerformanceWarning("BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh", commandBuffer, error_obj.location,
                                   "%s Avoid switching between pipelines with and without tessellation, geometry, task, "

@@ -72,10 +72,6 @@ struct CommandBufferSubmitState {
             return true;
         }
 
-        // Call submit-time functions to validate or update local mirrors of state (to preserve const-ness at validate time)
-        for (auto &function : cb_state.queue_submit_functions) {
-            skip |= function(queue_state, cb_state);
-        }
         for (auto &function : cb_state.event_updates) {
             skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, local_event_signal_info,
                              queue_state.VkHandle(), loc);

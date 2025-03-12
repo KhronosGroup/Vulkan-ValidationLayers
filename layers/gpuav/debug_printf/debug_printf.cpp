@@ -379,7 +379,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 #pragma GCC diagnostic pop
 #endif
 
-bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkDescriptorSet instrumentation_desc_set,
+bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkDescriptorSet instrumentation_desc_set,
                                   VkPipelineBindPoint bind_point, const Location &loc) {
     gpuav::vko::Buffer debug_printf_output_buffer(gpuav);
 

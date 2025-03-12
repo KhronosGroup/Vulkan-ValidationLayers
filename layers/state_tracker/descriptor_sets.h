@@ -22,6 +22,7 @@
 #include "utils/hash_util.h"
 #include "state_tracker/shader_stage_state.h"
 #include "containers/small_vector.h"
+#include "chassis/dispatch_object.h"
 #include "generated/vk_object_types.h"
 #include "generated/error_location_helper.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
@@ -400,16 +401,12 @@ class DescriptorSet;
 // be accessed via the common Descriptor.
 class Descriptor {
   public:
-    static bool SupportsNotifyInvalidate() { return false; }
-    static bool IsNotifyInvalidateType(VulkanObjectType) { return false; }
-    virtual void InvalidateNode(const std::shared_ptr<StateObject> &, bool) {}  // Most descriptor types will not call
+    virtual bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) { return false; }
 
     Descriptor() {}
     virtual ~Descriptor() {}
-    virtual void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                             bool is_bindless) = 0;
-    virtual void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                            VkDescriptorType type) = 0;
+    virtual void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) = 0;
+    virtual void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) = 0;
     virtual DescriptorClass GetClass() const = 0;
     // Special fast-path check for SamplerDescriptors that are immutable
     virtual bool IsImmutableSampler() const { return false; };
@@ -434,12 +431,11 @@ inline bool IsBufferDescriptor(VkDescriptorType type) {
 
 class SamplerDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) { return type == kVulkanObjectTypeSampler; }
     SamplerDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::PlainSampler; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const;
 
@@ -459,16 +455,11 @@ class SamplerDescriptor : public Descriptor {
 
 class ImageDescriptor : public Descriptor {
   public:
-    static bool SupportsNotifyInvalidate() { return true; }
-    static bool IsNotifyInvalidateType(const VulkanObjectType node_type) {
-        return node_type == VulkanObjectType::kVulkanObjectTypeImageView;
-    }
+    static bool IsNotifyInvalidateType(VulkanObjectType type) { return type == kVulkanObjectTypeImageView; }
     ImageDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::Image; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     void UpdateImageLayoutDrawState(vvl::CommandBuffer &cb_state) override;
     VkImageView GetImageView() const;
     const vvl::ImageView *GetImageViewState() const { return image_view_state_.get(); }
@@ -478,12 +469,12 @@ class ImageDescriptor : public Descriptor {
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
-    void InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &invalid_node, bool unlink) override;
     bool Invalid() const override;
 
   protected:
     bool ComputeInvalid() const;
-    void UpdateKnownValidView(bool is_bindless);
+    void UpdateKnownValidView();
 
     std::shared_ptr<vvl::ImageView> image_view_state_;
     VkImageLayout image_layout_{VK_IMAGE_LAYOUT_UNDEFINED};
@@ -492,12 +483,13 @@ class ImageDescriptor : public Descriptor {
 
 class ImageSamplerDescriptor : public ImageDescriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) {
+        return type == kVulkanObjectTypeImageView || type == kVulkanObjectTypeSampler;
+    }
     ImageSamplerDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::ImageSampler; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     virtual bool IsImmutableSampler() const override { return immutable_; };
     VkSampler GetSampler() const;
     void SetImmutableSampler(std::shared_ptr<vvl::Sampler> &&state);
@@ -507,6 +499,7 @@ class ImageSamplerDescriptor : public ImageDescriptor {
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) override;
     bool Invalid() const override;
 
   private:
@@ -516,12 +509,11 @@ class ImageSamplerDescriptor : public ImageDescriptor {
 
 class TexelDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) { return type == kVulkanObjectTypeBufferView; }
     TexelDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::TexelBuffer; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     VkBufferView GetBufferView() const;
     const vvl::BufferView *GetBufferViewState() const { return buffer_view_state_.get(); }
     vvl::BufferView *GetBufferViewState() { return buffer_view_state_.get(); }
@@ -529,6 +521,7 @@ class TexelDescriptor : public Descriptor {
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) override;
     bool Invalid() const override;
 
   private:
@@ -537,12 +530,11 @@ class TexelDescriptor : public Descriptor {
 
 class BufferDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) { return type == kVulkanObjectTypeBuffer; }
     BufferDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::GeneralBuffer; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     VkBuffer GetBuffer() const;
     const vvl::Buffer *GetBufferState() const { return buffer_state_.get(); }
     vvl::Buffer *GetBufferState() { return buffer_state_.get(); }
@@ -553,6 +545,7 @@ class BufferDescriptor : public Descriptor {
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) override;
     bool Invalid() const override;
 
   private:
@@ -563,32 +556,33 @@ class BufferDescriptor : public Descriptor {
 
 class InlineUniformDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) { return false; }
     InlineUniformDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::InlineUniform; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override {}
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override {}
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override {}
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override {}
 };
 
 class AccelerationStructureDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) {
+        return type == kVulkanObjectTypeAccelerationStructureKHR || type == kVulkanObjectTypeAccelerationStructureNV;
+    }
     AccelerationStructureDescriptor() = default;
     DescriptorClass GetClass() const override { return DescriptorClass::AccelerationStructure; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
     VkAccelerationStructureKHR GetAccelerationStructure() const { return acc_; }
     const vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() const { return acc_state_.get(); }
     vvl::AccelerationStructureKHR *GetAccelerationStructureStateKHR() { return acc_state_.get(); }
     VkAccelerationStructureNV GetAccelerationStructureNV() const { return acc_nv_; }
     const vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() const { return acc_state_nv_.get(); }
     vvl::AccelerationStructureNV *GetAccelerationStructureStateNV() { return acc_state_nv_.get(); }
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
     bool IsKHR() const { return is_khr_; }
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) override;
     bool Invalid() const override;
 
   private:
@@ -601,12 +595,24 @@ class AccelerationStructureDescriptor : public Descriptor {
 
 class MutableDescriptor : public Descriptor {
   public:
+    static bool IsNotifyInvalidateType(VulkanObjectType type) {
+        switch (type) {
+            case kVulkanObjectTypeImageView:
+            case kVulkanObjectTypeSampler:
+            case kVulkanObjectTypeBuffer:
+            case kVulkanObjectTypeBufferView:
+            case kVulkanObjectTypeAccelerationStructureKHR:
+            case kVulkanObjectTypeAccelerationStructureNV:
+                return true;
+            default:
+                break;
+        }
+        return false;
+    }
     MutableDescriptor();
     DescriptorClass GetClass() const override { return DescriptorClass::Mutable; }
-    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t,
-                     bool is_bindless) override;
-    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, bool is_bindless,
-                    VkDescriptorType type) override;
+    void WriteUpdate(DescriptorSet &set_state, const Device &dev_data, const VkWriteDescriptorSet &, const uint32_t) override;
+    void CopyUpdate(DescriptorSet &set_state, const Device &dev_data, const Descriptor &, VkDescriptorType type) override;
 
     void SetDescriptorType(VkDescriptorType type, VkDeviceSize buffer_size);
     VkDeviceSize GetBufferSize() const { return buffer_size_; }
@@ -637,6 +643,7 @@ class MutableDescriptor : public Descriptor {
 
     bool AddParent(StateObject *state_object) override;
     void RemoveParent(StateObject *state_object) override;
+    bool InvalidateNode(const std::shared_ptr<StateObject> &, bool) override;
 
     bool IsKHR() const { return is_khr_; }
     bool Invalid() const override;
@@ -694,7 +701,7 @@ class DescriptorBinding {
 
     virtual void AddParent(DescriptorSet *ds) = 0;
     virtual void RemoveParent(DescriptorSet *ds) = 0;
-    virtual void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) = 0;
+    virtual bool NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) = 0;
 
     virtual const Descriptor *GetDescriptor(const uint32_t index) const = 0;
     virtual Descriptor *GetDescriptor(const uint32_t index) = 0;
@@ -751,15 +758,18 @@ class DescriptorBindingImpl : public DescriptorBinding {
         ForAllUpdated(remove_parent);
     }
 
-    void NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
-        if (!T::SupportsNotifyInvalidate()) return;
-
+    bool NotifyInvalidate(const NodeList &invalid_nodes, bool unlink) override {
+        bool found_match = false;
         for (const auto &node : invalid_nodes) {
-            if (T::IsNotifyInvalidateType(node->Type())) {
-                auto notify_invalidate = [&node, unlink](T &descriptor) { descriptor.InvalidateNode(node, unlink); };
-                ForAllUpdated(notify_invalidate);
+            if (!T::IsNotifyInvalidateType(node->Handle().type)) {
+                continue;
             }
+            auto notify_invalidate = [&node, &found_match, unlink](T &descriptor) {
+                found_match |= descriptor.InvalidateNode(node, unlink);
+            };
+            ForAllUpdated(notify_invalidate);
         }
+        return IsBindless(binding_flags) ? false : found_match;
     }
 
     // Most descriptor bindings will only have a single descriptor, so want to assume that
@@ -804,7 +814,21 @@ struct DecodedTemplateUpdate {
  *   those maps is performed externally. The set class relies on their contents to
  *   be correct at the time of update.
  */
-class DescriptorSet : public StateObject {
+class DescriptorSetSubState {
+  public:
+    DescriptorSetSubState(const DescriptorSet &set_) : base(set_) {}
+    DescriptorSetSubState(const DescriptorSetSubState &) = delete;
+    DescriptorSetSubState &operator=(const DescriptorSetSubState &) = delete;
+
+    virtual ~DescriptorSetSubState() {}
+
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+    virtual void NotifyUpdate() {}
+
+    const DescriptorSet &base;
+};
+
+class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSubState> {
   public:
     using BaseClass = StateObject;
     // Given that we are providing placement new allocation for bindings, the deleter needs to *only* call the destructor
@@ -834,11 +858,11 @@ class DescriptorSet : public StateObject {
     bool HasBinding(const uint32_t binding) const { return layout_->HasBinding(binding); };
 
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
-    virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
+    void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
-    virtual void PerformWriteUpdate(const VkWriteDescriptorSet &);
+    void PerformWriteUpdate(const VkWriteDescriptorSet &);
     // Perform a CopyUpdate whose contents were just validated using ValidateCopyUpdate
-    virtual void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
+    void PerformCopyUpdate(const VkCopyDescriptorSet &, const DescriptorSet &src_set);
 
     const std::shared_ptr<DescriptorSetLayout const> &GetLayout() const { return layout_; };
     VkDescriptorSet VkHandle() const { return handle_.Cast<VkDescriptorSet>(); };

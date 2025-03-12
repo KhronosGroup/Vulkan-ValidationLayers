@@ -127,12 +127,6 @@ struct TraitsBase {
     struct Traits<state_type> : public TraitsBase<handle_type, state_type> {}; \
     }
 
-#define VALSTATETRACK_DERIVED_STATE_OBJECT(handle_type, state_type, base_type)            \
-    namespace state_object {                                                              \
-    template <>                                                                           \
-    struct Traits<state_type> : public TraitsBase<handle_type, state_type, base_type> {}; \
-    }
-
 VALSTATETRACK_STATE_OBJECT(VkQueue, vvl::Queue)
 VALSTATETRACK_STATE_OBJECT(VkAccelerationStructureNV, vvl::AccelerationStructureNV)
 VALSTATETRACK_STATE_OBJECT(VkRenderPass, vvl::RenderPass)

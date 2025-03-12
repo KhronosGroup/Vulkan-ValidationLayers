@@ -29,9 +29,6 @@ struct IndexBufferBinding;
 }  // namespace vvl
 
 namespace syncval_state {
-class CommandBuffer;
-class ImageState;
-class ImageViewState;
 class Swapchain;
 }  // namespace syncval_state
 

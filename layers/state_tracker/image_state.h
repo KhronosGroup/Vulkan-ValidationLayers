@@ -30,9 +30,11 @@
 namespace vvl {
 class Device;
 class Fence;
+class ImageSubState;
 class Semaphore;
 class Surface;
 class Swapchain;
+class SwapchainSubState;
 class VideoProfileDesc;
 }  // namespace vvl
 
@@ -85,7 +87,7 @@ namespace vvl {
 //    Note that the images for *every* image_index will show up as parents of the swapchain,
 //    so swapchain_image_index values must be compared.
 //
-class Image : public Bindable {
+class Image : public Bindable, public SubStateManager<ImageSubState> {
   public:
     const vku::safe_VkImageCreateInfo safe_create_info;
     const VkImageCreateInfo &create_info;
@@ -119,7 +121,6 @@ class Image : public Bindable {
 #endif  // VK_USE_PLATFORM_METAL
 
     const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder
-    std::unique_ptr<const subresource_adapter::ImageRangeEncoder> fragment_encoder;  // Fragment resolution encoder
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
 
     std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
@@ -224,9 +225,6 @@ class Image : public Bindable {
     // This function is only used for comparing Imported External Dedicated Memory
     bool CompareCreateInfo(const Image &other) const;
 
-  protected:
-    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
-
     template <typename UnaryPredicate>
     bool AnyAliasBindingOf(const StateObject::NodeMap &bindings, const UnaryPredicate &pred) const {
         for (auto &entry : bindings) {
@@ -255,10 +253,24 @@ class Image : public Bindable {
         return false;
     }
 
+  protected:
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+
   private:
     std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
                  BindableMultiplanarMemoryTracker>
         tracker_;
+};
+
+class ImageSubState {
+  public:
+    explicit ImageSubState(Image &img) : base(img) {}
+    ImageSubState(const ImageSubState &) = delete;
+    ImageSubState &operator=(const ImageSubState &) = delete;
+    virtual ~ImageSubState() {}
+    virtual void Destroy() {}
+
+    Image &base;
 };
 
 // State for VkImageView objects.
@@ -325,7 +337,7 @@ struct SwapchainImage {
 // Parent -> child relationships in the object usage tree:
 //    vvl::Swapchain [N] -> [1] vvl::Surface
 //    However, only 1 swapchain for each surface can be !retired.
-class Swapchain : public StateObject {
+class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> {
   public:
     const vku::safe_VkSwapchainCreateInfoKHR safe_create_info;
     const VkSwapchainCreateInfoKHR &create_info;
@@ -365,8 +377,22 @@ class Swapchain : public StateObject {
 
     std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
 
+    std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
+    std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
+
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+};
+
+class SwapchainSubState {
+  public:
+    explicit SwapchainSubState(Swapchain &sc) : base(sc) {}
+    SwapchainSubState(const SwapchainSubState &) = delete;
+    SwapchainSubState &operator=(const SwapchainSubState &) = delete;
+    virtual ~SwapchainSubState() {}
+    virtual void Destroy() {}
+
+    Swapchain &base;
 };
 
 }  // namespace vvl
