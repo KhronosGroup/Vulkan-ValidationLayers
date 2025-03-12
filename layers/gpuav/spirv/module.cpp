@@ -602,13 +602,14 @@ void Module::LinkFunction(const LinkInfo& info) {
             new_inst->ReplaceLinkedId(id_swap_map);
         }
 
+        // For a future FindInstruction() make sure everything is added to the inst_map
+        const uint32_t result_id = new_inst->ResultId();
+        if (result_id != 0) {
+            new_function->inst_map_[result_id] = new_inst.get();
+        }
+
         if (link_basic_block) {
             // Need for a possible FindInstruction() lookup
-            const uint32_t result_id = new_inst->ResultId();
-            if (result_id != 0) {
-                new_function->inst_map_[result_id] = new_inst.get();
-            }
-
             link_basic_block->instructions_.emplace_back(std::move(new_inst));
         } else {
             new_function->pre_block_inst_.emplace_back(std::move(new_inst));
