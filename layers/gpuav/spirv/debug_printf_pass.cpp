@@ -14,11 +14,14 @@
  */
 
 #include "debug_printf_pass.h"
+#include "generated/spirv_grammar_helper.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include <spirv/unified1/NonSemanticDebugPrintf.h>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <spirv/unified1/spirv.hpp>
 #include <string>
 
 #include "generated/device_features.h"
@@ -50,7 +53,8 @@ bool DebugPrintfPass::RequiresInstrumentation(const Instruction& inst) {
 // Takes the various arguments and casts them to a valid uint32_t to be passed as a parameter in the function
 void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params,
                                            BasicBlock& block, InstructionIt* inst_it) {
-    const uint32_t uint32_type_id = module_.type_manager_.GetTypeInt(32, false).Id();
+    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
+    const uint32_t uint32_type_id = uint32_type.Id();
 
     switch (argument_type.spv_type_) {
         case SpvType::kVector: {
@@ -190,6 +194,24 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
             const uint32_t select_id = module_.TakeNextId();
             block.CreateInstruction(spv::OpSelect, {uint32_type_id, select_id, argument_id, one_id, zero_id}, inst_it);
             params.push_back(select_id);
+            expanded_parameter_count_++;
+            break;
+        }
+
+        case SpvType::kPointer: {
+            // Cast to a uvec2 first to avoid needing a Int64
+            const uint32_t uvec2_type_id = module_.type_manager_.GetTypeVector(uint32_type, 2).Id();
+            const uint32_t bitcast_id = module_.TakeNextId();
+            block.CreateInstruction(spv::OpBitcast, {uvec2_type_id, bitcast_id, argument_id}, inst_it);
+
+            const uint32_t extract_id_0 = module_.TakeNextId();
+            block.CreateInstruction(spv::OpCompositeExtract, {uint32_type_id, extract_id_0, bitcast_id, 0}, inst_it);
+            params.push_back(extract_id_0);
+            expanded_parameter_count_++;
+
+            const uint32_t extract_id_1 = module_.TakeNextId();
+            block.CreateInstruction(spv::OpCompositeExtract, {uint32_type_id, extract_id_1, bitcast_id, 1}, inst_it);
+            params.push_back(extract_id_1);
             expanded_parameter_count_++;
             break;
         }
@@ -564,6 +586,7 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
     struct ParamInfo {
         bool is_float = false;  // else int (don't attempt to validate unsigned vs signed here)
         bool is_64_bit = false;
+        bool is_pointer = false;
         uint32_t vector_size = 0;  // zero == scalar
         char modifier[32];
     };
@@ -645,6 +668,10 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
                     if (i + 1 < op_string_len && op_string[i + 1] == 'l') {
                         param_info.is_64_bit = true;
                     }
+                    found_specifier = true;
+                    break;
+                case 'p':
+                    param_info.is_pointer = true;
                     found_specifier = true;
                     break;
                 case 'a':
@@ -799,9 +826,13 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
             }
         }
 
+        const bool is_pointer_type = argument_type->spv_type_ == SpvType::kPointer &&
+                                     (argument_type->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer);
+
         // this is after stripping the vector
+        // Pointers are handled by themselves
         if (argument_type->spv_type_ != SpvType::kFloat && argument_type->spv_type_ != SpvType::kInt &&
-            argument_type->spv_type_ != SpvType::kBool) {
+            argument_type->spv_type_ != SpvType::kBool && !is_pointer_type && !param.is_pointer) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
                                   ") is not a float, int, or bool";
@@ -810,11 +841,21 @@ bool DebugPrintfPass::Validate(const Function& current_function) {
         }
 
         const bool type_is_64 = argument_type->spv_type_ != SpvType::kBool && argument_type->inst_.Word(2) == 64;
-        if (!param.is_64_bit && type_is_64) {
+        // Do Pointer errors first for better message if it is related to a badly formatted pointer
+        if (!param.is_pointer && is_pointer_type) {
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-pointer modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) +
+                                  ") is a pointer and should use %p instead";
+            module_.InternalError(tag, err_msg);
+        } else if (param.is_pointer && !is_pointer_type) {
+            std::string err_msg = "OpString \"" + print_op_string() + "\" contains a pointer modifier \"" + param.modifier +
+                                  "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not a pointer";
+            module_.InternalError(tag, err_msg);
+        } else if (!param.is_64_bit && type_is_64 && !param.is_pointer) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a non-64-bit modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") a 64-bit";
             module_.InternalWarning(tag, err_msg);
-        } else if (param.is_64_bit && !type_is_64) {
+        } else if (param.is_64_bit && !type_is_64 && !is_pointer_type) {
             std::string err_msg = "OpString \"" + print_op_string() + "\" contains a 64-bit modifier \"" + param.modifier +
                                   "\", but the argument (SPIR-V Id " + std::to_string(argument_id) + ") is not 64-bit";
             module_.InternalWarning(tag, err_msg);
