@@ -81,24 +81,24 @@ struct HandleRecord {
     }
 };
 
-struct ResourceCmdUsageRecord {
+// ResourceUsageRecord encodes information about the command that performed the access.
+// It's important to limit the size of this structure. Separate record is stored per access command.
+struct ResourceUsageRecord {
     static constexpr auto kMaxIndex = std::numeric_limits<ResourceUsageTag>::max();
     enum class SubcommandType { kNone, kSubpassTransition, kLoadOp, kStoreOp, kResolveOp, kIndex };
 
-    ResourceCmdUsageRecord() = default;
-    ResourceCmdUsageRecord(vvl::Func command_, uint32_t seq_num_, SubcommandType sub_type_, uint32_t sub_command_,
-                           const vvl::CommandBuffer *cb_state_, uint32_t reset_count_)
-        : command(command_),
-          seq_num(seq_num_),
-          sub_command_type(sub_type_),
-          sub_command(sub_command_),
-          cb_state(cb_state_),
-          reset_count(reset_count_) {}
+    ResourceUsageRecord(vvl::Func command, uint32_t seq_num, SubcommandType sub_type, const vvl::CommandBuffer *cb_state,
+                        uint32_t reset_count)
+        : command(command), seq_num(seq_num), sub_command_type(sub_type), cb_state(cb_state), reset_count(reset_count) {}
+    ResourceUsageRecord(const AlternateResourceUsage &other) : alt_usage(other) {}
 
     vvl::Func command = vvl::Func::Empty;
-    uint32_t seq_num = 0U;
+
+    // TODO: this value should be relplaced by correct index of the Vulkan API command. Then it will be more useful.
+    // Currently this indexes only the commands that initiate memory accesses (so are of interest to syncval).
+    uint32_t seq_num = 0;
+
     SubcommandType sub_command_type = SubcommandType::kNone;
-    uint32_t sub_command = 0U;
 
     // This is somewhat repetitive, but it prevents the need for Exec/Submit time touchup, after which usage records can be
     // from different command buffers and resets.
@@ -110,31 +110,25 @@ struct ResourceCmdUsageRecord {
     uint32_t handle_count = 0;
 
     uint32_t label_command_index = vvl::kNoIndex32;
-};
-
-struct DebugNameProvider;
-
-struct ResourceUsageRecord : public ResourceCmdUsageRecord {
     AlternateResourceUsage alt_usage;
-
-    ResourceUsageRecord() = default;
-    ResourceUsageRecord(vvl::Func command_, uint32_t seq_num_, SubcommandType sub_type_, uint32_t sub_command_,
-                        const vvl::CommandBuffer *cb_state_, uint32_t reset_count_)
-        : ResourceCmdUsageRecord(command_, seq_num_, sub_type_, sub_command_, cb_state_, reset_count_) {}
-
-    ResourceUsageRecord(const AlternateResourceUsage &other) : ResourceCmdUsageRecord(), alt_usage(other) {}
-    ResourceUsageRecord(const ResourceUsageRecord &other) : ResourceCmdUsageRecord(other), alt_usage(other.alt_usage) {}
-    ResourceUsageRecord &operator=(const ResourceUsageRecord &other) = default;
 };
 
+// ResourceUsageInfo is similar to ResourceUsageRecord but prioritizes accessibility over memory efficiency.
+// This structure can be as large as needed. Instances are usually stored on the stack.
 struct ResourceUsageInfo {
     vvl::Func command = vvl::Func::Empty;
+    uint32_t command_seq = vvl::kNoIndex32;
+
     VulkanTypedHandle resource_handle;
     std::string debug_region_name;
+
     const vvl::CommandBuffer *cb = nullptr;
+    uint32_t command_buffer_reset_count = 0;
+
     const vvl::Queue *queue = nullptr;
     uint64_t submit_index = 0;
     uint32_t batch_index = 0;
+    ResourceUsageTag batch_base_tag = 0;
 };
 
 // Provides debug region name for the specified access log command.
@@ -158,7 +152,6 @@ class CommandExecutionContext {
     virtual QueueId GetQueueId() const = 0;
     virtual VulkanTypedHandle Handle() const = 0;
     virtual ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const = 0;
-    virtual void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const = 0;
 
     bool ValidForSyncOps() const;
     const SyncValidator &GetSyncState() const { return sync_state_; }
@@ -210,7 +203,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     void Reset();
 
     ResourceUsageInfo GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const override;
-    void AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const override;
     AccessContext *GetCurrentAccessContext() override { return current_context_; }
     SyncEventsContext *GetCurrentEventsContext() override { return &events_context_; }
     const AccessContext *GetCurrentAccessContext() const override { return current_context_; }
@@ -317,7 +309,6 @@ class CommandBufferAccessContext : public CommandExecutionContext, DebugNameProv
     std::shared_ptr<AccessLog> access_log_;
     std::shared_ptr<CommandBufferSet> cbs_referenced_;
     uint32_t command_number_;
-    uint32_t subcommand_number_;
     uint32_t reset_count_;
 
     // Handles referenced by the tagged commands
