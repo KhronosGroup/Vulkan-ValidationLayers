@@ -222,9 +222,6 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    // Since things can fail after building up this vector, we need to clear it here before starting to add more to it
-    meta.access_chain_insts.clear();
-
     const Variable* variable = nullptr;
     // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
     while (next_access_chain && next_access_chain->Opcode() == spv::OpAccessChain) {
@@ -326,7 +323,6 @@ void DescriptorClassGeneralBufferPass::PrintDebugInfo() const {
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassGeneralBufferPass::Instrument() {
-    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -337,16 +333,17 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
             auto& block_instructions = (*block_it)->instructions_;
 
             if (unsafe_mode_) {
+                InstructionMeta meta;  // dummy object
                 // Loop the Block once to get the highest offset
                 // Do here before we inject instructions into the block list below
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                     // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                     if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, true)) continue;
-                    meta.Reset();
                 }
             }
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, false)) continue;
 
@@ -365,7 +362,6 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
                 CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
-                meta.Reset();
             }
         }
     }

@@ -496,11 +496,11 @@ bool DebugPrintfPass::Instrument() {
         return false;  // no printf strings found, early return
     }
 
-    InstructionMeta meta;
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
                 if (!RequiresInstrumentation(*(inst_it->get()), meta)) continue;
                 if (!Validate(*(function.get()), meta)) continue;  // if not valid, don't attempt to instrument it
                 instrumentations_count_++;
@@ -523,8 +523,6 @@ bool DebugPrintfPass::Instrument() {
                     inst_it = block_instructions.erase(inst_it);
                     inst_it--;
                 }
-
-                meta.Reset();
             }
         }
     }
