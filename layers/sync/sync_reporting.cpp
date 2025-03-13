@@ -108,16 +108,7 @@ void ReportProperties::Add(std::string_view property_name, uint64_t value) {
     name_values.emplace_back(NameValue{std::string(property_name), std::to_string(value)});
 }
 
-const std::string *ReportProperties::FindProperty(std::string_view property_name) const {
-    for (const auto &property : name_values) {
-        if (property.name == property_name) {
-            return &property.value;
-        }
-    }
-    return nullptr;
-}
-
-std::string ReportProperties::GetExtraPropertiesSection(bool pretty_print) const {
+std::string ReportProperties::FormatExtraPropertiesSection(bool pretty_print) const {
     if (name_values.empty()) {
         return {};
     }
@@ -333,12 +324,11 @@ static void GetAccessProperties(const HazardResult &hazard_result, const vvl::De
     }
 }
 
-ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const vvl::Device &device,
-                                           const CommandExecutionContext &context, vvl::Func command, const char *message_type,
-                                           const AdditionalMessageInfo &additional_info) {
+ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
+                                           const char *message_type, const AdditionalMessageInfo &additional_info) {
     ReportProperties properties;
 
-    GetAccessProperties(hazard, device, context.GetQueueFlags(), properties);
+    GetAccessProperties(hazard, context.GetSyncState(), context.GetQueueFlags(), properties);
 
     if (hazard.Tag() != kInvalidTag) {
         ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
@@ -378,9 +368,8 @@ static std::pair<bool, bool> GetPartialProtectedInfo(const SyncAccessInfo &acces
     return std::make_pair(is_stage_protected, is_access_protected);
 }
 
-std::string FormatErrorMessage(const HazardResult &hazard, const std::string &resouce_description, vvl::Func command,
-                               const ReportProperties &properties, const CommandExecutionContext &context,
-                               const AdditionalMessageInfo &additional_info) {
+std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
+                               const std::string &resouce_description, const AdditionalMessageInfo &additional_info) {
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
@@ -429,8 +418,8 @@ std::string FormatErrorMessage(const HazardResult &hazard, const std::string &re
             ss << "another ";
         }
         ss << vvl::String(prior_usage_info.command);
-        if (const auto *debug_region = properties.FindProperty(kPropertyPriorDebugRegion)) {
-            ss << "[" << *debug_region << "]";
+        if (!prior_usage_info.debug_region_name.empty()) {
+            ss << "[" << prior_usage_info.debug_region_name << "]";
         }
         if (prior_usage_info.command == command) {
             ss << " command";
