@@ -25,15 +25,12 @@
 bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uvec4 stage_info, const uint desc_set,
                               const uint binding, const uint desc_index, const uint binding_layout_size, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_0 = binding_layout_size;
-    do {
-        // For non-array this should hopefully optimized out as "if (0 > 1)"
-        // Have seen with Mesa, that the final NIR will optimize out all of inst_descriptor_indexing_oob_non_bindless if this is false.
-        if (desc_index >= binding_layout_size) {
-            error = kErrorSubCodeDescriptorIndexingBounds;
-            break;
-        }
-    } while (false);
+
+    // For non-array this should hopefully optimized out as "if (0 > 1)"
+    // Have seen with Mesa, that the final NIR will optimize out all of inst_descriptor_indexing_oob_non_bindless if this is false.
+    if (desc_index >= binding_layout_size) {
+        error = kErrorSubCodeDescriptorIndexingBounds;
+    }
 
     if (0u != error) {
 
@@ -64,7 +61,7 @@ bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uvec4 
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = param_0;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = binding_layout_size;
         }
         return false;
     }

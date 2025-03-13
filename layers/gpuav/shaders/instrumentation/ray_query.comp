@@ -25,43 +25,25 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
     uint error = 0u;
     uint param_0 = 0u;
 
-    do {
-        if (isnan(ray_tmin)) {
-            error = kErrorSubCodeRayQueryMinNaN;
-            break;
-        }
-        if (isnan(ray_tmax)) {
-            error = kErrorSubCodeRayQueryMaxNaN;
-            break;
-        }
-        if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
-            error = kErrorSubCodeRayQueryOriginNaN;
-            break;
-        }
-        if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
-            error = kErrorSubCodeRayQueryDirectionNaN;
-            break;
-        }
-        if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
-            error = kErrorSubCodeRayQueryOriginFinite;
-            break;
-        }
-        if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
-            error = kErrorSubCodeRayQueryDirectionFinite;
-            break;
-        }
-        if (ray_tmin < 0.0f) {
-            error = kErrorSubCodeRayQueryNegativeMin;
-            break;
-        }
-        if (ray_tmax < 0.0f) {
-            error = kErrorSubCodeRayQueryNegativeMax;
-            break;
-        }
-        if (ray_tmax < ray_tmin) {
-            error = kErrorSubCodeRayQueryMinMax;
-            break;
-        }
+    if (isnan(ray_tmin)) {
+        error = kErrorSubCodeRayQueryMinNaN;
+    } else if (isnan(ray_tmax)) {
+        error = kErrorSubCodeRayQueryMaxNaN;
+    } else if (isnan(ray_origin.x) || isnan(ray_origin.y) || isnan(ray_origin.z)) {
+        error = kErrorSubCodeRayQueryOriginNaN;
+    } else if (isnan(ray_direction.x) || isnan(ray_direction.y) || isnan(ray_direction.z)) {
+        error = kErrorSubCodeRayQueryDirectionNaN;
+    } else if (isinf(ray_origin.x) || isinf(ray_origin.y) || isinf(ray_origin.z)) {
+        error = kErrorSubCodeRayQueryOriginFinite;
+    } else if (isinf(ray_direction.x) || isinf(ray_direction.y) || isinf(ray_direction.z)) {
+        error = kErrorSubCodeRayQueryDirectionFinite;
+    } else if (ray_tmin < 0.0f) {
+        error = kErrorSubCodeRayQueryNegativeMin;
+    } else if (ray_tmax < 0.0f) {
+        error = kErrorSubCodeRayQueryNegativeMax;
+    } else if (ray_tmax < ray_tmin) {
+        error = kErrorSubCodeRayQueryMinMax;
+    } else {
         // From SPIRV-Headers
         const uint OpaqueKHR = 0x00000001;
         const uint NoOpaqueKHR = 0x00000002;
@@ -79,19 +61,14 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
         if ((ray_flags & both_skip) == both_skip) {
             error = kErrorSubCodeRayQueryBothSkip;
             param_0 = ray_flags;
-            break;
-        }
-        if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
+        } else if (skip_cull_mask != 0 && ((skip_cull_mask & (skip_cull_mask - 1)) != 0)) {
             error = kErrorSubCodeRayQuerySkipCull;
             param_0 = ray_flags;
-            break;
-        }
-        if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
+        } else if (opaque_mask != 0 && ((opaque_mask & (opaque_mask - 1)) != 0)) {
             error = kErrorSubCodeRayQueryOpaque;
             param_0 = ray_flags;
-            break;
         }
-    } while (false);
+    }
 
     if (0u != error) {
         const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
