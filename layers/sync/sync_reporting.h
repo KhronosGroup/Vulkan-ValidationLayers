@@ -22,14 +22,18 @@
 #include "generated/vk_object_types.h"
 
 namespace vvl {
-class CommandBuffer;
 class Device;
-class Queue;
 }  // namespace vvl
+
 class CommandExecutionContext;
 class HazardResult;
 class Logger;
 
+// Collection of named values that describe key information associated with an error message.
+// This can be useful to filter out messages or for quick inspection as a more structured (but lose)
+// representation of the main error message text. The main error message might change relatively
+// often due to wording improvements and minor fixes (e.g. punctuation fix), but the associated
+// properties will change less frequently and are more suited for automatic processing.
 struct ReportProperties {
     struct NameValue {
         std::string name;
@@ -39,10 +43,10 @@ struct ReportProperties {
 
     void Add(std::string_view property_name, std::string_view value);
     void Add(std::string_view property_name, uint64_t value);
-    const std::string *FindProperty(std::string_view property_name) const;
-    std::string GetExtraPropertiesSection(bool pretty_print) const;
+    std::string FormatExtraPropertiesSection(bool pretty_print) const;
 };
 
+// Customization options to modify the standard form of the synchronization error message.
 struct AdditionalMessageInfo {
     // These are message-specific properties. They are combined with common message properties.
     ReportProperties properties;
@@ -60,20 +64,20 @@ struct AdditionalMessageInfo {
     std::string message_end_text;
 };
 
-ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const vvl::Device &device,
-                                           const CommandExecutionContext &context, vvl::Func command, const char *message_type,
-                                           const AdditionalMessageInfo &additional_info);
+std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
+                               const std::string &resouce_description, const AdditionalMessageInfo &additional_info);
 
-std::string FormatErrorMessage(const HazardResult &hazard, const std::string &resouce_description, vvl::Func command,
-                               const ReportProperties &properties, const CommandExecutionContext &context,
-                               const AdditionalMessageInfo &additional_info);
+ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
+                                           const char *message_type, const AdditionalMessageInfo &additional_info);
 
 std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property);
+
 void FormatVideoPictureResouce(const Logger &logger, const VkVideoPictureResourceInfoKHR &video_picture, std::stringstream &ss);
 void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantizationMapInfoKHR &quantization_map,
                                 std::stringstream &ss);
 
+// Common properties
 inline constexpr const char *kPropertyMessageType = "message_type";
 inline constexpr const char *kPropertyHazardType = "hazard_type";
 inline constexpr const char *kPropertyCommand = "command";
@@ -84,6 +88,8 @@ inline constexpr const char *kPropertyAccess = "access";
 inline constexpr const char *kPropertyPriorAccess = "prior_access";
 inline constexpr const char *kPropertyReadBarriers = "read_barriers";
 inline constexpr const char *kPropertyWriteBarriers = "write_barriers";
+
+// Message-specific properties
 inline constexpr const char *kPropertyRegionIndex = "region_index";
 inline constexpr const char *kPropertyLoadOp = "load_op";
 inline constexpr const char *kPropertyStoreOp = "store_op";
@@ -100,7 +106,7 @@ inline constexpr const char *kPropertyBatchIndex = "batch_index";
 inline constexpr const char *kPropertyCommandBufferIndex = "command_buffer_index";
 inline constexpr const char *kPropertySwapchainIndex = "swapchain_index";
 
-// debug properties
+// Debug properties
 inline constexpr const char *kPropertySeqNo = "seq_no";
 inline constexpr const char *kPropertySubCmd = "subcmd";
 inline constexpr const char *kPropertyResetNo = "reset_no";

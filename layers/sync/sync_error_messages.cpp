@@ -34,16 +34,14 @@ ErrorMessages::ErrorMessages(vvl::Device& validator) : validator_(validator) {}
 std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                                  const std::string& resource_description, const char* message_type,
                                  const AdditionalMessageInfo& additional_info) const {
-    const ReportProperties properties =
-        GetErrorMessageProperties(hazard, validator_, context, command, message_type, additional_info);
-
-    std::string message = FormatErrorMessage(hazard, resource_description, command, properties, context, additional_info);
+    std::string message = FormatErrorMessage(hazard, context, command, resource_description, additional_info);
 
     if (validator_.syncval_settings.message_extra_properties) {
         if (!message.empty() && message.back() != '\n') {
             message += '\n';
         }
-        message += properties.GetExtraPropertiesSection(validator_.syncval_settings.message_extra_properties_pretty_print);
+        const ReportProperties properties = GetErrorMessageProperties(hazard, context, command, message_type, additional_info);
+        message += properties.FormatExtraPropertiesSection(validator_.syncval_settings.message_extra_properties_pretty_print);
     }
     return message;
 }
