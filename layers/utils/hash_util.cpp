@@ -1,6 +1,6 @@
-/* Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,12 @@ uint32_t VuidHash(std::string_view vuid) {
     return XXH32(vuid.data(), vuid.size(), seed);
 }
 
-uint32_t ShaderHash(const void *pCode, const size_t codeSize) {
+uint32_t Hash32(const void *info, const size_t info_size) {
     constexpr uint32_t seed = 0;
-    return XXH32(pCode, codeSize, seed);
+    return XXH32(info, info_size, seed);
 }
 
-uint64_t DescriptorVariableHash(const void *info, const size_t info_size) {
+uint64_t Hash64(const void *info, const size_t info_size) {
     constexpr uint64_t seed = 0;
     return XXH64(info, info_size, seed);
 }

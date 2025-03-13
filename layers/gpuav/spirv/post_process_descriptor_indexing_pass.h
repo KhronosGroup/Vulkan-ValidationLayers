@@ -40,7 +40,8 @@ class PostProcessDescriptorIndexingPass : public Pass {
         uint32_t variable_id = 0;
     };
 
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
+                                 vvl::unordered_set<uint32_t>& found_in_block_set);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t link_function_id = 0;
