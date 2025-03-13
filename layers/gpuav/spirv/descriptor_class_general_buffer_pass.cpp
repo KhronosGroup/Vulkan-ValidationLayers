@@ -333,10 +333,11 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
             auto& block_instructions = (*block_it)->instructions_;
 
             if (unsafe_mode_) {
-                InstructionMeta meta;  // dummy object
                 // Loop the Block once to get the highest offset
                 // Do here before we inject instructions into the block list below
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                    // dummy object - need to be clear for access_chain_insts vector
+                    InstructionMeta meta;
                     // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                     if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, true)) continue;
                 }
