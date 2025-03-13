@@ -3467,7 +3467,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
     skip |=
         ValidateDrawPipelineDynamicRenderpassDepthStencil(last_bound_state, pipeline, rendering_info, pipeline_rendering_ci, vuid);
 
-    if (cb_state.active_render_pass) {
+    if (cb_state.active_render_pass && cb_state.IsPrimary()) {
         const auto rendering_view_mask = cb_state.active_render_pass->GetDynamicRenderingViewMask();
         if (pipeline_rendering_ci.viewMask != rendering_view_mask) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
@@ -3476,7 +3476,7 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpass(const LastBound &last_bou
                              ") must be equal to VkRenderingInfo::viewMask (0x%" PRIx32 ")",
                              FormatHandle(pipeline).c_str(), pipeline_rendering_ci.viewMask, rendering_view_mask);
         }
-        if (cb_state.IsPrimary() && (rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
+        if ((rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT) != 0 &&
             (rendering_info.flags & VK_RENDERING_CONTENTS_INLINE_BIT_KHR) == 0) {
             skip |= LogError(vuid.rendering_contents_10582, cb_state.Handle(), vuid.loc(),
                              "Render pass was begun with VkRenderingInfo::flags %s",
