@@ -402,7 +402,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                 << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
                 << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
                 << dev_state.FormatHandle(image_view) << " format (" << string_VkFormat(image_view_ci.format)
-                << "). Any loads or stores with the variable will produce undefined values to the whole imamge (not just the texel "
+                << "). Any loads or stores with the variable will produce undefined values to the whole image (not just the texel "
                    "being accessed).";
             if (vkuFormatCompatibilityClass(image_view_ci.format) ==
                 vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
@@ -980,7 +980,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             << string_SpirvImageFormat(resource_variable.info.image_format) << " (equivalent to "
             << string_VkFormat(resource_variable.info.image_format) << ") which doesn't match the "
             << dev_state.FormatHandle(buffer_view) << " format (" << string_VkFormat(buffer_view_format)
-            << ").Any loads or stores with the variable will produce undefined values to the whole imamge (not just the texel "
+            << ").Any loads or stores with the variable will produce undefined values to the whole image (not just the texel "
                "being accessed).";
         if (vkuFormatCompatibilityClass(buffer_view_format) == vkuFormatCompatibilityClass(resource_variable.info.image_format)) {
             msg << " While the formats are compatible, Texel Buffers must exactly match. Few ways to resolve this are\n";
