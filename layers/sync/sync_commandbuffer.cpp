@@ -80,7 +80,6 @@ CommandBufferAccessContext::CommandBufferAccessContext(const SyncValidator &sync
       access_log_(std::make_shared<AccessLog>()),
       cbs_referenced_(std::make_shared<CommandBufferSet>()),
       command_number_(0),
-      subcommand_number_(0),
       reset_count_(0),
       cb_access_context_(),
       current_context_(&cb_access_context_),
@@ -102,7 +101,6 @@ CommandBufferAccessContext::CommandBufferAccessContext(const CommandBufferAccess
     cb_state_ = from.cb_state_;
     access_log_ = std::make_shared<AccessLog>(*from.access_log_);  // potentially large, but no choice given tagging lookup.
     command_number_ = from.command_number_;
-    subcommand_number_ = from.subcommand_number_;
     reset_count_ = from.reset_count_;
 
     handles_ = from.handles_;
@@ -135,7 +133,6 @@ void CommandBufferAccessContext::Reset() {
     }
     sync_ops_.clear();
     command_number_ = 0;
-    subcommand_number_ = 0;
     reset_count_++;
 
     sync_state_.stats.RemoveHandleRecord((uint32_t)handles_.size());
@@ -1111,10 +1108,9 @@ void CommandBufferAccessContext::ImportRecordedAccessLog(const CommandBufferAcce
 
 ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
     command_number_++;
-    subcommand_number_ = 0;
     current_command_tag_ = access_log_->size();
 
-    auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
+    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_);
 
     if (!cb_state_->GetLabelCommands().empty()) {
         record.label_command_index = static_cast<uint32_t>(cb_state_->GetLabelCommands().size() - 1);
@@ -1124,10 +1120,8 @@ ResourceUsageTag CommandBufferAccessContext::NextCommandTag(vvl::Func command, R
 }
 
 ResourceUsageTag CommandBufferAccessContext::NextSubcommandTag(vvl::Func command, ResourceUsageRecord::SubcommandType subcommand) {
-    subcommand_number_++;
-
     const ResourceUsageTag tag = access_log_->size();
-    auto &record = access_log_->emplace_back(command, command_number_, subcommand, subcommand_number_, cb_state_, reset_count_);
+    ResourceUsageRecord &record = access_log_->emplace_back(command, command_number_, subcommand, cb_state_, reset_count_);
 
     // By default copy handle range from the main command, but can be overwritten with AddSubcommandHandle.
     const auto &main_command_record = (*access_log_)[current_command_tag_];

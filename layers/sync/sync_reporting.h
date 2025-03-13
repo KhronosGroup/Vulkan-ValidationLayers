@@ -108,6 +108,5 @@ inline constexpr const char *kPropertySwapchainIndex = "swapchain_index";
 
 // Debug properties
 inline constexpr const char *kPropertySeqNo = "seq_no";
-inline constexpr const char *kPropertySubCmd = "subcmd";
 inline constexpr const char *kPropertyResetNo = "reset_no";
 inline constexpr const char *kPropertyBatchTag = "batch_tag";

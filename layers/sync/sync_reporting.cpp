@@ -62,28 +62,25 @@ static bool IsHazardVsRead(SyncHazard hazard) {
 }
 
 static auto SortKeyValues(const std::vector<ReportProperties::NameValue> &name_values) {
-    auto get_sort_order = [](const std::string &key) -> uint32_t {
-        // message_type goes first
-        if (key == kPropertyMessageType) {
-            return 0;
-        }
-        // followed by hazard type
-        if (key == kPropertyHazardType) {
-            return 1;
-        }
-        // then some common properties
-        const char *common_properties[] = {kPropertyAccess,       kPropertyPriorAccess,  kPropertyCommand,
-                                           kPropertyPriorCommand, kPropertyReadBarriers, kPropertyWriteBarriers};
-        if (IsValueIn(key, common_properties)) {
-            return 2;
+    const std::vector<std::string> std_properties = {
+        kPropertyMessageType,   kPropertyHazardType, kPropertyAccess,       kPropertyPriorAccess, kPropertyReadBarriers,
+        kPropertyWriteBarriers, kPropertyCommand,    kPropertyPriorCommand, kPropertyDebugRegion, kPropertyPriorDebugRegion};
+    const uint32_t other_properties_order = uint32_t(std_properties.size());
+    const uint32_t debug_properties_order = other_properties_order + 1;
+
+    auto get_sort_order = [&](const std::string &key) -> uint32_t {
+        // at first put standard properties
+        auto std_it = std::find(std_properties.begin(), std_properties.end(), key);
+        if (std_it != std_properties.end()) {
+            const uint32_t std_order = uint32_t(&*std_it - std_properties.data());
+            return std_order;
         }
         // debug properties are at the end
-        const char *debug_properties[] = {kPropertySeqNo, kPropertySubCmd, kPropertyResetNo, kPropertyBatchTag};
+        const char *debug_properties[] = {kPropertySeqNo, kPropertyResetNo, kPropertyBatchTag};
         if (IsValueIn(key, debug_properties)) {
-            return 4;
+            return debug_properties_order;
         }
-        // everything else
-        return 3;
+        return other_properties_order;
     };
     auto sorted = name_values;
     std::stable_sort(sorted.begin(), sorted.end(), [&get_sort_order](const auto &a, const auto &b) {
@@ -119,13 +116,13 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
 static void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
                                 ReportProperties &properties) {
     const HazardResult::HazardState &hazard = hazard_result.State();
-    const auto &usage_info = GetSyncAccessInfos()[hazard.access_index];
-    const auto &prior_usage_info = GetSyncAccessInfos()[hazard.prior_access_index];
+    const SyncAccessInfo &access_info = GetSyncAccessInfos()[hazard.access_index];
+    const SyncAccessInfo &prior_access_info = GetSyncAccessInfos()[hazard.prior_access_index];
 
     if (!hazard.recorded_access.get()) {
-        properties.Add(kPropertyAccess, FormatAccessProperty(usage_info));
+        properties.Add(kPropertyAccess, FormatAccessProperty(access_info));
     }
-    properties.Add(kPropertyPriorAccess, FormatAccessProperty(prior_usage_info));
+    properties.Add(kPropertyPriorAccess, FormatAccessProperty(prior_access_info));
 
     if (IsHazardVsRead(hazard.hazard)) {
         const VkPipelineStageFlags2 barriers = hazard.access_state->GetReadBarriers(hazard.prior_access_index);
@@ -135,6 +132,28 @@ static void GetAccessProperties(const HazardResult &hazard_result, const vvl::De
         const SyncAccessFlags barriers = hazard.access_state->GetWriteBarriers();
         const std::string property_barriers_str = FormatSyncAccesses(barriers, device, allowed_queue_flags, true);
         properties.Add(kPropertyWriteBarriers, property_barriers_str);
+    }
+}
+
+static void GetPriorUsageProperties(const ResourceUsageInfo &prior_usage_info, ReportProperties &properties) {
+    properties.Add(kPropertyPriorCommand, vvl::String(prior_usage_info.command));
+
+    if (!prior_usage_info.debug_region_name.empty()) {
+        properties.Add(kPropertyPriorDebugRegion, prior_usage_info.debug_region_name);
+    }
+
+    // These commands are not recorded/submitted, so the rest of the properties are not applicable.
+    // TODO: we can track command seq number.
+    if (IsValueIn(prior_usage_info.command,
+                  {vvl::Func::vkQueuePresentKHR, vvl::Func::vkAcquireNextImageKHR, vvl::Func::vkAcquireNextImage2KHR})) {
+        return;
+    }
+    properties.Add(kPropertySeqNo, prior_usage_info.command_seq);
+    properties.Add(kPropertyResetNo, prior_usage_info.command_buffer_reset_count);
+    if (prior_usage_info.queue) {
+        properties.Add(kPropertyBatchTag, prior_usage_info.batch_base_tag);
+        properties.Add(kPropertySubmitIndex, prior_usage_info.submit_index);
+        properties.Add(kPropertyBatchIndex, prior_usage_info.batch_index);
     }
 }
 
@@ -321,24 +340,19 @@ std::string ReportProperties::FormatExtraPropertiesSection(bool pretty_print) co
 ReportProperties GetErrorMessageProperties(const HazardResult &hazard, const CommandExecutionContext &context, vvl::Func command,
                                            const char *message_type, const AdditionalMessageInfo &additional_info) {
     ReportProperties properties;
+    properties.Add(kPropertyMessageType, message_type);
+    properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
+    properties.Add(kPropertyCommand, vvl::String(command));
 
     GetAccessProperties(hazard, context.GetSyncState(), context.GetQueueFlags(), properties);
 
     if (hazard.Tag() != kInvalidTag) {
         ResourceUsageInfo prior_usage_info = context.GetResourceUsageInfo(hazard.TagEx());
-        if (!prior_usage_info.debug_region_name.empty()) {
-            properties.Add(kPropertyPriorDebugRegion, prior_usage_info.debug_region_name);
-        }
+        GetPriorUsageProperties(prior_usage_info, properties);
     }
-
-    properties.Add(kPropertyMessageType, message_type);
-    properties.Add(kPropertyHazardType, string_SyncHazard(hazard.Hazard()));
-    properties.Add(kPropertyCommand, vvl::String(command));
-
     for (const auto &property : additional_info.properties.name_values) {
         properties.Add(property.name, property.value);
     }
-    context.AddUsageRecordProperties(hazard.Tag(), properties);
     return properties;
 }
 
@@ -539,13 +553,16 @@ void FormatVideoQuantizationMap(const Logger &logger, const VkVideoEncodeQuantiz
     ss << "}";
 }
 
-static ResourceUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *debug_name_provider,
-                                                      const ResourceUsageRecord &record, ResourceUsageTagEx tag_ex) {
+static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_ex, const ResourceUsageRecord &record,
+                                                        const DebugNameProvider *debug_name_provider) {
     ResourceUsageInfo info;
     if (record.alt_usage) {
         info.command = record.alt_usage.GetCommand();
     } else {
         info.command = record.command;
+        info.command_seq = record.seq_num;
+        info.command_buffer_reset_count = record.reset_count;
+
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
             auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
@@ -571,21 +588,7 @@ static ResourceUsageInfo GetReportUsageInfoFromRecord(const DebugNameProvider *d
 ResourceUsageInfo CommandBufferAccessContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
     const ResourceUsageRecord &record = (*access_log_)[tag_ex.tag];
     const auto debug_name_provider = (record.label_command_index == vvl::kU32Max) ? nullptr : this;
-    return GetReportUsageInfoFromRecord(debug_name_provider, record, tag_ex);
-}
-
-void CommandBufferAccessContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
-    // TODO: should never happen? investigate this and potentially remove
-    if (tag >= access_log_->size()) {
-        return;
-    }
-    const ResourceUsageRecord &record = (*access_log_)[tag];
-    properties.Add(kPropertyPriorCommand, vvl::String(record.command));
-    properties.Add(kPropertySeqNo, record.seq_num);
-    if (record.sub_command != 0) {
-        properties.Add(kPropertySubCmd, record.sub_command);
-    }
-    properties.Add(kPropertyResetNo, record.reset_count);
+    return GetResourceUsageInfoFromRecord(tag_ex, record, debug_name_provider);
 }
 
 ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag_ex) const {
@@ -594,23 +597,14 @@ ResourceUsageInfo QueueBatchContext::GetResourceUsageInfo(ResourceUsageTagEx tag
         return {};
     }
     const ResourceUsageRecord &record = *access.record;
-    ResourceUsageInfo info = GetReportUsageInfoFromRecord(access.debug_name_provider, record, tag_ex);
+    ResourceUsageInfo info = GetResourceUsageInfoFromRecord(tag_ex, record, access.debug_name_provider);
 
     const BatchAccessLog::BatchRecord &batch = *access.batch;
     if (batch.queue) {
         info.queue = batch.queue->GetQueueState();
         info.submit_index = batch.submit_index;
         info.batch_index = batch.batch_index;
+        info.batch_base_tag = batch.base_tag;
     }
     return info;
-}
-
-void QueueBatchContext::AddUsageRecordProperties(ResourceUsageTag tag, ReportProperties &properties) const {
-    BatchAccessLog::AccessRecord access = batch_log_.GetAccessRecord(tag);
-    if (access.IsValid()) {
-        properties.Add(kPropertyBatchTag, access.batch->base_tag);
-        if (access.record->command != vvl::Func::Empty) {
-            properties.Add(kPropertyPriorCommand, vvl::String(access.record->command));
-        }
-    }
 }

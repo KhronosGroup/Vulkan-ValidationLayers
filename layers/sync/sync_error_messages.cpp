@@ -417,8 +417,6 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
         ss << " (from " << validator_.FormatHandle(recorded_context.Handle());
         ss << " submitted on the current ";
         ss << validator_.FormatHandle(exec_usage_info.queue->Handle()) << ")";
-        additional_info.properties.Add(kPropertySubmitIndex, exec_usage_info.submit_index);
-        additional_info.properties.Add(kPropertyBatchIndex, exec_usage_info.batch_index);
     } else {
         ss << " (from the secondary " << validator_.FormatHandle(recorded_context.Handle()) << ")";
     }
