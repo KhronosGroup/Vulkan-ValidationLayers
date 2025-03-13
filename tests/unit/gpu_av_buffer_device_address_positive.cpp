@@ -969,7 +969,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
           vec2 uv;
         };
 
-        layout(std430, buffer_reference) readonly buffer VertexBuffer {
+        layout(std430, buffer_reference) buffer VertexBuffer {
           Vertex vertices[];
         };
 
