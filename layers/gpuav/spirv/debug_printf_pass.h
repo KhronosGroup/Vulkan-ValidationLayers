@@ -37,8 +37,6 @@ class DebugPrintfPass : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
-
-        void Reset() { target_instruction = nullptr; }
     };
 
     // Once we want to create a function, we need to gather temporary data while building the parameters

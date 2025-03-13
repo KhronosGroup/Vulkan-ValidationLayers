@@ -171,7 +171,6 @@ void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassTexelBufferPass::Instrument() {
-    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -181,6 +180,7 @@ bool DescriptorClassTexelBufferPass::Instrument() {
             }
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
@@ -199,7 +199,6 @@ bool DescriptorClassTexelBufferPass::Instrument() {
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
                 CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
-                meta.Reset();
             }
         }
     }

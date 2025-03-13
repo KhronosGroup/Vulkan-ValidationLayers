@@ -38,14 +38,6 @@ class PostProcessDescriptorIndexingPass : public Pass {
         uint32_t descriptor_binding = 0;
         uint32_t descriptor_index_id = 0;
         uint32_t variable_id = 0;
-
-        void Reset() {
-            target_instruction = nullptr;
-            descriptor_set = 0;
-            descriptor_binding = 0;
-            descriptor_index_id = 0;
-            variable_id = 0;
-        }
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);

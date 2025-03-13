@@ -166,12 +166,12 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
 }
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
-    InstructionMeta meta;
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
                 if (module_.settings_.max_instrumentations_count != 0 &&
@@ -181,7 +181,6 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                 instrumentations_count_++;
 
                 CreateFunctionCall(block_it, &inst_it, meta);
-                meta.Reset();
             }
         }
     }

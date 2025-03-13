@@ -113,7 +113,6 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
 }
 
 bool InjectConditionalFunctionPass::Instrument() {
-    InstructionMeta meta;
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -125,6 +124,7 @@ bool InjectConditionalFunctionPass::Instrument() {
             NewBlock(**block_it);
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
                     // TODO - This should be cleaned up then having it injected here
@@ -161,7 +161,6 @@ bool InjectConditionalFunctionPass::Instrument() {
                 injection_data.inst_position_id = inst_position_constant.Id();
 
                 block_it = InjectFunction(function.get(), block_it, inst_it, injection_data, meta);
-                meta.Reset();
                 // will start searching again from newly split merge block
                 block_it--;
                 break;

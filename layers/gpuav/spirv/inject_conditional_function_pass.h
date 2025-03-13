@@ -76,24 +76,6 @@ class InjectConditionalFunctionPass : public Pass {
         uint32_t sampler_descriptor_set = 0;
         uint32_t sampler_descriptor_binding = 0;
         uint32_t sampler_descriptor_index_id = 0;
-
-        void Reset() {
-            target_instruction = nullptr;
-
-            alignment_literal = 0;
-            type_length = 0;
-
-            var_inst = nullptr;
-            image_inst = nullptr;
-            descriptor_set = 0;
-            descriptor_binding = 0;
-            descriptor_index_id = 0;
-            is_combined_image_sampler = false;
-            sampler_var_inst = nullptr;
-            sampler_descriptor_set = 0;
-            sampler_descriptor_binding = 0;
-            sampler_descriptor_index_id = 0;
-        }
     };
 
     BasicBlockIt InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,

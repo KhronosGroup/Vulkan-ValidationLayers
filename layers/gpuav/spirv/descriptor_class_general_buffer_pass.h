@@ -48,14 +48,6 @@ class DescriptorClassGeneralBufferPass : public Pass {
         // The back() will be closest to the OpVariable
         // (note GLSL will try to always create a single large OpAccessChain)
         std::vector<const Instruction*> access_chain_insts;
-
-        void Reset() {
-            target_instruction = nullptr;
-            descriptor_set = 0;
-            descriptor_binding = 0;
-            descriptor_index_id = 0;
-            descriptor_type = nullptr;
-        }
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta, bool pre_pass);
