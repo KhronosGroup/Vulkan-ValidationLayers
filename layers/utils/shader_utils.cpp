@@ -182,7 +182,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
 
     // The spv_validator_options_t in libspirv.h is hidden so we can't just hash that struct, so instead need to create our own.
     if (out_hash) {
-        *out_hash = hash_util::ShaderHash(&settings, sizeof(Settings));
+        *out_hash = hash_util::Hash32(&settings, sizeof(Settings));
     }
 }
 

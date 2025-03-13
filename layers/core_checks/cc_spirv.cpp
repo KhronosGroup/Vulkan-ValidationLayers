@@ -2006,7 +2006,7 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
 
     uint32_t hash = 0;
     if (cache) {
-        hash = hash_util::ShaderHash((void *)binary.code, binary.wordCount * sizeof(uint32_t));
+        hash = hash_util::Hash32((void *)binary.code, binary.wordCount * sizeof(uint32_t));
         if (cache->Contains(hash)) {
             return skip;
         }

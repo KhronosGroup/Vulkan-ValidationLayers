@@ -2114,7 +2114,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
     }
 
     info.access_mask = access_mask;
-    descriptor_hash = hash_util::DescriptorVariableHash(&info, sizeof(info));
+    descriptor_hash = hash_util::Hash64(&info, sizeof(info));
 }
 
 PushConstantVariable::PushConstantVariable(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,

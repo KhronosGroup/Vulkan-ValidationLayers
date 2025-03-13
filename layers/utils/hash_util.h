@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,8 +160,8 @@ class Dictionary {
 
 uint32_t VuidHash(std::string_view vuid);
 
-uint32_t ShaderHash(const void *pCode, const size_t codeSize);
+uint32_t Hash32(const void *info, const size_t info_size);
 
-uint64_t DescriptorVariableHash(const void *info, const size_t info_size);
+uint64_t Hash64(const void *info, const size_t info_size);
 
 }  // namespace hash_util

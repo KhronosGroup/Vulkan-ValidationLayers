@@ -19,6 +19,7 @@
 
 #include "generated/instrumentation_post_process_descriptor_index_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "utils/hash_util.h"
 
 namespace gpuav {
 namespace spirv {
@@ -61,7 +62,8 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
 }
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
-                                                                InstructionMeta& meta) {
+                                                                InstructionMeta& meta,
+                                                                vvl::unordered_set<uint32_t>& found_in_block_set) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -160,6 +162,13 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         return false;
     }
 
+    uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, meta.descriptor_index_id, meta.variable_id};
+    const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
+    if (found_in_block_set.find(hash) != found_in_block_set.end()) {
+        return false;  // duplicate detected
+    }
+    found_in_block_set.insert(hash);
+
     meta.target_instruction = &inst;
 
     return true;
@@ -170,9 +179,12 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             auto& block_instructions = (*block_it)->instructions_;
+
+            // We only need to instrument the set/binding/inde/variable combo once per block
+            vvl::unordered_set<uint32_t> found_in_block_set;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set)) continue;
 
                 if (module_.settings_.max_instrumentations_count != 0 &&
                     instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
