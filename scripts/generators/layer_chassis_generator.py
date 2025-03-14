@@ -321,9 +321,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             out.append(f'ErrorObject error_obj(vvl::Func::{command.name}, VulkanTypedHandle({command.params[0].name}, kVulkanObjectType{command.params[0].type[2:]}));\n')
 
             # Generate pre-call validation source code
-            out.append('''{
-                VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
-            ''')
+            out.append(f'{{\nVVL_ZoneScopedN("PreCallValidate_{command.name}");\n')
             if not command.instance:
                 out.append(f'for (const auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallValidate{command.name[2:]}]) {{\n')
                 out.append(f'   if (!vo) {{\n')
@@ -343,9 +341,8 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
 
             # Generate pre-call state recording source code
             out.append(f'RecordObject record_obj(vvl::Func::{command.name});\n')
-            out.append('''{
-                VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
-            ''')
+            out.append(f'{{\nVVL_ZoneScopedN("PreCallRecord_{command.name}");\n')
+            
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
                 out.append(f'   if (!vo) {{\n')
@@ -377,9 +374,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 out.append(f'{command.returnType} result;')
 
             # Tracy profiler
-            out.append('''{
-                VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
-            ''')
+            out.append(f'{{\nVVL_ZoneScopedN("Dispatch_{command.name}");\n')
 
             if "QueueSubmit" in command.name:
                 out.append('''
@@ -417,9 +412,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                 out.append('record_obj.device_address = result;\n')
 
             # Generate post-call object processing source code
-            out.append('''{
-                VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
-            ''')
+            out.append(f'{{\nVVL_ZoneScopedN("PostCallRecord_{command.name}");\n')
 
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
