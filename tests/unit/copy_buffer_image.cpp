@@ -3990,3 +3990,60 @@ TEST_F(NegativeCopyBufferImage, ResolveImageRemainingLayers) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeCopyBufferImage, ImageCopyWidthOverflow) {
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32u, 32u, 8u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    copy_region.srcOffset = {32, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+    copy_region.dstOffset = {32, 0, 0};
+    copy_region.extent = {std::numeric_limits<uint32_t>::max(), 32u, 1u};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00144");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00150");
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcOffset.x = 0;
+    copy_region.dstOffset.x = 0;
+    copy_region.extent.width = 1u;
+    copy_region.srcOffset.y = 32;
+    copy_region.dstOffset.y = 32;
+    copy_region.extent.height = std::numeric_limits<uint32_t>::max();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00145");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00151");
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    copy_region.srcOffset.y = 0;
+    copy_region.dstOffset.y = 0;
+    copy_region.extent.height = 1u;
+    copy_region.srcOffset.z = 8u;
+    copy_region.dstOffset.z = 8u;
+    copy_region.extent.depth = std::numeric_limits<uint32_t>::max();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-00147");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00153");
+    vk::CmdCopyImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_GENERAL, dst_image.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
