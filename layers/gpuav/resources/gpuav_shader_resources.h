@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,10 @@ struct ActionCommandSnapshot {
     // This is information from the pipeline/shaderObject we want to save
     std::vector<const BindingVariableMap *> binding_req_maps;
 
-    ActionCommandSnapshot(const uint32_t index) : descriptor_command_binding_index(index) {}
+    const VulkanTypedHandle& shader_handle;  // VkPipeline or VkShaderObject used
+
+    ActionCommandSnapshot(const uint32_t index, const VulkanTypedHandle& shader_handle)
+        : descriptor_command_binding_index(index), shader_handle(shader_handle) {}
 };
 
 // These match the Structures found in the instrumentation GLSL logic
