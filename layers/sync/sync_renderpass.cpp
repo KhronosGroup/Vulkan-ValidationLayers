@@ -167,11 +167,11 @@ bool RenderPassAccessContext::ValidateLayoutTransitions(const CommandBufferAcces
             const SyncValidator &sync_state = cb_context.GetSyncState();
             const Location loc(command);
 
-            const syncval_state::ImageViewState *attachment_view = attachment_views[transition.attachment].GetViewState();
+            const vvl::ImageView *attachment_view = attachment_views[transition.attachment].GetViewState();
             std::stringstream ss;
             ss << "in subpass " << subpass << " on attachment " << transition.attachment << " (";
             ss << sync_state.FormatHandle(attachment_view->Handle());
-            ss << ", " << sync_state.FormatHandle(attachment_view->GetImageState()->Handle());
+            ss << ", " << sync_state.FormatHandle(attachment_view->image_state->Handle());
             ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
             ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
             ss << ")";
@@ -668,8 +668,7 @@ void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuff
     }
 }
 
-const syncval_state::ImageViewState *RenderPassAccessContext::GetClearAttachmentView(
-    const VkClearAttachment &clear_attachment) const {
+const vvl::ImageView *RenderPassAccessContext::GetClearAttachmentView(const VkClearAttachment &clear_attachment) const {
     const auto &subpass = rp_state_->create_info.pSubpasses[current_subpass_];
     uint32_t attachment_index = VK_ATTACHMENT_UNUSED;
     if (clear_attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
@@ -760,7 +759,7 @@ bool RenderPassAccessContext::ValidateFinalSubpassLayoutTransitions(const Comman
             std::stringstream ss;
             ss << "on attachment " << transition.attachment << " (";
             ss << sync_state.FormatHandle(view_gen.GetViewState()->Handle());
-            ss << ", " << sync_state.FormatHandle(view_gen.GetViewState()->GetImageState()->Handle());
+            ss << ", " << sync_state.FormatHandle(view_gen.GetViewState()->image_state->Handle());
             ss << ", oldLayout " << string_VkImageLayout(transition.old_layout);
             ss << ", newLayout " << string_VkImageLayout(transition.new_layout);
             ss << ")";
@@ -826,7 +825,7 @@ void RenderPassAccessContext::RecordLoadOperations(const ResourceUsageTag tag) {
     }
 }
 AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
-    const VkRect2D &render_area, const std::vector<const syncval_state::ImageViewState *> &attachment_views) {
+    const VkRect2D &render_area, const std::vector<const vvl::ImageView *> &attachment_views) {
     AttachmentViewGenVector view_gens;
     VkExtent3D extent = CastTo3D(render_area.extent);
     VkOffset3D offset = CastTo3D(render_area.offset);
@@ -838,7 +837,7 @@ AttachmentViewGenVector RenderPassAccessContext::CreateAttachmentViewGen(
 }
 RenderPassAccessContext::RenderPassAccessContext(const vvl::RenderPass &rp_state, const VkRect2D &render_area,
                                                  VkQueueFlags queue_flags,
-                                                 const std::vector<const syncval_state::ImageViewState *> &attachment_views,
+                                                 const std::vector<const vvl::ImageView *> &attachment_views,
                                                  const AccessContext *external_context)
     : rp_state_(&rp_state), render_area_(render_area), current_subpass_(0U), attachment_views_() {
     // Add this for all subpasses here so that they exist during next subpass validation
@@ -929,9 +928,8 @@ syncval_state::DynamicRenderingInfo::DynamicRenderingInfo(const SyncValidator &s
     }
 }
 
-const syncval_state::ImageViewState *syncval_state::DynamicRenderingInfo::GetClearAttachmentView(
-    const VkClearAttachment &clear_attachment) const {
-    const syncval_state::ImageViewState *attachment_view = nullptr;
+const vvl::ImageView *syncval_state::DynamicRenderingInfo::GetClearAttachmentView(const VkClearAttachment &clear_attachment) const {
+    const vvl::ImageView *attachment_view = nullptr;
     if (clear_attachment.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
         if (clear_attachment.colorAttachment < info.colorAttachmentCount) {
             attachment_view = attachments[clear_attachment.colorAttachment].view.get();
@@ -949,26 +947,27 @@ syncval_state::DynamicRenderingInfo::Attachment::Attachment(const SyncValidator 
                                                             const vku::safe_VkRenderingAttachmentInfo &attachment_info,
                                                             AttachmentType type_, const VkOffset3D &offset,
                                                             const VkExtent3D &extent)
-    : info(attachment_info), view(state.Get<ImageViewState>(attachment_info.imageView)), view_gen(), type(type_) {
+    : info(attachment_info), view(state.Get<vvl::ImageView>(attachment_info.imageView)), view_gen(), type(type_) {
     if (view) {
         if (type == AttachmentType::kColor) {
-            view_gen = view->MakeImageRangeGen(offset, extent);
+            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent);
         } else if (type == AttachmentType::kDepth) {
-            view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
+            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT);
         } else {
-            view_gen = view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
+            view_gen = syncval_state::MakeImageRangeGen(*view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT);
         }
 
         if (info.resolveImageView != VK_NULL_HANDLE && (info.resolveMode != VK_RESOLVE_MODE_NONE)) {
-            resolve_view = state.Get<ImageViewState>(info.resolveImageView);
+            resolve_view = state.Get<vvl::ImageView>(info.resolveImageView);
             if (resolve_view) {
                 if (type == AttachmentType::kColor) {
-                    resolve_gen.emplace(resolve_view->MakeImageRangeGen(offset, extent));
+                    resolve_gen.emplace(syncval_state::MakeImageRangeGen(*resolve_view, offset, extent));
                 } else if (type == AttachmentType::kDepth) {
                     // Only the depth aspect
-                    resolve_gen.emplace(resolve_view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
+                    resolve_gen.emplace(syncval_state::MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_DEPTH_BIT));
                 } else {
-                    resolve_gen.emplace(resolve_view->MakeImageRangeGen(offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
+                    resolve_gen.emplace(
+                        syncval_state::MakeImageRangeGen(*resolve_view, offset, extent, VK_IMAGE_ASPECT_STENCIL_BIT));
                 }
             }
         }

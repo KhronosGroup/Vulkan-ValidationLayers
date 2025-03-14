@@ -21,15 +21,11 @@
 
 namespace syncval_state {
 
-class ImageState : public vvl::Image {
+class ImageSubState : public vvl::ImageSubState {
   public:
-    ImageState(const vvl::Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, pCreateInfo, features), opaque_base_address_(0U) {}
+    ImageSubState(vvl::Image &image);
 
-    ImageState(const vvl::Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
-               uint32_t swapchain_index, VkFormatFeatureFlags2 features)
-        : vvl::Image(dev_data, handle, pCreateInfo, swapchain, swapchain_index, features), opaque_base_address_(0U) {}
-    bool IsLinear() const { return fragment_encoder->IsLinearImage(); }
+    bool IsLinear() const { return fragment_encoder.IsLinearImage(); }
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
@@ -44,34 +40,39 @@ class ImageState : public vvl::Image {
 
   protected:
     VkDeviceSize opaque_base_address_ = 0U;
+    const subresource_adapter::ImageRangeEncoder fragment_encoder;
 };
 
-class ImageViewState : public vvl::ImageView {
-  public:
-    ImageViewState(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
-                   VkFormatFeatureFlags2 ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
-    const ImageState *GetImageState() const { return static_cast<const syncval_state::ImageState *>(image_state.get()); }
-    ImageRangeGen MakeImageRangeGen(const VkOffset3D &offset, const VkExtent3D &extent,
-                                    VkImageAspectFlags override_depth_stencil_aspect_mask = 0) const;
-    const ImageRangeGen &GetFullViewImageRangeGen() const { return view_range_gen; }
+static inline ImageSubState &SubState(vvl::Image &img) {
+    return *static_cast<ImageSubState *>(img.SubState(LayerObjectTypeSyncValidation));
+}
 
-  protected:
-    ImageRangeGen MakeImageRangeGen() const;
-    // All data members needs for MakeImageRangeGen() must be set before initializing view_range_gen... i.e. above this line.
-    const ImageRangeGen view_range_gen;
-};
+static inline const ImageSubState &SubState(const vvl::Image &img) {
+    return *static_cast<const ImageSubState *>(img.SubState(LayerObjectTypeSyncValidation));
+}
 
-class Swapchain : public vvl::Swapchain {
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view);
+ImageRangeGen MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
+                                VkImageAspectFlags override_depth_stencil_aspect_mask = 0);
+
+class SwapchainSubState : public vvl::SwapchainSubState {
   public:
-    Swapchain(vvl::Device &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
-    ~Swapchain() { Destroy(); }
+    SwapchainSubState(vvl::Swapchain &swapchain) : vvl::SwapchainSubState(swapchain) {}
+    ~SwapchainSubState() { Destroy(); }
     void RecordPresentedImage(PresentedImage &&presented_images);
     PresentedImage MovePresentedImage(uint32_t image_index);
     void GetPresentBatches(std::vector<QueueBatchContext::Ptr> &batches) const;
-    std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
-    std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
 
   private:
     PresentedImages presented;  // Build this on demand
 };
+
+static inline SwapchainSubState &SubState(vvl::Swapchain &sc) {
+    return *static_cast<SwapchainSubState *>(sc.SubState(LayerObjectTypeSyncValidation));
+}
+
+static inline const SwapchainSubState &SubState(const vvl::Swapchain &sc) {
+    return *static_cast<const SwapchainSubState *>(sc.SubState(LayerObjectTypeSyncValidation));
+}
+
 }  // namespace syncval_state

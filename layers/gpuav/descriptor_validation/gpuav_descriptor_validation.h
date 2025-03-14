@@ -1,6 +1,6 @@
-/* Copyright (c) 2020-2024 The Khronos Group Inc.
- * Copyright (c) 2020-2024 Valve Corporation
- * Copyright (c) 2020-2024 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,21 +23,23 @@ struct Location;
 struct LastBound;
 
 namespace gpuav {
-class CommandBuffer;
+class CommandBufferSubState;
 class Validator;
 struct DescriptorCommandBinding;
 
 namespace descriptor {
 
-void PreCallActionCommandPostProcess(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound, const Location& loc);
-void PreCallActionCommand(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point, const Location& loc);
+void PreCallActionCommandPostProcess(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
+                                     const Location& loc);
+void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,
+                          const Location& loc);
 
-void UpdateBoundDescriptorsPostProcess(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound,
+void UpdateBoundDescriptorsPostProcess(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                        DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
-void UpdateBoundDescriptorsDescriptorChecks(Validator& gpuav, CommandBuffer& cb_state, const LastBound& last_bound,
+void UpdateBoundDescriptorsDescriptorChecks(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                             DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
-void UpdateBoundDescriptors(Validator& gpuav, CommandBuffer& cb_state, VkPipelineBindPoint pipeline_bind_point,
+void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
-[[nodiscard]] bool UpdateDescriptorStateSSBO(Validator& gpuav, CommandBuffer& cb_state, const Location& loc);
+[[nodiscard]] bool UpdateDescriptorStateSSBO(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc);
 }  // namespace descriptor
 }  // namespace gpuav
