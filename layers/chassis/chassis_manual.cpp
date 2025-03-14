@@ -454,7 +454,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
     chassis::CreateGraphicsPipelines chassis_state(pCreateInfos);
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateGraphicsPipelines");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -469,7 +469,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
 
     RecordObject record_obj(vvl::Func::vkCreateGraphicsPipelines);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateGraphicsPipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -482,14 +482,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateGraphicsPipelines");
         result = device_dispatch->CreateGraphicsPipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
                                                           pAllocator, pPipelines);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateGraphicsPipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -516,7 +516,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
     chassis::CreateComputePipelines chassis_state(pCreateInfos);
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateComputePipelines");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -531,7 +531,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
 
     RecordObject record_obj(vvl::Func::vkCreateComputePipelines);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateComputePipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -544,14 +544,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateComputePipelines");
         result = device_dispatch->CreateComputePipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
                                                          pAllocator, pPipelines);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateComputePipelines");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -624,7 +624,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
     auto chassis_state = std::make_shared<chassis::CreateRayTracingPipelinesKHR>(pCreateInfos);
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateRayTracingPipelinesKHR");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -639,7 +639,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
 
     RecordObject record_obj(vvl::Func::vkCreateRayTracingPipelinesKHR);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateRayTracingPipelinesKHR");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -653,14 +653,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateRayTracingPipelinesKHR");
         result = device_dispatch->CreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                chassis_state->pCreateInfos, pAllocator, pPipelines);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateRayTracingPipelinesKHR");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -684,7 +684,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
     ErrorObject error_obj(vvl::Func::vkCreatePipelineLayout, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreatePipelineLayout");
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreatePipelineLayout]) {
             if (!vo) {
                 continue;
@@ -700,7 +700,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
 
     RecordObject record_obj(vvl::Func::vkCreatePipelineLayout);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreatePipelineLayout");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -712,13 +712,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreatePipelineLayout");
         result = device_dispatch->CreatePipelineLayout(device, &chassis_state.modified_create_info, pAllocator, pPipelineLayout);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreatePipelineLayout");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreatePipelineLayout]) {
             if (!vo) {
                 continue;
@@ -740,7 +740,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     ErrorObject error_obj(vvl::Func::vkCreateShaderModule, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateShaderModule");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -755,7 +755,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
 
     RecordObject record_obj(vvl::Func::vkCreateShaderModule);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateShaderModule");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -769,12 +769,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShaderModule(VkDevice device, const VkShade
     if (chassis_state.skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateShaderModule");
         result = device_dispatch->CreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule);
     }
     record_obj.result = result;
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateShaderModule");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -798,7 +798,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     chassis::ShaderObject chassis_state(createInfoCount, pCreateInfos);
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateShadersEXT");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -811,7 +811,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
 
     RecordObject record_obj(vvl::Func::vkCreateShadersEXT);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateShadersEXT");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -827,13 +827,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateShadersEXT");
         result = device_dispatch->CreateShadersEXT(device, createInfoCount, chassis_state.pCreateInfos, pAllocator, pShaders);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateShadersEXT");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -857,7 +857,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     vvl::AllocateDescriptorSetsData ads_state[LayerObjectTypeMaxEnum];
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_AllocateDescriptorSets");
         for (const auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -872,7 +872,7 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
 
     RecordObject record_obj(vvl::Func::vkAllocateDescriptorSets);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_AllocateDescriptorSets");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordAllocateDescriptorSets]) {
             if (!vo) {
                 continue;
@@ -884,13 +884,13 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_AllocateDescriptorSets");
         result = device_dispatch->AllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_AllocateDescriptorSets");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -913,7 +913,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
     ErrorObject error_obj(vvl::Func::vkCreateBuffer, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_CreateBuffer");
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateBuffer]) {
             if (!vo) {
                 continue;
@@ -929,7 +929,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
 
     RecordObject record_obj(vvl::Func::vkCreateBuffer);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_CreateBuffer");
         for (auto& vo : device_dispatch->object_dispatch) {
             if (!vo) {
                 continue;
@@ -941,13 +941,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateBuffer(VkDevice device, const VkBufferCreat
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_CreateBuffer");
         result = device_dispatch->CreateBuffer(device, &chassis_state.modified_create_info, pAllocator, pBuffer);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_CreateBuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateBuffer]) {
             if (!vo) {
                 continue;
@@ -967,7 +967,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkQueuePresentKHR, VulkanTypedHandle(queue, kVulkanObjectTypeQueue));
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_QueuePresentKHR");
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateQueuePresentKHR]) {
             if (!vo) {
                 continue;
@@ -979,7 +979,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
     }
     RecordObject record_obj(vvl::Func::vkQueuePresentKHR);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_QueuePresentKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordQueuePresentKHR]) {
             if (!vo) {
                 continue;
@@ -1001,7 +1001,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_QueuePresentKHR");
         result = device_dispatch->QueuePresentKHR(queue, pPresentInfo);
     }
     VVL_TracyCFrameMark;
@@ -1010,7 +1010,7 @@ VKAPI_ATTR VkResult VKAPI_CALL QueuePresentKHR(VkQueue queue, const VkPresentInf
 #endif
     record_obj.result = result;
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_QueuePresentKHR");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordQueuePresentKHR]) {
             if (!vo) {
                 continue;
@@ -1037,7 +1037,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
                           &handle_data);
     handle_data.command_buffer.is_secondary = device_dispatch->IsSecondary(commandBuffer);
     {
-        VVL_ZoneScopedN("PreCallValidate_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallValidate_BeginCommandBuffer");
         for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateBeginCommandBuffer]) {
             if (!vo) {
                 continue;
@@ -1050,7 +1050,7 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
     RecordObject record_obj(vvl::Func::vkBeginCommandBuffer, &handle_data);
     {
-        VVL_ZoneScopedN("PreCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PreCallRecord_BeginCommandBuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordBeginCommandBuffer]) {
             if (!vo) {
                 continue;
@@ -1062,13 +1062,13 @@ VKAPI_ATTR VkResult VKAPI_CALL BeginCommandBuffer(VkCommandBuffer commandBuffer,
 
     VkResult result;
     {
-        VVL_ZoneScopedN("Dispatch_" __FUNCTION__);
+        VVL_ZoneScopedN("Dispatch_BeginCommandBuffer");
         result = device_dispatch->BeginCommandBuffer(commandBuffer, pBeginInfo);
     }
     record_obj.result = result;
 
     {
-        VVL_ZoneScopedN("PostCallRecord_" __FUNCTION__);
+        VVL_ZoneScopedN("PostCallRecord_BeginCommandBuffer");
         for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordBeginCommandBuffer]) {
             if (!vo) {
                 continue;
