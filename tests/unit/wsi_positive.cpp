@@ -600,7 +600,6 @@ TEST_F(PositiveWsi, RetireSubmissionUsingAcquireFence2) {
     // Create new swapchain.
     m_swapchain = CreateSwapchain(m_surface.Handle(), VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR);
 
-    // The following Acquire will detect that fence's AcquireFenceSync belongs to the old swapchain and will invalidate it.
     image_index = m_swapchain.AcquireNextImage(acquire_fence, kWaitTimeout);
 
     vk::WaitForFences(device(), 1, &acquire_fence.handle(), VK_TRUE, kWaitTimeout);
@@ -2160,4 +2159,51 @@ TEST_F(PositiveWsi, CreateSwapchainWithOldSwapchain) {
 
     swapchain_ci.oldSwapchain = swapchain1.handle();
     vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+}
+
+TEST_F(PositiveWsi, UseAcquireFenceToDeletePresentSemaphore) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9587
+    TEST_DESCRIPTION("Use acquire fence to safely delete present semaphore from previous present operations");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    // Frame 0
+    vkt::Semaphore acquire_semaphore0(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore0, kWaitTimeout);
+    if (image_index != 0) {
+        GTEST_SKIP() << "test scenario assumes the first acquired image index is 0";
+    }
+    vkt::Semaphore present_semaphore0(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore0), vkt::Signal(present_semaphore0));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore0);
+
+    // Frame 1
+    vkt::Semaphore acquire_semaphore1(*m_device);
+    image_index = m_swapchain.AcquireNextImage(acquire_semaphore1, kWaitTimeout);
+    if (image_index != 1) {
+        m_default_queue->Wait();
+        GTEST_SKIP() << "test scenario assumes the second acquired image index is 1";
+    }
+    vkt::Semaphore present_semaphore1(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore1), vkt::Signal(present_semaphore1));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore1);
+
+    // Frame 2
+    vkt::Fence acquire_fence2(*m_device);
+    image_index = m_swapchain.AcquireNextImage(acquire_fence2, kWaitTimeout);
+    if (image_index != 0) {
+        m_default_queue->Wait();
+        GTEST_SKIP() << "test scenario assumes the third acquired image index is 0";
+    }
+    acquire_fence2.Wait(kWaitTimeout);
+
+    // This test checks that destroying present semaphore from frame 0 does not generate in-use error.
+    present_semaphore0.destroy();
+
+    m_default_queue->Wait();
 }
