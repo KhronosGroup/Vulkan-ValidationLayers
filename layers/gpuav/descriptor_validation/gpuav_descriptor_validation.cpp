@@ -44,10 +44,11 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
     if (!last_bound.pipeline_state) {
         return;
     }
+    const VulkanTypedHandle &shader_handle = last_bound.pipeline_state->Handle();
     const auto &active_slot = last_bound.pipeline_state->active_slots;
 
     const uint32_t descriptor_command_binding_index = (uint32_t)cb_state.descriptor_command_bindings.size() - 1;
-    auto &action_command_snapshot = cb_state.action_command_snapshots.emplace_back(descriptor_command_binding_index);
+    auto &action_command_snapshot = cb_state.action_command_snapshots.emplace_back(descriptor_command_binding_index, shader_handle);
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     action_command_snapshot.binding_req_maps.reserve(number_of_sets);
@@ -247,7 +248,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
 
             vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
-                                             draw_loc);
+                                             action_command_snapshot.shader_handle, draw_loc);
 
             auto descriptor_accesses = bound_descriptor_set->GetDescriptorAccesses(loc, set_index);
             for (const auto &descriptor_access : descriptor_accesses) {

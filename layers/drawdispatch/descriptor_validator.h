@@ -40,7 +40,7 @@ class DescriptorSet;
 class DescriptorValidator {
  public:
    DescriptorValidator(Device& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set, uint32_t set_index,
-                       VkFramebuffer framebuffer, const Location& loc);
+                       VkFramebuffer framebuffer, const VulkanTypedHandle& shader_handle, const Location& loc);
 
    // Used with normal validation where we know which descriptors are accessed.
    bool ValidateBindingStatic(const spirv::ResourceInterfaceVariable& binding_info, const vvl::DescriptorBinding& binding) const;
@@ -81,6 +81,7 @@ class DescriptorValidator {
    vvl::DescriptorSet& descriptor_set;
    const uint32_t set_index;
    const VkFramebuffer framebuffer;
+   const VulkanTypedHandle& shader_handle;  // VkPipeline or VkShaderObject
    const Location& loc;
    const DrawDispatchVuid& vuids;
 

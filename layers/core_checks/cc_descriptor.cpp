@@ -23,6 +23,7 @@
 
 #include "containers/custom_containers.h"
 #include "core_validation.h"
+#include "error_message/error_location.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -825,14 +826,16 @@ bool CoreChecks::PreCallValidateGetDescriptorSetLayoutSupportKHR(VkDevice device
 // Return true if state is acceptable, or false and write an error message into error string
 bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uint32_t set_index,
                                    const BindingVariableMap &binding_req_map, const vvl::CommandBuffer &cb_state,
-                                   const Location &loc, const vvl::DrawDispatchVuid &vuids) const {
+                                   const vvl::DrawDispatchVuid &vuids, const VulkanTypedHandle &shader_handle) const {
     bool result = false;
+    const Location &loc = vuids.loc();
     const VkFramebuffer framebuffer = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
     // NOTE: GPU-AV needs non-const state objects to do lazy updates of descriptor state of only the dynamically used
     // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
-                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer, loc);
+                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer, shader_handle,
+                                            loc);
 
     for (const auto &[binding_index, desc_set_reqs] : binding_req_map) {
         ASSERT_AND_CONTINUE(desc_set_reqs.variable);
