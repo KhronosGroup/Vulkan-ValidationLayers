@@ -29,7 +29,7 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
     const char* Name() const final { return "DescriptorIndexingOOBPass"; }
     void PrintDebugInfo() const final;
 
-    void NewBlock(const BasicBlock& block) override;
+    void NewBlock(const BasicBlock& block, bool is_original_new_block) override;
 
   private:
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) final;

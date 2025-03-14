@@ -151,7 +151,12 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
-void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&) { block_instrumented_table_.clear(); }
+void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&, bool is_original_new_block) {
+    // Don't clear if the new block occurs from control flow breaking one up
+    if (is_original_new_block) {
+        block_instrumented_table_.clear();
+    }
+}
 
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
