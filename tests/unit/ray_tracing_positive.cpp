@@ -1735,3 +1735,82 @@ TEST_F(PositiveRayTracing, AccelerationStructuresAndScratchBuffersAddressSharing
         }
     }
 }
+
+TEST_F(PositiveRayTracing, ZeroPrimitiveCount) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4203");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_command_buffer.Begin();
+    blas->SetupBuild(true);
+    const VkAccelerationStructureGeometryKHR* pGeometries = &blas->GetGeometries()[0].GetVkObj();
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_geometry_info = vku::InitStructHelper();
+    build_geometry_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    build_geometry_info.dstAccelerationStructure = *blas->GetDstAS();
+    build_geometry_info.geometryCount = 1u;
+    build_geometry_info.ppGeometries = &pGeometries;
+    build_geometry_info.scratchData = blas->GetInfo().scratchData;
+
+    VkAccelerationStructureBuildRangeInfoKHR build_range_info;
+    build_range_info.primitiveCount = 0u;
+    build_range_info.primitiveOffset = 0u;
+    build_range_info.firstVertex = 0u;
+    build_range_info.transformOffset = 0u;
+    const VkAccelerationStructureBuildRangeInfoKHR* p_build_range_info = &build_range_info;
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer.handle(), 1u, &build_geometry_info, &p_build_range_info);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}
+
+TEST_F(PositiveRayTracing, ZeroPrimitiveCountIndirect) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4203");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    auto blas =
+        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+
+    m_command_buffer.Begin();
+    blas->SetupBuild(true);
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer indirect_buffer_(*m_device, sizeof(VkAccelerationStructureBuildRangeInfoKHR),
+                                 VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                                 kHostVisibleMemProps, &alloc_flags);
+
+    auto* ranges_info = static_cast<VkAccelerationStructureBuildRangeInfoKHR*>(indirect_buffer_.Memory().Map());
+    const VkAccelerationStructureGeometryKHR* pGeometries;
+    pGeometries = &blas->GetGeometries()[0].GetVkObj();
+    *ranges_info = blas->GetGeometries()[0].GetFullBuildRange();
+
+    VkAccelerationStructureBuildGeometryInfoKHR build_geometry_info = blas->GetInfo();
+    build_geometry_info.geometryCount = 1u;
+    build_geometry_info.ppGeometries = &pGeometries;
+
+    const VkDeviceAddress indirect_address = indirect_buffer_.Address();
+    uint32_t stride = 0u;
+    uint32_t max_primitive_count = 1u;
+    const uint32_t* p_max_primitive_counts = &max_primitive_count;
+    vk::CmdBuildAccelerationStructuresIndirectKHR(m_command_buffer.handle(), 1u, &build_geometry_info, &indirect_address, &stride,
+                                                  &p_max_primitive_counts);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_device->Wait();
+}
