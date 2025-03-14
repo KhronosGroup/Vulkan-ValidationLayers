@@ -24,7 +24,7 @@
 
 namespace vvl {
 
-class Device;
+class DeviceState;
 class VideoProfileDesc;
 
 class Buffer : public Bindable {
@@ -39,7 +39,7 @@ class Buffer : public Bindable {
 
     unordered_set<std::shared_ptr<const VideoProfileDesc>> supported_video_profiles;
 
-    Buffer(Device &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
+    Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo);
 
     Buffer(Buffer const &rh_obj) = delete;
 

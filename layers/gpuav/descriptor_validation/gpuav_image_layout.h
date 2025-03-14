@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (C) 2015-2024 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,16 +19,16 @@
 #pragma once
 
 namespace vvl {
-class CommandBuffer;
 class RenderPass;
 }  // namespace vvl
 
 namespace gpuav {
 class Validator;
+class CommandBufferSubState;
 
-void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state);
-void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index);
-void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state);
-void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state);
+void UpdateCmdBufImageLayouts(Validator &gpuav, const CommandBufferSubState &cb_state);
+void TransitionSubpassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index);
+void TransitionBeginRenderPassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state);
+void TransitionFinalSubpassLayouts(CommandBufferSubState &cb_state);
 
 }  // namespace gpuav

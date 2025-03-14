@@ -25,7 +25,7 @@ static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateIn
     return export_info ? export_info->handleTypes : 0;
 }
 
-vvl::Fence::Fence(vvl::Device &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+vvl::Fence::Fence(vvl::DeviceState &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
     : RefcountedStateObject(handle, kVulkanObjectTypeFence),
       flags(pCreateInfo->flags),
       export_handle_types(GetExportHandleTypes(pCreateInfo)),

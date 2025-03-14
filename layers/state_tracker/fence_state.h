@@ -25,7 +25,7 @@
 
 namespace vvl {
 
-class Device;
+class DeviceState;
 class Queue;
 class Swapchain;
 
@@ -59,7 +59,7 @@ class Fence : public RefcountedStateObject {
         kExternalPermanent,
     };
 
-    Fence(Device &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo);
+    Fence(DeviceState &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo);
 
     const VulkanTypedHandle *InUse() const override;
     VkFence VkHandle() const { return handle_.Cast<VkFence>(); }
@@ -107,7 +107,7 @@ class Fence : public RefcountedStateObject {
     // Special frame synchronization based on acquire fence (check AcquireFenceSync documentation)
     AcquireFenceSync acquire_fence_sync_;
 
-    Device &dev_data_;
+    DeviceState &dev_data_;
 };
 
 }  // namespace vvl

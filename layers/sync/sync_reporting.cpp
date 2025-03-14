@@ -113,7 +113,7 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
     return ss.str();
 }
 
-static void GetAccessProperties(const HazardResult &hazard_result, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+static void GetAccessProperties(const HazardResult &hazard_result, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                 ReportProperties &properties) {
     const HazardResult::HazardState &hazard = hazard_result.State();
     const SyncAccessInfo &access_info = GetSyncAccessInfos()[hazard.access_index];
@@ -196,7 +196,7 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFla
 }
 
 static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
-    const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags) {
+    const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags) {
     if (sync_accesses.none()) {
         return {};
     }
@@ -506,7 +506,7 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
     return ss.str();
 }
 
-std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const vvl::Device &device, VkQueueFlags allowed_queue_flags,
+std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                bool format_as_extra_property) {
     const auto report_accesses = ConvertSyncAccessesToCompactVkForm(sync_accesses, device, allowed_queue_flags);
     if (report_accesses.empty()) {
@@ -565,8 +565,8 @@ static ResourceUsageInfo GetResourceUsageInfoFromRecord(ResourceUsageTagEx tag_e
 
         // Associated resource
         if (tag_ex.handle_index != vvl::kNoIndex32) {
-            auto cb_context = static_cast<const syncval_state::CommandBuffer *>(record.cb_state);
-            const auto &handle_records = cb_context->access_context.GetHandleRecords();
+            auto &cb_context = syncval_state::SubState(*record.cb_state);
+            const auto &handle_records = cb_context.access_context.GetHandleRecords();
 
             // Command buffer can be in inconsistent state due to unhandled core validation error (core validation is disabled).
             // In this case the goal is not to crash, no guarantees that reported information (handle index) makes sense.

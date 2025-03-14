@@ -255,24 +255,25 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const auto& submit_info = pSubmits[submit];
         for (uint32_t cb_index = 0; cb_index < submit_info.commandBufferCount; cb_index++) {
-            auto cb = GetWrite<bp_state::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
+            auto cb = GetWrite<vvl::CommandBuffer>(submit_info.pCommandBuffers[cb_index]);
             for (auto& func : cb->queue_submit_functions) {
                 func(*queue_state, *cb);
             }
-            cb->num_submits++;
+            auto& sub_state = bp_state::SubState(*cb);
+            sub_state.num_submits++;
         }
     }
 }
 
 namespace {
 struct EventValidator {
-    const vvl::Device& state_tracker;
+    const BestPractices &bp;
 
     vvl::unordered_map<VkEvent, bool> signaling_state;
 
-    EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
+    EventValidator(const BestPractices &bp_) : bp(bp_) {}
 
-    bool ValidateSubmittedCbSignalingState(const bp_state::CommandBuffer& cb, const Location& cb_loc) {
+    bool ValidateSubmittedCbSignalingState(const bp_state::CommandBufferSubState& cb, const Location& cb_loc) {
         bool skip = false;
         for (const auto& [event, info] : cb.event_signaling_state) {
             if (info.first_state_change_is_signal) {
@@ -282,18 +283,18 @@ struct EventValidator {
                     signaled = *p_signaled;
                 } else {
                     // check global event state
-                    auto event_state = state_tracker.Get<vvl::Event>(event);
+                    auto event_state = bp.Get<vvl::Event>(event);
                     if (event_state) {
                         signaled = event_state->signaled;
                     }
                 }
                 if (signaled) {
                     const LogObjectList objlist(cb.VkHandle(), event);
-                    skip |= state_tracker.LogWarning(
+                    skip |= bp.LogWarning(
                         "BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                         "%s sets event %s which is already in the signaled state (set by previously submitted command buffers or "
                         "from the host). If this is not the desired behavior, the event must be reset before it is set again.",
-                        state_tracker.FormatHandle(cb.VkHandle()).c_str(), state_tracker.FormatHandle(event).c_str());
+                        bp.FormatHandle(cb.VkHandle()).c_str(), bp.FormatHandle(event).c_str());
                 }
             }
             signaling_state[event] = info.signaled;
@@ -323,9 +324,10 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
                     "is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit);
         }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
-            if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
                 const Location cb_loc = submit_loc.dot(vvl::Field::pCommandBuffers, cb_index);
-                skip |= event_validator.ValidateSubmittedCbSignalingState(*cb_state, cb_loc);
+                const auto& sub_state = bp_state::SubState(*cb_state);
+                skip |= event_validator.ValidateSubmittedCbSignalingState(sub_state, cb_loc);
             }
         }
     }
@@ -351,10 +353,11 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
                                             pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
         }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferInfoCount; cb_index++) {
-            if (auto cb_state = GetRead<bp_state::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
+            if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
                 const Location infos_loc = submit_loc.dot(vvl::Field::pCommandBufferInfos, cb_index);
                 const Location cb_loc = infos_loc.dot(vvl::Field::commandBuffer);
-                skip |= event_validator.ValidateSubmittedCbSignalingState(*cb_state, cb_loc);
+                const auto& sub_state = bp_state::SubState(*cb_state);
+                skip |= event_validator.ValidateSubmittedCbSignalingState(sub_state, cb_loc);
             }
         }
     }

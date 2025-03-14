@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022 RasterGrid Kft.
  *
@@ -45,7 +45,7 @@ bool BestPractices::PreCallValidateCmdBuildAccelerationStructuresKHR(
 
 bool BestPractices::ValidateBuildAccelerationStructure(VkCommandBuffer commandBuffer, const Location& loc) const {
     bool skip = false;
-    auto cb_state = GetRead<bp_state::CommandBuffer>(commandBuffer);
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         if ((cb_state->GetQueueFlags() & VK_QUEUE_GRAPHICS_BIT) != 0) {

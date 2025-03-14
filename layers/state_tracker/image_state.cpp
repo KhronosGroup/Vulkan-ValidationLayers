@@ -95,8 +95,8 @@ static VkSwapchainKHR GetSwapchain(const VkImageCreateInfo *pCreateInfo) {
     return swapchain_info ? swapchain_info->swapchain : VK_NULL_HANDLE;
 }
 
-static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *create_info,
-                                                    bool disjoint, bool is_external_ahb) {
+static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::DeviceState &dev_data, VkImage img,
+                                                    const VkImageCreateInfo *create_info, bool disjoint, bool is_external_ahb) {
     vvl::Image::MemoryReqs result{};
     // Record the memory requirements in case they won't be queried
     // External AHB memory can't be queried until after memory is bound
@@ -135,7 +135,7 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::Device &dev_data,
     return result;
 }
 
-static vvl::Image::SparseReqs GetSparseRequirements(const vvl::Device &dev_data, VkImage img, bool sparse_residency) {
+static vvl::Image::SparseReqs GetSparseRequirements(const vvl::DeviceState &dev_data, VkImage img, bool sparse_residency) {
     vvl::Image::SparseReqs result;
     if (sparse_residency) {
         uint32_t count = 0;
@@ -173,7 +173,7 @@ static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTyp
 
 namespace vvl {
 
-Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
+Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),
@@ -198,7 +198,6 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
-      fragment_encoder(nullptr),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -215,7 +214,7 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
     }
 }
 
-Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
              uint32_t swapchain_index, VkFormatFeatureFlags2KHR ff)
     : Bindable(img, kVulkanObjectTypeImage, (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
@@ -241,12 +240,9 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
       subresource_encoder(full_range),
-      fragment_encoder(nullptr),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
-    fragment_encoder =
-        std::unique_ptr<const subresource_adapter::ImageRangeEncoder>(new subresource_adapter::ImageRangeEncoder(*this));
 
     tracker_.emplace<BindableNoMemoryTracker>(requirements.data());
     SetMemoryTracker(&std::get<BindableNoMemoryTracker>(tracker_));
@@ -258,8 +254,6 @@ void Image::Destroy() {
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
     // entry could get put into vvl::CommandBuffer::aliased_image_layout_map.
     //
-    // NOTE: the fragment_encoder should not be cleaned-up in case a semaphore to an acquired image is being processed
-    //       after the swapchain is waited, and the range generation needs an intact encoder.
     if (bind_swapchain) {
         bind_swapchain->RemoveParent(this);
         bind_swapchain = nullptr;
@@ -553,7 +547,7 @@ static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInf
 
 namespace vvl {
 
-Swapchain::Swapchain(vvl::Device &dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
+Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
     : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
       safe_create_info(pCreateInfo),
       create_info(*safe_create_info.ptr()),

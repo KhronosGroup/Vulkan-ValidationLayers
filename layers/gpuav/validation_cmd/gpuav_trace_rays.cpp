@@ -160,7 +160,8 @@ struct SharedTraceRaysValidationResources final {
         shader_group_handle_size_aligned = shader_group_size_aligned;
 
         // Retrieve SBT address
-        const VkDeviceAddress sbt_address = gpuav.GetBufferDeviceAddressHelper(sbt_buffer, &gpuav.modified_extensions);
+        const VkDeviceAddress sbt_address =
+            gpuav.device_state->GetBufferDeviceAddressHelper(sbt_buffer, &gpuav.modified_extensions);
         assert(sbt_address != 0);
         if (sbt_address == 0) {
             gpuav.InternalError(gpuav.device, loc, "Retrieved SBT buffer device address is null.");
@@ -196,7 +197,7 @@ struct SharedTraceRaysValidationResources final {
     bool IsValid() const { return valid; }
 };
 
-void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, CommandBuffer& cb_state,
+void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
                                        VkDeviceAddress indirect_data_address) {
     if (!gpuav.gpuav_settings.validate_indirect_trace_rays_buffers) {
         return;
@@ -205,7 +206,6 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
     if (!gpuav.modified_features.shaderInt64) {
         return;
     }
-
     auto& shared_trace_rays_resources =
         gpuav.shared_resources_manager.Get<SharedTraceRaysValidationResources>(gpuav, cb_state.GetErrorLoggingDescSetLayout(), loc);
 
@@ -252,8 +252,9 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
     VkStridedDeviceAddressRegionKHR empty_sbt{};
     DispatchCmdTraceRaysKHR(cb_state.VkHandle(), &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
 
-    CommandBuffer::ErrorLoggerFunc error_logger = [loc](Validator& gpuav, const CommandBuffer&, const uint32_t* error_record,
-                                                        const LogObjectList& objlist, const std::vector<std::string>&) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [loc](Validator& gpuav, const CommandBufferSubState&,
+                                                                const uint32_t* error_record, const LogObjectList& objlist,
+                                                                const std::vector<std::string>&) {
         bool skip = false;
 
         using namespace glsl;

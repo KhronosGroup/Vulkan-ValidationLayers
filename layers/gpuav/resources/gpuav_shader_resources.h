@@ -36,7 +36,7 @@ struct DescriptorCommandBinding {
 
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
-    std::vector<std::shared_ptr<DescriptorSet>> bound_descriptor_sets;
+    std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
 
     DescriptorCommandBinding(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav), post_process_ssbo_buffer(gpuav) {}
 };

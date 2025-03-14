@@ -333,7 +333,7 @@ void VideoProfileDesc::Cache::Release(VideoProfileDesc const *desc) {
 VideoPictureResource::VideoPictureResource()
     : image_view_state(nullptr), image_state(nullptr), base_array_layer(0), range(), coded_offset(), coded_extent() {}
 
-VideoPictureResource::VideoPictureResource(const Device &dev_data, VkVideoPictureResourceInfoKHR const &res)
+VideoPictureResource::VideoPictureResource(const DeviceState &dev_data, VkVideoPictureResourceInfoKHR const &res)
     : image_view_state(dev_data.Get<ImageView>(res.imageViewBinding)),
       image_state(image_view_state ? image_view_state->image_state : nullptr),
       base_array_layer(res.baseArrayLayer),
@@ -534,7 +534,7 @@ class RateControlStateMismatchRecorder {
     mutable std::string string_{};
 };
 
-bool VideoSessionDeviceState::ValidateRateControlState(const Device &dev_data, const VideoSession *vs_state,
+bool VideoSessionDeviceState::ValidateRateControlState(const DeviceProxy &dev_data, const VideoSession *vs_state,
                                                        const vku::safe_VkVideoBeginCodingInfoKHR &begin_info,
                                                        const Location &loc) const {
     bool skip = false;
@@ -712,7 +712,7 @@ bool VideoSessionDeviceState::ValidateRateControlState(const Device &dev_data, c
     return skip;
 }
 
-VideoSession::VideoSession(const Device &dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
+VideoSession::VideoSession(const DeviceState &dev_data, VkVideoSessionKHR handle, VkVideoSessionCreateInfoKHR const *pCreateInfo,
                            std::shared_ptr<const VideoProfileDesc> &&profile_desc)
     : StateObject(handle, kVulkanObjectTypeVideoSessionKHR),
       safe_create_info(pCreateInfo),
@@ -725,7 +725,7 @@ VideoSession::VideoSession(const Device &dev_data, VkVideoSessionKHR handle, VkV
       device_state_mutex_(),
       device_state_(pCreateInfo->maxDpbSlots) {}
 
-VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(const Device &dev_data, VkVideoSessionKHR vs) {
+VideoSession::MemoryBindingMap VideoSession::GetMemoryBindings(const DeviceState &dev_data, VkVideoSessionKHR vs) {
     uint32_t memory_requirement_count;
     DispatchGetVideoSessionMemoryRequirementsKHR(dev_data.device, vs, &memory_requirement_count, nullptr);
 
