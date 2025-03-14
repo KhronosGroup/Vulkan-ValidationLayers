@@ -1891,7 +1891,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
         if (fail && stage == VK_SHADER_STAGE_COMPUTE_BIT) {
             skip |= LogError("VUID-RuntimeSpirv-x-06432", module_state.handle(), loc,
-                             "SPIR-V LocalSiz (%" PRIu32 ", %" PRIu32 ", %" PRIu32
+                             "SPIR-V LocalSize (%" PRIu32 ", %" PRIu32 ", %" PRIu32
                              ") exceeds device limit maxComputeWorkGroupInvocations (%" PRIu32 ").",
                              local_size_x, local_size_y, local_size_z, phys_dev_props.limits.maxComputeWorkGroupInvocations);
         }
