@@ -1274,16 +1274,16 @@ static constexpr uint32_t kZBit = 4;
 static uint32_t ExceedsBounds(const VkOffset3D *offset, const VkExtent3D *extent, const VkExtent3D *image_extent) {
     uint32_t result = 0;
     // Extents/depths cannot be negative but checks left in for clarity
-    if ((offset->z + extent->depth > image_extent->depth) || (offset->z < 0) ||
-        ((offset->z + static_cast<int32_t>(extent->depth)) < 0)) {
+    if ((static_cast<uint64_t>(offset->z) + static_cast<uint64_t>(extent->depth) > static_cast<uint64_t>(image_extent->depth)) ||
+        (offset->z < 0) || ((offset->z + static_cast<int32_t>(extent->depth)) < 0)) {
         result |= kZBit;
     }
-    if ((offset->y + extent->height > image_extent->height) || (offset->y < 0) ||
-        ((offset->y + static_cast<int32_t>(extent->height)) < 0)) {
+    if ((static_cast<uint64_t>(offset->y) + static_cast<uint64_t>(extent->height) > static_cast<uint64_t>(image_extent->height)) ||
+        (offset->y < 0) || ((offset->y + static_cast<int32_t>(extent->height)) < 0)) {
         result |= kYBit;
     }
-    if ((offset->x + extent->width > image_extent->width) || (offset->x < 0) ||
-        ((offset->x + static_cast<int32_t>(extent->width)) < 0)) {
+    if ((static_cast<uint64_t>(offset->x) + static_cast<uint64_t>(extent->width) > static_cast<uint64_t>(image_extent->width)) ||
+        (offset->x < 0) || ((offset->x + static_cast<int32_t>(extent->width)) < 0)) {
         result |= kXBit;
     }
     return result;
