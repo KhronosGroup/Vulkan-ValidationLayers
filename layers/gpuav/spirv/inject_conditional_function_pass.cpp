@@ -113,6 +113,10 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
 }
 
 bool InjectConditionalFunctionPass::Instrument() {
+    // Due to the current way we use iterators, we will actually create new blocks when placing the conditional functions
+    // Need a way to convey if the new block is a "real" true new block, or just the rest of the one we split up
+    bool is_original_new_block = true;
+
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
@@ -121,7 +125,8 @@ bool InjectConditionalFunctionPass::Instrument() {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
             }
             auto& block_instructions = (*block_it)->instructions_;
-            NewBlock(**block_it);
+            NewBlock(**block_it, is_original_new_block);
+            is_original_new_block = true;  // Always reset once we start
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
@@ -163,6 +168,7 @@ bool InjectConditionalFunctionPass::Instrument() {
                 block_it = InjectFunction(function.get(), block_it, inst_it, injection_data, meta);
                 // will start searching again from newly split merge block
                 block_it--;
+                is_original_new_block = false;
                 break;
             }
         }

@@ -90,7 +90,7 @@ class InjectConditionalFunctionPass : public Pass {
                                         const InstructionMeta& meta) = 0;
 
     // Optional notification that a new block is being passed
-    virtual void NewBlock(const BasicBlock&){};
+    virtual void NewBlock(const BasicBlock&, bool) {};
 };
 
 }  // namespace spirv
