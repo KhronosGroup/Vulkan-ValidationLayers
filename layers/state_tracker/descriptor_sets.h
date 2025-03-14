@@ -761,6 +761,8 @@ class DescriptorBindingImpl : public DescriptorBinding {
         }
     }
 
+    // Most descriptor bindings will only have a single descriptor, so want to assume that
+    // If they don't have 1, we will resize on construction (and never resize again) to the exact size with small_vector
     small_vector<T, 1, uint32_t> descriptors;
 };
 
