@@ -87,7 +87,6 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
         skip |= ValidateShaderStageInputOutputLimits(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateShaderFloatControl(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateExecutionModes(module_state, *entry_point, stateless_data, loc);
-        skip |= ValidatePhysicalStorageBuffers(module_state, *entry_point, loc);
         skip |= ValidateConservativeRasterization(module_state, *entry_point, stateless_data, loc);
         if (enabled_features.transformFeedback) {
             skip |= ValidateTransformFeedbackEmitStreams(module_state, *entry_point, stateless_data, loc);
@@ -1302,26 +1301,6 @@ bool SpirvValidator::ValidateExecutionModes(const spirv::Module &module_state, c
                          "SPIR-V uses DerivativeGroupQuadsKHR in a %s shader, but meshAndTaskShaderDerivatives is not supported.",
                          string_VkShaderStageFlagBits(stage));
         }
-    }
-
-    return skip;
-}
-
-bool SpirvValidator::ValidatePhysicalStorageBuffers(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                                    const Location &loc) const {
-    bool skip = false;
-
-    // https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779
-    // This will likely not get resolved for awhile as it will be a LOT of testing and currently it "just works" for simple cases,
-    // but should warn users if trying to do this.
-    // We need to check at vkCreateShaderModule time as we have found some drivers will crash here (from our VVL tests).
-    if (entrypoint.has_physical_storage_buffer_interface) {
-        skip |= LogWarning(
-            "WARNING-PhysicalStorageBuffer-interface", module_state.handle(), loc,
-            "(SPIR-V Interface) Is trying to use PhysicalStorageBuffer as an Input/Output User-Defined Variable in (%s). This "
-            "has unresolved specification discussion and is undefined and caution should be taken. Advice is to use "
-            "int64 or uvec2 instead to pass the pointer betweeen stages.",
-            string_VkShaderStageFlagBits(entrypoint.stage));
     }
 
     return skip;

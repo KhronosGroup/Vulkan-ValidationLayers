@@ -1665,6 +1665,53 @@ TEST_F(NegativeShaderInterface, PackingInsideArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
+TEST_F(NegativeShaderInterface, PackingInsideArray2) {
+    TEST_DESCRIPTION(
+        "From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558, but then overturned in "
+        "https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4719");
+
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // GLSL use to allow alias location of different types
+    // https://github.com/KhronosGroup/glslang/pull/3438
+    //
+    // layout(location = 0, component = 1) out float[2] x;
+    // layout(location = 1, component = 0) out int y;
+    // layout(location = 1, component = 2) out int z;
+    char const *vsSource = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Vertex %main "main" %x %y %z
+               OpDecorate %x Component 1
+               OpDecorate %x Location 0
+               OpDecorate %y Component 0
+               OpDecorate %y Location 1
+               OpDecorate %z Component 2
+               OpDecorate %z Location 1
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+     %uint_2 = OpConstant %uint 2
+%_arr_float_uint_2 = OpTypeArray %float %uint_2
+%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
+          %x = OpVariable %_ptr_Output__arr_float_uint_2 Output
+        %int = OpTypeInt 32 1
+%_ptr_Output_int = OpTypePointer Output %int
+          %y = OpVariable %_ptr_Output_int Output
+          %z = OpVariable %_ptr_Output_int Output
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-OpEntryPoint-08722");
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    m_errorMonitor->VerifyFound();
+}
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
 TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
     TEST_DESCRIPTION(
@@ -2131,53 +2178,47 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirvMaintenance5Compute) {
     m_errorMonitor->VerifyFound();
 }
 
-// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBuffer) {
-    TEST_DESCRIPTION("Regression shaders from https://github.com/KhronosGroup/Vulkan-ValidationLayers/pull/5349");
+TEST_F(NegativeShaderInterface, PhysicalStorageBuffer) {
+    TEST_DESCRIPTION("Details found in https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    char const *vsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
+    char const *vs_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint Vertex %main "main" %outgoingPtr
+               OpDecorate %dataBuffer Block
+               OpMemberDecorate %dataBuffer 0 Offset 0
+               OpMemberDecorate %dataBuffer 1 Offset 4
+               OpDecorate %outgoingPtr Location 0
+               OpDecorate %outgoingPtr AliasedPointer
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_dataBuffer PhysicalStorageBuffer
+        %int = OpTypeInt 32 1
+ %dataBuffer = OpTypeStruct %int %int
+%_ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer PhysicalStorageBuffer %dataBuffer
+%_ptr_Output__ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer Output %_ptr_PhysicalStorageBuffer_dataBuffer
+%outgoingPtr = OpVariable %_ptr_Output__ptr_PhysicalStorageBuffer_dataBuffer Output
+       %uint = OpTypeInt 32 0
+     %v2uint = OpTypeVector %uint 2
+     %uint_2 = OpConstant %uint 2
+         %14 = OpConstantComposite %v2uint %uint_2 %uint_2
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %15 = OpBitcast %_ptr_PhysicalStorageBuffer_dataBuffer %14
+               OpStore %outgoingPtr %15
+               OpReturn
+               OpFunctionEnd
+    )";
 
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            highp int value1;
-            highp int value2;
-        };
-
-        layout(location=0) out dataBuffer outgoingPtr;
-        void main() {
-            outgoingPtr = dataBuffer(uvec2(2.0));
-        }
-    )glsl";
-
-    char const *fsSource = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            highp int value1;
-            highp int value2;
-        };
-
-        layout(location=0) in dataBuffer incomingPtr;
-        layout(location=0) out highp vec4 fragColor;
-        void main() {
-            highp ivec2 v = ivec2(incomingPtr.value1, incomingPtr.value2);
-            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
-        }
-    )glsl";
-
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-Input-09557");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2467,164 +2508,171 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndexShaderObject) {
     m_errorMonitor->VerifyFound();
 }
 
-// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferArray) {
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferArray) {
+    TEST_DESCRIPTION("Details found in https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
+    char const *vs_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint Vertex %main "main" %outgoingPtr
+               OpDecorate %dataBuffer Block
+               OpMemberDecorate %dataBuffer 0 Offset 0
+               OpMemberDecorate %dataBuffer 1 Offset 4
+               OpDecorate %outgoingPtr Location 0
+               OpDecorate %outgoingPtr AliasedPointer
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_dataBuffer PhysicalStorageBuffer
+        %int = OpTypeInt 32 1
+ %dataBuffer = OpTypeStruct %int %int
+%_ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer PhysicalStorageBuffer %dataBuffer
+       %uint = OpTypeInt 32 0
+     %uint_3 = OpConstant %uint 3
+%_arr__ptr_PhysicalStorageBuffer_dataBuffer_uint_3 = OpTypeArray %_ptr_PhysicalStorageBuffer_dataBuffer %uint_3
+%_ptr_Output__arr__ptr_PhysicalStorageBuffer_dataBuffer_uint_3 = OpTypePointer Output %_arr__ptr_PhysicalStorageBuffer_dataBuffer_uint_3
+%outgoingPtr = OpVariable %_ptr_Output__arr__ptr_PhysicalStorageBuffer_dataBuffer_uint_3 Output
+      %int_2 = OpConstant %int 2
+     %v2uint = OpTypeVector %uint 2
+     %uint_2 = OpConstant %uint 2
+         %17 = OpConstantComposite %v2uint %uint_2 %uint_2
+%_ptr_Output__ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer Output %_ptr_PhysicalStorageBuffer_dataBuffer
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %18 = OpBitcast %_ptr_PhysicalStorageBuffer_dataBuffer %17
+         %20 = OpAccessChain %_ptr_Output__ptr_PhysicalStorageBuffer_dataBuffer %outgoingPtr %int_2
+               OpStore %20 %18
+               OpReturn
+               OpFunctionEnd
+    )";
 
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            int value2;
-        };
-
-        layout(location=0) out dataBuffer outgoingPtr[3];
-        void main() {
-            outgoingPtr[2] = dataBuffer(uvec2(2.0));
-        }
-    )glsl";
-
-    char const *fs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference_uvec2 : enable
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            int value2;
-        };
-
-        layout(location=0) in dataBuffer incomingPtr[3];
-        layout(location=0) out vec4 fragColor;
-        void main() {
-            ivec2 v = ivec2(incomingPtr[1].value1, incomingPtr[2].value2);
-            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
-        }
-    )glsl";
-
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-Input-09557");
+    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferLinkedList) {
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferLinkedList) {
+    TEST_DESCRIPTION("Details found in https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
+    char const *fs_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint Fragment %main "main" %fragColor %incomingPtr
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %fragColor Location 0
+               OpDecorate %dataBuffer Block
+               OpMemberDecorate %dataBuffer 0 Offset 0
+               OpMemberDecorate %dataBuffer 1 Offset 16
+               OpDecorate %incomingPtr Location 0
+               OpDecorate %incomingPtr AliasedPointer
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+  %fragColor = OpVariable %_ptr_Output_v4float Output
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_dataBuffer PhysicalStorageBuffer
+ %dataBuffer = OpTypeStruct %v4float %_ptr_PhysicalStorageBuffer_dataBuffer
+%_ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer PhysicalStorageBuffer %dataBuffer
+%_ptr_Input__ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer Input %_ptr_PhysicalStorageBuffer_dataBuffer
+%incomingPtr = OpVariable %_ptr_Input__ptr_PhysicalStorageBuffer_dataBuffer Input
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PhysicalStorageBuffer_v4float = OpTypePointer PhysicalStorageBuffer %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %14 = OpLoad %_ptr_PhysicalStorageBuffer_dataBuffer %incomingPtr
+         %18 = OpAccessChain %_ptr_PhysicalStorageBuffer_v4float %14 %int_0
+         %19 = OpLoad %v4float %18 Aligned 16
+               OpStore %fragColor %19
+               OpReturn
+               OpFunctionEnd
+    )";
 
-        layout(buffer_reference) buffer dataBuffer;
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            dataBuffer next;
-        };
-
-        layout(location=0) out dataBuffer outgoingPtr;
-        void main() {
-            outgoingPtr.next.value1 = 3;
-        }
-    )glsl";
-
-    char const *fs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference) buffer dataBuffer;
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            dataBuffer next;
-        };
-
-        layout(location=0) in dataBuffer incomingPtr;
-        layout(location=0) out vec4 fragColor;
-        void main() {
-            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.value1);
-            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
-        }
-    )glsl";
-
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-Input-09557");
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
 
-// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
-TEST_F(NegativeShaderInterface, DISABLED_PhysicalStorageBufferNested) {
+TEST_F(NegativeShaderInterface, PhysicalStorageBufferNested) {
+    TEST_DESCRIPTION("Details found in https://gitlab.khronos.org/spirv/SPIR-V/-/issues/779");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(Init())
     InitRenderTarget();
 
-    char const *vs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
+    char const *fs_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint Fragment %main "main" %fragColor %incomingPtr
+               OpExecutionMode %main OriginUpperLeft
+               OpDecorate %fragColor Location 0
+               OpDecorate %dataBuffer Block
+               OpMemberDecorate %dataBuffer 0 Offset 0
+               OpDecorate %t1 Block
+               OpMemberDecorate %t1 0 NonWritable
+               OpMemberDecorate %t1 0 Offset 0
+               OpDecorate %_runtimearr_v4float ArrayStride 16
+               OpDecorate %t2 Block
+               OpMemberDecorate %t2 0 NonWritable
+               OpMemberDecorate %t2 0 Offset 0
+               OpDecorate %incomingPtr Location 0
+               OpDecorate %incomingPtr AliasedPointer
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Output_v4float = OpTypePointer Output %v4float
+  %fragColor = OpVariable %_ptr_Output_v4float Output
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_dataBuffer PhysicalStorageBuffer
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_t1 PhysicalStorageBuffer
+ %dataBuffer = OpTypeStruct %_ptr_PhysicalStorageBuffer_t1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_t2 PhysicalStorageBuffer
+         %t1 = OpTypeStruct %_ptr_PhysicalStorageBuffer_t2
+%_runtimearr_v4float = OpTypeRuntimeArray %v4float
+         %t2 = OpTypeStruct %_runtimearr_v4float
+%_ptr_PhysicalStorageBuffer_t2 = OpTypePointer PhysicalStorageBuffer %t2
+%_ptr_PhysicalStorageBuffer_t1 = OpTypePointer PhysicalStorageBuffer %t1
+%_ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer PhysicalStorageBuffer %dataBuffer
+%_ptr_Input__ptr_PhysicalStorageBuffer_dataBuffer = OpTypePointer Input %_ptr_PhysicalStorageBuffer_dataBuffer
+%incomingPtr = OpVariable %_ptr_Input__ptr_PhysicalStorageBuffer_dataBuffer Input
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_t1 = OpTypePointer PhysicalStorageBuffer %_ptr_PhysicalStorageBuffer_t1
+%_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_t2 = OpTypePointer PhysicalStorageBuffer %_ptr_PhysicalStorageBuffer_t2
+      %int_2 = OpConstant %int 2
+%_ptr_PhysicalStorageBuffer_v4float = OpTypePointer PhysicalStorageBuffer %v4float
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %19 = OpLoad %_ptr_PhysicalStorageBuffer_dataBuffer %incomingPtr
+         %23 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_t1 %19 %int_0
+         %24 = OpLoad %_ptr_PhysicalStorageBuffer_t1 %23 Aligned 4
+         %26 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_t2 %24 %int_0
+         %27 = OpLoad %_ptr_PhysicalStorageBuffer_t2 %26 Aligned 4
+         %30 = OpAccessChain %_ptr_PhysicalStorageBuffer_v4float %27 %int_0 %int_2
+         %31 = OpLoad %v4float %30 Aligned 4
+               OpStore %fragColor %31
+               OpReturn
+               OpFunctionEnd
+    )";
 
-        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
-            int values[];
-        };
-
-        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
-            t2 c;
-        };
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            t1 next;
-        };
-
-        layout(location=0) out dataBuffer outgoingPtr;
-        void main() {
-            outgoingPtr.next.c.values[3] = 3;
-        }
-    )glsl";
-
-    char const *fs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t2 {
-            int values[];
-        };
-
-        layout(buffer_reference, buffer_reference_align = 4) readonly buffer t1 {
-            t2 c;
-        };
-
-        layout(set=0, binding=0) layout(buffer_reference, std430) buffer dataBuffer {
-            int value1;
-            t1 next;
-        };
-
-        layout(location=0) in dataBuffer incomingPtr;
-        layout(location=0) out vec4 fragColor;
-        void main() {
-            ivec2 v = ivec2(incomingPtr.value1, incomingPtr.next.c.values[2]);
-            fragColor = vec4(float(v.x)/255.0,float(v.y)/255.0, float(v.x+v.y)/255.0,1.0);
-        }
-    )glsl";
-
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj vs(this, vs_source, VK_SHADER_STAGE_VERTEX_BIT);
-    m_errorMonitor->VerifyFound();
-    m_errorMonitor->SetDesiredWarning("WARNING-PhysicalStorageBuffer-interface");
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    m_errorMonitor->SetDesiredWarning("VUID-StandaloneSpirv-Input-09557");
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

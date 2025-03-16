@@ -48,7 +48,6 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
                 layout(location = 6, component = 3) out float f;
 
                 layout(location = 7, component = 0) out float ar1;
-                layout(location = 7, component = 1) out float ar2[2];
                 layout(location = 7, component = 3) out float ar3;
 
                 void main() {
@@ -66,8 +65,6 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
                         stp = vec3(1.0f);
                         q = 0.1f;
                         ar1 = 1.0f;
-                        ar2[0] = 0.5f;
-                        ar2[1] = 0.75f;
                         ar3 = 1.0f;
                 }
             )glsl";
@@ -103,8 +100,6 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
                 layout(location = 6, component = 0) in vec4 cdef;
 
                 layout(location = 7, component = 0) in float ar1;
-                layout(location = 7, component = 1) in float ar2;
-                layout(location = 8, component = 1) in float ar3;
                 layout(location = 7, component = 3) in float ar4;
 
                 layout (location = 0) out vec4 color;
@@ -114,7 +109,7 @@ TEST_F(PositiveShaderInterface, InputAndOutputComponents) {
                             vec4(r1, g1, 1.0f, a1) *
                             vec4(inBlock.zero_red, inBlock.zero_green, inBlock.zero_blue, inBlock.zero_alpha) *
                             vec4(inBlock.one_red, inBlock.one_green, inBlock.one_blue, inBlock.one_alpha) *
-                            vec4(xy, zw) * st * cdef * vec4(ar1, ar2, ar3, ar4);
+                            vec4(xy, zw) * st * cdef * vec4(ar1, ar1, ar1, ar4);
                 }
             )glsl";
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1331,94 +1326,6 @@ TEST_F(PositiveShaderInterface, MultidimensionalArray64bit) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
 
-TEST_F(PositiveShaderInterface, PackingInsideArray) {
-    TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
-
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    // GLSL use to allow alias location of different types
-    // https://github.com/KhronosGroup/glslang/pull/3438
-    //
-    // layout(location = 0, component = 1) out float[2] x;
-    // layout(location = 1, component = 0) out int y;
-    // layout(location = 1, component = 2) out int z;
-    char const *vsSource = R"(
-               OpCapability Shader
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint Vertex %main "main" %x %y %z
-               OpDecorate %x Component 1
-               OpDecorate %x Location 0
-               OpDecorate %y Component 0
-               OpDecorate %y Location 1
-               OpDecorate %z Component 2
-               OpDecorate %z Location 1
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-      %float = OpTypeFloat 32
-       %uint = OpTypeInt 32 0
-     %uint_2 = OpConstant %uint 2
-%_arr_float_uint_2 = OpTypeArray %float %uint_2
-%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
-          %x = OpVariable %_ptr_Output__arr_float_uint_2 Output
-        %int = OpTypeInt 32 1
-%_ptr_Output_int = OpTypePointer Output %int
-          %y = OpVariable %_ptr_Output_int Output
-          %z = OpVariable %_ptr_Output_int Output
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    // layout(location = 0, component = 1) in float x1;
-    // layout(location = 1, component = 0) flat in int y;
-    // layout(location = 1, component = 1) in float x2;
-    // layout(location = 1, component = 2) flat in int z;
-    // layout(location=0) out float color;
-    char const *fsSource = R"(
-               OpCapability Shader
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint Fragment %main "main" %x1 %y %x2 %z %color
-               OpExecutionMode %main OriginUpperLeft
-               OpDecorate %x1 Component 1
-               OpDecorate %x1 Location 0
-               OpDecorate %y Flat
-               OpDecorate %y Component 0
-               OpDecorate %y Location 1
-               OpDecorate %x2 Component 1
-               OpDecorate %x2 Location 1
-               OpDecorate %z Flat
-               OpDecorate %z Component 2
-               OpDecorate %z Location 1
-               OpDecorate %color Location 0
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-      %float = OpTypeFloat 32
-%_ptr_Input_float = OpTypePointer Input %float
-         %x1 = OpVariable %_ptr_Input_float Input
-        %int = OpTypeInt 32 1
-%_ptr_Input_int = OpTypePointer Input %int
-          %y = OpVariable %_ptr_Input_int Input
-         %x2 = OpVariable %_ptr_Input_float Input
-          %z = OpVariable %_ptr_Input_int Input
-%_ptr_Output_float = OpTypePointer Output %float
-      %color = OpVariable %_ptr_Output_float Output
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-
-    const auto set_info = [&](CreatePipelineHelper &helper) {
-        helper.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    };
-    CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
-}
-
 TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7923");
     RETURN_IF_SKIP(Init());
@@ -1517,41 +1424,6 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
-}
-
-// Re-enable when https://github.com/KhronosGroup/SPIRV-Tools/pull/6000 is merged
-TEST_F(PositiveShaderInterface, DISABLED_PhysicalStorageBufferGlslang3) {
-    TEST_DESCRIPTION(
-        "Taken from glslang spv.bufferhandle3.frag test - just creating the shader is valid, interface is tested elsewhere");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredExtensions(VK_EXT_SCALAR_BLOCK_LAYOUT_EXTENSION_NAME);
-    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
-    RETURN_IF_SKIP(Init());
-
-    char const *fs_source = R"glsl(
-        #version 450
-        #extension GL_EXT_buffer_reference : enable
-
-        layout(buffer_reference, std430) buffer t3 {
-            int h;
-        };
-
-        layout(set = 1, binding = 2, buffer_reference, std430) buffer t4 {
-            layout(offset = 0)  int j;
-            t3 k;
-        } x;
-
-        layout(set = 0, binding = 0, std430) buffer t5 {
-            t4 m;
-        } s5;
-
-        layout(location = 0) flat in t4 k;
-
-        t4 foo(t4 y) { return y; }
-        void main() {}
-    )glsl";
-
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 }
 
 TEST_F(PositiveShaderInterface, FragmentOutputDynamicRenderingUnusedAttachments) {
