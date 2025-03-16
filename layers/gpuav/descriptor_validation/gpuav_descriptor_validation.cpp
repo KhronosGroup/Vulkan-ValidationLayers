@@ -45,23 +45,13 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
         return;
     }
     const VulkanTypedHandle &shader_handle = last_bound.pipeline_state->Handle();
-    const auto &active_slot = last_bound.pipeline_state->active_slots;
 
     const uint32_t descriptor_command_binding_index = (uint32_t)cb_state.descriptor_command_bindings.size() - 1;
     auto &action_command_snapshot = cb_state.action_command_snapshots.emplace_back(descriptor_command_binding_index, shader_handle);
+    action_command_snapshot.entry_points.reserve(last_bound.pipeline_state->stage_states.size());
 
-    const size_t number_of_sets = last_bound.ds_slots.size();
-    action_command_snapshot.binding_req_maps.reserve(number_of_sets);
-
-    for (uint32_t i = 0; i < number_of_sets; i++) {
-        if (!last_bound.ds_slots[i].ds_state) {
-            continue;  // can have gaps in descriptor sets
-        }
-
-        auto slot = active_slot.find(i);
-        if (slot != active_slot.end()) {
-            action_command_snapshot.binding_req_maps.emplace_back(&slot->second);
-        }
+    for (const auto &stage : last_bound.pipeline_state->stage_states) {
+        action_command_snapshot.entry_points.emplace_back(stage.entrypoint.get());
     }
 }
 
@@ -218,13 +208,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
         // For each descriptor set ...
         for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
             auto &bound_descriptor_set = descriptor_command_binding.bound_descriptor_sets[set_index];
-            if (set_index >= action_command_snapshot.binding_req_maps.size()) {
-                // This can occure if binding 2 sets, but then a pipeline layout only uses the first set, so the remaining sets are
-                // now not valid to use
-                break;
-            }
-            const BindingVariableMap *binding_req_map = action_command_snapshot.binding_req_maps[set_index];
-            if (!binding_req_map) continue;
+
             if (validated_desc_sets.count(bound_descriptor_set->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
@@ -249,33 +233,18 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
                                              action_command_snapshot.shader_handle, draw_loc);
 
-            auto descriptor_accesses = bound_descriptor_set->GetDescriptorAccesses(loc, set_index);
+            std::vector<DescriptorAccess> descriptor_accesses =
+                bound_descriptor_set->GetDescriptorAccesses(loc, set_index, action_command_snapshot.entry_points);
             for (const auto &descriptor_access : descriptor_accesses) {
                 auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
                 ASSERT_AND_CONTINUE(descriptor_binding);
 
-                // There is a chance two descriptor bindings are aliased to each other.
-                //   layout(set = 0, binding = 2) uniform sampler3D tex3d[];
-                //   layout(set = 0, binding = 2) uniform sampler2D tex[];
-                // This is where we can use the OpVariable ID provided to map which aliased variable is being used
-                const ::spirv::ResourceInterfaceVariable *resource_variable = nullptr;
-                for (auto iter = binding_req_map->find(descriptor_access.binding);
-                     iter != binding_req_map->end() && iter->first == descriptor_access.binding; ++iter) {
-                    if (iter->second.variable->id == descriptor_access.variable_id) {
-                        resource_variable = iter->second.variable;
-                        break;
-                    }
-                }
-
-                // This can occur if 2 shaders have different OpVariable, but the pipelines are sharing the same descriptor set
-                if (!resource_variable) continue;
-
                 // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
-                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, *resource_variable)) {
+                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, descriptor_access.resource_variable)) {
                     continue;
                 }
 
-                context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
+                context.ValidateBindingDynamic(descriptor_access.resource_variable, *descriptor_binding, descriptor_access.index);
             }
         }
     }

@@ -19,6 +19,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <vector>
 #include "state_tracker/descriptor_sets.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/spirv/interface.h"
@@ -30,7 +31,7 @@ class Validator;
 struct DescriptorAccess {
     uint32_t binding;      // binding number in the descriptor set
     uint32_t index;        // index into descriptor array
-    uint32_t variable_id;  // OpVariable of descriptor accessed;
+    const ::spirv::ResourceInterfaceVariable &resource_variable;
 };
 
 class DescriptorSet : public vvl::DescriptorSet {
@@ -47,7 +48,8 @@ class DescriptorSet : public vvl::DescriptorSet {
     bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
     bool CanPostProcess() const;
 
-    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const;
+    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set,
+                                                        const std::vector<const ::spirv::EntryPoint *> &entry_points) const;
 
   private:
     void BuildBindingLayouts();

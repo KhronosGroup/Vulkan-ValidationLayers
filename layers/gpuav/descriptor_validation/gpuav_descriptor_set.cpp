@@ -22,6 +22,7 @@
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/shader_module.h"
 
 #include "profiling/profiling.h"
 
@@ -306,7 +307,8 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 
 // cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
 // where accessed
-std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Location &loc, uint32_t shader_set) const {
+std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(
+    const Location &loc, uint32_t shader_set, const std::vector<const ::spirv::EntryPoint *> &entry_points) const {
     VVL_ZoneScoped;
     std::vector<DescriptorAccess> descriptor_accesses;
     if (post_process_buffer_.IsDestroyed()) {
@@ -322,7 +324,14 @@ std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Locatio
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
             if (slot.descriptor_set & glsl::kDescriptorSetAccessedMask) {
                 if ((slot.descriptor_set & glsl::kDescriptorSetSelectionMask) == shader_set) {
-                    descriptor_accesses.emplace_back(DescriptorAccess{binding, descriptor_i, slot.variable_id});
+                    // TODO - Currently we don't save the shader stage in the shader so we rely on resource OpVariable IDs not being
+                    // the same across shader stages
+                    for (const ::spirv::EntryPoint *entry_point : entry_points) {
+                        auto variable_it = entry_point->resource_interface_variable_map.find(slot.variable_id);
+                        if (variable_it == entry_point->resource_interface_variable_map.end()) continue;
+                        descriptor_accesses.emplace_back(DescriptorAccess{binding, descriptor_i, *variable_it->second});
+                        break;  // Only need to find a single entry point
+                    }
                 }
             }
         }

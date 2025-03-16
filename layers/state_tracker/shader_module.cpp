@@ -794,6 +794,11 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
       resource_interface_variables(GetResourceInterfaceVariables(module_state, *this, image_access_map, access_chain_map,
                                                                  variable_access_map, debug_name_map)),
       stage_interface_variables(GetStageInterfaceVariables(module_state, *this, variable_access_map, debug_name_map)) {
+    // Tried to just create this map in GetResourceInterfaceVariables() but ran into errors because the function is static
+    for (const auto& variable : resource_interface_variables) {
+        resource_interface_variable_map[variable.id] = &variable;
+    }
+
     // After all variables are made, can get references from them
     // Also can set per-Entrypoint values now
     for (const auto& variable : stage_interface_variables) {
