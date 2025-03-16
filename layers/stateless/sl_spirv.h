@@ -84,8 +84,6 @@ class SpirvValidator : public Logger {
                                     const spirv::StatelessData& stateless_data, const Location& loc) const;
     bool ValidateExecutionModes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                 const spirv::StatelessData& stateless_data, const Location& loc) const;
-    bool ValidatePhysicalStorageBuffers(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                        const Location& loc) const;
     bool ValidateConservativeRasterization(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const spirv::StatelessData& stateless_data, const Location& loc) const;
 
