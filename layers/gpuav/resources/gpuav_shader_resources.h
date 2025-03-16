@@ -49,7 +49,9 @@ struct ActionCommandSnapshot {
     const uint32_t descriptor_command_binding_index;
 
     // This is information from the pipeline/shaderObject we want to save
-    std::vector<const BindingVariableMap *> binding_req_maps;
+    // For pipeline, we get all entry points inside of it
+    // For ShaderObject, we get the entryPoint for each stage bound
+    std::vector<const ::spirv::EntryPoint*> entry_points;
 
     const VulkanTypedHandle& shader_handle;  // VkPipeline or VkShaderObject used
 
