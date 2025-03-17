@@ -201,7 +201,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
             return;
         }
 
-        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer.GetMappedPtr(loc);
+        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer.GetMappedPtr();
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;

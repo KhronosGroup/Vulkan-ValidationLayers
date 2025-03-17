@@ -307,7 +307,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             return;
         }
 
-        auto indices_ptr = (uint32_t *)indices_buffer_.GetMappedPtr(loc);
+        auto indices_ptr = (uint32_t *)indices_buffer_.GetMappedPtr();
 
         for (uint32_t i = 0; i < buffer_info.size / sizeof(uint32_t); ++i) {
             indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));

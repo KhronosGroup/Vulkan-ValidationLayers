@@ -219,7 +219,7 @@ VkDeviceAddress DescriptorSet::GetTypeAddress(Validator &gpuav, const Location &
         return 0;
     }
 
-    auto data = (glsl::DescriptorState *)input_buffer_.GetMappedPtr(loc);
+    auto data = (glsl::DescriptorState *)input_buffer_.GetMappedPtr();
 
     uint32_t index = 0;
     for (uint32_t i = 0; i < bindings_.size(); i++) {
@@ -296,7 +296,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 
     VVL_TracyPlot("Post process buffer size (bytes)", int64_t(buffer_info.size));
 
-    void *data = post_process_buffer_.GetMappedPtr(loc);
+    void *data = post_process_buffer_.GetMappedPtr();
     memset(data, 0, static_cast<size_t>(buffer_info.size));
 
     post_process_buffer_.FlushAllocation(loc);
@@ -313,7 +313,7 @@ std::vector<DescriptorAccess> DescriptorSet::GetDescriptorAccesses(const Locatio
         return descriptor_accesses;
     }
 
-    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr(loc);
+    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr();
     post_process_buffer_.InvalidateAllocation(loc);
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
@@ -365,7 +365,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
         return;
     }
 
-    gpu_heap_state_ = (uint32_t *)buffer_.GetMappedPtr(loc);
+    gpu_heap_state_ = (uint32_t *)buffer_.GetMappedPtr();
     memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
 }
 
