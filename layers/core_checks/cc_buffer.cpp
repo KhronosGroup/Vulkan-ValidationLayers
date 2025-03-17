@@ -391,10 +391,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
-                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02750", objlist, create_info_loc,
-                                 "If buffer was created with usage containing "
-                                 "VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, "
-                                 "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02750", objlist, create_info_loc.dot(Field::buffer),
+                                 "was created with VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
                                  ") must be a multiple of the lesser of "
                                  "storageTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
                                  ") or, if storageTexelBufferOffsetSingleTexelAlignment "
@@ -412,10 +410,8 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
-                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02751", objlist, create_info_loc,
-                                 "If buffer was created with usage containing "
-                                 "VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, "
-                                 "VkBufferViewCreateInfo offset (%" PRIuLEAST64
+                skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02751", objlist, create_info_loc.dot(Field::buffer),
+                                 "was created with VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
                                  ") must be a multiple of the lesser of "
                                  "uniformTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
                                  ") or, if uniformTexelBufferOffsetSingleTexelAlignment "

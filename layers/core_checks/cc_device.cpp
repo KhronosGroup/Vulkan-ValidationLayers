@@ -286,14 +286,14 @@ bool core::Instance::ValidateDeviceQueueCreateInfos(const vvl::PhysicalDevice &p
                     extensions.vk_khr_get_physical_device_properties2 ? " or vkGetPhysicalDeviceQueueFamilyProperties2[KHR]" : "";
                 const std::string count_note =
                     queue_family_has_props
-                        ? "i.e. is not less than or equal to " + std::to_string(requested_queue_family_props.queueCount)
+                        ? "needs to be less than or equal to " + std::to_string(requested_queue_family_props.queueCount)
                         : "the pQueueFamilyProperties[" + std::to_string(requested_queue_family) + "] was never obtained";
 
                 skip |= LogError(
                     "VUID-VkDeviceQueueCreateInfo-queueCount-00382", pd_state.Handle(), info_loc.dot(Field::queueCount),
                     "(%" PRIu32
                     ") is not less than or equal to available queue count for this pCreateInfo->pQueueCreateInfos[%" PRIu32
-                    "].queueFamilyIndex} (%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
+                    "].queueFamilyIndex (%" PRIu32 ") obtained previously from vkGetPhysicalDeviceQueueFamilyProperties%s (%s).",
                     requested_queue_count, i, requested_queue_family, conditional_ext_cmd, count_note.c_str());
             } else {
                 if (requested_queue_family >= queue_counts.size()) {
@@ -435,10 +435,9 @@ bool CoreChecks::PreCallValidateGetDeviceQueue(VkDevice device, uint32_t queueFa
 
         if (device_queue_info.queue_count <= queueIndex) {
             skip |= LogError("VUID-vkGetDeviceQueue-queueIndex-00385", device, error_obj.location.dot(Field::queueIndex),
-                             "(%" PRIu32 ") is not less than the number of queues requested from queueFamilyIndex (%" PRIu32
-                             ") when the device was created vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32
-                             "] (i.e. is not less than %" PRIu32 ").",
-                             queueIndex, queueFamilyIndex, device_queue_info.index, device_queue_info.queue_count);
+                             "(%" PRIu32 ") is not less than the %" PRIu32 " queues requested from queueFamilyIndex (%" PRIu32
+                             ") when the device was created at vkCreateDevice::pCreateInfo->pQueueCreateInfos[%" PRIu32 "].",
+                             queueIndex, device_queue_info.queue_count, queueFamilyIndex, device_queue_info.index);
         }
     }
     return skip;

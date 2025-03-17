@@ -1615,7 +1615,7 @@ bool CoreChecks::ValidateImageSubresourceRange(const uint32_t image_mip_count, c
                 skip |= LogError(GetSubresourceRangeVUID(subresource_loc, vvl::SubresourceRangeError::MipCount_01724), objlist,
                                  subresource_loc.dot(Field::baseMipLevel),
                                  "(%" PRIu32 ") + levelCount (%" PRIu32 ") is %" PRIu64
-                                 ", which is greater than the mip level count of the image (i.e. greater than %" PRIu32 ").",
+                                 ", which is greater than the image mipLevels (%" PRIu32 ").",
                                  subresourceRange.baseMipLevel, subresourceRange.levelCount, necessary_mip_count, image_mip_count);
             }
         }

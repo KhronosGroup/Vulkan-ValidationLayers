@@ -92,8 +92,8 @@ bool Device::ValidatePushConstantRange(uint32_t push_constant_range_count, const
 
         // size needs to be non-zero and a multiple of 4.
         if (size == 0) {
-            skip |= LogError("VUID-VkPushConstantRange-size-00296", device, pc_loc.dot(Field::size),
-                             "(%" PRIu32 ") is not greater than zero.", size);
+            skip |=
+                LogError("VUID-VkPushConstantRange-size-00296", device, pc_loc.dot(Field::size), "(%" PRIu32 ") is zero.", size);
         }
         if (size & 0x3) {
             skip |= LogError("VUID-VkPushConstantRange-size-00297", device, pc_loc.dot(Field::size),
