@@ -2717,6 +2717,39 @@ TEST_F(NegativeDynamicState, ColorWriteNotSet) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeDynamicState, ColorWriteNotSet2) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116");
+
+    AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::colorWriteEnable);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget(2);
+
+    VkPipelineColorBlendAttachmentState color_blend[2] = {};
+    color_blend[0] = DefaultColorBlendAttachmentState();
+    color_blend[1] = DefaultColorBlendAttachmentState();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.cb_ci_.attachmentCount = 2;
+    pipe.cb_ci_.pAttachments = color_blend;
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    VkBool32 color_write_enable[] = {VK_TRUE, VK_FALSE};
+    vk::CmdSetColorWriteEnableEXT(m_command_buffer.handle(), 2, color_write_enable);
+    // This second call invalidates the previous call
+    vk::CmdSetColorWriteEnableEXT(m_command_buffer.handle(), 1, color_write_enable);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-attachmentCount-07750");
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicState, ColorWriteInvalidateStaticPipeline) {
     TEST_DESCRIPTION("Set the dynamic state, but then invalidate it with a static state pipeline");
     AddRequiredExtensions(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
