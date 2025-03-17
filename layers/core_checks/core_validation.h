@@ -1386,9 +1386,6 @@ class CoreChecks : public vvl::Device {
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
                                                vvl::AllocateDescriptorSetsData& ads_state) const override;
-    void PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
-                                              VkDescriptorSet* pDescriptorSets, const RecordObject& record_obj,
-                                              vvl::AllocateDescriptorSetsData& ads_state) override;
     bool PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
