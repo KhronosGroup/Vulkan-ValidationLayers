@@ -1381,7 +1381,8 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
 
 namespace rt {
 
-Pipeline::Pipeline(VkLayerTest &test, vkt::Device *device) : test_(test), device_(device) {}
+Pipeline::Pipeline(VkLayerTest &test, vkt::Device *device)
+    : test_(test), device_(device), pipeline_layout_ci_(vku::InitStructHelper()) {}
 
 Pipeline::~Pipeline() {
     if (deferred_op_ != VK_NULL_HANDLE) {
@@ -1411,6 +1412,11 @@ void Pipeline::AddBinding(VkDescriptorType descriptor_type, uint32_t binding, ui
 }
 
 void Pipeline::CreateDescriptorSet() { desc_set_ = std::make_unique<OneOffDescriptorSet>(device_, bindings_); }
+
+void Pipeline::SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout *set_layouts) {
+    pipeline_layout_ci_.setLayoutCount = set_layout_count;
+    pipeline_layout_ci_.pSetLayouts = set_layouts;
+}
 
 void Pipeline::SetPushConstantRangeSize(uint32_t byte_size) { push_constant_range_size_ = byte_size; }
 
@@ -1466,16 +1472,15 @@ void Pipeline::BuildPipeline() {
 
     // Create pipeline layout
     if (!pipeline_layout_.initialized()) {
-        VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
         if (push_constant_range_size_ > 0) {
-            pipeline_layout_ci.pushConstantRangeCount = 1;
-            pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
+            pipeline_layout_ci_.pushConstantRangeCount = 1;
+            pipeline_layout_ci_.pPushConstantRanges = &push_constant_range;
         }
         if (desc_set_) {
-            pipeline_layout_ci.setLayoutCount = 1;
-            pipeline_layout_ci.pSetLayouts = &desc_set_->layout_.handle();
+            pipeline_layout_ci_.setLayoutCount = 1;
+            pipeline_layout_ci_.pSetLayouts = &desc_set_->layout_.handle();
         }
-        pipeline_layout_.init(*device_, pipeline_layout_ci);
+        pipeline_layout_.init(*device_, pipeline_layout_ci_);
     }
 
     // Assemble shaders information (stages and groups)

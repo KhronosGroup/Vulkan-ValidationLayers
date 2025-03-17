@@ -1377,3 +1377,126 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
     (void)stack_size;
     m_errorMonitor->VerifyFound();
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9672
+TEST_F(NegativeRayTracingPipeline, RaygenOneMissShaderOneClosestHitShader) {
+    TEST_DESCRIPTION(
+        "Having a null descriptor set layout in the ray tracing pipeline layout should not cause a null pointer dereferencing");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingPipeline);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::rt::Pipeline pipeline(*this, m_device);
+
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 1) buffer DbgBuffer1 {
+        uint debug_buffer_1[];
+        };
+        layout(binding = 2, set = 2) buffer DbgBuffer2 {
+        uint debug_buffer_2[];
+        };
+        layout(binding = 3, set = 3) buffer DbgBuffer3 {
+        uint debug_buffer_3[];
+        };
+
+        layout(location = 0) rayPayloadEXT vec3 hit;
+
+        void main() {
+        uint last_1 = atomicAdd(debug_buffer_1[0], 1);
+        uint last_2 = atomicAdd(debug_buffer_2[0], 1);
+        uint last_3 = atomicAdd(debug_buffer_3[0], 1);
+
+        vec3 ray_origin = vec3(0,0,-50);
+        vec3 ray_direction = vec3(0,0,1);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+        // Will miss
+        ray_origin = vec3(0,0,-50);
+        ray_direction = vec3(0,0,-1);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+        // Will miss
+        ray_origin = vec3(0,0,50);
+        ray_direction = vec3(0,0,1);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+        ray_origin = vec3(0,0,50);
+        ray_direction = vec3(0,0,-1);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+
+        // Will miss
+        ray_origin = vec3(0,0,0);
+        ray_direction = vec3(0,0,1);
+        traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, ray_origin, 0.01, ray_direction, 1000.0, 0);
+        }
+        )glsl";
+    pipeline.SetGlslRayGenShader(ray_gen);
+
+    const char* miss = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 1) buffer DbgBuffer {
+        uint debug_buffer[];
+        };
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+
+        void main() {
+        uint last = atomicAdd(debug_buffer[1], 1);
+        hit = vec3(0.1, 0.2, 0.3);
+        }
+        )glsl";
+    pipeline.AddGlslMissShader(miss);
+
+    const char* closest_hit = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(binding = 1, set = 1) buffer DbgBuffer1 {
+        uint debug_buffer_1[];
+        };
+        layout(binding = 4, set = 4) buffer DbgBuffer4 {
+        uint debug_buffer_4[];
+        };
+
+        layout(location = 0) rayPayloadInEXT vec3 hit;
+        hitAttributeEXT vec2 baryCoord;
+
+        void main() {
+        uint last_1 = atomicAdd(debug_buffer_1[2], 1);
+        uint last_4 = atomicAdd(debug_buffer_4[2], 1);
+        const vec3 barycentricCoords = vec3(1.0f - baryCoord.x - baryCoord.y, baryCoord.x, baryCoord.y);
+        hit = barycentricCoords;
+        }
+        )glsl";
+    pipeline.AddGlslClosestHitShader(closest_hit);
+
+    OneOffDescriptorSet desc_set_0(m_device, {{0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet desc_set_1(m_device, {{1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet desc_set_2(m_device, {{2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet desc_set_3(m_device, {{3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet desc_set_4(m_device, {{4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    std::array desc_sets = {desc_set_0.layout_.handle(), desc_set_1.layout_.handle(), desc_set_2.layout_.handle(),
+                            desc_set_3.layout_.handle(), VkDescriptorSetLayout(VK_NULL_HANDLE)};
+
+    pipeline.SetPipelineSetLayouts(size32(desc_sets), desc_sets.data());
+
+    m_errorMonitor->SetDesiredError("VUID-VkRayTracingPipelineCreateInfoKHR-layout-07988");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
+    pipeline.Build();
+    m_errorMonitor->VerifyFound();
+}
