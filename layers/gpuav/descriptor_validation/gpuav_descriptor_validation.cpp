@@ -91,8 +91,8 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBuffer &cb_state
         return;
     }
 
+    descriptor_command_binding.post_process_ssbo_buffer.Clear();
     auto ssbo_buffer_ptr = (glsl::PostProcessSSBO *)descriptor_command_binding.post_process_ssbo_buffer.GetMappedPtr();
-    memset(ssbo_buffer_ptr, 0, sizeof(glsl::PostProcessSSBO));
 
     cb_state.post_process_buffer_lut = descriptor_command_binding.post_process_ssbo_buffer.VkHandle();
 

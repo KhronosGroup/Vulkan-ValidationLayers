@@ -112,7 +112,6 @@ class CommandBuffer : public vvl::CommandBuffer {
 
     const vko::Buffer &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
-    void ClearCmdErrorsCountsBuffer(const Location &loc) const;
     void IncrementCommandCount(VkPipelineBindPoint bind_point);
 
     std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;

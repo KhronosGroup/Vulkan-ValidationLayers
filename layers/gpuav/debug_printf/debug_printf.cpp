@@ -396,8 +396,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBuffer &cb_state, VkD
     }
 
     // Clear the output block to zeros so that only printf values from the gpu will be present
-    auto printf_output_ptr = (uint32_t *)debug_printf_output_buffer.GetMappedPtr();
-    memset(printf_output_ptr, 0, gpuav.gpuav_settings.debug_printf_buffer_size);
+    debug_printf_output_buffer.Clear();
 
     VkDescriptorBufferInfo debug_printf_desc_buffer_info = {};
     debug_printf_desc_buffer_info.range = gpuav.gpuav_settings.debug_printf_buffer_size;
