@@ -148,7 +148,7 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
         return false;
     }
 
-    auto output_buffer_ptr = (uint32_t *)error_output_buffer.GetMappedPtr(loc);
+    auto output_buffer_ptr = (uint32_t *)error_output_buffer.GetMappedPtr();
 
     memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
     if (gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
@@ -310,7 +310,7 @@ bool CommandBuffer::UpdateBdaRangesBuffer(const Location &loc) {
 
     // Update buffer device address table
     // ---
-    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.GetMappedPtr(loc);
+    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.GetMappedPtr();
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
@@ -427,7 +427,7 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
 }
 
 void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
-    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.GetMappedPtr(loc);
+    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.GetMappedPtr();
     std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
 }
 
@@ -487,7 +487,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
 
     // For the given command buffer, map its debug data buffers and read their contents for analysis.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
-        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.GetMappedPtr(loc);
+        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.GetMappedPtr();
         debug_printf::AnalyzeAndGenerateMessage(*gpuav, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
     }
 
@@ -500,7 +500,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
 
     bool skip = false;
     {
-        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_.GetMappedPtr(loc);
+        auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_.GetMappedPtr();
 
         // The second word in the debug output buffer is the number of words that would have
         // been written by the shader instrumentation, if there was enough room in the buffer we provided.
