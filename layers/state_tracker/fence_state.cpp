@@ -25,14 +25,14 @@ static VkExternalFenceHandleTypeFlags GetExportHandleTypes(const VkFenceCreateIn
     return export_info ? export_info->handleTypes : 0;
 }
 
-vvl::Fence::Fence(vvl::Device &dev, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
+vvl::Fence::Fence(Logger &logger, VkFence handle, const VkFenceCreateInfo *pCreateInfo)
     : RefcountedStateObject(handle, kVulkanObjectTypeFence),
       flags(pCreateInfo->flags),
       export_handle_types(GetExportHandleTypes(pCreateInfo)),
       state_((pCreateInfo->flags & VK_FENCE_CREATE_SIGNALED_BIT) ? kRetired : kUnsignaled),
       completed_(),
       waiter_(completed_.get_future()),
-      dev_data_(dev) {}
+      logger_(logger) {}
 
 const VulkanTypedHandle *vvl::Fence::InUse() const {
     auto guard = ReadLock();
@@ -67,7 +67,7 @@ bool vvl::Fence::EnqueueSignal(vvl::Queue *queue_state, uint64_t next_seq) {
 // Called from a non-queue operation, such as vkWaitForFences()|
 void vvl::Fence::NotifyAndWait(const Location &loc) {
     std::shared_future<void> waiter;
-    AcquireFenceSync acquire_fence_sync;
+    std::optional<SubmissionReference> present_submission_ref;
     {
         // Hold the lock only while updating members, but not
         // while waiting
@@ -82,20 +82,20 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
                 queue_ = nullptr;
                 seq_ = 0;
             }
-            acquire_fence_sync = std::move(acquire_fence_sync_);
-            acquire_fence_sync_ = AcquireFenceSync{};
+            present_submission_ref = std::move(present_submission_ref_);
+            present_submission_ref_.reset();
         }
     }
     if (waiter.valid()) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
         if (result != std::future_status::ready) {
-            dev_data_.LogError(
+            logger_.LogError(
                 "INTERNAL-ERROR-VkFence-state-timeout", Handle(), loc,
                 "The Validation Layers hit a timeout waiting for fence state to update (this is most likely a validation bug).");
         }
     }
-    for (const auto &submission_ref : acquire_fence_sync.submission_refs) {
-        submission_ref.queue->NotifyAndWait(loc, submission_ref.seq);
+    if (present_submission_ref.has_value()) {
+        present_submission_ref->queue->NotifyAndWait(loc, present_submission_ref->seq);
     }
 }
 
@@ -124,7 +124,7 @@ void vvl::Fence::Reset() {
     state_ = kUnsignaled;
     completed_ = std::promise<void>();
     waiter_ = std::shared_future<void>(completed_.get_future());
-    acquire_fence_sync_ = AcquireFenceSync{};
+    present_submission_ref_.reset();
 }
 
 void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
@@ -165,11 +165,9 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
     return imported_handle_type_;
 }
 
-void vvl::Fence::SetAcquireFenceSync(const AcquireFenceSync &acquire_fence_sync) {
+void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_submission_ref) {
     auto guard = WriteLock();
-
-    // An attempt to overwrite existing acquire fence sync is a bug
-    assert(acquire_fence_sync.submission_refs.empty() || acquire_fence_sync_.submission_refs.empty());
-
-    acquire_fence_sync_ = acquire_fence_sync;
+    assert(!present_submission_ref_.has_value());
+    assert(present_submission_ref.queue != nullptr);
+    present_submission_ref_ = present_submission_ref;
 }

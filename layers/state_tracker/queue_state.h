@@ -99,7 +99,7 @@ struct PreSubmitResult {
     uint64_t last_submission_seq = 0;
 
     bool has_external_fence = false;
-    uint64_t submission_with_external_fence_seq = 0;
+    uint64_t submission_seq = 0;
 };
 
 class Queue : public StateObject {

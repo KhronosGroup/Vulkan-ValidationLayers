@@ -985,7 +985,7 @@ void Device::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const
 
     PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
+        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
     }
 }
 
@@ -1041,7 +1041,7 @@ void Device::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, cons
     }
     PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
+        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
     }
 }
 
@@ -1216,7 +1216,7 @@ void Device::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount,
 
     PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
     if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
+        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
     }
 }
 
@@ -3607,12 +3607,8 @@ void Device::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR
         }
     }
 
-    AcquireFenceSync acquire_fence_sync;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         if (auto semaphore_state = Get<Semaphore>(pPresentInfo->pWaitSemaphores[i])) {
-            if (auto submission_ref = semaphore_state->GetPendingBinarySignalSubmission()) {
-                acquire_fence_sync.submission_refs.emplace_back(submission_ref.value());
-            }
             // Register present wait semaphores only in the first present batch.
             // NOTE: when presenting images from multiple swapchains, if some swapchains use
             // present fences, waiting on any present fence will retire all previous present batches.
@@ -3623,6 +3619,10 @@ void Device::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR
         }
     }
 
+    auto queue_state = Get<Queue>(queue);
+    PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
+    const SubmissionReference present_submission_ref(queue_state.get(), result.submission_seq);
+
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         // For multi-swapchain present pResults are always available (chassis adds pResults if necessary)
@@ -3632,15 +3632,12 @@ void Device::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR
         // Mark the image as having been released to the WSI
         if (auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i])) {
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
-            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, acquire_fence_sync);
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref);
         }
     }
 
-    auto queue_state = Get<Queue>(queue);
-    PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
-
     if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_with_external_fence_seq);
+        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
     }
 }
 

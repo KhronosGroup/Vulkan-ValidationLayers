@@ -106,9 +106,6 @@ class Semaphore : public RefcountedStateObject {
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
-    // Returns pending queue submission that signals this binary semaphore.
-    std::optional<SubmissionReference> GetPendingBinarySignalSubmission() const;
-
     // Returns pending queue submission that waits on this binary semaphore.
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
 
