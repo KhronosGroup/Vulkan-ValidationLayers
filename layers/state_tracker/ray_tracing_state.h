@@ -78,8 +78,7 @@ class AccelerationStructureKHR : public StateObject {
     AccelerationStructureKHR(VkAccelerationStructureKHR handle, const VkAccelerationStructureCreateInfoKHR *pCreateInfo,
                              std::shared_ptr<Buffer> &&buf_state, const VkDeviceAddress buffer_device_address)
         : StateObject(handle, kVulkanObjectTypeAccelerationStructureKHR),
-          safe_create_info(pCreateInfo),
-          create_info(*safe_create_info.ptr()),
+          create_info(*pCreateInfo),
           buffer_state(buf_state),
           buffer_device_address(buffer_device_address) {}
     AccelerationStructureKHR(const AccelerationStructureKHR &rh_obj) = delete;
@@ -131,15 +130,18 @@ class AccelerationStructureKHR : public StateObject {
             return {};
         }
         if (buffer_state->deviceAddress != 0) {
-            return {buffer_state->deviceAddress + safe_create_info.offset,
-                    buffer_state->deviceAddress + safe_create_info.offset + safe_create_info.size};
+            return {buffer_state->deviceAddress + create_info.offset,
+                    buffer_state->deviceAddress + create_info.offset + create_info.size};
         }
-        return {buffer_device_address + safe_create_info.offset,
-                buffer_device_address + safe_create_info.offset + safe_create_info.size};
+        return {buffer_device_address + create_info.offset, buffer_device_address + create_info.offset + create_info.size};
     }
 
-    const vku::safe_VkAccelerationStructureCreateInfoKHR safe_create_info;
-    const VkAccelerationStructureCreateInfoKHR &create_info;
+    // At time of writing, havin a safe_VkAccelerationStructureCreateInfoKHR is not strictly necessary,
+    // and https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9669
+    // showed that the underlying used to store host side acceleration structure
+    // data seems to have hard to reproduce issues
+    // => rely on a plain VkAccelerationStructureCreateInfoKHR
+    VkAccelerationStructureCreateInfoKHR create_info;
 
     uint64_t opaque_handle = 0;
     std::shared_ptr<vvl::Buffer> buffer_state{};
