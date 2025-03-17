@@ -297,9 +297,7 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
 
     VVL_TracyPlot("Post process buffer size (bytes)", int64_t(buffer_info.size));
 
-    void *data = post_process_buffer_.GetMappedPtr();
-    memset(data, 0, static_cast<size_t>(buffer_info.size));
-
+    post_process_buffer_.Clear();
     post_process_buffer_.FlushAllocation(loc);
 
     return post_process_buffer_.Address();

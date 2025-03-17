@@ -147,10 +147,8 @@ static bool AllocateErrorLogsBuffer(Validator &gpuav, VkCommandBuffer command_bu
     if (!success) {
         return false;
     }
-
+    error_output_buffer.Clear();
     auto output_buffer_ptr = (uint32_t *)error_output_buffer.GetMappedPtr();
-
-    memset(output_buffer_ptr, 0, glsl::kErrorBufferByteSize);
     if (gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
         output_buffer_ptr[cst::stream_output_flags_offset] = cst::inst_buffer_oob_enabled;
     }
@@ -195,7 +193,7 @@ void CommandBuffer::AllocateResources(const Location &loc) {
             return;
         }
 
-        ClearCmdErrorsCountsBuffer(loc);
+        cmd_errors_counts_buffer_.Clear();
         if (gpuav->aborted_) return;
     }
 
@@ -426,11 +424,6 @@ void CommandBuffer::ResetCBState(bool should_destroy) {
     action_command_count = 0;
 }
 
-void CommandBuffer::ClearCmdErrorsCountsBuffer(const Location &loc) const {
-    auto cmd_errors_counts_buffer_ptr = (uint32_t *)cmd_errors_counts_buffer_.GetMappedPtr();
-    std::memset(cmd_errors_counts_buffer_ptr, 0, static_cast<size_t>(GetCmdErrorsCountsBufferByteSize()));
-}
-
 void CommandBuffer::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     action_command_count++;
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -542,7 +535,7 @@ void CommandBuffer::PostProcess(VkQueue queue, const std::vector<std::string> &i
         error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
     }
 
-    ClearCmdErrorsCountsBuffer(loc);
+    cmd_errors_counts_buffer_.Clear();
     if (gpuav->aborted_) return;
 
     // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually

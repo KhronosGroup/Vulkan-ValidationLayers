@@ -169,6 +169,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
         gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
         return false;
     }
+    size = buffer_create_info->size;
 
     if (buffer_create_info->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
         // After creating the buffer, get the address right away
@@ -199,6 +200,12 @@ void Buffer::Destroy() {
         allocation = VK_NULL_HANDLE;
         device_address = 0;
     }
+}
+
+void Buffer::Clear() const {
+    // Caller is in charge of calling Flush/Invalidate as needed
+    assert(mapped_ptr);
+    memset((uint8_t *)mapped_ptr, 0, static_cast<size_t>(size));
 }
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {

@@ -72,6 +72,7 @@ class Buffer {
     const VkBuffer &VkHandle() const { return buffer; }
     const VmaAllocation &Allocation() const { return allocation; }
     VkDeviceAddress Address() const { return device_address; };
+    void Clear() const;
 
   private:
     const Validator &gpuav;
@@ -79,6 +80,7 @@ class Buffer {
     VmaAllocation allocation = VK_NULL_HANDLE;
     // If buffer was not created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT then this will not be zero
     VkDeviceAddress device_address = 0;
+    VkDeviceSize size = 0;
     void *mapped_ptr = nullptr;
 };
 
