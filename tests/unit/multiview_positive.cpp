@@ -175,6 +175,15 @@ TEST_F(PositiveMultiview, MeshShader) {
         layout(max_vertices=81) out;
         layout(max_primitives=32) out;
         layout(triangles) out;
+
+        // Leave out the Layer builtin
+        perprimitiveEXT out gl_MeshPerPrimitiveEXT {
+            int  gl_PrimitiveID;
+            int  gl_ViewportIndex;
+            bool gl_CullPrimitiveEXT;
+            int  gl_PrimitiveShadingRateEXT;
+        } gl_MeshPrimitivesEXT[];
+
         void main() {
             SetMeshOutputsEXT(81, 32);
             gl_MeshPrimitivesEXT[0].gl_CullPrimitiveEXT = true;
