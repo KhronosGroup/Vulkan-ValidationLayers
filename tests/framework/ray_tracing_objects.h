@@ -318,6 +318,8 @@ class Pipeline {
 
     void AddBinding(VkDescriptorType descriptor_type, uint32_t binding, uint32_t descriptor_count = 1);
     void CreateDescriptorSet();
+    // *If CreateDescriptorSet() is never called*, this method will hook supplied descriptor set layouts
+    void SetPipelineSetLayouts(uint32_t set_layout_count, const VkDescriptorSetLayout* set_layouts);
 
     void SetPushConstantRangeSize(uint32_t byte_size);
     void SetGlslRayGenShader(const char* glsl);
@@ -359,6 +361,7 @@ class Pipeline {
     uint32_t push_constant_range_size_ = 0;
     std::vector<VkDescriptorSetLayoutBinding> bindings_{};
     std::unique_ptr<OneOffDescriptorSet> desc_set_{};
+    VkPipelineLayoutCreateInfo pipeline_layout_ci_;
     vkt::PipelineLayout pipeline_layout_{};
     std::vector<VkDynamicState> dynamic_states{};
     std::vector<std::unique_ptr<VkShaderObj>> ray_gen_shaders_{};

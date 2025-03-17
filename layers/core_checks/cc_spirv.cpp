@@ -1380,8 +1380,10 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
         const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
         const uint32_t set = variable.decorations.set;
         if (pipeline_layout_state && set < pipeline_layout_state->set_layouts.size()) {
-            binding =
-                pipeline_layout_state->set_layouts[set]->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+            const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = pipeline_layout_state->set_layouts[set];
+            if (set_layout) {
+                binding = set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+            }
         }
     }
 
