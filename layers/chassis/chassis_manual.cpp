@@ -20,9 +20,7 @@
  ****************************************************************************/
 #include "chassis.h"
 
-#include <array>
 #include <cstring>
-#include <mutex>
 
 #include "chassis/dispatch_object.h"
 #include "chassis/validation_object.h"
@@ -485,6 +483,13 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateGraphicsPipelines(VkDevice device, VkPipeli
         VVL_ZoneScopedN("Dispatch_CreateGraphicsPipelines");
         result = device_dispatch->CreateGraphicsPipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
                                                           pAllocator, pPipelines);
+
+        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
+        if (result < VK_SUCCESS && chassis_state.is_modified) {
+            chassis_state.is_modified = false;
+            result = device_dispatch->CreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                              pPipelines);
+        }
     }
     record_obj.result = result;
 
@@ -547,6 +552,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateComputePipelines(VkDevice device, VkPipelin
         VVL_ZoneScopedN("Dispatch_CreateComputePipelines");
         result = device_dispatch->CreateComputePipelines(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
                                                          pAllocator, pPipelines);
+        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
+        if (result < VK_SUCCESS && chassis_state.is_modified) {
+            chassis_state.is_modified = false;
+            result = device_dispatch->CreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                             pPipelines);
+        }
     }
     record_obj.result = result;
 
@@ -595,8 +606,18 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
                                                      record_obj, pipeline_states[vo->container_type], chassis_state);
     }
 
-    VkResult result = device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount,
-                                                                   chassis_state.pCreateInfos, pAllocator, pPipelines);
+    VkResult result;
+    {
+        result = device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
+                                                              pAllocator, pPipelines);
+
+        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
+        if (result < VK_SUCCESS && chassis_state.is_modified) {
+            chassis_state.is_modified = false;
+            result = device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
+                                                                  pPipelines);
+        }
+    }
     record_obj.result = result;
 
     for (auto& vo : device_dispatch->object_dispatch) {
@@ -656,6 +677,14 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesKHR(VkDevice device, VkD
         VVL_ZoneScopedN("Dispatch_CreateRayTracingPipelinesKHR");
         result = device_dispatch->CreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
                                                                chassis_state->pCreateInfos, pAllocator, pPipelines);
+
+        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
+        // Note VK_OPERATION_DEFERRED_KHR is not "failing" as the pipeline will still be created
+        if (result < VK_SUCCESS && chassis_state->is_modified) {
+            chassis_state->is_modified = false;
+            result = device_dispatch->CreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                   pCreateInfos, pAllocator, pPipelines);
+        }
     }
     record_obj.result = result;
 
@@ -829,6 +858,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateShadersEXT(VkDevice device, uint32_t create
     {
         VVL_ZoneScopedN("Dispatch_CreateShadersEXT");
         result = device_dispatch->CreateShadersEXT(device, createInfoCount, chassis_state.pCreateInfos, pAllocator, pShaders);
+
+        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
+        if (result < VK_SUCCESS && chassis_state.is_modified) {
+            chassis_state.is_modified = false;
+            result = device_dispatch->CreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+        }
     }
     record_obj.result = result;
 

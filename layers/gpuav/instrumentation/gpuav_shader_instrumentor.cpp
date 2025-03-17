@@ -355,6 +355,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
         chassis_state.modified_create_infos.emplace_back(std::move(new_create_info));
     }
 
+    chassis_state.is_modified = true;
     chassis_state.pCreateInfos = reinterpret_cast<VkShaderCreateInfoEXT *>(chassis_state.modified_create_infos.data());
 }
 
@@ -365,7 +366,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
-
+    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
+    if (!chassis_state.is_modified) return;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
 
@@ -430,6 +432,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
         }
     }
 
+    chassis_state.is_modified = true;
     chassis_state.pCreateInfos = reinterpret_cast<VkGraphicsPipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
@@ -466,6 +469,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
         }
     }
 
+    chassis_state.is_modified = true;
     chassis_state.pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
@@ -503,6 +507,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice de
         }
     }
 
+    chassis_state.is_modified = true;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state.modified_create_infos.data());
 }
 
@@ -538,6 +543,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
         }
     }
 
+    chassis_state.is_modified = true;
     chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoKHR *>(chassis_state.modified_create_infos.data());
 }
 
@@ -564,6 +570,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
     if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
+    if (!chassis_state.is_modified) return;
 
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
@@ -594,6 +602,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
     if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
+    if (!chassis_state.is_modified) return;
 
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
@@ -615,6 +625,8 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
     if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
+    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
+    if (!chassis_state.is_modified) return;
 
     for (uint32_t i = 0; i < count; ++i) {
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
@@ -633,6 +645,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
     std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
                                                           pPipelines, record_obj, pipeline_states, chassis_state);
+    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
+    if (!chassis_state->is_modified) return;
+
     if (!gpuav_settings.IsSpirvModified()) return;
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case
