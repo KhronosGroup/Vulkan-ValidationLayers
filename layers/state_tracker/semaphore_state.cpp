@@ -185,22 +185,6 @@ std::optional<vvl::Semaphore::SemOp> vvl::Semaphore::LastOp(const std::function<
     return result;
 }
 
-std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinarySignalSubmission() const {
-    assert(type == VK_SEMAPHORE_TYPE_BINARY);
-    auto guard = ReadLock();
-    if (timeline_.empty()) {
-        return {};
-    }
-    const auto &timepoint = timeline_.rbegin()->second;
-    const auto &signal_submit = timepoint.signal_submit;
-
-    // Skip signals that are not associated with a queue
-    if (signal_submit.has_value() && signal_submit->queue == nullptr) {
-        return {};
-    }
-    return signal_submit;
-}
-
 std::optional<vvl::SubmissionReference> vvl::Semaphore::GetPendingBinaryWaitSubmission() const {
     assert(type == VK_SEMAPHORE_TYPE_BINARY);
     auto guard = ReadLock();

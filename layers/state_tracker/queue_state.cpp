@@ -70,6 +70,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
         // Note that this relies on the external synchonization requirements for the
         // VkQueue
         submission.seq = ++seq_;
+        result.submission_seq = submission.seq;
         submission.BeginUse();
         for (SemaphoreInfo &wait : submission.wait_semaphores) {
             wait.semaphore->EnqueueWait(SubmissionReference(this, submission.seq), wait.payload);
@@ -83,7 +84,6 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
         if (submission.fence) {
             if (submission.fence->EnqueueSignal(this, submission.seq)) {
                 result.has_external_fence = true;
-                result.submission_with_external_fence_seq = submission.seq;
             }
         }
         {

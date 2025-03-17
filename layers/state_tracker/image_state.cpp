@@ -564,7 +564,7 @@ Swapchain::Swapchain(vvl::Device &dev_data_, const VkSwapchainCreateInfoKHR *pCr
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_) {}
 
-void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const AcquireFenceSync &acquire_fence_sync) {
+void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference& present_submission_ref) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     if (!shared_presentable) {
@@ -575,7 +575,7 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Ac
     } else {
         images[image_index].image_state->layout_locked = true;
     }
-    images[image_index].acquire_fence_sync = acquire_fence_sync;
+    images[image_index].present_submission_ref = present_submission_ref;
     if (present_id > max_present_id) {
         max_present_id = present_id;
     }
@@ -596,9 +596,9 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     images[image_index].acquired = true;
     images[image_index].acquire_semaphore = semaphore_state;
     images[image_index].acquire_fence = fence_state;
-    if (fence_state) {
-        fence_state->SetAcquireFenceSync(images[image_index].acquire_fence_sync);
-        images[image_index].acquire_fence_sync = {};
+    if (fence_state && images[image_index].present_submission_ref.has_value()) {
+        fence_state->SetPresentSubmissionRef(*images[image_index].present_submission_ref);
+        images[image_index].present_submission_ref.reset();
     }
     if (shared_presentable) {
         images[image_index].image_state->shared_presentable = shared_presentable;
