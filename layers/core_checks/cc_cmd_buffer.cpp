@@ -38,7 +38,7 @@ bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, 
                                                                                : "";
         auto objlist = entry.second;  // intentional copy
         objlist.add(cb_state.Handle());
-        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because bound %s was destroyed%s.",
+        skip |= LogError(vuid, objlist, loc, "was called in %s which is invalid because the bound %s was destroyed%s.",
                          FormatHandle(cb_state).c_str(), FormatHandle(obj).c_str(), cause_str);
     }
     return skip;
@@ -395,13 +395,14 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     const VkDeviceSize offset_align = static_cast<VkDeviceSize>(GetIndexAlignment(indexType));
     if (!IsIntegerMultipleOf(offset, offset_align)) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08783" : "VUID-vkCmdBindIndexBuffer-offset-08783";
-        skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") does not fall on alignment (%s) boundary.", offset,
+        skip |= LogError(vuid, objlist, loc.dot(Field::offset),
+                         "(%" PRIu64 ") is not a multiple of %" PRIu64 " (the alignment for %s).", offset, offset_align,
                          string_VkIndexType(indexType));
     }
     if (offset >= buffer_state->create_info.size) {
         vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-offset-08782" : "VUID-vkCmdBindIndexBuffer-offset-08782";
-        skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") is not less than the size (%" PRIu64 ").", offset,
-                         buffer_state->create_info.size);
+        skip |= LogError(vuid, objlist, loc.dot(Field::offset), "(%" PRIu64 ") is not less than the VkBuffer size (%" PRIu64 ").",
+                         offset, buffer_state->create_info.size);
     }
 
     return skip;
@@ -1771,7 +1772,8 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
                 const LogObjectList objlist(commandBuffer, buffer_state->Handle());
                 skip |=
                     LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist, conditional_loc.dot(Field::buffer),
-                             "(%s) was created with %s.", FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
+                             "(%s) was created with %s (missing CONDITIONAL_RENDERING_BIT).",
+                             FormatHandle(pConditionalRenderingBegin->buffer).c_str(),
                              string_VkBufferUsageFlags2(buffer_state->usage).c_str());
             }
             if (pConditionalRenderingBegin->offset + 4 > buffer_state->create_info.size) {

@@ -34,8 +34,9 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
     if (!buffer_state && !enabled_features.maintenance6 && !enabled_features.nullDescriptor) {
-        skip |= LogError(vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                         "Index buffer object has not been bound to this command buffer.");
+        skip |=
+            LogError(vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                     "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw.");
     }
     return skip;
 }

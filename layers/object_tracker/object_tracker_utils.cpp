@@ -168,8 +168,9 @@ bool Device::ValidateCommandBuffer(VkCommandPool command_pool, VkCommandBuffer c
             const auto parent_pool = CastFromUint64<VkCommandPool>(node->parent_object);
             const LogObjectList objlist(command_buffer, parent_pool, command_pool);
             skip |= LogError("VUID-vkFreeCommandBuffers-pCommandBuffers-parent", objlist, loc,
-                             "attempting to free %s belonging to %s from %s.", FormatHandle(command_buffer).c_str(),
-                             FormatHandle(parent_pool).c_str(), FormatHandle(command_pool).c_str());
+                             "attempting to use %s to free %s, but the command buffer belongs to %s.",
+                             FormatHandle(command_pool).c_str(), FormatHandle(command_buffer).c_str(),
+                             FormatHandle(parent_pool).c_str());
         }
     } else {
         skip |= LogError("VUID-vkFreeCommandBuffers-pCommandBuffers-00048", command_buffer, loc, "Invalid %s.",

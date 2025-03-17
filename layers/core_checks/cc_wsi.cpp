@@ -403,8 +403,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
     // Shared Present Mode must have a minImageCount of 1
     if ((create_info.minImageCount < surface_caps.minImageCount) && !shared_present_mode) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-presentMode-02839", device, create_info_loc.dot(Field::minImageCount),
-                     "%" PRIu32 ", which is outside the bounds returned by "
-                     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                     "%" PRIu32 ", is outside the bounds (minImageCount = %d, maxImageCount = %d) returned by "
+                                "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().",
                      create_info.minImageCount, surface_caps.minImageCount, surface_caps.maxImageCount)) {
             return true;
         }
@@ -412,8 +412,8 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
     if ((surface_caps.maxImageCount > 0) && (create_info.minImageCount > surface_caps.maxImageCount)) {
         if (LogError("VUID-VkSwapchainCreateInfoKHR-minImageCount-01272", device, create_info_loc.dot(Field::minImageCount),
-                     "%" PRIu32 ", which is outside the bounds returned by "
-                     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR() (i.e. minImageCount = %d, maxImageCount = %d).",
+                     "%" PRIu32 ", is outside the bounds (minImageCount = %d, maxImageCount = %d) returned by "
+                                "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().",
                      create_info.minImageCount, surface_caps.minImageCount, surface_caps.maxImageCount)) {
             return true;
         }

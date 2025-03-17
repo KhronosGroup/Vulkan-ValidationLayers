@@ -2147,7 +2147,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 if (!buffer_state) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", buffer_view_handle,
                                      write_loc.dot(Field::pTexelBufferView, di),
-                                     "was craated with an invalid buffer %s (while trying to update a descriptorType of %s).",
+                                     "was created with an invalid buffer %s (while trying to update a descriptorType of %s).",
                                      FormatHandle(buffer_handle).c_str(), string_VkDescriptorType(update.descriptorType));
                     break;
                 }
