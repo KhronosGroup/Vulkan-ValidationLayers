@@ -456,15 +456,11 @@ const std::vector<VkDescriptorType> &vvl::DescriptorSetLayoutDef::GetMutableType
     return mutable_types_[binding];
 }
 
-void vvl::DescriptorSetLayout::SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_) {
-    if (layout_size_in_bytes_) {
-        layout_size_in_bytes = std::make_unique<VkDeviceSize>(*layout_size_in_bytes_);
-    } else {
-        layout_size_in_bytes.reset();
-    }
+void vvl::DescriptorSetLayout::SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes) {
+    layout_size_in_bytes_ = layout_size_in_bytes ? *layout_size_in_bytes : 0;
 }
 
-const VkDeviceSize *vvl::DescriptorSetLayout::GetLayoutSizeInBytes() const { return layout_size_in_bytes.get(); }
+VkDeviceSize vvl::DescriptorSetLayout::GetLayoutSizeInBytes() const { return layout_size_in_bytes_; }
 
 // If our layout is compatible with rh_ds_layout, return true.
 bool vvl::DescriptorSetLayout::IsCompatible(DescriptorSetLayout const *rh_ds_layout) const {

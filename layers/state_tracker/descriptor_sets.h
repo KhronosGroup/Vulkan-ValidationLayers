@@ -367,14 +367,14 @@ class DescriptorSetLayout : public StateObject {
         return IsVariableDescriptorCountFromIndex(GetIndexFromBinding(binding));
     }
     void SetLayoutSizeInBytes(const VkDeviceSize *layout_size_in_bytes_);
-    const VkDeviceSize *GetLayoutSizeInBytes() const;
+    VkDeviceSize GetLayoutSizeInBytes() const;
 
     using BindingTypeStats = DescriptorSetLayoutDef::BindingTypeStats;
     const BindingTypeStats &GetBindingTypeStats() const { return layout_id_->GetBindingTypeStats(); }
 
   private:
-    DescriptorSetLayoutId layout_id_;
-    std::unique_ptr<VkDeviceSize> layout_size_in_bytes;
+    DescriptorSetLayoutId layout_id_{};
+    VkDeviceSize layout_size_in_bytes_{};
 };
 
 // Slightly broader than type, each c++ "class" will has a corresponding "DescriptorClass"

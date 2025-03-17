@@ -2247,17 +2247,17 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
 
                 if (!buffer_state_starts.empty()) {
                     const auto bindings = set_layout->GetBindings();
-                    const auto pSetLayoutSize = set_layout->GetLayoutSizeInBytes();
-                    VkDeviceSize setLayoutSize = 0;
 
-                    if (pSetLayoutSize == nullptr) {
-                        const auto pool = cb_state.command_pool;
-                        DispatchGetDescriptorSetLayoutSizeEXT(pool->dev_data.device, set_layout->VkHandle(), &setLayoutSize);
+                    VkDeviceSize set_layout_size = 0;
+                    if (VkDeviceSize cached_set_layout_size = set_layout->GetLayoutSizeInBytes(); cached_set_layout_size == 0) {
+                        DispatchGetDescriptorSetLayoutSizeEXT(cb_state.dev_data.device, set_layout->VkHandle(), &set_layout_size);
+                        auto set_layout_ptr = const_cast<vvl::DescriptorSetLayout *>(set_layout.get());
+                        set_layout_ptr->SetLayoutSizeInBytes(&set_layout_size);
                     } else {
-                        setLayoutSize = *pSetLayoutSize;
+                        set_layout_size = cached_set_layout_size;
                     }
 
-                    if (setLayoutSize > 0) {
+                    if (set_layout_size > 0) {
                         // It looks like enough to check last binding in set
                         for (uint32_t j = 0; j < set_layout->GetBindingCount(); j++) {
                             const VkDescriptorBindingFlags flags = set_layout->GetDescriptorBindingFlagsFromIndex(j);
@@ -2269,13 +2269,13 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                                 const auto pool = cb_state.command_pool;
                                 uint32_t binding = set_layout->GetDescriptorSetLayoutBindingPtrFromIndex(j)->binding;
                                 DispatchGetDescriptorSetLayoutBindingOffsetEXT(pool->dev_data.device, set_layout->VkHandle(),
-                                                                               binding, &setLayoutSize);
+                                                                               binding, &set_layout_size);
 
                                 // If the descriptor set only consists of VARIABLE_DESCRIPTOR_COUNT bindings, the
                                 // offset may be 0. In this case, treat the descriptor set layout as size 1,
                                 // so we validate that the offset is sensible.
                                 if (set_layout->GetBindingCount() == 1) {
-                                    setLayoutSize = 1;
+                                    set_layout_size = 1;
                                 }
 
                                 // There can only be one binding with VARIABLE_COUNT.
@@ -2284,8 +2284,8 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                         }
                     }
 
-                    if (setLayoutSize > 0) {
-                        const auto buffer_state_ends = GetBuffersByAddress(start + offset + setLayoutSize - 1);
+                    if (set_layout_size > 0) {
+                        const auto buffer_state_ends = GetBuffersByAddress(start + offset + set_layout_size - 1);
                         if (!buffer_state_ends.empty()) {
                             valid_binding = true;
                         }
