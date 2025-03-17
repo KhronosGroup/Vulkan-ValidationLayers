@@ -91,7 +91,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 
         guard_helper = PlatformGuardHelper()
 
-        for command in [x for x in self.vk.commands.values() if x.extensions or x.version]:
+        for command in [x for x in self.vk.commands.values() if x.extensions or (x.version and x.version.name != 'VK_VERSION_1_0')]:
             if command.name == 'vkEnumerateInstanceVersion':
                 continue # TODO - Figure out how this can be automatically detected
             out.extend(guard_helper.add_guard(command.protect))
@@ -112,7 +112,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 
         out.append('const auto &GetApiPromotedMap() {\n')
         out.append('    static const vvl::unordered_map<std::string, std::string> api_promoted_map {\n')
-        for command in [x for x in self.vk.commands.values() if x.version and x.device]:
+        for command in [x for x in self.vk.commands.values() if x.version and x.version.name != 'VK_VERSION_1_0' and x.device]:
             out.append(f'    {{ "{command.name}", {{ "{command.version.name}" }} }},\n')
         out.append('    };\n')
         out.append('    return api_promoted_map;\n')
@@ -179,7 +179,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         for command in [x for x in self.vk.commands.values() if x.device and x.name != 'vkGetDeviceProcAddr']:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(device, "{command.name}");\n')
-            if command.version or command.extensions:
+            if (command.version and command.version.name != 'VK_VERSION_1_0') or command.extensions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
@@ -203,7 +203,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
         for command in [x for x in self.vk.commands.values() if x.instance and x.name not in ignoreList]:
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'    table->{command.name[2:]} = (PFN_{command.name}) gpa(instance, "{command.name}");\n')
-            if command.version or command.extensions:
+            if (command.version and command.version.name != 'VK_VERSION_1_0') or command.extensions:
                 out.append(f'    if (table->{command.name[2:]} == nullptr) {{ table->{command.name[2:]} = (PFN_{command.name})Stub{command.name[2:]}; }}\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')

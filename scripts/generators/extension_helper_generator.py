@@ -76,6 +76,8 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
         self.fieldName = dict()
         # [ Extension name : List[Extension | Version] ]
         self.requiredExpression = dict()
+        # List of names (like VK_VERSION_1_1) but excluding the first VK_VERSION_1_0
+        self.promotedVersionNames = []
 
     def generate(self):
         for extension in self.vk.extensions.values():
@@ -90,7 +92,9 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                     feature = self.vk.extensions[reqs] if reqs in self.vk.extensions else self.vk.versions[reqs]
                     self.requiredExpression[extension.name].append(feature)
         for version in self.vk.versions.keys():
-            self.fieldName[version] = version.lower().replace('version', 'feature_version')
+            if version != 'VK_VERSION_1_0':
+                self.promotedVersionNames.append(version)
+                self.fieldName[version] = version.lower().replace('version', 'feature_version')
 
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
             // See {os.path.basename(__file__)} for modifications
@@ -188,7 +192,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
 
         out.append('\nstruct InstanceExtensions {\n')
         out.append('    APIVersion api_version{};\n')
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotEnabled}};\n')
 
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.instance])
@@ -240,7 +244,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             ''')
 
         out.append('\nstruct DeviceExtensions : public InstanceExtensions {\n')
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             out.append(f'    ExtEnabled {self.fieldName[version]}{{kNotEnabled}};\n')
 
         out.extend([f'    ExtEnabled {ext.name.lower()}{{kNotEnabled}};\n' for ext in self.vk.extensions.values() if ext.device])
@@ -341,7 +345,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 static const PromotedExtensionInfoMap promoted_map = {
             ''')
 
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version and getattr(x, 'instance')]
             if len(promoted_ext_list) > 0:
                 out.append(f'{{{version.replace("VERSION", "API_VERSION")},{{"{version}",{{')
@@ -357,7 +361,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 static const PromotedExtensionInfoMap promoted_map = {
             ''')
 
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             promoted_ext_list = [x for x in self.vk.extensions.values() if x.promotedTo == version and getattr(x, 'device')]
             if len(promoted_ext_list) > 0:
                 out.append(f'{{{version.replace("VERSION", "API_VERSION")},{{"{version}",{{')
@@ -373,7 +377,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 static const InstanceExtensions::Info empty_info{nullptr, InstanceExtensions::RequirementVec()};
                 static const vvl::unordered_map<std::string_view, InstanceExtensions::Info> version_map = {
             ''')
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             out.append(f'{{"{version}", InstanceExtensions::Info(&InstanceExtensions::{self.fieldName[version]}, {{}})}},\n')
         out.append('''};
                 const auto info = version_map.find(version);
@@ -384,7 +388,7 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
                 static const DeviceExtensions::Info empty_info{nullptr, DeviceExtensions::RequirementVec()};
                 static const vvl::unordered_map<std::string_view, DeviceExtensions::Info> version_map = {
             ''')
-        for version in self.vk.versions.keys():
+        for version in self.promotedVersionNames:
             out.append(f'{{"{version}", DeviceExtensions::Info(&DeviceExtensions::{self.fieldName[version]}, {{}})}},\n')
         out.append('''};
                 const auto info = version_map.find(version);

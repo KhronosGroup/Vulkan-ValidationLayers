@@ -569,7 +569,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 startIndex = 0 if command.name == 'vkCreateInstance' else 1
                 lines = self.genFuncBody(command.params[startIndex:], command.name, 'loc', '', '', None, 'context.')
 
-                if command.instance and command.version:
+                if command.instance and command.version and command.version.name != 'VK_VERSION_1_0':
                     # check function name so KHR version doesn't trigger flase positive
                     out.append(f'if (loc.function == vvl::Func::{command.name} && CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
 

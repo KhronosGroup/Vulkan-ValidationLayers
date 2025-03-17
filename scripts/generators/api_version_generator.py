@@ -32,9 +32,7 @@ class APISpecific:
     def genAPIVersionEnum(targetApiName: str) -> str:
         match targetApiName:
             case 'vulkan':
-                return '''
-                    _VK_VERSION_1_0 = (int)VK_API_VERSION_1_0,
-                    '''
+                return ''
 
     @staticmethod
     def genAPIVersionSource(targetApiName: str) -> str:
