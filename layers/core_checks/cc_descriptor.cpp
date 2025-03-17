@@ -3366,7 +3366,31 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                              string_VkDescriptorSetLayoutCreateFlags(ds_layout_state->GetCreateFlags()).c_str(),
                              string_VkDescriptorPoolCreateFlags(ds_pool_state->create_info.flags).c_str());
         }
+
+        if (IsExtEnabled(extensions.vk_khr_maintenance1)) {
+            // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
+            // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY (or any error) they think they over-allocated, but if they instead
+            // allocated type not avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking
+            // they ran out. It was decided that this deserves to be a Core Validation check. From
+            // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9662 found this will crash real drivers
+            const uint32_t binding_count = ds_layout_state->GetBindingCount();
+            for (uint32_t j = 0; j < binding_count; ++j) {
+                const VkDescriptorType type = ds_layout_state->GetTypeFromIndex(j);
+                if (!ds_pool_state->IsAvailableType(type)) {
+                    const LogObjectList objlist(pAllocateInfo->descriptorPool, pAllocateInfo->pSetLayouts[i]);
+                    skip |=
+                        LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", objlist, set_layout_loc,
+                                   "binding %" PRIu32
+                                   " was created with %s but %s was not created with any VkDescriptorPoolSize::type with %s (Some "
+                                   "implementations will not VK_ERROR_OUT_OF_POOL_MEMORY as they should with VK_KHR_maintenance1).",
+                                   j, string_VkDescriptorType(type), FormatHandle(pAllocateInfo->descriptorPool).c_str(),
+                                   string_VkDescriptorType(type));
+                    break;  // only need to report once
+                }
+            }
+        }
     }
+
     if (!IsExtEnabled(extensions.vk_khr_maintenance1)) {
         // Track number of descriptorSets allowable in this pool
         if (ds_pool_state->GetAvailableSets() < pAllocateInfo->descriptorSetCount) {
@@ -3458,42 +3482,6 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
     }
 
     return skip;
-}
-
-void CoreChecks::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
-                                                      VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
-                                                      vvl::AllocateDescriptorSetsData &ads_state) {
-    // Discussed in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3347
-    // The issue if users see VK_ERROR_OUT_OF_POOL_MEMORY (or any error) they think they over-allocated, but if they instead
-    // allocated type not avaiable (so the pool size is zero), they will just keep getting this error mistakenly thinking they ran
-    // out. It was decided that this deserves to be a Core Validation check
-    if (record_obj.result != VK_SUCCESS && pAllocateInfo) {
-        // result type added in VK_KHR_maintenance1
-        auto ds_pool_state = Get<vvl::DescriptorPool>(pAllocateInfo->descriptorPool);
-        ASSERT_AND_RETURN(ds_pool_state);
-
-        for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
-            auto ds_layout_state = Get<vvl::DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i]);
-            ASSERT_AND_CONTINUE(ds_layout_state);
-
-            const uint32_t binding_count = ds_layout_state->GetBindingCount();
-            for (uint32_t j = 0; j < binding_count; ++j) {
-                const VkDescriptorType type = ds_layout_state->GetTypeFromIndex(j);
-                if (!ds_pool_state->IsAvailableType(type)) {
-                    // This check would be caught by validation if VK_KHR_maintenance1 was not enabled
-                    LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", pAllocateInfo->descriptorPool,
-                               record_obj.location.dot(Field::pAllocateInfo).dot(Field::pSetLayouts, i),
-                               "binding %" PRIu32
-                               " was created with %s but %s was not created with any VkDescriptorPoolSize::type with %s (This is "
-                               "why it returned %s).",
-                               j, string_VkDescriptorType(type), FormatHandle(pAllocateInfo->descriptorPool).c_str(),
-                               string_VkDescriptorType(type), string_VkResult(record_obj.result));
-                }
-            }
-        }
-    }
-
-    BaseClass::PostCallRecordAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, record_obj, ads_state);
 }
 
 // Validate that given set is valid and that it's not being used by an in-flight CmdBuffer

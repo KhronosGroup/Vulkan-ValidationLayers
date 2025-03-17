@@ -5337,45 +5337,55 @@ TEST_F(NegativeDescriptors, DescriptorTypeNotInPool) {
     InitRenderTarget();
 
     // Create Pool with 2 Sampler descriptors, but try to alloc an Uniform Buffer
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_SAMPLER;
-    ds_type_count.descriptorCount = 2;
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 2};
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
-    ds_pool_ci.flags = 0;
     ds_pool_ci.maxSets = 2;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
 
     vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
 
-    VkDescriptorSetLayoutBinding dsl_binding_sampler = {};
-    dsl_binding_sampler.binding = 0;
-    dsl_binding_sampler.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    dsl_binding_sampler.descriptorCount = 1;
-    dsl_binding_sampler.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_sampler.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding dsl_binding_uniform = {};
-    dsl_binding_uniform.binding = 1;
-    dsl_binding_uniform.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    dsl_binding_uniform.descriptorCount = 1;
-    dsl_binding_uniform.stageFlags = VK_SHADER_STAGE_ALL;
-    dsl_binding_uniform.pImmutableSamplers = nullptr;
-
+    VkDescriptorSetLayoutBinding dsl_binding_sampler = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding dsl_binding_uniform = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding_sampler, dsl_binding_uniform});
 
     VkDescriptorSet descriptor_set;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
-    VkResult result = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
+    m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
+    m_errorMonitor->VerifyFound();
+}
 
-    // not all implementations will return this exact error code
-    if (result != VK_ERROR_OUT_OF_POOL_MEMORY) {
-        GTEST_SKIP() << "Does not return expected VK_ERROR_OUT_OF_POOL_MEMORY";
-    }
+TEST_F(NegativeDescriptors, DescriptorTypeNotInPool2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9662");
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // Need VK_KHR_maintenance1
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 1;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding ds_layout_binding0 = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+                                                       nullptr};
+    VkDescriptorSetLayoutBinding ds_layout_binding1 = {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+                                                       nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {ds_layout_binding0, ds_layout_binding1});
+
+    VkDescriptorSet descriptor_set;
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.pSetLayouts = &ds_layout.handle();
+
     m_errorMonitor->SetDesiredWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType");
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
     m_errorMonitor->VerifyFound();
