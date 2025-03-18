@@ -61,7 +61,7 @@ VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGra
     }
 }
 
-PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::Device &state_data,
+PreRasterState::PreRasterState(const vvl::Pipeline &p, const vvl::DeviceState &state_data,
                                const vku::safe_VkGraphicsPipelineCreateInfo &create_info, std::shared_ptr<const vvl::RenderPass> rp,
                                spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages])
     : PipelineSubState(p),
@@ -196,8 +196,8 @@ std::unique_ptr<const vku::safe_VkPipelineShaderStageCreateInfo> ToShaderStageCI
 }
 
 template <typename CreateInfo>
-void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state, const vvl::Device &state_data,
-                                  const CreateInfo &create_info,
+void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
+                                  const vvl::DeviceState &state_data, const CreateInfo &create_info,
                                   spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     for (uint32_t i = 0; i < create_info.stageCount; ++i) {
         if (create_info.pStages[i].stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
@@ -247,20 +247,20 @@ void SetFragmentShaderInfoPrivate(const vvl::Pipeline &pipeline_state, FragmentS
 
 // static
 void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
-                                                const vvl::Device &state_data, const VkGraphicsPipelineCreateInfo &create_info,
+                                                const vvl::DeviceState &state_data, const VkGraphicsPipelineCreateInfo &create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
 // static
 void FragmentShaderState::SetFragmentShaderInfo(const vvl::Pipeline &pipeline_state, FragmentShaderState &fs_state,
-                                                const vvl::Device &state_data,
+                                                const vvl::DeviceState &state_data,
                                                 const vku::safe_VkGraphicsPipelineCreateInfo &create_info,
                                                 spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) {
     SetFragmentShaderInfoPrivate(pipeline_state, fs_state, state_data, create_info, stateless_data);
 }
 
-FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const vvl::Device &dev_data,
+FragmentShaderState::FragmentShaderState(const vvl::Pipeline &p, const vvl::DeviceState &dev_data,
                                          std::shared_ptr<const vvl::RenderPass> rp, uint32_t subp, VkPipelineLayout layout)
     : PipelineSubState(p), rp_state(rp), subpass(subp), pipeline_layout(dev_data.Get<vvl::PipelineLayout>(layout)) {}
 

@@ -46,8 +46,8 @@ struct DAGNode;
 struct SemaphoreSubmitState;
 
 namespace core {
-class Instance : public vvl::Instance {
-    using BaseClass = vvl::Instance;
+class Instance : public vvl::InstanceState {
+    using BaseClass = vvl::InstanceState;
 
   public:
     using Func = vvl::Func;
@@ -179,8 +179,8 @@ bool ValidateVideoProfileListInfo(const StateObject& state, const VkVideoProfile
                                   const char* missing_encode_profile_msg_code);
 }  // namespace core
 
-class CoreChecks : public vvl::Device {
-    using BaseClass = vvl::Device;
+class CoreChecks : public vvl::DeviceState {
+    using BaseClass = vvl::DeviceState;
 
   public:
     using Func = vvl::Func;

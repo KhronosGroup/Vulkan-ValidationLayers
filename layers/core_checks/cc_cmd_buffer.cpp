@@ -701,7 +701,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     static_assert(4 == sizeof(vvl::CommandBuffer::viewportMask), "Adjust max_viewports to match viewportMask bit width");
     static constexpr uint32_t kMaxViewports = 32, kNotTrashed = uint32_t(-2), kTrashedByPrimary = uint32_t(-1);
 
-    const vvl::Device &validation_;
+    const Logger &log_;
     const vvl::CommandBuffer *primary_state_ = nullptr;
     uint32_t viewport_mask_;
     uint32_t scissor_mask_;
@@ -714,7 +714,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     uint32_t scissor_count_trashed_by_;
 
   public:
-    ViewportScissorInheritanceTracker(const vvl::Device &validation) : validation_(validation) {}
+    ViewportScissorInheritanceTracker(const Logger &log) : log_(log) {}
 
     bool VisitPrimary(const vvl::CommandBuffer &primary_state) {
         assert(!primary_state_);
@@ -811,15 +811,15 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 assert(inherited_viewport != nullptr && expected_viewport_depth != nullptr);
                 if (inherited_viewport->minDepth != expected_viewport_depth->minDepth ||
                     inherited_viewport->maxDepth != expected_viewport_depth->maxDepth) {
-                    return validation_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
-                                                "(%s) consume inherited viewport %" PRIu32
-                                                " %s"
-                                                "but this state was not inherited as its depth range [%f, %f] does not match "
-                                                "pViewportDepths[%" PRIu32 "] = [%f, %f]",
-                                                validation_.FormatHandle(secondary_state.Handle()).c_str(), unsigned(index),
-                                                index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
-                                                inherited_viewport->maxDepth, unsigned(cmd_buffer_idx),
-                                                expected_viewport_depth->minDepth, expected_viewport_depth->maxDepth);
+                    return log_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
+                                         "(%s) consume inherited viewport %" PRIu32
+                                         " %s"
+                                         "but this state was not inherited as its depth range [%f, %f] does not match "
+                                         "pViewportDepths[%" PRIu32 "] = [%f, %f]",
+                                         log_.FormatHandle(secondary_state.Handle()).c_str(), unsigned(index),
+                                         index >= static_use_count ? "(with count) " : "", inherited_viewport->minDepth,
+                                         inherited_viewport->maxDepth, unsigned(cmd_buffer_idx), expected_viewport_depth->minDepth,
+                                         expected_viewport_depth->maxDepth);
                     // akeley98 note: This VUID is not ideal; however, there isn't a more relevant VUID as
                     // it isn't illegal in itself to have mismatched inherited viewport depths.
                     // The error only occurs upon attempting to consume the viewport.
@@ -853,7 +853,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
             }
 
             std::stringstream ss;
-            ss << "(" << validation_.FormatHandle(secondary_state.Handle()).c_str() << ") consume inherited " << state_name << " ";
+            ss << "(" << log_.FormatHandle(secondary_state.Handle()).c_str() << ") consume inherited " << state_name << " ";
             if (format_index) {
                 if (index >= static_use_count) {
                     ss << "(with count) ";
@@ -870,7 +870,7 @@ class CoreChecks::ViewportScissorInheritanceTracker {
                 ss << "was left undefined after vkCmdBindPipeline (with non-dynamic state) in pCommandBuffers[" << trashed_by
                    << "].";
             }
-            return validation_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc, "%s", ss.str().c_str());
+            return log_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc, "%s", ss.str().c_str());
         };
 
         // Check if secondary command buffer uses viewport/scissor-with-count state, and validate this state if so.
@@ -899,12 +899,12 @@ class CoreChecks::ViewportScissorInheritanceTracker {
 
         if (secondary_state.usedDynamicViewportCount &&
             viewport_count_to_inherit_ > secondary_state.inheritedViewportDepths.size()) {
-            skip |= validation_.LogError(
-                "VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
-                "(%s) consume inherited dynamic viewport with count state "
-                "but the dynamic viewport count (%" PRIu32 ") exceeds the inheritance limit (viewportDepthCount=%" PRIu32 ").",
-                validation_.FormatHandle(secondary_state.Handle()).c_str(), unsigned(viewport_count_to_inherit_),
-                unsigned(secondary_state.inheritedViewportDepths.size()));
+            skip |= log_.LogError("VUID-vkCmdDraw-None-07850", primary_state_->Handle(), cb_loc,
+                                  "(%s) consume inherited dynamic viewport with count state "
+                                  "but the dynamic viewport count (%" PRIu32
+                                  ") exceeds the inheritance limit (viewportDepthCount=%" PRIu32 ").",
+                                  log_.FormatHandle(secondary_state.Handle()).c_str(), unsigned(viewport_count_to_inherit_),
+                                  unsigned(secondary_state.inheritedViewportDepths.size()));
         }
 
         for (uint32_t n = 0; n < check_viewport_count; ++n) {

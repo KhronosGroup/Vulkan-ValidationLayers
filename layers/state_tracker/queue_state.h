@@ -32,7 +32,7 @@
 namespace vvl {
 
 class CommandBuffer;
-class Device;
+class DeviceState;
 class Queue;
 class QueueSubState;
 
@@ -106,7 +106,7 @@ struct PreSubmitResult {
 
 class Queue : public StateObject, public SubStateManager<QueueSubState> {
   public:
-    Queue(Device &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
+    Queue(DeviceState &dev_data, VkQueue handle, uint32_t family_index, uint32_t queue_index, VkDeviceQueueCreateFlags flags,
           const VkQueueFamilyProperties &queueFamilyProperties)
         : StateObject(handle, kVulkanObjectTypeQueue),
           queue_family_index(family_index),
@@ -178,7 +178,7 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     QueueSubmission *NextSubmission();
     LockGuard Lock() const { return LockGuard(lock_); }
 
-    Device &dev_data_;
+    DeviceState &dev_data_;
 
     // state related to submitting to the queue, all data members must
     // be accessed with lock_ held

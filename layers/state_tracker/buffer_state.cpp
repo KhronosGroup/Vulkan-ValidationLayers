@@ -26,7 +26,7 @@ static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkBufferCrea
     return external_memory_info ? external_memory_info->handleTypes : 0;
 }
 
-static VkMemoryRequirements GetMemoryRequirements(vvl::Device &dev_data, VkBuffer buffer) {
+static VkMemoryRequirements GetMemoryRequirements(vvl::DeviceState &dev_data, VkBuffer buffer) {
     VkMemoryRequirements result{};
     DispatchGetBufferMemoryRequirements(dev_data.device, buffer, &result);
     return result;
@@ -61,7 +61,7 @@ namespace vvl {
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
-Buffer::Buffer(Device &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
+Buffer::Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo *pCreateInfo)
     : Bindable(handle, kVulkanObjectTypeBuffer, (pCreateInfo->flags & VK_BUFFER_CREATE_SPARSE_BINDING_BIT) != 0,
                (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) == 0, GetExternalHandleTypes(pCreateInfo)),
       safe_create_info(pCreateInfo),

@@ -3275,7 +3275,8 @@ bool SyncValidator::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
     return ValidateQueueSubmit(queue, submitCount, submit_info.submit_infos2.data(), fence, error_obj);
 }
 
-static std::vector<CommandBufferConstPtr> GetCommandBuffers(const vvl::Device &state_tracker, const VkSubmitInfo2 &submit_info) {
+static std::vector<CommandBufferConstPtr> GetCommandBuffers(const vvl::DeviceState &state_tracker,
+                                                            const VkSubmitInfo2 &submit_info) {
     // Collected command buffers have the same indexing as in the input VkSubmitInfo2 for reporting purposes.
     // If Get query returns null, it is stored in the result array to keep original indexing.
     std::vector<CommandBufferConstPtr> command_buffers;
@@ -3664,7 +3665,7 @@ void SyncValidator::PostCallRecordGetSwapchainImagesKHR(VkDevice device, VkSwapc
 // Returns null when device address is asssociated with no buffers or more than one buffer.
 // Otherwise returns a valid buffer (device address is associated with a single buffer).
 // When syncval adds memory aliasing support the need of this function can be revisited.
-static const vvl::Buffer *GetSingleBufferFromDeviceAddress(const vvl::Device &device, VkDeviceAddress device_address) {
+static const vvl::Buffer *GetSingleBufferFromDeviceAddress(const vvl::DeviceState &device, VkDeviceAddress device_address) {
     vvl::span<vvl::Buffer *const> buffers = device.GetBuffersByAddress(device_address);
     if (buffers.empty()) {
         return nullptr;
@@ -3689,7 +3690,7 @@ struct AccelerationStructureGeometryInfo {
 };
 
 static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
-    const vvl::Device &device, const VkAccelerationStructureGeometryKHR &geometry,
+    const vvl::DeviceState &device, const VkAccelerationStructureGeometryKHR &geometry,
     const VkAccelerationStructureBuildRangeInfoKHR &range_info) {
     if (geometry.geometryType == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
         const VkAccelerationStructureGeometryTrianglesDataKHR &triangles = geometry.geometry.triangles;

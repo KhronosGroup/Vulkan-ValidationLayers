@@ -1449,7 +1449,7 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
     return skip;
 }
 
-vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::Device &device_data, VkDescriptorSet descriptorSet,
+vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device_data, VkDescriptorSet descriptorSet,
                                                   const vvl::DescriptorUpdateTemplate *template_state, const void *pData,
                                                   VkDescriptorSetLayout push_layout) {
     auto const &create_info = template_state->create_info;
