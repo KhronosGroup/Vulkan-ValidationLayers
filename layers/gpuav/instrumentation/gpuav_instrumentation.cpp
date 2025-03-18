@@ -893,12 +893,9 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         case vvl::Func::vkCmdDrawIndexedIndirect:
             out_vuid_msg = "VUID-vkCmdDrawIndexedIndirect-None-02721";
             break;
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9323
-#if 0
         case vvl::Func::vkCmdDrawMultiIndexedEXT:
             out_vuid_msg = "VUID-vkCmdDrawMultiIndexedEXT-None-02721";
             break;
-#endif
         default:
             return false;
     }
