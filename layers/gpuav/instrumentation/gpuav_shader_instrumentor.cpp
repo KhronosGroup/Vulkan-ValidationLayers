@@ -1241,8 +1241,10 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     }
 
     if (gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
-        spirv::VertexAttributeFetchOob pass(module);
-        modified |= pass.Run();
+        if (!modified_features.robustBufferAccess) {
+            spirv::VertexAttributeFetchOob pass(module);
+            modified |= pass.Run();
+        }
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here

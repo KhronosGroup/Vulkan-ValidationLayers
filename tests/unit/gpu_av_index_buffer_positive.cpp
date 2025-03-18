@@ -631,3 +631,65 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
+    TEST_DESCRIPTION("Do no Validate illegal index buffer values when robustness is on");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::robustBufferAccess);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+
+        layout(location=0) in vec3 pos;
+
+        void main() {
+        gl_Position = vec4(pos, 1.0);
+        }
+        )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkDrawIndexedIndirectCommand draw_params{};
+    draw_params.indexCount = 3;
+    draw_params.instanceCount = 1;
+    draw_params.firstIndex = 0;
+    draw_params.vertexOffset = 0;
+    draw_params.firstInstance = 0;
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    // The last 2 indices cause an OOB access in the vertex buffer, but if robustness is on,
+    // no validation is performed
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
