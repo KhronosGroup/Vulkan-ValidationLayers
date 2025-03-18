@@ -834,8 +834,8 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
     // descriptors, via the non-const version of ValidateBindingDynamic(), this code uses the const path only even it gives up
     // non-const versions of its state objects here.
     const vvl::DescriptorValidator desc_val(const_cast<CoreChecks &>(*this), const_cast<vvl::CommandBuffer &>(cb_state),
-                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer, shader_handle,
-                                            loc);
+                                            const_cast<vvl::DescriptorSet &>(descriptor_set), set_index, framebuffer,
+                                            &shader_handle, loc);
 
     for (const auto &[binding_index, desc_set_reqs] : binding_req_map) {
         ASSERT_AND_CONTINUE(desc_set_reqs.variable);

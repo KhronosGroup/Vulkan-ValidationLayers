@@ -40,7 +40,7 @@ class DescriptorSet;
 class DescriptorValidator : public Logger {
   public:
     DescriptorValidator(Device& dev, vvl::CommandBuffer& cb_state, vvl::DescriptorSet& descriptor_set, uint32_t set_index,
-                        VkFramebuffer framebuffer, const VulkanTypedHandle& shader_handle, const Location& loc);
+                        VkFramebuffer framebuffer, const VulkanTypedHandle* shader_handle, const Location& loc);
 
     // Used with normal validation where we know which descriptors are accessed.
     bool ValidateBindingStatic(const spirv::ResourceInterfaceVariable& binding_info, const vvl::DescriptorBinding& binding) const;
@@ -48,6 +48,10 @@ class DescriptorValidator : public Logger {
     // The main reason we can't combine is one function needs to be const and the other is non-const.
     bool ValidateBindingDynamic(const spirv::ResourceInterfaceVariable& binding_info, DescriptorBinding& binding,
                                 const uint32_t index);
+
+    // For GPU-AV, these can become aliased and need to be mutable between descriptor accesses
+    uint32_t set_index;
+    const VulkanTypedHandle* shader_handle;  // VkShaderModule or VkPipeline or VkShaderObject
 
   private:
     template <typename T>
@@ -79,9 +83,7 @@ class DescriptorValidator : public Logger {
     vvl::Device& dev_state;
     vvl::CommandBuffer& cb_state;
     vvl::DescriptorSet& descriptor_set;
-    const uint32_t set_index;
     const VkFramebuffer framebuffer;
-    const VulkanTypedHandle& shader_handle;  // VkPipeline or VkShaderObject
     const Location& loc;
     const DrawDispatchVuid& vuids;
 };

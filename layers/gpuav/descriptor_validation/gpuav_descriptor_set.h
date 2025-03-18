@@ -31,8 +31,13 @@ class Validator;
 struct DescriptorAccess {
     uint32_t binding;      // binding number in the descriptor set
     uint32_t index;        // index into descriptor array
-    const ::spirv::ResourceInterfaceVariable &resource_variable;
+    uint32_t variable_id;  // OpVariableID
+    uint32_t action_index;  // Index of action command access occured
 };
+
+// We create a map with the |unique_shader_id| as the key so we can only do the state object lookup once per
+// pipeline/shaderModule/shaderObject
+typedef vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>> DescriptorAccessMap;
 
 class DescriptorSet : public vvl::DescriptorSet {
   public:
@@ -47,9 +52,9 @@ class DescriptorSet : public vvl::DescriptorSet {
     VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
     bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
     bool CanPostProcess() const;
+    void ClearPostProcess(const Location &loc) const;
 
-    std::vector<DescriptorAccess> GetDescriptorAccesses(const Location &loc, uint32_t shader_set,
-                                                        const std::vector<const ::spirv::EntryPoint *> &entry_points) const;
+    DescriptorAccessMap GetDescriptorAccesses(const Location &loc) const;
 
   private:
     void BuildBindingLayouts();

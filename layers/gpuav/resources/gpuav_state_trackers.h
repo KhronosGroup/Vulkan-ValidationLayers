@@ -36,7 +36,6 @@ namespace gpuav {
 
 class Validator;
 struct DescriptorCommandBinding;
-struct ActionCommandSnapshot;
 
 struct DebugPrintfBufferInfo {
     vko::Buffer output_mem_buffer;
@@ -58,9 +57,6 @@ class CommandBuffer : public vvl::CommandBuffer {
     // Note: If the app calls vkCmdBindDescriptorSet 10 times to set descriptor set [0, 9] one at a time instead of setting [0, 9]
     // in a single vkCmdBindDescriptorSet call then this will allocate a lot of redundant memory
     std::vector<DescriptorCommandBinding> descriptor_command_bindings;
-    // Information that requires information about the SPIR-V requires pipeline/shaderObject info. This means we need to track
-    // things at an action level (draw call) granularity
-    std::vector<ActionCommandSnapshot> action_command_snapshots;
 
     // Buffer to be bound every draw/dispatch/action
     VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;

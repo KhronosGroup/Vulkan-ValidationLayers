@@ -1184,6 +1184,11 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                                              std::vector<uint32_t> &out_instrumented_spirv) {
     if (input_spirv[0] != spv::MagicNumber) return false;
 
+    if (unique_shader_id >= glsl::kMaxInstrumentedShaders) {
+        InternalWarning(device, loc, "kMaxInstrumentedShaders limit has been hit, no shaders can be instrumented.");
+        return false;
+    }
+
     if (gpuav_settings.debug_dump_instrumented_shaders) {
         std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
         DumpSpirvToFile(file_name, reinterpret_cast<const char *>(input_spirv.data()), input_spirv.size() * sizeof(uint32_t));

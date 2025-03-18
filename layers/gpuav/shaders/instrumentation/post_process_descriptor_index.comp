@@ -27,6 +27,9 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
 };
 
 layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std430) buffer PostProcessSSBO {
+    // There is a chance 2 sets are aliased to the same pointer
+    // ex - descriptor_index_post_process_buffers[0] == descriptor_index_post_process_buffers[1]
+    // But that is ok as we use the variable_id to extract thet set on the CPU
     DescriptorIndexPostProcess descriptor_index_post_process_buffers[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
@@ -34,11 +37,8 @@ void inst_post_process_descriptor_index(const uint desc_set, const uint binding,
     DescriptorIndexPostProcess descriptor_index_post_process = gpuav.descriptor_index_post_process_buffers[desc_set];
     const uint binding_layout_index = binding_layout_offset + desc_index;
 
-    const uvec2 result = uvec2(kDescriptorSetAccessedMask | desc_set, variable_id);
+    const uint cmd_id = inst_cmd_resource_index_buffer.index[0] << kPostProcessMetaShiftActionIndex;
 
     // The index has been accessed, write out for post processing
-    //
-    // Two pointers *could* be the same pointer if shared VkDescriptorSet handles
-    // ex - descriptor_index_post_process_buffers[0] == descriptor_index_post_process_buffers[1]
-    descriptor_index_post_process.slot[binding_layout_index] = result;
+    descriptor_index_post_process.slot[binding_layout_index] = uvec2(kPostProcessMetaMaskAccessed | cmd_id | kLinkShaderId, variable_id);
 }

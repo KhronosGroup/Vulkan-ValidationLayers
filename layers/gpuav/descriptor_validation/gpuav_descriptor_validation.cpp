@@ -17,13 +17,17 @@
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 
+#include "containers/custom_containers.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
 
 #include "profiling/profiling.h"
+#include "state_tracker/shader_object_state.h"
+#include "utils/vk_layer_utils.h"
 
 namespace gpuav {
 namespace descriptor {
@@ -43,15 +47,6 @@ void PreCallActionCommandPostProcess(Validator &gpuav, CommandBuffer &cb_state, 
     // TODO - Add Shader Object support
     if (!last_bound.pipeline_state) {
         return;
-    }
-    const VulkanTypedHandle &shader_handle = last_bound.pipeline_state->Handle();
-
-    const uint32_t descriptor_command_binding_index = (uint32_t)cb_state.descriptor_command_bindings.size() - 1;
-    auto &action_command_snapshot = cb_state.action_command_snapshots.emplace_back(descriptor_command_binding_index, shader_handle);
-    action_command_snapshot.entry_points.reserve(last_bound.pipeline_state->stage_states.size());
-
-    for (const auto &stage : last_bound.pipeline_state->stage_states) {
-        action_command_snapshot.entry_points.emplace_back(stage.entrypoint.get());
     }
 }
 
@@ -192,23 +187,20 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
 // After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
 [[nodiscard]] bool CommandBuffer::ValidateBindlessDescriptorSets(const Location &loc) {
     VVL_ZoneScoped;
-    for (uint32_t action_index = 0; action_index < action_command_snapshots.size(); action_index++) {
-        const auto &action_command_snapshot = action_command_snapshots[action_index];
-        const auto &descriptor_command_binding =
-            descriptor_command_bindings[action_command_snapshot.descriptor_command_binding_index];
+    // Only check a VkDescriptorSet once, might be bound multiple times in a single command buffer
+    vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
 
-        // Some applications repeatedly call vkCmdBindDescriptorSets() with the same descriptor sets, avoid checking them multiple
-        // times.
-        vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
+    // TODO - Currently we don't know the actual call that triggered this, but without just giving "vkCmdDraw" we will get
+    // VUID_Undefined We now have the DescriptorValidator::action_index, just need to hook it up!
+    Location draw_loc(vvl::Func::vkCmdDraw);
 
-        // TODO - Currently we don't know the actual call that triggered this, but without just giving "vkCmdDraw" we will get
-        // VUID_Undefined
-        Location draw_loc(vvl::Func::vkCmdDraw);
-
-        // For each descriptor set ...
+    // We loop each vkCmdBindDescriptorSet, find each VkDescriptorSet that was used in the command buffer, and check its post
+    // process buffer for which descriptor was accessed
+    for (const auto &descriptor_command_binding : descriptor_command_bindings) {
         for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
             auto &bound_descriptor_set = descriptor_command_binding.bound_descriptor_sets[set_index];
 
+            // The Post Process buffer is tied to the VkDescriptorSet, so we clear it after and only check it once
             if (validated_desc_sets.count(bound_descriptor_set->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
@@ -221,8 +213,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                 }
 
                 std::stringstream error;
-                error << "In CommandBuffer::ValidateBindlessDescriptorSets, action_command_snapshots[" << action_index
-                      << "].descriptor_command_binding.bound_descriptor_sets[" << set_index
+                error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_command_binding.bound_descriptor_sets["
+                      << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
                 auto gpuav = static_cast<Validator *>(&dev_data);
                 gpuav->InternalError(gpuav->device, loc, error.str().c_str());
@@ -230,21 +222,81 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
             validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
 
-            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, set_index, VK_NULL_HANDLE /*framebuffer*/,
-                                             action_command_snapshot.shader_handle, draw_loc);
+            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, 0, VK_NULL_HANDLE /*framebuffer*/, nullptr,
+                                             draw_loc);
 
-            std::vector<DescriptorAccess> descriptor_accesses =
-                bound_descriptor_set->GetDescriptorAccesses(loc, set_index, action_command_snapshot.entry_points);
-            for (const auto &descriptor_access : descriptor_accesses) {
-                auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
-                ASSERT_AND_CONTINUE(descriptor_binding);
+            DescriptorAccessMap descriptor_access_map = bound_descriptor_set->GetDescriptorAccesses(loc);
+            // Once we have accessed everything and created the DescriptorAccess, we can clear this buffer
+            bound_descriptor_set->ClearPostProcess(loc);
 
-                // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
-                if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, descriptor_access.resource_variable)) {
+            for (const auto &[shader_id, descriptor_accesses] : descriptor_access_map) {
+                auto it = state_.instrumented_shaders_map_.find(shader_id);
+                if (it == state_.instrumented_shaders_map_.end()) {
+                    assert(false);
                     continue;
                 }
 
-                context.ValidateBindingDynamic(descriptor_access.resource_variable, *descriptor_binding, descriptor_access.index);
+                const vvl::ShaderModule *module_state = nullptr;
+                const vvl::Pipeline *pipeline_state = nullptr;
+                const vvl::ShaderObject *shader_object_state = nullptr;
+
+                if (it->second.shader_module != VK_NULL_HANDLE && it->second.shader_module != kPipelineStageInfoHandle) {
+                    module_state = state_.Get<vvl::ShaderModule>(it->second.shader_module).get();
+                    ASSERT_AND_CONTINUE(module_state->spirv);
+                    context.shader_handle = &module_state->Handle();
+                } else if (it->second.pipeline != VK_NULL_HANDLE) {
+                    pipeline_state = state_.Get<vvl::Pipeline>(it->second.pipeline).get();
+                    context.shader_handle = &pipeline_state->Handle();
+                } else if (it->second.shader_object != VK_NULL_HANDLE) {
+                    shader_object_state = state_.Get<vvl::ShaderObject>(it->second.shader_object).get();
+                    ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
+                    context.shader_handle = &shader_object_state->Handle();
+                } else {
+                    assert(false);
+                    continue;
+                }
+
+                for (const auto &descriptor_access : descriptor_accesses) {
+                    auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
+                    ASSERT_AND_CONTINUE(descriptor_binding);
+
+                    const ::spirv::ResourceInterfaceVariable *resource_variable = nullptr;
+                    if (module_state) {
+                        for (const auto &entry_point : module_state->spirv->static_data_.entry_points) {
+                            auto variable_it = entry_point->resource_interface_variable_map.find(descriptor_access.variable_id);
+                            if (variable_it == entry_point->resource_interface_variable_map.end()) continue;
+                            resource_variable = variable_it->second;
+                            break;  // Only need to find a single entry point
+                        }
+                    } else if (pipeline_state) {
+                        for (const auto &stage_state : pipeline_state->stage_states) {
+                            if (!stage_state.entrypoint) continue;
+                            auto variable_it =
+                                stage_state.entrypoint->resource_interface_variable_map.find(descriptor_access.variable_id);
+                            if (variable_it == stage_state.entrypoint->resource_interface_variable_map.end()) continue;
+                            resource_variable = variable_it->second;
+                            break;  // Only need to find a single entry point
+                        }
+                    } else if (shader_object_state) {
+                        auto variable_it =
+                            shader_object_state->entrypoint->resource_interface_variable_map.find(descriptor_access.variable_id);
+                        if (variable_it != shader_object_state->entrypoint->resource_interface_variable_map.end()) {
+                            resource_variable = variable_it->second;
+                        }
+                    }
+                    ASSERT_AND_CONTINUE(resource_variable);
+
+                    // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
+                    if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, *resource_variable)) {
+                        continue;
+                    }
+
+                    // This will represent the Set that was accessed in the shader, which might not match the vkCmdBindDescriptorSet
+                    // index if sets are aliased
+                    context.set_index = resource_variable->decorations.set;
+                    assert(context.shader_handle);
+                    context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
+                }
             }
         }
     }
