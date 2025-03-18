@@ -1819,12 +1819,16 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
         skip |= ValidateCopyImageTransferGranularityRequirements(cb_state, *src_image_state, *dst_image_state, region, region_loc);
         skip |= ValidateCopyImageRegionCommon(commandBuffer, *src_image_state, *dst_image_state, region, region_loc);
-        vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10217" : "VUID-vkCmdCopyImage-commandBuffer-10217";
-        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, src_aspect, *src_image_state,
-                                           region_loc.dot(Field::srcSubresource).dot(Field::aspectMask), vuid);
-        vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10218" : "VUID-vkCmdCopyImage-commandBuffer-10218";
-        skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, dst_aspect, *dst_image_state,
-                                           region_loc.dot(Field::dstSubresource).dot(Field::aspectMask), vuid);
+        if (src_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
+            vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10217" : "VUID-vkCmdCopyImage-commandBuffer-10217";
+            skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, dst_aspect, *src_image_state,
+                                               region_loc.dot(Field::srcSubresource).dot(Field::aspectMask), vuid);
+        }
+        if (dst_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
+            vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10218" : "VUID-vkCmdCopyImage-commandBuffer-10218";
+            skip |= ValidateQueueFamilySupport(cb_state, *physical_device_state, src_aspect, *dst_image_state,
+                                               region_loc.dot(Field::dstSubresource).dot(Field::aspectMask), vuid);
+        }
     }
 
     if (vkuFormatIsCompressed(src_format) && vkuFormatIsCompressed(dst_format)) {
