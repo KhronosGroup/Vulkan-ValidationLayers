@@ -3441,7 +3441,7 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     image_copy.dstOffset = offset;
     image_copy.extent = extent;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-10217");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-10218");
     vk::CmdCopyImage(command_buffer.handle(), src_ds_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_color_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
     m_errorMonitor->VerifyFound();
@@ -3449,7 +3449,7 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     image_copy.srcSubresource = color_image_subresource;
     image_copy.dstSubresource = ds_image_subresource;
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-10218");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-10217");
     vk::CmdCopyImage(command_buffer.handle(), src_color_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_ds_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
     m_errorMonitor->VerifyFound();
