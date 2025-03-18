@@ -83,22 +83,22 @@ namespace spirv {
 struct StatelessData;
 }  // namespace spirv
 
-#define VALSTATETRACK_MAP_AND_TRAITS(handle_type, state_type, map_member)               \
-    vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member; \
-    template <typename Dummy>                                                           \
-    struct MapTraits<state_type, Dummy> {                                               \
-        static constexpr bool kInstanceScope = false;                                   \
-        using MapType = decltype(map_member);                                           \
-        static MapType vvl::Device::*Map() { return &vvl::Device::map_member; }         \
+#define VALSTATETRACK_MAP_AND_TRAITS(handle_type, state_type, map_member)                 \
+    vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;   \
+    template <typename Dummy>                                                             \
+    struct MapTraits<state_type, Dummy> {                                                 \
+        static constexpr bool kInstanceScope = false;                                     \
+        using MapType = decltype(map_member);                                             \
+        static MapType vvl::DeviceState::*Map() { return &vvl::DeviceState::map_member; } \
     };
 
-#define VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(handle_type, state_type, map_member) \
-    vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;  \
-    template <typename Dummy>                                                            \
-    struct MapTraits<state_type, Dummy> {                                                \
-        static constexpr bool kInstanceScope = false;                                    \
-        using MapType = decltype(map_member);                                            \
-        static MapType vvl::Instance::*Map() { return &vvl::Instance::map_member; }      \
+#define VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(handle_type, state_type, map_member)      \
+    vvl::concurrent_unordered_map<handle_type, std::shared_ptr<state_type>> map_member;       \
+    template <typename Dummy>                                                                 \
+    struct MapTraits<state_type, Dummy> {                                                     \
+        static constexpr bool kInstanceScope = false;                                         \
+        using MapType = decltype(map_member);                                                 \
+        static MapType vvl::InstanceState::*Map() { return &vvl::InstanceState::map_member; } \
     };
 
 namespace state_object {
@@ -173,12 +173,12 @@ VALSTATETRACK_STATE_OBJECT(VkIndirectExecutionSetEXT, vvl::IndirectExecutionSet)
 VALSTATETRACK_STATE_OBJECT(VkIndirectCommandsLayoutEXT, vvl::IndirectCommandsLayout)
 
 namespace vvl {
-class Instance : public vvl::base::Instance {
+class InstanceState : public vvl::base::Instance {
     using Func = vvl::Func;
     using BaseClass = vvl::base::Instance;
 
   public:
-    Instance(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
+    InstanceState(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
 
     virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
@@ -445,7 +445,7 @@ class Instance : public vvl::base::Instance {
     VALSTATETRACK_MAP_AND_TRAITS_INSTANCE_SCOPE(VkPhysicalDevice, vvl::PhysicalDevice, physical_device_map_)
 };
 
-class Device : public vvl::base::Device {
+class DeviceState : public vvl::base::Device {
     using Func = vvl::Func;
     using BaseClass = vvl::base::Device;
 
@@ -474,7 +474,7 @@ class Device : public vvl::base::Device {
     void DestroyObjectMaps();
 
   public:
-    Device(vvl::dispatch::Device* dev, Instance* instance, LayerObjectTypeId type)
+    DeviceState(vvl::dispatch::Device* dev, InstanceState* instance, LayerObjectTypeId type)
         : BaseClass(dev, instance, type),
           instance_state(instance),
           has_format_feature2(dev->stateless_device_data.has_format_feature2),
@@ -483,7 +483,7 @@ class Device : public vvl::base::Device {
           has_robust_buffer_access2(dev->stateless_device_data.has_robust_buffer_access2) {
         physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
     }
-    ~Device();
+    ~DeviceState();
 
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
@@ -1879,7 +1879,7 @@ class Device : public vvl::base::Device {
     vvl::PhysicalDevice* physical_device_state;
 
     // Link for derived device objects back to their parent instance object
-    vvl::Instance* instance_state;
+    vvl::InstanceState* instance_state;
 
     VkDeviceGroupDeviceCreateInfo device_group_create_info = {};
     uint32_t physical_device_count;

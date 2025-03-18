@@ -29,7 +29,7 @@ class ImageSubState : public vvl::ImageSubState {
     bool IsTiled() const { return !IsLinear(); }
     bool IsSimplyBound() const;
 
-    void SetOpaqueBaseAddress(vvl::Device &dev_data);
+    void SetOpaqueBaseAddress(vvl::DeviceState &dev_data);
 
     VkDeviceSize GetOpaqueBaseAddress() const { return opaque_base_address_; }
     bool HasOpaqueMapping() const { return 0U != opaque_base_address_; }

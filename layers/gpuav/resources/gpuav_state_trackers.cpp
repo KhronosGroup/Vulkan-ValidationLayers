@@ -227,7 +227,7 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
 
     const size_t max_recordable_ranges =
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
-    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 2);
+    auto bda_ranges = reinterpret_cast<vvl::DeviceState::BufferAddressRange *>(bda_table_ptr + 2);
     const auto [ranges_to_update_count, total_address_ranges_count] =
         state_.GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
     // Cast here instead of having to cast inside the shader

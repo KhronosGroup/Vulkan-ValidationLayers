@@ -21,7 +21,7 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace vvl {
-class Device;
+class DeviceState;
 class Pipeline;
 struct ShaderObject;
 
@@ -30,7 +30,8 @@ class IndirectExecutionSet : public StateObject {
     const vku::safe_VkIndirectExecutionSetCreateInfoEXT safe_create_info;
     const VkIndirectExecutionSetCreateInfoEXT &create_info;
 
-    IndirectExecutionSet(Device &dev, VkIndirectExecutionSetEXT handle, const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
+    IndirectExecutionSet(DeviceState &dev, VkIndirectExecutionSetEXT handle,
+                         const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo);
     VkIndirectExecutionSetEXT VkHandle() const { return handle_.Cast<VkIndirectExecutionSetEXT>(); }
 
     const bool is_pipeline;
@@ -52,7 +53,7 @@ class IndirectCommandsLayout : public StateObject {
     const vku::safe_VkIndirectCommandsLayoutCreateInfoEXT safe_create_info;
     const VkIndirectCommandsLayoutCreateInfoEXT &create_info;
 
-    IndirectCommandsLayout(Device &dev, VkIndirectCommandsLayoutEXT handle,
+    IndirectCommandsLayout(DeviceState &dev, VkIndirectCommandsLayoutEXT handle,
                            const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo);
     VkIndirectCommandsLayoutEXT VkHandle() const { return handle_.Cast<VkIndirectCommandsLayoutEXT>(); }
 

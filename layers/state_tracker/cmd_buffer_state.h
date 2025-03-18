@@ -30,7 +30,7 @@ namespace vvl {
 class Bindable;
 class Buffer;
 class CommandBufferSubState;
-class Device;
+class DeviceState;
 class Framebuffer;
 class Queue;
 class RenderPass;
@@ -136,7 +136,7 @@ class Event : public StateObject {
 // Track command pools and their command buffers
 class CommandPool : public StateObject {
   public:
-    Device &dev_data;
+    DeviceState &dev_data;
     const VkCommandPoolCreateFlags createFlags;
     const uint32_t queueFamilyIndex;
     const VkQueueFlags queue_flags;
@@ -144,7 +144,7 @@ class CommandPool : public StateObject {
     // Cmd buffers allocated from this pool
     vvl::unordered_map<VkCommandBuffer, CommandBuffer *> commandBuffers;
 
-    CommandPool(Device &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags);
+    CommandPool(DeviceState &dev, VkCommandPool handle, const VkCommandPoolCreateInfo *create_info, VkQueueFlags flags);
     virtual ~CommandPool() { Destroy(); }
 
     VkCommandPool VkHandle() const { return handle_.Cast<VkCommandPool>(); }
@@ -173,7 +173,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     VkCommandBufferInheritanceInfo inheritanceInfo;
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
-    Device &dev_data;
+    DeviceState &dev_data;
     bool unprotected;  // can't be used for protected memory
     bool hasRenderPassInstance;
     bool suspendsRenderPassInstance;
@@ -560,7 +560,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock); }
 
-    CommandBuffer(Device &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
+    CommandBuffer(DeviceState &dev, VkCommandBuffer handle, const VkCommandBufferAllocateInfo *allocate_info,
                   const vvl::CommandPool *cmd_pool);
 
     virtual ~CommandBuffer() { Destroy(); }
