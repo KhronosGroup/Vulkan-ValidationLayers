@@ -167,7 +167,19 @@ std::optional<VkExternalFenceHandleTypeFlagBits> vvl::Fence::ImportedHandleType(
 
 void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_submission_ref) {
     auto guard = WriteLock();
-    assert(!present_submission_ref_.has_value());
+    // In an error-free scenario, "present_submission_ref_" member has no value (as optional).
+    // If the fence is reused without being waited on/reset (which causes a validation error),
+    // then we may find a stale ref value here. Simply overwrite it with a new ref.
+    //
+    // VVL INSIGHT: Interestingly, stale ref value can't happen in VVL tests because this function
+    // (from the Record phase) is not called if validation fails. However, the Record phase is
+    // always called for regular applications even in the case of validation errors.
+    // This means we cannot assert that submission ref member is empty. Such an assert would be
+    // valid for VVL tests but not for regular apps. It's not a big deal, but this observation
+    // may be useful to get better understanding of VVL internals.
+    //
+    // assert(!present_submission_ref_.has_value()); - only valid for VVL tests
+
     assert(present_submission_ref.queue != nullptr);
     present_submission_ref_ = present_submission_ref;
 }
