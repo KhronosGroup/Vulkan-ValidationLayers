@@ -30,16 +30,19 @@ descriptor_b[index].data = 0;
 
 Currently, we have a `DescriptorValidator` class that is created at draw time with Core Checks and also at post-queue submission with GPU-AV.
 
-The goal is that the `ValidateDescriptor()` function can be called the same from both variations.
+The goal is that the `ValidateDescriptor()` function can be called the same from both variations. To call `ValidateDescriptor()` we need 2 things:
+
+1. Which descriptor was accessed
+2. The `OpVariable` from the SPIR-V that it was accessed in
 
 ## Tracking Descriptors and SPIR-V
 
-When tracking data for Post Process, we need both information from `vkCmdBindDescriptorSets` and `vkCmdBindPipeline` (or shader objects), but not all are present at the same time.
-
-The `VkDescriptorSet` object contains a buffer with a `PostProcessDescriptorIndexSlot` for each descriptor in it. This "descriptor index slot" holds information that can only be known at GPU execution time (which index, OpVariable, etc... are used). For each action command, we create a LUT mapping 32 (current max limit) addresses to the `VkDescriptorSet` buffer.
+The `VkDescriptorSet` object contains a buffer with a `PostProcessDescriptorIndexSlot` for each descriptor in it. This "descriptor index slot" holds information that can only be known at GPU execution time (which index, OpVariable, etc... are used). Each time `vkCmdBindDescriptorSets` is called, we create a LUT mapping of 32 (current max limit) addresses to map to each `VkDescriptorSet` bound and its buffer.
 
 The pipelines contain the `OpVariable` SPIR-V information, such as which type of image is used. This is wrapped up in a `BindingVariableMap` pointer. Using this we can map the accessed descriptor on the GPU back to all the state tracking on the CPU.
 
 The following diagram aims to illustrate the flow of data:
 
 ![alt_text](images/post_processing.svg "Post Processing")
+
+When processing on the CPU, we loop through every unique `VkDescriptorSet` to look at the contents of its `PostProcessDescriptorIndexSlot`. It contains both the instrumented `unqiue shader ID` and the `OpVariable` ID. Just like other GPU-AV checks, we can use the `unqiue shader ID` to lookup which `VkShaderModule`/`VkPipeline`/`VkShaderEXT` that reported the error.

@@ -285,7 +285,6 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
         descriptor_command_binding.post_process_ssbo_buffer.Destroy();
     }
     descriptor_command_bindings.clear();
-    action_command_snapshots.clear();
     descriptor_indexing_buffer = VK_NULL_HANDLE;
     post_process_buffer_lut = VK_NULL_HANDLE;
 
@@ -318,6 +317,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
 
 void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point) {
     action_command_count++;
+    assert(action_command_count < glsl::kMaxActionsPerCommandBuffer);
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {

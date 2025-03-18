@@ -41,24 +41,6 @@ struct DescriptorCommandBinding {
     DescriptorCommandBinding(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav), post_process_ssbo_buffer(gpuav) {}
 };
 
-// This holds inforamtion for a given action command (draw/dispatch/trace rays)
-// It needs the DescriptorCommandBinding, but to save memory, will just reference the last instance used at the time this is created
-struct ActionCommandSnapshot {
-    // This is a reference to the last DescriptorCommandBinding at a given action command time.
-    // We use an int here because the list for DescriptorCommandBinding is a vector and reference/pointer will change on us.
-    const uint32_t descriptor_command_binding_index;
-
-    // This is information from the pipeline/shaderObject we want to save
-    // For pipeline, we get all entry points inside of it
-    // For ShaderObject, we get the entryPoint for each stage bound
-    std::vector<const ::spirv::EntryPoint*> entry_points;
-
-    const VulkanTypedHandle& shader_handle;  // VkPipeline or VkShaderObject used
-
-    ActionCommandSnapshot(const uint32_t index, const VulkanTypedHandle& shader_handle)
-        : descriptor_command_binding_index(index), shader_handle(shader_handle) {}
-};
-
 // These match the Structures found in the instrumentation GLSL logic
 namespace glsl {
 
@@ -87,9 +69,8 @@ struct BindingLayout {
 // Represented as a uvec2 in the shader
 // For each descriptor index we have a "slot" to mark what happend on the GPU.
 struct PostProcessDescriptorIndexSlot {
-    // Since most devices can only support 32 descriptor sets (and we have checks for this assumption already), we try to compress
-    // other access info into this 32-bits GLSL doesn't have bitfields to divide this
-    uint32_t descriptor_set;
+    // see gpuav_shaders_constants.h for how we split this metadata up
+    uint32_t meta_data;
     // OpVariable ID of descriptor accessed.
     // This is required to distinguish between 2 aliased descriptors
     uint32_t variable_id;

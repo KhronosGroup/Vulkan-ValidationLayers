@@ -224,7 +224,12 @@ void Instruction::Fill(const std::vector<uint32_t>& words) {
     UpdateDebugInfo();
 }
 
-void Instruction::UpdateWord(uint32_t index, uint32_t data) { words_[index] = data; }
+void Instruction::UpdateWord(uint32_t index, uint32_t data) {
+    words_[index] = data;
+#ifndef NDEBUG
+    d_words_[index] = data;
+#endif
+}
 
 void Instruction::AppendWord(uint32_t word) {
     words_.emplace_back(word);

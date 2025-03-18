@@ -17,6 +17,7 @@
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
 
+#include "containers/custom_containers.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
@@ -285,8 +286,9 @@ VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav, co
         return post_process_buffer_.Address();
     }
 
+    const VkDeviceSize slot_size = base.GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = base.GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
+    buffer_info.size = slot_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     VmaAllocationCreateInfo alloc_info{};
@@ -298,22 +300,18 @@ VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav, co
         return 0;
     }
 
-    VVL_TracyPlot("Post process buffer size (bytes)", int64_t(buffer_info.size));
-
-    post_process_buffer_.Clear();
-    post_process_buffer_.FlushAllocation(loc);
+    ClearPostProcess(loc);
 
     return post_process_buffer_.Address();
 }
 
 // cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
 // where accessed
-std::vector<DescriptorAccess> DescriptorSetSubState::GetDescriptorAccesses(
-    const Location &loc, uint32_t shader_set, const std::vector<const ::spirv::EntryPoint *> &entry_points) const {
+DescriptorAccessMap DescriptorSetSubState::GetDescriptorAccesses(const Location &loc) const {
     VVL_ZoneScoped;
-    std::vector<DescriptorAccess> descriptor_accesses;
+    DescriptorAccessMap descriptor_access_map;
     if (post_process_buffer_.IsDestroyed()) {
-        return descriptor_accesses;
+        return descriptor_access_map;
     }
 
     auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr();
@@ -323,22 +321,21 @@ std::vector<DescriptorAccess> DescriptorSetSubState::GetDescriptorAccesses(
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
         for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
-            if (slot.descriptor_set & glsl::kDescriptorSetAccessedMask) {
-                if ((slot.descriptor_set & glsl::kDescriptorSetSelectionMask) == shader_set) {
-                    // TODO - Currently we don't save the shader stage in the shader so we rely on resource OpVariable IDs not being
-                    // the same across shader stages
-                    for (const ::spirv::EntryPoint *entry_point : entry_points) {
-                        auto variable_it = entry_point->resource_interface_variable_map.find(slot.variable_id);
-                        if (variable_it == entry_point->resource_interface_variable_map.end()) continue;
-                        descriptor_accesses.emplace_back(DescriptorAccess{binding, descriptor_i, *variable_it->second});
-                        break;  // Only need to find a single entry point
-                    }
-                }
+            if (slot.meta_data & glsl::kPostProcessMetaMaskAccessed) {
+                const uint32_t shader_id = slot.meta_data & glsl::kPostProcessMetaMaskShaderId;
+                const uint32_t action_index = slot.meta_data & glsl::kPostProcessMetaMaskActionIndex;
+                descriptor_access_map[shader_id].emplace_back(
+                    DescriptorAccess{binding, descriptor_i, slot.variable_id, action_index});
             }
         }
     }
 
-    return descriptor_accesses;
+    return descriptor_access_map;
+}
+
+void DescriptorSetSubState::ClearPostProcess(const Location &loc) const {
+    post_process_buffer_.Clear();
+    post_process_buffer_.FlushAllocation(loc);
 }
 
 void DescriptorSetSubState::NotifyUpdate() { current_version_++; }
