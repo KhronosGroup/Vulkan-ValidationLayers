@@ -30,14 +30,14 @@
 
 namespace syncval {
 // sync validation has no instance-level functionality
-class Instance : public vvl::Instance {
+class Instance : public vvl::InstanceState {
   public:
-    Instance(vvl::dispatch::Instance *dispatch) : vvl::Instance(dispatch, LayerObjectTypeSyncValidation) {}
+    Instance(vvl::dispatch::Instance *dispatch) : vvl::InstanceState(dispatch, LayerObjectTypeSyncValidation) {}
 };
 }  // namespace syncval
 
-class SyncValidator : public vvl::Device, public SyncStageAccess {
-    using BaseClass = vvl::Device;
+class SyncValidator : public vvl::DeviceState, public SyncStageAccess {
+    using BaseClass = vvl::DeviceState;
 
   public:
     using Func = vvl::Func;

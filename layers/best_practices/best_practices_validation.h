@@ -189,8 +189,8 @@ const char* VendorSpecificTag(BPVendorFlags vendors);
 
 bool VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors);
 
-class Instance : public vvl::Instance {
-    using BaseClass = vvl::Instance;
+class Instance : public vvl::InstanceState {
+    using BaseClass = vvl::InstanceState;
 
   public:
     using Func = vvl::Func;
@@ -243,8 +243,8 @@ class Instance : public vvl::Instance {
 };
 }  // namespace bp_state
 
-class BestPractices : public vvl::Device {
-    using BaseClass = vvl::Device;
+class BestPractices : public vvl::DeviceState {
+    using BaseClass = vvl::DeviceState;
 
   public:
     using Func = vvl::Func;

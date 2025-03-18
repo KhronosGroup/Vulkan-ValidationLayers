@@ -196,10 +196,10 @@ void BestPractices::PostCallRecordCmdSetDepthTestEnableEXT(VkCommandBuffer comma
 
 namespace {
 struct EventValidator {
-    const vvl::Device& state_tracker;
+    const Logger& log;
     vvl::unordered_map<VkEvent, bool> signaling_state;
 
-    EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
+    EventValidator(const Logger& log_) : log(log_) {}
 
     bool ValidateSecondaryCbSignalingState(const bp_state::CommandBufferSubState& primary_cb,
                                            const bp_state::CommandBufferSubState& secondary_cb, const Location& secondary_cb_loc) {
@@ -218,12 +218,12 @@ struct EventValidator {
                     // the most recent state update was signal (signaled == true) and the secondary
                     // command buffer starts with a signal too (first_state_change_is_signal).
                     const LogObjectList objlist(primary_cb.VkHandle(), secondary_cb.VkHandle(), event);
-                    skip |= state_tracker.LogWarning(
+                    skip |= log.LogWarning(
                         "BestPractices-Event-SignalSignaledEvent", objlist, secondary_cb_loc,
                         "%s sets event %s which was already set (in the primary command buffer %s or in the executed secondary "
                         "command buffers). If this is not the desired behavior, the event must be reset before it is set again.",
-                        state_tracker.FormatHandle(secondary_cb.VkHandle()).c_str(), state_tracker.FormatHandle(event).c_str(),
-                        state_tracker.FormatHandle(primary_cb.VkHandle()).c_str());
+                        log.FormatHandle(secondary_cb.VkHandle()).c_str(), log.FormatHandle(event).c_str(),
+                        log.FormatHandle(primary_cb.VkHandle()).c_str());
                 }
             }
             signaling_state[event] = signaling_info.signaled;

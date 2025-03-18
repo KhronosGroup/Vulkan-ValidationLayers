@@ -35,8 +35,8 @@ class QueueSubState;
 
 namespace gpuav {
 
-class Instance : public vvl::Instance {
-    using BaseClass = vvl::Instance;
+class Instance : public vvl::InstanceState {
+    using BaseClass = vvl::InstanceState;
 
   public:
     Instance(vvl::dispatch::Instance* dispatch) : BaseClass(dispatch, LayerObjectTypeGpuAssisted) {}

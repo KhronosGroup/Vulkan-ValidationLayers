@@ -19,7 +19,7 @@
 #include "state_tracker/state_tracker.h"
 
 namespace vvl {
-static ShaderObject::SetLayoutVector GetSetLayouts(Device &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
+static ShaderObject::SetLayoutVector GetSetLayouts(DeviceState &dev_data, const VkShaderCreateInfoEXT &pCreateInfo) {
     ShaderObject::SetLayoutVector set_layouts(pCreateInfo.setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo.setLayoutCount; ++i) {
@@ -28,7 +28,7 @@ static ShaderObject::SetLayoutVector GetSetLayouts(Device &dev_data, const VkSha
     return set_layouts;
 }
 
-ShaderObject::ShaderObject(Device &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
+ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
                            std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),

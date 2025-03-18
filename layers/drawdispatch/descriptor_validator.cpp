@@ -114,7 +114,7 @@ std::string DescriptorValidator::DescribeDescriptor(const spirv::ResourceInterfa
     return ss.str();
 }
 
-DescriptorValidator::DescriptorValidator(vvl::Device &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
+DescriptorValidator::DescriptorValidator(vvl::DeviceState &dev, CommandBuffer &cb_state, DescriptorSet &descriptor_set,
                                          uint32_t set_index, VkFramebuffer framebuffer, const VulkanTypedHandle *shader_handle,
                                          const Location &loc)
     : Logger(dev.debug_report),
