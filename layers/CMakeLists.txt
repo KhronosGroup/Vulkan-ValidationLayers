@@ -421,6 +421,11 @@ endif()
     # Both Apple and IOS
     target_link_options(vvl PRIVATE -exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.exp)
 elseif(ANDROID)
+    # Need 16k pages in Android 15
+    # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9703
+    # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9170
+    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE "-Wl,-z,max-page-size=16384")
+    
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}-android.map)
 else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map)
