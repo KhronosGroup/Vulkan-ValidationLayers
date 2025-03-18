@@ -1025,3 +1025,71 @@ TEST_F(NegativeGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32MultiDraw) {
+    TEST_DESCRIPTION("Validate illegal index buffer values - uint32_t index, multi draw");
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multiDraw);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+
+        layout(location=0) in vec3 pos;
+
+        void main() {
+        gl_Position = vec4(pos, gl_VertexIndex);
+        }
+        )glsl";
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    VkVertexInputBindingDescription input_binding = {0, 3 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX};
+    VkVertexInputAttributeDescription input_attrib = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1;
+    pipe.vi_ci_.pVertexAttributeDescriptions = &input_attrib;
+    pipe.vi_ci_.vertexAttributeDescriptionCount = 1;
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+
+    pipe.CreateGraphicsPipeline();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+
+    VkMultiDrawIndexedInfoEXT multi_draw_info[2] = {};
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawMultiIndexedEXT-None-02721", "Vertex index 666");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawMultiIndexedEXT-None-02721", "Vertex index 42");
+    multi_draw_info[0].firstIndex = 0;
+    multi_draw_info[0].indexCount = 3;
+    multi_draw_info[0].vertexOffset = 0;
+    // From vertexOffset = 3
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawMultiIndexedEXT-None-02721", "Vertex index 3");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawMultiIndexedEXT-None-02721", "Vertex index 669");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawMultiIndexedEXT-None-02721", "Vertex index 45");
+    multi_draw_info[1].firstIndex = 0;
+    multi_draw_info[1].indexCount = 3;
+    multi_draw_info[1].vertexOffset = 3;
+
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 2, multi_draw_info, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), nullptr);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

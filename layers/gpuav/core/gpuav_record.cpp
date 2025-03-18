@@ -483,11 +483,9 @@ void Validator::PreCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffe
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    for (uint32_t i = 0; i < drawCount; i++) {
-        // #ARNO_TODO calling Setup drawCount times seems weird...
-        PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
-        descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
-    }
+
+    PreCallSetupShaderInstrumentationResources(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
+    descriptor::PreCallActionCommand(*this, *cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location);
 }
 
 void Validator::PostCallRecordCmdDrawMultiIndexedEXT(VkCommandBuffer commandBuffer, uint32_t drawCount,
