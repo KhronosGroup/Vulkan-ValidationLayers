@@ -1089,8 +1089,8 @@ void Device::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocat
         WriteLockGuard guard(fd_handle_map_lock_);
         fd_handle_map_.erase(import_memory_fd_info->fd);
     }
-    Add(std::make_shared<DeviceMemory>(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap,
-                                       std::move(dedicated_binding), physical_device_count));
+    Add(CreateDeviceMemoryState(*pMemory, pAllocateInfo, fake_address, memory_type, memory_heap, std::move(dedicated_binding),
+                                physical_device_count));
     return;
 }
 
@@ -1695,6 +1695,14 @@ void Device::PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache 
     Destroy<PipelineCache>(pipelineCache);
 }
 
+std::shared_ptr<Pipeline> Device::CreateGraphicsPipelineState(
+    const VkGraphicsPipelineCreateInfo *create_info, std::shared_ptr<const PipelineCache> pipeline_cache,
+    std::shared_ptr<const RenderPass> &&render_pass, std::shared_ptr<const PipelineLayout> &&layout,
+    spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const {
+    return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(render_pass), std::move(layout),
+                                      stateless_data);
+}
+
 bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                     const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1729,8 +1737,8 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
                 skip = true;
             }
         }
-        pipeline_states.push_back(std::make_shared<Pipeline>(*this, &create_info, pipeline_cache, std::move(render_pass),
-                                                             std::move(layout_state), chassis_state.stateless_data));
+        pipeline_states.push_back(CreateGraphicsPipelineState(&create_info, pipeline_cache, std::move(render_pass),
+                                                              std::move(layout_state), chassis_state.stateless_data));
     }
     return skip;
 }
@@ -1929,6 +1937,11 @@ void Device::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelin
     Add(std::make_shared<PipelineLayout>(*this, *pPipelineLayout, pCreateInfo));
 }
 
+std::shared_ptr<DescriptorPool> Device::CreateDescriptorPoolState(VkDescriptorPool handle,
+                                                                  const VkDescriptorPoolCreateInfo *create_info) {
+    return std::make_shared<DescriptorPool>(*this, handle, create_info);
+}
+
 std::shared_ptr<DescriptorSet> Device::CreateDescriptorSet(VkDescriptorSet handle, DescriptorPool *pool,
                                                            const std::shared_ptr<DescriptorSetLayout const> &layout,
                                                            uint32_t variable_count) {
@@ -1939,7 +1952,7 @@ void Device::PostCallRecordCreateDescriptorPool(VkDevice device, const VkDescrip
                                                 const VkAllocationCallbacks *pAllocator, VkDescriptorPool *pDescriptorPool,
                                                 const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
-    Add(std::make_shared<DescriptorPool>(*this, *pDescriptorPool, pCreateInfo));
+    Add(CreateDescriptorPoolState(*pDescriptorPool, pCreateInfo));
 }
 
 void Device::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
@@ -3700,6 +3713,10 @@ void Device::PostCallRecordAcquireNextImage2KHR(VkDevice device, const VkAcquire
                                 pAcquireInfo->fence, pImageIndex, record_obj.location.function);
 }
 
+std::shared_ptr<PhysicalDevice> Instance::CreatePhysicalDeviceState(VkPhysicalDevice handle) {
+    return std::make_shared<PhysicalDevice>(handle);
+}
+
 void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                             VkInstance *pInstance, const RecordObject &record_obj) {
     if (record_obj.result != VK_SUCCESS) {
@@ -3719,7 +3736,7 @@ void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateI
     }
 
     for (auto physdev : physdev_handles) {
-        Add(std::make_shared<PhysicalDevice>(physdev));
+        Add(CreatePhysicalDeviceState(physdev));
     }
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -5483,6 +5500,15 @@ std::shared_ptr<CommandBuffer> Device::CreateCmdBufferState(VkCommandBuffer hand
                                                             const VkCommandBufferAllocateInfo *allocate_info,
                                                             const CommandPool *pool) {
     return std::make_shared<CommandBuffer>(*this, handle, allocate_info, pool);
+}
+
+std::shared_ptr<DeviceMemory> Device::CreateDeviceMemoryState(VkDeviceMemory handle, const VkMemoryAllocateInfo *allocate_info,
+                                                              uint64_t fake_address, const VkMemoryType &memory_type,
+                                                              const VkMemoryHeap &memory_heap,
+                                                              std::optional<DedicatedBinding> &&dedicated_binding,
+                                                              uint32_t physical_device_count) {
+    return std::make_shared<DeviceMemory>(handle, allocate_info, fake_address, memory_type, memory_heap,
+                                          std::move(dedicated_binding), physical_device_count);
 }
 
 void Device::PostCallRecordCmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,

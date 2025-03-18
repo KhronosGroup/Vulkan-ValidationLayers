@@ -178,6 +178,7 @@ class Instance : public vvl::base::Instance {
   public:
     Instance(vvl::dispatch::Instance* dispatch, LayerObjectTypeId type) : BaseClass(dispatch, type) {}
 
+    virtual std::shared_ptr<vvl::PhysicalDevice> CreatePhysicalDeviceState(VkPhysicalDevice handle);
     void PostCallRecordCreateInstance(const VkInstanceCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                       VkInstance* pInstance, const RecordObject& record_obj) override;
     void RecordEnumeratePhysicalDeviceQueueFamilyPerformanceQueryCounters(VkPhysicalDevice physicalDevice,
@@ -822,6 +823,8 @@ class Device : public vvl::base::Device {
     void PreCallRecordDestroyEvent(VkDevice device, VkEvent event, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;
 
+    virtual std::shared_ptr<vvl::DescriptorPool> CreateDescriptorPoolState(VkDescriptorPool handle,
+                                                                           const VkDescriptorPoolCreateInfo* create_info);
     virtual std::shared_ptr<vvl::DescriptorSet> CreateDescriptorSet(VkDescriptorSet handle, vvl::DescriptorPool* pool,
                                                                     const std::shared_ptr<vvl::DescriptorSetLayout const>& layout,
                                                                     uint32_t variable_count);
@@ -894,6 +897,10 @@ class Device : public vvl::base::Device {
     void PreCallRecordDestroyPipelineCache(VkDevice device, VkPipelineCache pipelineCache, const VkAllocationCallbacks* pAllocator,
                                            const RecordObject& record_obj) override;
 
+    virtual std::shared_ptr<vvl::Pipeline> CreateGraphicsPipelineState(
+        const VkGraphicsPipelineCreateInfo* create_info, std::shared_ptr<const vvl::PipelineCache> pipeline_cache,
+        std::shared_ptr<const vvl::RenderPass>&& render_pass, std::shared_ptr<const vvl::PipelineLayout>&& layout,
+        spirv::StatelessData stateless_data[kCommonMaxGraphicsShaderStages]) const;
     bool PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                 const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
@@ -1122,6 +1129,10 @@ class Device : public vvl::base::Device {
     void PreCallRecordUpdateDescriptorSetWithTemplateKHR(VkDevice device, VkDescriptorSet descriptorSet,
                                                          VkDescriptorUpdateTemplate descriptorUpdateTemplate, const void* pData,
                                                          const RecordObject& record_obj) override;
+
+    virtual std::shared_ptr<vvl::DeviceMemory> CreateDeviceMemoryState(
+        VkDeviceMemory handle, const VkMemoryAllocateInfo* allocate_infos, uint64_t fake_address, const VkMemoryType& memory_type,
+        const VkMemoryHeap& memory_heap, std::optional<vvl::DedicatedBinding>&& dedicated_binding, uint32_t physical_device_count);
 
     // Memory mapping
     void PostCallRecordMapMemory(VkDevice device, VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, VkFlags flags,
