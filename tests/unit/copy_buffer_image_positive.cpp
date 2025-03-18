@@ -836,3 +836,42 @@ TEST_F(PositiveCopyBufferImage, ImageBufferCopyDepthStencil) {
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), ds_image_1S.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                              buffer_64k.handle(), 1, &ds_region);
 }
+
+TEST_F(PositiveCopyBufferImage, MissingQueueGraphicsSupport) {
+    TEST_DESCRIPTION("Copy from image with depth aspect when queue does not support graphics");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    const std::optional<uint32_t> non_graphics_queue_family_index = m_device->QueueFamilyWithoutCapabilities(VK_QUEUE_GRAPHICS_BIT);
+
+    if (!non_graphics_queue_family_index) {
+        GTEST_SKIP() << "No suitable queue found.";
+    }
+
+    vkt::CommandPool command_pool(*m_device, non_graphics_queue_family_index.value());
+    vkt::CommandBuffer command_buffer(*m_device, command_pool);
+
+    vkt::Image src_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D16_UNORM,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    src_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    vkt::Image dst_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D16_UNORM,
+                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    command_buffer.Begin();
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {32u, 32u, 1u};
+
+    vk::CmdCopyImage(command_buffer.handle(), src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+
+    command_buffer.End();
+}
