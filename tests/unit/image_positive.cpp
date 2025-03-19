@@ -53,11 +53,12 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     auto image_subres = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
-    auto image_barrier = image.ImageMemoryBarrier(0, 0, image.Layout(), image.Layout(), image_subres);
+    auto image_barrier = image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
+
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     ValidOwnershipTransfer(m_errorMonitor, m_default_queue, m_command_buffer, no_gfx_queue, no_gfx_cb,
                            VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, nullptr, &image_barrier);
@@ -65,7 +66,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     // Change layouts while changing ownership
     image_barrier.srcQueueFamilyIndex = no_gfx_queue->family_index;
     image_barrier.dstQueueFamilyIndex = m_device->graphics_queue_node_index_;
-    image_barrier.oldLayout = image.Layout();
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     // Make sure the new layout is different from the old
     if (image_barrier.oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

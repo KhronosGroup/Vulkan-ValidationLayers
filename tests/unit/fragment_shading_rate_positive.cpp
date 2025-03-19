@@ -52,7 +52,6 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
     }
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;

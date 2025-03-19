@@ -547,7 +547,6 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, format, usage_input);
     vkt::Image image_input(*m_device, image_ci, vkt::set_layout);
-    image_input.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView view_input = image_input.CreateView();
 
     const VkAttachmentDescription inputAttachment = {

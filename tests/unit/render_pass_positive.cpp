@@ -47,7 +47,6 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
 
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
 
@@ -673,7 +672,6 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     vkt::Image image_3d(*m_device, image_info, vkt::set_layout);
-    image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     // 2D image views to be used as color attchments for framebuffer
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
@@ -774,7 +772,6 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     vkt::Image image_3d(*m_device, image_info, vkt::set_layout);
-    image_3d.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     // 2D image views for each slice of the 3D image
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
@@ -871,7 +868,6 @@ TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
 
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     std::array<VkImageView, size> views = {{view.handle(), view.handle()}};
 
@@ -1229,7 +1225,6 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
     vkt::RenderPass render_pass(*m_device, rpci);
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle());

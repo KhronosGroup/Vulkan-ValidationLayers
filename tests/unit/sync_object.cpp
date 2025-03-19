@@ -1314,7 +1314,6 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, usage);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // Release image
     VkImageMemoryBarrier2 release_barrier = vku::InitStructHelper();
@@ -1457,7 +1456,6 @@ TEST_F(NegativeSyncObject, ConcurrentImageBarrierNeedsIgnoredQueue) {
     VkImageCreateInfo image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, usage,
                                                                VK_IMAGE_TILING_OPTIMAL, vvl::make_span(queue_families, 2));
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // Release image
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
@@ -1527,7 +1525,6 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -2434,7 +2431,6 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
     BufferMemoryBarrier.dstQueueFamilyIndex = no_gfx.value();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier ImageMemoryBarrier = vku::InitStructHelper();
     ImageMemoryBarrier.srcAccessMask = 0;
@@ -3564,7 +3560,6 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
     }
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex.value());
     vkt::CommandBuffer commandBuffer(*m_device, commandPool);
@@ -3819,7 +3814,6 @@ TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
 

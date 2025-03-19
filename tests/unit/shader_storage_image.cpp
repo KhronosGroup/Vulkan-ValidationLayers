@@ -250,7 +250,6 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         VkFormat format = tests[t].format;
 
         vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         vkt::ImageView view = image.CreateView();
 
         ds.Clear();
@@ -396,7 +395,6 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         VkFormat format = tests[t].format;
 
         vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         vkt::ImageView view = image.CreateView();
 
         ds.Clear();
@@ -776,7 +774,6 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     }
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -857,7 +854,6 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     }
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -890,7 +886,6 @@ void NegativeShaderStorageImage::FormatComponentMismatchTest(std::string spirv_f
     )";
 
     vkt::Image image(*m_device, 4, 4, 1, vk_format, VK_IMAGE_USAGE_STORAGE_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device, {

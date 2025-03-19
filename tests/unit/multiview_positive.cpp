@@ -115,7 +115,6 @@ TEST_F(PositiveMultiview, PushDescriptor) {
 
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, render_pass, 1, &view.handle());
 

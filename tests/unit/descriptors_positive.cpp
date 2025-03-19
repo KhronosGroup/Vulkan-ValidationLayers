@@ -790,7 +790,6 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
 
     vkt::Image image_input(*m_device, width, height, 1, format, usage);
-    image_input.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view_input = image_input.CreateView();
 
     // Create render pass with a subpass that has input attachment.

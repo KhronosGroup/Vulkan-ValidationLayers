@@ -998,7 +998,6 @@ TEST_F(NegativeDescriptors, DescriptorSetSamplerDestroyed) {
     // Create images to update the descriptor with
     const VkFormat tex_format = VK_FORMAT_B8G8R8A8_UNORM;
     vkt::Image image(*m_device, 32, 32, 1, tex_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::ImageView view = image.CreateView();
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -1064,7 +1063,6 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
     // Create image, view, and sampler
     const VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     auto image_view_create_info = image.BasicViewCreatInfo();
     vkt::ImageView view(*m_device, image_view_create_info);
@@ -1115,7 +1113,6 @@ TEST_F(NegativeDescriptors, ImageDescriptorLayoutMismatch) {
                                                            image->SubresourceRange(aspect_mask));
             vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
                                    nullptr, 0, nullptr, 1, &image_barrier);
-            image->Layout(image_layout);
 
             if (test_type == kExternal) {
                 // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -4833,7 +4830,6 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
 
     const VkFormat combined_image_format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image(*m_device, 1, 1, 1, combined_image_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -4941,7 +4937,6 @@ TEST_F(NegativeDescriptors, SampledImageDepthComparisonForFormat) {
     g_pipe.CreateGraphicsPipeline();
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 

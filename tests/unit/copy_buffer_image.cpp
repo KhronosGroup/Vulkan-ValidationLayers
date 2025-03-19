@@ -37,11 +37,9 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
     // 128^2 texels, 64k
     vkt::Image image_64k(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UINT,
                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_64k.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     // 64^2 texels, 16k
     vkt::Image image_16k(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UINT,
                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_16k.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_64k(*m_device, 65536, transfer_usage);  // 64k
@@ -257,25 +255,21 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyDepthStencil) {
     vkt::Image ds_image_4D_1S(
         *m_device, 256, 256, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image_4D_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256^2 texels, 256kb (192k depth, 64k stencil)
     vkt::Image ds_image_3D_1S(
         *m_device, 256, 256, 1, VK_FORMAT_D24_UNORM_S8_UINT,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image_3D_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256^2 texels, 128k (128k depth)
     vkt::Image ds_image_2D(
         *m_device, 256, 256, 1, VK_FORMAT_D16_UNORM,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image_2D.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256^2 texels, 64k (64k stencil)
     vkt::Image ds_image_1S(
         *m_device, 256, 256, 1, VK_FORMAT_S8_UINT,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_256k(*m_device, 262144, transfer_usage);  // 256k
@@ -362,7 +356,6 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyDepthStencil2) {
     vkt::Image ds_image_4D_1S(
         *m_device, 256, 256, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image_4D_1S.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Buffer buffer_256k(*m_device, 262144, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
@@ -424,19 +417,13 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyCompression) {
 
     if (device_features.textureCompressionBC && (!missing_bc_support)) {
         image_16k_4x4comp.Init(*m_device, 128, 128, 1, VK_FORMAT_BC3_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_16k_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         image_NPOT_4x4comp.Init(*m_device, 130, 130, 1, VK_FORMAT_BC3_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_NPOT_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     } else if (device_features.textureCompressionETC2 && (!missing_etc_support)) {
         image_16k_4x4comp.Init(*m_device, 128, 128, 1, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_16k_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         image_NPOT_4x4comp.Init(*m_device, 130, 130, 1, VK_FORMAT_ETC2_R8G8B8A8_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_NPOT_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     } else if (device_features.textureCompressionASTC_LDR && (!missing_astc_support)) {
         image_16k_4x4comp.Init(*m_device, 128, 128, 1, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_16k_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         image_NPOT_4x4comp.Init(*m_device, 130, 130, 1, VK_FORMAT_ASTC_4x4_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        image_NPOT_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     } else {
         GTEST_SKIP() << "No compressed formats transfers bits are supported - block compression tests";
     }
@@ -556,7 +543,6 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyCompression2) {
     vkt::Buffer buffer_16k(*m_device, 16384, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     // 128^2 texels as 32^2 compressed (4x4) blocks, 16k
     vkt::Image image_16k_4x4comp(*m_device, 128, 128, 1, VK_FORMAT_BC3_SRGB_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image_16k_4x4comp.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferImageCopy2 region = vku::InitStructHelper();
     region.bufferRowLength = 0;
@@ -610,7 +596,6 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopyMultiPlanar) {
     // YUV420 means 1/2 width and height so plane_0 is 128x128 and plane_1 is 64x64 here
     // 128^2 texels in plane_0 and 64^2 texels in plane_1
     vkt::Image image_multi_planar(*m_device, 128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_multi_planar.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkMemoryBarrier mem_barrier = vku::InitStructHelper();
     mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -987,7 +972,6 @@ TEST_F(NegativeCopyBufferImage, MiscImageLayer) {
     }
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT);  // 64bpp
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Buffer buffer(*m_device, 128 * 128 * 8, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0);
     VkBufferImageCopy region = {};
     region.bufferRowLength = 128;
@@ -998,7 +982,6 @@ TEST_F(NegativeCopyBufferImage, MiscImageLayer) {
     region.imageExtent = {4, 4, 1};
 
     vkt::Image image2(*m_device, 128, 128, 1, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);  // 16bpp
-    image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Buffer buffer2(*m_device, 128 * 128 * 2, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0);
     m_command_buffer.Begin();
 
@@ -1754,9 +1737,7 @@ TEST_F(NegativeCopyBufferImage, ImageMultiPlaneSizeExceeded) {
 
     // 128^2 texels in plane_0 and 64^2 texels in plane_1
     vkt::Image src_image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image dst_image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region = {};
     copy_region.extent = {64, 64, 1};  // Size of plane 1
@@ -1992,9 +1973,7 @@ TEST_F(NegativeCopyBufferImage, ImageDepthStencilFormatMismatch) {
     }
 
     vkt::Image srcImage(*m_device, 32, 32, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    srcImage.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image dstImage(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dstImage.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // Create two images of different types and try to copy between them
 
@@ -2133,9 +2112,6 @@ TEST_F(NegativeCopyBufferImage, ImageAspectMismatch) {
     vkt::Image depth_image(*m_device, 128, 128, 1, VK_FORMAT_D32_SFLOAT,
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image ds_image(*m_device, 128, 128, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    depth_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
@@ -2252,7 +2228,6 @@ TEST_F(NegativeCopyBufferImage, DepthStencilImageCopyNoGraphicsQueueFlags) {
     const VkFormat ds_format = FindSupportedDepthOnlyFormat(Gpu());
     vkt::Image ds_image(*m_device, 64, 64, 1, ds_format,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256k to have more then enough to copy
     vkt::Buffer buffer(*m_device, 262144, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0);
@@ -2292,7 +2267,6 @@ TEST_F(NegativeCopyBufferImage, ImageTransferQueueFlags) {
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // 256k to have more then enough to copy
     vkt::Buffer buffer(*m_device, 262144, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -2326,10 +2300,8 @@ TEST_F(NegativeCopyBufferImage, CopyCommands2V13) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     RETURN_IF_SKIP(Init());
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image image2(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
                       VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Buffer dst_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer src_buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
@@ -2589,10 +2561,7 @@ TEST_F(NegativeCopyBufferImage, DifferentFormatTexelBlockExtent) {
     }
 
     vkt::Image src_image(*m_device, 32, 32, 1, src_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
     vkt::Image dst_image(*m_device, 32, 32, 1, dst_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region;
     region.extent = {32, 32, 1};
@@ -2848,7 +2817,6 @@ TEST_F(NegativeCopyBufferImage, OverlappingImage) {
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
 
@@ -3215,8 +3183,6 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenance8AspectMask) {
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image depth_image(*m_device, 128, 128, 1, VK_FORMAT_D32_SFLOAT,
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    depth_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -3259,8 +3225,6 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8DepthStencil) {
     vkt::Image color_image(*m_device, 128, 128, 1, VK_FORMAT_R32_SFLOAT,
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image ds_image(*m_device, 128, 128, 1, ds_format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -3309,8 +3273,6 @@ TEST_F(NegativeCopyBufferImage, CopyColorToDepthMaintenanc8Compatible) {
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image depth_image(*m_device, 128, 128, 1, VK_FORMAT_D32_SFLOAT,
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    depth_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -3356,8 +3318,6 @@ TEST_F(NegativeCopyBufferImage, CopyColorToStencilMaintenanc8Compatible) {
                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image ds_image(*m_device, 128, 128, 1, VK_FORMAT_D32_SFLOAT_S8_UINT,
                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -3401,16 +3361,12 @@ TEST_F(NegativeCopyBufferImage, MissingQueueGraphicsSupport) {
     vkt::CommandBuffer command_buffer(*m_device, command_pool);
 
     vkt::Image src_color_image(*m_device, 32u, 32u, 1u, VK_FORMAT_R16_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_color_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vkt::Image dst_color_image(*m_device, 32u, 32u, 1u, VK_FORMAT_R16_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dst_color_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     vkt::Image src_ds_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D16_UNORM,
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    src_ds_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vkt::Image dst_ds_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D16_UNORM,
                             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    dst_ds_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -3494,17 +3450,13 @@ TEST_F(NegativeCopyBufferImage, BlitInvalidDepth) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 4u, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image src_image(*m_device, image_ci);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vkt::Image dst_image(*m_device, image_ci);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.arrayLayers = 1u;
     image_ci.extent.depth = 4u;
     vkt::Image src_image_3d(*m_device, image_ci);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     vkt::Image dst_image_3d(*m_device, image_ci);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_command_buffer.Begin();
 
@@ -3557,10 +3509,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyMissingSrcFormatFeature) {
     m_command_buffer.Begin();
 
     vkt::Image src_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
     vkt::Image dst_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(32u * 32u * 4u, VK_IMAGE_USAGE_TRANSFER_DST_BIT));
 
@@ -3618,10 +3567,7 @@ TEST_F(NegativeCopyBufferImage, ImageCopyMissingDstFormatFeature) {
     m_command_buffer.Begin();
 
     vkt::Image src_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
     vkt::Image dst_image(*m_device, 32u, 32u, 1u, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    dst_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Buffer buffer(*m_device,
                        vkt::Buffer::CreateInfo(32u * 32u * 4u, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
@@ -3659,11 +3605,9 @@ TEST_F(NegativeCopyBufferImage, ImageCopyAspectMismatch) {
 
     vkt::Image image(*m_device, 32u, 32u, 1u, VK_FORMAT_R16_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Image ds_image(*m_device, 32u, 32u, 1u, VK_FORMAT_D16_UNORM,
                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region;
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
@@ -3688,7 +3632,6 @@ TEST_F(NegativeCopyBufferImage, CopyToBufferWithoutMemory) {
 
     vkt::Image image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(32u * 32u * 4u, VK_IMAGE_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
@@ -3753,7 +3696,6 @@ TEST_F(NegativeCopyBufferImage, CopySrcImageMissingTransferBit) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(32u * 32u * 4u, VK_IMAGE_USAGE_TRANSFER_DST_BIT));
 
@@ -3865,9 +3807,7 @@ TEST_F(NegativeCopyBufferImage, BlitDepthImage) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_D16_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image1(*m_device, image_ci);
-    image1.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image image2(*m_device, image_ci);
-    image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
 
@@ -3893,7 +3833,6 @@ TEST_F(NegativeCopyBufferImage, ResolveImage) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image image_no_mem(*m_device, image_ci, vkt::no_mem);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci);
@@ -3938,7 +3877,6 @@ TEST_F(NegativeCopyBufferImage, ResolveSubsampledImage) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image image_no_mem(*m_device, image_ci, vkt::no_mem);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     image_ci.flags = VK_IMAGE_CREATE_SUBSAMPLED_BIT_EXT;
@@ -3969,10 +3907,8 @@ TEST_F(NegativeCopyBufferImage, ResolveImageRemainingLayers) {
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
     image_ci.arrayLayers = 1u;
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci);
-    ms_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
 

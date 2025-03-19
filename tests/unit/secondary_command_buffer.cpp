@@ -45,11 +45,9 @@ TEST_F(NegativeSecondaryCommandBuffer, Barrier) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     // Second image that img_barrier will incorrectly use
     vkt::Image image2(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
 
@@ -529,7 +527,6 @@ TEST_F(NegativeSecondaryCommandBuffer, RenderPassContentsNotFirstSubpass) {
 
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view.handle());
 
