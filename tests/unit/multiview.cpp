@@ -233,7 +233,6 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     image_create_info.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     image_create_info.flags = 0;
     vkt::Image image(*m_device, image_create_info);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
     vkt::Framebuffer fb(*m_device, m_renderPass, 1, &imageView.handle(), m_width, m_height);

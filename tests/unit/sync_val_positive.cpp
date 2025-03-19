@@ -519,7 +519,6 @@ TEST_F(PositiveSyncVal, LayoutTransitionWithAlreadyAvailableImage) {
 
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     m_command_buffer.Begin();
 
@@ -977,12 +976,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingColorResolve) {
     auto color_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
     color_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferColorSampleCounts
     vkt::Image color_image(*m_device, color_ci, vkt::set_layout);
-    color_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView color_image_view = color_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
 
     auto color_resolved_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, color_format, usage);
     vkt::Image color_resolved_image(*m_device, color_resolved_ci, vkt::set_layout);
-    color_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView color_resolved_image_view = color_resolved_image.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -1029,12 +1026,10 @@ TEST_F(PositiveSyncVal, DynamicRenderingDepthResolve) {
     auto depth_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
     depth_ci.samples = VK_SAMPLE_COUNT_4_BIT;  // guaranteed by framebufferDepthSampleCounts
     vkt::Image depth_image(*m_device, depth_ci, vkt::set_layout);
-    depth_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView depth_image_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     auto depth_resolved_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, depth_format, usage);
     vkt::Image depth_resolved_image(*m_device, depth_resolved_ci, vkt::set_layout);
-    depth_resolved_image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     vkt::ImageView depth_resolved_image_view = depth_resolved_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
@@ -1209,7 +1204,6 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    image.SetLayout(input_attachment_layout);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 
@@ -1746,7 +1740,6 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
     vkt::Buffer copy_source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT}});

@@ -231,8 +231,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-    auto image_view = image.CreateView();
+    vkt::ImageView image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
     rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -658,7 +657,6 @@ TEST_F(VkArmBestPracticesLayerTest, DepthPrePassUsage) {
     m_depth_stencil_fmt = FindSupportedDepthStencilFormat(Gpu());
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -923,7 +921,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
     auto img = std::unique_ptr<vkt::Image>(new vkt::Image(
         *m_device, WIDTH, HEIGHT, 1, FMT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
-    img->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     auto image1 = std::move(img);
     vkt::ImageView view1 = image1->CreateView();

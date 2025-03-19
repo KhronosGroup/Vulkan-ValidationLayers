@@ -1152,7 +1152,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, ClearColor_NotCompressed) {
     };
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();

@@ -1190,7 +1190,6 @@ TEST_F(NegativeFragmentShadingRate, ShadingRateUsage) {
     }
     // Initialize image with transfer source usage
     vkt::Image image(*m_device, 128, 128, 1, format, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageViewCreateInfo createinfo = vku::InitStructHelper();
     createinfo.image = image.handle();

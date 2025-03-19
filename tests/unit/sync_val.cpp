@@ -1447,12 +1447,8 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 
     vkt::Image src_image(*m_device, w, h, 1, format, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    src_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Image attachment_image(*m_device, w, h, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    // Transition layout manually, so the render pass will start with LOAD_OP operation instead of layout transition.
-    attachment_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-
     vkt::ImageView attachment_view = attachment_image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -1503,7 +1499,6 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1535,10 +1530,8 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentLoadHazard) {
     RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
-    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1582,10 +1575,8 @@ TEST_F(NegativeSyncVal, DynamicRenderingAttachmentStoreHazard) {
     RETURN_IF_SKIP(InitState());
 
     InitRenderTarget();
-    m_renderTargets[0]->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1665,11 +1656,9 @@ TEST_F(NegativeSyncVal, SampledImageDescriptorHazard) {
     RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     vkt::Image source_image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    source_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -1715,11 +1704,9 @@ TEST_F(NegativeSyncVal, StorageImageDescriptorHazard) {
     RETURN_IF_SKIP(InitSyncVal());
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     vkt::Image source_image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    source_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1804,11 +1791,9 @@ TEST_F(NegativeSyncVal, CopyVsShaderDescriptorAccess) {
     vkt::Buffer source_buffer(*m_device, 2048, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     vkt::Image source_image(*m_device, 16, 16, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    source_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -2015,7 +2000,6 @@ TEST_F(NegativeSyncVal, CmdDispatchDrawHazardsDrawIndirectCount) {
         VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     const auto image_s_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
     vkt::Image image_s_a(*m_device, image_s_ci, vkt::set_layout);
-    image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageview_s = image_s_a.CreateView();
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
@@ -2219,8 +2203,6 @@ TEST_F(NegativeSyncVal, CmdClear) {
     vkt::Image image_ds_b(*m_device, image_ci);
 
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    image_ds_a.SetLayout(ds_aspect, VK_IMAGE_LAYOUT_GENERAL);
-    image_ds_b.SetLayout(ds_aspect, VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
     const VkClearDepthStencilValue clear_value = {};
@@ -2506,8 +2488,6 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
     vkt::RenderPass rp(*m_device, renderPassInfo);
     vkt::Framebuffer fb(*m_device, rp.handle(), 2, attachments);
 
-    image_input.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
     m_command_buffer.Begin();
 
     m_renderPassBeginInfo.renderArea = {{0, 0}, {32, 32}};
@@ -2548,7 +2528,6 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     vkt::Image image_color(*m_device, image_ci, vkt::set_layout);
     vkt::Image image_color2(*m_device, image_ci, vkt::set_layout);
     vkt::Image image_ds(*m_device, 32, 32, 1, ds_format, usage_ds);
-    image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     const VkAttachmentDescription colorAttachmentDescription = {(VkAttachmentDescriptionFlags)0,
                                                                 color_format,
@@ -4048,7 +4027,6 @@ TEST_F(NegativeSyncVal, StoreOpAndLayoutTransitionHazard) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
@@ -4163,8 +4141,6 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     const auto image_s_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, format, image_usage_storage);
     vkt::Image image_s_a(*m_device, image_s_ci, vkt::set_layout);
     vkt::Image image_s_b(*m_device, image_s_ci, vkt::set_layout);
-    image_s_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_s_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::ImageView imageview_s = image_s_a.CreateView();
 
@@ -4874,7 +4850,6 @@ TEST_F(NegativeSyncVal, ImageCopyHazardsLayoutTransition) {
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage);
-    image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkBufferImageCopy region{};
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -4909,7 +4884,6 @@ TEST_F(NegativeSyncVal, TestMessageReportingWithManyBarriers) {
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8G8B8A8_UNORM, usage);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkBufferImageCopy region{};
     region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -5003,7 +4977,6 @@ TEST_F(NegativeSyncVal, WriteOnlyImageWriteHazard) {
     vkt::Buffer copy_source(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device, {
@@ -5437,7 +5410,6 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
-    image.SetLayout(input_attachment_layout);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
 

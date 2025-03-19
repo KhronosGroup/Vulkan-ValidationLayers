@@ -1190,7 +1190,6 @@ TEST_F(NegativeSyncValReporting, DoNotUseShortcutForSimpleAccessMask) {
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     VkRenderingAttachmentInfo attachment = vku::InitStructHelper();

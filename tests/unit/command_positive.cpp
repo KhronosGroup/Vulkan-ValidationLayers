@@ -183,7 +183,6 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
 
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
@@ -364,7 +363,6 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     InitRenderTarget();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
@@ -374,7 +372,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     // Try good case
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
     }
 
     image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -383,7 +381,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
     }
 }
 
@@ -396,7 +394,6 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
     vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    image.SetLayout(ds_aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     const VkClearDepthStencilValue clear_value = {};
 
@@ -406,7 +403,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     // Try good case
     {
         VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
     }
 
     image.ImageMemoryBarrier(m_command_buffer, ds_aspect, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
@@ -415,7 +412,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {ds_aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
     }
 }
 
@@ -427,12 +424,11 @@ TEST_F(PositiveCommand, ClearColor64Bit) {
         GTEST_SKIP() << "VK_FORMAT_R64_UINT format not supported";
     }
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_color, 1, &range);
+    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
 }
 
 TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
@@ -580,7 +576,6 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
 
     VkFormat format = VK_FORMAT_R32G32B32A32_SINT;
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
@@ -649,7 +644,6 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
 
     VkFormat format = VK_FORMAT_R32G32B32A32_UINT;
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView();
 
     pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,

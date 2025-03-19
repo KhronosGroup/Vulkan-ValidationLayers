@@ -1248,13 +1248,11 @@ TEST_F(NegativeProtectedMemory, ResolveProtectedImage) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci);
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.flags = VK_IMAGE_CREATE_PROTECTED_BIT;
     vkt::Image image_protected(*m_device, image_ci, vkt::no_mem);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image_protected(*m_device, image_ci, vkt::no_mem);
 
@@ -1321,7 +1319,6 @@ TEST_F(NegativeProtectedMemory, ResolveImageInProtectedCmdBuffer) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
     vkt::Image ms_image(*m_device, image_ci);
 

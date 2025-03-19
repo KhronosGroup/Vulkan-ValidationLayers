@@ -213,7 +213,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.size = 32;
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
@@ -278,7 +277,6 @@ TEST_F(PositiveRayTracing, BarrierAccessMaskAccelerationStructureRayQueryEnabled
     buffer_barrier.size = 32;
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
     image_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;

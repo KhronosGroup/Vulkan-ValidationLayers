@@ -179,7 +179,6 @@ TEST_F(NegativeCommand, ClearAttachment64Bit) {
         GTEST_SKIP() << "VK_FORMAT_R64G64B64A64_SFLOAT format not supported";
     }
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R64G64B64A64_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -665,7 +664,6 @@ TEST_F(NegativeCommand, ClearAttachmentsDepth) {
     }
 
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -696,7 +694,6 @@ TEST_F(NegativeCommand, ClearAttachmentsStencil) {
     RETURN_IF_SKIP(Init());
     m_depth_stencil_fmt = FindSupportedDepthOnlyFormat(Gpu());
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -859,7 +856,6 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipeline) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -913,7 +909,6 @@ TEST_F(NegativeCommand, DrawTimeImageViewTypeMismatchWithPipelineFunction) {
     VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView imageView = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -1584,13 +1579,12 @@ TEST_F(NegativeCommand, ClearColor64Bit) {
         GTEST_SKIP() << "VK_FORMAT_R64G64B64A64_SFLOAT format not supported";
     }
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R64G64B64A64_SFLOAT, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-09678");
-    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_color, 1, &range);
+    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2671,7 +2665,6 @@ TEST_F(NegativeCommand, CmdClearColorImageNullColor) {
     RETURN_IF_SKIP(Init());
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageSubresourceRange isr = {};
     isr.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2951,7 +2944,6 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
     const VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
     vkt::Image ds_image(*m_device, 32, 32, 1, ds_format,
                         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    ds_image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::ImageView image_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -3041,7 +3033,6 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     InitRenderTarget();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
 
@@ -3052,7 +3043,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseMipLevel-01470");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3061,7 +3052,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseMipLevel-01470");
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01692");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3069,7 +3060,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3077,7 +3068,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01692");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3085,7 +3076,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseArrayLayer-01472");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3094,7 +3085,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-baseArrayLayer-01472");
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01693");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3102,7 +3093,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 0};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3110,7 +3101,7 @@ TEST_F(NegativeCommand, ClearColorImageWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-pRanges-01693");
         const VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
-        vk::CmdClearColorImage(cb_handle, image.handle(), image.Layout(), &clear_color, 1, &range);
+        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3195,7 +3186,6 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     const auto depth_format = FindSupportedDepthStencilFormat(Gpu());
     vkt::Image image(*m_device, 32, 32, 1, depth_format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    image.SetLayout(ds_aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     const VkClearDepthStencilValue clear_value = {};
 
@@ -3206,7 +3196,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
         const VkImageSubresourceRange range = {ds_aspect, 1, VK_REMAINING_MIP_LEVELS, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3215,7 +3205,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseMipLevel-01474");
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01694");
         const VkImageSubresourceRange range = {ds_aspect, 1, 1, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3223,7 +3213,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-levelCount-01720");
         const VkImageSubresourceRange range = {ds_aspect, 0, 0, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3231,7 +3221,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01694");
         const VkImageSubresourceRange range = {ds_aspect, 0, 2, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3239,7 +3229,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 1, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3248,7 +3238,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-baseArrayLayer-01476");
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01695");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 1, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3256,7 +3246,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceRange-layerCount-01721");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 0};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 
@@ -3264,7 +3254,7 @@ TEST_F(NegativeCommand, ClearDepthStencilWithRange) {
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-01695");
         const VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 2};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), image.Layout(), &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -3352,7 +3342,6 @@ TEST_F(NegativeCommand, ClearDepthRangeUnrestricted) {
     int depth_attachment_index = 1;
     m_depthStencil->Init(*m_device, m_width, m_height, 1, m_depth_stencil_fmt,
                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    m_depthStencil->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     InitRenderTarget(&depth_image_view.handle());
 
@@ -3567,7 +3556,6 @@ TEST_F(NegativeCommand, ClearImageAspectMask) {
     const VkImageSubresourceRange color_range = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-aspectMask-02498");
@@ -3605,7 +3593,6 @@ TEST_F(NegativeCommand, ClearDepthStencilImageWithInvalidAspect) {
 
     VkFormat format = FindSupportedDepthStencilFormat(m_device->Physical().handle());
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkClearDepthStencilValue clear_value = {0};
     VkImageSubresourceRange range = {};
@@ -3642,7 +3629,6 @@ TEST_F(NegativeCommand, ClearColorImageWithMissingFeature) {
     fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageSubresourceRange range = {};
     range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -3676,7 +3662,6 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         VkImageAspectFlags clear_aspect = missing_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_STENCIL_BIT;
 
         vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         vkt::ImageView image_view = image.CreateView(image_aspect);
 
         RenderPassSingleSubpass rp(*this);

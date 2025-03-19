@@ -1039,7 +1039,6 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
@@ -4859,7 +4858,6 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
     }
 
     vkt::Image image(*m_device, 256, 256, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     m_command_buffer.Begin();
@@ -5376,7 +5374,6 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
 
     vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -6804,7 +6801,6 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();

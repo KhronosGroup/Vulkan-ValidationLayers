@@ -353,9 +353,7 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Image image_src(*m_device, 128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    image_src.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::Image image_dst(*m_device, 128, 128, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image_dst.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageBlit blit_region = {};
     blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -368,8 +366,8 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-src");
     m_errorMonitor->SetDesiredWarning("BestPractices-DrawState-InvalidExtents-dst");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_src.handle(), image_src.Layout(), image_dst.handle(), image_dst.Layout(), 1,
-                     &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_src.handle(), VK_IMAGE_LAYOUT_GENERAL, image_dst.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -660,7 +658,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     RETURN_IF_SKIP(InitState());
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     auto image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -710,7 +707,6 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-RenderPass-inefficient-clear");
 
     vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     auto image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -1207,7 +1203,6 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkClearColorValue color_clear_value = {};
     color_clear_value.uint32[0] = 255;
@@ -1371,7 +1366,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearWithoutLoadOpClear) {
     const unsigned int h = 1080;
 
     vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     // Setup RenderPass
@@ -1437,7 +1431,6 @@ TEST_F(VkBestPracticesLayerTest, RenderPassClearValueCountHigherThanAttachmentCo
     const unsigned int h = 1080;
 
     vkt::Image image(*m_device, w, h, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView image_view = image.CreateView();
 
     // Setup RenderPass
@@ -1807,7 +1800,6 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
 
     vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkClearColorValue color_clear_value = {};
     color_clear_value.uint32[0] = 255;
