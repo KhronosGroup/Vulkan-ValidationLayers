@@ -3970,13 +3970,11 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
 
     const char* cs_src = R"(
                    OpCapability Shader
-                   OpExtension "SPV_KHR_non_semantic_info"
-   %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
+                   OpExtension "SPV_EXT_shader_image_int64"
                    OpMemoryModel Logical GLSL450
                    OpEntryPoint GLCompute %main "main"
                    OpExecutionMode %main LocalSize 1 1 1
            %void = OpTypeVoid
-              %1 = OpExtInst %void %non_semantic 55 %void
            %func = OpTypeFunction %void
            %main = OpFunction %void None %func
               %2 = OpLabel

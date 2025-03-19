@@ -89,6 +89,8 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         if enable.version is not None:
             # Version should be VK_VERSION_x_x as defined in header but need to get as VK_API_VERSION_x_x
             version = enable.version.replace('VK_VERSION', 'VK_API_VERSION')
+            if name == 'SPV_KHR_non_semantic_info':
+                version = 'VK_API_VERSION_1_0'
             out.append(f'{{{version}, nullptr, nullptr, ""}}')
         elif enable.feature is not None:
             out.append(f'{{0, &DeviceFeatures::{enable.feature}, nullptr, ""}}')
@@ -235,6 +237,11 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('    static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirv_extensions = {')
         for spirv in [x for x in self.vk.spirv if x.extension]:
             for enable in spirv.enable:
+                if spirv.name == 'SPV_KHR_non_semantic_info' and enable.version is not None:
+                    out.append('\n        // Debug Printf is in charge of adding SPV_KHR_non_semantic_info and emitting an error if it is not available.\n')
+                    out.append('        // Given how things are wired, core check will not see the extension being added and would emit an error\n')
+                    out.append('        // if SPV_KHR_non_semantic_info is then seen in some spirv code. To prevent that, assume the extension is always available.\n')
+                    out.append('        // If Debug Printf is off, in practice even driver not supporting this extension will not crash.')
                 out.append(f'\n        {{"{spirv.name}", {self.createMapValue(spirv.name, enable, True)}}},')
         out.append('\n    };\n')
         out.append('// clang-format on\n')

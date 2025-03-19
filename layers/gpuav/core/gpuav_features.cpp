@@ -259,6 +259,16 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
             add_8bit_access();
         }
     }
+
+    if (gpuav_settings.debug_printf_enabled) {
+        if (!IsExtensionAvailable(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME, available_extensions)) {
+            InternalWarning(instance, loc,
+                            "VK_KHR_shader_non_semantic_info is not available on selected device, Debug Printf may produce SPIR-V "
+                            "that could fail to compile the shader.");
+        } else {
+            vku::AddExtension(*modified_create_info, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+        }
+    }
 }
 
 }  // namespace gpuav
