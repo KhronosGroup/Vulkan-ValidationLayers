@@ -1696,39 +1696,6 @@ TEST_F(NegativeShaderSpirv, ShaderNotEnabled) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeShaderSpirv, NonSemanticInfoEnabled) {
-    TEST_DESCRIPTION("Test VK_KHR_shader_non_semantic_info.");
-
-    RETURN_IF_SKIP(Init());
-    if (!DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)) {
-        GTEST_SKIP() << "VK_KHR_shader_non_semantic_info not supported";
-    }
-
-    std::vector<VkDescriptorSetLayoutBinding> bindings(0);
-    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
-    const vkt::PipelineLayout pl(*m_device, {&dsl});
-
-    const char *source = R"(
-                   OpCapability Shader
-                   OpExtension "SPV_KHR_non_semantic_info"
-   %non_semantic = OpExtInstImport "NonSemantic.Validation.Test"
-                   OpMemoryModel Logical GLSL450
-                   OpEntryPoint GLCompute %main "main"
-                   OpExecutionMode %main LocalSize 1 1 1
-           %void = OpTypeVoid
-              %1 = OpExtInst %void %non_semantic 55 %void
-           %func = OpTypeFunction %void
-           %main = OpFunction %void None %func
-              %2 = OpLabel
-                   OpReturn
-                   OpFunctionEnd
-        )";
-
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
-    VkShaderObj::CreateFromASM(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativeShaderSpirv, ShaderImageFootprintEnabled) {
     TEST_DESCRIPTION("Create a pipeline requiring the shader image footprint feature which has not enabled on the device.");
     AddRequiredExtensions(VK_NV_SHADER_IMAGE_FOOTPRINT_EXTENSION_NAME);

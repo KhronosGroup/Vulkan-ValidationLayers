@@ -339,7 +339,11 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_EXT_demote_to_helper_invocation", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
         {"SPV_EXT_demote_to_helper_invocation", {0, nullptr, &DeviceExtensions::vk_ext_shader_demote_to_helper_invocation, ""}},
         {"SPV_KHR_fragment_shading_rate", {0, nullptr, &DeviceExtensions::vk_khr_fragment_shading_rate, ""}},
-        {"SPV_KHR_non_semantic_info", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
+        // Debug Printf is in charge of adding SPV_KHR_non_semantic_info and emitting an error if it is not available.
+        // Given how things are wired, core check will not see the extension being added and would emit an error
+        // if SPV_KHR_non_semantic_info is then seen in some spirv code. To prevent that, assume the extension is always available.
+        // If Debug Printf is off, in practice even driver not supporting this extension will not crash.
+        {"SPV_KHR_non_semantic_info", {VK_API_VERSION_1_0, nullptr, nullptr, ""}},
         {"SPV_KHR_non_semantic_info", {0, nullptr, &DeviceExtensions::vk_khr_shader_non_semantic_info, ""}},
         {"SPV_EXT_shader_image_int64", {0, nullptr, &DeviceExtensions::vk_ext_shader_image_atomic_int64, ""}},
         {"SPV_KHR_terminate_invocation", {VK_API_VERSION_1_3, nullptr, nullptr, ""}},
