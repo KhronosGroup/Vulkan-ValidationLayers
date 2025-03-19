@@ -30,9 +30,7 @@ namespace gpuav {
 namespace spirv {
 
 DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module)
-    : Pass(module),
-      // robustBufferAccess safety to got into unsafe mode to improve performance
-      unsafe_mode_(module.settings_.unsafe_mode || module.enabled_features_.robustBufferAccess) {
+    : Pass(module), unsafe_mode_(module.settings_.unsafe_mode) {
     module.use_bda_ = true;
 }
 
