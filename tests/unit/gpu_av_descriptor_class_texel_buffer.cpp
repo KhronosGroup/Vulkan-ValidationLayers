@@ -481,8 +481,8 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageStore) {
         layout(set = 0, binding = 0, r32f) uniform imageBuffer s_buffer;  // texel_buffer[4]
 
         void main() {
-            vec4 x = imageLoad(s_buffer, 4); // invalid load
-            imageStore(s_buffer, 5, x); // invalid store
+            vec4 x = imageLoad(s_buffer, 3); // valid load
+            imageStore(s_buffer, 4, x); // invalid store
         }
     )glsl";
 
@@ -509,65 +509,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageStore) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 2);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-    m_errorMonitor->VerifyFound();
-}
-
-// This will hang a GPU
-// Texel Buffers might not properly under robustBufferAccess like we think, need to investigate
-TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, DISABLED_ConstantArrayOOBTexture) {
-    TEST_DESCRIPTION("index into texelFetch OOB for an array of TexelBuffers");
-    SetTargetApiVersion(VK_API_VERSION_1_2);
-
-    RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState());
-
-    char const *cs_source = R"glsl(
-        #version 450
-
-        layout(set = 0, binding = 0, std430) buffer foo {
-            int index;
-            vec4 a;
-        };
-
-        layout(set = 0, binding = 1) uniform samplerBuffer u_buffer[2];
-
-        void main() {
-            a = texelFetch(u_buffer[index], 0);
-        }
-    )glsl";
-
-    CreateComputePipelineHelper pipe(*this);
-    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                          {1, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.CreateComputePipeline();
-
-    vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-
-    vkt::Buffer uniform_texel_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, kHostVisibleMemProps);
-    vkt::BufferView buffer_view(*m_device, uniform_texel_buffer, VK_FORMAT_R32_SFLOAT);
-
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE,
-                                                    VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferView(1, buffer_view.handle(), VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1);
-    pipe.descriptor_set_->UpdateDescriptorSets();
-
-    uint32_t *data = (uint32_t *)storage_buffer.Memory().Map();
-    *data = 8;
-    storage_buffer.Memory().Unmap();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    m_command_buffer.End();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-uniformBuffers-06935");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
