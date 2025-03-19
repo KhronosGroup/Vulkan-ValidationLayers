@@ -164,3 +164,9 @@ if (IsPlatformMockICD()) {
     GTEST_SKIP() << "Test not supported on a mock ICD";
 }
 ```
+
+### Using debug printf in GPU-AV tests
+
+Debug printf can be used to help debug GPU-AV tests. You just have to make sure the `PRINTF_FOR_GPU_AV_TESTS` macro is defined at compile time. 
+To do that, you can just uncomment the `#define PRINTF_FOR_GPU_AV_TESTS` found at the top of `gpu_av_positive.cpp`.
+Don't forget to add `#extension GL_EXT_debug_printf : enable` to your shaders, and then happily go `debugPrintfEXT(My value: %u, my_value);`.

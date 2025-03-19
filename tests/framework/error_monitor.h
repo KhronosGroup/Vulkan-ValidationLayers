@@ -78,6 +78,8 @@ class ErrorMonitor {
     void SetDesiredWarning(const char *msg, uint32_t count = 1);
     void SetDesiredInfo(const char *msg, uint32_t count = 1);
 
+    void AddMessageFlags(VkFlags message_flags) { message_flags_ |= message_flags_; }
+
     // Set an error that the error monitor will ignore. Do not use this function if you are creating a new test.
     // TODO: This is stopgap to block new unexpected errors from being introduced. The long-term goal is to remove the use of this
     // function and its definition.

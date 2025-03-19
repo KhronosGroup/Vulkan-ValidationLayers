@@ -21,10 +21,16 @@
 #include "../framework/gpu_av_helper.h"
 #include "../../layers/gpuav/shaders/gpuav_shaders_constants.h"
 
+// #define PRINTF_FOR_GPU_AV_TESTS
+
 class PositiveGpuAV : public GpuAVTest {};
 
 static const std::array gpu_av_enables = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,
-                                          VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT};
+                                          VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT,
+#if defined(PRINTF_FOR_GPU_AV_TESTS)
+                                          VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT
+#endif
+};
 static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,
                                            VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT};
 
@@ -32,6 +38,9 @@ static const std::array gpu_av_disables = {VK_VALIDATION_FEATURE_DISABLE_THREAD_
 // enabled/disabled
 VkValidationFeaturesEXT GpuAVTest::GetGpuAvValidationFeatures() {
     AddRequiredExtensions(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+#if defined(PRINTF_FOR_GPU_AV_TESTS)
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+#endif
     VkValidationFeaturesEXT features = vku::InitStructHelper();
     features.enabledValidationFeatureCount = size32(gpu_av_enables);
     features.pEnabledValidationFeatures = gpu_av_enables.data();
@@ -48,6 +57,9 @@ void GpuAVTest::InitGpuAvFramework(void *p_next) {
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
     validation_features.pNext = p_next;
     RETURN_IF_SKIP(InitFramework(&validation_features));
+#if defined(PRINTF_FOR_GPU_AV_TESTS)
+    m_errorMonitor->AddMessageFlags(kInformationBit);
+#endif
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
     }
