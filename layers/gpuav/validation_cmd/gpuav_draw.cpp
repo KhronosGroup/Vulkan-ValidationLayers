@@ -845,7 +845,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBuffer &cb_state, c
         return;
     }
 
-    if (gpuav.enabled_features.robustBufferAccess2) {
+    if (gpuav.modified_features.robustBufferAccess2) {
         return;
     }
 

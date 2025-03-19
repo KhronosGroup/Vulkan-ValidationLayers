@@ -229,8 +229,8 @@ class GpuShaderInstrumentor : public vvl::Device {
 
     std::vector<spirv::InternalOnlyDebugPrintf> intenral_only_debug_printf_;
 
-    // Keep track of changes made to the enabled extensions and features separately so
-    // that they don't influence other parts of validation.
+    // These are the same as enabled_features, but may have been altered at setup time. This should be use for any feature GPU-AV
+    // might force on. We need to track these changes separately so that they don't influence non-GPU-AV parts of validation.
     DeviceExtensions modified_extensions;
     DeviceFeatures modified_features;
 
