@@ -338,7 +338,7 @@ static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
 
 // TODO: The set of interesting opcodes here was determined by eyeballing the SPIRV spec. It might be worth
 // converting parts of this to be generated from the machine-readable spec instead.
-static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<uint32_t>& result) {
+static void FindPointersAndObjects(const Instruction& insn, std::unordered_set<uint32_t>& result) {
     switch (insn.Opcode()) {
         case spv::OpLoad:
             result.insert(insn.Word(3));  // ptr
@@ -471,12 +471,12 @@ bool EntryPoint::HasBuiltIn(spv::BuiltIn built_in) const {
     return false;
 }
 
-vvl::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
-    vvl::unordered_set<uint32_t> result_ids;
+std::unordered_set<uint32_t> EntryPoint::GetAccessibleIds(const Module& module_state, EntryPoint& entrypoint) {
+    std::unordered_set<uint32_t> result_ids;
 
     // For some analyses, we need to know about all ids referenced by the static call tree of a particular entrypoint.
     // This is important for identifying the set of shader resources actually used by an entrypoint.
-    vvl::unordered_set<uint32_t> worklist;
+    std::unordered_set<uint32_t> worklist;
     worklist.insert(entrypoint.id);
 
     while (!worklist.empty()) {
