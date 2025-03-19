@@ -1218,9 +1218,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
             // This check is for catching OOB in a UBO/SSBO which is caught with robustBufferAccess
             spirv::DescriptorClassGeneralBufferPass general_buffer_pass(module);
             modified |= general_buffer_pass.Run();
+
+            // Details being worked out in https://gitlab.khronos.org/vulkan/vulkan/-/issues/3977
+            // But for what we are checking for, can rely on robustBufferAccess
+            spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
+            modified |= texel_buffer_pass.Run();
         }
-        spirv::DescriptorClassTexelBufferPass texel_buffer_pass(module);
-        modified |= texel_buffer_pass.Run();
     }
 
     if (gpuav_settings.shader_instrumentation.buffer_device_address) {
