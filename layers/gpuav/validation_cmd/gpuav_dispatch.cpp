@@ -1,6 +1,6 @@
-/* Copyright (c) 2018-2024 The Khronos Group Inc.
- * Copyright (c) 2018-2024 Valve Corporation
- * Copyright (c) 2018-2024 LunarG, Inc.
+/* Copyright (c) 2018-2025 The Khronos Group Inc.
+ * Copyright (c) 2018-2025 Valve Corporation
+ * Copyright (c) 2018-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "generated/validation_cmd_dispatch_comp.h"
+#include "utils/vk_layer_utils.h"
 
 namespace gpuav {
 
@@ -38,13 +39,10 @@ struct SharedDispatchValidationResources final {
                                       const Location &loc)
         : device(gpuav.device) {
         VkResult result = VK_SUCCESS;
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // indirect buffer
-        };
-
+        VkDescriptorSetLayoutBinding bindings = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
-        ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
-        ds_layout_ci.pBindings = bindings.data();
+        ds_layout_ci.bindingCount = 1;
+        ds_layout_ci.pBindings = &bindings;
         result = DispatchCreateDescriptorSetLayout(device, &ds_layout_ci, nullptr, &ds_layout);
         if (result != VK_SUCCESS) {
             gpuav.InternalError(device, loc, "Unable to create descriptor set layout.");
@@ -86,6 +84,8 @@ struct SharedDispatchValidationResources final {
             }
         }
 
+        // It is possible the user uses both Shader Object and Pipeline in the same command buffer. Currently we just build the
+        // pipeline regardless, but could make it more on-the-fly dynamic if needed.
         {
             VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
             shader_module_ci.codeSize = validation_cmd_dispatch_comp_size * sizeof(uint32_t);
@@ -162,10 +162,7 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
     auto &shared_dispatch_resources = gpuav.shared_resources_manager.Get<SharedDispatchValidationResources>(
         gpuav, cb_state.GetErrorLoggingDescSetLayout(), use_shader_objects, loc);
 
-    assert(shared_dispatch_resources.IsValid());
-    if (!shared_dispatch_resources.IsValid()) {
-        return;
-    }
+    ASSERT_AND_RETURN(shared_dispatch_resources.IsValid());
 
     VkDescriptorSet indirect_buffer_desc_set =
         cb_state.gpu_resources_manager.GetManagedDescriptorSet(shared_dispatch_resources.ds_layout);
@@ -174,14 +171,8 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
         return;
     }
 
-    VkDescriptorBufferInfo desc_buffer_info{};
-    // Indirect buffer
-    desc_buffer_info.buffer = indirect_buffer;
-    desc_buffer_info.offset = 0;
-    desc_buffer_info.range = VK_WHOLE_SIZE;
-
-    VkWriteDescriptorSet desc_write{};
-    desc_write = vku::InitStructHelper();
+    VkDescriptorBufferInfo desc_buffer_info{indirect_buffer, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet desc_write = vku::InitStructHelper();
     desc_write.dstBinding = 0;
     desc_write.descriptorCount = 1;
     desc_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

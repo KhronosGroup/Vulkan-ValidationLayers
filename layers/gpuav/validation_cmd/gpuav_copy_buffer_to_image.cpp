@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "gpuav/core/gpuav.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -35,10 +36,10 @@ struct SharedCopyBufferToImageValidationResources final {
     SharedCopyBufferToImageValidationResources(Validator &gpuav, VkDescriptorSetLayout error_output_set_layout, const Location &loc)
         : device(gpuav.device), vma_allocator(gpuav.vma_allocator_) {
         VkResult result = VK_SUCCESS;
-        const std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        const std::array<VkDescriptorSetLayoutBinding, 2> bindings = {{
             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // copy source buffer
             {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},  // copy regions buffer
-        };
+        }};
 
         VkDescriptorSetLayoutCreateInfo ds_layout_ci = vku::InitStructHelper();
         ds_layout_ci.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -267,15 +268,10 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
             return;
         }
 
-        std::array<VkDescriptorBufferInfo, 2> descriptor_buffer_infos = {};
-        // Copy source buffer
-        descriptor_buffer_infos[0].buffer = copy_buffer_to_img_info->srcBuffer;
-        descriptor_buffer_infos[0].offset = 0;
-        descriptor_buffer_infos[0].range = VK_WHOLE_SIZE;
-        // Copy regions buffer
-        descriptor_buffer_infos[1].buffer = copy_src_regions_mem_buffer.VkHandle();
-        descriptor_buffer_infos[1].offset = 0;
-        descriptor_buffer_infos[1].range = VK_WHOLE_SIZE;
+        std::array<VkDescriptorBufferInfo, 2> descriptor_buffer_infos = {{
+            {copy_buffer_to_img_info->srcBuffer, 0, VK_WHOLE_SIZE},      // Copy source buffer_
+            {copy_src_regions_mem_buffer.VkHandle(), 0, VK_WHOLE_SIZE},  // Copy regions buffer
+        }};
 
         std::array<VkWriteDescriptorSet, descriptor_buffer_infos.size()> desc_writes = {};
         for (const auto [i, desc_buffer_info] : vvl::enumerate(descriptor_buffer_infos.data(), descriptor_buffer_infos.size())) {
@@ -316,7 +312,7 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
 
         switch (error_record[kHeaderErrorSubCodeOffset]) {
             case kErrorSubCodePreCopyBufferToImageBufferTexel: {
-                uint32_t texel_offset = error_record[kPreActionParamOffset_0];
+                const uint32_t texel_offset = error_record[kPreActionParamOffset_0];
                 LogObjectList objlist_and_src_buffer = objlist;
                 objlist_and_src_buffer.add(src_buffer);
                 const char *vuid = loc.function == vvl::Func::vkCmdCopyBufferToImage
