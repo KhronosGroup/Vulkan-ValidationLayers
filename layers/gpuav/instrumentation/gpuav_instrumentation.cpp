@@ -187,7 +187,7 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
     {
         const ::spirv::EntryPoint *vertex_entry_point = last_bound.GetVertexEntryPoint();
         if (!vertex_entry_point) {
-            return {vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate};
+            return {std::optional<VertexAttributeFetchLimit>{}, std::optional<VertexAttributeFetchLimit>{}};
         }
         for (const ::spirv::StageInterfaceVariable &interface_var : vertex_entry_point->stage_interface_variables) {
             for (const ::spirv::InterfaceSlot &interface_slot : interface_var.interface_slots) {
@@ -232,22 +232,37 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
                 vertex_attributes_count += 1;
             }
 
-            std::optional<VertexAttributeFetchLimit> *vertex_attribute_fetch_limit_ptr =
-                (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_VERTEX)
-                    ? &vertex_attribute_fetch_limit_vertex_input_rate
-                    : &vertex_attribute_fetch_limit_instance_input_rate;
+            if (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_VERTEX) {
+                if (!vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
+                    vertex_attribute_fetch_limit_vertex_input_rate = VertexAttributeFetchLimit{};
+                }
 
-            if (!vertex_attribute_fetch_limit_ptr->has_value()) {
-                *vertex_attribute_fetch_limit_ptr = VertexAttributeFetchLimit{};
-            }
-            (*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count =
-                std::min((*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count, vertex_attributes_count);
-            if ((*vertex_attribute_fetch_limit_ptr)->max_vertex_attributes_count == vertex_attributes_count) {
-                (*vertex_attribute_fetch_limit_ptr)->binding_info = *vbb;
-                (*vertex_attribute_fetch_limit_ptr)->attribute.location = attrib.desc.location;
-                (*vertex_attribute_fetch_limit_ptr)->attribute.binding = attrib.desc.binding;
-                (*vertex_attribute_fetch_limit_ptr)->attribute.format = attrib.desc.format;
-                (*vertex_attribute_fetch_limit_ptr)->attribute.offset = attrib.desc.offset;
+                vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count =
+                    std::min(vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count, vertex_attributes_count);
+                if (vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count == vertex_attributes_count) {
+                    vertex_attribute_fetch_limit_vertex_input_rate->binding_info = *vbb;
+                    vertex_attribute_fetch_limit_vertex_input_rate->attribute.location = attrib.desc.location;
+                    vertex_attribute_fetch_limit_vertex_input_rate->attribute.binding = attrib.desc.binding;
+                    vertex_attribute_fetch_limit_vertex_input_rate->attribute.format = attrib.desc.format;
+                    vertex_attribute_fetch_limit_vertex_input_rate->attribute.offset = attrib.desc.offset;
+                }
+            } else if (vertex_binding_desc.desc.inputRate == VK_VERTEX_INPUT_RATE_INSTANCE) {
+                if (!vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
+                    vertex_attribute_fetch_limit_instance_input_rate = VertexAttributeFetchLimit{};
+                }
+
+                vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count =
+                    std::min(vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count,
+                             vertex_attributes_count * vertex_binding_desc.desc.divisor);
+                if (vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count ==
+                    (vertex_attributes_count * vertex_binding_desc.desc.divisor)) {
+                    vertex_attribute_fetch_limit_instance_input_rate->binding_info = *vbb;
+                    vertex_attribute_fetch_limit_instance_input_rate->attribute.location = attrib.desc.location;
+                    vertex_attribute_fetch_limit_instance_input_rate->attribute.binding = attrib.desc.binding;
+                    vertex_attribute_fetch_limit_instance_input_rate->attribute.format = attrib.desc.format;
+                    vertex_attribute_fetch_limit_instance_input_rate->attribute.offset = attrib.desc.offset;
+                    vertex_attribute_fetch_limit_instance_input_rate->instance_rate_divisor = vertex_binding_desc.desc.divisor;
+                }
             }
         }
     }
@@ -904,8 +919,8 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
            inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate.has_value());
     assert(inst_error_blob.index_buffer_binding.has_value());
 
-    auto add_vertex_buffer_binding_info = [&gpuav](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit,
-                                                   std::string &out) {
+    auto add_vertex_buffer_binding_info = [&gpuav, error_sub_code](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit,
+                                                                   std::string &out) {
         out += "- Buffer: ";
         out += gpuav.FormatHandle(vertex_attribute_fetch_limit.binding_info.buffer);
         out += '\n';
@@ -924,6 +939,13 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         out += "- Vertices count: ";
         out += std::to_string(vertex_attribute_fetch_limit.max_vertex_attributes_count);
         out += '\n';
+        if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
+            if (vertex_attribute_fetch_limit.instance_rate_divisor != vvl::kU32Max) {
+                out += "- Instance rate divisor: ";
+                out += std::to_string(vertex_attribute_fetch_limit.instance_rate_divisor);
+                out += '\n';
+            }
+        }
     };
 
     auto add_vertex_attribute_info = [](const VertexAttributeFetchLimit &vertex_attribute_fetch_limit, std::string &out) {
@@ -946,10 +968,19 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         out_error_msg += "Vertex index ";
         const uint32_t oob_vertex_index = error_record[glsl::kHeaderStageInfoOffset_0];
         out_error_msg += std::to_string(oob_vertex_index);
-    } else {
+    } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
         out_error_msg += "Instance index ";
         const uint32_t oob_instance_index = error_record[glsl::kHeaderStageInfoOffset_1];
         out_error_msg += std::to_string(oob_instance_index);
+        const uint32_t instance_rate_divisor =
+            inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate->instance_rate_divisor;
+        if (instance_rate_divisor > 1 && instance_rate_divisor != vvl::kU32Max) {
+            out_error_msg += " (or ";
+            out_error_msg += std::to_string(oob_instance_index / instance_rate_divisor);
+            out_error_msg += " if divided by instance rate divisor of ";
+            out_error_msg += std::to_string(instance_rate_divisor);
+            out_error_msg += ")";
+        }
     }
 
     out_error_msg += " is not within the smallest bound vertex buffer.\n";
@@ -959,7 +990,7 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
         add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
         add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_vertex_input_rate, out_error_msg);
 
-    } else {
+    } else if (error_sub_code == glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
         out_error_msg += "Smallest vertex buffer binding info, causing OOB access with VK_VERTEX_INPUT_RATE_INSTANCE:\n";
         add_vertex_buffer_binding_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);
         add_vertex_attribute_info(*inst_error_blob.vertex_attribute_fetch_limit_instance_input_rate, out_error_msg);

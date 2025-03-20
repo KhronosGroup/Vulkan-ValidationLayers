@@ -56,6 +56,7 @@ struct VertexAttributeFetchLimit {
     VkDeviceSize max_vertex_attributes_count = std::numeric_limits<VkDeviceSize>::max();
     vvl::VertexBufferBinding binding_info{};
     VkVertexInputAttributeDescription attribute{};
+    uint32_t instance_rate_divisor = std::numeric_limits<uint32_t>::max();
 };
 
 struct InstrumentationErrorBlob {
