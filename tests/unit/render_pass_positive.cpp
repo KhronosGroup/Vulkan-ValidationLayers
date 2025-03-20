@@ -126,10 +126,9 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
 
-    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -202,13 +201,11 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     vkt::CommandBuffer cmdbuf(*m_device, m_command_pool);
     cmdbuf.Begin();
 
-    m_depthStencil->InitialImageMemoryBarrier(cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                                              VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    m_depthStencil->InitialImageMemoryBarrier(cmdbuf, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                               VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
                                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    destImage.InitialImageMemoryBarrier(cmdbuf, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0,
-                                        VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+    destImage.InitialImageMemoryBarrier(cmdbuf, 0, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     VkImageCopy cregion;
     cregion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
@@ -524,9 +521,9 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     // At this point the first miplevel should be in GENERAL due to the "finalLayout" in the render pass.
     // Note that these image barriers attempt to transition *all* miplevels, even though only 1 miplevel has transitioned.
-    colorImage.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                  VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL,
-                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    colorImage.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                  VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     m_command_buffer.End();
 }
 
@@ -614,7 +611,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     rp.CreateRenderPass();
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_D32_SFLOAT_S8_UINT, 0x26 /* usage */);
-    image.SetLayout(0x6, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());

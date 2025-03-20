@@ -709,29 +709,28 @@ inline VkBufferViewCreateInfo BufferView::CreateInfo(VkBuffer buffer, VkFormat f
 class Image : public internal::NonDispHandle<VkImage> {
   public:
     explicit Image() : NonDispHandle() {}
-    explicit Image(const Device &dev, const VkImageCreateInfo &info);
-    explicit Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props,
+    explicit Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
                    void *alloc_info_pnext = nullptr);
-    explicit Image(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
-                   VkFlags const usage);
-
+    explicit Image(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format,
+                   VkImageUsageFlags usage);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT);
+
     Image(Image &&rhs) noexcept;
     Image &operator=(Image &&rhs) noexcept;
 
     ~Image() noexcept;
     void destroy() noexcept;
 
-    void init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext = nullptr);
-    void Init(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
-              VkFlags const usage);
+    void Init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
+              void *alloc_info_pnext = nullptr);
+    void Init(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format, VkImageUsageFlags usage);
     void InitNoMemory(const Device &dev, const VkImageCreateInfo &info);
     void SetName(const char *name) { NonDispHandle<VkImage>::SetName(VK_OBJECT_TYPE_IMAGE, name); }
 
-    static VkImageCreateInfo ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
-                                               uint32_t const layers, VkFormat const format, VkFlags const usage,
-                                               VkImageTiling const requested_tiling = VK_IMAGE_TILING_OPTIMAL,
+    static VkImageCreateInfo ImageCreateInfo2D(uint32_t width, uint32_t height, uint32_t mip_levels, uint32_t layers,
+                                               VkFormat format, VkImageUsageFlags usage,
+                                               VkImageTiling requested_tiling = VK_IMAGE_TILING_OPTIMAL,
                                                const vvl::span<uint32_t> &queue_families = {});
 
     static bool IsCompatible(const Device &dev, VkImageUsageFlags usages, VkFormatFeatureFlags2 features);
@@ -769,31 +768,12 @@ class Image : public internal::NonDispHandle<VkImage> {
         return barrier;
     }
 
-    VkImageMemoryBarrier2 ImageMemoryBarrier(VkPipelineStageFlags2 src_stage, VkPipelineStageFlags2 dst_stage,
-                                             VkAccessFlags2 src_access, VkAccessFlags2 dst_access, VkImageLayout old_layout,
-                                             VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
-        VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
-        barrier.srcStageMask = src_stage;
-        barrier.srcAccessMask = src_access;
-        barrier.dstStageMask = dst_stage;
-        barrier.dstAccessMask = dst_access;
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.image = handle();
-        barrier.subresourceRange = range;
-        return barrier;
-    }
-
-    void InitialImageMemoryBarrier(CommandBuffer &cmd, VkImageAspectFlags aspect, VkAccessFlags src_access,
-                                   VkAccessFlags dst_access, VkImageLayout image_layout,
-                                   VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    void InitialImageMemoryBarrier(CommandBuffer &cmd, VkAccessFlags src_access, VkAccessFlags dst_access,
+                                   VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                                    VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-    void ImageMemoryBarrier(CommandBuffer &cmd, VkImageAspectFlags aspect, VkAccessFlags src_access, VkAccessFlags dst_access,
-                            VkImageLayout old_layout, VkImageLayout new_layout,
-                            VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    void ImageMemoryBarrier(CommandBuffer &cmd, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
+                            VkImageLayout new_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     const VkImageCreateInfo &CreateInfo() const { return create_info_; }
@@ -805,11 +785,10 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     static VkImageAspectFlags AspectMask(VkFormat format);
 
-    void SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
-    void TransitionLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout old_layout, VkImageLayout new_layout);
+    void SetLayout(CommandBuffer &cmd_buf, VkImageLayout image_layout);
+    void SetLayout(VkImageLayout image_layout);
 
-    void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
-    void SetLayout(VkImageLayout image_layout) { SetLayout(AspectMask(Format()), image_layout); };
+    void TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout);
     void TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout);
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const;

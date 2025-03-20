@@ -57,7 +57,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+    image.SetLayout(layout);
 
     std::vector<uint8_t> pixels(width * height * 4);
     // Fill image with random values
@@ -100,7 +100,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
 
     // Copy from one image to another
     vkt::Image image2(*m_device, image_ci);
-    image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+    image2.SetLayout(layout);
 
     VkImageCopy2 image_copy_2 = vku::InitStructHelper();
     image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -196,7 +196,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+    image.SetLayout(layout);
 
     std::vector<uint8_t> pixels(width * height * 4);
     // Fill image with random values
@@ -245,7 +245,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
 
     // Copy from one image to another
     vkt::Image image2(*m_device, image_ci);
-    image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+    image2.SetLayout(layout);
 
     VkImageCopy2 image_copy_2 = vku::InitStructHelper();
     image_copy_2.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -317,7 +317,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
     image_ci.mipLevels = 4;
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
+    image.SetLayout(layout);
 
     const uint32_t buffer_size = width * height * 4u;
     std::vector<uint8_t> data(buffer_size);
@@ -352,7 +352,7 @@ TEST_F(PositiveHostImageCopy, CompressedFormat) {
     }
     image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;
     vkt::Image image(*m_device, image_ci);
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     std::vector<uint8_t> pixels(width * height * 4);
 

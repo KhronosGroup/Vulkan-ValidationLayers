@@ -375,8 +375,8 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
         vk::CmdClearColorImage(m_command_buffer, image.handle(), image_layout, &clear_color, 1, &range);
     }
 
-    image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                             VK_ACCESS_TRANSFER_WRITE_BIT, image_layout, image_layout);
+    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
+                             image_layout);
 
     // Try good case with VK_REMAINING
     {
@@ -406,7 +406,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
         vk::CmdClearDepthStencilImage(m_command_buffer, image.handle(), image_layout, &clear_value, 1, &range);
     }
 
-    image.ImageMemoryBarrier(m_command_buffer, ds_aspect, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
+    image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
                              image_layout);
 
     // Try good case with VK_REMAINING

@@ -760,10 +760,10 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     vk::BindImageMemory(device(), image_unprotected_descriptor.handle(), memory_image_unprotected.handle(), 0);
 
     // Change layout once memory is bound
-    image_protected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_protected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_unprotected.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_unprotected_descriptor.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_protected.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_protected_descriptor.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_unprotected.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
+    image_unprotected_descriptor.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     // need memory bound at image view creation time
     vkt::ImageView view0 = image_protected.CreateView();

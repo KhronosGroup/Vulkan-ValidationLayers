@@ -59,7 +59,7 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
     VkImageLayout image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     if (image_memory) {
         image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        image_.init(*device_obj, image_ci, 0);
+        image_.Init(*device_obj, image_ci);
         image_.SetLayout(image_layout);
     } else {
         image_.InitNoMemory(*device_obj, image_ci);
@@ -83,20 +83,27 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
 void Barrier2QueueFamilyTestHelper::Init(bool image_memory, bool buffer_memory) {
     vkt::Device *device_obj = context_->layer_test->DeviceObj();
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                                  VK_IMAGE_TILING_OPTIMAL);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkImageLayout image_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     if (image_memory) {
         image_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        image_.init(*device_obj, image_ci, 0);
+        image_.Init(*device_obj, image_ci);
         image_.SetLayout(image_layout);
     } else {
         image_.InitNoMemory(*device_obj, image_ci);
     }
 
-    image_barrier_ = image_.ImageMemoryBarrier(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                                               VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_TRANSFER_READ_BIT, image_layout, image_layout,
-                                               VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1});
+    image_barrier_ = vku::InitStructHelper();
+    image_barrier_.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    image_barrier_.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    image_barrier_.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    image_barrier_.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    image_barrier_.oldLayout = image_layout;
+    image_barrier_.newLayout = image_layout;
+    image_barrier_.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier_.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier_.image = image_;
+    image_barrier_.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);

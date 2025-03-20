@@ -1168,15 +1168,12 @@ void BufferView::init(const Device &dev, const VkBufferViewCreateInfo &info) {
 
 NON_DISPATCHABLE_HANDLE_DTOR(Image, vk::DestroyImage)
 
-Image::Image(const Device &dev, const VkImageCreateInfo &info) : device_(&dev) { init(dev, info, 0); }
-
 Image::Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext)
     : device_(&dev) {
-    init(dev, info, mem_props, alloc_info_pnext);
+    Init(dev, info, mem_props, alloc_info_pnext);
 }
 
-Image::Image(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
-             VkFlags const usage)
+Image::Image(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format, VkImageUsageFlags usage)
     : device_(&dev) {
     Init(dev, width, height, mip_levels, format, usage);
 }
@@ -1187,7 +1184,7 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_
 //     SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 // after you init the image manually
 Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : device_(&dev) {
-    init(*device_, info, 0);
+    Init(*device_, info);
 
     VkImageLayout newLayout;
     const auto usage = info.usage;
@@ -1199,8 +1196,7 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : dev
         newLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
 
-    VkImageAspectFlags image_aspect = AspectMask(info.format);
-    SetLayout(image_aspect, newLayout);
+    SetLayout(newLayout);
 }
 
 Image::Image(Image &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
@@ -1237,7 +1233,7 @@ Image &Image::operator=(Image &&rhs) noexcept {
     return *this;
 }
 
-void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
+void Image::Init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props, void *alloc_info_pnext) {
     InitNoMemory(dev, info);
 
     if (initialized()) {
@@ -1247,10 +1243,10 @@ void Image::init(const Device &dev, const VkImageCreateInfo &info, VkMemoryPrope
     }
 }
 
-void Image::Init(const Device &dev, uint32_t const width, uint32_t const height, uint32_t const mip_levels, VkFormat const format,
-                 VkFlags const usage) {
+void Image::Init(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format,
+                 VkImageUsageFlags usage) {
     const VkImageCreateInfo info = ImageCreateInfo2D(width, height, mip_levels, 1, format, usage, VK_IMAGE_TILING_OPTIMAL);
-    init(dev, info, 0);
+    Init(dev, info);
 }
 
 // Currently all init call here, so can set things for all path
@@ -1309,18 +1305,16 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
     return true;
 }
 
-VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
-                                           uint32_t const layers, VkFormat const format, VkFlags const usage,
-                                           VkImageTiling const requested_tiling, const vvl::span<uint32_t> &queue_families) {
+VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t width, uint32_t height, uint32_t mip_levels, uint32_t layers, VkFormat format,
+                                           VkImageUsageFlags usage, VkImageTiling requested_tiling,
+                                           const vvl::span<uint32_t> &queue_families) {
     VkImageCreateInfo imageCreateInfo = DefaultCreateInfo();
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
     imageCreateInfo.extent.width = width;
     imageCreateInfo.extent.height = height;
     imageCreateInfo.mipLevels = mip_levels;
     imageCreateInfo.arrayLayers = layers;
-    imageCreateInfo.tiling = requested_tiling;  // This will be touched up below...
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.tiling = requested_tiling;
 
     // Automatically set sharing mode etc. based on queue family information
     if (queue_families.size() > 1) {
@@ -1367,27 +1361,25 @@ VkImageAspectFlags Image::AspectMask(VkFormat format) {
     return image_aspect;
 }
 
-void Image::InitialImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkAccessFlags src_access,
-                                      VkAccessFlags dst_access, VkImageLayout image_layout, VkPipelineStageFlags src_stages,
+void Image::InitialImageMemoryBarrier(CommandBuffer &cmd_buf, VkAccessFlags src_access, VkAccessFlags dst_access,
+                                      VkImageLayout image_layout, VkPipelineStageFlags src_stages,
                                       VkPipelineStageFlags dst_stages) {
-    ImageMemoryBarrier(cmd_buf, aspect, src_access, dst_access, VK_IMAGE_LAYOUT_UNDEFINED, image_layout, src_stages, dst_stages);
+    ImageMemoryBarrier(cmd_buf, src_access, dst_access, VK_IMAGE_LAYOUT_UNDEFINED, image_layout, src_stages, dst_stages);
 }
 
-void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkAccessFlags src_access,
-                               VkAccessFlags dst_access, VkImageLayout old_layout, VkImageLayout new_layout,
-                               VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages) {
-    VkImageSubresourceRange subresource_range{aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
+void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
+                               VkImageLayout new_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages) {
+    VkImageSubresourceRange subresource_range = SubresourceRange(AspectMask(Format()));
     VkImageMemoryBarrier barrier = ImageMemoryBarrier(src_access, dst_access, old_layout, new_layout, subresource_range);
     vk::CmdPipelineBarrier(cmd_buf, src_stages, dst_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void Image::SetLayout(CommandBuffer &cmd_buf, VkImageLayout image_layout) {
     assert(image_layout_ == create_info_.initialLayout);
-    TransitionLayout(cmd_buf, aspect, image_layout_, image_layout);
+    TransitionLayout(cmd_buf, image_layout_, image_layout);
 }
 
-void Image::TransitionLayout(CommandBuffer& cmd_buf, VkImageAspectFlags aspect, VkImageLayout old_layout,
-    VkImageLayout new_layout) {
+void Image::TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout) {
     VkFlags src_mask, dst_mask;
     const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1448,17 +1440,17 @@ void Image::TransitionLayout(CommandBuffer& cmd_buf, VkImageAspectFlags aspect, 
             break;
     }
 
-    ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, old_layout, new_layout);
+    ImageMemoryBarrier(cmd_buf, src_mask, dst_mask, old_layout, new_layout);
     image_layout_ = new_layout;
 }
 
-void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
+void Image::SetLayout(VkImageLayout image_layout) {
     CommandPool pool(*device_, device_->graphics_queue_node_index_);
     CommandBuffer cmd_buf(*device_, pool);
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    SetLayout(cmd_buf, aspect, image_layout);
+    SetLayout(cmd_buf, image_layout);
     cmd_buf.End();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
@@ -1471,7 +1463,7 @@ void Image::TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout)
     CommandBuffer cmd_buf(*device_, pool);
 
     cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    TransitionLayout(cmd_buf, AspectMask(Format()), old_layout, new_layout);
+    TransitionLayout(cmd_buf, old_layout, new_layout);
     cmd_buf.End();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];

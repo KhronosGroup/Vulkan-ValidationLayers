@@ -299,22 +299,22 @@ struct ClearAttachmentHazardHelper {
           ds() {
         auto image_ci = vkt::Image::ImageCreateInfo2D(width, height, 1, 1, rt_format, transfer_usage);
 
-        image.init(device, image_ci, 0);
+        image.Init(device, image_ci);
         image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
         image_ci.format = ds_format;
-        image_ds.init(device, image_ci, 0);
+        image_ds.Init(device, image_ci);
         image_ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
         image_ci.format = rt_format;
         image_ci.usage = rt_usage;
-        rt.init(device, image_ci, 0);
+        rt.Init(device, image_ci);
         rt.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         rt_view = rt.CreateView();
 
         image_ci.format = ds_format;
         image_ci.usage = ds_usage;
-        ds.init(device, image_ci, 0);
+        ds.Init(device, image_ci);
         ds.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
         ds_view = ds.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     }
@@ -596,9 +596,9 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -741,8 +741,8 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazards) {
 
         m_command_buffer.Reset();
         m_command_buffer.Begin();
-        image_s2_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-        image_s2_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+        image_s2_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+        image_s2_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
         vk::CmdResolveImage(cb, image_s2_a.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                             &r_full_region);
         m_command_buffer.End();
@@ -799,9 +799,9 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
 
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -917,9 +917,9 @@ TEST_F(NegativeSyncVal, CopyOptimalMultiPlanarHazards) {
 
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -1016,9 +1016,9 @@ TEST_F(NegativeSyncVal, CopyLinearImageHazards) {
 
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -1097,9 +1097,9 @@ TEST_F(NegativeSyncVal, CopyLinearMultiPlanarHazards) {
 
     m_command_buffer.Begin();
 
-    image_c.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_c.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -1202,8 +1202,8 @@ TEST_F(NegativeSyncVal, CopyBufferImageHazards) {
     VkBufferImageCopy region_buffer_back_image_1_back = {1024, 16, 16, layers_1, half_offset, half_extent};
 
     m_command_buffer.Begin();
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
     vk::CmdCopyBufferToImage(cb, buffer_a.handle(), image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
@@ -1325,8 +1325,8 @@ TEST_F(NegativeSyncVal, BlitImageHazards) {
     VkImageBlit region_1_back_0_back = {layers_1, {half_0_offset, full_offset}, layers_0, {half_0_offset, full_offset}};
 
     m_command_buffer.Begin();
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
 
@@ -1397,10 +1397,10 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     auto cb = m_command_buffer.handle();
 
     m_command_buffer.Begin();
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    rt_image_0.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    rt_image_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    rt_image_0.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    rt_image_1.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     vk::CmdCopyImage(cb, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, rt_image_0.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &region_to_copy);
@@ -2175,8 +2175,8 @@ TEST_F(NegativeSyncVal, CmdClear) {
 
     m_command_buffer.Begin();
 
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     auto cb = m_command_buffer.handle();
     VkClearColorValue ccv = {};
@@ -2386,9 +2386,9 @@ TEST_F(NegativeSyncVal, CmdDrawDepthStencil) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
 
-    image_ds.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_dp.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
-    image_st.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_ds.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_dp.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
+    image_st.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageCopy copyRegion;
     copyRegion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
@@ -3632,9 +3632,9 @@ TEST_F(NegativeSyncVal, EventsCopyImageHazards) {
     };
 
     auto set_layouts = [this, &image_a, &image_b, &image_c]() {
-        image_c.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-        image_b.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-        image_a.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        image_c.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        image_b.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+        image_a.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     };
 
     // Scope check.  One access in, one access not
@@ -4654,10 +4654,10 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
 
     vkt::Image image_a(*m_device, image_ci);
-    image_a.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_a.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     vkt::Image image_b(*m_device, image_ci);
-    image_b.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image_b.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
     VkImageSubresourceLayers all_layers{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
     VkOffset3D zero_offset{0, 0, 0};
@@ -4669,7 +4669,7 @@ TEST_F(NegativeSyncVal, QSOBarrierHazard) {
     test.End();
 
     test.BeginB();
-    image_a.ImageMemoryBarrier(*test.current_cb, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL,
+    image_a.ImageMemoryBarrier(*test.current_cb, VK_ACCESS_NONE, VK_ACCESS_NONE, VK_IMAGE_LAYOUT_GENERAL,
                                VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT,
                                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
     test.End();

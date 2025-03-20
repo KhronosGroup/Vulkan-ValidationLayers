@@ -282,7 +282,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
         vkt::Image image(*m_device, image_ci);
 
         m_command_buffer.Begin();
-        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearColorValue clear_value = {{0.0f, 0.0f, 0.0f, 0.0f}};
         VkImageSubresourceRange image_range = {};
@@ -310,8 +310,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
         vkt::Image image(*m_device, image_ci);
 
         m_command_buffer.Begin();
-        image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
-                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
         VkClearDepthStencilValue clear_value = {0.0f, 0};
         VkImageSubresourceRange image_range = {};
@@ -346,7 +345,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
 
     m_command_buffer.Begin();
 
-    image_1.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image_1.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-AvoidImageToImageCopy");
 
     VkImageCopy copy{};
@@ -412,9 +411,8 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     m_command_buffer.Begin();
     // check for read-to-read barrier
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-PipelineBarrier-readToReadBarrier");
-    image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    image.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
     m_errorMonitor->VerifyFound();
 
@@ -423,15 +421,12 @@ TEST_F(VkAmdBestPracticesLayerTest, Barriers) {
     // check total number of barriers warning
     uint32_t warn_limit = 250;
     for (uint32_t i = 0; i < warn_limit; i++) {
-        image.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                               VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-        image.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     }
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-CmdBuffer-highBarrierCount");
-    image.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    image.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();

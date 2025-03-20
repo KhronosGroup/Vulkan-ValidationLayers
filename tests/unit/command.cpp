@@ -1152,12 +1152,11 @@ TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.layerCount = 1;
     subresource.levelCount = 1;
-    srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    srcImage.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1,
                            &subresource);
-    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dstImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dstImage.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolveRegion;
     resolveRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1215,12 +1214,11 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     subresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresource.layerCount = 1;
     subresource.levelCount = 1;
-    srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    srcImage.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1,
                            &subresource);
-    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dstImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dstImage.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolveRegion;
     resolveRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -2872,7 +2870,7 @@ TEST_F(NegativeCommand, ResolveUsage) {
     bool src_image_2_tests_valid = false;
     vkt::Image srcImage2;
     if ((result == VK_SUCCESS) && (image_format_props.sampleCounts & VK_SAMPLE_COUNT_4_BIT) != 0) {
-        srcImage2.init(*m_device, image_create_info, 0);
+        srcImage2.Init(*m_device, image_create_info);
         src_image_2_tests_valid = true;
     }
 

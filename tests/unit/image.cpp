@@ -2131,7 +2131,7 @@ TEST_F(NegativeImage, ImageViewLayerCount) {
     vkt::Image image_3d_array;
     image_ci.arrayLayers = 1;  // arrayLayers must be 1 for 3D images
     if (img_limits.maxArrayLayers >= image_ci.arrayLayers) {
-        image_3d_array.init(*m_device, image_ci, 0);
+        image_3d_array.Init(*m_device, image_ci);
     }
 
     // base for each test that never changes
@@ -3783,7 +3783,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         bool supported = ImageFormatIsSupported(instance(), Gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
 
         if (supported) {
-            image.init(*m_device, image_create_info, 0);
+            image.Init(*m_device, image_create_info);
         }
 
         return supported;
@@ -3925,7 +3925,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
         bool supported = ImageFormatIsSupported(instance(), Gpu(), image_create_info, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT);
 
         if (supported) {
-            image.init(*m_device, image_create_info, 0);
+            image.Init(*m_device, image_create_info);
         }
 
         return supported;
@@ -4012,7 +4012,7 @@ TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
     vkt::Image image(*m_device, info, vkt::no_mem);
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-image-01932");
-    image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
+    image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     m_errorMonitor->VerifyFound();
 }
 
