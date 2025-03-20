@@ -56,7 +56,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     }
 
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     std::vector<uint8_t> pixels(width * height * 4);
@@ -99,7 +99,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     ASSERT_EQ(pixels, welcome_back);
 
     // Copy from one image to another
-    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image2(*m_device, image_ci);
     image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     VkImageCopy2 image_copy_2 = vku::InitStructHelper();
@@ -134,8 +134,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     transition_info.image = image2;
     result = vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     ASSERT_EQ(VK_SUCCESS, result);
-    VkImageSubresource image_sub = vkt::Image::Subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
-    VkImageSubresourceRange image_sub_range = vkt::Image::SubresourceRange(image_sub);
+    VkImageSubresourceRange image_sub_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barrier =
         image2.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
@@ -196,7 +195,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     image_ci = vkt::Image::ImageCreateInfo2D(
         width, height, 1, 1, format,
         VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     std::vector<uint8_t> pixels(width * height * 4);
@@ -245,7 +244,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     ASSERT_EQ(pixels, welcome_back);
 
     // Copy from one image to another
-    vkt::Image image2(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image2(*m_device, image_ci);
     image2.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     VkImageCopy2 image_copy_2 = vku::InitStructHelper();
@@ -280,8 +279,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     transition_info.image = image2;
     result = vk::TransitionImageLayout(*m_device, 1, &transition_info);
     ASSERT_EQ(VK_SUCCESS, result);
-    VkImageSubresource image_sub = vkt::Image::Subresource(VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
-    VkImageSubresourceRange image_sub_range = vkt::Image::SubresourceRange(image_sub);
+    VkImageSubresourceRange image_sub_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageMemoryBarrier image_barrier =
         image2.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, image_sub_range);
 
@@ -318,7 +316,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
 
     image_ci.mipLevels = 4;
     VkImageLayout layout = VK_IMAGE_LAYOUT_GENERAL;
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image(*m_device, image_ci);
     image.SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, layout);
 
     const uint32_t buffer_size = width * height * 4u;

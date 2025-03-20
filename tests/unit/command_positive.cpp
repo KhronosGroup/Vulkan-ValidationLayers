@@ -365,23 +365,23 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+    const VkImageLayout image_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
     m_command_buffer.Begin();
-    const auto cb_handle = m_command_buffer.handle();
 
     // Try good case
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
+        vk::CmdClearColorImage(m_command_buffer, image.handle(), image_layout, &clear_color, 1, &range);
     }
 
     image.ImageMemoryBarrier(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                             VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+                             VK_ACCESS_TRANSFER_WRITE_BIT, image_layout, image_layout);
 
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearColorImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1, &range);
+        vk::CmdClearColorImage(m_command_buffer, image.handle(), image_layout, &clear_color, 1, &range);
     }
 }
 
@@ -396,23 +396,23 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     const VkImageAspectFlags ds_aspect = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
     const VkClearDepthStencilValue clear_value = {};
+    const VkImageLayout image_layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
     m_command_buffer.Begin();
-    const auto cb_handle = m_command_buffer.handle();
 
     // Try good case
     {
         VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 1};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(m_command_buffer, image.handle(), image_layout, &clear_value, 1, &range);
     }
 
-    image.ImageMemoryBarrier(m_command_buffer, ds_aspect, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
-                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    image.ImageMemoryBarrier(m_command_buffer, ds_aspect, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
+                             image_layout);
 
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {ds_aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearDepthStencilImage(cb_handle, image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(m_command_buffer, image.handle(), image_layout, &clear_value, 1, &range);
     }
 }
 

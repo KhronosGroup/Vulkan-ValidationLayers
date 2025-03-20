@@ -1019,7 +1019,6 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     const uint32_t WIDTH = 512, HEIGHT = 512;
 
     auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
-    image0->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view0 = image0->CreateView();
 
     std::vector<VkRenderPass> renderpasses;
@@ -1118,7 +1117,6 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     vkt::RenderPass rp(*m_device, rpinf);
 
     std::unique_ptr<vkt::Image> image = CreateImage(FMT, WIDTH, HEIGHT);
-    image->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image->CreateView();
     VkFramebuffer fb = CreateFramebuffer(WIDTH, HEIGHT, view, rp.handle());
 
@@ -1206,11 +1204,9 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     vkt::RenderPass rp(*m_device, rpinf);
 
     auto image0 = CreateImage(FMT, WIDTH, HEIGHT);
-    image0->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     auto view0 = image0->CreateView();
 
     auto image1 = CreateImage(FMT, WIDTH, HEIGHT);
-    image1->SetLayout(VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_GENERAL);
     auto view1 = image1->CreateView();
 
     std::vector<VkFramebuffer> framebuffers;

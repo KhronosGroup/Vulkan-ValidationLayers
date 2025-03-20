@@ -53,7 +53,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
-    auto image_subres = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1);
+    auto image_subres = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     auto image_barrier = image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     image_barrier.dstQueueFamilyIndex = no_gfx_queue->family_index;
@@ -530,7 +530,7 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, ci, vkt::set_layout);
+    vkt::Image image(*m_device, ci);
 
     VkImageBlit blitRegion = {};
     blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, VK_REMAINING_ARRAY_LAYERS};
@@ -542,12 +542,12 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blitRegion, VK_FILTER_NEAREST);
     m_command_buffer.FullMemoryBarrier();
     blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blitRegion, VK_FILTER_NEAREST);
 }
 
 TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
@@ -741,12 +741,12 @@ TEST_F(PositiveImage, BlitMaintenance8) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_3d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_3d(*m_device, ci);
 
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.extent.depth = 1;
     ci.arrayLayers = 4;
-    vkt::Image image_2d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_2d(*m_device, ci);
 
     // src is 2D with multiple layers
     VkImageBlit blit_region = {};
@@ -758,8 +758,8 @@ TEST_F(PositiveImage, BlitMaintenance8) {
     blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, image_2d.Layout(), image_3d, image_3d.Layout(), 1, &blit_region,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_command_buffer.End();
 }
 

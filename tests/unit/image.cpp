@@ -481,15 +481,15 @@ TEST_F(NegativeImage, BlitOffsets) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_1D(*m_device, ci, vkt::set_layout);
+    vkt::Image image_1D(*m_device, ci);
 
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.extent = {64, 64, 1};
-    vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+    vkt::Image image_2D(*m_device, ci);
 
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.extent = {64, 64, 64};
-    vkt::Image image_3D(*m_device, ci, vkt::set_layout);
+    vkt::Image image_3D(*m_device, ci);
 
     VkImageBlit blit_region = {};
     blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -503,15 +503,15 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[0] = {32, 0, 0};
     blit_region.dstOffsets[1] = {64, 1, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00245");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_1D.handle(), image_1D.Layout(), image_1D.handle(), image_1D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_1D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_1D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.dstOffsets[0] = {32, 1, 0};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00250");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_1D.handle(), image_1D.Layout(), image_1D.handle(), image_1D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_1D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_1D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // 2D, with src/dest z offsets other than (0,1)
@@ -520,15 +520,15 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[0] = {32, 32, 0};
     blit_region.dstOffsets[1] = {64, 64, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00247");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.srcOffsets[0] = {0, 0, 0};
     blit_region.dstOffsets[0] = {32, 32, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00252");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Source offsets exceeding source image dimensions
@@ -538,23 +538,23 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[1] = {64, 64, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00243");  // x
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), image_3D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    blit_region.srcOffsets[1] = {64, 65, 1};                                                 // src y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");                  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");                   // src region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), image_3D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    blit_region.srcOffsets[1] = {64, 65, 1};                                 // src y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");  // y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
+    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.srcOffsets[0] = {0, 0, 65};  // src z
     blit_region.srcOffsets[1] = {64, 64, 64};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00246");  // z
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), image_3D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_3D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Dest offsets exceeding source image dimensions
@@ -564,23 +564,23 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[1] = {64, 0, 33};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00248");  // x
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_3D.handle(), image_3D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_3D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
-    blit_region.dstOffsets[0] = {0, 65, 32};                                                 // dst y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");                  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");                   // dst region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_3D.handle(), image_3D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    blit_region.dstOffsets[0] = {0, 65, 32};                                 // dst y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");  // y
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_3D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.dstOffsets[0] = {0, 64, 65};  // dst z
     blit_region.dstOffsets[1] = {64, 0, 64};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00251");  // z
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_3D.handle(), image_3D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_3D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -607,7 +607,7 @@ TEST_F(NegativeImage, BlitOverlap) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_2D(*m_device, ci, vkt::set_layout);
+    vkt::Image image_2D(*m_device, ci);
 
     VkImageBlit blit_region = {};
     blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -620,8 +620,8 @@ TEST_F(NegativeImage, BlitOverlap) {
     blit_region.dstOffsets[0] = {15, 15, 0};
     blit_region.dstOffsets[1] = {47, 47, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00217");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), image_2D.Layout(), image_2D.handle(), image_2D.Layout(), 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2D.handle(), VK_IMAGE_LAYOUT_GENERAL, image_2D.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -649,17 +649,17 @@ TEST_F(NegativeImage, MiscBlitTests) {
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     // 2D color image
-    vkt::Image color_img(*m_device, ci, vkt::set_layout);
+    vkt::Image color_img(*m_device, 64, 64, 1, f_color, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     // 2D multi-sample image
     ci.samples = VK_SAMPLE_COUNT_4_BIT;
-    vkt::Image ms_img(*m_device, ci, vkt::set_layout);
+    vkt::Image ms_img(*m_device, ci);
 
     // 3D color image
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.imageType = VK_IMAGE_TYPE_3D;
     ci.extent = {64, 64, 8};
-    vkt::Image color_3D_img(*m_device, ci, vkt::set_layout);
+    vkt::Image color_3D_img(*m_device, ci);
 
     VkImageBlit blitRegion = {};
     blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -676,8 +676,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
     blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-aspectMask-00241");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-aspectMask-00242");
-    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), color_img.Layout(), color_img.handle(), color_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid src mip level
@@ -690,8 +690,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");  // out-of-bounds srcOffset.y
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00246");  // out-of-bounds srcOffset.z
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // region not contained within src image
-    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), color_img.Layout(), color_img.handle(), color_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid dst mip level
@@ -703,16 +703,16 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");  // out-of-bounds dstOffset.y
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00251");  // out-of-bounds dstOffset.z
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // region not contained within dst image
-    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), color_img.Layout(), color_img.handle(), color_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid src array layer
     blitRegion.dstSubresource.mipLevel = 0;
     blitRegion.srcSubresource.baseArrayLayer = ci.arrayLayers;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01707");  // invalid srcSubresource layer range
-    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), color_img.Layout(), color_img.handle(), color_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit with invalid dst array layer
@@ -720,8 +720,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
     blitRegion.dstSubresource.baseArrayLayer = ci.arrayLayers;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstSubresource-01708");  // invalid dstSubresource layer range
                                                                                   // Redundant unavoidable errors
-    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), color_img.Layout(), color_img.handle(), color_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blitRegion.dstSubresource.baseArrayLayer = 0;
@@ -729,8 +729,8 @@ TEST_F(NegativeImage, MiscBlitTests) {
     // Blit multi-sample image
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00233");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-00234");
-    vk::CmdBlitImage(m_command_buffer.handle(), ms_img.handle(), ms_img.Layout(), ms_img.handle(), ms_img.Layout(), 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), ms_img.handle(), VK_IMAGE_LAYOUT_GENERAL, ms_img.handle(), VK_IMAGE_LAYOUT_GENERAL,
+                     1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     // Blit 3D with baseArrayLayer != 0 or layerCount != 1
@@ -739,16 +739,16 @@ TEST_F(NegativeImage, MiscBlitTests) {
     blitRegion.srcSubresource.baseArrayLayer = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01707");  // base+count > total layer count
-    vk::CmdBlitImage(m_command_buffer.handle(), color_3D_img.handle(), color_3D_img.Layout(), color_3D_img.handle(),
-                     color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_3D_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_3D_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
     blitRegion.srcSubresource.baseArrayLayer = 0;
     blitRegion.srcSubresource.layerCount = 0;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
     m_errorMonitor->SetDesiredError("VUID-VkImageSubresourceLayers-layerCount-01700");  // layer count == 0 (src)
     m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08800");               // src/dst layer count mismatch
-    vk::CmdBlitImage(m_command_buffer.handle(), color_3D_img.handle(), color_3D_img.Layout(), color_3D_img.handle(),
-                     color_3D_img.Layout(), 1, &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), color_3D_img.handle(), VK_IMAGE_LAYOUT_GENERAL, color_3D_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -775,7 +775,7 @@ TEST_F(NegativeImage, BlitRemainingArrayLayers) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, ci, vkt::set_layout);
+    vkt::Image image(*m_device, ci);
 
     VkImageBlit blitRegion = {};
     blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -794,8 +794,8 @@ TEST_F(NegativeImage, BlitRemainingArrayLayers) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08801");
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), image.Layout(), image.handle(), image.Layout(), 1, &blitRegion,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 }
 
@@ -809,19 +809,8 @@ TEST_F(NegativeImage, BlitToDepth) {
         GTEST_SKIP() << "Required no depth VK_FORMAT_FEATURE_BLIT_DST_BIT features not supported";
     }
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = f_depth;
-    ci.extent = {64, 64, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 1;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
     // 2D depth image
-    vkt::Image depth_img(*m_device, ci, vkt::set_layout);
+    vkt::Image depth_img(*m_device, 64, 64, 1, f_depth, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImageBlit blitRegion = {};
     blitRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -837,8 +826,8 @@ TEST_F(NegativeImage, BlitToDepth) {
     blitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     blitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImage-02000");
-    vk::CmdBlitImage(m_command_buffer.handle(), depth_img.handle(), depth_img.Layout(), depth_img.handle(), depth_img.Layout(), 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), depth_img.handle(), VK_IMAGE_LAYOUT_GENERAL, depth_img.handle(),
+                     VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -864,12 +853,12 @@ TEST_F(NegativeImage, BlitWithoutMaintenance8) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_3d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_3d(*m_device, ci);
 
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.extent.depth = 1;
     ci.arrayLayers = 4;
-    vkt::Image image_2d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_2d(*m_device, ci);
 
     // src is 2D with multiple layers
     VkImageBlit blit_region = {};
@@ -882,8 +871,8 @@ TEST_F(NegativeImage, BlitWithoutMaintenance8) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, image_2d.Layout(), image_3d, image_3d.Layout(), 1, &blit_region,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -910,12 +899,12 @@ TEST_F(NegativeImage, BlitMaintenance8) {
     ci.samples = VK_SAMPLE_COUNT_1_BIT;
     ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_3d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_3d(*m_device, ci);
 
     ci.imageType = VK_IMAGE_TYPE_2D;
     ci.extent.depth = 1;
     ci.arrayLayers = 4;
-    vkt::Image image_2d(*m_device, ci, vkt::set_layout);
+    vkt::Image image_2d(*m_device, ci);
 
     VkImageBlit blit_region = {};
     blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 1};
@@ -928,14 +917,14 @@ TEST_F(NegativeImage, BlitMaintenance8) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10207");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01707");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_3d, image_3d.Layout(), image_2d, image_2d.Layout(), 1, &blit_region,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_3d, VK_IMAGE_LAYOUT_GENERAL, image_2d, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10208");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstSubresource-01708");
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, image_2d.Layout(), image_3d, image_3d.Layout(), 1, &blit_region,
-                     VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -4043,7 +4032,7 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage =
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
-    vkt::Image image(*m_device, info, vkt::set_layout);
+    vkt::Image image(*m_device, info);
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-attachmentFeedbackLoopLayout-07313");
     image.SetLayout(VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
     m_errorMonitor->VerifyFound();
