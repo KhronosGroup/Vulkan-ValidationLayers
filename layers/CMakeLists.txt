@@ -422,6 +422,8 @@ endif()
     target_link_options(vvl PRIVATE -exported_symbols_list ${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.exp)
 elseif(ANDROID)
     # Need 16k pages in Android 15
+    # When we bump our NDK requirement to r28 we can remove
+    # https://developer.android.com/guide/practices/page-sizes#compile-r28
     # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9703
     # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9170
     target_link_options(vvl PRIVATE "-Wl,-z,max-page-size=16384")
