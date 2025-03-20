@@ -40,6 +40,9 @@ class Pass {
     virtual const char* Name() const = 0;
     // Return true if code was instrumented/modified in anyway
     virtual bool Instrument() = 0;
+    // Optional time before the pass to decide to skip or not.
+    // This is for things that can change between shaders
+    virtual bool EarlySkip() const { return false; };
     // Requiring because this becomes important/helpful while debugging
     virtual void PrintDebugInfo() const = 0;
     // Wrapper that each pass can use to start

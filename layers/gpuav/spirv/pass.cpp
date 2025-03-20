@@ -25,7 +25,13 @@ namespace gpuav {
 namespace spirv {
 
 bool Pass::Run() {
-    const bool modified = Instrument();
+    bool modified = false;
+    if (EarlySkip()) {
+        return modified;
+    }
+
+    modified = Instrument();
+
     if (module_.settings_.print_debug_info) {
         PrintDebugInfo();
     }
