@@ -1511,6 +1511,22 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
     return total_size;
 }
 
+uint32_t Module::CalculateTaskPayloadMemory() const {
+    uint32_t total_size = 0;
+
+    for (const Instruction* insn : static_data_.variable_inst) {
+        if (insn->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
+            const uint32_t result_type_id = insn->Word(1);
+            const Instruction* result_type = FindDef(result_type_id);
+            const Instruction* type = FindDef(result_type->Word(3));
+            const uint32_t variable_shared_size = GetTypeBytesSize(type);
+
+            total_size += variable_shared_size;
+        }
+    }
+    return total_size;
+}
+
 // If the instruction at |id| is a OpConstant or copy of a constant, returns the instruction
 // Cases such as runtime arrays, will not find a constant and return NULL
 const Instruction* Module::GetConstantDef(uint32_t id) const {
