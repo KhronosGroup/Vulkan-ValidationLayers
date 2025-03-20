@@ -6983,3 +6983,39 @@ TEST_F(NegativeShaderObject, LineRasterization) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObject, MeshShaderPayloadMemoryOverLimit) {
+    TEST_DESCRIPTION("Validate Mesh shader shared memory limit");
+
+    RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
+    InitRenderTarget();
+
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(mesh_shader_properties);
+
+    const uint32_t max_mesh_payload_and_shared_memory_size = mesh_shader_properties.maxMeshPayloadAndSharedMemorySize;
+    const uint32_t max_mesh_payload_and_shared_ints = max_mesh_payload_and_shared_memory_size / 4;
+
+    std::stringstream mesh_source;
+    mesh_source << R"glsl(
+            #version 460
+            #extension GL_EXT_mesh_shader : require
+            layout(max_vertices = 3, max_primitives=1) out;
+            layout(triangles) out;
+            struct Task {
+                uint baseID[)glsl";
+    mesh_source << (max_mesh_payload_and_shared_ints / 2 + 1);
+    mesh_source << R"glsl(];
+            };
+            taskPayloadSharedEXT Task IN;
+            shared int a[)glsl";
+    mesh_source << (max_mesh_payload_and_shared_ints / 2 + 1);
+    mesh_source << R"glsl(];
+            void main(){}
+        )glsl";
+
+    const auto mesh_spv = GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, mesh_source.str().c_str(), SPV_ENV_VULKAN_1_3);
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
+    vkt::Shader mesh_shader(*m_device, ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
+    m_errorMonitor->VerifyFound();
+}
