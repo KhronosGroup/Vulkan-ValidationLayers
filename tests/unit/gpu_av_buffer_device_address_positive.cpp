@@ -1988,3 +1988,110 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
     ASSERT_TRUE(out_buffer_ptr[0] == 42);
     ssbo_a_buffer.Memory().Unmap();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
+    TEST_DESCRIPTION("Used to mimic cases where apps have 100s of the same BDA instrumented.");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference, buffer_reference_align = 16, std430) buffer BDA {
+            uvec4 payload[16]; // some traces this is 8k large
+            uint x;
+        };
+
+        layout(push_constant) uniform Uniforms {
+            BDA ptr0;
+            BDA ptr1;
+        };
+
+        void main() {
+            uint a = 0;
+            a += ptr0.payload[2].x + ptr0.payload[2].y;
+            a += ptr0.payload[3].x + ptr0.payload[3].y;
+            a += ptr0.payload[4].x + ptr0.payload[4].y;
+            a += ptr0.payload[6].x + ptr0.payload[6].y;
+            a += ptr0.payload[8].x + ptr0.payload[8].y;
+            a += ptr0.payload[7].x + ptr0.payload[7].y;
+
+            a += ptr1.payload[6].x + ptr1.payload[6].y;
+            a += ptr1.payload[10].x + ptr1.payload[10].y;
+            a += ptr1.payload[8].x + ptr1.payload[8].y;
+
+            ptr0.x = a;
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress) * 2};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 1024, 0, vkt::device_address);
+    auto bda_buffer_addr = bda_buffer.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress),
+                         &bda_buffer_addr);
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, sizeof(VkDeviceAddress),
+                         sizeof(VkDeviceAddress), &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+// Used to test large accesses to a single struct from a single pointer
+// If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
+TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_Stress) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    InitRenderTarget();
+
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+
+        layout(buffer_reference) buffer BDA {
+            vec3 x;
+            vec3 payload[4096];
+        };
+
+        layout(push_constant) uniform Uniforms {
+            BDA ptr;
+        };
+
+        void main() {
+            vec3 a = vec3(0);
+            // a += fma(vec3(ptr.payload[0].x, ptr.payload[0].y, ptr.payload[0].z),
+            //          vec3(ptr.payload[1].x, ptr.payload[1].y, ptr.payload[1].z),
+            //          vec3(ptr.payload[2].x, ptr.payload[2].y, ptr.payload[2].z));
+            //
+            // .... many times
+            //
+            // ptr.x = a;
+    )glsl";
+
+    for (uint32_t i = 0; i < 512; i += 3) {
+        cs_source << "a += fma(vec3(ptr.payload[" << i << "].x, ptr.payload[" << i << "].y, ptr.payload[" << i << "].z), ";
+        cs_source << "vec3(ptr.payload[" << i + 1 << "].x, ptr.payload[" << i + 1 << "].y, ptr.payload[" << i + 1 << "].z), ";
+        cs_source << "vec3(ptr.payload[" << i + 2 << "].x, ptr.payload[" << i + 2 << "].y, ptr.payload[" << i + 2 << "].z));\n";
+    }
+    cs_source << "\nptr.x = a;\n}";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+}
