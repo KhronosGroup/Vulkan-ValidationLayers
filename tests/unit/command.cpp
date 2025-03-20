@@ -1138,12 +1138,12 @@ TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     // Note: Some implementations expect color attachment usage for any
     // multisample surface
     image_create_info.flags = 0;
-    vkt::Image srcImage(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image srcImage(*m_device, image_create_info);
 
     // Note: Some implementations expect color attachment usage for any
     // multisample surface
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkt::Image dstImage(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image dstImage(*m_device, image_create_info);
 
     m_command_buffer.Begin();
     // source image must have valid contents before resolve
@@ -1155,7 +1155,8 @@ TEST_F(NegativeCommand, ResolveImageLayoutMismatch) {
     srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1,
                            &subresource);
-    srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     dstImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolveRegion;
@@ -1200,12 +1201,12 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     // Note: Some implementations expect color attachment usage for any
     // multisample surface
     image_create_info.flags = 0;
-    vkt::Image srcImage(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image srcImage(*m_device, image_create_info);
 
     // Note: Some implementations expect color attachment usage for any
     // multisample surface
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkt::Image dstImage(*m_device, image_create_info, vkt::set_layout);
+    vkt::Image dstImage(*m_device, image_create_info);
 
     m_command_buffer.Begin();
     // source image must have valid contents before resolve
@@ -1217,7 +1218,8 @@ TEST_F(NegativeCommand, ResolveInvalidSubresource) {
     srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdClearColorImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_color, 1,
                            &subresource);
-    srcImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    srcImage.TransitionLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     dstImage.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageResolve resolveRegion;
@@ -1536,7 +1538,7 @@ TEST_F(NegativeCommand, ClearImage) {
     image_ci.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image color_image(*m_device, image_ci);
 
-    const VkImageSubresourceRange color_range = vkt::Image::SubresourceRange(image_ci, VK_IMAGE_ASPECT_COLOR_BIT);
+    const VkImageSubresourceRange color_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, image_ci.mipLevels, 0, image_ci.arrayLayers};
 
     // Depth/Stencil image
     VkClearDepthStencilValue clear_value = {0};
@@ -1545,7 +1547,7 @@ TEST_F(NegativeCommand, ClearImage) {
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image ds_image(*m_device, image_ci);
 
-    const VkImageSubresourceRange ds_range = vkt::Image::SubresourceRange(image_ci, VK_IMAGE_ASPECT_DEPTH_BIT);
+    const VkImageSubresourceRange ds_range{VK_IMAGE_ASPECT_DEPTH_BIT, 0, image_ci.mipLevels, 0, image_ci.arrayLayers};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-image-00007");
 
@@ -3112,14 +3114,11 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     const auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
     const VkClearDepthStencilValue clear_value = {};
-    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+
+    vkt::Image image(*m_device, 64, 64, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     m_command_buffer.Begin();
-
-    range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-
-    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the
     // VkImageCreateInfo::usage used to create image
@@ -3129,18 +3128,17 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspect) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02660");
     // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
-    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
+    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
     m_errorMonitor->VerifyFound();
 
     // Using stencil aspect when format only have depth
     const VkFormat depth_only_format = FindSupportedDepthOnlyFormat(Gpu());
     if (depth_only_format != VK_FORMAT_UNDEFINED) {
-        image_ci.format = depth_only_format;
-        image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-        vkt::Image depth_image(*m_device, image_ci, vkt::set_layout);
+        vkt::Image depth_image(*m_device, 64, 64, 1, depth_only_format,
+                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-image-02825");
-        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), depth_image.handle(), depth_image.Layout(), &clear_value, 1,
+        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), depth_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1,
                                       &range);
         m_errorMonitor->VerifyFound();
     }
@@ -3164,14 +3162,14 @@ TEST_F(NegativeCommand, ClearDepthStencilWithAspectSeparate) {
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image_ci.pNext = &image_stencil_create_info;
-    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image image(*m_device, image_ci);
 
     // Element of pRanges.aspect includes VK_IMAGE_ASPECT_STENCIL_BIT, and image was created with separate stencil usage,
     // VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageStencilUsageCreateInfo::stencilUsage used to create image
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02658");
     // ... since VK_IMAGE_USAGE_TRANSFER_DST_BIT not included in the VkImageCreateInfo::usage used to create image
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearDepthStencilImage-pRanges-02659");
-    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), image.Layout(), &clear_value, 1, &range);
+    vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &range);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -3275,7 +3273,7 @@ TEST_F(NegativeCommand, ClearColorImageWithinRenderPass) {
                                                   VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
 
-    const VkImageSubresourceRange range = vkt::Image::SubresourceRange(image_ci, VK_IMAGE_ASPECT_COLOR_BIT);
+    const VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, image_ci.mipLevels, 0, image_ci.arrayLayers};
 
     vk::CmdClearColorImage(m_command_buffer.handle(), dst_image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
 
@@ -3305,7 +3303,8 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     // Error here is that VK_IMAGE_USAGE_TRANSFER_DST_BIT is excluded for DS image that we'll call Clear on below
     image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     vkt::Image dst_image_bad_usage(*m_device, image_create_info, vkt::set_layout);
-    const VkImageSubresourceRange range = vkt::Image::SubresourceRange(image_create_info, VK_IMAGE_ASPECT_DEPTH_BIT);
+    const VkImageSubresourceRange range{VK_IMAGE_ASPECT_DEPTH_BIT, 0, image_create_info.mipLevels, 0,
+                                        image_create_info.arrayLayers};
 
     m_command_buffer.Begin();
     // need to handle since an element of pRanges includes VK_IMAGE_ASPECT_DEPTH_BIT without VkImageCreateInfo::usage having

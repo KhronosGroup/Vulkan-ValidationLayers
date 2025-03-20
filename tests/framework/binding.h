@@ -755,26 +755,9 @@ class Image : public internal::NonDispHandle<VkImage> {
     VkFormat Format() const { return create_info_.format; }
     VkImageUsageFlags Usage() const { return create_info_.usage; }
 
-    VkImageMemoryBarrier ImageMemoryBarrier(VkFlags output_mask, VkFlags input_mask, VkImageLayout old_layout,
+    VkImageMemoryBarrier ImageMemoryBarrier(VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
                                             VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
         VkImageMemoryBarrier barrier = vku::InitStructHelper();
-        barrier.srcAccessMask = output_mask;
-        barrier.dstAccessMask = input_mask;
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
-        barrier.image = handle();
-        barrier.subresourceRange = range;
-        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        return barrier;
-    }
-
-    VkImageMemoryBarrier2 ImageMemoryBarrier(VkPipelineStageFlags2KHR src_stage, VkPipelineStageFlags2KHR dst_stage,
-                                             VkAccessFlags2KHR src_access, VkAccessFlags2KHR dst_access, VkImageLayout old_layout,
-                                             VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
-        VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
-        barrier.srcStageMask = src_stage;
-        barrier.dstStageMask = dst_stage;
         barrier.srcAccessMask = src_access;
         barrier.dstAccessMask = dst_access;
         barrier.oldLayout = old_layout;
@@ -786,33 +769,47 @@ class Image : public internal::NonDispHandle<VkImage> {
         return barrier;
     }
 
-    void ImageMemoryBarrier(CommandBuffer &cmd, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
-                            VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+    VkImageMemoryBarrier2 ImageMemoryBarrier(VkPipelineStageFlags2 src_stage, VkPipelineStageFlags2 dst_stage,
+                                             VkAccessFlags2 src_access, VkAccessFlags2 dst_access, VkImageLayout old_layout,
+                                             VkImageLayout new_layout, const VkImageSubresourceRange &range) const {
+        VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+        barrier.srcStageMask = src_stage;
+        barrier.srcAccessMask = src_access;
+        barrier.dstStageMask = dst_stage;
+        barrier.dstAccessMask = dst_access;
+        barrier.oldLayout = old_layout;
+        barrier.newLayout = new_layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = handle();
+        barrier.subresourceRange = range;
+        return barrier;
+    }
+
+    void InitialImageMemoryBarrier(CommandBuffer &cmd, VkImageAspectFlags aspect, VkAccessFlags src_access,
+                                   VkAccessFlags dst_access, VkImageLayout image_layout,
+                                   VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                   VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+    void ImageMemoryBarrier(CommandBuffer &cmd, VkImageAspectFlags aspect, VkAccessFlags src_access, VkAccessFlags dst_access,
+                            VkImageLayout old_layout, VkImageLayout new_layout,
+                            VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     static VkImageCreateInfo CreateInfo();
 
-    static VkImageSubresource Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer);
-    static VkImageSubresource Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer);
-    static VkImageSubresourceLayers Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
-                                                uint32_t array_size);
-    static VkImageSubresourceLayers Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
-                                                uint32_t array_size);
-
-    VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect) const { return SubresourceRange(create_info_, aspect); }
-    static VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
-                                                    uint32_t base_array_layer, uint32_t num_layers);
-    static VkImageSubresourceRange SubresourceRange(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask);
-    static VkImageSubresourceRange SubresourceRange(const VkImageSubresource &subres);
+    VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask) {
+        return VkImageSubresourceRange{aspect_mask, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
+    }
 
     static VkImageAspectFlags AspectMask(VkFormat format);
 
-    void Layout(VkImageLayout const layout) { image_layout_ = layout; }
-    VkImageLayout Layout() const { return image_layout_; }
-
     void SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout);
+    void TransitionLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout old_layout, VkImageLayout new_layout);
+
     void SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout);
     void SetLayout(VkImageLayout image_layout) { SetLayout(AspectMask(Format()), image_layout); };
+    void TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout);
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const;
     ImageView CreateView(VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT, void *pNext = nullptr) const;
@@ -1303,68 +1300,6 @@ inline VkImageCreateInfo Image::CreateInfo() {
     info.arrayLayers = 1;
     info.samples = VK_SAMPLE_COUNT_1_BIT;
     return info;
-}
-
-inline VkImageSubresource Image::Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer) {
-    VkImageSubresource subres = {};
-    if (aspect == 0) {
-        assert(false && "Invalid VkImageAspectFlags");
-    }
-    subres.aspectMask = aspect;
-    subres.mipLevel = mip_level;
-    subres.arrayLayer = array_layer;
-    return subres;
-}
-
-inline VkImageSubresource Image::Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer) {
-    return Subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer);
-}
-
-inline VkImageSubresourceLayers Image::Subresource(VkImageAspectFlags aspect, uint32_t mip_level, uint32_t array_layer,
-                                                   uint32_t array_size) {
-    VkImageSubresourceLayers subres = {};
-    switch (aspect) {
-        case VK_IMAGE_ASPECT_COLOR_BIT:
-        case VK_IMAGE_ASPECT_DEPTH_BIT:
-        case VK_IMAGE_ASPECT_STENCIL_BIT:
-        case VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT:
-            /* valid */
-            break;
-        default:
-            assert(false && "Invalid VkImageAspectFlags");
-    }
-    subres.aspectMask = aspect;
-    subres.mipLevel = mip_level;
-    subres.baseArrayLayer = array_layer;
-    subres.layerCount = array_size;
-    return subres;
-}
-
-inline VkImageSubresourceLayers Image::Subresource(const VkImageSubresourceRange &range, uint32_t mip_level, uint32_t array_layer,
-                                                   uint32_t array_size) {
-    return Subresource(range.aspectMask, range.baseMipLevel + mip_level, range.baseArrayLayer + array_layer, array_size);
-}
-
-inline VkImageSubresourceRange Image::SubresourceRange(VkImageAspectFlags aspect_mask, uint32_t base_mip_level, uint32_t mip_levels,
-                                                       uint32_t base_array_layer, uint32_t num_layers) {
-    VkImageSubresourceRange range = {};
-    if (aspect_mask == 0) {
-        assert(false && "Invalid VkImageAspectFlags");
-    }
-    range.aspectMask = aspect_mask;
-    range.baseMipLevel = base_mip_level;
-    range.levelCount = mip_levels;
-    range.baseArrayLayer = base_array_layer;
-    range.layerCount = num_layers;
-    return range;
-}
-
-inline VkImageSubresourceRange Image::SubresourceRange(const VkImageCreateInfo &info, VkImageAspectFlags aspect_mask) {
-    return SubresourceRange(aspect_mask, 0, info.mipLevels, 0, info.arrayLayers);
-}
-
-inline VkImageSubresourceRange Image::SubresourceRange(const VkImageSubresource &subres) {
-    return SubresourceRange(subres.aspectMask, subres.mipLevel, 1, subres.arrayLayer, 1);
 }
 
 inline VkShaderModuleCreateInfo ShaderModule::CreateInfo(size_t code_size, const uint32_t *code, VkFlags flags) {

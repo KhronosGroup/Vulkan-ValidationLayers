@@ -36,10 +36,10 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
 
     // Copy from a to b
     ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    vkt::Image image_a(*m_device, ci, vkt::set_layout);
+    vkt::Image image_a(*m_device, ci);
 
     ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_b(*m_device, ci, vkt::set_layout);
+    vkt::Image image_b(*m_device, ci);
 
     m_command_buffer.Begin();
     image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -460,14 +460,14 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DImage) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image src_image(*m_device, image_ci);
 
     image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
     src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -507,7 +507,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image src_image(*m_device, image_ci);
 
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent = {32u, 32u, 1u};
@@ -515,7 +515,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
     src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -554,7 +554,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci);
 
     VkBufferImageCopy buffer_image_copy;
     buffer_image_copy.bufferOffset = 0u;
@@ -594,7 +594,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image src_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image src_image(*m_device, image_ci);
 
     image_ci.imageType = VK_IMAGE_TYPE_1D;
     image_ci.extent = {1024u, 1u, 1u};
@@ -602,7 +602,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image dst_image(*m_device, image_ci, vkt::set_layout);
+    vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
     src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);

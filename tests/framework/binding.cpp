@@ -1367,22 +1367,27 @@ VkImageAspectFlags Image::AspectMask(VkFormat format) {
     return image_aspect;
 }
 
-void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkFlags output_mask, VkFlags input_mask,
-                               VkImageLayout image_layout, VkPipelineStageFlags src_stages, VkPipelineStageFlags dest_stages) {
-    // clang-format on
-    const VkImageSubresourceRange subresourceRange =
-        SubresourceRange(aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers);
-    VkImageMemoryBarrier barrier;
-    barrier = ImageMemoryBarrier(output_mask, input_mask, image_layout_, image_layout, subresourceRange);
+void Image::InitialImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkAccessFlags src_access,
+                                      VkAccessFlags dst_access, VkImageLayout image_layout, VkPipelineStageFlags src_stages,
+                                      VkPipelineStageFlags dst_stages) {
+    ImageMemoryBarrier(cmd_buf, aspect, src_access, dst_access, VK_IMAGE_LAYOUT_UNDEFINED, image_layout, src_stages, dst_stages);
+}
 
-    VkImageMemoryBarrier *pmemory_barrier = &barrier;
-
-    // write barrier to the command buffer
-    vk::CmdPipelineBarrier(cmd_buf.handle(), src_stages, dest_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, NULL, 0, NULL, 1,
-                           pmemory_barrier);
+void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkAccessFlags src_access,
+                               VkAccessFlags dst_access, VkImageLayout old_layout, VkImageLayout new_layout,
+                               VkPipelineStageFlags src_stages, VkPipelineStageFlags dst_stages) {
+    VkImageSubresourceRange subresource_range{aspect, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
+    VkImageMemoryBarrier barrier = ImageMemoryBarrier(src_access, dst_access, old_layout, new_layout, subresource_range);
+    vk::CmdPipelineBarrier(cmd_buf, src_stages, dst_stages, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImageLayout image_layout) {
+    assert(image_layout_ == create_info_.initialLayout);
+    TransitionLayout(cmd_buf, aspect, image_layout_, image_layout);
+}
+
+void Image::TransitionLayout(CommandBuffer& cmd_buf, VkImageAspectFlags aspect, VkImageLayout old_layout,
+    VkImageLayout new_layout) {
     VkFlags src_mask, dst_mask;
     const VkFlags all_cache_outputs = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
                                       VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1393,12 +1398,8 @@ void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImage
 
     const VkFlags shader_read_inputs = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT;
 
-    if (image_layout == image_layout_) {
-        return;
-    }
-
     // Attempt to narrow the src_mask, by what the image could have validly been used for in it's current layout
-    switch (image_layout_) {
+    switch (old_layout) {
         case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
             src_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             break;
@@ -1419,7 +1420,7 @@ void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImage
     }
 
     // Narrow the dst mask by the valid accesss for the new layout
-    switch (image_layout) {
+    switch (new_layout) {
         case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
             // NOTE: not sure why shader read is here...
             dst_mask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
@@ -1447,21 +1448,30 @@ void Image::SetLayout(CommandBuffer &cmd_buf, VkImageAspectFlags aspect, VkImage
             break;
     }
 
-    ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, image_layout);
-    image_layout_ = image_layout;
+    ImageMemoryBarrier(cmd_buf, aspect, src_mask, dst_mask, old_layout, new_layout);
+    image_layout_ = new_layout;
 }
 
 void Image::SetLayout(VkImageAspectFlags aspect, VkImageLayout image_layout) {
-    if (image_layout == image_layout_) {
-        return;
-    }
-
     CommandPool pool(*device_, device_->graphics_queue_node_index_);
     CommandBuffer cmd_buf(*device_, pool);
 
     /* Build command buffer to set image layout in the driver */
     cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
     SetLayout(cmd_buf, aspect, image_layout);
+    cmd_buf.End();
+
+    auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
+    graphics_queue->Submit(cmd_buf);
+    graphics_queue->Wait();
+}
+
+void Image::TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout) {
+    CommandPool pool(*device_, device_->graphics_queue_node_index_);
+    CommandBuffer cmd_buf(*device_, pool);
+
+    cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    TransitionLayout(cmd_buf, AspectMask(Format()), old_layout, new_layout);
     cmd_buf.End();
 
     auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];

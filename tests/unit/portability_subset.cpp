@@ -447,7 +447,6 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
 
     constexpr VkFormat img_format = VK_FORMAT_R8G8B8A8_UNORM;
     vkt::Image image(*m_device, 32, 32, 1, img_format, VK_IMAGE_USAGE_SAMPLED_BIT);
-    image.Layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
