@@ -42,8 +42,8 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     vkt::Image image_b(*m_device, ci);
 
     m_command_buffer.Begin();
-    image_a.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    image_b.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy copy_region{};
     copy_region.extent = ci.extent;
@@ -470,8 +470,8 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DImage) {
     vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy image_copy;
     image_copy.srcSubresource = {1u, 0u, 0u, 1u};
@@ -518,8 +518,8 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
     vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy image_copy;
     image_copy.srcSubresource = {1u, 0u, 0u, 1u};
@@ -565,7 +565,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
     buffer_image_copy.imageExtent = {64u, 4u, 1u};
 
     m_command_buffer.Begin();
-    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u,
                              &buffer_image_copy);
     m_command_buffer.End();
@@ -605,8 +605,8 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     vkt::Image dst_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    src_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dst_image.SetLayout(m_command_buffer, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy image_copy;
     image_copy.srcSubresource = {1u, 0u, 0u, 1u};
