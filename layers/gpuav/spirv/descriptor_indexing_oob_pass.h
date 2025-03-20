@@ -27,6 +27,7 @@ class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
   public:
     DescriptorIndexingOOBPass(Module& module) : InjectConditionalFunctionPass(module) {}
     const char* Name() const final { return "DescriptorIndexingOOBPass"; }
+    bool EarlySkip() const final;
     void PrintDebugInfo() const final;
 
     void NewBlock(const BasicBlock& block, bool is_original_new_block) override;

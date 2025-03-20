@@ -200,6 +200,13 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
     return (instrumentations_count_ != 0);
 }
 
+bool PostProcessDescriptorIndexingPass::EarlySkip() const {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return true;  // If there is no bindings, nothing to instrument
+    }
+    return false;
+}
+
 void PostProcessDescriptorIndexingPass::PrintDebugInfo() const {
     std::cout << "PostProcessDescriptorIndexingPass instrumentation count: " << instrumentations_count_ << '\n';
 }

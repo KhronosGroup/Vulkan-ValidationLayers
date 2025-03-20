@@ -151,6 +151,13 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
+bool DescriptorIndexingOOBPass::EarlySkip() const {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return true;  // If there is no bindings, nothing to instrument
+    }
+    return false;
+}
+
 void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&, bool is_original_new_block) {
     // Don't clear if the new block occurs from control flow breaking one up
     if (is_original_new_block) {

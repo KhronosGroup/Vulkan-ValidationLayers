@@ -315,6 +315,13 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     return true;
 }
 
+bool DescriptorClassGeneralBufferPass::EarlySkip() const {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return true;  // If there is no bindings, nothing to instrument
+    }
+    return false;
+}
+
 void DescriptorClassGeneralBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassGeneralBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }

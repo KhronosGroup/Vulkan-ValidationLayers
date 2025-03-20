@@ -28,6 +28,7 @@ class PostProcessDescriptorIndexingPass : public Pass {
     const char* Name() const final { return "PostProcessDescriptorIndexingPass"; }
 
     bool Instrument() final;
+    bool EarlySkip() const final;
     void PrintDebugInfo() const final;
 
   private:

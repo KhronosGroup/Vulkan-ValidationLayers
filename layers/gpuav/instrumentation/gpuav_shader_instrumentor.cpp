@@ -1204,11 +1204,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     bool modified = false;
 
-    // If there is no bindings found, can just ignore passes that use it
-    const bool has_bindings_layouts = !instrumentation_dsl.set_index_to_bindings_layout_lut.empty();
-
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
-    if (gpuav_settings.shader_instrumentation.descriptor_checks && has_bindings_layouts) {
+    if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         // Will wrap descriptor indexing with if/else to prevent crashing if OOB
         spirv::DescriptorIndexingOOBPass oob_pass(module);
         modified |= oob_pass.Run();
@@ -1238,7 +1235,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
 
     // Post Process instrumentation passes assume the things inside are valid, but putting at the end, things above will wrap checks
     // in a if/else, this means they will be gaurded as if they were inside the above passes
-    if (gpuav_settings.shader_instrumentation.post_process_descriptor_indexing && has_bindings_layouts) {
+    if (gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
         spirv::PostProcessDescriptorIndexingPass pass(module);
         modified |= pass.Run();
     }

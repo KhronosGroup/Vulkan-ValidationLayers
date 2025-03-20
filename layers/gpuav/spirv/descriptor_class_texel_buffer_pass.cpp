@@ -165,6 +165,13 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     return true;
 }
 
+bool DescriptorClassTexelBufferPass::EarlySkip() const {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return true;  // If there is no bindings, nothing to instrument
+    }
+    return false;
+}
+
 void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassTexelBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
