@@ -36,8 +36,6 @@
 
 #include "profiling/profiling.h"
 
-#include <optional>
-
 namespace gpuav {
 namespace valcmd {
 
@@ -619,24 +617,17 @@ void DrawMeshIndirect(Validator &gpuav, CommandBuffer &cb_state, const Location 
                 MeshValidationShader shader_resources;
                 shader_resources.push_constants.draw_cmds_stride_dwords = draw_cmds_byte_stride / sizeof(uint32_t);
                 shader_resources.push_constants.cpu_draw_count = draw_count;
+                const auto &properties = gpuav.phys_dev_ext_props.mesh_shader_props_ext;
                 if (is_task_shader) {
-                    shader_resources.push_constants.max_workgroup_count_x =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0];
-                    shader_resources.push_constants.max_workgroup_count_y =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[1];
-                    shader_resources.push_constants.max_workgroup_count_z =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[2];
-                    shader_resources.push_constants.max_workgroup_total_count =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupTotalCount;
+                    shader_resources.push_constants.max_workgroup_count_x = properties.maxTaskWorkGroupCount[0];
+                    shader_resources.push_constants.max_workgroup_count_y = properties.maxTaskWorkGroupCount[1];
+                    shader_resources.push_constants.max_workgroup_count_z = properties.maxTaskWorkGroupCount[2];
+                    shader_resources.push_constants.max_workgroup_total_count = properties.maxTaskWorkGroupTotalCount;
                 } else {
-                    shader_resources.push_constants.max_workgroup_count_x =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[0];
-                    shader_resources.push_constants.max_workgroup_count_y =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[1];
-                    shader_resources.push_constants.max_workgroup_count_z =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupCount[2];
-                    shader_resources.push_constants.max_workgroup_total_count =
-                        gpuav.phys_dev_ext_props.mesh_shader_props_ext.maxMeshWorkGroupTotalCount;
+                    shader_resources.push_constants.max_workgroup_count_x = properties.maxMeshWorkGroupCount[0];
+                    shader_resources.push_constants.max_workgroup_count_y = properties.maxMeshWorkGroupCount[1];
+                    shader_resources.push_constants.max_workgroup_count_z = properties.maxMeshWorkGroupCount[2];
+                    shader_resources.push_constants.max_workgroup_total_count = properties.maxMeshWorkGroupTotalCount;
                 }
 
                 shader_resources.draw_buffer_binding.info = {draw_buffer, 0, VK_WHOLE_SIZE};
