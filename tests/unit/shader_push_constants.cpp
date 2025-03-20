@@ -408,6 +408,39 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeShaderPushConstants, BufferDeviceAddress) {
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+        layout(buffer_reference, buffer_reference_align = 16, std430) buffer BDA {
+            uint x;
+        };
+        layout(push_constant) uniform Uniforms {
+            BDA ptr0;
+            BDA ptr1;
+        };
+        void main() {
+            ptr0.x = 0;
+            ptr0.x = 1;
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 12};  // need 16
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+
+    m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-10069");
+    pipe.CreateComputePipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     TEST_DESCRIPTION("Test push-constant detect the write entrypoint with the push constants.");
 
