@@ -1869,11 +1869,9 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFromWin32Handle) {
     {
         VkExternalMemoryImageCreateInfo external_info = vku::InitStructHelper();
         external_info.handleTypes = handle_type;
-        auto create_info = vkt::Image::CreateInfo();
+        auto create_info = vkt::Image::DefaultCreateInfo();
         create_info.pNext = &external_info;
-        create_info.imageType = VK_IMAGE_TYPE_2D;
         create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
-        create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
         image.InitNoMemory(*m_device, create_info);
     }
@@ -2564,7 +2562,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     RETURN_IF_SKIP(Init());
     IgnoreHandleTypeError(m_errorMonitor);
 
-    auto image_info = vkt::Image::CreateInfo();
+    auto image_info = vkt::Image::DefaultCreateInfo();
     image_info.extent.width = 1024;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;

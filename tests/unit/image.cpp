@@ -1848,14 +1848,11 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeCubeArray) {
 
     vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    auto image_ci = vkt::Image::CreateInfo();
+    auto image_ci = vkt::Image::DefaultCreateInfo();
     image_ci.arrayLayers = 18;
     image_ci.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image cubeArrayImg(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo cube_img_view_info_template = vku::InitStructHelper();
@@ -1931,15 +1928,13 @@ TEST_F(NegativeImage, ImageViewInvalidSubresourceRangeMaintenance1) {
     AddRequiredFeature(vkt::Feature::sparseResidencyImage3D);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::CreateInfo();
+    auto image_ci = vkt::Image::DefaultCreateInfo();
     image_ci.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.extent = {8, 8, 8};
     image_ci.mipLevels = 4;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     vkt::Image volumeImage(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo volume_img_view_info_template = vku::InitStructHelper();
@@ -4011,7 +4006,7 @@ TEST_F(NegativeImage, TransitionNonSparseImageLayoutWithoutBoundMemory) {
 
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info = vkt::Image::CreateInfo();
+    VkImageCreateInfo info = vkt::Image::DefaultCreateInfo();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     vkt::Image image(*m_device, info, vkt::no_mem);
@@ -4028,7 +4023,7 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo info = vkt::Image::CreateInfo();
+    VkImageCreateInfo info = vkt::Image::DefaultCreateInfo();
     info.format = VK_FORMAT_B8G8R8A8_UNORM;
     info.usage =
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT;
@@ -4603,17 +4598,12 @@ TEST_F(NegativeImage, ResolveDepthImage) {
 
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
-    VkImageCreateInfo image_ci = vkt::Image::CreateInfo();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    VkImageCreateInfo image_ci = vkt::Image::DefaultCreateInfo();
     image_ci.format = depth_format;
     image_ci.extent.width = 32u;
     image_ci.extent.height = 32u;
-    image_ci.mipLevels = 1u;
-    image_ci.arrayLayers = 1u;
     image_ci.samples = VK_SAMPLE_COUNT_2_BIT;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     VkImageFormatProperties image_format_properties;
     vk::GetPhysicalDeviceImageFormatProperties(Gpu(), image_ci.format, image_ci.imageType, image_ci.tiling, image_ci.usage,
