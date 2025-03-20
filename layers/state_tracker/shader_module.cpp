@@ -2253,7 +2253,7 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
         if (insn->StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
             // All PhysicalStorageBuffer are just 64-bit pointers
             // We don't need to go chasing it to find the size, as it is not calculated for any VUs
-            bit_size = 8;
+            bit_size = 64;
         } else {
             const Instruction* type = FindDef(insn->Word(3));
             bit_size = GetTypeBitsSize(type);
