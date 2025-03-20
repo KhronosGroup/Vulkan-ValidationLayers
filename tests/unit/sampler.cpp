@@ -501,7 +501,7 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     RETURN_IF_SKIP(InitState(nullptr, nullptr, 0));
     InitRenderTarget();
 
-    VkImageCreateInfo image_info = vkt::Image::CreateInfo();
+    VkImageCreateInfo image_info = vkt::Image::DefaultCreateInfo();
     image_info.flags = VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -511,8 +511,6 @@ TEST_F(NegativeSampler, AddressModeWithCornerSampledNV) {
     // If flags contains VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV and imageType is VK_IMAGE_TYPE_2D,
     // extent.width and extent.height must be greater than 1.
     image_info.extent = {2, 2, 1};
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     vkt::Image test_image(*m_device, image_info, vkt::set_layout);
 

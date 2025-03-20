@@ -1312,7 +1312,7 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
 VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t const width, uint32_t const height, uint32_t const mip_levels,
                                            uint32_t const layers, VkFormat const format, VkFlags const usage,
                                            VkImageTiling const requested_tiling, const vvl::span<uint32_t> &queue_families) {
-    VkImageCreateInfo imageCreateInfo = CreateInfo();
+    VkImageCreateInfo imageCreateInfo = DefaultCreateInfo();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
     imageCreateInfo.extent.width = width;

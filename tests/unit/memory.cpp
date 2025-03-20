@@ -555,12 +555,10 @@ TEST_F(NegativeMemory, QueryMemoryCommitmentWithoutLazyProperty) {
     TEST_DESCRIPTION("Attempt to query memory commitment on memory without lazy allocation");
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::CreateInfo();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    auto image_ci = vkt::Image::DefaultCreateInfo();
     image_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
@@ -1384,7 +1382,7 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
     vk::BindBufferMemory(m_device->handle(), buffer.handle(), dedicated_buffer_memory.handle(), 0);
 
     // And for images...
-    auto image_info = vkt::Image::CreateInfo();
+    auto image_info = vkt::Image::DefaultCreateInfo();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1423,7 +1421,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     VkMemoryPropertyFlags mem_flags = 0;
     const VkDeviceSize resource_size = 1024;
 
-    auto image_info = vkt::Image::CreateInfo();
+    auto image_info = vkt::Image::DefaultCreateInfo();
     image_info.extent.width = resource_size;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1441,7 +1439,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind with different but identical image
     vk::BindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
 
-    image_info = vkt::Image::CreateInfo();
+    image_info = vkt::Image::DefaultCreateInfo();
     image_info.extent.width = resource_size - 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -1450,7 +1448,7 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     // Bind with a smaller image
     vk::BindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
 
-    image_info = vkt::Image::CreateInfo();
+    image_info = vkt::Image::DefaultCreateInfo();
     image_info.extent.width = resource_size + 1;
     image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -2251,12 +2249,10 @@ TEST_F(NegativeMemory, BadMemoryBindMemory2) {
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::CreateInfo();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    auto image_ci = vkt::Image::DefaultCreateInfo();
     image_ci.extent.width = 32;
     image_ci.extent.height = 32;
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 

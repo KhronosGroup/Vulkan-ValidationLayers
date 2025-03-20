@@ -796,7 +796,8 @@ class Image : public internal::NonDispHandle<VkImage> {
                             VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
-    static VkImageCreateInfo CreateInfo();
+    const VkImageCreateInfo &CreateInfo() const { return create_info_; }
+    static VkImageCreateInfo DefaultCreateInfo();
 
     VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask) {
         return VkImageSubresourceRange{aspect_mask, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
@@ -1291,14 +1292,15 @@ inline VkQueryPoolCreateInfo QueryPool::CreateInfo(VkQueryType type, uint32_t sl
     return info;
 }
 
-inline VkImageCreateInfo Image::CreateInfo() {
+inline VkImageCreateInfo Image::DefaultCreateInfo() {
     VkImageCreateInfo info = vku::InitStructHelper();
-    info.extent.width = 1;
-    info.extent.height = 1;
-    info.extent.depth = 1;
+    info.imageType = VK_IMAGE_TYPE_2D;
+    info.extent = {1, 1, 1};
     info.mipLevels = 1;
     info.arrayLayers = 1;
     info.samples = VK_SAMPLE_COUNT_1_BIT;
+    info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     return info;
 }
 
