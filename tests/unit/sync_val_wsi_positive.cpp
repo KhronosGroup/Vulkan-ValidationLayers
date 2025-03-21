@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -423,7 +423,7 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
 
         auto &dst_image = dst_images[image_index];
         dst_image.destroy();
-        dst_image = vkt::Image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        dst_image = vkt::Image(*m_device, width, height, format, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
         VkBufferImageCopy region = {};
         region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};

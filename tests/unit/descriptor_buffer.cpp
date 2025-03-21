@@ -453,7 +453,7 @@ TEST_F(NegativeDescriptorBuffer, NotEnabledDescriptorBufferCaptureReplay) {
     }
 
     {
-        vkt::Image temp_image(*m_device, 64, 64, 1, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image temp_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         VkImageViewCreateInfo dsvci = vku::InitStructHelper();
         dsvci.flags |= VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT;

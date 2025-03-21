@@ -49,7 +49,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     rpci.pDependencies = nullptr;
 
     vkt::RenderPass rp_noselfdep(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle());
     vkt::Framebuffer fb_noselfdep(*m_device, rp_noselfdep.handle(), 1, &imageView.handle());
@@ -164,7 +164,7 @@ TEST_F(NegativeSyncObject, ImageBarrierSubpassConflicts) {
     m_errorMonitor->VerifyFound();
 
     // Add image barrier w/ image handle that's not in framebuffer
-    vkt::Image lone_image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image lone_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     img_barrier.image = lone_image.handle();
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-04073");
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -241,7 +241,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     const bool video_encode_queue = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
     const bool video_encode_quantization_map = IsExtensionsEnabled(VK_KHR_VIDEO_ENCODE_QUANTIZATION_MAP_EXTENSION_NAME);
 
-    vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
     // Just using all framebuffer-space pipeline stages in order to get a reasonably large
@@ -289,7 +289,7 @@ TEST_F(NegativeSyncObject, Barriers) {
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     conc_test.buffer_barrier_.buffer = buffer.handle();
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     conc_test.image_barrier_.image = image.handle();
 
@@ -377,7 +377,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
 
     // Now exercise barrier aspect bit errors, first DS
-    vkt::Image ds_image(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -408,7 +408,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_D16_UNORM, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        vkt::Image d_image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image d_image(*m_device, 128, 128, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -426,7 +426,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Now test stencil-only
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_S8_UINT, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        vkt::Image s_image(*m_device, 128, 128, 1, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image s_image(*m_device, 128, 128, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -439,7 +439,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     }
 
     // Finally test color
-    vkt::Image c_image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image c_image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     conc_test.image_barrier_.image = c_image.handle();
@@ -538,12 +538,12 @@ TEST_F(NegativeSyncObject, Barriers) {
 
     // A barrier's new and old VkImageLayout must be compatible with an image's VkImageUsageFlags.
     {
-        vkt::Image img_color(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        vkt::Image img_ds(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        vkt::Image img_xfer_src(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        vkt::Image img_xfer_dst(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-        vkt::Image img_sampled(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-        vkt::Image img_input(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+        vkt::Image img_color(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        vkt::Image img_ds(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image img_xfer_src(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        vkt::Image img_xfer_dst(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        vkt::Image img_sampled(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+        vkt::Image img_input(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         struct BadBufferTest {
             vkt::Image &image_obj;
             VkImageLayout bad_layout;
@@ -762,7 +762,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
-    vkt::Image color_image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     auto color_view = color_image.CreateView();
 
     // Just using all framebuffer-space pipeline stages in order to get a reasonably large
@@ -807,7 +807,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     conc_test.buffer_barrier_.buffer = buffer.handle();
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     conc_test.image_barrier_.image = image.handle();
 
@@ -901,7 +901,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test.buffer_barrier_.size = VK_WHOLE_SIZE;
 
     // Now exercise barrier aspect bit errors, first DS
-    vkt::Image ds_image(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -928,7 +928,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     VkFormatProperties format_props;
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_D16_UNORM, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        vkt::Image d_image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image d_image(*m_device, 128, 128, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -946,7 +946,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Now test stencil-only
     vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_S8_UINT, &format_props);
     if (format_props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-        vkt::Image s_image(*m_device, 128, 128, 1, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image s_image(*m_device, 128, 128, VK_FORMAT_S8_UINT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -958,7 +958,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     }
 
     // Finally test color
-    vkt::Image c_image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image c_image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     conc_test.image_barrier_.image = c_image.handle();
@@ -975,12 +975,12 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
 
     // A barrier's new and old VkImageLayout must be compatible with an image's VkImageUsageFlags.
     {
-        vkt::Image img_color(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        vkt::Image img_ds(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-        vkt::Image img_xfer_src(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
-        vkt::Image img_xfer_dst(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-        vkt::Image img_sampled(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
-        vkt::Image img_input(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+        vkt::Image img_color(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        vkt::Image img_ds(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image img_xfer_src(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+        vkt::Image img_xfer_dst(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        vkt::Image img_sampled(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+        vkt::Image img_input(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
         struct BadBufferTest {
             vkt::Image &image_obj;
             VkImageLayout bad_layout;
@@ -1160,7 +1160,7 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparate) {
     m_command_buffer.Begin();
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image ds_image(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1199,7 +1199,7 @@ TEST_F(NegativeSyncObject, DepthStencilImageNonSeparateSync2) {
     m_command_buffer.Begin();
 
     const VkFormat depth_format = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image ds_image(*m_device, 128, 128, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, 128, 128, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     conc_test.image_barrier_.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     conc_test.image_barrier_.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1313,7 +1313,7 @@ TEST_F(NegativeSyncObject, ImageOwnershipTransferQueueMismatch) {
     vkt::CommandBuffer acquire_cb(*m_device, m_command_pool);
 
     const VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, usage);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, usage);
 
     // Release image
     VkImageMemoryBarrier2 release_barrier = vku::InitStructHelper();
@@ -1524,7 +1524,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStage) {
     AddRequiredFeature(vkt::Feature::synchronization2);
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -1604,7 +1604,7 @@ TEST_F(NegativeSyncObject, ImageBarrierWithHostStageSync1) {
     if (m_device->Physical().queue_properties_.size() < 2) {
         GTEST_SKIP() << "Two queue families are required";
     }
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     VkImageMemoryBarrier barrier = vku::InitStructHelper();
     barrier.srcQueueFamilyIndex = 0;
@@ -2430,7 +2430,7 @@ TEST_F(NegativeSyncObject, WaitEventsDifferentQueueFamilies) {
     BufferMemoryBarrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
     BufferMemoryBarrier.dstQueueFamilyIndex = no_gfx.value();
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkImageMemoryBarrier ImageMemoryBarrier = vku::InitStructHelper();
     ImageMemoryBarrier.srcAccessMask = 0;
@@ -3559,7 +3559,7 @@ TEST_F(NegativeSyncObject, PipelineStageConditionalRenderingWithWrongQueue) {
         GTEST_SKIP() << "Transfer only queue is not supported";
     }
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::CommandPool commandPool(*m_device, only_transfer_queueFamilyIndex.value());
     vkt::CommandBuffer commandBuffer(*m_device, commandPool);
@@ -3813,7 +3813,7 @@ TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
     rp.AddSubpassDependency();
     rp.CreateRenderPass();
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
 
@@ -4050,7 +4050,7 @@ TEST_F(NegativeSyncObject, ImageBarrierStageNotSupportedByQueue) {
     vkt::CommandPool compute_pool(*m_device, compute_only_family.value());
     vkt::CommandBuffer compute_cb(*m_device, compute_pool);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     VkImageMemoryBarrier2 barrier_src_gfx = vku::InitStructHelper();
     barrier_src_gfx.srcStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;  // graphics stage

@@ -681,7 +681,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsImage) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::Image image(*m_second_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_second_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet ds(m_device, {
@@ -701,7 +701,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsSampler) {
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_second_device, SafeSaneSamplerCreateInfo());
 
@@ -718,14 +718,14 @@ TEST_F(NegativeParent, UpdateDescriptorSetsSampler) {
 TEST_F(NegativeParent, UpdateDescriptorSetsCombinedImageSampler) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     auto features = m_device->Physical().Features();
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
-    vkt::Image bad_image(*m_second_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image bad_image(*m_second_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView bad_image_view = bad_image.CreateView();
     vkt::Sampler bad_sampler(*m_second_device, SafeSaneSamplerCreateInfo());
 

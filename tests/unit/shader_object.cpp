@@ -1038,7 +1038,7 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
@@ -1430,9 +1430,9 @@ TEST_F(NegativeShaderObject, ColorWriteEnableAttachmentCount) {
     AddRequiredFeature(vkt::Feature::colorWriteEnable);
     RETURN_IF_SKIP(InitBasicShaderObject());
 
-    vkt::Image img1(*m_device, m_width, m_height, 1, m_render_target_fmt,
+    vkt::Image img1(*m_device, m_width, m_height, m_render_target_fmt,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image img2(*m_device, m_width, m_height, 1, m_render_target_fmt,
+    vkt::Image img2(*m_device, m_width, m_height, m_render_target_fmt,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     vkt::ImageView view1 = img1.CreateView();
@@ -4855,7 +4855,7 @@ TEST_F(NegativeShaderObject, InvalidColorWriteMask) {
         GTEST_SKIP() << "image format not supported as color attachment.";
     }
 
-    vkt::Image image(*m_device, 256, 256, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 256, 256, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     m_command_buffer.Begin();
@@ -5371,7 +5371,7 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
 
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
 
-    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
@@ -5409,7 +5409,7 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     VkPhysicalDeviceMultiviewProperties multiview_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(multiview_properties);
 
-    vkt::Image img(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image img(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = img.CreateView();
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
@@ -5463,9 +5463,9 @@ TEST_F(NegativeShaderObject, MaxFragmentDualSrcAttachmentsDynamicBlendEnable) {
     const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, fs_src);
 
-    vkt::Image img1(*m_device, m_width, m_height, 1, m_render_target_fmt,
+    vkt::Image img1(*m_device, m_width, m_height, m_render_target_fmt,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image img2(*m_device, m_width, m_height, 1, m_render_target_fmt,
+    vkt::Image img2(*m_device, m_width, m_height, m_render_target_fmt,
                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     vkt::ImageView view1 = img1.CreateView();
@@ -6797,7 +6797,7 @@ TEST_F(NegativeShaderObject, TaskMeshShadersDrawWithoutBindingVertex) {
 
     VkShaderEXT shaders[3] = {task_shader.handle(), mesh_shader.handle(), frag_shader.handle()};
 
-    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::ImageView view = image.CreateView();
 
@@ -6835,7 +6835,7 @@ TEST_F(NegativeShaderObject, DrawMeshTasksWithoutMeshShader) {
     RETURN_IF_SKIP(InitBasicMeshShaderObject(VK_API_VERSION_1_3));
     CreateMinimalShaders();
 
-    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R32G32B32A32_SFLOAT,
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R32G32B32A32_SFLOAT,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     vkt::ImageView view = image.CreateView();

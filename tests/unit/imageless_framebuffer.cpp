@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -987,7 +987,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImagePNext) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    vkt::Image image(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM,
+    vkt::Image image(*m_device, 256, 256, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView imageView = image.CreateView();
 
@@ -1048,7 +1048,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageFormat) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    vkt::Image image(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM,
+    vkt::Image image(*m_device, 256, 256, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView imageView = image.CreateView();
 

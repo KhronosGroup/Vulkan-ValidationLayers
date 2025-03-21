@@ -54,7 +54,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
     vkt::RenderPass render_pass(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
@@ -132,7 +132,7 @@ TEST_F(PositiveSubpass, SubpassWithEventWait) {
     rpci.dependencyCount = 1;
     rpci.pDependencies = &dependency;
     vkt::RenderPass render_pass(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());

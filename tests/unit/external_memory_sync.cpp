@@ -2803,7 +2803,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     buff_view_ci.pNext = &metal_object_create_info;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-pNext-06782");
 
-    vkt::Image image_obj(*m_device, 256, 256, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image_obj(*m_device, 256, 256, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
     ivci.image = image_obj.handle();
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;

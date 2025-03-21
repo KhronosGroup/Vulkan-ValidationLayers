@@ -1942,7 +1942,7 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
     exe_pipe_ci.renderPass = VK_NULL_HANDLE;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
 
-    vkt::Image color_image(*m_device, 32, 32, 1, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView color_image_view = color_image.CreateView();
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();

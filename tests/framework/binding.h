@@ -712,8 +712,7 @@ class Image : public internal::NonDispHandle<VkImage> {
     explicit Image() : NonDispHandle() {}
     explicit Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyFlags mem_props = 0,
                    void *alloc_info_pnext = nullptr);
-    explicit Image(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format,
-                   VkImageUsageFlags usage);
+    explicit Image(const Device &dev, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, NoMemT);
     explicit Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT);
 

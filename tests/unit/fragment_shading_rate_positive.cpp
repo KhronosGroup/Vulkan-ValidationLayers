@@ -51,7 +51,7 @@ TEST_F(PositiveFragmentShadingRate, StageWithPipelineBarrier) {
         GTEST_SKIP() << "Image options not supported";
     }
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
 
     VkImageMemoryBarrier imageMemoryBarrier = vku::InitStructHelper();
     imageMemoryBarrier.srcAccessMask = VK_ACCESS_NONE;
@@ -91,7 +91,7 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     rp.AddFragmentShadingRateAttachment(0, fsr_properties.minFragmentShadingRateAttachmentTexelSize);
     rp.SetViewMask(0x2);
     rp.CreateRenderPass();
-    vkt::Image image(*m_device, 1, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
+    vkt::Image image(*m_device, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vkt::ImageView imageView = image.CreateView();
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle(),
@@ -241,7 +241,7 @@ TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffsetEmptyRenderPass) {
     AddRequiredFeature(vkt::Feature::fragmentDensityMapOffset);
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8_UNORM, VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT);
     vkt::ImageView image_view = image.CreateView();
 
     VkRenderPassFragmentDensityMapCreateInfoEXT fragment_density_map_ci = vku::InitStructHelper();

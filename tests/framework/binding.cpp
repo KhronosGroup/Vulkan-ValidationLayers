@@ -1173,16 +1173,12 @@ Image::Image(const Device &dev, const VkImageCreateInfo &info, VkMemoryPropertyF
     Init(dev, info, mem_props, alloc_info_pnext);
 }
 
-Image::Image(const Device &dev, uint32_t width, uint32_t height, uint32_t mip_levels, VkFormat format, VkImageUsageFlags usage)
-    : device_(&dev) {
-    Init(dev, width, height, mip_levels, format, usage);
+Image::Image(const Device &dev, uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) : device_(&dev) {
+    Init(dev, width, height, 1, format, usage);
 }
 
 Image::Image(const Device &dev, const VkImageCreateInfo &info, NoMemT) : device_(&dev) { InitNoMemory(dev, info); }
 
-// If you find yourself wanting to expand this or making another overload, then you might really just want to call
-//     SetLayout(VK_IMAGE_LAYOUT_GENERAL);
-// after you init the image manually
 Image::Image(const Device &dev, const VkImageCreateInfo &info, SetLayoutT) : device_(&dev) {
     Init(*device_, info);
 

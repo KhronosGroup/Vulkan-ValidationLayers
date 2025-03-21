@@ -52,7 +52,7 @@ TEST_F(PositiveImage, OwnershipTranfersImage) {
 
     // Create an "exclusive" image owned by the graphics queue.
     VkFlags image_use = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, image_use);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, image_use);
     auto image_subres = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     auto image_barrier = image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_GENERAL, image_subres);
     image_barrier.srcQueueFamilyIndex = m_device->graphics_queue_node_index_;
@@ -144,7 +144,7 @@ TEST_F(PositiveImage, CreateImageViewFollowsParameterCompatibilityRequirements) 
 TEST_F(PositiveImage, BasicUsage) {
     TEST_DESCRIPTION("Verify that we can create a view with usage INPUT_ATTACHMENT");
     RETURN_IF_SKIP(Init());
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
 }
 

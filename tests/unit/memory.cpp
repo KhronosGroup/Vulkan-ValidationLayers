@@ -1322,7 +1322,7 @@ TEST_F(NegativeMemory, BufferMemoryNotBound) {
     TEST_DESCRIPTION("Attempt to copy from a buffer which has not had memory bound to it.");
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_B8G8R8A8_UNORM,
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkBufferCreateInfo buf_info = vku::InitStructHelper();

@@ -60,7 +60,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
 std::unique_ptr<vkt::Image> VkArmBestPracticesLayerTest::CreateImage(VkFormat format, const uint32_t width, const uint32_t height,
                                                                      VkImageUsageFlags attachment_usage) {
     auto img = std::unique_ptr<vkt::Image>(new vkt::Image(
-        *m_device, width, height, 1, format,
+        *m_device, width, height, format,
         VK_IMAGE_USAGE_SAMPLED_BIT | attachment_usage | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT));
     img->SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     return img;
@@ -230,7 +230,7 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -920,7 +920,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
     auto img = std::unique_ptr<vkt::Image>(new vkt::Image(
-        *m_device, WIDTH, HEIGHT, 1, FMT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
+        *m_device, WIDTH, HEIGHT, FMT, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT));
 
     auto image1 = std::move(img);
     vkt::ImageView view1 = image1->CreateView();

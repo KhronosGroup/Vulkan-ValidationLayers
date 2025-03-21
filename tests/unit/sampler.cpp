@@ -443,7 +443,7 @@ TEST_F(NegativeSampler, LinearReductionModeMinMax) {
     formatProps.optimalTilingFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
     fpvkSetPhysicalDeviceFormatPropertiesEXT(Gpu(), format, formatProps);
 
-    vkt::Image image(*m_device, 128, 128, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 128, 128, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
@@ -830,7 +830,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -883,7 +883,7 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefinedNonCombined) {
     sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                      {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -940,7 +940,7 @@ TEST_F(NegativeSampler, DISABLED_CustomBorderColorFormatUndefinedNonCombinedMult
     sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
     OneOffDescriptorSet descriptor_set0(m_device, {
                                                       {2, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                   });

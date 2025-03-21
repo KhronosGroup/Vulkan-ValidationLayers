@@ -1030,7 +1030,7 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
 
     vkt::RenderPass rp(*m_device, rpci);
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.handle(), 1, &imageView.handle());
 
