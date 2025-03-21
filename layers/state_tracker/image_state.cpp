@@ -274,6 +274,11 @@ VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourc
     return norm;
 }
 
+uint32_t Image::NormalizeLayerCount(const VkImageSubresourceLayers &resource) const {
+    return (resource.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (create_info.arrayLayers - resource.baseArrayLayer)
+                                                              : resource.layerCount;
+}
+
 VkImageSubresourceRange Image::MakeImageFullRange() {
     const auto format = create_info.format;
     VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};

@@ -835,6 +835,9 @@ TEST_F(NegativeImage, BlitToDepth) {
 
 TEST_F(NegativeImage, BlitWithoutMaintenance8) {
     TEST_DESCRIPTION("Would be valid if Maintenance8 was added.");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 
     VkFormat format = VK_FORMAT_R32_SFLOAT;  // Need features ..BLIT_SRC_BIT & ..BLIT_DST_BIT
@@ -870,6 +873,13 @@ TEST_F(NegativeImage, BlitWithoutMaintenance8) {
     blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
+    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &blit_region, VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
+
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, VK_REMAINING_ARRAY_LAYERS};
+    m_errorMonitor->SetDesiredError("VUID-VkImageBlit-layerCount-08801");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImage-00240");
     vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
                      &blit_region, VK_FILTER_NEAREST);
