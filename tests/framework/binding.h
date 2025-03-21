@@ -785,10 +785,16 @@ class Image : public internal::NonDispHandle<VkImage> {
 
     static VkImageAspectFlags AspectMask(VkFormat format);
 
+    // Performs image layout transition by specifying old layout as VK_IMAGE_LAYOUT_UNDEFINED (more precisely
+    // VkImageCreateInfo::initialLayout).
+    // Can be used for initial layout transition or when the previous layout is not important for testing purposes.
     void SetLayout(CommandBuffer &cmd_buf, VkImageLayout image_layout);
+    // This overload does queue submit and waits for layout transition to finish.
     void SetLayout(VkImageLayout image_layout);
 
+    // Performs layout transition from old to new layout.
     void TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout);
+    // This overload does queue submit and waits for layout transition to finish.
     void TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout);
 
     VkImageViewCreateInfo BasicViewCreatInfo(VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_COLOR_BIT) const;
@@ -804,7 +810,6 @@ class Image : public internal::NonDispHandle<VkImage> {
     VkImageCreateInfo create_info_;
 
     DeviceMemory internal_mem_;
-    VkImageLayout image_layout_ = VK_IMAGE_LAYOUT_GENERAL;
 };
 
 class ImageView : public internal::NonDispHandle<VkImageView> {
