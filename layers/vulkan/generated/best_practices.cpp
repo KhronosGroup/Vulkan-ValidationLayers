@@ -1567,10 +1567,9 @@ void BestPractices::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, V
                                                               uint32_t createInfoCount,
                                                               const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                               const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                                              const RecordObject& record_obj, PipelineStates& pipeline_states,
-                                                              chassis::CreateRayTracingPipelinesNV& chassis_state) {
+                                                              const RecordObject& record_obj, PipelineStates& pipeline_states) {
     BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                         pPipelines, record_obj, pipeline_states, chassis_state);
+                                                         pPipelines, record_obj, pipeline_states);
     bp_state::LogResult(*this, device, record_obj);
 }
 

@@ -497,8 +497,7 @@ void PostCallRecordBindAccelerationStructureMemoryNV(VkDevice device, uint32_t b
 void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount,
                                                const VkRayTracingPipelineCreateInfoNV* pCreateInfos,
                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
-                                               const RecordObject& record_obj, PipelineStates& pipeline_states,
-                                               chassis::CreateRayTracingPipelinesNV& chassis_state) override;
+                                               const RecordObject& record_obj, PipelineStates& pipeline_states) override;
 
 void PostCallRecordGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup,
                                                       uint32_t groupCount, size_t dataSize, void* pData,

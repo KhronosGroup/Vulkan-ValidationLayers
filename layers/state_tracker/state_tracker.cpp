@@ -1805,8 +1805,7 @@ std::shared_ptr<Pipeline> Device::CreateRayTracingPipelineState(const VkRayTraci
 bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states,
-                                                        chassis::CreateRayTracingPipelinesNV &chassis_state) const {
+                                                        const ErrorObject &error_obj, PipelineStates &pipeline_states) const {
     pipeline_states.reserve(count);
     auto pipeline_cache = Get<PipelineCache>(pipelineCache);
     for (uint32_t i = 0; i < count; i++) {
@@ -1820,8 +1819,7 @@ bool Device::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipel
 void Device::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                        const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                       const RecordObject &record_obj, PipelineStates &pipeline_states,
-                                                       chassis::CreateRayTracingPipelinesNV &chassis_state) {
+                                                       const RecordObject &record_obj, PipelineStates &pipeline_states) {
     // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
         if (pPipelines[i] != VK_NULL_HANDLE) {
