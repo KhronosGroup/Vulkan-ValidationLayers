@@ -1681,6 +1681,7 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
     uint32_t local_size_y = 0;
     uint32_t local_size_z = 0;
     uint32_t total_workgroup_shared_memory = 0;
+    uint32_t total_task_payload_memory = 0;
 
     // If specialization-constant instructions are present in the shader, the specializations should be applied.
     if (module_state.static_data_.has_specialization_constants) {
@@ -1823,6 +1824,10 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
 
             total_workgroup_shared_memory = spec_mod.CalculateWorkgroupSharedMemory();
 
+            if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
+                total_task_payload_memory = spec_mod.CalculateTaskPayloadMemory();
+            }
+
             spvDiagnosticDestroy(diag);
             spvContextDestroy(ctx);
         } else {
@@ -1839,6 +1844,12 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         }
     } else {
         module_state.FindLocalSize(entrypoint, local_size_x, local_size_y, local_size_z);
+
+        total_workgroup_shared_memory = module_state.CalculateWorkgroupSharedMemory();
+
+        if ((stage == VK_SHADER_STAGE_TASK_BIT_EXT || stage == VK_SHADER_STAGE_MESH_BIT_EXT)) {
+            total_task_payload_memory = module_state.CalculateTaskPayloadMemory();
+        }
     }
 
     skip |= ValidateShaderTileImage(module_state, entrypoint, pipeline, stage, loc);
@@ -1921,6 +1932,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         skip |= ValidateTaskMeshWorkGroupSizes(module_state, entrypoint, local_size_x, local_size_y, local_size_z, loc);
         if (stage == VK_SHADER_STAGE_TASK_BIT_EXT) {
             skip |= ValidateEmitMeshTasksSize(module_state, entrypoint, stage_state, loc);
+        } else if (stage == VK_SHADER_STAGE_MESH_BIT_EXT) {
+            skip |= ValidateMeshMemorySize(module_state, total_workgroup_shared_memory, total_task_payload_memory, loc);
         }
     }
 
@@ -2398,6 +2411,23 @@ bool CoreChecks::ValidateEmitMeshTasksSize(const spirv::Module &module_state, co
                 }
             }
         }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateMeshMemorySize(const spirv::Module &module_state, uint32_t total_workgroup_shared_memory,
+                                        uint32_t total_task_payload_memory, const Location &loc) const {
+    bool skip = false;
+
+    if (total_task_payload_memory + total_workgroup_shared_memory >
+        phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndSharedMemorySize) {
+        skip |=
+            LogError("VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755", module_state.handle(), loc,
+                     "SPIR-V uses %" PRIu32
+                     " bytes of task payload or shared memory, which is more than maxMeshPayloadAndSharedMemorySize (%" PRIu32 ").",
+                     total_task_payload_memory + total_workgroup_shared_memory,
+                     phys_dev_ext_props.mesh_shader_props_ext.maxMeshPayloadAndSharedMemorySize);
     }
 
     return skip;
