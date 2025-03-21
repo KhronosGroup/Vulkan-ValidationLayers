@@ -26,14 +26,12 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
 
-#include "containers/custom_containers.h"
 #include "error_message/logging.h"
-#include "utils/vk_layer_utils.h"
+#include "containers/custom_containers.h"
 #include "layer_options.h"
 #include "gpuav/core/gpuav_settings.h"
 #include "sync/sync_settings.h"
 #include "generated/device_features.h"
-#include "generated/dispatch_vector.h"
 #include "generated/vk_api_version.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_layer_dispatch_table.h"

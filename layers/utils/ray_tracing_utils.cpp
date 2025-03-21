@@ -17,7 +17,7 @@
 #include "ray_tracing_utils.h"
 
 #include "generated/dispatch_functions.h"
-#include "containers/custom_containers.h"
+#include "containers/span.h"
 
 #include <cassert>
 #include <vector>

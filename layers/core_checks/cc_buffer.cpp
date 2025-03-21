@@ -23,6 +23,7 @@
 #include "error_message/error_location.h"
 #include "core_validation.h"
 #include "state_tracker/buffer_state.h"
+#include "generated/dispatch_functions.h"
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct

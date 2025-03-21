@@ -28,6 +28,7 @@
 #include "utils/ray_tracing_utils.h"
 #include "utils/text_utils.h"
 #include "vk_layer_config.h"
+#include "containers/tls_guard.h"
 
 SyncValidator::~SyncValidator() {
     // Instance level SyncValidator does not have much to say

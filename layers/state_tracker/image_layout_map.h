@@ -24,6 +24,8 @@
 
 #include "containers/range.h"
 #include "containers/subresource_adapter.h"
+#include "containers/small_vector.h"
+#include "containers/container_utils.h"
 #include "utils/vk_layer_utils.h"
 #include "vulkan/vulkan.h"
 #include "error_message/logging.h"

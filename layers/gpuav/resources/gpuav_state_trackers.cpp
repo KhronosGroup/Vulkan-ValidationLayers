@@ -24,6 +24,7 @@
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/debug_printf/debug_printf.h"
+#include "containers/limits.h"
 
 #include "profiling/profiling.h"
 

@@ -27,6 +27,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
+#include "containers/limits.h"
 #include "cc_buffer_address.h"
 
 static inline bool IsActionCommand(VkIndirectCommandsTokenTypeEXT type) {

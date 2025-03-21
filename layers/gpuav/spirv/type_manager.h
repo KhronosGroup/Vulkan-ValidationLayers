@@ -15,6 +15,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
 

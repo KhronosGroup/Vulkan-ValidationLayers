@@ -22,6 +22,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "generated/validation_cmd_trace_rays_rgen.h"
 #include "error_message/error_strings.h"
+#include "containers/limits.h"
 
 // See gpuav/shaders/validation_cmd/trace_rays.rgen
 constexpr uint32_t kPushConstantDWords = 6u;

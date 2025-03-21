@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/core/gpuav.h"
+#include "generated/dispatch_functions.h"
 
 namespace gpuav {
 

@@ -17,6 +17,7 @@
  */
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
+#include "containers/small_vector.h"
 
 namespace object_lifetimes {
 

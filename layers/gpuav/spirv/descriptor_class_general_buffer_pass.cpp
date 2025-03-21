@@ -14,7 +14,6 @@
  */
 
 #include "descriptor_class_general_buffer_pass.h"
-#include "containers/custom_containers.h"
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/shader_instruction.h"
 #include "utils/vk_layer_utils.h"

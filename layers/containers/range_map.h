@@ -24,12 +24,11 @@
 #include <cassert>
 #include <limits>
 #include <map>
-#include <string>
-#include <sstream>
+#include <optional>
 #include <utility>
 #include <cstdint>
 #include "containers/range.h"
-#include "containers/custom_containers.h"
+#include "containers/container_utils.h"
 
 #define RANGE_ASSERT(b) assert(b)
 

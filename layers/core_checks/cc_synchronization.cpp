@@ -36,6 +36,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "generated/dispatch_functions.h"
 
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;

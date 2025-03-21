@@ -22,6 +22,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "generated/validation_cmd_copy_buffer_to_image_comp.h"
+#include "containers/limits.h"
 
 namespace gpuav {
 

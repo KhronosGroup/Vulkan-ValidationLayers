@@ -21,6 +21,7 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 #include "stateless/sl_vuid_maps.h"
+#include "containers/container_utils.h"
 
 namespace stateless {
 

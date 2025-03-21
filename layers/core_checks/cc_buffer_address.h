@@ -18,7 +18,6 @@
 #pragma once
 
 #include "state_tracker/buffer_state.h"
-#include "containers/custom_containers.h"
 #include "error_message/logging.h"
 
 #include <array>

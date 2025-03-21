@@ -18,6 +18,7 @@
 
 #pragma once
 #include <vulkan/vulkan.h>
+#include <memory>
 #include "containers/custom_containers.h"
 
 namespace vku {

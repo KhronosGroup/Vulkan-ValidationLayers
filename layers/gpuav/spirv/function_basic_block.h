@@ -18,7 +18,6 @@
 #include <vector>
 #include <memory>
 #include <spirv/unified1/spirv.hpp>
-#include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"
 
 namespace gpuav {

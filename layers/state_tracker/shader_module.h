@@ -22,12 +22,14 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <optional>
 #include <unordered_set>
 
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
 #include <spirv/unified1/spirv.hpp>
+#include "containers/limits.h"
 
 namespace vvl {
 class Pipeline;

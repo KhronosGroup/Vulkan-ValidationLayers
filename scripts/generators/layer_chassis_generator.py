@@ -221,14 +221,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
             #include "chassis/chassis.h"
             #include <array>
             #include <cstring>
-            #include <mutex>
 
             #include "chassis/dispatch_object.h"
             #include "chassis/validation_object.h"
+            #include "generated/dispatch_vector.h"
             #include "layer_options.h"
-            #include "state_tracker/descriptor_sets.h"
-            #include "chassis/chassis_modification_state.h"
-            #include "core_checks/core_validation.h"
 
             #include "profiling/profiling.h"
 
@@ -342,7 +339,7 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Generate pre-call state recording source code
             out.append(f'RecordObject record_obj(vvl::Func::{command.name});\n')
             out.append(f'{{\nVVL_ZoneScopedN("PreCallRecord_{command.name}");\n')
-            
+
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPreCallRecord{command.name[2:]}]) {{\n')
                 out.append(f'   if (!vo) {{\n')

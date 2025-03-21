@@ -20,6 +20,8 @@
 #include "chassis/dispatch_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "state_tracker/pipeline_state.h"
+#include "containers/small_vector.h"
+#include "generated/dispatch_functions.h"
 
 #include <atomic>
 

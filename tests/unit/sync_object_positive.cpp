@@ -16,6 +16,7 @@
 #include "../framework/external_memory_sync.h"
 #include "../framework/barrier_queue_family.h"
 #include "../framework/render_pass_helper.h"
+#include "containers/container_utils.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
 #include <poll.h>

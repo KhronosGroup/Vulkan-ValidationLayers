@@ -18,7 +18,6 @@
  */
 
 #include "drawdispatch_vuids.h"
-#include "containers/custom_containers.h"
 
 namespace vvl {
 // clang-format off

@@ -23,6 +23,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
+#include "generated/dispatch_functions.h"
 
 bool CoreChecks::CanSemaphoreExportFromImported(VkExternalSemaphoreHandleTypeFlagBits export_type,
                                                 VkExternalSemaphoreHandleTypeFlagBits imported_type) const {

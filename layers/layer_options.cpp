@@ -19,6 +19,7 @@
 #include "layer_options.h"
 #include <vulkan/vulkan_core.h>
 #include "chassis/validation_object.h"
+#include "containers/span.h"
 #include "error_message/log_message_type.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
@@ -26,7 +27,6 @@
 #include "utils/hash_util.h"
 #include <cstring>
 #include <string>
-#include <unordered_set>
 #include <vector>
 #include <vulkan/layer/vk_layer_settings.hpp>
 

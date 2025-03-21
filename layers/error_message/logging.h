@@ -23,11 +23,13 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <memory>
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "containers/custom_containers.h"
+#include "containers/small_vector.h"
 #include "generated/vk_object_types.h"
 #include "error_message/log_message_type.h"
 

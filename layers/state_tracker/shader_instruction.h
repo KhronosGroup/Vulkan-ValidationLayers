@@ -20,8 +20,10 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include "containers/custom_containers.h"
 #include <spirv/unified1/spirv.hpp>
+#include "containers/custom_containers.h"
+#include "containers/small_vector.h"
+#include "containers/span.h"
 
 struct OperandInfo;
 
