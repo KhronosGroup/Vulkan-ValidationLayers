@@ -29,7 +29,8 @@
 #include "containers/custom_containers.h"
 #include <spirv-tools/libspirv.hpp>
 
-typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+// TODO - Get to work with non-STL custom hashmap
+typedef std::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
 
 namespace vvl {
 struct DrawDispatchVuid;

@@ -71,6 +71,7 @@ target_sources(gpu_av_spirv PRIVATE
 
 target_include_directories(gpu_av_spirv PRIVATE .
     ${VVL_SOURCE_DIR}/layers
+    ${VVL_SOURCE_DIR}/layers/external
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}
 )
 
