@@ -1207,9 +1207,6 @@ Image::Image(Image &&rhs) noexcept : NonDispHandle(std::move(rhs)) {
     rhs.create_info_ = vku::InitStructHelper();
 
     internal_mem_ = std::move(rhs.internal_mem_);
-
-    image_layout_ = std::move(rhs.image_layout_);
-    rhs.image_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
 Image &Image::operator=(Image &&rhs) noexcept {
@@ -1227,9 +1224,6 @@ Image &Image::operator=(Image &&rhs) noexcept {
     rhs.create_info_ = vku::InitStructHelper();
 
     internal_mem_ = std::move(rhs.internal_mem_);
-
-    image_layout_ = std::move(rhs.image_layout_);
-    rhs.image_layout_ = VK_IMAGE_LAYOUT_UNDEFINED;
     return *this;
 }
 
@@ -1256,7 +1250,6 @@ void Image::InitNoMemory(const Device &dev, const VkImageCreateInfo &info) {
     }
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateImage, dev, &info);
     create_info_ = info;
-    image_layout_ = info.initialLayout;
 }
 
 bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, const VkFormatFeatureFlags2 features) {
@@ -1375,9 +1368,10 @@ void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkAccessFlags src_access,
 }
 
 void Image::SetLayout(CommandBuffer &cmd_buf, VkImageLayout image_layout) {
-    assert(image_layout_ == create_info_.initialLayout);
-    TransitionLayout(cmd_buf, image_layout_, image_layout);
+    TransitionLayout(cmd_buf, create_info_.initialLayout, image_layout);
 }
+
+void Image::SetLayout(VkImageLayout image_layout) { TransitionLayout(create_info_.initialLayout, image_layout); }
 
 void Image::TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, VkImageLayout new_layout) {
     VkFlags src_mask, dst_mask;
@@ -1441,21 +1435,6 @@ void Image::TransitionLayout(CommandBuffer &cmd_buf, VkImageLayout old_layout, V
     }
 
     ImageMemoryBarrier(cmd_buf, src_mask, dst_mask, old_layout, new_layout);
-    image_layout_ = new_layout;
-}
-
-void Image::SetLayout(VkImageLayout image_layout) {
-    CommandPool pool(*device_, device_->graphics_queue_node_index_);
-    CommandBuffer cmd_buf(*device_, pool);
-
-    /* Build command buffer to set image layout in the driver */
-    cmd_buf.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    SetLayout(cmd_buf, image_layout);
-    cmd_buf.End();
-
-    auto graphics_queue = device_->QueuesWithGraphicsCapability()[0];
-    graphics_queue->Submit(cmd_buf);
-    graphics_queue->Wait();
 }
 
 void Image::TransitionLayout(VkImageLayout old_layout, VkImageLayout new_layout) {
