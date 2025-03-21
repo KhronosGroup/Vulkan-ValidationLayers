@@ -20,15 +20,15 @@
 
 namespace vvl {
 class RenderPass;
+class CommandBuffer;
 }  // namespace vvl
 
 namespace gpuav {
 class Validator;
-class CommandBufferSubState;
 
-void UpdateCmdBufImageLayouts(Validator &gpuav, const CommandBufferSubState &cb_state);
-void TransitionSubpassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index);
-void TransitionBeginRenderPassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state);
-void TransitionFinalSubpassLayouts(CommandBufferSubState &cb_state);
+void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state);
+void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index);
+void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state);
+void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state);
 
 }  // namespace gpuav
