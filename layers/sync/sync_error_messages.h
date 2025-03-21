@@ -27,10 +27,10 @@ class CommandExecutionContext;
 class HazardResult;
 class QueueBatchContext;
 struct SyncImageMemoryBarrier;
+class SyncValidator;
 
 namespace vvl {
 class DescriptorSet;
-class Device;
 class Pipeline;
 }  // namespace vvl
 
@@ -38,7 +38,7 @@ namespace syncval {
 
 class ErrorMessages {
   public:
-    explicit ErrorMessages(vvl::Device& validator);
+    explicit ErrorMessages(SyncValidator& validator);
 
     std::string Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                       const std::string& resource_description, const char* message_type,
@@ -134,7 +134,7 @@ class ErrorMessages {
                            const std::string& resource_description) const;
 
   private:
-    vvl::Device& validator_;
+    SyncValidator& validator_;
 };
 
 }  // namespace syncval

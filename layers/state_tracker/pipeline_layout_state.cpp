@@ -187,7 +187,7 @@ VkPipelineLayoutCreateFlags GetCreateFlags(const vvl::span<const vvl::PipelineLa
 
 namespace vvl {
 
-static PipelineLayout::SetLayoutVector GetSetLayouts(Device &dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo) {
+static PipelineLayout::SetLayoutVector GetSetLayouts(DeviceState &dev_data, const VkPipelineLayoutCreateInfo *pCreateInfo) {
     PipelineLayout::SetLayoutVector set_layouts(pCreateInfo->setLayoutCount);
 
     for (uint32_t i = 0; i < pCreateInfo->setLayoutCount; ++i) {
@@ -232,7 +232,7 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
     return set_layouts;
 }
 
-PipelineLayout::PipelineLayout(Device &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo)
+PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),

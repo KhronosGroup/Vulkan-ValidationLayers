@@ -28,7 +28,7 @@
 #include "containers/span.h"
 
 namespace vvl {
-class Device;
+class DeviceState;
 class Fence;
 class ImageSubState;
 class Semaphore;
@@ -123,8 +123,8 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
-    Image(const Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR features);
-    Image(const Device &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
+    Image(const DeviceState &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkFormatFeatureFlags2KHR features);
+    Image(const DeviceState &dev_data, VkImage handle, const VkImageCreateInfo *pCreateInfo, VkSwapchainKHR swapchain,
           uint32_t swapchain_index, VkFormatFeatureFlags2KHR features);
     Image(Image const &rh_obj) = delete;
     std::shared_ptr<const Image> shared_from_this() const { return SharedFromThisImpl(this); }
@@ -352,10 +352,10 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     const vku::safe_VkImageCreateInfo image_create_info;
 
     std::shared_ptr<vvl::Surface> surface;
-    Device &dev_data;
+    DeviceState &dev_data;
     uint32_t acquired_images = 0;
 
-    Swapchain(Device &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
+    Swapchain(DeviceState &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
     ~Swapchain() {
         if (!Destroyed()) {
