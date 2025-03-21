@@ -246,7 +246,8 @@ IGNORED_INCLUDES = {
     b'rapidjson/...',
     # Validation layers support building with robin hood hashing, but we are not enabling that
     # See http://anglebug.com/42264327
-    b'robin_hood.h',
+    # Update: Validation layers now use parallel hashmap, but still it is not wanted in BUILD.gn
+    b'parallel_hashmap/phmap.h',
     # Validation layers optionally use mimalloc
     b'mimalloc-new-delete.h',
     # From the Vulkan-Loader

@@ -90,17 +90,16 @@ target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 
 option(USE_CUSTOM_HASH_MAP "Use a custom hashing library that is faster than std::unordered_map and std::unordered_set (default: ON)" ON)
 
-find_package(robin_hood CONFIG)
-
-# Keep this option as legacy for people to turn off custom hashing
-option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
-if (NOT USE_ROBIN_HOOD_HASHING)
-    set(USE_CUSTOM_HASH_MAP OFF CACHE BOOL "Disable custom hash map" FORCE)
+if(DEFINED USE_ROBIN_HOOD_HASHING)
+    message(DEPRECATION "USE_ROBIN_HOOD_HASHING has been deprecated. Please use USE_CUSTOM_HASH_MAP option instead.")
+    set(USE_CUSTOM_HASH_MAP ${USE_ROBIN_HOOD_HASHING})
 endif()
 
 if (USE_CUSTOM_HASH_MAP)
-    target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
+    message(STATUS "Using parallel_hashmap as custom hash maps")
     target_compile_definitions(VkLayer_utils PUBLIC USE_CUSTOM_HASH_MAP)
+else()
+    message(STATUS "Using STL maps instead of custom hash maps")
 endif()
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
@@ -209,6 +208,15 @@ target_sources(vvl PRIVATE
     error_message/spirv_logging.cpp
     external/vma/vma.h
     external/vma/vma.cpp
+    external/parallel_hashmap/btree.h
+    external/parallel_hashmap/meminfo.h
+    external/parallel_hashmap/phmap_base.h
+    external/parallel_hashmap/phmap_bits.h
+    external/parallel_hashmap/phmap_config.h
+    external/parallel_hashmap/phmap_dump.h
+    external/parallel_hashmap/phmap_fwd_decl.h
+    external/parallel_hashmap/phmap_utils.h
+    external/parallel_hashmap/phmap.h
     ${API_TYPE}/generated/best_practices.cpp
     ${API_TYPE}/generated/best_practices_device_methods.h
     ${API_TYPE}/generated/best_practices_instance_methods.h

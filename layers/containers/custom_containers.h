@@ -26,7 +26,7 @@
 #include <utility>
 
 #ifdef USE_CUSTOM_HASH_MAP
-#include "robin_hood.h"
+#include "parallel_hashmap/phmap.h"
 #else
 #include <map>
 #include <set>
@@ -41,54 +41,17 @@ namespace vvl {
 
 #ifdef USE_CUSTOM_HASH_MAP
 template <typename T>
-using hash = robin_hood::hash<T>;
+using hash = phmap::Hash<T>;
 
-template <typename Key, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key>>
-using unordered_set = robin_hood::unordered_set<Key, Hash, KeyEqual>;
+template <typename Key, typename Hash = phmap::Hash<Key>, typename KeyEqual = std::equal_to<Key>>
+using unordered_set = phmap::flat_hash_set<Key, Hash, KeyEqual>;
 
-template <typename Key, typename T, typename Hash = robin_hood::hash<Key>, typename KeyEqual = std::equal_to<Key>>
-using unordered_map = robin_hood::unordered_map<Key, T, Hash, KeyEqual>;
+template <typename Key, typename T, typename Hash = phmap::Hash<Key>, typename KeyEqual = std::equal_to<Key>>
+using unordered_map = phmap::flat_hash_map<Key, T, Hash, KeyEqual>;
 
 template <typename Key, typename T>
-using map_entry = robin_hood::pair<Key, T>;
+using map_entry = phmap::Pair<Key, T>;
 
-// robin_hood-compatible insert_iterator (std:: uses the wrong insert method)
-// NOTE: std::iterator was deprecated in C++17, and newer versions of libstdc++ appear to mark this as such.
-template <typename T>
-struct insert_iterator {
-    using iterator_category = std::output_iterator_tag;
-    using value_type = typename T::value_type;
-    using iterator = typename T::iterator;
-    using difference_type = void;
-    using pointer = void;
-    using reference = T &;
-
-    insert_iterator(reference t, iterator i) : container(&t), iter(i) {}
-
-    insert_iterator &operator=(const value_type &value) {
-        auto result = container->insert(value);
-        iter = result.first;
-        ++iter;
-        return *this;
-    }
-
-    insert_iterator &operator=(value_type &&value) {
-        auto result = container->insert(std::move(value));
-        iter = result.first;
-        ++iter;
-        return *this;
-    }
-
-    insert_iterator &operator*() { return *this; }
-
-    insert_iterator &operator++() { return *this; }
-
-    insert_iterator &operator++(int) { return *this; }
-
-  private:
-    T *container;
-    iterator iter;
-};
 #else
 template <typename T>
 using hash = std::hash<T>;
@@ -102,8 +65,6 @@ using unordered_map = std::unordered_map<Key, T, Hash, KeyEqual>;
 template <typename Key, typename T>
 using map_entry = std::pair<Key, T>;
 
-template <typename T>
-using insert_iterator = std::insert_iterator<T>;
 #endif
 
 #if 1

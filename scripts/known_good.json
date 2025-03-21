@@ -46,17 +46,6 @@
             "commit": "ba1359d203e544bd458373ba249a47c44e97b071"
         },
         {
-            "name": "robin-hood-hashing",
-            "url": "https://github.com/martinus/robin-hood-hashing.git",
-            "sub_dir": "robin-hood-hashing",
-            "build_dir": "robin-hood-hashing/build",
-            "install_dir": "robin-hood-hashing/build/install",
-            "cmake_options": [
-                "-DRH_STANDALONE_PROJECT=OFF"
-            ],
-            "commit": "3.11.5"
-        },
-        {
             "name": "mimalloc",
             "url": "https://github.com/microsoft/mimalloc.git",
             "sub_dir": "mimalloc",

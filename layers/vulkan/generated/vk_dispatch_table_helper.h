@@ -30,7 +30,8 @@
 #include <cstring>
 #include <string>
 #include "vk_layer_dispatch_table.h"
-#include "vk_extension_helper.h"
+
+struct DeviceExtensions;
 
 // Using the above code-generated map of APINames-to-parent extension names, this function will:
 //   o  Determine if the API has an associated extension
