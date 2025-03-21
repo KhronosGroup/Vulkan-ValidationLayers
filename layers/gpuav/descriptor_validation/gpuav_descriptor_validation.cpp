@@ -32,36 +32,6 @@
 namespace gpuav {
 namespace descriptor {
 
-void PreCallActionCommandPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
-                                     const Location &loc) {
-    // Can hit if current action command doesn't use any descriptor
-    if (cb_state.descriptor_command_bindings.empty()) {
-        return;
-    }
-
-    // Should have just been updated
-    if (!last_bound.pipeline_state && !last_bound.HasShaderObjects()) {
-        gpuav.InternalError(gpuav.device, loc, "Unrecognized pipeline nor shader object");
-        return;
-    }
-
-    // TODO - Add Shader Object support
-    if (!last_bound.pipeline_state) {
-        return;
-    }
-}
-
-void PreCallActionCommand(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint pipeline_bind_point,
-                          const Location &loc) {
-    // Currently this is only for updating the binding_req_map which is used for post processing only
-    if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
-
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto const &last_bound = cb_state.base.lastBound[lv_bind_point];
-
-    PreCallActionCommandPostProcess(gpuav, cb_state, last_bound, loc);
-}
-
 void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                        DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
