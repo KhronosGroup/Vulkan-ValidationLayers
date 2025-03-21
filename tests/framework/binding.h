@@ -768,16 +768,11 @@ class Image : public internal::NonDispHandle<VkImage> {
         return barrier;
     }
 
-    void InitialImageMemoryBarrier(CommandBuffer &cmd, VkAccessFlags src_access, VkAccessFlags dst_access,
-                                   VkImageLayout image_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                   VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
-
     void ImageMemoryBarrier(CommandBuffer &cmd, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
                             VkImageLayout new_layout, VkPipelineStageFlags src_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                             VkPipelineStageFlags dest_stages = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     const VkImageCreateInfo &CreateInfo() const { return create_info_; }
-    static VkImageCreateInfo DefaultCreateInfo();
 
     VkImageSubresourceRange SubresourceRange(VkImageAspectFlags aspect_mask) {
         return VkImageSubresourceRange{aspect_mask, 0, create_info_.mipLevels, 0, create_info_.arrayLayers};
@@ -1273,18 +1268,6 @@ inline VkQueryPoolCreateInfo QueryPool::CreateInfo(VkQueryType type, uint32_t sl
     VkQueryPoolCreateInfo info = vku::InitStructHelper();
     info.queryType = type;
     info.queryCount = slot_count;
-    return info;
-}
-
-inline VkImageCreateInfo Image::DefaultCreateInfo() {
-    VkImageCreateInfo info = vku::InitStructHelper();
-    info.imageType = VK_IMAGE_TYPE_2D;
-    info.extent = {1, 1, 1};
-    info.mipLevels = 1;
-    info.arrayLayers = 1;
-    info.samples = VK_SAMPLE_COUNT_1_BIT;
-    info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     return info;
 }
 

@@ -2084,7 +2084,7 @@ TEST_F(NegativeYcbcr, MultiplaneImageCopyAspectMask) {
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstImage-08714");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-aspectMask-00143");
-    image.InitialImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_GENERAL);
+    image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
     vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
                      &image_copy);
     m_errorMonitor->VerifyFound();

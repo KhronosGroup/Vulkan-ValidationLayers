@@ -2507,15 +2507,11 @@ TEST_F(NegativeCommand, ImageFilterCubicSamplerInCmdDraw) {
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    auto image_ci = vkt::Image::DefaultCreateInfo();
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, usage);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
-    image_ci.format = format;
-    image_ci.extent.width = 128;
-    image_ci.extent.height = 128;
-    image_ci.usage = usage;
-    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_3D;
-
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkImageViewType imageViewType = VK_IMAGE_VIEW_TYPE_3D;
     vkt::ImageView imageView = image.CreateView(imageViewType);
 
     VkSamplerCreateInfo sampler_ci = vku::InitStructHelper();
@@ -3288,12 +3284,9 @@ TEST_F(NegativeCommand, ClearDepthStencilImage) {
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
     VkClearDepthStencilValue clear_value = {0};
-    VkImageCreateInfo image_create_info = vkt::Image::DefaultCreateInfo();
-    image_create_info.format = depth_format;
-    image_create_info.extent.width = 64;
-    image_create_info.extent.height = 64;
     // Error here is that VK_IMAGE_USAGE_TRANSFER_DST_BIT is excluded for DS image that we'll call Clear on below
-    image_create_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    VkImageCreateInfo image_create_info =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::Image dst_image_bad_usage(*m_device, image_create_info, vkt::set_layout);
     const VkImageSubresourceRange range{VK_IMAGE_ASPECT_DEPTH_BIT, 0, image_create_info.mipLevels, 0,
                                         image_create_info.arrayLayers};

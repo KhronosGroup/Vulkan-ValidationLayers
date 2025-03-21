@@ -322,10 +322,8 @@ TEST_F(PositiveImage, ImageCompressionControl) {
 
     vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_format_info, &image_format_properties);
 
-    auto image_ci = vkt::Image::DefaultCreateInfo();
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.tiling = VK_IMAGE_TILING_LINEAR;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                                                  VK_IMAGE_TILING_LINEAR);
 
     // Create with disabled image compression
     {

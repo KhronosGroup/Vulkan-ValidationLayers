@@ -178,11 +178,7 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
 
     // Create a test image
-    auto image_ci = vkt::Image::DefaultCreateInfo();
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     // Use extension to get image memory requirements
@@ -236,11 +232,7 @@ TEST_F(PositiveMemory, BindMemory2) {
     vk::BindBufferMemory2KHR(device(), 1, &buffer_bind_info);
 
     // Create a test image
-    auto image_ci = vkt::Image::DefaultCreateInfo();
-    image_ci.extent.width = 32;
-    image_ci.extent.height = 32;
-    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     // Allocate image memory

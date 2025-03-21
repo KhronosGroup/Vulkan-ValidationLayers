@@ -1297,22 +1297,24 @@ bool Image::IsCompatible(const Device &dev, const VkImageUsageFlags usages, cons
 VkImageCreateInfo Image::ImageCreateInfo2D(uint32_t width, uint32_t height, uint32_t mip_levels, uint32_t layers, VkFormat format,
                                            VkImageUsageFlags usage, VkImageTiling requested_tiling,
                                            const vvl::span<uint32_t> &queue_families) {
-    VkImageCreateInfo imageCreateInfo = DefaultCreateInfo();
-    imageCreateInfo.format = format;
-    imageCreateInfo.extent.width = width;
-    imageCreateInfo.extent.height = height;
-    imageCreateInfo.mipLevels = mip_levels;
-    imageCreateInfo.arrayLayers = layers;
-    imageCreateInfo.tiling = requested_tiling;
-
-    // Automatically set sharing mode etc. based on queue family information
+    VkImageCreateInfo create_info = vku::InitStructHelper();
+    create_info.imageType = VK_IMAGE_TYPE_2D;
+    create_info.format = format;
+    create_info.extent.width = width;
+    create_info.extent.height = height;
+    create_info.extent.depth = 1;
+    create_info.mipLevels = mip_levels;
+    create_info.arrayLayers = layers;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = requested_tiling;
+    create_info.usage = usage;
     if (queue_families.size() > 1) {
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-        imageCreateInfo.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
-        imageCreateInfo.pQueueFamilyIndices = queue_families.data();
+        create_info.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
+        create_info.pQueueFamilyIndices = queue_families.data();
     }
-    imageCreateInfo.usage = usage;
-    return imageCreateInfo;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    return create_info;
 }
 
 VkMemoryRequirements Image::MemoryRequirements() const {
@@ -1348,12 +1350,6 @@ VkImageAspectFlags Image::AspectMask(VkFormat format) {
         image_aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     }
     return image_aspect;
-}
-
-void Image::InitialImageMemoryBarrier(CommandBuffer &cmd_buf, VkAccessFlags src_access, VkAccessFlags dst_access,
-                                      VkImageLayout image_layout, VkPipelineStageFlags src_stages,
-                                      VkPipelineStageFlags dst_stages) {
-    ImageMemoryBarrier(cmd_buf, src_access, dst_access, VK_IMAGE_LAYOUT_UNDEFINED, image_layout, src_stages, dst_stages);
 }
 
 void Image::ImageMemoryBarrier(CommandBuffer &cmd_buf, VkAccessFlags src_access, VkAccessFlags dst_access, VkImageLayout old_layout,
