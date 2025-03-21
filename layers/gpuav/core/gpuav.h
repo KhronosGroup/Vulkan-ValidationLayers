@@ -151,6 +151,12 @@ class Validator : public GpuShaderInstrumentor {
         VkCommandBuffer commandBuffer,
         const VkBindDescriptorBufferEmbeddedSamplersInfoEXT* pBindDescriptorBufferEmbeddedSamplersInfo,
         const RecordObject& record_obj) final;
+
+    void PreCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+                              const Location& loc);
+    void PostCallActionCommand(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+                               const Location& loc);
+
     void PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
                               uint32_t firstInstance, const RecordObject& record_obj) final;
     void PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex,
