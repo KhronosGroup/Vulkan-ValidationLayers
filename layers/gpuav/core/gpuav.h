@@ -97,7 +97,7 @@ class Validator : public GpuShaderInstrumentor {
 
     void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          const VkSubpassContents contents);
-    void RecordCmdEndRenderPassLayouts(CommandBufferSubState& cb_state);
+    void RecordCmdEndRenderPassLayouts(vvl::CommandBuffer& cb_state);
     void PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                          VkSubpassContents contents, const RecordObject&) final;
     void PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -105,7 +105,7 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                           const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) final;
 
-    void RecordCmdNextSubpassLayouts(CommandBufferSubState& cb_state, VkSubpassContents contents);
+    void RecordCmdNextSubpassLayouts(vvl::CommandBuffer& cb_state, VkSubpassContents contents);
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                       const RecordObject& record_obj) final;
     void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
