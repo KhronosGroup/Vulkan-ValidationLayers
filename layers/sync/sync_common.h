@@ -18,6 +18,7 @@
 #include "containers/subresource_adapter.h"
 #include "containers/range.h"
 #include "generated/sync_validation_types.h"
+#include "containers/limits.h"
 #include <set>
 
 namespace vvl {

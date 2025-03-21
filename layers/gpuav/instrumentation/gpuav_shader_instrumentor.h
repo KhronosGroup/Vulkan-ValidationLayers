@@ -16,11 +16,11 @@
  */
 #pragma once
 
-#include "containers/custom_containers.h"
 #include "error_message/error_location.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_tracker.h"
 #include "gpuav/spirv/interface.h"
+#include "containers/custom_containers.h"
 
 #include <vector>
 

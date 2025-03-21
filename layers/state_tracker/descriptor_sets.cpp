@@ -25,6 +25,7 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/shader_module.h"
+#include "containers/limits.h"
 
 static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
     vvl::DescriptorPool::TypeCountMap counts;

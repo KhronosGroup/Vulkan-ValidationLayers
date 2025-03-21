@@ -22,6 +22,7 @@
 #include "state_tracker/device_state.h"
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "containers/limits.h"
 
 VkShaderStageFlags FindNextStage(uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos, VkShaderStageFlagBits stage) {
     constexpr uint32_t graphicsStagesCount = 5;

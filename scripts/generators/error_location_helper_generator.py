@@ -87,7 +87,7 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
         out.append('''
             #pragma once
             #include <vulkan/vulkan.h>
-            #include "containers/custom_containers.h"
+            #include "containers/small_vector.h"
             #include "generated/vk_api_version.h"
 
             namespace vvl {

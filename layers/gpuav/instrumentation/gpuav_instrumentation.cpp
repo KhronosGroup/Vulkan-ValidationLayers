@@ -18,12 +18,14 @@
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 
 #include "chassis/chassis_modification_state.h"
+#include "containers/small_vector.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/error_message/gpuav_vuids.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/debug_printf/debug_printf.h"
+#include "containers/limits.h"
 
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/shader_object_state.h"

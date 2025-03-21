@@ -37,7 +37,6 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 #include "utils/cast_utils.h"
 #include "layer_options.h"
-#include "containers/custom_containers.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"

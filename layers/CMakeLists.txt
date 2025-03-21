@@ -22,7 +22,13 @@ set(LAYER_NAME "VkLayer_khronos_validation")
 
 add_library(VkLayer_utils STATIC)
 target_sources(VkLayer_utils PRIVATE
+    containers/container_utils.h
     containers/custom_containers.h
+    containers/limits.h
+    containers/small_container.h
+    containers/small_vector.h
+    containers/span.h
+    containers/tls_guard.h
     error_message/logging.h
     error_message/logging.cpp
     error_message/error_location.cpp
@@ -427,7 +433,7 @@ elseif(ANDROID)
     # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9703
     # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9170
     target_link_options(vvl PRIVATE "-Wl,-z,max-page-size=16384")
-    
+
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}-android.map)
 else()
     target_link_options(vvl PRIVATE LINKER:--version-script=${CMAKE_CURRENT_SOURCE_DIR}/${LAYER_NAME}.map)

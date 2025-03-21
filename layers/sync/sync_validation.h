@@ -26,6 +26,7 @@
 #include "sync/sync_error_messages.h"
 #include "sync/sync_stats.h"
 #include "sync/sync_submit.h"
+#include "containers/limits.h"
 
 namespace syncval {
 // sync validation has no instance-level functionality

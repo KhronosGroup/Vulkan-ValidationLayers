@@ -22,9 +22,10 @@
 
 #include "generated/error_location_helper.h"
 #include "logging.h"
-#include "containers/custom_containers.h"
 #include "chassis/chassis_handle_data.h"
 #include "utils/hash_util.h"
+#include "containers/small_vector.h"
+#include "containers/limits.h"
 
 // Holds the 'Location' of where the code is inside a function/struct/etc
 // see docs/error_object.md for more details

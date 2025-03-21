@@ -18,6 +18,7 @@
  */
 #include "state_tracker/queue_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "containers/small_vector.h"
 
 #include "profiling/profiling.h"
 

@@ -21,7 +21,6 @@
 #include <sstream>
 #include <valarray>
 
-#include "containers/custom_containers.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
 #include "state_tracker/descriptor_sets.h"

@@ -24,6 +24,7 @@
 #include <vector>
 #include "containers/range.h"
 #include "containers/range_map.h"
+#include "containers/small_vector.h"
 #include "vulkan/vulkan.h"
 
 namespace vvl {

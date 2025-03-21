@@ -25,6 +25,7 @@
 #include "state_tracker/fence_state.h"
 #include "state_tracker/image_layout_map.h"
 #include "utils/vk_layer_utils.h"
+#include "containers/span.h"
 
 namespace vvl {
 class Device;

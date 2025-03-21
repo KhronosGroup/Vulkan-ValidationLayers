@@ -21,7 +21,6 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
@@ -33,6 +32,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/render_pass_state.h"
 #include "utils/vk_layer_utils.h"
+#include "containers/limits.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
                                               const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {

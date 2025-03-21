@@ -31,6 +31,14 @@
 #include "state_tracker/render_pass_state.h"
 #include "utils/math_utils.h"
 
+namespace vvl {
+template <typename T>
+T GetQuotientCeil(T numerator, T denominator) {
+    denominator = std::max(denominator, T{1});
+    return static_cast<T>(std::ceil(static_cast<double>(numerator) / static_cast<double>(denominator)));
+}
+}  // namespace vvl
+
 bool CoreChecks::ValidateAttachmentCompatibility(const VulkanTypedHandle &rp1_object, const vvl::RenderPass &rp1_state,
                                                  const VulkanTypedHandle &rp2_object, const vvl::RenderPass &rp2_state,
                                                  uint32_t primary_attachment, uint32_t secondary_attachment,

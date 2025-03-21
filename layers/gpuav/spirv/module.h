@@ -20,7 +20,6 @@
 #include "interface.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
-#include "containers/custom_containers.h"
 
 class DebugReport;
 struct DeviceFeatures;

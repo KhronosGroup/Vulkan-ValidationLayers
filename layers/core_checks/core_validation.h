@@ -26,6 +26,7 @@
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
 #include "containers/qfo_transfer.h"
+#include "containers/custom_containers.h"
 #include <spirv-tools/libspirv.hpp>
 
 typedef vvl::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;

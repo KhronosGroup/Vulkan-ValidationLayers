@@ -17,12 +17,12 @@
 
 #pragma once
 
-#include "containers/custom_containers.h"
 #include "vma/vma.h"
 
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
+#include "containers/custom_containers.h"
 
 struct Location;
 namespace gpuav {
