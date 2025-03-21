@@ -658,12 +658,12 @@ TEST_F(NegativeSyncValReporting, ReportImageResource_SubmitTime) {
     vkt::Buffer buffer(*m_device, 64 * 64 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     buffer.SetName("BufferA");
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM,
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_B8G8R8A8_UNORM,
                      VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetName("ImageB");
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
-    vkt::Image image2(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image2(*m_device, 64, 64, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image2.SetName("ImageC");
     image2.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
 
@@ -898,7 +898,7 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
     buffer.SetName("BufferA");
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     image.SetName("ImageB");
 
@@ -1187,7 +1187,7 @@ TEST_F(NegativeSyncValReporting, DoNotUseShortcutForSimpleAccessMask) {
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     RETURN_IF_SKIP(InitSyncVal());
 
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     vkt::ImageView image_view = image.CreateView();
@@ -1247,7 +1247,7 @@ TEST_F(NegativeSyncValReporting, LayoutTrasitionErrorHasImageHandle) {
         GTEST_SKIP() << "Two queues are needed";
     }
 
-    vkt::Image image(*m_device, 64, 64, 1, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     image.SetName("ImageA");
 
     VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();

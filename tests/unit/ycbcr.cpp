@@ -257,7 +257,7 @@ TEST_F(NegativeYcbcr, Swizzle) {
     sycci.components = identity;
     vkt::SamplerYcbcrConversion conversion(*m_device, sycci);
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkSamplerYcbcrConversionInfo conversion_info = vku::InitStructHelper();
     conversion_info.conversion = conversion.handle();
@@ -1285,7 +1285,7 @@ TEST_F(NegativeYcbcr, MismatchedImageViewAndSamplerFormat) {
     AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkSamplerYcbcrConversionCreateInfo sampler_conversion_ci = vku::InitStructHelper();
     sampler_conversion_ci.format = VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM;

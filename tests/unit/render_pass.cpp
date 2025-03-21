@@ -1187,7 +1187,7 @@ TEST_F(NegativeRenderPass, BeginIncompatibleFramebuffer) {
     RETURN_IF_SKIP(Init());
 
     // Create a depth stencil image view
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView dsv = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
@@ -1243,16 +1243,16 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     }
 
     // Create an input attachment view
-    vkt::Image iai(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image iai(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView iav = iai.CreateView();
 
     // Create an input depth attachment view
     VkFormat dformat = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image iadi(*m_device, 128, 128, 1, dformat, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::Image iadi(*m_device, 128, 128, dformat, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView iadv = iadi.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     // Create a color attachment view
-    vkt::Image cai(*m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image cai(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView cav = cai.CreateView();
 
     // Create a renderPass with those attachments
@@ -1339,7 +1339,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
     if (feedback_loop_layout) {
         // No VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT
         vkt::Image no_fb_loop_attachment(
-            *m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
+            *m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         vkt::ImageView image_view_no_fb_loop;
         auto image_view_ci = no_fb_loop_attachment.BasicViewCreatInfo();
@@ -1354,7 +1354,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
         views[0] = iadv;
         // No VK_IMAGE_USAGE_SAMPLED_BIT_EXT or VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
         vkt::Image no_usage_sampled_attachment(
-            *m_device, 128, 128, 1, VK_FORMAT_R8G8B8A8_UNORM,
+            *m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT);
         image_view_ci.image = no_usage_sampled_attachment.handle();
         vkt::ImageView image_view_no_usage_sampled;
@@ -1380,7 +1380,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
                        const char *rp2_vuid) {
         // Create an input attachment with a depth stencil format, without VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
         VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
-        vkt::Image input_image(*m_device, 128, 128, 1, depth_stencil_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+        vkt::Image input_image(*m_device, 128, 128, depth_stencil_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
         vkt::ImageView input_view = input_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
@@ -1437,7 +1437,7 @@ TEST_F(NegativeRenderPass, BeginStencilFormat) {
             return;
         }
         // Create an input attachment with a depth stencil format, without VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-        vkt::Image depth_stencil_image(*m_device, 128, 128, 1, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        vkt::Image depth_stencil_image(*m_device, 128, 128, depth_stencil_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
         // Create the render pass attachment...
         VkAttachmentDescription2 depth_stencil_attachment_desc = vku::InitStructHelper();
@@ -1528,7 +1528,7 @@ TEST_F(NegativeRenderPass, BeginSampleLocationsIndicesEXT) {
     }
 
     // Create a depth stencil image view
-    vkt::Image image(*m_device, 128, 128, 1, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_D16_UNORM, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView dsv = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     // Create a renderPass with a single attachment that uses loadOp CLEAR
@@ -1673,7 +1673,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     rp.CreateRenderPass();
 
     // A compatible framebuffer.
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::ImageView view = image.CreateView();
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1u, &view.handle());
@@ -1909,7 +1909,7 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPassFragmentDen
     ASSERT_TRUE(rp2.initialized());
 
     // Create image views
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::ImageView iv = image.CreateView();
 
@@ -2535,8 +2535,7 @@ TEST_F(NegativeRenderPass, ColorAttachmentImageViewUsage) {
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
     VkImageViewUsageCreateInfo image_view_usage = vku::InitStructHelper();
     image_view_usage.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -3217,7 +3216,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass) {
     dependency.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     vkt::RenderPass render_pass3(*m_device, rpci);
-    vkt::Image image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, width, height, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass1.handle(), 1, &imageView.handle(), width, height);
 
@@ -3297,7 +3296,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPass2) {
     correlated_view_mask = 0x2;
     vkt::RenderPass render_pass3(*m_device, rpci);
 
-    vkt::Image image(*m_device, width, height, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, width, height, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass1.handle(), 1, &imageView.handle(), width, height);
 
@@ -3362,7 +3361,7 @@ TEST_F(NegativeRenderPass, IncompatibleRenderPassSubpassFlags) {
     vkt::RenderPass render_pass1(*m_device, rpci);
     subpass.flags = VK_SUBPASS_DESCRIPTION_ENABLE_LEGACY_DITHERING_BIT_EXT;
     vkt::RenderPass render_pass2(*m_device, rpci);
-    vkt::Image image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
     vkt::Framebuffer framebuffer(*m_device, render_pass1.handle(), 1, &imageView.handle());
 
@@ -3911,7 +3910,7 @@ TEST_F(NegativeRenderPass, InvalidFramebufferAttachmentImageUsage) {
 
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, m_width, m_height, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     VkAttachmentDescription description = {0,
@@ -4000,7 +3999,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     TEST_DESCRIPTION("Test attachment descriptions with layouts other than undefined");
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 32u, 32u, 1u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     RenderPassSingleSubpass rp(*this);
@@ -4349,7 +4348,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthAttachmentInvalidUsage) {
     InitRenderTarget();
 
     VkFormat depth_stencil_format = FindSupportedDepthStencilFormat(Gpu());
-    vkt::Image image(*m_device, 32u, 32u, 1u, depth_stencil_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32u, 32u, depth_stencil_format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkAttachmentReference attach = {};

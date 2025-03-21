@@ -1963,10 +1963,10 @@ TEST_F(NegativeShaderInterface, FragmentOutputDynamicRenderingUnusedAttachments)
 
     VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
 
-    vkt::Image color_image(*m_device, 32, 32, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image color_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView color_image_view = color_image.CreateView();
 
-    vkt::Image ds_image(*m_device, 32, 32, 1, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image(*m_device, 32, 32, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     const vkt::ImageView depth_view(*m_device, ds_image.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();

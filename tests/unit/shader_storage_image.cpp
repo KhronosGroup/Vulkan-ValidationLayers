@@ -249,7 +249,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
 
-        vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_STORAGE_BIT);
         vkt::ImageView view = image.CreateView();
 
         ds.Clear();
@@ -394,7 +394,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
     for (int t = 0; t < n_tests; t++) {
         VkFormat format = tests[t].format;
 
-        vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+        vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_STORAGE_BIT);
         vkt::ImageView view = image.CreateView();
 
         ds.Clear();
@@ -773,7 +773,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -853,7 +853,7 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
         GTEST_SKIP() << "Format doesn't support storage write without format";
     }
 
-    vkt::Image image(*m_device, 32, 32, 1, format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 32, 32, format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
     ds.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -885,7 +885,7 @@ void NegativeShaderStorageImage::FormatComponentMismatchTest(std::string spirv_f
         }
     )";
 
-    vkt::Image image(*m_device, 4, 4, 1, vk_format, VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::Image image(*m_device, 4, 4, vk_format, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView image_view = image.CreateView();
 
     OneOffDescriptorSet descriptor_set(m_device, {

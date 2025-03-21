@@ -274,7 +274,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::Image image(*m_device, 32, 32, 1, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::Image image(*m_device, 32, 32, mp_format, VK_IMAGE_USAGE_SAMPLED_BIT);
 
     vkt::SamplerYcbcrConversion conversion(*m_device, mp_format);
     auto conversion_info = conversion.ConversionInfo();
