@@ -473,44 +473,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
     chassis_state.pCreateInfos = reinterpret_cast<VkComputePipelineCreateInfo *>(chassis_state.modified_create_infos.data());
 }
 
-void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                                     const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                                     const VkAllocationCallbacks *pAllocator,
-                                                                     VkPipeline *pPipelines, const RecordObject &record_obj,
-                                                                     PipelineStates &pipeline_states,
-                                                                     chassis::CreateRayTracingPipelinesNV &chassis_state) {
-    BaseClass::PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
-                                                        record_obj, pipeline_states, chassis_state);
-    if (!gpuav_settings.IsSpirvModified()) return;
-
-    chassis_state.shader_instrumentations_metadata.resize(count);
-    chassis_state.modified_create_infos.resize(count);
-
-    for (uint32_t i = 0; i < count; ++i) {
-        const auto &pipeline_state = pipeline_states[i];
-        const Location create_info_loc = record_obj.location.dot(vvl::Field::pCreateInfos, i);
-
-        // Need to make a deep copy so if SPIR-V is inlined, user doesn't see it after the call
-        auto &new_pipeline_ci = chassis_state.modified_create_infos[i];
-        new_pipeline_ci = pipeline_state->RayTracingCreateInfo();  // use copy operation to fight the Common vs NV
-
-        if (!NeedPipelineCreationShaderInstrumentation(*pipeline_state, create_info_loc)) {
-            continue;
-        }
-
-        auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-
-        bool success = PreCallRecordPipelineCreationShaderInstrumentation(pAllocator, *pipeline_state, new_pipeline_ci,
-                                                                          create_info_loc, shader_instrumentation_metadata);
-        if (!success) {
-            return;
-        }
-    }
-
-    chassis_state.is_modified = true;
-    chassis_state.pCreateInfos = reinterpret_cast<VkRayTracingPipelineCreateInfoNV *>(chassis_state.modified_create_infos.data());
-}
-
 void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -598,29 +560,6 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
                                                                  chassis::CreateComputePipelines &chassis_state) {
     BaseClass::PostCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
                                                     pipeline_states, chassis_state);
-    if (!gpuav_settings.IsSpirvModified()) return;
-    // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
-    // no pipeline is created in this case
-    if (record_obj.result == VK_PIPELINE_COMPILE_REQUIRED) return;
-    // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
-    if (!chassis_state.is_modified) return;
-
-    for (uint32_t i = 0; i < count; ++i) {
-        UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
-
-        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
-        ASSERT_AND_CONTINUE(pipeline_state);
-        auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
-        PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
-    }
-}
-
-void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesNV(
-    VkDevice device, VkPipelineCache pipelineCache, uint32_t count, const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-    const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines, const RecordObject &record_obj,
-    PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesNV &chassis_state) {
-    BaseClass::PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines,
-                                                         record_obj, pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
     // VK_PIPELINE_COMPILE_REQUIRED means that the current pipeline creation call was used to poke the driver cache,
     // no pipeline is created in this case

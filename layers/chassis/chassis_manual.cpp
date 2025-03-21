@@ -583,7 +583,6 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
     ErrorObject error_obj(vvl::Func::vkCreateRayTracingPipelinesNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
     PipelineStates pipeline_states[LayerObjectTypeMaxEnum];
-    chassis::CreateRayTracingPipelinesNV chassis_state(pCreateInfos);
 
     for (const auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
@@ -591,8 +590,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
         }
         auto lock = vo->ReadLock();
         skip |= vo->PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                               pPipelines, error_obj, pipeline_states[vo->container_type],
-                                                               chassis_state);
+                                                               pPipelines, error_obj, pipeline_states[vo->container_type]);
         if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
     }
 
@@ -603,21 +601,12 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
         }
         auto lock = vo->WriteLock();
         vo->PreCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                     record_obj, pipeline_states[vo->container_type], chassis_state);
+                                                     record_obj, pipeline_states[vo->container_type]);
     }
 
     VkResult result;
-    {
-        result = device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, chassis_state.pCreateInfos,
-                                                              pAllocator, pPipelines);
-
-        // If we have modified the pCreateInfos caused things to fail, revert to allow the app to continue
-        if (result < VK_SUCCESS && chassis_state.is_modified) {
-            chassis_state.is_modified = false;
-            result = device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines);
-        }
-    }
+    result =
+        device_dispatch->CreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines);
     record_obj.result = result;
 
     for (auto& vo : device_dispatch->object_dispatch) {
@@ -626,7 +615,7 @@ VKAPI_ATTR VkResult VKAPI_CALL CreateRayTracingPipelinesNV(VkDevice device, VkPi
         }
         auto lock = vo->WriteLock();
         vo->PostCallRecordCreateRayTracingPipelinesNV(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines,
-                                                      record_obj, pipeline_states[vo->container_type], chassis_state);
+                                                      record_obj, pipeline_states[vo->container_type]);
     }
     return result;
 }

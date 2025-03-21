@@ -121,11 +121,6 @@ class GpuShaderInstrumentor : public vvl::Device {
                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                              const RecordObject &record_obj, PipelineStates &pipeline_states,
                                              chassis::CreateComputePipelines &chassis_state) override;
-    void PreCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                  const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
-                                                  chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PreCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                    VkPipelineCache pipelineCache, uint32_t count,
                                                    const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
@@ -142,11 +137,6 @@ class GpuShaderInstrumentor : public vvl::Device {
                                               const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                               const RecordObject &record_obj, PipelineStates &pipeline_states,
                                               chassis::CreateComputePipelines &chassis_state) override;
-    void PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
-                                                   const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
-                                                   const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
-                                                   const RecordObject &record_obj, PipelineStates &pipeline_states,
-                                                   chassis::CreateRayTracingPipelinesNV &chassis_state) override;
     void PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     VkPipelineCache pipelineCache, uint32_t count,
                                                     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,

@@ -112,17 +112,6 @@ struct CreateComputePipelines {
     CreateComputePipelines(const VkComputePipelineCreateInfo* create_info) { pCreateInfos = create_info; }
 };
 
-struct CreateRayTracingPipelinesNV {
-    // When using GPU-AV the pCreateInfo is modified on the user
-    bool is_modified = false;
-    std::vector<vku::safe_VkRayTracingPipelineCreateInfoCommon> modified_create_infos;
-    const VkRayTracingPipelineCreateInfoNV* pCreateInfos = nullptr;
-    // 2D array for [pipelineCount][stageCount]
-    std::vector<std::vector<ShaderInstrumentationMetadata>> shader_instrumentations_metadata;
-
-    CreateRayTracingPipelinesNV(const VkRayTracingPipelineCreateInfoNV* create_info) { pCreateInfos = create_info; }
-};
-
 struct CreateRayTracingPipelinesKHR {
     // When using GPU-AV the pCreateInfo is modified on the user
     bool is_modified = false;
