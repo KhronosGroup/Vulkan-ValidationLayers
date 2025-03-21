@@ -51,7 +51,8 @@ class DescriptorValidator : public Logger {
 
     // For GPU-AV, these can become aliased and need to be mutable between descriptor accesses
     uint32_t set_index;
-    const VulkanTypedHandle* shader_handle;  // VkShaderModule or VkPipeline or VkShaderObject
+    // A descriptor set might be used between multiple shaders and need to adjust which one was found
+    const VulkanTypedHandle* shader_handle;  // VkPipeline or VkShaderObject
 
   private:
     template <typename T>

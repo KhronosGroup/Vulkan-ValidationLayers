@@ -67,6 +67,13 @@ struct BindingLayout {
 };
 
 // Represented as a uvec2 in the shader
+// One for each binding to represent the min/max index bound to narrow the search range in the post processing
+struct PostProcessDescriptorIndexMinMax {
+    uint32_t min;
+    uint32_t max;
+};
+
+// Represented as a uvec2 in the shader
 // For each descriptor index we have a "slot" to mark what happend on the GPU.
 struct PostProcessDescriptorIndexSlot {
     // see gpuav_shaders_constants.h for how we split this metadata up

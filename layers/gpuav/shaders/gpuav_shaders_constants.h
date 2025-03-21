@@ -125,6 +125,13 @@ const int kDebugInputBuffAddrPtrOffset = 1;
 // not a valid buffer, the length associated with the 0x0 address is zero.
 const int kDebugInputBuffAddrLengthOffset = 0;
 
+// The Min/Max is an optimization to bound the range of each binding to search for the descriptor (have found things can have
+// 1,000,000 wide descriptor array, but access only things within a small window) Due to some limiations of GLSL, we just create a
+// upper bound of min/max bindings we will store, after we hit the limit, we will revert to the whole search 8 was picked as we
+// don't want to create to much memory for smaller sets and waste time resetting the values. At the same time, found most larger
+// things using descriptor indexing only need a few bindings
+const uint kPostProcessMinMaxBindings = 8;
+
 // Current layout for the meta_data dword
 // |     31      | 30 .......... 18 | 17 ................. 0 |
 // | is accessed | Action Cmd Index | Instrumented Shader Id |

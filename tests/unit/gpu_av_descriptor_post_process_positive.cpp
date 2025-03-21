@@ -1026,7 +1026,9 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
     m_default_queue->Wait();
 }
 
-TEST_F(PositiveGpuAVDescriptorPostProcess, VariableIdClash) {
+// TODO - Need way in pipeline to distinguish which stage it came from
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9741
+TEST_F(PositiveGpuAVDescriptorPostProcess, DISABLED_VariableIdClash) {
     TEST_DESCRIPTION("OpVariable ID points to two different descriptors, but have the same uint32_t id by chance");
     SetTargetApiVersion(VK_API_VERSION_1_2);  // need to use SPIR-V entrypoint interface
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);

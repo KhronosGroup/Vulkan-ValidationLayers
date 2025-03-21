@@ -444,6 +444,8 @@ def main(argv):
         'instrumentation_ray_query_comp.cpp',
         'instrumentation_post_process_descriptor_index_comp.h',
         'instrumentation_post_process_descriptor_index_comp.cpp',
+        'instrumentation_post_process_descriptor_index_minmax_comp.h',
+        'instrumentation_post_process_descriptor_index_minmax_comp.cpp',
         'instrumentation_vertex_attribute_fetch_oob_vert.cpp',
         'instrumentation_vertex_attribute_fetch_oob_vert.h',
         'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969

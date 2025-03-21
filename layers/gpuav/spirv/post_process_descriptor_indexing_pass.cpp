@@ -18,6 +18,7 @@
 #include <iostream>
 
 #include "generated/instrumentation_post_process_descriptor_index_comp.h"
+#include "generated/instrumentation_post_process_descriptor_index_minmax_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/hash_util.h"
 
@@ -27,16 +28,35 @@ namespace spirv {
 PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
-                                 instrumentation_post_process_descriptor_index_comp_size, 0, "inst_post_process_descriptor_index"};
+uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId(bool use_min_max) {
+    static LinkInfo link_info_normal = {instrumentation_post_process_descriptor_index_comp,
+                                        instrumentation_post_process_descriptor_index_comp_size, 0,
+                                        "inst_post_process_descriptor_index"};
 
-    if (link_function_id == 0) {
-        link_function_id = module_.TakeNextId();
-        link_info.function_id = link_function_id;
-        module_.link_info_.push_back(link_info);
+    static LinkInfo link_info_mimmax = {instrumentation_post_process_descriptor_index_minmax_comp,
+                                        instrumentation_post_process_descriptor_index_minmax_comp_size, 0,
+                                        "inst_post_process_descriptor_index_minmax"};
+
+    uint32_t link_id = 0;
+
+    if (use_min_max) {
+        if (link_function_id_minmax == 0) {
+            link_function_id_minmax = module_.TakeNextId();
+            LinkInfo& link_info = link_info_mimmax;
+            link_info.function_id = link_function_id_minmax;
+            module_.link_info_.push_back(link_info);
+        }
+        link_id = link_function_id_minmax;
+    } else {
+        if (link_function_id_normal == 0) {
+            link_function_id_normal = module_.TakeNextId();
+            LinkInfo& link_info = link_info_normal;
+            link_info.function_id = link_function_id_normal;
+            module_.link_info_.push_back(link_info);
+        }
+        link_id = link_function_id_normal;
     }
-    return link_function_id;
+    return link_id;
 }
 
 void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it,
@@ -52,7 +72,9 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it
     const Constant& variable_id_constant = module_.type_manager_.GetConstantUInt32(meta.variable_id);
 
     const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
+    // This logic needs to match the logic when parse it
+    const bool use_min_max = meta.descriptor_binding < glsl::kPostProcessMinMaxBindings;
+    const uint32_t function_def = GetLinkFunctionId(use_min_max);
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,

@@ -406,6 +406,8 @@ vvl_sources = [
   "layers/vulkan/generated/instrumentation_ray_query_comp.h",
   "layers/vulkan/generated/instrumentation_post_process_descriptor_index_comp.cpp",
   "layers/vulkan/generated/instrumentation_post_process_descriptor_index_comp.h",
+  "layers/vulkan/generated/instrumentation_post_process_descriptor_index_minmax_comp.cpp",
+  "layers/vulkan/generated/instrumentation_post_process_descriptor_index_minmax_comp.h",
   "layers/vulkan/generated/instrumentation_vertex_attribute_fetch_oob_vert.cpp",
   "layers/vulkan/generated/instrumentation_vertex_attribute_fetch_oob_vert.h",
   "layers/vulkan/generated/object_tracker.cpp",

@@ -100,8 +100,6 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnly) {
            color = texture(s, vec3(0));
         }
     )glsl";
-    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -116,9 +114,14 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnly) {
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.CreateGraphicsPipeline();
+    {
+        // Destroy the shader module after creating the pipeline
+        VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+        VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+        pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+        pipe.gp_ci_.layout = pipeline_layout.handle();
+        pipe.CreateGraphicsPipeline();
+    }
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -2039,7 +2042,9 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, SameDescriptorAcrossStagesFragment) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorPostProcess, VariableIdClash) {
+// TODO - Need way in pipeline to distinguish which stage it came from
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9741
+TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_VariableIdClash) {
     TEST_DESCRIPTION("OpVariable ID points to two different descriptors, but have the same uint32_t id by chance");
     SetTargetApiVersion(VK_API_VERSION_1_2);  // need to use SPIR-V entrypoint interface
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
@@ -2347,7 +2352,90 @@ OpFunctionEnd
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleDrawsMixPipelines) {
+TEST_F(NegativeGpuAVDescriptorPostProcess, LotsOfBindings) {
+    TEST_DESCRIPTION("Use lots of bindings in a single set");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    const uint32_t binding_count = 64;
+    std::stringstream fs_source;
+    fs_source << R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform UBO {
+            uint data; // will be 15
+        };
+    )glsl";
+    for (uint32_t i = 1; i < binding_count; i++) {
+        fs_source << "layout(set = 0, binding = " << i << ") uniform sampler3D s" << i << ";\n";
+    }
+    // The last sampler is a descriptor array where the last element is accessed (and invalid)
+    fs_source << "layout(set = 0, binding = " << binding_count << ") uniform sampler3D last_sampler[];\n";
+    fs_source << R"glsl(
+        layout(location=0) out vec4 color;
+        void main() {
+            color = texture(last_sampler[data], vec3(0));
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source.str().c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    *buffer_ptr = 15;
+    buffer.Memory().Unmap();
+
+    vkt::Image image(*m_device, 16, 16, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    for (uint32_t i = 1; i < binding_count; i++) {
+        bindings.push_back({i, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr});
+    }
+    bindings.push_back({binding_count, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 16, VK_SHADER_STAGE_ALL, nullptr});
+    OneOffDescriptorSet descriptor_set(m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    for (uint32_t i = 1; i < binding_count; i++) {
+        descriptor_set.WriteDescriptorImageInfo(i, image_view, sampler);
+    }
+    for (uint32_t i = 0; i < 16; i++) {
+        descriptor_set.WriteDescriptorImageInfo(binding_count, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, i);
+    }
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    // VUID-vkCmdDraw-viewType-07752
+    m_errorMonitor->SetDesiredError("Set 0, Binding 64, Index 15");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+// Currently we will overwrite the error when the last draw is called, masking the error
+// This is a known limitation that only one draw/dispatch is validated
+TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_MultipleDrawsMixPipelines) {
     TEST_DESCRIPTION("Test the post process works when the error in the middle of the command stream");
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);

@@ -210,6 +210,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             if (!bound_descriptor_set->HasPostProcessBuffer()) {
                 if (!bound_descriptor_set->CanPostProcess()) {
                     continue;  // hit a dummy object used as a placeholder
+                } else if (bound_descriptor_set->GetBindingCount() == 0) {
+                    continue;  // empty set
                 }
 
                 std::stringstream error;
@@ -222,13 +224,14 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
             }
             validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
 
-            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, 0, VK_NULL_HANDLE /*framebuffer*/, nullptr,
-                                             draw_loc);
+            // We build once here, but will update the set_index and shader_handle when found
+            vvl::DescriptorValidator context(state_, *this, *bound_descriptor_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
 
             DescriptorAccessMap descriptor_access_map = bound_descriptor_set->GetDescriptorAccesses(loc);
             // Once we have accessed everything and created the DescriptorAccess, we can clear this buffer
             bound_descriptor_set->ClearPostProcess(loc);
 
+            // For each shader ID we can do the state object lookup once, then validate all the accesses inside of it
             for (const auto &[shader_id, descriptor_accesses] : descriptor_access_map) {
                 auto it = state_.instrumented_shaders_map_.find(shader_id);
                 if (it == state_.instrumented_shaders_map_.end()) {
@@ -236,15 +239,11 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                     continue;
                 }
 
-                const vvl::ShaderModule *module_state = nullptr;
                 const vvl::Pipeline *pipeline_state = nullptr;
                 const vvl::ShaderObject *shader_object_state = nullptr;
 
-                if (it->second.shader_module != VK_NULL_HANDLE && it->second.shader_module != kPipelineStageInfoHandle) {
-                    module_state = state_.Get<vvl::ShaderModule>(it->second.shader_module).get();
-                    ASSERT_AND_CONTINUE(module_state->spirv);
-                    context.shader_handle = &module_state->Handle();
-                } else if (it->second.pipeline != VK_NULL_HANDLE) {
+                if (it->second.pipeline != VK_NULL_HANDLE) {
+                    // We use pipeline over vkShaderModule as likely they will have been destroyed by now
                     pipeline_state = state_.Get<vvl::Pipeline>(it->second.pipeline).get();
                     context.shader_handle = &pipeline_state->Handle();
                 } else if (it->second.shader_object != VK_NULL_HANDLE) {
@@ -261,23 +260,18 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBuffer &cb_state, VkPipelin
                     ASSERT_AND_CONTINUE(descriptor_binding);
 
                     const ::spirv::ResourceInterfaceVariable *resource_variable = nullptr;
-                    if (module_state) {
-                        for (const auto &entry_point : module_state->spirv->static_data_.entry_points) {
-                            auto variable_it = entry_point->resource_interface_variable_map.find(descriptor_access.variable_id);
-                            if (variable_it == entry_point->resource_interface_variable_map.end()) continue;
-                            resource_variable = variable_it->second;
-                            break;  // Only need to find a single entry point
-                        }
-                    } else if (pipeline_state) {
+                    if (pipeline_state) {
                         for (const auto &stage_state : pipeline_state->stage_states) {
-                            if (!stage_state.entrypoint) continue;
+                            ASSERT_AND_CONTINUE(stage_state.entrypoint);
                             auto variable_it =
                                 stage_state.entrypoint->resource_interface_variable_map.find(descriptor_access.variable_id);
-                            if (variable_it == stage_state.entrypoint->resource_interface_variable_map.end()) continue;
-                            resource_variable = variable_it->second;
-                            break;  // Only need to find a single entry point
+                            if (variable_it != stage_state.entrypoint->resource_interface_variable_map.end()) {
+                                resource_variable = variable_it->second;
+                                break;  // Only need to find a single entry point
+                            }
                         }
                     } else if (shader_object_state) {
+                        ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
                         auto variable_it =
                             shader_object_state->entrypoint->resource_interface_variable_map.find(descriptor_access.variable_id);
                         if (variable_it != shader_object_state->entrypoint->resource_interface_variable_map.end()) {

@@ -16,7 +16,9 @@
  */
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
+#include <vulkan/vulkan_core.h>
 
+#include "containers/custom_containers.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
@@ -272,6 +274,12 @@ bool DescriptorSet::CanPostProcess() const {
 
 void DescriptorSet::ClearPostProcess(const Location &loc) const {
     post_process_buffer_.Clear();
+
+    auto min_max_ptr = (glsl::PostProcessDescriptorIndexMinMax *)post_process_buffer_.GetMappedPtr();
+    for (uint32_t i = 0; i < glsl::kPostProcessMinMaxBindings; i++) {
+        min_max_ptr[i].min = vvl::kU32Max;
+    }
+
     post_process_buffer_.FlushAllocation(loc);
 }
 
@@ -287,8 +295,11 @@ VkDeviceAddress DescriptorSet::GetPostProcessBuffer(Validator &gpuav, const Loca
         return post_process_buffer_.Address();
     }
 
+    const VkDeviceSize min_max_size = glsl::kPostProcessMinMaxBindings * sizeof(glsl::PostProcessDescriptorIndexMinMax);
+    const VkDeviceSize slot_size = GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
+
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
+    buffer_info.size = min_max_size + slot_size;
     buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 
     VmaAllocationCreateInfo alloc_info{};
@@ -314,12 +325,21 @@ DescriptorAccessMap DescriptorSet::GetDescriptorAccesses(const Location &loc) co
         return descriptor_access_map;
     }
 
-    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr();
+    auto min_max_ptr = (glsl::PostProcessDescriptorIndexMinMax *)post_process_buffer_.GetMappedPtr();
+    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)(min_max_ptr + glsl::kPostProcessMinMaxBindings);
     post_process_buffer_.InvalidateAllocation(loc);
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
-        for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
+        if (binding_layout.count == 0) continue;  // there is a gap in the bindings
+
+        // |min| will be vvl::kU32Max if nothing was set
+        const uint32_t min = binding < glsl::kPostProcessMinMaxBindings ? min_max_ptr[binding].min : 0;
+        // |max| is where we stop, so need to add one to make the last item in-bounds
+        const uint32_t max = binding < glsl::kPostProcessMinMaxBindings ? min_max_ptr[binding].max + 1 : binding_layout.count;
+        assert(max <= binding_layout.count);
+
+        for (uint32_t descriptor_i = min; descriptor_i < max; descriptor_i++) {
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
             if (slot.meta_data & glsl::kPostProcessMetaMaskAccessed) {
                 const uint32_t shader_id = slot.meta_data & glsl::kPostProcessMetaMaskShaderId;
