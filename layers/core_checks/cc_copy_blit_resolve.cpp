@@ -3372,37 +3372,43 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                  src_subresource.layerCount, dst_subresource.baseArrayLayer, dst_subresource.layerCount);
             }
         } else if (enabled_features.maintenance8) {
+            const auto src_layer_count = (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS)
+                                             ? (src_image_state->create_info.arrayLayers - src_subresource.baseArrayLayer)
+                                             : src_subresource.layerCount;
+            const auto dst_layer_count = (dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS)
+                                             ? (dst_image_state->create_info.arrayLayers - dst_subresource.baseArrayLayer)
+                                             : dst_subresource.layerCount;
             if (src_type == VK_IMAGE_TYPE_3D) {
-                if (src_subresource.baseArrayLayer != 0 || src_subresource.layerCount != 1 || dst_subresource.layerCount != 1) {
+                if (src_subresource.baseArrayLayer != 0 || src_layer_count != 1 || dst_layer_count != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10207" : "VUID-vkCmdBlitImage-maintenance8-10207";
                     skip |= LogError(vuid, all_objlist, src_subresource_loc,
                                      "(src baseArrayLayer = %" PRIu32 ",  src layerCount = %" PRIu32 ", dst layerCount = %" PRIu32
                                      ") but srcImage is VK_IMAGE_TYPE_3D",
-                                     src_subresource.baseArrayLayer, src_subresource.layerCount, dst_subresource.layerCount);
+                                     src_subresource.baseArrayLayer, src_layer_count, dst_layer_count);
                 }
             } else if (uint32_t diff = static_cast<uint32_t>(abs(region.dstOffsets[0].z - region.dstOffsets[1].z));
-                       diff != src_subresource.layerCount) {
+                       diff != src_layer_count) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10579" : "VUID-vkCmdBlitImage-maintenance8-10579";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "has the absolute difference of dstOffsets[0].z (%" PRIu32 ") and dstOffsets[1].z (%" PRIu32
                                  ") = %" PRIu32 ", which is not equal to srcSubresource.layerCount (%" PRIu32 ")",
-                                 region.dstOffsets[0].z, region.dstOffsets[1].z, diff, src_subresource.layerCount);
+                                 region.dstOffsets[0].z, region.dstOffsets[1].z, diff, src_layer_count);
             }
             if (dst_type == VK_IMAGE_TYPE_3D) {
-                if (dst_subresource.baseArrayLayer != 0 || dst_subresource.layerCount != 1 || src_subresource.layerCount != 1) {
+                if (dst_subresource.baseArrayLayer != 0 || dst_layer_count != 1 || src_layer_count != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10208" : "VUID-vkCmdBlitImage-maintenance8-10208";
                     skip |= LogError(vuid, all_objlist, dst_subresource_loc,
                                      "(dst baseArrayLayer = %" PRIu32 ", dst layerCount = %" PRIu32 ", src layerCount = %" PRIu32
                                      ") but dstImage is VK_IMAGE_TYPE_3D",
-                                     dst_subresource.baseArrayLayer, dst_subresource.layerCount, src_subresource.layerCount);
+                                     dst_subresource.baseArrayLayer, dst_layer_count, src_layer_count);
                 }
             } else if (uint32_t diff = static_cast<uint32_t>(abs(region.srcOffsets[0].z - region.srcOffsets[1].z));
-                       diff != dst_subresource.layerCount) {
+                       diff != dst_layer_count) {
                 vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10580" : "VUID-vkCmdBlitImage-maintenance8-10580";
                 skip |= LogError(vuid, all_objlist, region_loc,
                                  "has the absolute difference of srcOffsets[0].z (%" PRIu32 ") and srcOffsets[1].z (%" PRIu32
                                  ") = %" PRIu32 ", which is not equal to dstSubresource.layerCount (%" PRIu32 ")",
-                                 region.srcOffsets[0].z, region.srcOffsets[1].z, diff, dst_subresource.layerCount);
+                                 region.srcOffsets[0].z, region.srcOffsets[1].z, diff, dst_layer_count);
             }
         }
 
