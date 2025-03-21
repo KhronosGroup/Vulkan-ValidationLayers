@@ -201,12 +201,12 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     vkt::CommandBuffer cmdbuf(*m_device, m_command_pool);
     cmdbuf.Begin();
 
-    m_depthStencil->InitialImageMemoryBarrier(cmdbuf, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                              VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-                                              VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    m_depthStencil->ImageMemoryBarrier(cmdbuf, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                       VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
+                                       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
-    destImage.InitialImageMemoryBarrier(cmdbuf, 0, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    destImage.ImageMemoryBarrier(cmdbuf, 0, VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                 VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     VkImageCopy cregion;
     cregion.srcSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     cregion.srcOffset = {0, 0, 0};
@@ -893,15 +893,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
         ASSERT_TRUE((props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0);
     }
 
-    auto image_ci = vkt::Image::DefaultCreateInfo();
-    image_ci.imageType = VK_IMAGE_TYPE_2D;
-    image_ci.extent.width = 64;
-    image_ci.extent.height = 64;
-    image_ci.mipLevels = 1;
-    image_ci.arrayLayers = 6;
-    image_ci.format = ds_format;
-    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 6, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::Image image(*m_device, image_ci);
 
     const VkImageSubresourceRange depth_range = image.SubresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT);

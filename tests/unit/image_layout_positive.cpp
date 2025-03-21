@@ -202,13 +202,8 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
 TEST_F(PositiveImageLayout, Subresource) {
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::DefaultCreateInfo();
-    image_ci.extent.width = 64;
-    image_ci.extent.height = 64;
-    image_ci.mipLevels = 7;
-    image_ci.arrayLayers = 6;
-    image_ci.format = VK_FORMAT_R8_UINT;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 7, 6, VK_FORMAT_R8_UINT,
+                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     vkt::Image image(*m_device, image_ci);
 
     m_command_buffer.Begin();
