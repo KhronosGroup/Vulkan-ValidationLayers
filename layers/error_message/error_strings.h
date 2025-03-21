@@ -83,6 +83,18 @@
     return ss.str();
 }
 
+[[maybe_unused]] static std::string string_LayerCount(const VkImageCreateInfo &ci, VkImageSubresourceLayers const &resource) {
+    std::stringstream ss;
+    if (resource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
+        const uint32_t layer_count = ci.arrayLayers - resource.baseArrayLayer;
+        ss << "VK_REMAINING_ARRAY_LAYERS [arrayLayers (" << ci.arrayLayers << ") - baseArrayLayer (" << resource.baseArrayLayer
+           << ") = " << layer_count << "]";
+    } else {
+        ss << resource.layerCount;
+    }
+    return ss.str();
+}
+
 [[maybe_unused]] static std::string string_VkPushConstantRange(VkPushConstantRange range) {
     std::stringstream ss;
     ss << "range [" << range.offset << ", " << (range.offset + range.size) << ") for "

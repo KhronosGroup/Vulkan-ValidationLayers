@@ -212,6 +212,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     }
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const;
+    uint32_t NormalizeLayerCount(const VkImageSubresourceLayers &resource) const;
 
     void SetInitialLayoutMap();
     void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
