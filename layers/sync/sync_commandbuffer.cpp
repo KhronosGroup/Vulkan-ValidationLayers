@@ -377,7 +377,7 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
                         const auto *img_view_state = image_descriptor->GetImageViewState();
                         VkImageLayout image_layout = image_descriptor->GetImageLayout();
 
-                        if (img_view_state->IsDepthSliced()) {
+                        if (img_view_state->is_depth_sliced) {
                             // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
                             // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
                             // See: VUID 00343
@@ -536,7 +536,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
                             continue;
                         }
                         const auto *img_view_state = image_descriptor->GetImageViewState();
-                        if (img_view_state->IsDepthSliced()) {
+                        if (img_view_state->is_depth_sliced) {
                             // NOTE: 2D ImageViews of VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT Images are not allowed in
                             // Descriptors, unless VK_EXT_image_2d_view_of_3d is supported, which it isn't at the moment.
                             // See: VUID 00343
@@ -937,7 +937,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
         subresource_range.aspectMask = aspect;
 
         HazardResult hazard = current_context_->DetectHazard(
-            *info.attachment_view.image_state, subresource_range, offset, extent, info.attachment_view.IsDepthSliced(),
+            *info.attachment_view.image_state, subresource_range, offset, extent, info.attachment_view.is_depth_sliced,
             SYNC_COLOR_ATTACHMENT_OUTPUT_COLOR_ATTACHMENT_WRITE, SyncOrdering::kColorAttachment);
         if (hazard.IsHazard()) {
             std::stringstream ss;
@@ -964,7 +964,7 @@ bool CommandBufferAccessContext::ValidateClearAttachment(const Location &loc, co
             // vkCmdClearAttachments depth/stencil writes are executed by the EARLY_FRAGMENT_TESTS_BIT and LATE_FRAGMENT_TESTS_BIT
             // stages. The implementation tracks the most recent access, which happens in the LATE_FRAGMENT_TESTS_BIT stage.
             HazardResult hazard = current_context_->DetectHazard(
-                *info.attachment_view.image_state, info.subresource_range, offset, extent, info.attachment_view.IsDepthSliced(),
+                *info.attachment_view.image_state, info.subresource_range, offset, extent, info.attachment_view.is_depth_sliced,
                 SYNC_LATE_FRAGMENT_TESTS_DEPTH_STENCIL_ATTACHMENT_WRITE, SyncOrdering::kDepthStencilAttachment);
 
             if (hazard.IsHazard()) {

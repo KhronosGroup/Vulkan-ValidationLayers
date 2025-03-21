@@ -337,7 +337,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const 
     image_memory_barriers.reserve(barrier_count);
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
-            auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
+            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
@@ -353,7 +353,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueu
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         auto image = sync_state.Get<vvl::Image>(barrier.image);
         if (image) {
-            auto subresource_range = NormalizeSubresourceRange(image->create_info, barrier.subresourceRange);
+            auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
             const SyncBarrier sync_barrier(barrier, src, dst);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);

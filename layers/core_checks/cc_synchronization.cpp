@@ -2043,7 +2043,7 @@ void CoreChecks::RecordBarrierValidationInfo(const Location &barrier_loc, vvl::C
     if (IsOwnershipTransfer(image_barrier)) {
         if (auto image = Get<vvl::Image>(image_barrier.image)) {
             ImageBarrier barrier = image_barrier;
-            barrier.subresourceRange = NormalizeSubresourceRange(image->create_info, image_barrier.subresourceRange);
+            barrier.subresourceRange = image->NormalizeSubresourceRange(image_barrier.subresourceRange);
 
             if (cb_state.IsReleaseOp(barrier) && !IsQueueFamilyExternal(barrier.dstQueueFamilyIndex)) {
                 barrier_sets.release.emplace(barrier);

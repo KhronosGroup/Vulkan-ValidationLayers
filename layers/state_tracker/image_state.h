@@ -42,10 +42,6 @@ static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubres
     return (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
 }
 
-VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info, const VkImageSubresourceRange &range);
-VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                  const VkImageViewCreateInfo &view_create_info);
-
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
     VkImageSubresourceLayers subresource_layers;
@@ -215,9 +211,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
         return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
     }
 
-    VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
-        return ::NormalizeSubresourceRange(create_info, range);
-    }
+    VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const;
 
     void SetInitialLayoutMap();
     void SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout);
@@ -257,6 +251,8 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
   private:
+    VkImageSubresourceRange MakeImageFullRange();
+
     std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
                  BindableMultiplanarMemoryTracker>
         tracker_;
@@ -281,6 +277,13 @@ class ImageView : public StateObject {
     const vku::safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
 
+    std::shared_ptr<vvl::Image> image_state;
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    const bool metal_imageview_export;
+#endif  // VK_USE_PLATFORM_METAL_EXT
+
+    const bool is_depth_sliced;
     const VkImageSubresourceRange normalized_subresource_range;
     const image_layout_map::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
@@ -289,11 +292,6 @@ class ImageView : public StateObject {
     const float min_lod;
     const VkFormatFeatureFlags2KHR format_features;
     const VkImageUsageFlags inherited_usage;  // from spec #resources-image-inherited-usage
-#ifdef VK_USE_PLATFORM_METAL_EXT
-    const bool metal_imageview_export;
-#endif  // VK_USE_PLATFORM_METAL_EXT
-    std::shared_ptr<vvl::Image> image_state;
-    const bool is_depth_sliced;
 
     ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
               VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props);
@@ -315,11 +313,13 @@ class ImageView : public StateObject {
 
     void Destroy() override;
 
-    bool IsDepthSliced() const { return is_depth_sliced; }
-
     uint32_t GetAttachmentLayerCount() const;
 
     bool Invalid() const override { return Destroyed() || !image_state || image_state->Invalid(); }
+
+  private:
+    VkImageSubresourceRange NormalizeSubresourceRange() const;
+    bool IsDepthSliced();
 };
 
 struct SwapchainImage {
