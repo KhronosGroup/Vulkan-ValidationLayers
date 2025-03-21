@@ -62,6 +62,10 @@ struct ActionCommandSnapshot {
 // These match the Structures found in the instrumentation GLSL logic
 namespace glsl {
 
+struct RootNode {
+    VkDeviceAddress binding_buffer_device_address;
+};
+
 // Every descriptor set has various BDA pointers to data from the CPU
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
 struct DescriptorStateSSBO {

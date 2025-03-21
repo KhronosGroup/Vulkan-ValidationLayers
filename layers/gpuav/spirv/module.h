@@ -51,6 +51,8 @@ struct Settings {
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
     bool has_bindless_descriptors;
+    // Store as a uint64_t over VkDeviceAddress to make more SPIR-V friendly
+    uint64_t root_node_address;
 };
 
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.

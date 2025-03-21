@@ -44,3 +44,11 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstCmdErrorsCount, st
     uint errors_count[];
 }
 inst_cmd_errors_count_buffer;
+
+// Need to forward reference
+layout(buffer_reference) buffer BDAInputBuffer;
+// Each item here is just a VkDeviceAddress
+layout(buffer_reference, std430) buffer RootNode { BDAInputBuffer binding_buffer_device_address; };
+
+// Use uvec2 because not everyone can support shaderInt64
+const uvec2 root_node_address = uvec2(kLinkRootNodeAddressLow, kLinkRootNodeAddressHigh);

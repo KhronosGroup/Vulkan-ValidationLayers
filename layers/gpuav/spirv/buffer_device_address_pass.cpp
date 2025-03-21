@@ -14,6 +14,7 @@
  */
 
 #include "buffer_device_address_pass.h"
+#include "link.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -27,7 +28,7 @@ namespace spirv {
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
     static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
-                                 "inst_buffer_device_address"};
+                                 "inst_buffer_device_address", ZeroInitializeUintPrivateVariables};
 
     if (link_function_id == 0) {
         link_function_id = module_.TakeNextId();

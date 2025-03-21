@@ -1198,6 +1198,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
     module_settings.support_non_semantic_info = IsExtEnabled(extensions.vk_khr_shader_non_semantic_info);
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
+    module_settings.root_node_address = (uint64_t)root_node_address_;
 
     spirv::Module module(input_spirv, debug_report, module_settings, modified_features,
                          instrumentation_dsl.set_index_to_bindings_layout_lut);

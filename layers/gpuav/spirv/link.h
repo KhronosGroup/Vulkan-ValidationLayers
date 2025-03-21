@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-205 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,13 @@
 namespace gpuav {
 namespace spirv {
 
+enum LinkFlags {
+    // GLSL can't use the optional Initializer operand for OpVariables
+    // This will make all private variables set to zero
+    // Currently only does Uint32, but could expand to be all types if we find more usecases
+    ZeroInitializeUintPrivateVariables = 0x00000001,
+};
+
 struct LinkInfo {
     // SPIR-V module to link in
     const uint32_t* words;
@@ -29,6 +36,9 @@ struct LinkInfo {
 
     // used for debugging
     const char* opname;
+
+    // Optional things to be done when linking
+    uint32_t flags = 0;
 };
 
 }  // namespace spirv
