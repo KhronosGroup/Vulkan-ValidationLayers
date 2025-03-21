@@ -2054,7 +2054,10 @@ void DeviceState::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer,
 
 void DeviceState::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    assert(cb_state != nullptr);
+    LogWarning(__FUNCTION__, commandBuffer, record_obj.location, "begin %d", record_obj.result);
     cb_state->End(record_obj.result);
+    LogWarning(__FUNCTION__, commandBuffer, record_obj.location, "end %d", record_obj.result);
 }
 
 void DeviceState::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
