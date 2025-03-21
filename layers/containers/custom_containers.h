@@ -25,7 +25,7 @@
 #include <iterator>
 #include <utility>
 
-#ifdef USE_ROBIN_HOOD_HASHING
+#ifdef USE_CUSTOM_HASH_MAP
 #include "robin_hood.h"
 #else
 #include <map>
@@ -39,7 +39,7 @@
 // namespace aliases to allow map and set implementations to easily be swapped out
 namespace vvl {
 
-#ifdef USE_ROBIN_HOOD_HASHING
+#ifdef USE_CUSTOM_HASH_MAP
 template <typename T>
 using hash = robin_hood::hash<T>;
 
