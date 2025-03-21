@@ -23,68 +23,6 @@
 #include "state_tracker/shader_module.h"
 #include "generated/dispatch_functions.h"
 
-static VkImageSubresourceRange MakeImageFullRange(const VkImageCreateInfo &create_info) {
-    const auto format = create_info.format;
-    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-
-    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || GetExternalFormat(create_info.pNext) != 0) {
-        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
-    } else {
-        init_range.aspectMask = (vkuFormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
-                                (vkuFormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
-    }
-    return NormalizeSubresourceRange(create_info, init_range);
-}
-
-VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                  const VkImageSubresourceRange &range) {
-    VkImageSubresourceRange norm = range;
-    norm.levelCount =
-        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (image_create_info.mipLevels - range.baseMipLevel) : range.levelCount;
-    norm.layerCount =
-        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (image_create_info.arrayLayers - range.baseArrayLayer) : range.layerCount;
-
-    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
-    if (vkuFormatIsMultiplane(image_create_info.format)) {
-        if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
-            norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
-            norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
-            if (vkuFormatPlaneCount(image_create_info.format) > 2) {
-                norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
-            }
-        }
-    }
-    return norm;
-}
-
-static bool IsDepthSliced(const VkImageCreateInfo &image_create_info, const VkImageViewCreateInfo &create_info) {
-    auto depth_slice_flag = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
-    return ((image_create_info.flags & depth_slice_flag) != 0) &&
-           (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
-}
-
-VkImageSubresourceRange NormalizeSubresourceRange(const VkImageCreateInfo &image_create_info,
-                                                  const VkImageViewCreateInfo &create_info) {
-    auto subres_range = create_info.subresourceRange;
-
-    // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
-    // image's understanding of the world. From the VkImageSubresourceRange section of the Vulkan spec:
-    //
-    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in
-    //     order to create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
-    //     baseArrayLayer and layerCount specify the first slice index and the number of slices to include in the created
-    //     image view. Such an image view can be used as a framebuffer attachment that refers only to the specified range
-    //     of slices of the selected mip level. However, any layout transitions performed on such an attachment view during
-    //     a render pass instance still apply to the entire subresource referenced which includes all the slices of the
-    //     selected mip level.
-    //
-    if (IsDepthSliced(image_create_info, create_info)) {
-        subres_range.baseArrayLayer = 0;
-        subres_range.layerCount = 1;
-    }
-    return NormalizeSubresourceRange(image_create_info, subres_range);
-}
-
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {
     const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
@@ -181,7 +119,7 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
-      full_range{MakeImageFullRange(*pCreateInfo)},
+      full_range{MakeImageFullRange()},
       create_from_swapchain(GetSwapchain(pCreateInfo)),
       owned_by_swapchain(false),
       swapchain_image_index(0),
@@ -223,7 +161,7 @@ Image::Image(const vvl::Device &dev_data, VkImage img, const VkImageCreateInfo *
       shared_presentable(false),
       layout_locked(false),
       ahb_format(GetExternalFormat(pCreateInfo->pNext)),
-      full_range{MakeImageFullRange(*pCreateInfo)},
+      full_range{MakeImageFullRange()},
       create_from_swapchain(swapchain),
       owned_by_swapchain(true),
       swapchain_image_index(swapchain_index),
@@ -314,6 +252,39 @@ bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
         return true;
     }
     return false;
+}
+
+VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {
+    VkImageSubresourceRange norm = range;
+    norm.levelCount =
+        (range.levelCount == VK_REMAINING_MIP_LEVELS) ? (create_info.mipLevels - range.baseMipLevel) : range.levelCount;
+    norm.layerCount =
+        (range.layerCount == VK_REMAINING_ARRAY_LAYERS) ? (create_info.arrayLayers - range.baseArrayLayer) : range.layerCount;
+
+    // For multiplanar formats, IMAGE_ASPECT_COLOR is equivalent to adding the aspect of the individual planes
+    if (vkuFormatIsMultiplane(create_info.format)) {
+        if (norm.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) {
+            norm.aspectMask &= ~VK_IMAGE_ASPECT_COLOR_BIT;
+            norm.aspectMask |= (VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT);
+            if (vkuFormatPlaneCount(create_info.format) > 2) {
+                norm.aspectMask |= VK_IMAGE_ASPECT_PLANE_2_BIT;
+            }
+        }
+    }
+    return norm;
+}
+
+VkImageSubresourceRange Image::MakeImageFullRange() {
+    const auto format = create_info.format;
+    VkImageSubresourceRange init_range{0, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+
+    if (vkuFormatIsColor(format) || vkuFormatIsMultiplane(format) || GetExternalFormat(create_info.pNext) != 0) {
+        init_range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // Normalization will expand this for multiplane
+    } else {
+        init_range.aspectMask = (vkuFormatHasDepth(format) ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
+                                (vkuFormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+    }
+    return NormalizeSubresourceRange(init_range);
 }
 
 void Image::SetInitialLayoutMap() {
@@ -428,24 +399,24 @@ static bool GetMetalExport(const VkImageViewCreateInfo *info) {
 
 namespace vvl {
 
-ImageView::ImageView(const std::shared_ptr<vvl::Image> &im, VkImageView handle, const VkImageViewCreateInfo *ci,
+ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView handle, const VkImageViewCreateInfo *ci,
                      VkFormatFeatureFlags2KHR ff, const VkFilterCubicImageViewImageFormatPropertiesEXT &cubic_props)
     : StateObject(handle, kVulkanObjectTypeImageView),
       safe_create_info(ci),
       create_info(*safe_create_info.ptr()),
-      normalized_subresource_range(::NormalizeSubresourceRange(im->create_info, *ci)),
-      range_generator(im->subresource_encoder, normalized_subresource_range),
-      samples(im->create_info.samples),
+      image_state(image_state),
+#ifdef VK_USE_PLATFORM_METAL_EXT
+      metal_imageview_export(GetMetalExport(ci)),
+#endif
+      is_depth_sliced(IsDepthSliced()),
+      normalized_subresource_range(NormalizeSubresourceRange()),
+      range_generator(image_state->subresource_encoder, normalized_subresource_range),
+      samples(image_state->create_info.samples),
       samplerConversion(GetSamplerConversion(ci)),
       filter_cubic_props(cubic_props),
       min_lod(GetImageViewMinLod(ci)),
       format_features(ff),
-      inherited_usage(GetInheritedUsage(ci, *im)),
-#ifdef VK_USE_PLATFORM_METAL_EXT
-      metal_imageview_export(GetMetalExport(ci)),
-#endif
-      image_state(im),
-      is_depth_sliced(::IsDepthSliced(im->create_info, *ci)) {
+      inherited_usage(GetInheritedUsage(ci, *image_state)) {
 }
 
 void ImageView::Destroy() {
@@ -456,8 +427,35 @@ void ImageView::Destroy() {
     StateObject::Destroy();
 }
 
+bool ImageView::IsDepthSliced() {
+    auto depth_slice_flag = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT | VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT;
+    return ((image_state->create_info.flags & depth_slice_flag) != 0) &&
+           (create_info.viewType == VK_IMAGE_VIEW_TYPE_2D || create_info.viewType == VK_IMAGE_VIEW_TYPE_2D_ARRAY);
+}
+
+VkImageSubresourceRange ImageView::NormalizeSubresourceRange() const {
+    auto subres_range = create_info.subresourceRange;
+
+    // if we're mapping a 3D image to a 2d image view, convert the view's subresource range to be compatible with the
+    // image's understanding of the world. From the VkImageSubresourceRange section of the Vulkan spec:
+    //
+    //     When the VkImageSubresourceRange structure is used to select a subset of the slices of a 3D image’s mip level in
+    //     order to create a 2D or 2D array image view of a 3D image created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT,
+    //     baseArrayLayer and layerCount specify the first slice index and the number of slices to include in the created
+    //     image view. Such an image view can be used as a framebuffer attachment that refers only to the specified range
+    //     of slices of the selected mip level. However, any layout transitions performed on such an attachment view during
+    //     a render pass instance still apply to the entire subresource referenced which includes all the slices of the
+    //     selected mip level.
+    //
+    if (is_depth_sliced) {
+        subres_range.baseArrayLayer = 0;
+        subres_range.layerCount = 1;
+    }
+    return image_state->NormalizeSubresourceRange(subres_range);
+}
+
 uint32_t ImageView::GetAttachmentLayerCount() const {
-    if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !IsDepthSliced()) {
+    if (create_info.subresourceRange.layerCount == VK_REMAINING_ARRAY_LAYERS && !is_depth_sliced) {
         return image_state->create_info.arrayLayers;
     }
     return create_info.subresourceRange.layerCount;

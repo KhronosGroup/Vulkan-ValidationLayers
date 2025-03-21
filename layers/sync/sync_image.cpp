@@ -81,7 +81,7 @@ ImageRangeGen syncval_state::ImageSubState::MakeImageRangeGen(const VkImageSubre
 
 ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view) {
     const auto &sub_state = SubState(*view.image_state);
-    return sub_state.MakeImageRangeGen(view.normalized_subresource_range, view.IsDepthSliced());
+    return sub_state.MakeImageRangeGen(view.normalized_subresource_range, view.is_depth_sliced);
 }
 
 ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view, const VkOffset3D &offset, const VkExtent3D &extent,
@@ -95,5 +95,5 @@ ImageRangeGen syncval_state::MakeImageRangeGen(const vvl::ImageView &view, const
         subresource_range.aspectMask = override_depth_stencil_aspect_mask;
     }
     const auto &sub_state = SubState(*view.image_state);
-    return sub_state.MakeImageRangeGen(subresource_range, offset, extent, view.IsDepthSliced());
+    return sub_state.MakeImageRangeGen(subresource_range, offset, extent, view.is_depth_sliced);
 }
