@@ -88,11 +88,19 @@ target_link_libraries(VkLayer_utils PUBLIC
 target_include_directories(VkLayer_utils SYSTEM PRIVATE external)
 target_include_directories(VkLayer_utils PUBLIC . ${API_TYPE})
 
+option(USE_CUSTOM_HASH_MAP "Use a custom hashing library that is faster than std::unordered_map and std::unordered_set (default: ON)" ON)
+
 find_package(robin_hood CONFIG)
+
+# Keep this option as legacy for people to turn off custom hashing
 option(USE_ROBIN_HOOD_HASHING "robin_hood provides faster versions of std::unordered_map and std::unordered_set" ${robin_hood_FOUND})
-if (USE_ROBIN_HOOD_HASHING)
+if (NOT USE_ROBIN_HOOD_HASHING)
+    set(USE_CUSTOM_HASH_MAP OFF CACHE BOOL "Disable custom hash map" FORCE)
+endif()
+
+if (USE_CUSTOM_HASH_MAP)
     target_link_libraries(VkLayer_utils PUBLIC robin_hood::robin_hood)
-    target_compile_definitions(VkLayer_utils PUBLIC USE_ROBIN_HOOD_HASHING)
+    target_compile_definitions(VkLayer_utils PUBLIC USE_CUSTOM_HASH_MAP)
 endif()
 
 # Using mimalloc on non-Windows OSes currently results in unit test instability with some
