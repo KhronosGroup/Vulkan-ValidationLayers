@@ -237,7 +237,6 @@ jobs:
             ${{ github.workspace }}/external/glslang/build/install
             ${{ github.workspace }}/external/googltest/build/install
             ${{ github.workspace }}/external/mimalloc/build/install
-            ${{ github.workspace }}/external/robin-hood-hashing/build/install
             ${{ github.workspace }}/external/SPIRV-Headers/build/install
             ${{ github.workspace }}/external/SPIRV-Tools/build/install
             ${{ github.workspace }}/external/Vulkan-Headers/build/install
@@ -274,7 +273,6 @@ jobs:
             ${{ github.workspace }}/external/glslang/build/install
             ${{ github.workspace }}/external/googltest/build/install
             ${{ github.workspace }}/external/mimalloc/build/install
-            ${{ github.workspace }}/external/robin-hood-hashing/build/install
             ${{ github.workspace }}/external/SPIRV-Headers/build/install
             ${{ github.workspace }}/external/SPIRV-Tools/build/install
             ${{ github.workspace }}/external/Vulkan-Headers/build/install

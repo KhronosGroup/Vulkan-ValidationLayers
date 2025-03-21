@@ -1,6 +1,6 @@
 # ~~~
-# Copyright (c) 2016-2023 Valve Corporation
-# Copyright (c) 2016-2023 LunarG, Inc.
+# Copyright (c) 2016-2025 Valve Corporation
+# Copyright (c) 2016-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +55,9 @@ elseif(MSVC)
     )
 endif()
 
-target_include_directories(VkLayer_device_profile_api PRIVATE .)
+target_include_directories(VkLayer_device_profile_api PRIVATE .
+    ${VVL_SOURCE_DIR}/layers/external
+)
 
 set(INTERMEDIATE_FILE "${CMAKE_CURRENT_BINARY_DIR}/profiling.json")
 

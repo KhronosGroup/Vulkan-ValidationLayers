@@ -23,6 +23,9 @@
 
 // NOLINTBEGIN
 #include "vk_dispatch_table_helper.h"
+
+#include "vk_extension_helper.h"
+
 static VKAPI_ATTR VkResult VKAPI_CALL StubBindBufferMemory2(VkDevice, uint32_t, const VkBindBufferMemoryInfo*) {
     return VK_SUCCESS;
 }

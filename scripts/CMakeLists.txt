@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2023-2024 LunarG, Inc.
+# Copyright (c) 2023-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ if (UPDATE_DEPS)
     else()
         math(EXPR bitness "8 * ${CMAKE_SIZEOF_VOID_P}")
         set(UPDATE_DEPS_DIR_SUFFIX "${UPDATE_DEPS_DIR_SUFFIX}/${bitness}")
-    endif()    
+    endif()
     set(UPDATE_DEPS_DIR "${PROJECT_SOURCE_DIR}/external/${UPDATE_DEPS_DIR_SUFFIX}" CACHE PATH "Location where update_deps.py installs packages")
     list(APPEND update_dep_command "--dir" )
     list(APPEND update_dep_command "${UPDATE_DEPS_DIR}")
@@ -130,10 +130,7 @@ if (UPDATE_DEPS)
         include("${UPDATE_DEPS_DIR}/helper.cmake")
     endif()
 endif()
-if (ROBIN_HOOD_HASHING_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH ${ROBIN_HOOD_HASHING_INSTALL_DIR})
-    set(CMAKE_REQUIRE_FIND_PACKAGE_robin_hood TRUE PARENT_SCOPE)
-endif()
+
 if (GLSLANG_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH ${GLSLANG_INSTALL_DIR})
     set(CMAKE_REQUIRE_FIND_PACKAGE_glslang TRUE PARENT_SCOPE)

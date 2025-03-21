@@ -70,7 +70,8 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             #include <cstring>
             #include <string>
             #include "vk_layer_dispatch_table.h"
-            #include "vk_extension_helper.h"
+            
+            struct DeviceExtensions;
             \n''')
 
         out.append('''
@@ -87,7 +88,8 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
 
     def generateSource(self):
         out = []
-        out.append('#include "vk_dispatch_table_helper.h"\n')
+        out.append('#include "vk_dispatch_table_helper.h"\n\n')
+        out.append('#include "vk_extension_helper.h"\n\n')
 
         guard_helper = PlatformGuardHelper()
 
