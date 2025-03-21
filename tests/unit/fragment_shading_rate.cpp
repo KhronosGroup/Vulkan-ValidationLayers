@@ -1636,13 +1636,13 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetMissingFeature) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapOffsets-06503");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
     // Same error even if offsets are zero
     offset = {0, 0};
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapOffsets-06503");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapOffsets-06503");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -1699,13 +1699,13 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetAttachment) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapAttachment-06504");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
     // Same error even if offsets are zero
     offset = {0, 0};
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityMapAttachment-06504");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -1781,7 +1781,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDepthAttachment) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pDepthStencilAttachment-06505");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pDepthStencilAttachment-06505");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -1858,7 +1858,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetInputAttachment) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pInputAttachments-06506");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pInputAttachments-06506");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -1935,7 +1935,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetColorAttachment) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pColorAttachments-06507");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pColorAttachments-06507");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2040,7 +2040,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetResolveAttachment) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pResolveAttachments-06508");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pResolveAttachments-06508");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2114,7 +2114,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetPreserveAttachment) 
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pPreserveAttachments-06509");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2185,7 +2185,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetMultiview) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06510");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06510");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2248,7 +2248,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetInvalidCount) {
     fdm_offset_end_info.pFragmentDensityOffsets = offsets;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-fragmentDensityOffsetCount-06511");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityOffsetCount-06511");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2319,7 +2319,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetWidthGranularity) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-x-06512");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-x-06512");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
@@ -2390,7 +2390,7 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetHeightGranularity) {
     fdm_offset_end_info.pFragmentDensityOffsets = &offset;
     VkSubpassEndInfo subpass_end_info = vku::InitStructHelper(&fdm_offset_end_info);
 
-    m_errorMonitor->SetDesiredError("VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-y-06513");
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-y-06513");
     vk::CmdEndRenderPass2KHR(m_command_buffer.handle(), &subpass_end_info);
     m_errorMonitor->VerifyFound();
 
