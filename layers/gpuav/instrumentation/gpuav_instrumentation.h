@@ -47,8 +47,7 @@ void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_st
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                                 const Location& loc);
-
-void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_statee, VkPipelineBindPoint bind_point,
+void PostCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                                  const Location& loc);
 
 struct VertexAttributeFetchLimit {
