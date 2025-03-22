@@ -8148,6 +8148,18 @@ void Device::PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, Vk
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void Device::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                              const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                               const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkAccelerationStructureKHR* pAccelerationStructure,

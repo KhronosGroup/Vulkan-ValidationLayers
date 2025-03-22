@@ -7939,6 +7939,9 @@ bool Device::PreCallValidateGetMemoryMetalHandleEXT(VkDevice device, const VkMem
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+// vkCmdEndRendering2EXT:
+// Checked by chassis: commandBuffer: "VUID-vkCmdEndRendering2EXT-commandBuffer-parameter"
+
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

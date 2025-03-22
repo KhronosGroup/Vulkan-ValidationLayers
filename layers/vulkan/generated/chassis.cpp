@@ -31812,6 +31812,50 @@ VKAPI_ATTR VkResult VKAPI_CALL GetMemoryMetalHandlePropertiesEXT(VkDevice device
 }
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+VKAPI_ATTR void VKAPI_CALL CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdEndRendering2EXT, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdEndRendering2EXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdEndRendering2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdEndRendering2EXT(commandBuffer, pRenderingEndInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdEndRendering2EXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdEndRendering2EXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdEndRendering2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdEndRendering2EXT(commandBuffer, pRenderingEndInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdEndRendering2EXT");
+        device_dispatch->CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdEndRendering2EXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdEndRendering2EXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdEndRendering2EXT(commandBuffer, pRenderingEndInfo, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
@@ -33788,6 +33832,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkGetMemoryMetalHandleEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandleEXT}},
         {"vkGetMemoryMetalHandlePropertiesEXT", {kFuncTypeDev, (void*)GetMemoryMetalHandlePropertiesEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT
+        {"vkCmdEndRendering2EXT", {kFuncTypeDev, (void*)CmdEndRendering2EXT}},
         {"vkCreateAccelerationStructureKHR", {kFuncTypeDev, (void*)CreateAccelerationStructureKHR}},
         {"vkDestroyAccelerationStructureKHR", {kFuncTypeDev, (void*)DestroyAccelerationStructureKHR}},
         {"vkCmdBuildAccelerationStructuresKHR", {kFuncTypeDev, (void*)CmdBuildAccelerationStructuresKHR}},

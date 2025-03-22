@@ -324,6 +324,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_variable_pointers{kNotEnabled};
     ExtEnabled vk_khr_dedicated_allocation{kNotEnabled};
     ExtEnabled vk_khr_storage_buffer_storage_class{kNotEnabled};
+    ExtEnabled vk_khr_shader_bfloat16{kNotEnabled};
     ExtEnabled vk_khr_relaxed_block_layout{kNotEnabled};
     ExtEnabled vk_khr_get_memory_requirements2{kNotEnabled};
     ExtEnabled vk_khr_image_format_list{kNotEnabled};
@@ -642,6 +643,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_nv_present_metering{kNotEnabled};
+    ExtEnabled vk_ext_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -783,6 +785,9 @@ struct DeviceExtensions : public InstanceExtensions {
                   {{{&DeviceExtensions::vk_khr_get_memory_requirements2, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_storage_buffer_storage_class,
              Info(&DeviceExtensions::vk_khr_storage_buffer_storage_class, {})},
+            {vvl::Extension::_VK_KHR_shader_bfloat16,
+             Info(&DeviceExtensions::vk_khr_shader_bfloat16, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                                                                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_relaxed_block_layout, Info(&DeviceExtensions::vk_khr_relaxed_block_layout, {})},
             {vvl::Extension::_VK_KHR_get_memory_requirements2, Info(&DeviceExtensions::vk_khr_get_memory_requirements2, {})},
             {vvl::Extension::_VK_KHR_image_format_list, Info(&DeviceExtensions::vk_khr_image_format_list, {})},
@@ -1757,6 +1762,13 @@ struct DeviceExtensions : public InstanceExtensions {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_NV_present_metering, Info(&DeviceExtensions::vk_nv_present_metering, {})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+            {vvl::Extension::_VK_EXT_fragment_density_map_offset,
+             Info(&DeviceExtensions::vk_ext_fragment_density_map_offset,
+                  {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_create_renderpass2, VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_dynamic_rendering, VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_KHR_acceleration_structure,
              Info(&DeviceExtensions::vk_khr_acceleration_structure,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"},
@@ -1884,6 +1896,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_variable_pointers:
         case vvl::Extension::_VK_KHR_dedicated_allocation:
         case vvl::Extension::_VK_KHR_storage_buffer_storage_class:
+        case vvl::Extension::_VK_KHR_shader_bfloat16:
         case vvl::Extension::_VK_KHR_relaxed_block_layout:
         case vvl::Extension::_VK_KHR_get_memory_requirements2:
         case vvl::Extension::_VK_KHR_image_format_list:
@@ -2202,6 +2215,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_NV_present_metering:
+        case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

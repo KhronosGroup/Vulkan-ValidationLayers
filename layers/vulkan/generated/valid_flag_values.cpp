@@ -203,14 +203,16 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_EXT_image_2d_view_of_3d};
                 }
             }
-            if (value & (VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM)) {
-                if (!IsExtEnabled(extensions.vk_qcom_fragment_density_map_offset)) {
-                    return {vvl::Extension::_VK_QCOM_fragment_density_map_offset};
-                }
-            }
             if (value & (VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_video_maintenance1)) {
                     return {vvl::Extension::_VK_KHR_video_maintenance1};
+                }
+            }
+            if (value & (VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT)) {
+                if (!IsExtEnabled(extensions.vk_qcom_fragment_density_map_offset) &&
+                    !IsExtEnabled(extensions.vk_ext_fragment_density_map_offset)) {
+                    return {vvl::Extension::_VK_QCOM_fragment_density_map_offset,
+                            vvl::Extension::_VK_EXT_fragment_density_map_offset};
                 }
             }
             return {};

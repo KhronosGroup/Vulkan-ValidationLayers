@@ -4145,6 +4145,12 @@ void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternal
                                                      const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                      const RecordObject& record_obj) override;
+
+void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                       const RecordObject& record_obj) override;
+
 void PreCallRecordCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator,
                                                  VkAccelerationStructureKHR* pAccelerationStructure,

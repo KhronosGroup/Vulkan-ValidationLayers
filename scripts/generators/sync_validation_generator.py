@@ -70,9 +70,9 @@ class SyncValidationOutputGenerator(BaseGenerator):
         self.stageAccessCombo = []
 
         # fake stages and accesses for acquire present support
-        self.pipelineStagePresentEngine = Flag('VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL', 0, False, False, None, None)
-        self.accessAcquireRead = Flag('VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL', 0, False, False, None, None)
-        self.accessPresented = Flag('VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL', 0, False, False, None, None)
+        self.pipelineStagePresentEngine = Flag('VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL', 0, False, False, None, None, [])
+        self.accessAcquireRead = Flag('VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL', 0, False, False, None, None, [])
+        self.accessPresented = Flag('VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL', 0, False, False, None, None, [])
 
     def generate(self):
         self.write(f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
@@ -98,9 +98,9 @@ class SyncValidationOutputGenerator(BaseGenerator):
         self.write('// NOLINTBEGIN') # Wrap for clang-tidy to ignore
 
         # Set value to be at end of bitmask
-        self.pipelineStagePresentEngine.value = max([x.value for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags]) + 1
-        self.accessAcquireRead.value = max([x.value for x in self.vk.bitmasks['VkAccessFlagBits2'].flags]) + 1
-        self.accessPresented.value = max([x.value for x in self.vk.bitmasks['VkAccessFlagBits2'].flags]) + 2
+        self.pipelineStagePresentEngine.value = max([x.value for x in self.vk.bitmasks['VkPipelineStageFlagBits2'].flags]) << 1
+        self.accessAcquireRead.value = max([x.value for x in self.vk.bitmasks['VkAccessFlagBits2'].flags]) << 1
+        self.accessPresented.value = max([x.value for x in self.vk.bitmasks['VkAccessFlagBits2'].flags]) << 2
 
         # Add into the VulkanObject so logic works as if they were in the XML
         self.vk.bitmasks['VkPipelineStageFlagBits2'].flags.append(self.pipelineStagePresentEngine)
@@ -171,9 +171,9 @@ class SyncValidationOutputGenerator(BaseGenerator):
 
         out.append(f'''
 // Fake stages and accesses for acquire present support
-static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x{(1 << self.pipelineStagePresentEngine.value):016X}ULL;
-static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x{(1 << self.accessAcquireRead.value):016X}ULL;
-static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(1 << self.accessPresented.value):016X}ULL;
+static const VkPipelineStageFlagBits2 VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL = 0x{(self.pipelineStagePresentEngine.value):016X}ULL;
+static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_ACQUIRE_READ_BIT_SYNCVAL = 0x{(self.accessAcquireRead.value):016X}ULL;
+static const VkAccessFlagBits2 VK_ACCESS_2_PRESENT_PRESENTED_BIT_SYNCVAL = 0x{(self.accessPresented.value):016X}ULL;
 ''')
 
         out.append('// Unique number for each  stage/access combination\n')

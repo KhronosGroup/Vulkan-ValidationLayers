@@ -166,6 +166,7 @@ const char* String(Func func) {
     {"vkCmdEndRenderPass2", 20},
     {"vkCmdEndRenderPass2KHR", 23},
     {"vkCmdEndRendering", 18},
+    {"vkCmdEndRendering2EXT", 22},
     {"vkCmdEndRenderingKHR", 21},
     {"vkCmdEndTransformFeedbackEXT", 29},
     {"vkCmdEndVideoCodingKHR", 23},
@@ -1350,8 +1351,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceFragmentDensityMap2FeaturesEXT", 47},
     {"VkPhysicalDeviceFragmentDensityMap2PropertiesEXT", 49},
     {"VkPhysicalDeviceFragmentDensityMapFeaturesEXT", 46},
-    {"VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM", 53},
-    {"VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM", 55},
+    {"VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT", 52},
+    {"VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT", 54},
     {"VkPhysicalDeviceFragmentDensityMapPropertiesEXT", 48},
     {"VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR", 53},
     {"VkPhysicalDeviceFragmentShaderBarycentricPropertiesKHR", 55},
@@ -1507,6 +1508,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderAtomicFloat2FeaturesEXT", 46},
     {"VkPhysicalDeviceShaderAtomicFloatFeaturesEXT", 45},
     {"VkPhysicalDeviceShaderAtomicInt64Features", 42},
+    {"VkPhysicalDeviceShaderBfloat16FeaturesKHR", 42},
     {"VkPhysicalDeviceShaderClockFeaturesKHR", 39},
     {"VkPhysicalDeviceShaderCoreBuiltinsFeaturesARM", 46},
     {"VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM", 48},
@@ -1700,6 +1702,7 @@ const char* String(Struct structure) {
     {"VkRenderPassCreationFeedbackCreateInfoEXT", 42},
     {"VkRenderPassCreationFeedbackInfoEXT", 36},
     {"VkRenderPassFragmentDensityMapCreateInfoEXT", 44},
+    {"VkRenderPassFragmentDensityMapOffsetEndInfoEXT", 47},
     {"VkRenderPassInputAttachmentAspectCreateInfo", 44},
     {"VkRenderPassMultiviewCreateInfo", 32},
     {"VkRenderPassSampleLocationsBeginInfoEXT", 40},
@@ -1712,6 +1715,7 @@ const char* String(Struct structure) {
     {"VkRenderingAreaInfo", 20},
     {"VkRenderingAttachmentInfo", 26},
     {"VkRenderingAttachmentLocationInfo", 34},
+    {"VkRenderingEndInfoEXT", 22},
     {"VkRenderingFragmentDensityMapAttachmentInfoEXT", 47},
     {"VkRenderingFragmentShadingRateAttachmentInfoKHR", 48},
     {"VkRenderingInfo", 16},
@@ -1778,7 +1782,6 @@ const char* String(Struct structure) {
     {"VkSubpassDescription2", 22},
     {"VkSubpassDescriptionDepthStencilResolve", 40},
     {"VkSubpassEndInfo", 17},
-    {"VkSubpassFragmentDensityMapOffsetEndInfoQCOM", 45},
     {"VkSubpassResolvePerformanceQueryEXT", 36},
     {"VkSubpassSampleLocationsEXT", 28},
     {"VkSubpassShadingPipelineCreateInfoHUAWEI", 41},
@@ -3785,6 +3788,7 @@ const char* String(Field field) {
     {"pRenderPassBegin", 17},
     {"pRenderPassFeedback", 20},
     {"pRenderingAreaInfo", 19},
+    {"pRenderingEndInfo", 18},
     {"pRenderingInfo", 15},
     {"pResolveAttachments", 20},
     {"pResolveImageInfo", 18},
@@ -4328,6 +4332,9 @@ const char* String(Field field) {
     {"sgprsPerSimd", 13},
     {"shader", 7},
     {"shaderArraysPerEngineCount", 27},
+    {"shaderBFloat16CooperativeMatrix", 32},
+    {"shaderBFloat16DotProduct", 25},
+    {"shaderBFloat16Type", 19},
     {"shaderBinaryUUID", 17},
     {"shaderBinaryVersion", 20},
     {"shaderBufferFloat16AtomicAdd", 29},
@@ -5250,6 +5257,7 @@ const char* String(Extension extension) {
     {"VK_EXT_filter_cubic", 20},
     {"VK_EXT_fragment_density_map", 28},
     {"VK_EXT_fragment_density_map2", 29},
+    {"VK_EXT_fragment_density_map_offset", 35},
     {"VK_EXT_fragment_shader_interlock", 33},
     {"VK_EXT_frame_boundary", 22},
     {"VK_EXT_full_screen_exclusive", 29},
@@ -5436,6 +5444,7 @@ const char* String(Extension extension) {
     {"VK_KHR_sampler_ycbcr_conversion", 32},
     {"VK_KHR_separate_depth_stencil_layouts", 38},
     {"VK_KHR_shader_atomic_int64", 27},
+    {"VK_KHR_shader_bfloat16", 23},
     {"VK_KHR_shader_clock", 20},
     {"VK_KHR_shader_draw_parameters", 30},
     {"VK_KHR_shader_expect_assume", 28},
@@ -5972,6 +5981,7 @@ bool IsFieldPointer(Field field) {
     case Field::pRenderPassBegin:
     case Field::pRenderPassFeedback:
     case Field::pRenderingAreaInfo:
+    case Field::pRenderingEndInfo:
     case Field::pRenderingInfo:
     case Field::pResolveAttachments:
     case Field::pResolveImageInfo:

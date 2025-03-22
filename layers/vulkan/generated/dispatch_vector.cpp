@@ -1848,6 +1848,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetMemoryMetalHandlePropertiesEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetMemoryMetalHandlePropertiesEXT);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndRendering2EXT);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndRendering2EXT);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndRendering2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);

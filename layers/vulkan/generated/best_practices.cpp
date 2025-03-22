@@ -158,6 +158,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_load_store_op_none, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_load_store_op_none}}},
         {vvl::Extension::_VK_EXT_depth_clamp_zero_one,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_depth_clamp_zero_one}}},
+        {vvl::Extension::_VK_QCOM_fragment_density_map_offset,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_fragment_density_map_offset}}},
         {vvl::Extension::_VK_EXT_pipeline_protected_access, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
     };
 

@@ -4267,6 +4267,11 @@ static inline VkResult DispatchGetMemoryMetalHandlePropertiesEXT(VkDevice device
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+static inline void DispatchCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
+}
+
 static inline VkResult DispatchCreateAccelerationStructureKHR(VkDevice device,
                                                               const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                               const VkAllocationCallbacks* pAllocator,
