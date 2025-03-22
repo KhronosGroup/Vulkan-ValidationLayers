@@ -26,29 +26,27 @@ layout(push_constant) uniform UniformInfo {
 };
 
 /*
+Matching Struct from the API
 struct VkDrawIndexedIndirectCommand {
-uint indexCount;
-uint instanceCount;
-uint firstIndex;
-uint vertexOffset;
-uint firstInstance;
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    uint vertexOffset;
+    uint firstInstance;
 };
 */
-
 const uint kIndexCount = 0;
 const uint kInstancekCount = 1;
 const uint kFirstIndex = 2;
 const uint kVertexOffset = 3;
 const uint kFirstInstance = 4;
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer) 
-readonly buffer DrawBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer) readonly buffer DrawBuffer {
     uint draw_indexed_indirect_cmds[];
 };
 
 // CountBuffer won't be bound for non-count draws
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) 
-readonly buffer CountBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
     uint count_buffer[];
 };
 
@@ -56,19 +54,19 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 void main() {
     uint draw_count = 0;
     if ((pc.flags & kIndexedIndirectDrawFlags_DrawCountFromBuffer) == 0) {
-        draw_count = pc.cpu_draw_count;
+        draw_count = pc.api_draw_count;
     } else {
         // Need to clamp draw count value stored in count buffer to the maxDrawCount
         // that was specified at vkCmdDrawIndexedIndirect time.
-        // pc.cpu_draw_count is used to store maxDrawCount
-        draw_count = min(count_buffer[pc.count_buffer_dwords_offset], pc.cpu_draw_count);
+        // pc.api_draw_count is used to store maxDrawCount
+        draw_count = min(count_buffer[pc.api_count_buffer_offset_dwords], pc.api_draw_count);
     }
 
     for (uint draw_i = 0; draw_i < draw_count; ++draw_i) {
-        const uint draw_indexed_indirect_cmd_i = draw_i * pc.draw_cmds_stride_dwords + pc.draw_indexed_indirect_cmds_buffer_dwords_offset;
+        const uint draw_indexed_indirect_cmd_i = draw_i * pc.api_stride_dwords + pc.api_offset_dwords;
         const uint draw_i_index_count = draw_indexed_indirect_cmds[ draw_indexed_indirect_cmd_i + kIndexCount ];
         const uint draw_i_first_index = draw_indexed_indirect_cmds[ draw_indexed_indirect_cmd_i + kFirstIndex ];
-    
+
         if ((draw_i_first_index + draw_i_index_count) > pc.bound_index_buffer_indices_count) {
             GpuavLogError4(kErrorGroupGpuPreDraw, kErrorSubCode_OobIndexBuffer, draw_i, draw_i_first_index, draw_i_index_count, 0);
         }

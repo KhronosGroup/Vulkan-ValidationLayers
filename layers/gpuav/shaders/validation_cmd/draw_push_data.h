@@ -39,43 +39,43 @@ const uint kPreDrawBinding_IndexBuffer = 2;
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
 struct DrawIndexedIndirectIndexBufferPushData {
     uint flags;
-    uint draw_cmds_stride_dwords;
+    uint api_stride_dwords;
     uint bound_index_buffer_indices_count;  // Number of indices in the index buffer, taking index type in account. NOT a byte size.
-    uint cpu_draw_count;
-    uint draw_indexed_indirect_cmds_buffer_dwords_offset;
-    uint count_buffer_dwords_offset;
+    uint api_draw_count;
+    uint api_offset_dwords;
+    uint api_count_buffer_offset_dwords;
 };
 
 const uint kDrawMeshFlags_DrawCountFromBuffer = uint(1) << 0;
 struct DrawMeshPushData {
     uint flags;
-    uint draw_cmds_stride_dwords;
-    uint cpu_draw_count;
+    uint api_stride_dwords;
+    uint api_draw_count;
     uint max_workgroup_count_x;
     uint max_workgroup_count_y;
     uint max_workgroup_count_z;
     uint max_workgroup_total_count;
-    uint draw_buffer_dwords_offset;
-    uint count_buffer_dwords_offset;
+    uint api_offset_dwords;
+    uint api_count_buffer_offset_dwords;
 };
 
 const uint kFirstInstanceFlags_DrawCountFromBuffer = uint(1) << 0;
 struct FirstInstancePushData {
     uint flags;
-    uint draw_cmds_stride_dwords;
-    uint cpu_draw_count;
-    uint first_instance_member_pos;
-    uint draw_buffer_dwords_offset;
-    uint count_buffer_dwords_offset;
+    uint api_stride_dwords;
+    uint api_draw_count;
+    uint first_instance_member_pos;  // position in the struct where the firstInstance member is
+    uint api_offset_dwords;
+    uint api_count_buffer_offset_dwords;
 };
 
 struct CountBufferPushData {
-    uint draw_cmds_byte_stride;
-    uint64_t draw_buffer_offset;
+    uint api_stride;
+    uint64_t api_offset;
     uint64_t draw_buffer_size;
-    uint draw_cmd_byte_size;
+    uint api_struct_size_byte;
     uint device_limit_max_draw_indirect_count;
-    uint count_buffer_dwords_offset;
+    uint api_count_buffer_offset_dwords;
 };
 
 #ifdef __cplusplus

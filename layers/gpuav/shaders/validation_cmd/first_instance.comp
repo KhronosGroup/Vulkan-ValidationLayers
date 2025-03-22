@@ -25,14 +25,11 @@ uniform PushConstants {
     FirstInstancePushData pc;
 };
 
-
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer)
-readonly buffer DrawBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer) readonly buffer DrawBuffer {
     uint draw_indexed_indirect_cmds[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer)
-readonly buffer CountBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
     uint count_buffer[];
 };
 
@@ -44,12 +41,12 @@ void main() {
     if ((pc.flags & kFirstInstanceFlags_DrawCountFromBuffer) != 0) {
         // Need to clamp draw count value stored in count buffer to the maxDrawCount
         // that was specified at vkCmdDrawIndexedIndirect time.
-        // pc.cpu_draw_count is used to store maxDrawCount
-        const uint draw_count = min(count_buffer[pc.count_buffer_dwords_offset], pc.cpu_draw_count);
+        // pc.api_draw_count is used to store maxDrawCount
+        const uint draw_count = min(count_buffer[pc.api_count_buffer_offset_dwords], pc.api_draw_count);
         if (draw_i >= draw_count) return;
     }
 
-    const uint draw_indexed_indirect_cmd_i = draw_i * pc.draw_cmds_stride_dwords + pc.first_instance_member_pos + pc.draw_buffer_dwords_offset;
+    const uint draw_indexed_indirect_cmd_i = draw_i * pc.api_stride_dwords + pc.first_instance_member_pos + pc.api_offset_dwords;
     const uint first_instance = draw_indexed_indirect_cmds[ draw_indexed_indirect_cmd_i ];
     if (first_instance != 0) {
         GpuavLogError2(kErrorGroupGpuPreDraw, kErrorSubCodePreDrawFirstInstance, draw_i, first_instance);
