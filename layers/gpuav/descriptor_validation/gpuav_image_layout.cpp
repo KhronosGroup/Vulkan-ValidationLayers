@@ -137,9 +137,9 @@ static void TransitionImageLayouts(Validator &gpuav, vvl::CommandBuffer &cb_stat
     }
 }
 
-static void TransitionAttachmentRefLayout(CommandBufferSubState &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
+static void TransitionAttachmentRefLayout(vvl::CommandBuffer &cb_state, const vku::safe_VkAttachmentReference2 &ref) {
     if (ref.attachment != VK_ATTACHMENT_UNUSED) {
-        vvl::ImageView *image_view = cb_state.base.GetActiveAttachmentImageViewState(ref.attachment);
+        vvl::ImageView *image_view = cb_state.GetActiveAttachmentImageViewState(ref.attachment);
         if (image_view) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_reference_stencil_layout =
@@ -148,7 +148,7 @@ static void TransitionAttachmentRefLayout(CommandBufferSubState &cb_state, const
                 stencil_layout = attachment_reference_stencil_layout->stencilLayout;
             }
 
-            cb_state.base.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
+            cb_state.SetImageViewLayout(*image_view, ref.layout, stencil_layout);
         }
     }
 }
@@ -253,8 +253,8 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
     }
 }
 
-void UpdateCmdBufImageLayouts(Validator &gpuav, const CommandBufferSubState &cb_state) {
-    for (const auto &[image, image_layout_registry] : cb_state.base.image_layout_map) {
+void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
+    for (const auto &[image, image_layout_registry] : cb_state.image_layout_map) {
         if (!image_layout_registry) continue;
         auto image_state = gpuav.Get<vvl::Image>(image);
         if (image_state && image_state->GetId() == image_layout_registry->GetImageId()) {
@@ -264,7 +264,7 @@ void UpdateCmdBufImageLayouts(Validator &gpuav, const CommandBufferSubState &cb_
     }
 }
 
-void TransitionSubpassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index) {
+void TransitionSubpassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state, const int subpass_index) {
     auto const &subpass = render_pass_state.create_info.pSubpasses[subpass_index];
     for (uint32_t j = 0; j < subpass.inputAttachmentCount; ++j) {
         TransitionAttachmentRefLayout(cb_state, subpass.pInputAttachments[j]);
@@ -280,11 +280,11 @@ void TransitionSubpassLayouts(CommandBufferSubState &cb_state, const vvl::Render
 // Transition the layout state for renderpass attachments based on the BeginRenderPass() call. This includes:
 // 1. Transition into initialLayout state
 // 2. Transition from initialLayout to layout used in subpass 0
-void TransitionBeginRenderPassLayouts(CommandBufferSubState &cb_state, const vvl::RenderPass &render_pass_state) {
+void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::RenderPass &render_pass_state) {
     // First record expected initialLayout as a potential initial layout usage.
     auto const rpci = render_pass_state.create_info.ptr();
     for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
-        auto *view_state = cb_state.base.GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             vvl::Image *image_state = view_state->image_state.get();
             const auto initial_layout = rpci->pAttachments[i].initialLayout;
@@ -294,11 +294,11 @@ void TransitionBeginRenderPassLayouts(CommandBufferSubState &cb_state, const vvl
                 const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
                 VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
                 sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state.base.SetImageInitialLayout(*image_state, sub_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
                 sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state.base.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
             } else {
-                cb_state.base.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
+                cb_state.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
             }
         }
     }
@@ -306,16 +306,16 @@ void TransitionBeginRenderPassLayouts(CommandBufferSubState &cb_state, const vvl
     TransitionSubpassLayouts(cb_state, render_pass_state, 0);
 }
 
-void TransitionFinalSubpassLayouts(CommandBufferSubState &cb_state) {
-    auto render_pass_state = cb_state.base.active_render_pass.get();
-    auto framebuffer_state = cb_state.base.activeFramebuffer.get();
+void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
+    auto render_pass_state = cb_state.active_render_pass.get();
+    auto framebuffer_state = cb_state.activeFramebuffer.get();
     if (!render_pass_state || !framebuffer_state) {
         return;
     }
 
     const VkRenderPassCreateInfo2 *render_pass_info = render_pass_state->create_info.ptr();
     for (uint32_t i = 0; i < render_pass_info->attachmentCount; ++i) {
-        auto *view_state = cb_state.base.GetActiveAttachmentImageViewState(i);
+        auto *view_state = cb_state.GetActiveAttachmentImageViewState(i);
         if (view_state) {
             VkImageLayout stencil_layout = kInvalidLayout;
             const auto *attachment_description_stencil_layout =
@@ -323,7 +323,7 @@ void TransitionFinalSubpassLayouts(CommandBufferSubState &cb_state) {
             if (attachment_description_stencil_layout) {
                 stencil_layout = attachment_description_stencil_layout->stencilFinalLayout;
             }
-            cb_state.base.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
+            cb_state.SetImageViewLayout(*view_state, render_pass_info->pAttachments[i].finalLayout, stencil_layout);
         }
     }
 }

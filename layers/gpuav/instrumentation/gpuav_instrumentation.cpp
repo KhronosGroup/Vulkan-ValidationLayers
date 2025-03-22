@@ -34,8 +34,7 @@
 namespace gpuav {
 
 // If application is using shader objects, bindings count will be computed from bound shaders
-static uint32_t LastBoundPipelineOrShaderDescSetBindingsCount(Validator &gpuav, VkPipelineBindPoint bind_point,
-                                                              CommandBufferSubState &cb_state, const LastBound &last_bound) {
+static uint32_t LastBoundPipelineOrShaderDescSetBindingsCount(VkPipelineBindPoint bind_point, const LastBound &last_bound) {
     if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
         return static_cast<uint32_t>(last_bound.pipeline_state->PreRasterPipelineLayoutState()->set_layouts.size());
     }
@@ -50,8 +49,7 @@ static uint32_t LastBoundPipelineOrShaderDescSetBindingsCount(Validator &gpuav, 
 }
 
 // If application is using shader objects, bindings count will be computed from bound shaders
-static uint32_t LastBoundPipelineOrShaderPushConstantsRangesCount(Validator &gpuav, VkPipelineBindPoint bind_point,
-                                                                  CommandBufferSubState &cb_state, const LastBound &last_bound) {
+static uint32_t LastBoundPipelineOrShaderPushConstantsRangesCount(VkPipelineBindPoint bind_point, const LastBound &last_bound) {
     if (last_bound.pipeline_state && last_bound.pipeline_state->PreRasterPipelineLayoutState()) {
         return static_cast<uint32_t>(
             last_bound.pipeline_state->PreRasterPipelineLayoutState()->push_constant_ranges_layout->size());
@@ -550,10 +548,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                 // last bound shader objects is created and used.
                 // If will also be cached: heuristic is next action command will likely need the same.
 
-                const uint32_t last_pipe_bindings_count =
-                    LastBoundPipelineOrShaderDescSetBindingsCount(gpuav, bind_point, cb_state, last_bound);
-                const uint32_t last_pipe_pcr_count =
-                    LastBoundPipelineOrShaderPushConstantsRangesCount(gpuav, bind_point, cb_state, last_bound);
+                const uint32_t last_pipe_bindings_count = LastBoundPipelineOrShaderDescSetBindingsCount(bind_point, last_bound);
+                const uint32_t last_pipe_pcr_count = LastBoundPipelineOrShaderPushConstantsRangesCount(bind_point, last_bound);
 
                 // If the number of binding of the currently bound pipeline's layout (or the equivalent for shader objects) is
                 // less that the number of bindings in the pipeline layout used to bind descriptor sets,
@@ -642,7 +638,7 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
             gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
         if (last_bound_desc_set_pipe_layout_state) {
             const uint32_t desc_set_bindings_counts_from_last_pipeline =
-                LastBoundPipelineOrShaderDescSetBindingsCount(gpuav, bind_point, cb_state, last_bound);
+                LastBoundPipelineOrShaderDescSetBindingsCount(bind_point, last_bound);
 
             const bool any_disturbed_desc_sets_bindings =
                 desc_set_bindings_counts_from_last_pipeline <

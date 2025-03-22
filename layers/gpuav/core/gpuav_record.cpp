@@ -144,7 +144,7 @@ void Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, c
     auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     if (cb_state && render_pass_state) {
         // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(SubState(*cb_state), *render_pass_state);
+        TransitionBeginRenderPassLayouts(*cb_state, *render_pass_state);
     }
 }
 
@@ -165,7 +165,7 @@ void Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, 
     RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
 }
 
-void Validator::RecordCmdEndRenderPassLayouts(CommandBufferSubState &cb_state) { TransitionFinalSubpassLayouts(cb_state); }
+void Validator::RecordCmdEndRenderPassLayouts(vvl::CommandBuffer &cb_state) { TransitionFinalSubpassLayouts(cb_state); }
 
 void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
@@ -175,7 +175,7 @@ void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, co
             InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
             return;
         }
-        RecordCmdEndRenderPassLayouts(SubState(*cb_state));
+        RecordCmdEndRenderPassLayouts(*cb_state);
     }
     BaseClass::PostCallRecordCmdEndRenderPass(commandBuffer, record_obj);
 
@@ -200,7 +200,7 @@ void Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, c
             InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
             return;
         }
-        RecordCmdEndRenderPassLayouts(SubState(*cb_state));
+        RecordCmdEndRenderPassLayouts(*cb_state);
     }
     BaseClass::PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 
@@ -226,9 +226,9 @@ void Validator::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, 
     PostCallRecordCmdEndRendering(commandBuffer, record_obj);
 }
 
-void Validator::RecordCmdNextSubpassLayouts(CommandBufferSubState &cb_state, VkSubpassContents contents) {
-    ASSERT_AND_RETURN(cb_state.base.active_render_pass);
-    TransitionSubpassLayouts(cb_state, *cb_state.base.active_render_pass, cb_state.base.GetActiveSubpass());
+void Validator::RecordCmdNextSubpassLayouts(vvl::CommandBuffer &cb_state, VkSubpassContents contents) {
+    ASSERT_AND_RETURN(cb_state.active_render_pass);
+    TransitionSubpassLayouts(cb_state, *cb_state.active_render_pass, cb_state.GetActiveSubpass());
 }
 
 void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -239,7 +239,7 @@ void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSu
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    RecordCmdNextSubpassLayouts(SubState(*cb_state), contents);
+    RecordCmdNextSubpassLayouts(*cb_state, contents);
 }
 
 void Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
@@ -255,7 +255,7 @@ void Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, con
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    RecordCmdNextSubpassLayouts(SubState(*cb_state), pSubpassBeginInfo->contents);
+    RecordCmdNextSubpassLayouts(*cb_state, pSubpassBeginInfo->contents);
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,

@@ -435,7 +435,7 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
     }
 
     if (gpuav_success) {
-        UpdateCmdBufImageLayouts(state_, *this);
+        UpdateCmdBufImageLayouts(state_, base);
     }
 }
 
