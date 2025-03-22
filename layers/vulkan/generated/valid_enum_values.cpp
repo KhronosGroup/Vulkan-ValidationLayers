@@ -1280,6 +1280,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const 
         case VK_COMPONENT_TYPE_FLOAT_E4M3_NV:
         case VK_COMPONENT_TYPE_FLOAT_E5M2_NV:
             return ValidValue::Valid;
+        case VK_COMPONENT_TYPE_BFLOAT16_KHR:
+            return IsExtEnabled(extensions.vk_khr_shader_bfloat16) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -3077,11 +3079,16 @@ const char* stateless::Context::DescribeEnum(VkVideoEncodeTuningModeKHR value) c
 
 template <>
 vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) const {
-    return {};
+    switch (value) {
+        case VK_COMPONENT_TYPE_BFLOAT16_KHR:
+            return {vvl::Extension::_VK_KHR_shader_bfloat16};
+        default:
+            return {};
+    };
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkComponentTypeKHR value) const {
-    return nullptr;
+    return string_VkComponentTypeKHR(value);
 }
 
 template <>

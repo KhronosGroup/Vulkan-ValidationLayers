@@ -881,6 +881,21 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                                        structure->performanceCounterMultipleQueryPools);
             }
         } break;
+
+        // Validation code for VkPhysicalDeviceShaderBfloat16FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR: {  // Covers
+                                                                                // VUID-VkPhysicalDeviceShaderBfloat16FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderBfloat16FeaturesKHR);
+                VkPhysicalDeviceShaderBfloat16FeaturesKHR* structure = (VkPhysicalDeviceShaderBfloat16FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderBFloat16Type), structure->shaderBFloat16Type);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderBFloat16DotProduct), structure->shaderBFloat16DotProduct);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderBFloat16CooperativeMatrix),
+                                       structure->shaderBFloat16CooperativeMatrix);
+            }
+        } break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePortabilitySubsetFeaturesKHR structure members
@@ -2246,13 +2261,13 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
-        // Validation code for VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM structure members
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM: {  // Covers
-                                                                                             // VUID-VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM-sType-sType
+        // Validation code for VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT: {  // Covers
+                                                                                            // VUID-VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT-sType-sType
             if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM);
-                VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM* structure =
-                    (VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM*)header;
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT);
+                VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT* structure =
+                    (VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::fragmentDensityMapOffset), structure->fragmentDensityMapOffset);
             }
         } break;
@@ -6572,16 +6587,16 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
-        // Validation code for VkSubpassFragmentDensityMapOffsetEndInfoQCOM structure members
-        case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM: {  // Covers
-                                                                                     // VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-sType-sType
+        // Validation code for VkRenderPassFragmentDensityMapOffsetEndInfoEXT structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT: {  // Covers
+                                                                                        // VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-sType-sType
             if (is_const_param) {
-                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSubpassFragmentDensityMapOffsetEndInfoQCOM);
-                VkSubpassFragmentDensityMapOffsetEndInfoQCOM* structure = (VkSubpassFragmentDensityMapOffsetEndInfoQCOM*)header;
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT);
+                VkRenderPassFragmentDensityMapOffsetEndInfoEXT* structure = (VkRenderPassFragmentDensityMapOffsetEndInfoEXT*)header;
                 skip |= ValidateArray(pNext_loc.dot(Field::fragmentDensityOffsetCount),
                                       pNext_loc.dot(Field::pFragmentDensityOffsets), structure->fragmentDensityOffsetCount,
                                       &structure->pFragmentDensityOffsets, false, true, kVUIDUndefined,
-                                      "VUID-VkSubpassFragmentDensityMapOffsetEndInfoQCOM-pFragmentDensityOffsets-parameter");
+                                      "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-parameter");
 
                 if (structure->pFragmentDensityOffsets != nullptr) {
                     for (uint32_t fragmentDensityOffsetIndex = 0;
@@ -7188,7 +7203,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_FEATURES_NV,
@@ -7283,6 +7298,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_FLOAT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ATOMIC_INT64_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CORE_BUILTINS_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_DEMOTE_TO_HELPER_INVOCATION_FEATURES,
@@ -10560,7 +10576,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT,
-            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_ENUMS_PROPERTIES_NV,
@@ -11624,7 +11640,7 @@ bool Device::PreCallValidateCmdNextSubpass2(VkCommandBuffer commandBuffer, const
     if (pSubpassEndInfo != nullptr) {
         [[maybe_unused]] const Location pSubpassEndInfo_loc = loc.dot(Field::pSubpassEndInfo);
         constexpr std::array allowed_structs_VkSubpassEndInfo = {
-            VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM};
+            VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT};
 
         skip |= context.ValidateStructPnext(pSubpassEndInfo_loc, pSubpassEndInfo->pNext, allowed_structs_VkSubpassEndInfo.size(),
                                             allowed_structs_VkSubpassEndInfo.data(), GeneratedVulkanHeaderVersion,
@@ -11643,7 +11659,7 @@ bool Device::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer, con
     if (pSubpassEndInfo != nullptr) {
         [[maybe_unused]] const Location pSubpassEndInfo_loc = loc.dot(Field::pSubpassEndInfo);
         constexpr std::array allowed_structs_VkSubpassEndInfo = {
-            VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM};
+            VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT};
 
         skip |= context.ValidateStructPnext(pSubpassEndInfo_loc, pSubpassEndInfo->pNext, allowed_structs_VkSubpassEndInfo.size(),
                                             allowed_structs_VkSubpassEndInfo.data(), GeneratedVulkanHeaderVersion,
@@ -24891,6 +24907,29 @@ bool Device::PreCallValidateGetMemoryMetalHandlePropertiesEXT(VkDevice device, V
     return skip;
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+bool Device::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ext_fragment_density_map_offset))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_fragment_density_map_offset});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pRenderingEndInfo), pRenderingEndInfo, VK_STRUCTURE_TYPE_RENDERING_END_INFO_EXT, false,
+        "VUID-vkCmdEndRendering2EXT-pRenderingEndInfo-parameter", "VUID-VkRenderingEndInfoEXT-sType-sType");
+    if (pRenderingEndInfo != nullptr) {
+        [[maybe_unused]] const Location pRenderingEndInfo_loc = loc.dot(Field::pRenderingEndInfo);
+        constexpr std::array allowed_structs_VkRenderingEndInfoEXT = {
+            VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(
+            pRenderingEndInfo_loc, pRenderingEndInfo->pNext, allowed_structs_VkRenderingEndInfoEXT.size(),
+            allowed_structs_VkRenderingEndInfoEXT.data(), GeneratedVulkanHeaderVersion, "VUID-VkRenderingEndInfoEXT-pNext-pNext",
+            "VUID-VkRenderingEndInfoEXT-sType-unique", true);
+    }
+    return skip;
+}
 
 bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,

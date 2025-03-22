@@ -831,6 +831,7 @@ PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysic
 PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
 PFN_vkGetMemoryMetalHandlePropertiesEXT GetMemoryMetalHandlePropertiesEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+PFN_vkCmdEndRendering2EXT CmdEndRendering2EXT;
 PFN_vkCreateAccelerationStructureKHR CreateAccelerationStructureKHR;
 PFN_vkDestroyAccelerationStructureKHR DestroyAccelerationStructureKHR;
 PFN_vkCmdBuildAccelerationStructuresKHR CmdBuildAccelerationStructuresKHR;
@@ -2571,6 +2572,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #endif  // VK_USE_PLATFORM_METAL_EXT
         {
+            "VK_EXT_fragment_density_map_offset", [](VkInstance , VkDevice device) {
+                CmdEndRendering2EXT = reinterpret_cast<PFN_vkCmdEndRendering2EXT>(GetDeviceProcAddr(device, "vkCmdEndRendering2EXT"));
+            }
+        },
+        {
             "VK_KHR_acceleration_structure", [](VkInstance , VkDevice device) {
                 CreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkCreateAccelerationStructureKHR"));
                 DestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(GetDeviceProcAddr(device, "vkDestroyAccelerationStructureKHR"));
@@ -3136,6 +3142,7 @@ void ResetAllExtensions() {
     GetMemoryMetalHandleEXT = nullptr;
     GetMemoryMetalHandlePropertiesEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+    CmdEndRendering2EXT = nullptr;
     CreateAccelerationStructureKHR = nullptr;
     DestroyAccelerationStructureKHR = nullptr;
     CmdBuildAccelerationStructuresKHR = nullptr;

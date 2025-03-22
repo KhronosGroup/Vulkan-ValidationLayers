@@ -8338,6 +8338,10 @@ VkResult Device::GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMe
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
 
+void Device::CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+    device_dispatch_table.CmdEndRendering2EXT(commandBuffer, pRenderingEndInfo);
+}
+
 VkResult Device::CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                 const VkAllocationCallbacks* pAllocator,
                                                 VkAccelerationStructureKHR* pAccelerationStructure) {

@@ -1051,6 +1051,11 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkPerformanceQuerySubmitInfoKHR *>(header);
             break;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceShaderBfloat16FeaturesKHR *>(header);
+            break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR:
             PnextChainFree(header->pNext);
@@ -2746,20 +2751,20 @@ void PnextChainFree(void *chain) {
             header->pNext = nullptr;
             delete reinterpret_cast<const VkRenderPassStripeSubmitInfoARM *>(header);
             break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM:
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(header);
+            delete reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_QCOM:
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
-            delete reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM *>(header);
+            delete reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT *>(header);
             break;
-        case VK_STRUCTURE_TYPE_SUBPASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_QCOM:
+        case VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_OFFSET_END_INFO_EXT:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;
-            delete reinterpret_cast<const VkSubpassFragmentDensityMapOffsetEndInfoQCOM *>(header);
+            delete reinterpret_cast<const VkRenderPassFragmentDensityMapOffsetEndInfoEXT *>(header);
             break;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COPY_MEMORY_INDIRECT_FEATURES_NV:
             PnextChainFree(header->pNext);

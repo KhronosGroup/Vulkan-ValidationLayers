@@ -568,6 +568,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->performanceCounterMultipleQueryPools |= enabled->performanceCounterMultipleQueryPools == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_BFLOAT16_FEATURES_KHR: {
+                const VkPhysicalDeviceShaderBfloat16FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderBfloat16FeaturesKHR *>(pNext);
+                features->shaderBFloat16Type |= enabled->shaderBFloat16Type == VK_TRUE;
+                features->shaderBFloat16DotProduct |= enabled->shaderBFloat16DotProduct == VK_TRUE;
+                features->shaderBFloat16CooperativeMatrix |= enabled->shaderBFloat16CooperativeMatrix == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR: {
                 const VkPhysicalDevicePortabilitySubsetFeaturesKHR *enabled =
@@ -1319,9 +1327,9 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->renderPassStriped |= enabled->renderPassStriped == VK_TRUE;
                 break;
             }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_QCOM: {
-                const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM *>(pNext);
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT: {
+                const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT *>(pNext);
                 features->fragmentDensityMapOffset |= enabled->fragmentDensityMapOffset == VK_TRUE;
                 break;
             }

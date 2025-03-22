@@ -5623,6 +5623,14 @@ virtual void PostCallRecordGetMemoryMetalHandlePropertiesEXT(VkDevice device, Vk
                                                              VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties,
                                                              const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_METAL_EXT
+virtual bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                               const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                                            const VkAllocationCallbacks* pAllocator,
                                                            VkAccelerationStructureKHR* pAccelerationStructure,

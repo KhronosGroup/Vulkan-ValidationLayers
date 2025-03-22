@@ -1843,6 +1843,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdExecuteGeneratedCommandsEXT-videocoding",
 }},
+{Func::vkCmdEndRendering2EXT, {
+    "VUID-vkCmdEndRendering2EXT-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT, "VUID-vkCmdEndRendering2EXT-commandBuffer-cmdpool",
+    CMD_SCOPE_INSIDE, "VUID-vkCmdEndRendering2EXT-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdEndRendering2EXT-videocoding",
+}},
 {Func::vkCmdBuildAccelerationStructuresKHR, {
     "VUID-vkCmdBuildAccelerationStructuresKHR-commandBuffer-recording",
     nullptr,

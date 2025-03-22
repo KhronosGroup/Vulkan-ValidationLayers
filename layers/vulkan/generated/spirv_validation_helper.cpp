@@ -257,6 +257,12 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
         {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
         {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityBFloat16TypeKHR, {0, &DeviceFeatures::shaderBFloat16Type, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityBFloat16DotProductKHR, {0, &DeviceFeatures::shaderBFloat16DotProduct, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityBFloat16CooperativeMatrixKHR, {0, &DeviceFeatures::shaderBFloat16CooperativeMatrix, nullptr, ""}},
         {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
         {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
         {spv::CapabilityTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
@@ -383,6 +389,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_KHR_float_controls2", {VK_API_VERSION_1_4, nullptr, nullptr, ""}},
         {"SPV_KHR_float_controls2", {0, nullptr, &DeviceExtensions::vk_khr_shader_float_controls2, ""}},
         {"SPV_KHR_quad_control", {0, nullptr, &DeviceExtensions::vk_khr_shader_quad_control, ""}},
+        {"SPV_KHR_bfloat16", {0, nullptr, &DeviceExtensions::vk_khr_shader_bfloat16, ""}},
         {"SPV_NV_raw_access_chains", {0, nullptr, &DeviceExtensions::vk_nv_raw_access_chains, ""}},
         {"SPV_KHR_compute_shader_derivatives", {0, nullptr, &DeviceExtensions::vk_khr_compute_shader_derivatives, ""}},
         {"SPV_EXT_replicated_composites", {0, nullptr, &DeviceExtensions::vk_ext_shader_replicated_composites, ""}},
@@ -1236,6 +1243,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
     {"SPV_KHR_expect_assume", {{vvl::Version::_VK_VERSION_1_4}, {vvl::Extension::_VK_KHR_shader_expect_assume}}},
     {"SPV_KHR_float_controls2", {{vvl::Version::_VK_VERSION_1_4}, {vvl::Extension::_VK_KHR_shader_float_controls2}}},
     {"SPV_KHR_quad_control", {{vvl::Extension::_VK_KHR_shader_quad_control}}},
+    {"SPV_KHR_bfloat16", {{vvl::Extension::_VK_KHR_shader_bfloat16}}},
     {"SPV_NV_raw_access_chains", {{vvl::Extension::_VK_NV_raw_access_chains}}},
     {"SPV_KHR_compute_shader_derivatives", {{vvl::Extension::_VK_KHR_compute_shader_derivatives}}},
     {"SPV_EXT_replicated_composites", {{vvl::Extension::_VK_EXT_shader_replicated_composites}}},

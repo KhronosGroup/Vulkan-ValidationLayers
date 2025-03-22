@@ -945,6 +945,7 @@ VkResult GetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleIn
 VkResult GetMemoryMetalHandlePropertiesEXT(VkDevice device, VkExternalMemoryHandleTypeFlagBits handleType, const void* pHandle,
                                            VkMemoryMetalHandlePropertiesEXT* pMemoryMetalHandleProperties);
 #endif  // VK_USE_PLATFORM_METAL_EXT
+void CmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo);
 VkResult CreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator,
                                         VkAccelerationStructureKHR* pAccelerationStructure);
