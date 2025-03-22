@@ -37,12 +37,12 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
         if (createInfo.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
             if (SafeModulo(pCode, 16 * sizeof(unsigned char)) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08492", device, create_info_loc.dot(Field::codeType),
-                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCodde is not aligned to 16 bytes.");
+                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode is not aligned to 16 bytes.");
             }
         } else if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             if (SafeModulo(pCode, 4 * sizeof(unsigned char)) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08493", device, create_info_loc.dot(Field::codeType),
-                                 "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCodde is not aligned to 4 bytes.");
+                                 "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode is not aligned to 4 bytes.");
             }
         }
 
