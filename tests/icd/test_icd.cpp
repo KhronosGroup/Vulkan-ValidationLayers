@@ -652,7 +652,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL MapMemory(VkDevice device, VkDeviceMemory 
 static VKAPI_ATTR void VKAPI_CALL UnmapMemory(VkDevice device, VkDeviceMemory memory) {
     unique_lock_t lock(global_lock);
     for (auto map_addr : mapped_memory_map[memory]) {
+#if defined(_WIN32)
+        _aligned_free(map_addr);
+#else
         free(map_addr);
+#endif
     }
     mapped_memory_map.erase(memory);
 }
