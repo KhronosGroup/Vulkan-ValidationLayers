@@ -37,12 +37,12 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
         if (createInfo.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
             if (SafeModulo(pCode, 16 * sizeof(unsigned char)) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08492", device, create_info_loc.dot(Field::codeType),
-                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode is not aligned to 16 bytes.");
+                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode (%p) is not aligned to 16 bytes.", createInfo.pCode);
             }
         } else if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             if (SafeModulo(pCode, 4 * sizeof(unsigned char)) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08493", device, create_info_loc.dot(Field::codeType),
-                                 "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode is not aligned to 4 bytes.");
+                                 "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode (%p) is not aligned to 4 bytes.", createInfo.pCode);
             }
         }
 
@@ -161,8 +161,8 @@ bool Device::manual_PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkSha
     if (pData) {
         auto ptr = reinterpret_cast<std::uintptr_t>(pData);
         if (SafeModulo(ptr, 16 * sizeof(unsigned char)) != 0) {
-            skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08499", device, error_obj.location.dot(Field::pData),
-                             "is not aligned to 16 bytes.");
+            skip |= LogError("VUID-vkGetShaderBinaryDataEXT-None-08499", shader, error_obj.location.dot(Field::pData),
+                             "(%p) is not aligned to 16 bytes.", pData);
         }
     }
 

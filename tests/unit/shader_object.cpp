@@ -2829,18 +2829,13 @@ TEST_F(NegativeShaderObject, BindShaderBetweenLinkedShaders) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
+TEST_F(NegativeShaderObject, DifferentShaderPushConstantRangesSizee) {
     TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    VkPushConstantRange pushConstRange;
-    pushConstRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-    pushConstRange.offset = 0u;
-    pushConstRange.size = sizeof(uint32_t);
-
-    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, nullptr, &pushConstRange);
+    VkPushConstantRange ranges = {VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4};
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, nullptr, &ranges);
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     m_command_buffer.Begin();
@@ -2856,9 +2851,32 @@ TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
-    TEST_DESCRIPTION("Draw with shaders that have different descriptor layouts.");
+TEST_F(NegativeShaderObject, DifferentShaderPushConstantRanges) {
+    TEST_DESCRIPTION("Draw with shaders that have different push constant ranges.");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
 
+    VkPushConstantRange ranges_frag = {VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4};
+    VkPushConstantRange ranges_vert = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, nullptr, &ranges_vert);
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl, nullptr, &ranges_frag);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08878");
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayoutsSize) {
+    TEST_DESCRIPTION("Draw with shaders that have different descriptor layouts.");
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
@@ -2876,6 +2894,40 @@ TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
                               &descriptor_set.set_, 0u, nullptr);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08879");
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, DifferentShaderDescriptorLayouts) {
+    TEST_DESCRIPTION("Draw with shaders that have different descriptor layouts.");
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    OneOffDescriptorSet descriptor_set_frag(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                            });
+    OneOffDescriptorSet descriptor_set_vert(m_device,
+                                            {
+                                                {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                            });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_frag.layout_});
+
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, &descriptor_set_frag.layout_.handle());
+    const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl,
+                                  &descriptor_set_vert.layout_.handle());
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                              &descriptor_set_frag.set_, 0u, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08879");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
