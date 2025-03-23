@@ -386,13 +386,12 @@ bool SpirvValidator::Validate8And16BitStorage(const spirv::Module &module_state,
                                               const Location &loc) const {
     bool skip = false;
 
-    const uint32_t storage_class = var_insn.StorageClass();
-
-    const spirv::Instruction *type_pointer = module_state.FindDef(var_insn.Word(1));
-    const spirv::Instruction *type = module_state.FindDef(type_pointer->Word(3));
     // type will either be a float, int, or struct and if struct need to traverse it
+    const spirv::Instruction *type = module_state.GetVariablePointerType(var_insn);
     VariableInstInfo info;
     GetVariableInfo(module_state, type, info);
+
+    const uint32_t storage_class = var_insn.StorageClass();
 
     if (info.has_8bit) {
         if (!enabled_features.storageBuffer8BitAccess &&
@@ -460,7 +459,7 @@ bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Mod
     // to trigger the error.
     assert(insn.Opcode() == spv::OpVariable);
     // spirv-val validates this is an OpTypePointer
-    const spirv::Instruction *pointer_def = module_state.FindDef(insn.Word(1));
+    const spirv::Instruction *pointer_def = module_state.FindDef(insn.TypeId());
     if (pointer_def->Word(2) != spv::StorageClassUniformConstant) {
         return skip;  // Vulkan Spec says storage image must be UniformConstant
     }

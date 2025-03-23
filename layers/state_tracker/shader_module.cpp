@@ -1263,6 +1263,28 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 }
 
+std::shared_ptr<const TypeStructInfo> Module::GetTypeStructInfo(uint32_t struct_id) const {
+    // return the actual execution modes for this id, or a default empty set.
+    const auto it = static_data_.type_struct_map.find(struct_id);
+    return (it != static_data_.type_struct_map.end()) ? it->second : nullptr;
+}
+
+std::shared_ptr<const TypeStructInfo> Module::GetTypeStructInfo(const Instruction* insn) const {
+    while (true) {
+        if (insn->Opcode() == spv::OpVariable) {
+            insn = FindDef(insn->Word(1));
+        } else if (insn->Opcode() == spv::OpTypePointer) {
+            insn = FindDef(insn->Word(3));
+        } else if (insn->IsArray()) {
+            insn = FindDef(insn->Word(2));
+        } else if (insn->Opcode() == spv::OpTypeStruct) {
+            return GetTypeStructInfo(insn->Word(1));
+        } else {
+            return nullptr;
+        }
+    }
+}
+
 std::string Module::GetDecorations(uint32_t id) const {
     std::ostringstream ss;
     for (const spirv::Instruction& insn : GetInstructions()) {
@@ -1492,9 +1514,7 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
                 find_max_block = true;
             }
 
-            const uint32_t result_type_id = insn->Word(1);
-            const Instruction* result_type = FindDef(result_type_id);
-            const Instruction* type = FindDef(result_type->Word(3));
+            const Instruction* type = GetVariablePointerType(*insn);
 
             // structs might have an offset padding
             const uint32_t variable_shared_size = (type->Opcode() == spv::OpTypeStruct)
@@ -1516,9 +1536,7 @@ uint32_t Module::CalculateTaskPayloadMemory() const {
 
     for (const Instruction* insn : static_data_.variable_inst) {
         if (insn->StorageClass() == spv::StorageClassTaskPayloadWorkgroupEXT) {
-            const uint32_t result_type_id = insn->Word(1);
-            const Instruction* result_type = FindDef(result_type_id);
-            const Instruction* type = FindDef(result_type->Word(3));
+            const Instruction* type = GetVariablePointerType(*insn);
             const uint32_t variable_shared_size = GetTypeBytesSize(type);
 
             total_size += variable_shared_size;
@@ -2333,6 +2351,16 @@ const Instruction* Module::GetBaseTypeInstruction(uint32_t type) const {
     const uint32_t base_insn_id = GetBaseType(insn);
     // Will return end() if an invalid/unknown base_insn_id is returned
     return FindDef(base_insn_id);
+}
+
+// return %A in:
+//   %B = OpTypePointer Input %A
+//   %C = OpVariable %B Input
+const Instruction* Module::GetVariablePointerType(const spirv::Instruction& var_insn) const {
+    assert(var_insn.Opcode() == spv::OpVariable);
+    const uint32_t result_type_id = var_insn.TypeId();
+    const Instruction* type_pointer = FindDef(result_type_id);
+    return FindDef(type_pointer->Word(3));
 }
 
 // Returns type_id if id has type or zero otherwise

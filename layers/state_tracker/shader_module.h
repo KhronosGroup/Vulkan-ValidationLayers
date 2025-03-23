@@ -696,27 +696,9 @@ struct Module {
         return (it != static_data_.execution_modes.end()) ? it->second : static_data_.empty_execution_mode;
     }
 
-    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(uint32_t struct_id) const {
-        // return the actual execution modes for this id, or a default empty set.
-        const auto it = static_data_.type_struct_map.find(struct_id);
-        return (it != static_data_.type_struct_map.end()) ? it->second : nullptr;
-    }
+    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(uint32_t struct_id) const;
     // Overload to walk down and find the OpTypeStruct
-    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(const Instruction *insn) const {
-        while (true) {
-            if (insn->Opcode() == spv::OpVariable) {
-                insn = FindDef(insn->Word(1));
-            } else if (insn->Opcode() == spv::OpTypePointer) {
-                insn = FindDef(insn->Word(3));
-            } else if (insn->IsArray()) {
-                insn = FindDef(insn->Word(2));
-            } else if (insn->Opcode() == spv::OpTypeStruct) {
-                return GetTypeStructInfo(insn->Word(1));
-            } else {
-                return nullptr;
-            }
-        }
-    }
+    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(const Instruction *insn) const;
 
     // Used to get human readable strings for error messages
     std::string GetDecorations(uint32_t id) const;
@@ -750,6 +732,7 @@ struct Module {
     uint32_t GetTypeBytesSize(const Instruction *insn) const;
     uint32_t GetBaseType(const Instruction *insn) const;
     const Instruction *GetBaseTypeInstruction(uint32_t type) const;
+    const Instruction *GetVariablePointerType(const spirv::Instruction &var_insn) const;
     uint32_t GetTypeId(uint32_t id) const;
     uint32_t GetTexelComponentCount(const Instruction &insn) const;
     uint32_t GetFlattenArraySize(const Instruction &insn) const;
