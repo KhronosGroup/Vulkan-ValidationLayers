@@ -1570,7 +1570,7 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
                                              dst_slices, src_image_state->create_info.arrayLayers, src_subresource.baseArrayLayer);
                         }
                     }
-                } else if (src_slices != dst_slices) {
+                } else if (src_image_type == dst_image_type && src_slices != dst_slices) {
                     vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImage-08793" : "VUID-vkCmdCopyImage-srcImage-08793";
                     skip |= LogError(vuid, all_objlist, region_loc, "%s (%" PRIu32 ") is different from %s (%" PRIu32 ").",
                                      src_is_3d ? "extent.depth" : "srcSubresource.layerCount", src_slices,
