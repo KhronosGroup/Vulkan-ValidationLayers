@@ -562,5 +562,124 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block, const Instruction& 
     return block.instructions_.end();
 }
 
+// A type of common pass that will inject a function call and link it up later,
+// We will have wrap the checks to be safe from bad values crashing things
+// For OpStore we will just ignore the store if it is invalid, example:
+// Before:
+//     bda.data[index] = value;
+// After:
+//    if (isValid(bda.data, index)) {
+//         bda.data[index] = value;
+//    }
+//
+// For OpLoad we replace the value with Zero (via Phi node) if it is invalid, example
+// Before:
+//     int X = bda.data[index];
+//     int Y = bda.data[X];
+// After:
+//    if (isValid(bda.data, index)) {
+//         int X = bda.data[index];
+//    } else {
+//         int X = 0;
+//    }
+//    if (isValid(bda.data, X)) {
+//         int Y = bda.data[X];
+//    } else {
+//         int Y = 0;
+//    }
+BasicBlockIt Pass::InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it
+                                  //, const InjectionData& injection_data, const InstructionMeta& meta
+) {
+    // We turn the block into 4 separate blocks
+    BasicBlock& original_block = **block_it;
+    const uint32_t original_label = original_block.GetLabelId();
+
+    // Where we call targeted instruction if it is valid
+    BasicBlockIt valid_block_it = function.InsertNewBlock(block_it);
+    BasicBlock& valid_block = **valid_block_it;
+    const uint32_t valid_block_label = valid_block.GetLabelId();
+
+    // will be an empty block, used for the Phi node, even if no result, create for simplicity
+    BasicBlockIt invalid_block_it = function.InsertNewBlock(valid_block_it);
+    BasicBlock& invalid_block = **invalid_block_it;
+    const uint32_t invalid_block_label = invalid_block.GetLabelId();
+
+    // All the remaining block instructions after targeted instruction
+    BasicBlockIt merge_block_it = function.InsertNewBlock(invalid_block_it);
+    BasicBlock& merge_block = **merge_block_it;
+    const uint32_t merge_block_label = merge_block.GetLabelId();
+
+    // need to preserve the control-flow of how things, like a OpPhi, are accessed from a predecessor block
+    function.ReplaceAllUsesWith(original_label, merge_block_label);
+
+    // Move the targeted instruction to a valid block
+    const Instruction& target_inst = *valid_block.instructions_.emplace_back(std::move(*inst_it));
+    inst_it = original_block.instructions_.erase(inst_it);
+    valid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
+
+    // If thre is a result, we need to create an additional BasicBlock to hold the |else| case, then after we create a Phi node to
+    // hold the result
+    const uint32_t target_inst_id = target_inst.ResultId();
+    if (target_inst_id != 0) {
+        const uint32_t phi_id = module_.TakeNextId();
+        const Type& phi_type = *module_.type_manager_.FindTypeById(target_inst.TypeId());
+        uint32_t null_id = 0;
+        // Can't create ConstantNull of pointer type, so convert uint64 zero to pointer
+        if (phi_type.spv_type_ == SpvType::kPointer) {
+            const Type& uint64_type = module_.type_manager_.GetTypeInt(64, false);
+            const Constant& null_constant = module_.type_manager_.GetConstantNull(uint64_type);
+            null_id = module_.TakeNextId();
+            // We need to put any intermittent instructions here so Phi is first in the merge block
+            invalid_block.CreateInstruction(spv::OpConvertUToPtr, {phi_type.Id(), null_id, null_constant.Id()});
+            module_.AddCapability(spv::CapabilityInt64);
+        } else {
+            if ((phi_type.spv_type_ == SpvType::kInt || phi_type.spv_type_ == SpvType::kFloat) && phi_type.inst_.Word(2) < 32) {
+                // You can't make a constant of a 8-int, 16-int, 16-float without having the capability
+                // The only way this situation occurs if they use something like
+                //     OpCapability StorageBuffer8BitAccess
+                // but there is not explicit Int8
+                // It should be more than safe to inject it for them
+                spv::Capability capability = (phi_type.spv_type_ == SpvType::kFloat) ? spv::CapabilityFloat16
+                                             : (phi_type.inst_.Word(2) == 16)        ? spv::CapabilityInt16
+                                                                                     : spv::CapabilityInt8;
+                module_.AddCapability(capability);
+            }
+
+            null_id = module_.type_manager_.GetConstantNull(phi_type).Id();
+        }
+
+        // replace before creating instruction, otherwise will over-write itself
+        function.ReplaceAllUsesWith(target_inst_id, phi_id);
+        merge_block.CreateInstruction(spv::OpPhi,
+                                      {phi_type.Id(), phi_id, target_inst_id, valid_block_label, null_id, invalid_block_label});
+    }
+
+    // When skipping some instructions, we need something valid to replace it
+    if (target_inst.Opcode() == spv::OpRayQueryInitializeKHR) {
+        // Currently assume the RayQuery and AS object were valid already
+        const uint32_t uint32_0_id = module_.type_manager_.GetConstantZeroUint32().Id();
+        const uint32_t float32_0_id = module_.type_manager_.GetConstantZeroFloat32().Id();
+        const uint32_t vec3_0_id = module_.type_manager_.GetConstantZeroVec3().Id();
+        invalid_block.CreateInstruction(spv::OpRayQueryInitializeKHR,
+                                        {target_inst.Operand(0), target_inst.Operand(1), uint32_0_id, uint32_0_id, vec3_0_id,
+                                         float32_0_id, vec3_0_id, float32_0_id});
+    }
+
+    invalid_block.CreateInstruction(spv::OpBranch, {merge_block_label});
+
+    // move all remaining instructions to the newly created merge block
+    merge_block.instructions_.insert(merge_block.instructions_.end(), std::make_move_iterator(inst_it),
+                                     std::make_move_iterator(original_block.instructions_.end()));
+    original_block.instructions_.erase(inst_it, original_block.instructions_.end());
+
+    // Go back to original Block and add function call and branch from the bool result
+    // const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data, meta);
+
+    // original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
+    // original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
+
+    return merge_block_it;
+}
+
 }  // namespace spirv
 }  // namespace gpuav

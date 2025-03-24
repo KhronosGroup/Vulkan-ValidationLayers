@@ -65,6 +65,10 @@ class Pass {
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
 
+    BasicBlockIt InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it
+                                // , const InjectionData& injection_data, const InstructionMeta& meta
+    );
+
   protected:
     Pass(Module& module) : module_(module) {}
     Module& module_;

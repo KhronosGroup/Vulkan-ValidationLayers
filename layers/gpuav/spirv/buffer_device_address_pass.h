@@ -15,7 +15,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_conditional_function_pass.h"
+#include "pass.h"
 
 namespace gpuav {
 namespace spirv {
@@ -23,16 +23,24 @@ namespace spirv {
 // Create a pass to instrument physical buffer address checking
 // This pass instruments all physical buffer address references to check that
 // all referenced bytes fall in a valid buffer.
-class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
+class BufferDeviceAddressPass : public Pass {
   public:
     BufferDeviceAddressPass(Module& module);
     const char* Name() const final { return "BufferDeviceAddressPass"; }
+    bool Instrument() final;
     void PrintDebugInfo() const final;
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) final;
+    // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
+    struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
+        uint32_t alignment_literal = 0;
+        uint32_t type_length = 0;
+    };
+
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                const InstructionMeta& meta) final;
+                                const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
 };
