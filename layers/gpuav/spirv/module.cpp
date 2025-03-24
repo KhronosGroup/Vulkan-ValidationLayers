@@ -14,6 +14,7 @@
  */
 
 #include "module.h"
+#include <cassert>
 #include <spirv/unified1/spirv.hpp>
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
@@ -486,7 +487,10 @@ void Module::LinkFunction(const LinkInfo& info) {
             // for simplicity, just create a new constant for things other than 32-bit OpConstant as there are rarely-to-none
             // composite/null/true/false constants in linked functions. The extra logic to try and find them is much larger and cost
             // time failing most the searches.
-            if (opcode == spv::OpConstant) {
+            //
+            // If length is 5, it is a 64-bit constant, which we don't care about
+            // (we want lenght of 4 as that means it is 32-bit)
+            if (opcode == spv::OpConstant && new_inst->Length() == 4) {
                 const uint32_t constant_value = new_inst->Word(3);
                 if (type.inst_.Opcode() == spv::OpTypeInt && type.inst_.Word(2) == 32) {
                     constant = type_manager_.FindConstantInt32(type.Id(), constant_value);
@@ -510,12 +514,25 @@ void Module::LinkFunction(const LinkInfo& info) {
         } else if (opcode == spv::OpVariable) {
             // Add in all variables outside of functions
             const uint32_t new_result_id = TakeNextId();
-            AddInterfaceVariables(new_result_id, (spv::StorageClass)new_inst->Word(3));
+            const spv::StorageClass storage_class = new_inst->StorageClass();
+            AddInterfaceVariables(new_result_id, storage_class);
             id_swap_map[old_result_id] = new_result_id;
             new_inst->ReplaceResultId(new_result_id);
             new_inst->ReplaceLinkedId(id_swap_map);
 
             const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+
+            if (storage_class == spv::StorageClassPrivate && type->spv_type_ == SpvType::kPointer &&
+                ((info.flags & ZeroInitializeUintPrivateVariables) != 0)) {
+                const Type* pointer_type = type_manager_.FindTypeById(type->inst_.Word(3));
+                // If we hit this assert, we need to add support for another type
+                assert(pointer_type && pointer_type->spv_type_ == SpvType::kInt);
+                if (pointer_type->spv_type_ == SpvType::kInt) {
+                    const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
+                    new_inst->AppendWord(uint32_0_id);
+                }
+            }
+
             type_manager_.AddVariable(std::move(new_inst), *type);
         } else if (opcode == spv::OpDecorate || opcode == spv::OpMemberDecorate) {
             decorations.emplace_back(std::move(new_inst));
