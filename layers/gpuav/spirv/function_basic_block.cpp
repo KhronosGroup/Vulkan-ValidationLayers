@@ -110,19 +110,14 @@ Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) :
 }
 
 BasicBlockIt Function::InsertNewBlock(BasicBlockIt it) {
-    auto new_block = std::make_unique<BasicBlock>(module_, (*it)->function_);
     it++;  // make sure it inserted after
-    BasicBlockIt new_block_it = blocks_.insert(it, std::move(new_block));
-
+    BasicBlockIt new_block_it = blocks_.emplace(it, std::make_unique<BasicBlock>(module_, *this));
     return new_block_it;
 }
 
-void Function::InitBlocks(uint32_t count) {
-    blocks_.reserve(blocks_.size() + count);
-    for (uint32_t i = 0; i < count; i++) {
-        auto new_block = std::make_unique<BasicBlock>(module_, *this);
-        blocks_.emplace_back(std::move(new_block));
-    }
+BasicBlock& Function::InsertNewBlockEnd() {
+    std::unique_ptr<BasicBlock>& new_block = blocks_.emplace_back(std::make_unique<BasicBlock>(module_, *this));
+    return *new_block;
 }
 
 const Instruction* Function::FindInstruction(uint32_t id) const {

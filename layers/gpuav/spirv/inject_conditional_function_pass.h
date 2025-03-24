@@ -78,7 +78,7 @@ class InjectConditionalFunctionPass : public Pass {
         uint32_t sampler_descriptor_index_id = 0;
     };
 
-    BasicBlockIt InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
+    BasicBlockIt InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it,
                                 const InjectionData& injection_data, const InstructionMeta& meta);
 
     // Each pass decides if the instruction should needs to have its function check injected
