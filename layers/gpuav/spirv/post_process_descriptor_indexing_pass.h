@@ -45,7 +45,6 @@ class PostProcessDescriptorIndexingPass : public Pass {
                                  vvl::unordered_set<uint32_t>& found_in_block_set);
     void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
 
-    uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 };
 

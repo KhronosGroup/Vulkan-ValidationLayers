@@ -1,4 +1,4 @@
-/* Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ struct LinkInfo {
     const uint32_t word_count;
 
     // Information about the function it has
+    // (Will change each time pass is ran)
     uint32_t function_id;
 
     // used for debugging
