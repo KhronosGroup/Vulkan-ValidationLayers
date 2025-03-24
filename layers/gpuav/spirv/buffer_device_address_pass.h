@@ -25,7 +25,7 @@ namespace spirv {
 // all referenced bytes fall in a valid buffer.
 class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
   public:
-    BufferDeviceAddressPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    BufferDeviceAddressPass(Module& module);
     const char* Name() const final { return "BufferDeviceAddressPass"; }
     void PrintDebugInfo() const final;
 
@@ -34,7 +34,6 @@ class BufferDeviceAddressPass : public InjectConditionalFunctionPass {
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                 const InstructionMeta& meta) final;
 
-    uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 };
 

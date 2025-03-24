@@ -23,7 +23,7 @@ namespace spirv {
 // Create a pass to instrument SPV_KHR_ray_query instructions
 class RayQueryPass : public InjectConditionalFunctionPass {
   public:
-    RayQueryPass(Module& module) : InjectConditionalFunctionPass(module) {}
+    RayQueryPass(Module& module);
     const char* Name() const final { return "RayQueryPass"; }
     void PrintDebugInfo() const final;
 
@@ -32,7 +32,6 @@ class RayQueryPass : public InjectConditionalFunctionPass {
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                 const InstructionMeta& meta) final;
 
-    uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 };
 

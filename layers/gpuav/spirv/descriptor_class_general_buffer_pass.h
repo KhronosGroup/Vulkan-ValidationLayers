@@ -54,7 +54,6 @@ class DescriptorClassGeneralBufferPass : public Pass {
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                 const InstructionMeta& meta);
 
-    uint32_t link_function_id = 0;
     uint32_t GetLinkFunctionId();
 
     // Finds the offset into the SSBO/UBO

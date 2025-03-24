@@ -26,19 +26,20 @@
 namespace gpuav {
 namespace spirv {
 
-uint32_t VertexAttributeFetchOob::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_vertex_attribute_fetch_oob_vert,
-                                 instrumentation_vertex_attribute_fetch_oob_vert_size, 0, "inst_vertex_attribute_fetch_oob"};
+static LinkInfo link_info = {instrumentation_vertex_attribute_fetch_oob_vert, instrumentation_vertex_attribute_fetch_oob_vert_size,
+                             0, "inst_vertex_attribute_fetch_oob"};
 
-    if (link_function_id == 0) {
-        link_function_id = module_.TakeNextId();
-        link_info.function_id = link_function_id;
-        module_.link_info_.push_back(link_info);
-    }
-    return link_function_id;
+VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module) {
+    link_info.function_id = 0;  // reset each pass
 }
 
-VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module) {}
+uint32_t VertexAttributeFetchOob::GetLinkFunctionId() {
+    if (link_info.function_id == 0) {
+        link_info.function_id = module_.TakeNextId();
+        module_.link_info_.push_back(link_info);
+    }
+    return link_info.function_id;
+}
 
 bool VertexAttributeFetchOob::Instrument() {
     for (const auto& entry_point_inst : module_.entry_points_) {

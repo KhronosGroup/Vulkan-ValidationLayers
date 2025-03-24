@@ -27,49 +27,43 @@
 namespace gpuav {
 namespace spirv {
 
+// This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
+static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
+                                      instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
+                                      "inst_descriptor_indexing_oob_bindless"};
+
+static LinkInfo link_info_bindless_combined_image_sampler = {
+    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
+    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size, 0,
+    "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
+
+static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
+                                          instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
+                                          "inst_descriptor_indexing_oob_non_bindless"};
+
+DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : InjectConditionalFunctionPass(module) {
+    // reset each pass
+    link_info_bindless.function_id = 0;
+    link_info_bindless_combined_image_sampler.function_id = 0;
+    link_info_non_bindless.function_id = 0;
+}
+
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sampler) {
-    // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-    static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
-                                          instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
-                                          "inst_descriptor_indexing_oob_bindless"};
-
-    static LinkInfo link_info_bindless_combined_image_sampler = {
-        instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
-        instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size, 0,
-        "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
-
-    static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
-                                              instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
-                                              "inst_descriptor_indexing_oob_non_bindless"};
-
-    uint32_t link_id = 0;
+    LinkInfo* link_info = nullptr;
     if (!module_.has_bindless_descriptors_) {
-        if (link_function_id_non_bindless_ == 0) {
-            link_function_id_non_bindless_ = module_.TakeNextId();
-            LinkInfo& link_info = link_info_non_bindless;
-            link_info.function_id = link_function_id_non_bindless_;
-            module_.link_info_.push_back(link_info);
-        }
-        link_id = link_function_id_non_bindless_;
+        link_info = &link_info_non_bindless;
     } else if (is_combined_image_sampler) {
-        if (link_function_id_bindless_combined_image_sampler_ == 0) {
-            link_function_id_bindless_combined_image_sampler_ = module_.TakeNextId();
-            LinkInfo& link_info = link_info_bindless_combined_image_sampler;
-            link_info.function_id = link_function_id_bindless_combined_image_sampler_;
-            module_.link_info_.push_back(link_info);
-        }
-        link_id = link_function_id_bindless_combined_image_sampler_;
+        link_info = &link_info_bindless_combined_image_sampler;
     } else {
-        if (link_function_id_bindless_ == 0) {
-            link_function_id_bindless_ = module_.TakeNextId();
-            LinkInfo& link_info = link_info_bindless;
-            link_info.function_id = link_function_id_bindless_;
-            module_.link_info_.push_back(link_info);
-        }
-        link_id = link_function_id_bindless_;
+        link_info = &link_info_bindless;
     }
-    return link_id;
+
+    if (link_info->function_id == 0) {
+        link_info->function_id = module_.TakeNextId();
+        module_.link_info_.push_back(*link_info);
+    }
+    return link_info->function_id;
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,

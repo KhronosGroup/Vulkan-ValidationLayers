@@ -24,17 +24,20 @@
 namespace gpuav {
 namespace spirv {
 
+static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
+                             "inst_buffer_device_address"};
+
+BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : InjectConditionalFunctionPass(module) {
+    link_info.function_id = 0;  // reset each pass
+}
+
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
-    static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
-                                 "inst_buffer_device_address"};
-
-    if (link_function_id == 0) {
-        link_function_id = module_.TakeNextId();
-        link_info.function_id = link_function_id;
+    if (link_info.function_id == 0) {
+        link_info.function_id = module_.TakeNextId();
         module_.link_info_.push_back(link_info);
     }
-    return link_function_id;
+    return link_info.function_id;
 }
 
 uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,

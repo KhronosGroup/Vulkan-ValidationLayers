@@ -35,7 +35,6 @@ class VertexAttributeFetchOob : public Pass {
   private:
     uint32_t GetLinkFunctionId();
 
-    uint32_t link_function_id = 0;
     bool instrumentation_performed = false;
 };
 
