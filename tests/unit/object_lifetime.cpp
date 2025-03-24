@@ -18,6 +18,7 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/external_memory_sync.h"
+#include "../framework/sync_helper.h"
 
 class NegativeObjectLifetime : public VkLayerTest {};
 
@@ -189,11 +190,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierBufferDestroyed) {
     buf_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     buf_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &buf_barrier;
-
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.BarrierKHR(buf_barrier);
 
     vk::FreeMemory(m_device->handle(), mem, NULL);
 
@@ -245,11 +242,7 @@ TEST_F(NegativeObjectLifetime, Sync2CmdBarrierImageDestroyed) {
     img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &img_barrier;
-
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.BarrierKHR(img_barrier);
 
     vk::FreeMemory(m_device->handle(), image_mem, NULL);
 

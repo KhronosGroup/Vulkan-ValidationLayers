@@ -859,10 +859,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
     discard_barrier2.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 1,
                                          VK_REMAINING_ARRAY_LAYERS};
 
-    VkDependencyInfo discard_dependency_info = vku::InitStructHelper();
-    discard_dependency_info.imageMemoryBarrierCount = 1;
-    discard_dependency_info.pImageMemoryBarriers = &discard_barrier2;
-
     auto set_desired_failure_msg = [this] {
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-Zcull-LessGreaterRatio");
     };
@@ -936,7 +932,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
 
         vk::CmdEndRendering(cmd);
 
-        vk::CmdPipelineBarrier2(cmd, &discard_dependency_info);
+        m_command_buffer.Barrier(discard_barrier2);
 
         vk::CmdBeginRendering(cmd, &begin_rendering_info);
 
@@ -962,7 +958,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
         vk::CmdEndRendering(cmd);
 
         set_desired_failure_msg();
-        vk::CmdPipelineBarrier2(cmd, &discard_dependency_info);
+        m_command_buffer.Barrier(discard_barrier2);
         m_errorMonitor->VerifyFound();
     }
 

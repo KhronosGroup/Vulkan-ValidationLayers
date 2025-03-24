@@ -1329,15 +1329,13 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
         vk::CmdBuildMicromapsEXT(m_command_buffer.handle(), 1, &mmBuildInfo);
 
         {
-            VkMemoryBarrier2 memoryBarrier = { VK_STRUCTURE_TYPE_MEMORY_BARRIER_2, NULL,
-                VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT, VK_ACCESS_2_MICROMAP_WRITE_BIT_EXT,
-                VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, VK_ACCESS_2_MICROMAP_READ_BIT_EXT };
-            VkDependencyInfo dependencyInfo = { VK_STRUCTURE_TYPE_DEPENDENCY_INFO };
-
-            dependencyInfo.memoryBarrierCount = 1;
-            dependencyInfo.pMemoryBarriers = &memoryBarrier;
-
-            vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependencyInfo);
+            VkMemoryBarrier2 memoryBarrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+                                              NULL,
+                                              VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT,
+                                              VK_ACCESS_2_MICROMAP_WRITE_BIT_EXT,
+                                              VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+                                              VK_ACCESS_2_MICROMAP_READ_BIT_EXT};
+            m_command_buffer.BarrierKHR(memoryBarrier);
         }
         m_command_buffer.End();
 

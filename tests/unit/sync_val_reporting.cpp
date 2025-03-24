@@ -1033,10 +1033,6 @@ TEST_F(NegativeSyncValReporting, ReportAllTransferMetaStage) {
     barrier.buffer = buffer_b;
     barrier.size = 128;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
@@ -1044,7 +1040,7 @@ TEST_F(NegativeSyncValReporting, ReportAllTransferMetaStage) {
 
     m_command_buffer.Copy(buffer_a, buffer_b);
     // This barrier makes copy accesses visible to the transfer stage but not to the compute stage
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
 
     // Check that error reporting merged internal representation of transfer stage accesses into a compact form
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
@@ -1095,10 +1091,6 @@ TEST_F(NegativeSyncValReporting, DoNotReportUnsupportedStage) {
     barrier.buffer = buffer_b;
     barrier.size = 128;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
@@ -1106,7 +1098,7 @@ TEST_F(NegativeSyncValReporting, DoNotReportUnsupportedStage) {
 
     m_command_buffer.Copy(buffer_a, buffer_b);
     // This barrier makes previous writes visible to COPY stage but not to the following COMPUTE stage
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
 
     // If error reporting does not skip unsupported ACCELERATION_STRUCTURE_COPY_BIT_KHR then the following error message won't
     // be able to use short form (TRANSFER_WRITE+TRANSFER_READ != "all accesses" in that case)
@@ -1157,10 +1149,6 @@ TEST_F(NegativeSyncValReporting, ReportAccelerationStructureCopyAccesses) {
     barrier.buffer = buffer_b;
     barrier.size = 128;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
@@ -1168,7 +1156,7 @@ TEST_F(NegativeSyncValReporting, ReportAccelerationStructureCopyAccesses) {
 
     m_command_buffer.Copy(buffer_a, buffer_b);
     // This barrier makes previous writes visible to COPY stage but not to the following COMPUTE stage
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
 
     // ACCELERATION_STRUCTURE_COPY_BIT_KHR supports more accesses than TRANSFER_READ+WRITE,
     // so the latter combination can't be replaced with "all accesses"
@@ -1216,17 +1204,13 @@ TEST_F(NegativeSyncValReporting, DoNotUseShortcutForSimpleAccessMask) {
     barrier.image = image;
     barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     // Generate accesses on COLOR_ATTACHMENT_OUTPUT stage that the barrier will connect with
     m_command_buffer.BeginRendering(rendering_info);
     m_command_buffer.EndRendering();
 
     // This barrier does not protect writes on the transfer stage. The following copy generates WAW
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
 
     // Test that access mask is printed directly and is not replaced with "all accesses" shortcut
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
@@ -1256,16 +1240,12 @@ TEST_F(NegativeSyncValReporting, LayoutTrasitionErrorHasImageHandle) {
     image_barrier.image = image;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &image_barrier;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(image_barrier);
     m_command_buffer.End();
 
     m_second_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_second_command_buffer, &dep_info);
+    m_second_command_buffer.Barrier(image_barrier);
     m_second_command_buffer.End();
 
     m_default_queue->Submit2(m_command_buffer);

@@ -46,8 +46,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/ray_tracing_helper_nv.cpp
     framework/external_memory_sync.h
     framework/external_memory_sync.cpp
-    framework/barrier_queue_family.h
-    framework/barrier_queue_family.cpp
+    framework/sync_helper.h
+    framework/sync_helper.cpp
     framework/descriptor_helper.h
     framework/descriptor_helper.cpp
     framework/thread_helper.h

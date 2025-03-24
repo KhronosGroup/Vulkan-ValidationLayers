@@ -93,13 +93,9 @@ TEST_F(NegativeSyncVal, BufferCopyWrongBarrier) {
     barrier.buffer = buffer_b;
     barrier.size = 256;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_errorMonitor->VerifyFound();
@@ -123,13 +119,9 @@ TEST_F(NegativeSyncVal, BufferCopyWrongBarrier2) {
     barrier.buffer = buffer_a;
     barrier.size = 256;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     m_command_buffer.Copy(buffer_c, buffer_a);
     m_errorMonitor->VerifyFound();
@@ -221,10 +213,7 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
         buffer_barrier.buffer = buffer_a.handle();
         buffer_barrier.offset = 0;
         buffer_barrier.size = 256;
-        VkDependencyInfo dep_info = vku::InitStructHelper();
-        dep_info.bufferMemoryBarrierCount = 1;
-        dep_info.pBufferMemoryBarriers = &buffer_barrier;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(buffer_barrier);
     }
 
     vk::CmdCopyBuffer(cb, buffer_c.handle(), buffer_a.handle(), 1, &front2front);
@@ -248,17 +237,14 @@ TEST_F(NegativeSyncVal, BufferCopyHazardsSync2) {
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        VkDependencyInfo dep_info = vku::InitStructHelper();
-        dep_info.memoryBarrierCount = 1;
-        dep_info.pMemoryBarriers = &mem_barrier;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(mem_barrier);
 
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_c.handle(), buffer_b.handle(), 1, &region);
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;  // Protect C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(mem_barrier);
         vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_b.handle(), buffer_c.handle(), 1, &region);
         m_errorMonitor->VerifyFound();
 
@@ -822,10 +808,7 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
         image_barrier.subresourceRange = full_subresource_range;
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        VkDependencyInfo dep_info = vku::InitStructHelper();
-        dep_info.imageMemoryBarrierCount = 1;
-        dep_info.pImageMemoryBarriers = &image_barrier;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(image_barrier);
     }
 
     vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_a.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region_0_to_0);
@@ -849,17 +832,14 @@ TEST_F(NegativeSyncVal, CopyOptimalImageHazardsSync2) {
         mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
         mem_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         mem_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        VkDependencyInfo dep_info = vku::InitStructHelper();
-        dep_info.memoryBarrierCount = 1;
-        dep_info.pMemoryBarriers = &mem_barrier;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(mem_barrier);
         vk::CmdCopyImage(cb, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
 
         // Use barrier to protect last reader, but not last writer...
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
         mem_barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;  // Protects C but not B
         mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        vk::CmdPipelineBarrier2KHR(cb, &dep_info);
+        m_command_buffer.BarrierKHR(mem_barrier);
         vk::CmdCopyImage(cb, image_b.handle(), VK_IMAGE_LAYOUT_GENERAL, image_c.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &full_region);
         m_errorMonitor->VerifyFound();
     }
@@ -5054,10 +5034,7 @@ TEST_F(NegativeSyncVal, UseShaderReadAccessForUniformBuffer) {
     // VK_ACCESS_2_SHADER_READ_BIT cannot protect uniform buffer shader accesses.
     // Expect RAW on the next dispatch.
     barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.memoryBarrierCount = 1;
-    dep_info.pMemoryBarriers = &barrier;
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
 
     // Initiate dispatch that reads tranferred data.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -5111,13 +5088,9 @@ TEST_F(NegativeSyncVal, FillBufferWrongBarrier) {
     barrier.buffer = src_buffer;
     barrier.size = size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer, src_buffer, 0, size, 42);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
     m_errorMonitor->VerifyFound();
@@ -5170,13 +5143,9 @@ TEST_F(NegativeSyncVal, UpdateBufferWrongBarrier) {
     barrier.buffer = src_buffer;
     barrier.size = size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdUpdateBuffer(m_command_buffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
     m_errorMonitor->VerifyFound();
@@ -5211,13 +5180,9 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite) {
     image_barrier.image = image;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &image_barrier;
-
     // Submit from Graphics queue: perform image layout transition (WRITE access).
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(image_barrier);
     m_command_buffer.End();
     m_default_queue->Submit2(m_command_buffer);
 
@@ -5271,10 +5236,7 @@ TEST_F(NegativeSyncVal, QSWriteRacingWrite2) {
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.image = image;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &image_barrier;
-    vk::CmdPipelineBarrier2(cb1, &dep_info);
+    cb1.Barrier(image_barrier);
     cb1.End();
 
     m_default_queue->Submit2(cb1);
@@ -5422,9 +5384,6 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1};
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
 
     // Fragment shader READs input attachment.
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -5451,7 +5410,8 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
 
     // SYNC-HAZARD-WRITE-AFTER-READ hazard: transition should synchronize with draw command
     m_errorMonitor->SetDesiredError("(VK_ACCESS_2_INPUT_ATTACHMENT_READ_BIT) at VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT");
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(layout_transition);
+
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -5585,13 +5545,10 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage) {
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;  // Read access mask does not protect subsequent copy writes
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.memoryBarrierCount = 1;
-    dep_info.pMemoryBarriers = &barrier;
 
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
                                          "VK_ACCESS_2_SHADER_READ_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT");
     m_command_buffer.Copy(buffer_a, buffer_b);
@@ -5613,13 +5570,10 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage2) {
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;  // Read access mask does not protect subsequent copy writes
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.memoryBarrierCount = 1;
-    dep_info.pMemoryBarriers = &barrier;
 
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
                                          "VK_ACCESS_2_MEMORY_READ_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT");
     m_command_buffer.Copy(buffer_a, buffer_b);
@@ -5641,13 +5595,10 @@ TEST_F(NegativeSyncVal, ExpandedMetaStage3) {
     barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
     barrier.dstAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT;  // Shader write access mask does not protect subsequent copy writes
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.memoryBarrierCount = 1;
-    dep_info.pMemoryBarriers = &barrier;
 
     m_command_buffer.Begin();
     m_command_buffer.Copy(buffer_a, buffer_b);
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE",
                                          "VK_ACCESS_2_SHADER_WRITE_BIT accesses at VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT");
     m_command_buffer.Copy(buffer_a, buffer_b);

@@ -77,10 +77,6 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     // VkDependencyInfo with VkImageMemoryBarrier2
     const auto safe_barrier2 = ConvertVkImageMemoryBarrierToV2(barrier, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = safe_barrier2.ptr();
 
     // Test vkCmdPipelineBarrier subpass barrier
     m_command_buffer.Begin();
@@ -94,7 +90,7 @@ TEST_F(PositiveSubpass, SubpassImageBarrier) {
     // Test vkCmdPipelineBarrier2 subpass barrier
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dependency_info);
+    m_command_buffer.Barrier(*safe_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
 }

@@ -17,6 +17,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/sync_helper.h"
 #include "../framework/thread_helper.h"
 
 void VkBestPracticesLayerTest::InitBestPracticesFramework(const char *vendor_checks_to_enable) {
@@ -1866,15 +1867,11 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.subresourceRange.layerCount = 1;
         img_barrier2.subresourceRange.levelCount = 1;
 
-        VkDependencyInfo dependency_info = vku::InitStructHelper();
-        dependency_info.imageMemoryBarrierCount = 1;
-        dependency_info.pImageMemoryBarriers = &img_barrier2;
-
         img_barrier2.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03903");
         m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
-        vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+        m_command_buffer.BarrierKHR(img_barrier2);
         m_errorMonitor->VerifyFound();
 
         // make sure bits above UINT32_MAX are detected
@@ -1882,12 +1879,12 @@ TEST_F(VkBestPracticesLayerTest, ImageMemoryBarrierAccessLayoutCombinations) {
         img_barrier2.dstAccessMask = VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
         m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dstAccessMask-03907");
         m_errorMonitor->SetDesiredWarning("BestPractices-ImageBarrierAccessLayout");
-        vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+        m_command_buffer.BarrierKHR(img_barrier2);
         m_errorMonitor->VerifyFound();
 
         img_barrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         img_barrier2.dstAccessMask = 0;
-        vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+        m_command_buffer.BarrierKHR(img_barrier2);
 
         m_command_buffer.End();
     }
@@ -2189,11 +2186,8 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.memoryBarrierCount = 1;
-    dep_info.pMemoryBarriers = &barrier;
-
+    VkDependencyInfo dep_info = DependencyInfo(barrier);
+    
     m_command_buffer.Begin();
     vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
     m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");

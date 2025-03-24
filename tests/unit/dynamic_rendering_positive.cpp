@@ -666,17 +666,8 @@ TEST_F(PositiveDynamicRendering, WithShaderTileImageAndBarrier) {
     memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &memory_barrier_2;
-    dependency_info.bufferMemoryBarrierCount = 0;
-    dependency_info.pBufferMemoryBarriers = VK_NULL_HANDLE;
-    dependency_info.imageMemoryBarrierCount = 0;
-    dependency_info.pImageMemoryBarriers = VK_NULL_HANDLE;
-
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(memory_barrier_2, VK_DEPENDENCY_BY_REGION_BIT);
     m_command_buffer.EndRendering();
 
     VkMemoryBarrier memory_barrier = vku::InitStructHelper();

@@ -9,7 +9,31 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
-#include "barrier_queue_family.h"
+#include "sync_helper.h"
+
+VkDependencyInfo DependencyInfo(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.dependencyFlags = dependency_flags;
+    dep_info.memoryBarrierCount = 1;
+    dep_info.pMemoryBarriers = &barrier;
+    return dep_info;
+}
+
+VkDependencyInfo DependencyInfo(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.dependencyFlags = dependency_flags;
+    dep_info.bufferMemoryBarrierCount = 1;
+    dep_info.pBufferMemoryBarriers = &buffer_barrier;
+    return dep_info;
+}
+
+VkDependencyInfo DependencyInfo(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = vku::InitStructHelper();
+    dep_info.dependencyFlags = dependency_flags;
+    dep_info.imageMemoryBarrierCount = 1;
+    dep_info.pImageMemoryBarriers = &image_barrier;
+    return dep_info;
+}
 
 BarrierQueueFamilyBase::QueueFamilyObjs::~QueueFamilyObjs() {
     delete command_buffer2;

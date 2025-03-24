@@ -17,6 +17,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/sync_helper.h"
 #include "utils/vk_layer_utils.h"
 
 class NegativeImage : public ImageTest {};
@@ -4046,11 +4047,8 @@ TEST_F(NegativeImage, AttachmentFeedbackLoopLayoutFeature) {
     img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &img_barrier;
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-attachmentFeedbackLoopLayout-07313");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dep_info);
+    m_command_buffer.BarrierKHR(img_barrier);
     m_errorMonitor->VerifyFound();
 
     VkAttachmentReference attach = {};
