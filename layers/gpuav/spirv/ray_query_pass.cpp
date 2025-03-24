@@ -25,7 +25,8 @@ namespace spirv {
 
 static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, 0, "inst_ray_query"};
 
-RayQueryPass::RayQueryPass(Module& module) : InjectConditionalFunctionPass(module) {
+RayQueryPass::RayQueryPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
     link_info.function_id = 0;  // reset each pass
 }
 
@@ -66,6 +67,45 @@ bool RayQueryPass::RequiresInstrumentation(const Function& function, const Instr
     }
     meta.target_instruction = &inst;
     return true;
+}
+
+bool RayQueryPass::Instrument() {
+    // Can safely loop function list as there is no injecting of new Functions until linking time
+    for (const auto& function : module_.functions_) {
+        if (function->instrumentation_added_) continue;
+        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+            if ((*block_it)->loop_header_) {
+                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+            }
+            auto& block_instructions = (*block_it)->instructions_;
+
+            for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
+
+                if (module_.settings_.max_instrumentations_count != 0 &&
+                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
+                    return true;  // hit limit
+                }
+                instrumentations_count_++;
+
+                // Add any debug information to pass into the function call
+                InjectionData injection_data;
+                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
+                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
+                injection_data.inst_position_id = inst_position_constant.Id();
+
+                // block_it = InjectFunction(*function.get(), block_it, inst_it, injection_data, meta);
+                // will start searching again from newly split merge block
+                block_it--;
+                break;
+            }
+        }
+    }
+
+    return instrumentations_count_ != 0;
 }
 
 void RayQueryPass::PrintDebugInfo() const {

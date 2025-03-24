@@ -41,7 +41,8 @@ static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oo
                                           instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
                                           "inst_descriptor_indexing_oob_non_bindless"};
 
-DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : InjectConditionalFunctionPass(module) {
+DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : Pass(module) {
+    module.use_bda_ = true;
     // reset each pass
     link_info_bindless.function_id = 0;
     link_info_bindless_combined_image_sampler.function_id = 0;
@@ -396,6 +397,71 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
     meta.target_instruction = &inst;
 
     return true;
+}
+
+bool DescriptorIndexingOOBPass::Instrument() {
+    // Due to the current way we use iterators, we will actually create new blocks when placing the conditional functions
+    // Need a way to convey if the new block is a "real" true new block, or just the rest of the one we split up
+    bool is_original_new_block = true;
+
+    // Can safely loop function list as there is no injecting of new Functions until linking time
+    for (const auto& function : module_.functions_) {
+        if (function->instrumentation_added_) continue;
+        for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
+            if ((*block_it)->loop_header_) {
+                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
+            }
+            auto& block_instructions = (*block_it)->instructions_;
+            NewBlock(**block_it, is_original_new_block);
+            is_original_new_block = true;  // Always reset once we start
+
+            for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                InstructionMeta meta;
+                // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                    // TODO - This should be cleaned up then having it injected here
+                    // we can have a situation where the incoming SPIR-V looks like
+                    // %a = OpSampledImage %type %image %sampler
+                    // ... other stuff we inject a
+                    // function around
+                    // %b = OpImageSampleExplicitLod %type2 %a %3893 Lod %3918
+                    // and we get an error "All OpSampledImage instructions must be in the same block in which their Result <id> are
+                    // consumed" to get around this we inject a OpCopyObject right after the OpSampledImage
+                    if ((*inst_it)->Opcode() == spv::OpSampledImage) {
+                        const uint32_t result_id = (*inst_it)->ResultId();
+                        const uint32_t type_id = (*inst_it)->TypeId();
+                        const uint32_t copy_id = module_.TakeNextId();
+                        function->ReplaceAllUsesWith(result_id, copy_id);
+                        inst_it++;
+                        (*block_it)->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
+                        inst_it--;
+                    }
+                    continue;
+                }
+
+                if (module_.settings_.max_instrumentations_count != 0 &&
+                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
+                    return true;  // hit limit
+                }
+                instrumentations_count_++;
+
+                // Add any debug information to pass into the function call
+                InjectionData injection_data;
+                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
+                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
+                injection_data.inst_position_id = inst_position_constant.Id();
+
+                // block_it = InjectFunction(*function.get(), block_it, inst_it, injection_data, meta);
+                // will start searching again from newly split merge block
+                block_it--;
+                is_original_new_block = false;
+                break;
+            }
+        }
+    }
+
+    return instrumentations_count_ != 0;
 }
 
 void DescriptorIndexingOOBPass::PrintDebugInfo() const {

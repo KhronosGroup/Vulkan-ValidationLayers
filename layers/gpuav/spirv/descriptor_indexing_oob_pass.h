@@ -15,26 +15,45 @@
 #pragma once
 
 #include <stdint.h>
-#include "inject_conditional_function_pass.h"
+#include "pass.h"
 
 namespace gpuav {
 namespace spirv {
 
 // Create a pass to instrument descriptor indexing.
 // This pass makes sure any index into an descriptor array is not OOB or uninitialized
-class DescriptorIndexingOOBPass : public InjectConditionalFunctionPass {
+class DescriptorIndexingOOBPass : public Pass {
   public:
     DescriptorIndexingOOBPass(Module& module);
     const char* Name() const final { return "DescriptorIndexingOOBPass"; }
+    bool Instrument() final;
     bool EarlySkip() const final;
     void PrintDebugInfo() const final;
 
-    void NewBlock(const BasicBlock& block, bool is_original_new_block) override;
+    void NewBlock(const BasicBlock& block, bool is_original_new_block);
 
   private:
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) final;
+    // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
+    struct InstructionMeta {
+        const Instruction* target_instruction = nullptr;
+
+        const Instruction* var_inst = nullptr;
+        const Instruction* image_inst = nullptr;
+        uint32_t descriptor_set = 0;
+        uint32_t descriptor_binding = 0;
+        uint32_t descriptor_index_id = 0;
+        bool is_combined_image_sampler = false;
+
+        // Duplicate values if dealing with SAMPLED_IMAGE and SAMPLER together
+        const Instruction* sampler_var_inst = nullptr;
+        uint32_t sampler_descriptor_set = 0;
+        uint32_t sampler_descriptor_binding = 0;
+        uint32_t sampler_descriptor_index_id = 0;
+    };
+
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                const InstructionMeta& meta) final;
+                                const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(bool is_combined_image_sampler);
 
