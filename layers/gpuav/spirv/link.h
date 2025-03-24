@@ -19,6 +19,13 @@
 namespace gpuav {
 namespace spirv {
 
+enum LinkFlags {
+    // GLSL can't use the optional Initializer operand for OpVariables
+    // This will make all private variables set to zero
+    // Currently only does Uint32, but could expand to be all types if we find more usecases
+    ZeroInitializeUintPrivateVariables = 0x00000001,
+};
+
 struct LinkInfo {
     // SPIR-V module to link in
     const uint32_t* words;
@@ -30,6 +37,9 @@ struct LinkInfo {
 
     // used for debugging
     const char* opname;
+
+    // Optional things to be done when linking
+    uint32_t flags = 0;
 };
 
 }  // namespace spirv

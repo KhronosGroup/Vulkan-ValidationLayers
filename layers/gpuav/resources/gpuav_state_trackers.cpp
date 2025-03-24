@@ -212,11 +212,13 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
 
     // Update buffer device address table
     // ---
-    auto bda_table_ptr = (VkDeviceAddress *)bda_ranges_snapshot_.GetMappedPtr();
+    auto bda_table_ptr = (uint32_t *)bda_ranges_snapshot_.GetMappedPtr();
 
     // Buffer device address table layout
     // Ranges are sorted from low to high, and do not overlap
-    // QWord 0 | Number of *ranges* (1 range occupies 2 QWords)
+    // QWord 0 | split up into two dwords
+    //     DWord 0 | Number of *ranges* (1 range occupies 2 QWords)
+    //     DWord 1 | unused
     // QWord 1 | Range 1 begin
     // QWord 2 | Range 1 end
     // QWord 3 | Range 2 begin
@@ -225,10 +227,11 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
 
     const size_t max_recordable_ranges =
         static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
-    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 1);
+    auto bda_ranges = reinterpret_cast<vvl::Device::BufferAddressRange *>(bda_table_ptr + 2);
     const auto [ranges_to_update_count, total_address_ranges_count] =
         state_.GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
-    bda_table_ptr[0] = ranges_to_update_count;
+    // Cast here instead of having to cast inside the shader
+    bda_table_ptr[0] = static_cast<uint32_t>(ranges_to_update_count);
 
     if (total_address_ranges_count > size_t(state_.gpuav_settings.max_bda_in_use)) {
         std::ostringstream problem_string;
