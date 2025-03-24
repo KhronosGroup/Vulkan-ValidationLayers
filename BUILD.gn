@@ -378,6 +378,8 @@ vvl_sources = [
   "layers/vulkan/generated/validation_cmd_first_instance_comp.cpp",
   "layers/vulkan/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.h",
   "layers/vulkan/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.cpp",
+  "layers/vulkan/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.h",
+  "layers/vulkan/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.cpp",
   "layers/vulkan/generated/validation_cmd_draw_mesh_indirect_comp.h",
   "layers/vulkan/generated/validation_cmd_draw_mesh_indirect_comp.cpp",
   "layers/vulkan/generated/validation_cmd_trace_rays_rgen.cpp",

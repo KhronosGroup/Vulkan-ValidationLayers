@@ -35,8 +35,11 @@ using uint = unsigned int;
 const uint kPreDrawBinding_IndirectBuffer = 0;
 const uint kPreDrawBinding_CountBuffer = 1;
 const uint kPreDrawBinding_IndexBuffer = 2;
+const uint kPreDrawBinding_DispatchIndirectBuffer = 3;
 
 const uint kIndexedIndirectDrawFlags_DrawCountFromBuffer = uint(1) << 0;
+// Most implementations have wave sizes of 32 or 64, so 64 is a good default
+const uint DrawIndexedIndirect_LocalWorkGroupSizeX = 64;
 struct DrawIndexedIndirectIndexBufferPushData {
     uint flags;
     uint api_stride_dwords;
