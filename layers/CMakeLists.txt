@@ -250,6 +250,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/validation_cmd_first_instance_comp.cpp
     ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.h
     ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.h
+    ${API_TYPE}/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.cpp
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.h
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.cpp
     ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.h

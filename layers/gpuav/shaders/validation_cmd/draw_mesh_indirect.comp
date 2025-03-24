@@ -37,11 +37,13 @@ const uint kGroupCountX = 0;
 const uint kGroupCountY = 1;
 const uint kGroupCountZ = 2;
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer) readonly buffer DrawBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_IndirectBuffer) 
+readonly buffer DrawBuffer {
     uint draw_buffer[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) 
+readonly buffer CountBuffer {
     uint count_buffer[];
 };
 
