@@ -392,10 +392,9 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         }
     }
 
-    new_function->InitBlocks(3);
-    auto& check_block = new_function->blocks_[0];
-    auto& store_block = new_function->blocks_[1];
-    auto& merge_block = new_function->blocks_[2];
+    BasicBlock& check_block = new_function->InsertNewBlockEnd();
+    BasicBlock& store_block = new_function->InsertNewBlockEnd();
+    BasicBlock& merge_block = new_function->InsertNewBlockEnd();
 
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     const uint32_t pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
@@ -407,54 +406,54 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     // Atomically get a write index in the output buffer, and check if this index is with buffer's bounds
     {
         const uint32_t access_chain_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpAccessChain, {pointer_type_id, access_chain_id, output_buffer_variable_id, zero_id});
+        check_block.CreateInstruction(spv::OpAccessChain, {pointer_type_id, access_chain_id, output_buffer_variable_id, zero_id});
 
         atomic_add_id = module_.TakeNextId();
         const uint32_t scope_invok_id = module_.type_manager_.GetConstantUInt32(spv::ScopeInvocation).Id();
         const uint32_t mask_none_id = module_.type_manager_.GetConstantUInt32(spv::MemoryAccessMaskNone).Id();
-        check_block->CreateInstruction(
+        check_block.CreateInstruction(
             spv::OpAtomicIAdd, {uint32_type_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id});
 
         const uint32_t int_add_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
+        check_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
 
         const uint32_t array_length_id = module_.TakeNextId();
-        check_block->CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id, 1});
+        check_block.CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id, 1});
 
         const uint32_t less_than_equal_id = module_.TakeNextId();
         const uint32_t bool_type_id = module_.type_manager_.GetTypeBool().Id();
-        check_block->CreateInstruction(spv::OpULessThanEqual, {bool_type_id, less_than_equal_id, int_add_id, array_length_id});
+        check_block.CreateInstruction(spv::OpULessThanEqual, {bool_type_id, less_than_equal_id, int_add_id, array_length_id});
 
-        const uint32_t merge_block_label_id = merge_block->GetLabelId();
-        check_block->CreateInstruction(spv::OpSelectionMerge, {merge_block_label_id, spv::SelectionControlMaskNone});
+        const uint32_t merge_block_label_id = merge_block.GetLabelId();
+        check_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label_id, spv::SelectionControlMaskNone});
 
-        const uint32_t store_block_label_id = store_block->GetLabelId();
-        check_block->CreateInstruction(spv::OpBranchConditional, {less_than_equal_id, store_block_label_id, merge_block_label_id});
+        const uint32_t store_block_label_id = store_block.GetLabelId();
+        check_block.CreateInstruction(spv::OpBranchConditional, {less_than_equal_id, store_block_label_id, merge_block_label_id});
     }
 
     // Store how many 32-bit words
     {
         const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, zero_id});
+        store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, zero_id});
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
+        store_block.CreateInstruction(spv::OpAccessChain,
+                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
 
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, byte_written_id});
+        store_block.CreateInstruction(spv::OpStore, {access_chain_id, byte_written_id});
     }
 
     // Store Shader Stage ID
     {
         const uint32_t int_add_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, one_id});
+        store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, one_id});
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
+        store_block.CreateInstruction(spv::OpAccessChain,
+                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
 
         const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.settings_.shader_id).Id();
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
+        store_block.CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
     }
 
     // Write a 32-bit word to the output buffer for each argument
@@ -462,19 +461,19 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     for (uint32_t i = 0; i < argument_count; i++) {
         const uint32_t int_add_id = module_.TakeNextId();
         const uint32_t offset_id = module_.type_manager_.GetConstantUInt32(i + argument_id_offset).Id();
-        store_block->CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, offset_id});
+        store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, offset_id});
 
         const uint32_t access_chain_id = module_.TakeNextId();
-        store_block->CreateInstruction(spv::OpAccessChain,
-                                       {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
+        store_block.CreateInstruction(spv::OpAccessChain,
+                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
 
-        store_block->CreateInstruction(spv::OpStore, {access_chain_id, function_param_ids[i]});
+        store_block.CreateInstruction(spv::OpStore, {access_chain_id, function_param_ids[i]});
     }
 
     // merge block of the above if() check
     {
-        store_block->CreateInstruction(spv::OpBranch, {merge_block->GetLabelId()});
-        merge_block->CreateInstruction(spv::OpReturn, {});
+        store_block.CreateInstruction(spv::OpBranch, {merge_block.GetLabelId()});
+        merge_block.CreateInstruction(spv::OpReturn, {});
     }
 
     {

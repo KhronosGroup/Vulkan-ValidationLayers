@@ -52,7 +52,7 @@ bool VertexAttributeFetchOob::Instrument() {
             const uint32_t function_id = function->GetDef().Word(2);
             if (vertex_shader_entry_point_id != function_id) continue;
 
-            BasicBlock& first_block = *function->blocks_[0];
+            BasicBlock& first_block = function->GetFirstBlock();
             InstructionIt first_injectable_instruction = first_block.GetFirstInjectableInstrution();
 
             const uint32_t stage_info_id = GetStageInfo(*function, function->blocks_.begin(), first_injectable_instruction);

@@ -21,27 +21,29 @@ namespace spirv {
 
 InjectConditionalFunctionPass::InjectConditionalFunctionPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
-BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, BasicBlockIt block_it, InstructionIt inst_it,
+BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it,
                                                            const InjectionData& injection_data, const InstructionMeta& meta) {
     // We turn the block into 4 separate blocks
-    block_it = function->InsertNewBlock(block_it);
-    block_it = function->InsertNewBlock(block_it);
-    block_it = function->InsertNewBlock(block_it);
-    BasicBlock& original_block = **(std::prev(block_it, 3));
-    // Where we call targeted instruction if it is valid
-    BasicBlock& valid_block = **(std::prev(block_it, 2));
-    // will be an empty block, used for the Phi node, even if no result, create for simplicity
-    BasicBlock& invalid_block = **(std::prev(block_it, 1));
-    // All the remaining block instructions after targeted instruction
-    BasicBlock& merge_block = **block_it;
-
+    BasicBlock& original_block = **block_it;
     const uint32_t original_label = original_block.GetLabelId();
+
+    // Where we call targeted instruction if it is valid
+    BasicBlockIt valid_block_it = function.InsertNewBlock(block_it);
+    BasicBlock& valid_block = **valid_block_it;
     const uint32_t valid_block_label = valid_block.GetLabelId();
+
+    // will be an empty block, used for the Phi node, even if no result, create for simplicity
+    BasicBlockIt invalid_block_it = function.InsertNewBlock(valid_block_it);
+    BasicBlock& invalid_block = **invalid_block_it;
     const uint32_t invalid_block_label = invalid_block.GetLabelId();
+
+    // All the remaining block instructions after targeted instruction
+    BasicBlockIt merge_block_it = function.InsertNewBlock(invalid_block_it);
+    BasicBlock& merge_block = **merge_block_it;
     const uint32_t merge_block_label = merge_block.GetLabelId();
 
     // need to preserve the control-flow of how things, like a OpPhi, are accessed from a predecessor block
-    function->ReplaceAllUsesWith(original_label, merge_block_label);
+    function.ReplaceAllUsesWith(original_label, merge_block_label);
 
     // Move the targeted instruction to a valid block
     const Instruction& target_inst = *valid_block.instructions_.emplace_back(std::move(*inst_it));
@@ -80,7 +82,7 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
         }
 
         // replace before creating instruction, otherwise will over-write itself
-        function->ReplaceAllUsesWith(target_inst_id, phi_id);
+        function.ReplaceAllUsesWith(target_inst_id, phi_id);
         merge_block.CreateInstruction(spv::OpPhi,
                                       {phi_type.Id(), phi_id, target_inst_id, valid_block_label, null_id, invalid_block_label});
     }
@@ -109,7 +111,7 @@ BasicBlockIt InjectConditionalFunctionPass::InjectFunction(Function* function, B
     original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
 
-    return block_it;
+    return merge_block_it;
 }
 
 bool InjectConditionalFunctionPass::Instrument() {
@@ -165,7 +167,7 @@ bool InjectConditionalFunctionPass::Instrument() {
                 auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
                 injection_data.inst_position_id = inst_position_constant.Id();
 
-                block_it = InjectFunction(function.get(), block_it, inst_it, injection_data, meta);
+                block_it = InjectFunction(*function.get(), block_it, inst_it, injection_data, meta);
                 // will start searching again from newly split merge block
                 block_it--;
                 is_original_new_block = false;
