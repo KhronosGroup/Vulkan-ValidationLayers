@@ -28,7 +28,6 @@ class PostProcessDescriptorIndexingPass : public Pass {
     const char* Name() const final { return "PostProcessDescriptorIndexingPass"; }
 
     bool Instrument() final;
-    bool EarlySkip() const final;
     void PrintDebugInfo() const final;
 
   private:
@@ -43,7 +42,7 @@ class PostProcessDescriptorIndexingPass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
                                  vvl::unordered_set<uint32_t>& found_in_block_set);
-    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
 };

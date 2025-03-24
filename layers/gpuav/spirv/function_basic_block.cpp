@@ -48,7 +48,7 @@ BasicBlock::BasicBlock(Module& module, Function& function) : function_(function)
     CreateInstruction(spv::OpLabel, {new_label_id});
 }
 
-uint32_t BasicBlock::GetLabelId() { return (*(instructions_[0])).ResultId(); }
+uint32_t BasicBlock::GetLabelId() const { return (*(instructions_[0])).ResultId(); }
 
 InstructionIt BasicBlock::GetFirstInjectableInstrution() {
     InstructionIt inst_it;

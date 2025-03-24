@@ -146,20 +146,6 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
-bool DescriptorIndexingOOBPass::EarlySkip() const {
-    if (module_.set_index_to_bindings_layout_lut_.empty()) {
-        return true;  // If there is no bindings, nothing to instrument
-    }
-    return false;
-}
-
-void DescriptorIndexingOOBPass::NewBlock(const BasicBlock&, bool is_original_new_block) {
-    // Don't clear if the new block occurs from control flow breaking one up
-    if (is_original_new_block) {
-        block_instrumented_table_.clear();
-    }
-}
-
 bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
@@ -400,6 +386,10 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 }
 
 bool DescriptorIndexingOOBPass::Instrument() {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return false;  // If there is no bindings, nothing to instrument
+    }
+
     // Due to the current way we use iterators, we will actually create new blocks when placing the conditional functions
     // Need a way to convey if the new block is a "real" true new block, or just the rest of the one we split up
     bool is_original_new_block = true;
@@ -408,11 +398,16 @@ bool DescriptorIndexingOOBPass::Instrument() {
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            if ((*block_it)->loop_header_) {
+            BasicBlock& current_block = **block_it;
+            if (current_block.IsLoopHeader()) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
             }
-            auto& block_instructions = (*block_it)->instructions_;
-            NewBlock(**block_it, is_original_new_block);
+            auto& block_instructions = current_block.instructions_;
+
+            // Don't clear if the new block occurs from control flow breaking one up
+            if (is_original_new_block) {
+                block_instrumented_table_.clear();
+            }
             is_original_new_block = true;  // Always reset once we start
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
@@ -433,28 +428,23 @@ bool DescriptorIndexingOOBPass::Instrument() {
                         const uint32_t copy_id = module_.TakeNextId();
                         function->ReplaceAllUsesWith(result_id, copy_id);
                         inst_it++;
-                        (*block_it)->CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
+                        current_block.CreateInstruction(spv::OpCopyObject, {type_id, copy_id, result_id}, &inst_it);
                         inst_it--;
                     }
                     continue;
                 }
 
-                if (module_.settings_.max_instrumentations_count != 0 &&
-                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
-                    return true;  // hit limit
-                }
+                if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                // Add any debug information to pass into the function call
-                InjectionData injection_data;
-                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
-                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-                injection_data.inst_position_id = inst_position_constant.Id();
+                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
 
-                // block_it = InjectFunction(*function.get(), block_it, inst_it, injection_data, meta);
-                // will start searching again from newly split merge block
-                block_it--;
+                InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
+                InjectFunctionPost(current_block, ic_data);
+                // Skip the newly added valid and invalid block. Start searching again from newly split merge block
+                block_it++;
+                block_it++;
                 is_original_new_block = false;
                 break;
             }

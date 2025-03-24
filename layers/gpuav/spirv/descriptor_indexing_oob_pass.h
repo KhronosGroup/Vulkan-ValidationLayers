@@ -27,10 +27,7 @@ class DescriptorIndexingOOBPass : public Pass {
     DescriptorIndexingOOBPass(Module& module);
     const char* Name() const final { return "DescriptorIndexingOOBPass"; }
     bool Instrument() final;
-    bool EarlySkip() const final;
     void PrintDebugInfo() const final;
-
-    void NewBlock(const BasicBlock& block, bool is_original_new_block);
 
   private:
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later

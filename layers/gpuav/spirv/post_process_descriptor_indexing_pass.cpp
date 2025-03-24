@@ -41,10 +41,7 @@ uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
     return link_info.function_id;
 }
 
-void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it,
-                                                           const InstructionMeta& meta) {
-    BasicBlock& block = **block_it;
-
+void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
@@ -177,10 +174,15 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
 }
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return false;  // If there is no bindings, nothing to instrument
+    }
+
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            auto& block_instructions = (*block_it)->instructions_;
+            BasicBlock& current_block = **block_it;
+            auto& block_instructions = current_block.instructions_;
 
             // We only need to instrument the set/binding/inde/variable combo once per block
             vvl::unordered_set<uint32_t> found_in_block_set;
@@ -188,25 +190,15 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
                 InstructionMeta meta;
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set)) continue;
 
-                if (module_.settings_.max_instrumentations_count != 0 &&
-                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
-                    return true;  // hit limit
-                }
+                if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                CreateFunctionCall(block_it, &inst_it, meta);
+                CreateFunctionCall(current_block, &inst_it, meta);
             }
         }
     }
 
     return (instrumentations_count_ != 0);
-}
-
-bool PostProcessDescriptorIndexingPass::EarlySkip() const {
-    if (module_.set_index_to_bindings_layout_lut_.empty()) {
-        return true;  // If there is no bindings, nothing to instrument
-    }
-    return false;
 }
 
 void PostProcessDescriptorIndexingPass::PrintDebugInfo() const {
