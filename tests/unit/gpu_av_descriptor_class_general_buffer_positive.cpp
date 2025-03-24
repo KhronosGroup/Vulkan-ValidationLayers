@@ -19,7 +19,7 @@
 class PositiveGpuAVDescriptorClassGeneralBuffer : public GpuAVDescriptorClassGeneralBuffer {};
 
 void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *shader, bool is_glsl, VkDeviceSize buffer_size,
-                                                                 const char *expected_error) {
+                                                                 const char *expected_error, uint32_t error_count) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
@@ -41,7 +41,7 @@ void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *sha
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    if (expected_error) m_errorMonitor->SetDesiredError(expected_error);
+    if (expected_error) m_errorMonitor->SetDesiredError(expected_error, error_count);
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     if (expected_error) m_errorMonitor->VerifyFound();
@@ -1478,4 +1478,55 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 0; i < 63; i++) {
+                x += data[i];
+            }
+            for (uint i = 0; i < 4; i++) {
+                x += data[62] + i;
+            }
+
+            for (uint i = 0; i < 2; i++) {
+                for (uint j = 0; j < 2; j++) {
+                    x += data[(i * 2) + j];
+                    x += data[62] + i + j;
+                }
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256);
+}
+
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, LoopsEarlyBranch) {
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            uint y = 0;
+            for (uint i = 0; i < 64; i++) {
+                y++;
+                if (y == 64) break;
+                x += data[i];
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256);
 }

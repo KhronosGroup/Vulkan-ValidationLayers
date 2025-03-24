@@ -1013,6 +1013,60 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
 }
 
 // Disabled as this is a perf testing test, not much value in normal CI
+TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
+    TEST_DESCRIPTION("Show the GPU overhead of doing redundant checks inside a loop");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout (local_size_x = 256) in;
+        layout(set = 0, binding = 0) buffer Data {
+            uint a;
+            uint b;
+            uint c;
+            uint result;
+        } buffers[2];
+
+        void main() {
+            uint x = 0;
+            // Only does 3 instrumentations in the loop
+            // But if not getting hoisted out, can take seconds to execute on the GPU
+            for (int i = 0; i < 32768; i++) {
+                x += buffers[0].a;
+                x *= buffers[0].b;
+                x -= buffers[0].c;
+            }
+            buffers[1].result = x;
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    OneOffDescriptorIndexingSet descriptor_set(m_device, {
+                                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+                                                         });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 32, 32, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+// Disabled as this is a perf testing test, not much value in normal CI
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
     TEST_DESCRIPTION("Touching every part of a SSBO");
     SetTargetApiVersion(VK_API_VERSION_1_2);
