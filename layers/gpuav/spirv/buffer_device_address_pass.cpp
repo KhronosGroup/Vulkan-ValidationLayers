@@ -140,32 +140,28 @@ bool BufferDeviceAddressPass::Instrument() {
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            if ((*block_it)->loop_header_) {
+            BasicBlock& current_block = **block_it;
+            if (current_block.IsLoopHeader()) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
             }
-            auto& block_instructions = (*block_it)->instructions_;
+            auto& block_instructions = current_block.instructions_;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
-                if (module_.settings_.max_instrumentations_count != 0 &&
-                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
-                    return true;  // hit limit
-                }
+                if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                // Add any debug information to pass into the function call
-                InjectionData injection_data;
-                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
-                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-                injection_data.inst_position_id = inst_position_constant.Id();
+                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
 
-                // block_it = InjectFunction(*function.get(), block_it, inst_it, injection_data, meta);
-                // will start searching again from newly split merge block
-                block_it--;
+                InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
+                InjectFunctionPost(current_block, ic_data);
+                // Skip the newly added valid and invalid block. Start searching again from newly split merge block
+                block_it++;
+                block_it++;
                 break;
             }
         }

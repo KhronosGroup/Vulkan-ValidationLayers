@@ -32,6 +32,17 @@ struct InjectionData {
     uint32_t inst_position_id;
 };
 
+// The goal is to have the complex conditional inject control flow to be in a single spot
+// To allow this, we create all the pieces for Pass, let it make its own function call, then use this data to apply the final
+// control flow logic
+struct InjectConditionalData {
+    uint32_t merge_block_label;
+    uint32_t valid_block_label;
+    uint32_t invalid_block_label;
+    uint32_t function_result_id;
+    BasicBlockIt merge_block_it;
+};
+
 // Common helpers for all passes
 // The pass takes the Module object and modifies it as needed
 class Pass {
@@ -40,9 +51,6 @@ class Pass {
     virtual const char* Name() const = 0;
     // Return true if code was instrumented/modified in anyway
     virtual bool Instrument() = 0;
-    // Optional time before the pass to decide to skip or not.
-    // This is for things that can change between shaders
-    virtual bool EarlySkip() const { return false; };
     // Requiring because this becomes important/helpful while debugging
     virtual void PrintDebugInfo() const = 0;
     // Wrapper that each pass can use to start
@@ -52,7 +60,9 @@ class Pass {
     const Variable& GetBuiltinVariable(uint32_t built_in);
 
     // Returns the ID for OpCompositeConstruct it creates
-    uint32_t GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& out_inst_it);
+    uint32_t GetStageInfo(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it);
+    InjectionData GetInjectionData(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it,
+                                   const Instruction& target_instruction);
 
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration) const;
     const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const;
@@ -65,9 +75,10 @@ class Pass {
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
     uint32_t CastToUint32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;
 
-    BasicBlockIt InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it
-                                // , const InjectionData& injection_data, const InstructionMeta& meta
-    );
+    bool IsMaxInstrumentationsCount() const;
+
+    InjectConditionalData InjectFunctionPre(Function& function, const BasicBlockIt original_block_it, InstructionIt inst_it);
+    void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
 
   protected:
     Pass(Module& module) : module_(module) {}

@@ -167,47 +167,37 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     return true;
 }
 
-bool DescriptorClassTexelBufferPass::EarlySkip() const {
-    if (module_.set_index_to_bindings_layout_lut_.empty()) {
-        return true;  // If there is no bindings, nothing to instrument
-    }
-    return false;
-}
-
 void DescriptorClassTexelBufferPass::PrintDebugInfo() const {
     std::cout << "DescriptorClassTexelBufferPass instrumentation count: " << instrumentations_count_ << '\n';
 }
 
 // Created own Instrument() because need to control finding the largest offset in a given block
 bool DescriptorClassTexelBufferPass::Instrument() {
+    if (module_.set_index_to_bindings_layout_lut_.empty()) {
+        return false;  // If there is no bindings, nothing to instrument
+    }
+
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            if ((*block_it)->loop_header_) {
+            BasicBlock& current_block = **block_it;
+            if (current_block.IsLoopHeader()) {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
             }
-            auto& block_instructions = (*block_it)->instructions_;
+            auto& block_instructions = current_block.instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
-                if (module_.settings_.max_instrumentations_count != 0 &&
-                    instrumentations_count_ >= module_.settings_.max_instrumentations_count) {
-                    return true;  // hit limit
-                }
+                if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                // Add any debug information to pass into the function call
-                InjectionData injection_data;
-                injection_data.stage_info_id = GetStageInfo(*function, block_it, inst_it);
-                const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
-                auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-                injection_data.inst_position_id = inst_position_constant.Id();
+                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
 
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
-                CreateFunctionCall(**block_it, &inst_it, injection_data, meta);
+                CreateFunctionCall(current_block, &inst_it, injection_data, meta);
             }
         }
     }

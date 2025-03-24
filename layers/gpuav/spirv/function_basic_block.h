@@ -43,7 +43,7 @@ struct BasicBlock {
 
     void ToBinary(std::vector<uint32_t>& out);
 
-    uint32_t GetLabelId();
+    uint32_t GetLabelId() const;
 
     // "All OpVariable instructions in a function must be the first instructions in the first block"
     // So need to get the first valid location in block.
@@ -59,7 +59,9 @@ struct BasicBlock {
     InstructionList instructions_;
     Function& function_;
 
-    bool loop_header_ = false;
+    // For blocks that are a Loop hader, points to the Continue Target
+    uint32_t loop_header_continue_target_ = 0;
+    bool IsLoopHeader() const { return loop_header_continue_target_ != 0; }
 };
 
 // Control Flow can be tricky, so having this as a List allows use to easily add/remove/edit blocks around without worrying about

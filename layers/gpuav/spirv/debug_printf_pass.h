@@ -52,7 +52,7 @@ class DebugPrintfPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Instruction& inst, InstructionMeta& meta);
-    void CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
     void CreateFunctionParams(uint32_t argument_id, const Type& argument_type, std::vector<uint32_t>& params, BasicBlock& block,
                               InstructionIt* inst_it, ParamMeta& p_meta);
     uint32_t CreateDescriptorSet();

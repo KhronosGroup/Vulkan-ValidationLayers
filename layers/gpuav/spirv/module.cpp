@@ -187,7 +187,7 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
         }
 
         if (opcode == spv::OpLoopMerge) {
-            current_block->loop_header_ = true;
+            current_block->loop_header_continue_target_ = new_inst->Word(2);
         }
 
         if (opcode == spv::OpLabel) {

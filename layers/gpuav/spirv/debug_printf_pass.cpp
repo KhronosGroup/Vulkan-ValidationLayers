@@ -222,11 +222,10 @@ void DebugPrintfPass::CreateFunctionParams(uint32_t argument_id, const Type& arg
     }
 }
 
-void DebugPrintfPass::CreateFunctionCall(BasicBlockIt block_it, InstructionIt* inst_it, const InstructionMeta& meta) {
-    BasicBlock& block = **block_it;
+void DebugPrintfPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     Function& block_func = block.function_;
     // need to call to get the underlying 4 IDs (simpler to pass in as 4 uint then a uvec4)
-    GetStageInfo(block_func, block_it, *inst_it);
+    GetStageInfo(block_func, block, *inst_it);
 
     const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
     auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
@@ -497,7 +496,9 @@ bool DebugPrintfPass::Instrument() {
 
     for (const auto& function : module_.functions_) {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
-            auto& block_instructions = (*block_it)->instructions_;
+            BasicBlock& current_block = **block_it;
+
+            auto& block_instructions = current_block.instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
                 if (!RequiresInstrumentation(*(inst_it->get()), meta)) continue;
@@ -515,7 +516,7 @@ bool DebugPrintfPass::Instrument() {
                     }
                 }
 
-                CreateFunctionCall(block_it, &inst_it, meta);
+                CreateFunctionCall(current_block, &inst_it, meta);
 
                 // remove the OpExtInst incase they don't support VK_KHR_non_semantic_info
                 if (!module_.settings_.support_non_semantic_info) {

@@ -28,7 +28,6 @@ class DescriptorClassGeneralBufferPass : public Pass {
     const char* Name() const final { return "DescriptorClassGeneralBufferPass"; }
 
     bool Instrument() final;
-    bool EarlySkip() const final;
     void PrintDebugInfo() const final;
 
   private:

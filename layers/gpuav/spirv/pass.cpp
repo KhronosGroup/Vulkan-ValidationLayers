@@ -25,13 +25,7 @@ namespace gpuav {
 namespace spirv {
 
 bool Pass::Run() {
-    bool modified = false;
-    if (EarlySkip()) {
-        return modified;
-    }
-
-    modified = Instrument();
-
+    const bool modified = Instrument();
     if (module_.settings_.print_debug_info) {
         PrintDebugInfo();
     }
@@ -71,7 +65,7 @@ const Variable& Pass::GetBuiltinVariable(uint32_t built_in) {
 
 // To reduce having to load this information everytime we do a OpFunctionCall, instead just create it once per Function block and
 // reference it each time
-uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, InstructionIt& out_inst_it) {
+uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it) {
     // Cached so only need to compute this once
     if (function.stage_info_id_ != 0) {
         return function.stage_info_id_;
@@ -199,11 +193,22 @@ uint32_t Pass::GetStageInfo(Function& function, BasicBlockIt target_block_it, In
 
     // because we are injecting things in the first block, there is a chance we just destroyed the iterator if the target
     // instruction was also in the first block, so need to regain it for the caller
-    if ((*target_block_it)->GetLabelId() == block.GetLabelId()) {
+    if (target_block_it.GetLabelId() == block.GetLabelId()) {
         out_inst_it = FindTargetInstruction(block, target_instruction);
     }
 
     return function.stage_info_id_;
+}
+
+InjectionData Pass::GetInjectionData(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it,
+                                     const Instruction& target_instruction) {
+    // Add any debug information to pass into the function call
+    InjectionData injection_data;
+    injection_data.stage_info_id = GetStageInfo(function, target_block_it, out_inst_it);
+    const uint32_t inst_position = target_instruction.GetPositionIndex();
+    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
+    injection_data.inst_position_id = inst_position_constant.Id();
+    return injection_data;
 }
 
 const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) const {
@@ -562,6 +567,11 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block, const Instruction& 
     return block.instructions_.end();
 }
 
+bool Pass::IsMaxInstrumentationsCount() const {
+    return (module_.settings_.max_instrumentations_count != 0) &&
+           (instrumentations_count_ >= module_.settings_.max_instrumentations_count);
+}
+
 // A type of common pass that will inject a function call and link it up later,
 // We will have wrap the checks to be safe from bad values crashing things
 // For OpStore we will just ignore the store if it is invalid, example:
@@ -587,15 +597,13 @@ InstructionIt Pass::FindTargetInstruction(BasicBlock& block, const Instruction& 
 //    } else {
 //         int Y = 0;
 //    }
-BasicBlockIt Pass::InjectFunction(Function& function, BasicBlockIt block_it, InstructionIt inst_it
-                                  //, const InjectionData& injection_data, const InstructionMeta& meta
-) {
+InjectConditionalData Pass::InjectFunctionPre(Function& function, const BasicBlockIt original_block_it, InstructionIt inst_it) {
     // We turn the block into 4 separate blocks
-    BasicBlock& original_block = **block_it;
+    BasicBlock& original_block = **original_block_it;
     const uint32_t original_label = original_block.GetLabelId();
 
     // Where we call targeted instruction if it is valid
-    BasicBlockIt valid_block_it = function.InsertNewBlock(block_it);
+    BasicBlockIt valid_block_it = function.InsertNewBlock(original_block_it);
     BasicBlock& valid_block = **valid_block_it;
     const uint32_t valid_block_label = valid_block.GetLabelId();
 
@@ -672,13 +680,13 @@ BasicBlockIt Pass::InjectFunction(Function& function, BasicBlockIt block_it, Ins
                                      std::make_move_iterator(original_block.instructions_.end()));
     original_block.instructions_.erase(inst_it, original_block.instructions_.end());
 
-    // Go back to original Block and add function call and branch from the bool result
-    // const uint32_t function_result = CreateFunctionCall(original_block, nullptr, injection_data, meta);
+    return InjectConditionalData{merge_block_label, valid_block_label, invalid_block_label, 0, merge_block_it};
+}
 
-    // original_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label, spv::SelectionControlMaskNone});
-    // original_block.CreateInstruction(spv::OpBranchConditional, {function_result, valid_block_label, invalid_block_label});
-
-    return merge_block_it;
+void Pass::InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data) {
+    original_block.CreateInstruction(spv::OpSelectionMerge, {ic_data.merge_block_label, spv::SelectionControlMaskNone});
+    original_block.CreateInstruction(spv::OpBranchConditional,
+                                     {ic_data.function_result_id, ic_data.valid_block_label, ic_data.invalid_block_label});
 }
 
 }  // namespace spirv
