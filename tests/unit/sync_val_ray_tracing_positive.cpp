@@ -73,13 +73,9 @@ TEST_F(PositiveSyncValRayTracing, BuildAccelerationStructureThenBarrier) {
     barrier.offset = 0;
     barrier.size = 4;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     vk::CmdFillBuffer(m_command_buffer, accel_buffer, 0, 4, 0x80386);
     m_command_buffer.End();
 }
@@ -118,14 +114,10 @@ TEST_F(PositiveSyncValRayTracing, UseSourceAccelerationStructureThenBarrier) {
     barrier.offset = 0;
     barrier.size = 4;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     // Build in update mode READs source acceleration structure
     blas2.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     // WRITE to source acceleration structure
     vk::CmdFillBuffer(m_command_buffer, src_accel_buffer, 0, 4, 0x80486);
     m_command_buffer.End();
@@ -343,10 +335,6 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     barrier.offset = 0;
     barrier.size = tlas.GetDstAS()->GetBuffer().CreateInfo().size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
@@ -354,7 +342,7 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     // Build
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     // Wait
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     // Trace
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
@@ -383,13 +371,9 @@ TEST_F(PositiveSyncValRayTracing, WriteIndexDataThenBuild) {
     barrier.offset = 0;
     barrier.size = index_buffer.CreateInfo().size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     m_command_buffer.Copy(src_buffer, index_buffer);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
 }

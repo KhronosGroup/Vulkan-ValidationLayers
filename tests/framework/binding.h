@@ -1175,6 +1175,16 @@ class CommandBuffer : public internal::Handle<VkCommandBuffer> {
     void Copy(const Buffer &src, const Buffer &dst);
     void ExecuteCommands(const CommandBuffer &secondary);
 
+    void Barrier(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags = 0);
+    void Barrier(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags = 0);
+    void Barrier(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags = 0);
+    void Barrier(const VkDependencyInfo &dep_info);
+
+    void BarrierKHR(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags = 0);
+    void BarrierKHR(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags = 0);
+    void BarrierKHR(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags = 0);
+    void BarrierKHR(const VkDependencyInfo &dep_info);
+
     void FullMemoryBarrier();
 
   private:

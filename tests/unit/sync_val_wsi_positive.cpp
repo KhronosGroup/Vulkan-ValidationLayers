@@ -58,12 +58,8 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmit2AutomaticVisibility) {
     layout_transition.subresourceRange.baseArrayLayer = 0;
     layout_transition.subresourceRange.layerCount = 1;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(layout_transition);
     m_command_buffer.End();
 
     m_default_queue->Submit2(m_command_buffer, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
@@ -136,12 +132,8 @@ TEST_F(PositiveSyncValWsi, PresentAfterSubmitNoneDstStage) {
     layout_transition.image = swapchain_images[image_index];
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(layout_transition);
     m_command_buffer.End();
 
     // The goal of this test is to use QueueSubmit API (not QueueSubmit2) to
@@ -439,13 +431,9 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
         layout_transition.image = dst_image;
         layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-        VkDependencyInfo dep_info = vku::InitStructHelper();
-        dep_info.imageMemoryBarrierCount = 1;
-        dep_info.pImageMemoryBarriers = &layout_transition;
-
         auto &command_buffer = command_buffers[image_index];
         command_buffer.Begin();
-        vk::CmdPipelineBarrier2(command_buffer, &dep_info);
+        command_buffer.Barrier(layout_transition);
         vk::CmdCopyBufferToImage(command_buffer, src_buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
         command_buffer.End();
 

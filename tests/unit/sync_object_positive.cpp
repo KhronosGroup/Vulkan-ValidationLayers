@@ -14,8 +14,8 @@
 #include <thread>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/external_memory_sync.h"
-#include "../framework/barrier_queue_family.h"
 #include "../framework/render_pass_helper.h"
+#include "../framework/sync_helper.h"
 #include "containers/container_utils.h"
 
 #ifndef VK_USE_PLATFORM_WIN32_KHR
@@ -1654,14 +1654,9 @@ TEST_F(PositiveSyncObject, SubpassBarrier2) {
     barrier.image = image.handle();
     barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(barrier, VK_DEPENDENCY_BY_REGION_BIT);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -1729,12 +1724,8 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = VK_WHOLE_SIZE;
 
-    VkDependencyInfo buffer_dependency = vku::InitStructHelper();
-    buffer_dependency.bufferMemoryBarrierCount = 1;
-    buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &buffer_dependency);
+    m_command_buffer.Barrier(buffer_barrier);
     m_command_buffer.End();
 
     // HOST stage as destination
@@ -1751,12 +1742,8 @@ TEST_F(PositiveSyncObject, BarrierWithHostStage) {
     image_barrier.image = image.handle();
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo image_dependency = vku::InitStructHelper();
-    image_dependency.imageMemoryBarrierCount = 1;
-    image_dependency.pImageMemoryBarriers = &image_barrier;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &image_dependency);
+    m_command_buffer.Barrier(image_barrier);
     m_command_buffer.End();
 }
 
@@ -1772,12 +1759,8 @@ TEST_F(PositiveSyncObject, BarrierASBuildWithShaderReadAccess) {
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &mem_barrier;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2KHR(m_command_buffer, &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
     m_command_buffer.End();
 }
 
@@ -1797,12 +1780,8 @@ TEST_F(PositiveSyncObject, BarrierAccessSyncMicroMap) {
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &mem_barrier;
-
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
     m_command_buffer.End();
 }
 
@@ -2008,12 +1987,8 @@ TEST_F(PositiveSyncObject, IgnoreAcquireOpSrcStage) {
     acquire_barrier.offset = 0;
     acquire_barrier.size = 256;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &acquire_barrier;
-
     transfer_cb.Begin();
-    vk::CmdPipelineBarrier2(transfer_cb.handle(), &dep_info);
+    transfer_cb.Barrier(acquire_barrier);
     transfer_cb.End();
 }
 
@@ -2044,12 +2019,8 @@ TEST_F(PositiveSyncObject, IgnoreReleaseOpDstStage) {
     release_barrier.offset = 0;
     release_barrier.size = 256;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &release_barrier;
-
     release_cb.Begin();
-    vk::CmdPipelineBarrier2(release_cb.handle(), &dep_info);
+    release_cb.Barrier(release_barrier);
     release_cb.End();
 }
 
@@ -2088,11 +2059,8 @@ TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalizeSubresourceRange) {
     // Specify exact mip/layer count
     release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo release_dep_info = vku::InitStructHelper();
-    release_dep_info.imageMemoryBarrierCount = 1;
-    release_dep_info.pImageMemoryBarriers = &release_barrier;
     release_cb.Begin();
-    vk::CmdPipelineBarrier2(release_cb, &release_dep_info);
+    release_cb.Barrier(release_barrier);
     release_cb.End();
 
     // Acquire image
@@ -2110,11 +2078,8 @@ TEST_F(PositiveSyncObject, ImageOwnershipTransferNormalizeSubresourceRange) {
     // Test for regression when VK_REMAINING is not compared correctly against specific mip/layer values for ownership transfer.
     acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
 
-    VkDependencyInfo acquire_dep_info = vku::InitStructHelper();
-    acquire_dep_info.imageMemoryBarrierCount = 1;
-    acquire_dep_info.pImageMemoryBarriers = &acquire_barrier;
     acquire_cb.Begin();
-    vk::CmdPipelineBarrier2(acquire_cb, &acquire_dep_info);
+    acquire_cb.Barrier(acquire_barrier);
     acquire_cb.End();
 
     // Submit release on the transfer queue and acquire on the main queue.
@@ -2463,14 +2428,9 @@ TEST_F(PositiveSyncObject, OwnershipTransferUseAllStages) {
     acquire_barrier.offset = 0;
     acquire_barrier.size = 256;
 
-    VkDependencyInfo acquire_dep_info = vku::InitStructHelper();
-    // Use this dependency flag to be able to use src stage other then ALL_COMMANDS
-    acquire_dep_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
-    acquire_dep_info.bufferMemoryBarrierCount = 1;
-    acquire_dep_info.pBufferMemoryBarriers = &acquire_barrier;
-
     transfer_cb.Begin();
-    vk::CmdPipelineBarrier2(transfer_cb, &acquire_dep_info);
+    // Use dependency flag to be able to use src stage other then ALL_COMMANDS
+    transfer_cb.Barrier(acquire_barrier, VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR);
     transfer_cb.End();
 
     // Release operation on transfer queue.
@@ -2486,14 +2446,9 @@ TEST_F(PositiveSyncObject, OwnershipTransferUseAllStages) {
     release_barrier.offset = 0;
     release_barrier.size = 256;
 
-    VkDependencyInfo release_dep_info = vku::InitStructHelper();
-    // Use this dependency flag to be able to use dst stage other then ALL_COMMANDS
-    release_dep_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
-    release_dep_info.bufferMemoryBarrierCount = 1;
-    release_dep_info.pBufferMemoryBarriers = &release_barrier;
-
     transfer_cb.Begin();
-    vk::CmdPipelineBarrier2(transfer_cb, &release_dep_info);
+    // Use dependency flag to be able to use dst stage other then ALL_COMMANDS
+    transfer_cb.Barrier(release_barrier, VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR);
     transfer_cb.End();
 }
 

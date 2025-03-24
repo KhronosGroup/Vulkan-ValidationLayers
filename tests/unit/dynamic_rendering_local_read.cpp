@@ -251,14 +251,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = img_barrier2.ptr();
-
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-dynamicRenderingLocalRead-09552");
@@ -275,7 +270,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrier) {
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09551");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -329,15 +324,10 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierOwnership) {
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = img_barrier2.ptr();
-
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-srcQueueFamilyIndex-09550");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageMemoryBarrier2-dynamicRenderingLocalRead-09552");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdPipelineBarrier2-None-09554");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier-srcQueueFamilyIndex-09550");
@@ -385,13 +375,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierNoBufferOrImage) {
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = img_barrier2.ptr();
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09554");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-09554");
@@ -420,14 +405,9 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierFramebufferStagesOnly) {
     barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     barrier2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &barrier2;
-
     // testing vkCmdPipelineBarrier2 srcStageMask
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09556");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(barrier2, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     // testing vkCmdPipelineBarrier2 dstStageMask
@@ -435,7 +415,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierFramebufferStagesOnly) {
     std::swap(barrier2.srcAccessMask, barrier2.dstAccessMask);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09556");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(barrier2, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     // testing vkCmdPipelineBarrier srcStageMask
@@ -479,12 +459,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierRequireFeature) {
     barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     barrier2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &barrier2;
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-None-09553");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(barrier2, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     VkMemoryBarrier barrier = vku::InitStructHelper();
@@ -545,13 +521,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierInProperLayout) {
     auto img_barrier2 = ConvertVkImageMemoryBarrierToV2(img_barrier, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                         VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.imageMemoryBarrierCount = 1;
-    dependency_info.pImageMemoryBarriers = img_barrier2.ptr();
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-image-09555");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.Barrier(*img_barrier2.ptr(), VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-image-09555");
@@ -1094,15 +1065,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, DependencyViewLocalInsideRendering) {
     memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &memory_barrier_2;
-    dependency_info.bufferMemoryBarrierCount = 0;
-    dependency_info.imageMemoryBarrierCount = 0;
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dependencyFlags-07891");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(memory_barrier_2, VK_DEPENDENCY_VIEW_LOCAL_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1119,15 +1083,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, DependencyViewLocalOutsideRendering) {
     memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     memory_barrier_2.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_VIEW_LOCAL_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &memory_barrier_2;
-    dependency_info.bufferMemoryBarrierCount = 0;
-    dependency_info.imageMemoryBarrierCount = 0;
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-dependencyFlags-01186");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(memory_barrier_2, VK_DEPENDENCY_VIEW_LOCAL_BIT);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1146,15 +1103,8 @@ TEST_F(NegativeDynamicRenderingLocalRead, FramebufferSpaceStagesDst) {
     memory_barrier_2.dstStageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
     memory_barrier_2.dstAccessMask = VK_ACCESS_2_NONE;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &memory_barrier_2;
-    dependency_info.bufferMemoryBarrierCount = 0;
-    dependency_info.imageMemoryBarrierCount = 0;
-
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-srcStageMask-09556");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(memory_barrier_2, VK_DEPENDENCY_BY_REGION_BIT);
     m_errorMonitor->VerifyFound();
 }
 

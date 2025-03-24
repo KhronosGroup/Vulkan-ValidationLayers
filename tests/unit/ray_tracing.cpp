@@ -56,31 +56,27 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
 
-    VkDependencyInfo dependency_info = vku::InitStructHelper();
-    dependency_info.memoryBarrierCount = 1;
-    dependency_info.pMemoryBarriers = &mem_barrier;
-
     m_command_buffer.Begin();
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03927");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
 
     mem_barrier.srcAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcAccessMask-03928");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
 
     mem_barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03927");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03928");
-    vk::CmdPipelineBarrier2KHR(m_command_buffer.handle(), &dependency_info);
+    m_command_buffer.BarrierKHR(mem_barrier);
 
     m_command_buffer.End();
 

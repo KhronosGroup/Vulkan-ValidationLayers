@@ -26,6 +26,7 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "shader_helper.h"
+#include "sync_helper.h"
 
 #define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                                \
     do {                                                                                                   \
@@ -2038,6 +2039,41 @@ void CommandBuffer::Copy(const Buffer &src, const Buffer &dst) {
 }
 
 void CommandBuffer::ExecuteCommands(const CommandBuffer &secondary) { vk::CmdExecuteCommands(handle(), 1, &secondary.handle()); }
+
+void CommandBuffer::Barrier(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(barrier, dependency_flags);
+    vk::CmdPipelineBarrier2(handle(), &dep_info);
+}
+
+void CommandBuffer::Barrier(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(buffer_barrier, dependency_flags);
+    dep_info.dependencyFlags = dependency_flags;
+    vk::CmdPipelineBarrier2(handle(), &dep_info);
+}
+
+void CommandBuffer::Barrier(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(image_barrier, dependency_flags);
+    vk::CmdPipelineBarrier2(handle(), &dep_info);
+}
+
+void CommandBuffer::Barrier(const VkDependencyInfo &dep_info) { vk::CmdPipelineBarrier2(handle(), &dep_info); }
+
+void CommandBuffer::BarrierKHR(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(barrier, dependency_flags);
+    vk::CmdPipelineBarrier2KHR(handle(), &dep_info);
+}
+
+void CommandBuffer::BarrierKHR(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(buffer_barrier, dependency_flags);
+    vk::CmdPipelineBarrier2KHR(handle(), &dep_info);
+}
+
+void CommandBuffer::BarrierKHR(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags) {
+    VkDependencyInfo dep_info = DependencyInfo(image_barrier, dependency_flags);
+    vk::CmdPipelineBarrier2KHR(handle(), &dep_info);
+}
+
+void CommandBuffer::BarrierKHR(const VkDependencyInfo &dep_info) { vk::CmdPipelineBarrier2KHR(handle(), &dep_info); }
 
 // For positive tests, if you run with sync val, ideally want no errors.
 // Many tests need a simple quick way to sync multiple commands

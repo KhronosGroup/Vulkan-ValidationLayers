@@ -14,6 +14,10 @@
 #include "layer_validation_tests.h"
 #include "containers/limits.h"
 
+VkDependencyInfo DependencyInfo(const VkMemoryBarrier2 &barrier, VkDependencyFlags dependency_flags = 0);
+VkDependencyInfo DependencyInfo(const VkBufferMemoryBarrier2 &buffer_barrier, VkDependencyFlags dependency_flags = 0);
+VkDependencyInfo DependencyInfo(const VkImageMemoryBarrier2 &image_barrier, VkDependencyFlags dependency_flags = 0);
+
 class BarrierQueueFamilyBase {
   public:
     struct QueueFamilyObjs {

@@ -15,7 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
-#include "../framework/barrier_queue_family.h"
+#include "../framework/sync_helper.h"
 
 #include "utils/vk_layer_utils.h"
 

@@ -872,13 +872,9 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
     buffer_barrier.buffer = buffer.handle();
     buffer_barrier.size = VK_WHOLE_SIZE;
 
-    VkDependencyInfo buffer_dependency = vku::InitStructHelper();
-    buffer_dependency.bufferMemoryBarrierCount = 1;
-    buffer_dependency.pBufferMemoryBarriers = &buffer_barrier;
-
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent");
-    vk::CmdPipelineBarrier2(m_command_buffer.handle(), &buffer_dependency);
+    m_command_buffer.Barrier(buffer_barrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

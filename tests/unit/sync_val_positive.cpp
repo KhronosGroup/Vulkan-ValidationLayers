@@ -842,13 +842,9 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
-
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdPipelineBarrier2(cb2, &dep_info);
+    cb2.Barrier(layout_transition);
     cb2.End();
 
     m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
@@ -877,9 +873,6 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     layout_transition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
 
     vkt::Semaphore semaphore(*m_device);
 
@@ -893,7 +886,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage2) {
     // Submit 2: Transition layout (WRITE access)
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdPipelineBarrier2(cb2, &dep_info);
+    cb2.Barrier(layout_transition);
     cb2.End();
     m_default_queue->Submit2(cb2, vkt::Wait(semaphore));
     m_default_queue->Wait();
@@ -922,13 +915,9 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
-
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
-    vk::CmdPipelineBarrier2(cb, &dep_info);
+    cb.Barrier(layout_transition);
     cb.End();
     m_default_queue->Submit2(cb, vkt::Signal(semaphore));
 
@@ -1075,13 +1064,9 @@ TEST_F(PositiveSyncVal, FillBuffer) {
     barrier.buffer = src_buffer;
     barrier.size = size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer, src_buffer, 0, size, 42);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
     m_command_buffer.End();
 }
@@ -1110,13 +1095,9 @@ TEST_F(PositiveSyncVal, UpdateBuffer) {
     barrier.buffer = src_buffer;
     barrier.size = size;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdUpdateBuffer(m_command_buffer, src_buffer, 0, static_cast<VkDeviceSize>(data.size()), data.data());
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     vk::CmdCopyBuffer(m_command_buffer, src_buffer, dst_buffer, 1, &region);
     m_command_buffer.End();
 }
@@ -1158,10 +1139,7 @@ TEST_F(PositiveSyncVal, QSSynchronizedWritesAndAsyncWait) {
     image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_barrier.image = image;
     image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &image_barrier;
-    vk::CmdPipelineBarrier2(cb0, &dep_info);
+    cb0.Barrier(image_barrier);
     cb0.End();
     m_default_queue->Submit2(cb0, vkt::Signal(semaphore));
 
@@ -1217,9 +1195,6 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
     layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     layout_transition.image = image;
     layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.imageMemoryBarrierCount = 1;
-    dep_info.pImageMemoryBarriers = &layout_transition;
 
     // Fragment shader READs input attachment.
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -1246,7 +1221,7 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
 
     // This waits for the FRAGMENT_SHADER read before starting with transition.
     // If storeOp other than NONE was used we had to wait for it instead.
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(layout_transition);
     m_command_buffer.End();
 }
 
@@ -1991,13 +1966,9 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         release_barrier.image = image;
         release_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-        VkDependencyInfo release_dependency = vku::InitStructHelper();
-        release_dependency.imageMemoryBarrierCount = 1;
-        release_dependency.pImageMemoryBarriers = &release_barrier;
-
         transfer_command_buffer.Begin();
         vk::CmdCopyBufferToImage2(transfer_command_buffer, &copy_info);
-        vk::CmdPipelineBarrier2(transfer_command_buffer, &release_dependency);
+        transfer_command_buffer.Barrier(release_barrier);
         transfer_command_buffer.End();
 
         transfer_queue->Submit2(transfer_command_buffer, vkt::Signal(semaphore));
@@ -2021,12 +1992,8 @@ TEST_F(PositiveSyncVal, QueueFamilyOwnershipTransfer) {
         acquire_barrier.image = image;
         acquire_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-        VkDependencyInfo acquire_dependency = vku::InitStructHelper();
-        acquire_dependency.imageMemoryBarrierCount = 1;
-        acquire_dependency.pImageMemoryBarriers = &acquire_barrier;
-
         m_command_buffer.Begin();
-        vk::CmdPipelineBarrier2(m_command_buffer, &acquire_dependency);
+        m_command_buffer.Barrier(acquire_barrier);
         m_command_buffer.End();
 
         m_default_queue->Submit2(m_command_buffer, vkt::Wait(semaphore));
@@ -2211,13 +2178,9 @@ TEST_F(PositiveSyncVal, AmdBufferMarker) {
     barrier.buffer = buffer_a;
     barrier.size = 256;
 
-    VkDependencyInfo dep_info = vku::InitStructHelper();
-    dep_info.bufferMemoryBarrierCount = 1;
-    dep_info.pBufferMemoryBarriers = &barrier;
-
     m_command_buffer.Begin();
     vk::CmdWriteBufferMarkerAMD(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, buffer_a, 0, 1);
-    vk::CmdPipelineBarrier2(m_command_buffer, &dep_info);
+    m_command_buffer.Barrier(barrier);
     m_command_buffer.Copy(buffer_b, buffer_a);
     m_command_buffer.End();
 }
