@@ -90,13 +90,17 @@ bool RayQueryPass::Instrument() {
 
                 InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
 
-                InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
-                ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
-                InjectFunctionPost(current_block, ic_data);
-                // Skip the newly added valid and invalid block. Start searching again from newly split merge block
-                block_it++;
-                block_it++;
-                break;
+                if (module_.settings_.unsafe_mode) {
+                    CreateFunctionCall(current_block, &inst_it, injection_data, meta);
+                } else {
+                    InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
+                    InjectFunctionPost(current_block, ic_data);
+                    // Skip the newly added valid and invalid block. Start searching again from newly split merge block
+                    block_it++;
+                    block_it++;
+                    break;
+                }
             }
         }
     }
