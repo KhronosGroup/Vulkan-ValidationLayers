@@ -1991,3 +1991,116 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Loops) {
+    TEST_DESCRIPTION("Invalid during last iteration of a loop");
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 0; i < 64; i++) {
+                x += data[i];
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNested) {
+    TEST_DESCRIPTION("Invalid during last iteration of a loop");
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 0; i < 8; i++) {
+                for (uint j = 0; j < 8; j++) {
+                    x += data[(i * 8) + j];
+                }
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsHoistable) {
+    TEST_DESCRIPTION("Invalid during each iteration of a loop, but not dependent on the loop itself");
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 0; i < 4; i++) {
+                x += data[63] + i;
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936", 4);
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNestedHoistable) {
+    TEST_DESCRIPTION("Invalid during each iteration of a loop, but not dependent on the loop itself");
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 0; i < 2; i++) {
+                for (uint j = 0; j < 2; j++) {
+                    x += data[63] + i + j;
+                }
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936", 4);
+}
+
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsWithBranch) {
+    TEST_DESCRIPTION("Invalid during last iteration of a loop, but has branch in it");
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint result;
+            uint data[64]; // [63] will be OOB
+        };
+
+        void main() {
+            uint x = 0;
+            for (uint i = 1; i < 64; i++) {
+                if (i / 2 == 0) {
+                    x += data[i - 1];
+                } else {
+                    x += data[i];
+                }
+            }
+            result = x;
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
+}

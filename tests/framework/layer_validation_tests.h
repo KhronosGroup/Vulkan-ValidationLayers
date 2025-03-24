@@ -260,7 +260,8 @@ class GpuAVDescriptorIndexingTest : public GpuAVTest {
 
 class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
   public:
-    void ComputeStorageBufferTest(const char *shader, bool is_glsl, VkDeviceSize buffer_size, const char *expected_error = nullptr);
+    void ComputeStorageBufferTest(const char *shader, bool is_glsl, VkDeviceSize buffer_size, const char *expected_error = nullptr,
+                                  uint32_t error_count = 1);
 };
 
 class GpuAVRayQueryTest : public GpuAVTest {
