@@ -1165,9 +1165,7 @@ class CoreChecks : public vvl::Device {
 
     bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkFlags desired, bool strict,
                                   const char* vuid, const Location& buffer_loc) const;
-
-    bool ValidateCreateBufferBufferDeviceAddress(const VkBufferCreateInfo& create_info, const Location& create_info_loc) const;
-    bool ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo& create_info, const VkBufferUsageFlags2KHR& usage,
+    bool ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo& create_info, const VkBufferUsageFlags2& usage,
                                               const Location& create_info_loc) const;
 
     bool PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo,
