@@ -89,6 +89,17 @@ class Pass {
     InstructionIt FindTargetInstruction(BasicBlock& block, const Instruction& target_instruction) const;
 
     uint32_t instrumentations_count_ = 0;
+
+    // This is a very basic amount of Control Flow helpers to help track during any pass
+    struct ControlFlow {
+        bool in_loop = false;
+        uint32_t merge_target_id = 0;
+        void Update(const BasicBlock& block);
+    } cf_;
+
+    // Currently a just used to quickly see GPU runtime diff if the entire loop is not instrumented
+    // (Still deciding how to properly handle slow loops, but need examine more traces)
+    const bool debug_disable_loops_ = false;
 };
 
 }  // namespace spirv

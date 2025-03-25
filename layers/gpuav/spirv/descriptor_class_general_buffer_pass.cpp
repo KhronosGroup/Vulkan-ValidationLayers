@@ -329,6 +329,9 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
+            cf_.Update(current_block);
+            if (debug_disable_loops_ && cf_.in_loop) continue;
+
             auto& block_instructions = current_block.instructions_;
 
             if (unsafe_mode_) {

@@ -16,6 +16,7 @@
 #include "pass.h"
 #include <cstdint>
 #include <spirv/unified1/spirv.hpp>
+#include "function_basic_block.h"
 #include "generated/spirv_grammar_helper.h"
 #include "state_tracker/shader_instruction.h"
 #include "module.h"
@@ -687,6 +688,18 @@ void Pass::InjectFunctionPost(BasicBlock& original_block, const InjectConditiona
     original_block.CreateInstruction(spv::OpSelectionMerge, {ic_data.merge_block_label, spv::SelectionControlMaskNone});
     original_block.CreateInstruction(spv::OpBranchConditional,
                                      {ic_data.function_result_id, ic_data.valid_block_label, ic_data.invalid_block_label});
+}
+
+void Pass::ControlFlow::Update(const BasicBlock& block) {
+    if (in_loop) {
+        if (block.GetLabelId() == merge_target_id) {
+            in_loop = false;
+            merge_target_id = 0;
+        }
+    } else if (block.IsLoopHeader()) {
+        in_loop = true;
+        merge_target_id = block.loop_header_merge_target_;
+    }
 }
 
 }  // namespace spirv

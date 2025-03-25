@@ -182,6 +182,10 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
+
+            cf_.Update(current_block);
+            if (debug_disable_loops_ && cf_.in_loop) continue;
+
             auto& block_instructions = current_block.instructions_;
 
             // We only need to instrument the set/binding/inde/variable combo once per block
