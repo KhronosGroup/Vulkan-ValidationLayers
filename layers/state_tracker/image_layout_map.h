@@ -58,18 +58,6 @@ class ImageLayoutRegistry {
   public:
     typedef std::function<bool(const VkImageSubresource&, VkImageLayout, VkImageLayout)> Callback;
 
-    struct SubresourceLayout {
-        VkImageSubresource subresource;
-        VkImageLayout current_layout;
-        VkImageLayout initial_layout;
-
-        bool operator==(const SubresourceLayout& rhs) const;
-        bool operator!=(const SubresourceLayout& rhs) const { return !(*this == rhs); }
-        SubresourceLayout(const VkImageSubresource& subresource_, VkImageLayout current_layout_, VkImageLayout initial_layout_)
-            : subresource(subresource_), current_layout(current_layout_), initial_layout(initial_layout_) {}
-        SubresourceLayout() = default;
-    };
-
     struct LayoutEntry {
         VkImageLayout initial_layout;
         VkImageLayout current_layout;
