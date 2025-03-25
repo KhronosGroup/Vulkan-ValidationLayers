@@ -40,5 +40,5 @@ void inst_post_process_descriptor_index(const uint desc_set, const uint binding,
 
     // The index has been accessed, write out for post processing
     const uint binding_layout_index = binding_layout_offset + desc_index;
-    descriptor_index_post_process.slot[binding_layout_index] = uvec2(kPostProcessMetaMaskAccessed | cmd_id | kLinkShaderId, variable_id);
+    descriptor_index_post_process.slot[binding_layout_index] = uvec2(kPostProcessMetaMaskAccessed | cmd_id | SpecConstantLinkShaderId, variable_id);
 }

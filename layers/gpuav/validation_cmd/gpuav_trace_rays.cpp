@@ -256,14 +256,15 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
                                                                 const uint32_t* error_record, const LogObjectList& objlist,
                                                                 const std::vector<std::string>&) {
         bool skip = false;
-
         using namespace glsl;
 
-        if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreTraceRays) {
+        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
+        if (error_group != kErrorGroupGpuPreTraceRays) {
             return skip;
         }
 
-        switch (error_record[kHeaderErrorSubCodeOffset]) {
+        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        switch (error_sub_code) {
             case kErrorSubCodePreTraceRaysLimitWidth: {
                 const uint32_t width = error_record[kPreActionParamOffset_0];
                 skip |= gpuav.LogError("VUID-VkTraceRaysIndirectCommandKHR-width-03638", objlist, loc,

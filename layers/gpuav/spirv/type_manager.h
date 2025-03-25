@@ -74,6 +74,9 @@ struct Constant {
 
     uint32_t Id() const { return inst_.ResultId(); }
 
+    // Only for cases where we know the constant value
+    uint32_t GetValueUint32() const;
+
     const Type& type_;
     const Instruction& inst_;
     // Most times we just need Constant to get type or id, so being a spec const doesn't matter.

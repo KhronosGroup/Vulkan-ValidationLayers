@@ -27,6 +27,7 @@ namespace glsl {
 // Error Groups
 //
 // These will match one-for-one with the file found in gpu_shader folder
+// Note - We currently have a max of 256 slots for error groups (see kHeaderShaderIdErrorOffset)
 const int kErrorGroupInstDescriptorIndexingOOB = 1;
 const int kErrorGroupInstBufferDeviceAddress = 2;
 const int kErrorGroupInstRayQuery = 3;
@@ -38,8 +39,26 @@ const int kErrorGroupInstDescriptorClass = 8;
 const int kErrorGroupInstIndexedDraw = 9;
 const int kErrorGroupInst_Reserved_6452 = 10;  // Saved for future extension MR 6452
 
+// We just take ExecutionModel and normalize it so we only use 5 bits to store it
+const int kExecutionModelVertex = 0;
+const int kExecutionModelTessellationControl = 1;
+const int kExecutionModelTessellationEvaluation = 2;
+const int kExecutionModelGeometry = 3;
+const int kExecutionModelFragment = 4;
+const int kExecutionModelGLCompute = 5;
+const int kExecutionModelKernel = 6;
+const int kExecutionModelTaskNV = 7;
+const int kExecutionModelMeshNV = 8;
+const int kExecutionModelRayGenerationKHR = 9;
+const int kExecutionModelIntersectionKHR = 10;
+const int kExecutionModelAnyHitKHR = 11;
+const int kExecutionModelClosestHitKHR = 12;
+const int kExecutionModelMissKHR = 13;
+const int kExecutionModelCallableKHR = 14;
+const int kExecutionModelTaskEXT = 15;
+const int kExecutionModelMeshEXT = 16;
 // Used for MultiEntry and there is no single stage set
-const int kHeaderStageIdMultiEntryPoint = 0x7fffffff;  // same as spv::ExecutionModelMax
+const int kExecutionModelMultiEntryPoint = 31;
 
 // Descriptor Indexing
 //

@@ -54,7 +54,7 @@ bool inst_buffer_device_address(
     const uvec4 stage_info,
     const uint64_t addr,
     const uint access_byte_size,
-    const uint access_opcode,
+    const uint is_write,
     const uint alignment)
 {
     uint error_sub_code = kErrorSubCodeBufferDeviceAddressUnallocRef;
@@ -105,24 +105,19 @@ bool inst_buffer_device_address(
 
     if (errors_buffer_not_filled) {
         inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-        inst_errors_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
-        inst_errors_buffer.data[write_pos + kHeaderInstructionIdOffset] = inst_num;
-        inst_errors_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info.x;
+        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (error_sub_code << kErrorSubCodeShift);
+        inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-        inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstBufferDeviceAddress;
-        inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] = error_sub_code;
-
-        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
-        inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
+        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
 
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessByteSizeOffset] = access_byte_size;
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessOpcodeOffset] = access_opcode;
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessAlignmentOffset] = alignment;
+
+        const uint payload = access_byte_size | (alignment << kInstBuffAddrAccessPayloadShiftAlignment) | (is_write << kInstBuffAddrAccessPayloadShiftIsWrite);
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = payload;
     }
 
     return false;

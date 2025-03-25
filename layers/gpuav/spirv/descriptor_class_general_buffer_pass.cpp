@@ -90,7 +90,7 @@ uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descripto
         if (!index_constant || index_constant->inst_.Opcode() != spv::OpConstant) {
             return 0;  // Access Chain has dynamic value
         }
-        const uint32_t constant_value = index_constant->inst_.Word(3);
+        const uint32_t constant_value = index_constant->GetValueUint32();
 
         uint32_t current_offset = 0;
 

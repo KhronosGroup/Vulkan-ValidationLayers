@@ -186,17 +186,17 @@ struct FirstInstanceValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_first_instance_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_first_instance_comp; }
 
-    static const uint32_t desc_set_id = gpuav::glsl::kDiagPerCmdDescriptorSet;
+    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
 
     glsl::FirstInstancePushData push_constants{};
-    BoundStorageBuffer draw_buffer_binding = {gpuav::glsl::kPreDrawBinding_IndirectBuffer};
-    BoundStorageBuffer count_buffer_binding = {gpuav::glsl::kPreDrawBinding_CountBuffer};
+    BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
+    BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {gpuav::glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},  // indirect buffer
-            {gpuav::glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},  // count buffer
         };
 
@@ -266,7 +266,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
             shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
             shader_resources.push_constants.api_offset_dwords = (uint32_t)api_offset / sizeof(uint32_t);
             if (api_count_buffer) {
-                shader_resources.push_constants.flags |= gpuav::glsl::kFirstInstanceFlags_DrawCountFromBuffer;
+                shader_resources.push_constants.flags |= glsl::kFirstInstanceFlags_DrawCountFromBuffer;
                 shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
                 shader_resources.push_constants.api_count_buffer_offset_dwords =
                     (uint32_t)api_count_buffer_offset / sizeof(uint32_t);
@@ -341,15 +341,16 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                                        Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
                                        const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
-
         using namespace glsl;
 
-        if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDraw) {
+        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
+        if (error_group != kErrorGroupGpuPreDraw) {
             assert(false);
             return skip;
         }
 
-        assert(error_record[kHeaderErrorSubCodeOffset] == kErrorSubCodePreDrawFirstInstance);
+        assert(((error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift) ==
+               kErrorSubCodePreDrawFirstInstance);
 
         const uint32_t index = error_record[kPreActionParamOffset_0];
         const uint32_t invalid_first_instance = error_record[kPreActionParamOffset_1];
@@ -388,14 +389,14 @@ struct CountBufferValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_count_buffer_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_count_buffer_comp; }
 
-    static const uint32_t desc_set_id = gpuav::glsl::kDiagPerCmdDescriptorSet;
+    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
 
     glsl::CountBufferPushData push_constants{};
-    BoundStorageBuffer count_buffer_binding = {gpuav::glsl::kPreDrawBinding_CountBuffer};
+    BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {gpuav::glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},  // count buffer
         };
 
@@ -493,13 +494,13 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                                        Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
                                        const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
-
         using namespace glsl;
 
         std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
         Location loc_with_debug_region(loc, debug_region_name);
 
-        switch (error_record[kHeaderErrorSubCodeOffset]) {
+        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        switch (error_sub_code) {
             case kErrorSubCodePreDraw_DrawBufferSize: {
                 const uint32_t count = error_record[kPreActionParamOffset_0];
 
@@ -539,17 +540,17 @@ struct MeshValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_draw_mesh_indirect_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_draw_mesh_indirect_comp; }
 
-    static const uint32_t desc_set_id = gpuav::glsl::kDiagPerCmdDescriptorSet;
+    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
 
     glsl::DrawMeshPushData push_constants{};
-    BoundStorageBuffer draw_buffer_binding = {gpuav::glsl::kPreDrawBinding_IndirectBuffer};
-    BoundStorageBuffer count_buffer_binding = {gpuav::glsl::kPreDrawBinding_CountBuffer};
+    BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
+    BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {gpuav::glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},  // indirect buffer
-            {gpuav::glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},  // count buffer
         };
 
@@ -698,7 +699,6 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                                        Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
                                        const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
-
         using namespace glsl;
 
         const char *vuid_task_group_count_exceeds_max_x = "VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322";
@@ -717,7 +717,8 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
         Location loc_with_debug_region(loc, debug_region_name);
 
-        switch (error_record[kHeaderErrorSubCodeOffset]) {
+        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        switch (error_sub_code) {
             case kErrorSubCodePreDrawGroupCountX: {
                 const char *vuid_group_count_exceeds_max =
                     is_task_shader ? vuid_task_group_count_exceeds_max_x : vuid_mesh_group_count_exceeds_max_x;
@@ -789,18 +790,17 @@ struct DrawIndexedIndirectIndexBufferShader {
     static size_t GetSpirvSize() { return validation_cmd_draw_indexed_indirect_index_buffer_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_draw_indexed_indirect_index_buffer_comp; }
 
-    static const uint32_t desc_set_id = gpuav::glsl::kDiagPerCmdDescriptorSet;
+    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
 
     glsl::DrawIndexedIndirectIndexBufferPushData push_constants{};
-    BoundStorageBuffer draw_buffer_binding = {gpuav::glsl::kPreDrawBinding_IndirectBuffer};
-    BoundStorageBuffer count_buffer_binding = {gpuav::glsl::kPreDrawBinding_CountBuffer};
+    BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
+    BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {gpuav::glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},
-            {gpuav::glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {gpuav::glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
+            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+            {glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
 
         return bindings;
     }
@@ -832,17 +832,17 @@ struct SetupDrawCountDispatchIndirectShader {
     static size_t GetSpirvSize() { return validation_cmd_setup_draw_indexed_indirect_index_buffer_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_setup_draw_indexed_indirect_index_buffer_comp; }
 
-    static const uint32_t desc_set_id = gpuav::glsl::kDiagPerCmdDescriptorSet;
+    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
 
     glsl::DrawIndexedIndirectIndexBufferPushData push_constants{};
-    BoundStorageBuffer count_buffer_binding = {gpuav::glsl::kPreDrawBinding_CountBuffer};
-    BoundStorageBuffer dispatch_indirect_buffer_binding = {gpuav::glsl::kPreDrawBinding_DispatchIndirectBuffer};
+    BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
+    BoundStorageBuffer dispatch_indirect_buffer_binding = {glsl::kPreDrawBinding_DispatchIndirectBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {gpuav::glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {gpuav::glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {gpuav::glsl::kPreDrawBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+            {glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+            {glsl::kPreDrawBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
              nullptr},
         };
 
@@ -1040,10 +1040,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                                        Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
                                        const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
-
         using namespace glsl;
 
-        switch (error_record[kHeaderErrorSubCodeOffset]) {
+        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        switch (error_sub_code) {
             case kErrorSubCode_OobIndexBuffer: {
                 const uint32_t draw_i = error_record[kPreActionParamOffset_0];
                 const uint32_t first_index = error_record[kPreActionParamOffset_1];

@@ -55,22 +55,17 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
         const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
 
         if (errors_buffer_not_filled) {
+            const uint error = valid_vertex_attribute_fetch_vertex_input_rate ? kErrorSubCode_IndexedDraw_OOBInstanceIndex : kErrorSubCode_IndexedDraw_OOBVertexIndex;
+
             inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-            inst_errors_buffer.data[write_pos + kHeaderShaderIdOffset] = kLinkShaderId;
-            inst_errors_buffer.data[write_pos + kHeaderInstructionIdOffset] = 0;// Irrelevant
-            inst_errors_buffer.data[write_pos + kHeaderStageIdOffset] = stage_info[0];
+            inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstIndexedDraw << kErrorGroupShift) | (error << kErrorSubCodeShift);
+            // The shader stage is irrelevant because we know it is a vertex shader
+            inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = stage_info[0] << kStageIdShift;
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info[1];
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info[2];
             inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info[3];
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorGroupOffset] = kErrorGroupInstIndexedDraw;
-            inst_errors_buffer.data[write_pos + kHeaderErrorSubCodeOffset] =
-                !valid_vertex_attribute_fetch_vertex_input_rate ?
-                kErrorSubCode_IndexedDraw_OOBVertexIndex :
-                kErrorSubCode_IndexedDraw_OOBInstanceIndex;
-
-            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = inst_action_index_buffer.index[0];
-            inst_errors_buffer.data[write_pos + kHeaderCommandResourceIdOffset] = inst_cmd_resource_index_buffer.index[0];
+            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
         }
     }
 }

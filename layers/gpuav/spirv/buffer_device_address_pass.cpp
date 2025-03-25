@@ -51,7 +51,8 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
     const uint32_t opcode = meta.target_instruction->Opcode();
-    const Constant& access_opcode = module_.type_manager_.GetConstantUInt32(opcode);
+    const uint32_t is_write_value = opcode == spv::OpStore ? 1 : 0;
+    const Constant& is_write = module_.type_manager_.GetConstantUInt32(is_write_value);
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
@@ -62,7 +63,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, convert_id,
-         length_constant.Id(), access_opcode.Id(), alignment_constant.Id()},
+         length_constant.Id(), is_write.Id(), alignment_constant.Id()},
         inst_it);
 
     return function_result;

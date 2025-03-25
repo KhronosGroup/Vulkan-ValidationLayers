@@ -681,7 +681,9 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
 
     const uint32_t descriptor_index = error_record[kInstDescriptorIndexingDescIndexOffset];
     const uint32_t array_length = error_record[kInstDescriptorIndexingParamOffset_0];
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
+
+    const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+    switch (error_sub_code) {
         case kErrorSubCodeDescriptorIndexingBounds: {
             strm << "(set = " << set_num << ", binding = " << binding_num << ") Index of " << descriptor_index
                  << " used to index descriptor array of length " << array_length << ".";
@@ -742,7 +744,9 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     const uint32_t desc_index = error_record[kInstDescriptorClassDescIndexOffset];
 
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
+
+    const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+    switch (error_sub_code) {
         case kErrorSubCodeDescriptorClassGeneralBufferBounds: {
             const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
             const vvl::Buffer *buffer_state =
@@ -801,20 +805,27 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
+
+    const uint32_t payload = error_record[kInstBuffAddrAccessPayloadOffset];
+    const bool is_write = (payload >> kInstBuffAddrAccessPayloadShiftIsWrite) != 0;
+
+    const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+    switch (error_sub_code) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
-            const char *access_type = error_record[kInstBuffAddrAccessOpcodeOffset] == spv::OpStore ? "written" : "read";
+            const char *access_type = is_write ? "written" : "read";
+            const uint32_t byte_size = payload & kInstBuffAddrAccessPayloadMaskAccessSize;
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
-            strm << "Out of bounds access: " << error_record[kInstBuffAddrAccessByteSizeOffset] << " bytes " << access_type
-                 << " at buffer device address 0x" << std::hex << address << '.';
+            strm << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x" << std::hex
+                 << address << '.';
             out_vuid_msg = "UNASSIGNED-Device address out of bounds";
         } break;
         case kErrorSubCodeBufferDeviceAddressAlignment: {
-            const char *access_type = error_record[kInstBuffAddrAccessOpcodeOffset] == spv::OpStore ? "OpStore" : "OpLoad";
+            const char *access_type = is_write ? "OpStore" : "OpLoad";
+            const uint32_t alignment =
+                (payload & kInstBuffAddrAccessPayloadMaskAlignment) >> kInstBuffAddrAccessPayloadShiftAlignment;
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex << address
-                 << " is not aligned to the instruction Aligned operand of " << std::dec
-                 << error_record[kInstBuffAddrAccessAlignmentOffset] << '.';
+                 << " is not aligned to the instruction Aligned operand of " << std::dec << alignment << '.';
             out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";
         } break;
         default:
@@ -829,7 +840,9 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
     using namespace glsl;
     bool error_found = true;
     std::ostringstream strm;
-    switch (error_record[kHeaderErrorSubCodeOffset]) {
+
+    const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+    switch (error_sub_code) {
         case kErrorSubCodeRayQueryNegativeMin: {
             // TODO - Figure a way to properly use GLSL floatBitsToUint and print the float values
             strm << "OpRayQueryInitializeKHR operand Ray Tmin value is negative. ";
@@ -892,7 +905,8 @@ bool LogMessageInstRayQuery(const uint32_t *error_record, std::string &out_error
 
 bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, std::string &out_error_msg,
                                std::string &out_vuid_msg, const Location &loc, const InstrumentationErrorBlob &inst_error_blob) {
-    const uint32_t error_sub_code = error_record[glsl::kHeaderErrorSubCodeOffset];
+    const uint32_t error_sub_code =
+        (error_record[glsl::kHeaderShaderIdErrorOffset] & glsl::kErrorSubCodeMask) >> glsl::kErrorSubCodeShift;
     if (error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBVertexIndex &&
         error_sub_code != glsl::kErrorSubCode_IndexedDraw_OOBInstanceIndex) {
         return false;
@@ -1051,7 +1065,8 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
     std::string error_msg;
     std::string vuid_msg;
     bool error_found = false;
-    switch (error_record[glsl::kHeaderErrorGroupOffset]) {
+    const uint32_t error_group = error_record[glsl::kHeaderShaderIdErrorOffset] >> glsl::kErrorGroupShift;
+    switch (error_group) {
         case glsl::kErrorGroupInstDescriptorIndexingOOB:
             error_found = LogMessageInstDescriptorIndexingOOB(gpuav, error_record, error_msg, vuid_msg, descriptor_sets, loc,
                                                               uses_shader_object);
@@ -1077,7 +1092,7 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
         // Lookup the VkShaderModule handle and SPIR-V code used to create the shader, using the unique shader ID value returned
         // by the instrumented shader.
         const InstrumentedShader *instrumented_shader = nullptr;
-        const uint32_t shader_id = error_record[glsl::kHeaderShaderIdOffset];
+        const uint32_t shader_id = error_record[glsl::kHeaderShaderIdErrorOffset] & glsl::kShaderIdMask;
         auto it = gpuav.instrumented_shaders_map_.find(shader_id);
         if (it != gpuav.instrumented_shaders_map_.end()) {
             instrumented_shader = &it->second;
@@ -1085,11 +1100,17 @@ bool LogInstrumentationError(Validator &gpuav, const CommandBufferSubState &cb_s
 
         std::string debug_region_name = cb_state.GetDebugLabelRegion(label_command_i, initial_label_stack);
         Location loc_with_debug_region(loc, debug_region_name);
-        std::string debug_info_message = gpuav.GenerateDebugInfoMessage(
-            cb_state.VkHandle(), error_record[gpuav::glsl::kHeaderStageIdOffset],
-            error_record[gpuav::glsl::kHeaderStageInfoOffset_0], error_record[gpuav::glsl::kHeaderStageInfoOffset_1],
-            error_record[gpuav::glsl::kHeaderStageInfoOffset_2], error_record[gpuav::glsl::kHeaderInstructionIdOffset],
-            instrumented_shader, shader_id, pipeline_bind_point, operation_index);
+
+        const uint32_t stage_id = error_record[glsl::kHeaderStageInstructionIdOffset] >> glsl::kStageIdShift;
+        const uint32_t instruction_position = error_record[glsl::kHeaderStageInstructionIdOffset] & glsl::kInstructionIdMask;
+        GpuShaderInstrumentor::ShaderMessageInfo shader_info{stage_id,
+                                                             error_record[glsl::kHeaderStageInfoOffset_0],
+                                                             error_record[glsl::kHeaderStageInfoOffset_1],
+                                                             error_record[glsl::kHeaderStageInfoOffset_2],
+                                                             instruction_position,
+                                                             shader_id};
+        std::string debug_info_message = gpuav.GenerateDebugInfoMessage(cb_state.VkHandle(), shader_info, instrumented_shader,
+                                                                        pipeline_bind_point, operation_index);
 
         gpuav.LogError(vuid_msg.c_str(), objlist, loc_with_debug_region, "%s\n%s", error_msg.c_str(), debug_info_message.c_str());
     }

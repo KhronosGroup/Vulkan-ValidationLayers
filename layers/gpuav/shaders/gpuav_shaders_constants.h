@@ -39,8 +39,8 @@ const uint kMaxErrorsPerCmd = 6;
 // ---
 
 // Instead of having to create a variable and pass it in each time for every function call made, we use these values to map
-// constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime. (Similar to
-// Specialization Constant)
+// constants in the GLSL to be updated with constant values known when we are doing the linking at GPU-AV runtime.
+// (Basically our own implementaiton of Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 
 // This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
@@ -125,19 +125,21 @@ const int kDebugInputBuffAddrPtrOffset = 1;
 // not a valid buffer, the length associated with the 0x0 address is zero.
 const int kDebugInputBuffAddrLengthOffset = 0;
 
+// This is used various places trying to compress the Shader ID
+const uint kMaxInstrumentedShaders = 1u << 18;  // 256k
+const uint kShaderIdMask = 0x3FFFF;
+
 // Current layout for the meta_data dword
 // |     31      | 30 .......... 18 | 17 ................. 0 |
 // | is accessed | Action Cmd Index | Instrumented Shader Id |
 //
 // We make some assumptions from profiling that we can maintain these limits and squeeze all this information in a single dword
 // these values are asserted for and can be adjusted if we edge cases that matter
-const uint kMaxInstrumentedShaders = 1u << 18;      // 256k
 const uint kMaxActionsPerCommandBuffer = 1u << 13;  // 8k
 // We use a single bit mark if this descriptor was accessed or not
 const uint kPostProcessMetaMaskAccessed = 1u << 31;
 const uint kPostProcessMetaShiftActionIndex = 18;
 const uint kPostProcessMetaMaskActionIndex = 0x1FFF << kPostProcessMetaShiftActionIndex;
-const uint kPostProcessMetaMaskShaderId = 0x3FFFF;
 
 #ifdef __cplusplus
 }  // namespace glsl

@@ -1,6 +1,6 @@
-// Copyright (c) 2023-2024 The Khronos Group Inc.
-// Copyright (c) 2023-2024 Valve Corporation
-// Copyright (c) 2023-2024 LunarG, Inc.
+// Copyright (c) 2023-2025 The Khronos Group Inc.
+// Copyright (c) 2023-2025 Valve Corporation
+// Copyright (c) 2023-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,11 +48,9 @@ void GpuavLogError4(uint error_group, uint error_sub_code, uint param_0, uint pa
     const bool errors_buffer_filled = (vo_idx + kErrorRecordSize) > errors_buffer.length();
     if (errors_buffer_filled) return;
 
+    errors_buffer[vo_idx + kHeaderShaderIdErrorOffset] = (error_group << kErrorGroupShift) | (error_sub_code << kErrorSubCodeShift);
     errors_buffer[vo_idx + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-    errors_buffer[vo_idx + kHeaderActionIdOffset] = action_index[0];
-    errors_buffer[vo_idx + kHeaderCommandResourceIdOffset] = resource_index[0];
-    errors_buffer[vo_idx + kHeaderErrorGroupOffset] = error_group;
-    errors_buffer[vo_idx + kHeaderErrorSubCodeOffset] = error_sub_code;
+    errors_buffer[vo_idx + kHeaderActionIdOffset] = (action_index[0] << kActionIdShift) | resource_index[0];
 
     errors_buffer[vo_idx + kPreActionParamOffset_0] = param_0;
     errors_buffer[vo_idx + kPreActionParamOffset_1] = param_1;
