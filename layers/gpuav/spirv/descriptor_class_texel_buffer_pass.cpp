@@ -182,9 +182,7 @@ bool DescriptorClassTexelBufferPass::Instrument() {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
+
             auto& block_instructions = current_block.instructions_;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
