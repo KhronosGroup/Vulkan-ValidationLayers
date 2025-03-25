@@ -146,7 +146,6 @@ TEST_F(NegativeBuffer, CreateBufferViewNoMemoryBoundToBuffer) {
 TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     TEST_DESCRIPTION("Attempt to create a buffer view with invalid create info.");
     RETURN_IF_SKIP(Init());
-
     const VkPhysicalDeviceLimits &dev_limits = m_device->Physical().limits_;
     const VkDeviceSize minTexelBufferOffsetAlignment = dev_limits.minTexelBufferOffsetAlignment;
     if (minTexelBufferOffsetAlignment == 1) {
@@ -162,19 +161,20 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
 
     // Create a test buffer--buffer must have been created using VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT or
     // VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so use a different usage value instead to cause an error
-    vkt::Buffer bad_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    const uint32_t buffer_size = 1024;
+    vkt::Buffer bad_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = bad_buffer.handle();
+    buff_view_ci.buffer = bad_buffer;
     buff_view_ci.format = format_with_uniform_texel_support;
     buff_view_ci.range = VK_WHOLE_SIZE;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-buffer-00932");
 
-    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
 
     // Offset must be less than the size of the buffer, so set it equal to the buffer size to cause an error
-    buff_view_ci.buffer = buffer.handle();
-    buff_view_ci.offset = buffer.CreateInfo().size;
+    buff_view_ci.buffer = buffer;
+    buff_view_ci.offset = buffer_size;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00925");
 
     // Offset must be a multiple of VkPhysicalDeviceLimits::minTexelBufferOffsetAlignment so add 1 to ensure it is not
@@ -195,7 +195,10 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     // Twice the element size of format multiplied by VkPhysicalDeviceLimits::maxTexelBufferElements guarantees range divided by the
     // element size is greater than maxTexelBufferElements, causing failure
     buff_view_ci.range = 2 * static_cast<VkDeviceSize>(format_size) * static_cast<VkDeviceSize>(dev_limits.maxTexelBufferElements);
-    m_errorMonitor->SetDesiredError("VUID-VkBufferViewCreateInfo-range-00930");
+    CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-range-00930");
+
+    buff_view_ci.offset = minTexelBufferOffsetAlignment;
+    buff_view_ci.range = buffer_size;
     CreateBufferViewTest(buff_view_ci, "VUID-VkBufferViewCreateInfo-offset-00931");
 }
 
