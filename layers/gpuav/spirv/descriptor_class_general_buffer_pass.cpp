@@ -328,9 +328,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
         if (function->instrumentation_added_) continue;
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
-            if (current_block.IsLoopHeader()) {
-                continue;  // Currently can't properly handle injecting CFG logic into a loop header block
-            }
+
             auto& block_instructions = current_block.instructions_;
 
             if (unsafe_mode_) {
