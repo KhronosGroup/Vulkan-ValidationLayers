@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <!-- small_vector -->
+    <Type Name="small_vector&lt;*,*,*&gt;">
+        <DisplayString>size = {size_}</DisplayString>
+        <Expand>
+            <Item Name="size">size_</Item>
+            <Item Name="capacity">capacity_</Item>
+            <IndexListItems>
+                <Size>size_</Size>
+                <ValueNode>(large_store_ ? large_store_[$i].object : small_store_[$i].object)</ValueNode>
+            </IndexListItems>
+        </Expand>
+    </Type>
+    <!-- ============= sparse containers ========== -->
+    <!-- small_range_map -->
+    <Type Name="sparse_container::small_range_map&lt;*,*&gt;">
+        <DisplayString>size = {size_}</DisplayString>
+        <Expand>
+            <Item Name="size">size_</Item>
+            <IndexListItems>
+                <Size>size_</Size>
+                <ValueNode>*reinterpret_cast&lt;const value_type*&gt;(&amp;backing_store_[$i])</ValueNode>
+            </IndexListItems>
+        </Expand>
+    </Type>
+</AutoVisualizer>
