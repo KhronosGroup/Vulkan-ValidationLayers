@@ -35,9 +35,7 @@ namespace subresource_adapter {
 
 class RangeEncoder;
 using IndexType = uint64_t;
-template <typename Element>
-using Range = vvl::range<Element>;
-using IndexRange = Range<IndexType>;
+using IndexRange = vvl::range<IndexType>;
 using WritePolicy = sparse_container::value_precedence;
 using split_op_keep_both = sparse_container::split_op_keep_both;
 
@@ -473,51 +471,41 @@ class ImageRangeGenerator {
 // double wrapped map variants.. to avoid needing to templatize on the range map type.  The underlying maps are available for
 // use in performance sensitive places that are *already* templatized (for example update_range_value).
 // In STL style.  Note that N must be < uint8_t max
-enum BothRangeMapMode { kTristate, kSmall, kBig };
 template <typename T, size_t N>
 class BothRangeMap {
-    using BigMap = sparse_container::range_map<IndexType, T>;
-    using RangeType = vvl::range<IndexType>;
-    using SmallMap = sparse_container::small_range_map<IndexType, T, RangeType, N>;
+    using SmallMap = sparse_container::small_range_map<IndexType, T, vvl::range<IndexType>, N>;
     using SmallMapIterator = typename SmallMap::iterator;
     using SmallMapConstIterator = typename SmallMap::const_iterator;
+
+    using BigMap = sparse_container::range_map<IndexType, T>;
     using BigMapIterator = typename BigMap::iterator;
     using BigMapConstIterator = typename BigMap::const_iterator;
 
   public:
-    using value_type = typename SmallMap::value_type;
-    using key_type = typename SmallMap::key_type;
-    using index_type = typename SmallMap::index_type;
-    using mapped_type = typename SmallMap::mapped_type;
-    using small_map = SmallMap;
-    using big_map = BigMap;
+    using index_type = IndexType;
+    using key_type = vvl::range<IndexType>;
+    using mapped_type = T;
+    using value_type = std::pair<const key_type, mapped_type>;
 
-    template <typename Map, typename Value, typename SmallIt, typename BigIt>
+    template <typename Value, typename SmallIt, typename BigIt>
     class IteratorImpl {
-      protected:
-        friend BothRangeMap;
-
       public:
         Value* operator->() const {
-            assert(!Tristate());
-            if (SmallMode()) {
+            if (is_small_it_) {
                 return small_it_.operator->();
             } else {
                 return big_it_.operator->();
             }
         }
-
         Value& operator*() const {
-            assert(!Tristate());
-            if (SmallMode()) {
+            if (is_small_it_) {
                 return small_it_.operator*();
             } else {
                 return big_it_.operator*();
             }
         }
         IteratorImpl& operator++() {
-            assert(!Tristate());
-            if (SmallMode()) {
+            if (is_small_it_) {
                 small_it_.operator++();
             } else {
                 big_it_.operator++();
@@ -525,8 +513,7 @@ class BothRangeMap {
             return *this;
         }
         IteratorImpl& operator--() {
-            assert(!Tristate());
-            if (SmallMode()) {
+            if (is_small_it_) {
                 small_it_.operator--();
             } else {
                 big_it_.operator--();
@@ -534,121 +521,93 @@ class BothRangeMap {
             return *this;
         }
         IteratorImpl& operator=(const IteratorImpl& other) {
-            if (other.Tristate()) {
-                // Transition to tristate
-                small_it_ = SmallIt();
-                big_it_ = BigIt();
-            } else if (other.SmallMode()) {
-                small_it_ = other.small_it_;
-                if (mode_ != other.mode_) {
-                    big_it_ = BigIt();
-                }
-            } else {
-                big_it_ = other.big_it_;
-                if (mode_ != other.mode_) {
-                    small_it_ = SmallIt();
-                }
-            }
-            mode_ = other.mode_;
+            is_small_it_ = other.is_small_it_;
+            small_it_ = other.small_it_;
+            big_it_ = other.big_it_;
             return *this;
         }
         bool operator==(const IteratorImpl& other) const {
-            if (other.Tristate()) return Tristate();  // both Tristate -> equal, any other comparison !equal
-            if (Tristate()) return false;
-
-            // Since we know neither are tristate....
-            assert(mode_ == other.mode_);
-            if (SmallMode()) {
-                return small_it_ == other.small_it_;
-            } else {
-                return big_it_ == other.big_it_;
-            }
+            // It's enough just to compare both iterators.
+            // No need to check is_small_map_it_ flag. It doesn't provide additional information.
+            return small_it_ == other.small_it_ && big_it_ == other.big_it_;
         }
         bool operator!=(const IteratorImpl& other) const { return !(*this == other); }
-        IteratorImpl() : small_it_(), big_it_(), mode_(BothRangeMapMode::kTristate) {}
-        IteratorImpl(const IteratorImpl& other)
-            : small_it_(other.SmallMode() ? other.small_it_ : SmallIt()),
-              big_it_(other.BigMode() ? other.big_it_ : BigIt()),
-              mode_(other.mode_){};
+
+        IteratorImpl() = default;
+        IteratorImpl(const IteratorImpl& other) = default;
+        IteratorImpl(const SmallIt& it) : is_small_it_(true), small_it_(it) {}
+        IteratorImpl(const BigIt& it) : is_small_it_(false), big_it_(it) {}
 
       private:
-        IteratorImpl(BothRangeMapMode mode) : small_it_(), big_it_(), mode_(mode) {}
-        IteratorImpl(const SmallIt& it) : small_it_(it), big_it_(), mode_(BothRangeMapMode::kSmall) {}
-        IteratorImpl(const BigIt& it) : small_it_(), big_it_(it), mode_(BothRangeMapMode::kBig) {}
-        inline bool SmallMode() const { return BothRangeMapMode::kSmall == mode_; }
-        inline bool BigMode() const { return BothRangeMapMode::kBig == mode_; }
-        inline bool Tristate() const { return BothRangeMapMode::kTristate == mode_; }
-        SmallIt small_it_;  // only one of these will be initialized non trivially (and they should be small)
+        friend BothRangeMap;
+
+        bool is_small_it_ = false;
+        SmallIt small_it_;
         BigIt big_it_;
-        BothRangeMapMode mode_;
     };
 
-    using iterator = IteratorImpl<BothRangeMap, value_type, SmallMapIterator, BigMapIterator>;
+    using iterator = IteratorImpl<value_type, SmallMapIterator, BigMapIterator>;
     // TODO change const iterator to derived class if iterator -> const_iterator constructor is needed
-    using const_iterator = IteratorImpl<const BothRangeMap, const value_type, SmallMapConstIterator, BigMapConstIterator>;
+    using const_iterator = IteratorImpl<const value_type, SmallMapConstIterator, BigMapConstIterator>;
 
-    inline iterator begin() {
-        if (SmallMode()) {
+    iterator begin() {
+        if (small_map_) {
             return iterator(small_map_->begin());
         } else {
             return iterator(big_map_->begin());
         }
     }
-    inline const_iterator cbegin() const {
-        if (SmallMode()) {
+    const_iterator cbegin() const {
+        if (small_map_) {
             return const_iterator(small_map_->begin());
         } else {
             return const_iterator(big_map_->begin());
         }
     }
-    inline const_iterator begin() const { return cbegin(); }
+    const_iterator begin() const { return cbegin(); }
 
-    inline iterator end() {
-        if (SmallMode()) {
+    iterator end() {
+        if (small_map_) {
             return iterator(small_map_->end());
         } else {
             return iterator(big_map_->end());
         }
     }
-    inline const_iterator cend() const {
-        if (SmallMode()) {
+    const_iterator cend() const {
+        if (small_map_) {
             return const_iterator(small_map_->end());
         } else {
             return const_iterator(big_map_->end());
         }
     }
-    inline const_iterator end() const { return cend(); }
+    const_iterator end() const { return cend(); }
 
-    inline iterator find(const key_type& key) {
-        assert(!Tristate());
-        if (SmallMode()) {
+    iterator find(const key_type& key) {
+        if (small_map_) {
             return iterator(small_map_->find(key));
         } else {
             return iterator(big_map_->find(key));
         }
     }
 
-    inline const_iterator find(const key_type& key) const {
-        assert(!Tristate());
-        if (SmallMode()) {
+    const_iterator find(const key_type& key) const {
+        if (small_map_) {
             return const_iterator(small_map_->find(key));
         } else {
             return const_iterator(big_map_->find(key));
         }
     }
 
-    inline iterator find(const index_type& index) {
-        assert(!Tristate());
-        if (SmallMode()) {
+    iterator find(const index_type& index) {
+        if (small_map_) {
             return iterator(small_map_->find(index));
         } else {
             return iterator(big_map_->find(index));
         }
     }
 
-    inline const_iterator find(const index_type& index) const {
-        assert(!Tristate());
-        if (SmallMode()) {
+    const_iterator find(const index_type& index) const {
+        if (small_map_) {
             return const_iterator(static_cast<const SmallMap*>(small_map_)->find(index));
         } else {
             return const_iterator(static_cast<const BigMap*>(big_map_)->find(index));
@@ -656,37 +615,26 @@ class BothRangeMap {
     }
 
     // TODO -- this is supposed to be a const_iterator, which is constructable from an iterator
-    inline void insert(const iterator& hint, const value_type& value) {
-        assert(!Tristate());
-        if (SmallMode()) {
-            assert(hint.SmallMode());
+    void insert(const iterator& hint, const value_type& value) {
+        if (small_map_) {
+            assert(hint.is_small_it_);
             small_map_->insert(hint.small_it_, value);
         } else {
-            assert(hint.BigMode());
+            assert(!hint.is_small_it_);
             big_map_->insert(hint.big_it_, value);
         }
     }
 
-    template <typename SplitOp>
-    iterator split(const iterator whole_it, const index_type& index, const SplitOp& split_op) {
-        assert(!Tristate());
-        if (SmallMode()) {
-            return small_map_->split(whole_it.small_it_, index, split_op);
-        } else {
-            return big_map_->split(whole_it.big_it_, index, split_op);
-        }
-    }
-
-    inline iterator lower_bound(const key_type& key) {
-        if (SmallMode()) {
+    iterator lower_bound(const key_type& key) {
+        if (small_map_) {
             return iterator(small_map_->lower_bound(key));
         } else {
             return iterator(big_map_->lower_bound(key));
         }
     }
 
-    inline const_iterator lower_bound(const key_type& key) const {
-        if (SmallMode()) {
+    const_iterator lower_bound(const key_type& key) const {
+        if (small_map_) {
             return const_iterator(small_map_->lower_bound(key));
         } else {
             return const_iterator(big_map_->lower_bound(key));
@@ -694,37 +642,44 @@ class BothRangeMap {
     }
 
     template <typename Value>
-    inline iterator overwrite_range(const iterator& lower, Value&& value) {
-        if (SmallMode()) {
-            assert(lower.SmallMode());
+    iterator overwrite_range(const iterator& lower, Value&& value) {
+        if (small_map_) {
+            assert(lower.is_small_it_);
             return small_map_->overwrite_range(lower.small_it_, std::forward<Value>(value));
         } else {
-            assert(lower.BigMode());
+            assert(!lower.is_small_it_);
             return big_map_->overwrite_range(lower.big_it_, std::forward<Value>(value));
         }
     }
 
     // With power comes responsibility.  You can get to the underlying maps, s.t. in inner loops, the "SmallMode" checks can be
     // avoided per call, just be sure and Get the correct one.
-    BothRangeMapMode GetMode() const { return mode_; }
-    const small_map& GetSmallMap() const {
-        assert(SmallMode());
+    const SmallMap& GetSmallMap() const {
+        assert(small_map_);
         return *small_map_;
     }
-    small_map& GetSmallMap() {
-        assert(SmallMode());
+    SmallMap& GetSmallMap() {
+        assert(small_map_);
         return *small_map_;
     }
-    const big_map& GetBigMap() const {
-        assert(BigMode());
+    const BigMap& GetBigMap() const {
+        assert(big_map_);
         return *big_map_;
     }
-    big_map& GetBigMap() {
-        assert(BigMode());
+    BigMap& GetBigMap() {
+        assert(big_map_);
         return *big_map_;
     }
+
     BothRangeMap() = delete;
-    BothRangeMap(index_type limit) : mode_(ComputeMode(limit)), big_map_(MakeBigMap()), small_map_(MakeSmallMap(limit)) {}
+
+    BothRangeMap(index_type limit) {
+        if (limit <= N) {
+            small_map_ = new (backing_store) SmallMap(limit);
+        } else {
+            big_map_ = new (backing_store) BigMap();
+        }
+    }
 
     ~BothRangeMap() {
         if (big_map_) {
@@ -735,47 +690,25 @@ class BothRangeMap {
         }
     }
 
-    inline bool empty() const {
-        if (SmallMode()) {
+    bool empty() const {
+        if (small_map_) {
             return small_map_->empty();
         } else {
-            assert(BigMode());
             return big_map_->empty();
         }
     }
 
-    inline size_t size() const {
-        if (SmallMode()) {
+    size_t size() const {
+        if (small_map_) {
             return small_map_->size();
         } else {
-            assert(BigMode());
             return big_map_->size();
         }
     }
 
-    inline bool SmallMode() const { return BothRangeMapMode::kSmall == mode_; }
-    inline bool BigMode() const { return BothRangeMapMode::kBig == mode_; }
-    inline bool Tristate() const { return BothRangeMapMode::kTristate == mode_; }
+    bool UsesSmallMap() const { return small_map_ != nullptr; }
 
   private:
-    static BothRangeMapMode ComputeMode(index_type size_limit) {
-        return size_limit <= N ? BothRangeMapMode::kSmall : BothRangeMapMode::kBig;
-    }
-    BigMap* MakeBigMap() {
-        if (BigMode()) {
-            return new (backing_store) BigMap();
-        }
-        return nullptr;
-    }
-    SmallMap* MakeSmallMap(index_type limit) {
-        if (SmallMode()) {
-            return new (backing_store) SmallMap(limit);
-        }
-        return nullptr;
-    }
-
-    BothRangeMapMode mode_ = BothRangeMapMode::kTristate;
-    // Must be after mode_ as they use mode for initialization logic
     BigMap* big_map_ = nullptr;
     SmallMap* small_map_ = nullptr;
 

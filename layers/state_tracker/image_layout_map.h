@@ -163,7 +163,6 @@ class ImageLayoutRegistry {
 class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
   public:
     using RangeGenerator = image_layout_map::RangeGenerator;
-    using RangeType = key_type;
 
     GlobalImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
