@@ -481,7 +481,34 @@ void Module::LinkFunction(const LinkInfo& info) {
 
             id_swap_map[old_result_id] = type_id;
 
-        } else if (ConstantOperation(opcode)) {
+        } else if (ConstantOperation(opcode) || IsSpecConstant(opcode)) {
+            if (opcode == spv::OpSpecConstant) {
+                // Replace LinkConstants with a OpCostant
+                uint32_t new_op_constant[4];
+                new_op_constant[0] = (4 << 16) | spv::OpConstant;
+                new_op_constant[1] = new_inst->Word(1);
+                new_op_constant[2] = new_inst->Word(2);
+                if (new_inst->Word(3) == glsl::kLinkShaderId) {
+                    new_op_constant[3] = settings_.shader_id;
+                }
+                new_inst.reset(new Instruction(new_op_constant, kLinkedInstruction));
+            } else if (opcode == spv::OpSpecConstantOp) {
+                // Apply the SpecConstantOp and generate a new OpCostant
+                uint32_t new_op_constant[4];
+                new_op_constant[0] = (4 << 16) | spv::OpConstant;
+                new_op_constant[1] = new_inst->Word(1);
+                new_op_constant[2] = new_inst->Word(2);
+                const uint32_t operation = new_inst->Word(3);
+                if (operation == spv::OpBitwiseOr) {
+                    const Constant* op_1 = type_manager_.FindConstantById(id_swap_map[new_inst->Word(4)]);
+                    const Constant* op_2 = type_manager_.FindConstantById(id_swap_map[new_inst->Word(5)]);
+                    new_op_constant[3] = op_1->GetValueUint32() | op_2->GetValueUint32();
+                } else {
+                    assert(false);  // Missing support
+                }
+                new_inst.reset(new Instruction(new_op_constant, kLinkedInstruction));
+            }
+
             const Type& type = *type_manager_.FindTypeById(id_swap_map[new_inst->TypeId()]);
             const Constant* constant = nullptr;
             // for simplicity, just create a new constant for things other than 32-bit OpConstant as there are rarely-to-none
@@ -496,11 +523,6 @@ void Module::LinkFunction(const LinkInfo& info) {
                     constant = type_manager_.FindConstantInt32(type.Id(), constant_value);
                 } else if (type.inst_.Opcode() == spv::OpTypeFloat && type.inst_.Word(2) == 32) {
                     constant = type_manager_.FindConstantFloat32(type.Id(), constant_value);
-                }
-
-                // Replace LinkConstants
-                if (constant_value == glsl::kLinkShaderId) {
-                    new_inst->UpdateWord(3, settings_.shader_id);
                 }
             }
 
@@ -535,7 +557,10 @@ void Module::LinkFunction(const LinkInfo& info) {
 
             type_manager_.AddVariable(std::move(new_inst), *type);
         } else if (opcode == spv::OpDecorate || opcode == spv::OpMemberDecorate) {
-            decorations.emplace_back(std::move(new_inst));
+            // We want to drop any SpecId we added
+            if (opcode != spv::OpDecorate || new_inst->Word(2) != spv::DecorationSpecId) {
+                decorations.emplace_back(std::move(new_inst));
+            }
         } else if (opcode == spv::OpCapability) {
             spv::Capability capability = spv::Capability(new_inst->Word(1));
             // Shader is required and we want to remove Linkage from final shader

@@ -87,10 +87,36 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
     if (module_.entry_points_.size() > 1) {
         // For Multi Entry Points it currently a lot of work to scan every function to see where it will be called from
         // For now we will just report it is "unknown" and skip printing that part of the error message
-        stage_info[0] = module_.type_manager_.GetConstantUInt32(glsl::kHeaderStageIdMultiEntryPoint).Id();
+        stage_info[0] = module_.type_manager_.GetConstantUInt32(glsl::kExecutionModelMultiEntryPoint).Id();
     } else {
         spv::ExecutionModel execution_model = spv::ExecutionModel(module_.entry_points_.begin()->get()->Operand(0));
-        stage_info[0] = module_.type_manager_.GetConstantUInt32(execution_model).Id();
+
+        // Need to map how GenerateStageMessage() will consume it
+        uint32_t normalized_execution_model = execution_model;
+        if (execution_model == spv::ExecutionModelTaskNV) {
+            normalized_execution_model = glsl::kExecutionModelTaskNV;
+        } else if (execution_model == spv::ExecutionModelMeshNV) {
+            normalized_execution_model = glsl::kExecutionModelMeshNV;
+        } else if (execution_model == spv::ExecutionModelRayGenerationKHR) {
+            normalized_execution_model = glsl::kExecutionModelRayGenerationKHR;
+        } else if (execution_model == spv::ExecutionModelIntersectionKHR) {
+            normalized_execution_model = glsl::kExecutionModelIntersectionKHR;
+        } else if (execution_model == spv::ExecutionModelAnyHitKHR) {
+            normalized_execution_model = glsl::kExecutionModelAnyHitKHR;
+        } else if (execution_model == spv::ExecutionModelClosestHitKHR) {
+            normalized_execution_model = glsl::kExecutionModelClosestHitKHR;
+        } else if (execution_model == spv::ExecutionModelMissKHR) {
+            normalized_execution_model = glsl::kExecutionModelMissKHR;
+        } else if (execution_model == spv::ExecutionModelCallableKHR) {
+            normalized_execution_model = glsl::kExecutionModelCallableKHR;
+        } else if (execution_model == spv::ExecutionModelCallableKHR) {
+            normalized_execution_model = glsl::kExecutionModelCallableKHR;
+        } else if (execution_model == spv::ExecutionModelTaskEXT) {
+            normalized_execution_model = glsl::kExecutionModelTaskEXT;
+        } else if (execution_model == spv::ExecutionModelMeshEXT) {
+            normalized_execution_model = glsl::kExecutionModelMeshEXT;
+        }
+        stage_info[0] = module_.type_manager_.GetConstantUInt32(normalized_execution_model).Id();
 
         // Gets BuiltIn variable and creates a valid OpLoad of it
         auto create_load = [this, &block, &inst_it](spv::BuiltIn built_in) {

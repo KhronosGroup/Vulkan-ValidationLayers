@@ -210,11 +210,13 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
         bool skip = false;
         using namespace glsl;
 
-        if (error_record[kHeaderErrorGroupOffset] != kErrorGroupGpuPreDispatch) {
+        const uint32_t error_group = error_record[kHeaderShaderIdErrorOffset] >> kErrorGroupShift;
+        if (error_group != kErrorGroupGpuPreDispatch) {
             return skip;
         }
 
-        switch (error_record[kHeaderErrorSubCodeOffset]) {
+        const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
+        switch (error_sub_code) {
             case kErrorSubCodePreDispatchCountLimitX: {
                 uint32_t count = error_record[kPreActionParamOffset_0];
                 skip |= gpuav.LogError("VUID-VkDispatchIndirectCommand-x-00417", objlist, loc,

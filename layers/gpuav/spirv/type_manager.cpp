@@ -14,6 +14,7 @@
  */
 
 #include "type_manager.h"
+#include <spirv/unified1/spirv.hpp>
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
 
@@ -562,6 +563,11 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
 const Variable* TypeManager::FindVariableById(uint32_t id) const {
     auto variable = id_to_variable_.find(id);
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
+}
+
+uint32_t Constant::GetValueUint32() const {
+    assert(inst_.Opcode() == spv::OpConstant);
+    return inst_.Word(3);
 }
 
 }  // namespace spirv

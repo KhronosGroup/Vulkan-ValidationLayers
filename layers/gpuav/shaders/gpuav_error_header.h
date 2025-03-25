@@ -24,6 +24,7 @@
 #ifdef __cplusplus
 namespace gpuav {
 namespace glsl {
+using uint = unsigned int;
 #endif
 
 // GPU-AV Error record structure:
@@ -52,33 +53,63 @@ namespace glsl {
 // the size word.
 const int kHeaderErrorRecordSizeOffset = 0;
 
-// This is the shader id passed by the layer when the instrumentation pass is
-// created.
-const int kHeaderShaderIdOffset = 1;
+// We compress the |shader id|, |error group| and |error sub code| in a single dword
+// |shader id| is used to map back the VkShaderMoudle/Pipeline/ShaderObject
+// |error group| maps to which instrumentation pass is from
+// |error sub code| is how we can map things to a single VUID
+const int kHeaderShaderIdErrorOffset = 1;
 
 // This is the ordinal position of the instruction within the SPIR-V shader
 // which generated the validation error.
-const int kHeaderInstructionIdOffset = 2;
+//
+// This also is the stage which generated the validation error.
+const int kHeaderStageInstructionIdOffset = 2;
 
-// This is the stage which generated the validation error. This word is used
-// to determine the contents of the next two words in the record.
-const int kHeaderStageIdOffset = 3;  // Values come from SpvExecutionModel (See spirv.h):
 // Each stage will contain different values in the next set of words of the
 // record used to identify which instantiation of the shader generated the
 // validation error.
-const int kHeaderStageInfoOffset_0 = 4;
-const int kHeaderStageInfoOffset_1 = 5;
-const int kHeaderStageInfoOffset_2 = 6;
+const int kHeaderStageInfoOffset_0 = 3;
+const int kHeaderStageInfoOffset_1 = 4;
+const int kHeaderStageInfoOffset_2 = 5;
 
-const int kHeaderActionIdOffset = 7;
-const int kHeaderCommandResourceIdOffset = 8;
+// Compressed dword to know where the error came from in the API
+const int kHeaderActionIdOffset = 6;
 
-// This identifies the validation error
-// We use groups to more easily manage the many int values not conflicting
-const int kHeaderErrorGroupOffset = 9;
-const int kHeaderErrorSubCodeOffset = 10;
+const int kHeaderSize = 7;
 
-const int kHeaderSize = 11;
+// kHeaderShaderIdErrorOffset
+// ---
+// This dword is split up as
+// | 31 ..... 24 | 23 ......... 18 | 17 ................. 0 |
+// | Error Group | Error Sub Group | Instrumented Shader Id |
+//
+// These limits are reasonable and will be awhile until we go past them
+// When moved to slang from GLSL, can add staic asserts
+const int kErrorSubCodeShift = 18;
+const int kErrorSubCodeMask = 0x3F << kErrorSubCodeShift;  // 32 slot
+const int kErrorGroupShift = 24;
+const int kErrorGroupMask = 0xFF << kErrorGroupShift;  // 256 slots
+
+// kHeaderStageInstructionIdOffset
+// ---
+// This dword is split up as
+// | 31 .. 27 | 26 ...... 0 |
+// | Stage Id | Instruction Id |
+// We control and know there are under 32 shader stages
+// We can assume shader don't have 128 million lines of code in them
+const int kStageIdShift = 27;
+const int kStageIdMask = 0x1F << kStageIdShift;  // 32 slot
+const int kInstructionIdMask = 0x7FFFFFF;
+
+// kHeaderActionIdOffset
+// ---
+// This dword is split up as
+// | 31 ..... 16 | 15 ................. 0 |
+// | Error Group | Instrumented Shader Id |
+// Note we have a limit (kMaxActionsPerCommandBuffer) but for simplicity, divide in half until find need to adjust.
+const int kActionIdShift = 16;
+const int kActionIdMask = 0xFFFF << kActionIdShift;  // 64k slot
+const int kCommandResourceIdMask = 0xFFFF;
 
 // Error specific parameters offsets:
 // ----------------------------------
@@ -105,9 +136,15 @@ const int kInstDescriptorClassParamOffset_1 = kHeaderSize + 4;
 // two 32-bit pieces, lower bits first.
 const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
 const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
-const int kInstBuffAddrAccessByteSizeOffset = kHeaderSize + 2;
-const int kInstBuffAddrAccessOpcodeOffset = kHeaderSize + 3;
-const int kInstBuffAddrAccessAlignmentOffset = kHeaderSize + 4;
+const int kInstBuffAddrAccessPayloadOffset = kHeaderSize + 2;
+// Payload contains 3 pieces of data, compressed into a single uint32_t
+// We can be safe that assume alignment is never over 4k and the composite access is well under 512k
+// |    31    | 30 ... 19 | 18 ............ 0 |
+// | is write | Alignment | Access Byte Size |
+const uint kInstBuffAddrAccessPayloadShiftIsWrite = 31;
+const uint kInstBuffAddrAccessPayloadShiftAlignment = 19;
+const uint kInstBuffAddrAccessPayloadMaskAlignment = 0xFFF << kInstBuffAddrAccessPayloadShiftAlignment;
+const uint kInstBuffAddrAccessPayloadMaskAccessSize = 0x7FFFF;
 
 // Ray query
 // ---

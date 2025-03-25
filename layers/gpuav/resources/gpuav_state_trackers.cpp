@@ -406,7 +406,7 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
             assert(record_size == glsl::kErrorRecordSize);
 
             while (record_size > 0 && (error_record_ptr + record_size) <= error_records_end) {
-                const uint32_t error_logger_i = error_record_ptr[glsl::kHeaderCommandResourceIdOffset];
+                const uint32_t error_logger_i = error_record_ptr[glsl::kHeaderActionIdOffset] & glsl::kCommandResourceIdMask;
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
