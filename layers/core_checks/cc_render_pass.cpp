@@ -938,13 +938,13 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
                 const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
                 skip |=
                     LogError("VUID-VkRenderPassBeginInfo-pNext-02856", objlist, render_area_loc,
-                             "offset.x (%" PRId32 ") + extent.width (%" PRId32 ") is greater than framebuffer width (%" PRId32 ").",
+                             "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is greater than framebuffer width (%" PRIu32 ").",
                              deviceRenderArea.offset.x, deviceRenderArea.extent.width, framebuffer_info->width);
             }
             if ((deviceRenderArea.offset.y + deviceRenderArea.extent.height) > framebuffer_info->height) {
                 const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
                 skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02857", objlist, render_area_loc,
-                                 "offset.y (%" PRId32 ") + extent.height (%" PRId32 ") is greater than framebuffer height (%" PRId32
+                                 "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is greater than framebuffer height (%" PRIu32
                                  ").",
                                  deviceRenderArea.offset.y, deviceRenderArea.extent.height, framebuffer_info->height);
             }
@@ -967,7 +967,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
         if (x_adjusted_extent > static_cast<int64_t>(framebuffer_info->width)) {
             const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
             skip |= LogError("VUID-VkRenderPassBeginInfo-pNext-02852", objlist, render_area_loc,
-                             "offset.x (%" PRId32 ") + extent.width (%" PRId32 ") is greater than framebuffer width (%" PRId32 ").",
+                             "offset.x (%" PRId32 ") + extent.width (%" PRIu32 ") is greater than framebuffer width (%" PRIu32 ").",
                              begin_info.renderArea.offset.x, begin_info.renderArea.extent.width, framebuffer_info->width);
         }
 
@@ -977,7 +977,7 @@ bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info,
             const LogObjectList objlist(begin_info.renderPass, framebuffer_state->Handle());
             skip |=
                 LogError("VUID-VkRenderPassBeginInfo-pNext-02853", objlist, render_area_loc,
-                         "offset.y (%" PRId32 ") + extent.height (%" PRId32 ") is greater than framebuffer height (%" PRId32 ").",
+                         "offset.y (%" PRId32 ") + extent.height (%" PRIu32 ") is greater than framebuffer height (%" PRIu32 ").",
                          begin_info.renderArea.offset.y, begin_info.renderArea.extent.height, framebuffer_info->height);
         }
     }
