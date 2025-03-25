@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
- * Copyright (C) 2019-2024 Google Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,11 +81,7 @@ InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, cons
         aspect_mask = view_state_->normalized_subresource_range.aspectMask;
     }
 }
-bool ImageLayoutRegistry::SubresourceLayout::operator==(const ImageLayoutRegistry::SubresourceLayout& rhs) const {
-    bool is_equal =
-        (current_layout == rhs.current_layout) && (initial_layout == rhs.initial_layout) && (subresource == rhs.subresource);
-    return is_equal;
-}
+
 ImageLayoutRegistry::ImageLayoutRegistry(const vvl::Image& image_state)
     : image_state_(image_state),
       encoder_(image_state.subresource_encoder),
