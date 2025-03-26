@@ -953,8 +953,12 @@ class CoreChecks : public vvl::Device {
                                   const Location& loc) const;
 
     bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc) const;
-
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateImageVideo(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                            const ErrorObject& error_obj) const;
+    bool ValidateImageSwapchain(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateImageExternalMemory(const VkImageCreateInfo& create_info, const Location& create_info_loc,
+                                     VkPhysicalDeviceImageFormatInfo2& image_format_info) const;
 
     bool PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                     VkImage* pImage, const ErrorObject& error_obj) const override;
