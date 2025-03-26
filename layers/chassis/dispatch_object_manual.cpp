@@ -280,17 +280,17 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             phys_dev_props_core14.lineSubPixelPrecisionBits = line_rasterization_props.lineSubPixelPrecisionBits;
         }
 
-        if (extensions.vk_ext_vertex_attribute_divisor) {
-            VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
-            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_vertex_attribute_divisor,
-                                                     &vtx_attrib_divisor_props_ext);
-            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
-        } else if (extensions.vk_khr_vertex_attribute_divisor) {
+        if (extensions.vk_khr_vertex_attribute_divisor) {
             VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR vtx_attrib_divisor_props_khr;
             instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_vertex_attribute_divisor,
                                                      &vtx_attrib_divisor_props_khr);
             phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_khr.maxVertexAttribDivisor;
             phys_dev_props_core14.supportsNonZeroFirstInstance = vtx_attrib_divisor_props_khr.supportsNonZeroFirstInstance;
+        } else if (extensions.vk_ext_vertex_attribute_divisor) {
+            VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT vtx_attrib_divisor_props_ext;
+            instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_vertex_attribute_divisor,
+                                                     &vtx_attrib_divisor_props_ext);
+            phys_dev_props_core14.maxVertexAttribDivisor = vtx_attrib_divisor_props_ext.maxVertexAttribDivisor;
         }
 
         if (extensions.vk_khr_push_descriptor) {
