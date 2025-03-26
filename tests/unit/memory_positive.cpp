@@ -562,8 +562,10 @@ TEST_F(PositiveMemory, BindMemoryStatusBuffer) {
     vkt::Buffer buffer;
     buffer.InitNoMemory(*m_device, buffer_ci);
 
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.allocationSize = 32u;
+    alloc_info.allocationSize = mem_reqs.size;
     vkt::DeviceMemory memory(*m_device, alloc_info);
 
     VkResult result = VK_RESULT_MAX_ENUM;
