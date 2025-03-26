@@ -165,11 +165,22 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
             case spv::ExecutionModelMeshNV:
             case spv::ExecutionModelTaskEXT:
             case spv::ExecutionModelMeshEXT: {
-                const uint32_t load_id = create_load(spv::BuiltInGlobalInvocationId);
+                // This can be both a uvec3 or ivec3 so need to cast if ivec3
+                const Variable& variable = GetBuiltinVariable(spv::BuiltInGlobalInvocationId);
+                const Type* pointer_type = variable.PointerType(module_.type_manager_);
+                const uint32_t load_id = module_.TakeNextId();
+                block.CreateInstruction(spv::OpLoad, {pointer_type->Id(), load_id, variable.Id()}, &inst_it);
+                uint32_t final_load_id = load_id;
+
+                if (pointer_type->IsIVec3(module_.type_manager_)) {
+                    const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
+                    final_load_id = module_.TakeNextId();
+                    block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), final_load_id, load_id}, &inst_it);
+                }
 
                 for (uint32_t i = 0; i < 3; i++) {
                     const uint32_t extract_id = module_.TakeNextId();
-                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, load_id, i}, &inst_it);
+                    block.CreateInstruction(spv::OpCompositeExtract, {uint32_type.Id(), extract_id, final_load_id, i}, &inst_it);
                     stage_info[i + 1] = extract_id;
                 }
             } break;
@@ -190,10 +201,10 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
                 stage_info[1] = CastToUint32(primitive_id, block, &inst_it);
 
                 // convert vec3 to uvec3
-                const Type& vec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
+                const Type& uvec3_type = module_.type_manager_.GetTypeVector(uint32_type, 3);
                 const uint32_t load_id = create_load(spv::BuiltInTessCoord);
                 const uint32_t bitcast_id = module_.TakeNextId();
-                block.CreateInstruction(spv::OpBitcast, {vec3_type.Id(), bitcast_id, load_id}, &inst_it);
+                block.CreateInstruction(spv::OpBitcast, {uvec3_type.Id(), bitcast_id, load_id}, &inst_it);
 
                 // TessCoord.uv values from it
                 for (uint32_t i = 0; i < 2; i++) {
