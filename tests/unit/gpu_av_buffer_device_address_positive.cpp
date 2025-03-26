@@ -2095,3 +2095,63 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_Stress) {
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, GlobalInvocationIdIVec3) {
+    TEST_DESCRIPTION("Found issue when we assumed GlobalInvocationId was a uvec3 and it was a ivec3");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    // Looks like the following, but we force the ivec3 over a uvec3
+    //
+    // layout(buffer_reference) buffer BDA { int x; };
+    // void main() {
+    //     ptr.x = int(gl_GlobalInvocationID.x);
+    // }
+    char const *shader_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %gl_GlobalInvocationID
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %Uniforms Block
+               OpMemberDecorate %Uniforms 0 Offset 0
+               OpDecorate %BDA Block
+               OpMemberDecorate %BDA 0 Offset 0
+               OpDecorate %gl_GlobalInvocationID BuiltIn GlobalInvocationId
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_BDA PhysicalStorageBuffer
+   %Uniforms = OpTypeStruct %_ptr_PhysicalStorageBuffer_BDA
+        %int = OpTypeInt 32 1
+        %BDA = OpTypeStruct %int
+%_ptr_PhysicalStorageBuffer_BDA = OpTypePointer PhysicalStorageBuffer %BDA
+%_ptr_PushConstant_Uniforms = OpTypePointer PushConstant %Uniforms
+          %_ = OpVariable %_ptr_PushConstant_Uniforms PushConstant
+      %int_0 = OpConstant %int 0
+%_ptr_PushConstant__ptr_PhysicalStorageBuffer_BDA = OpTypePointer PushConstant %_ptr_PhysicalStorageBuffer_BDA
+       %uint = OpTypeInt 32 0
+     %v3int = OpTypeVector %int 3
+%_ptr_Input_v3uint = OpTypePointer Input %v3int
+%gl_GlobalInvocationID = OpVariable %_ptr_Input_v3uint Input
+     %uint_0 = OpConstant %uint 0
+%_ptr_Input_int = OpTypePointer Input %int
+%_ptr_PhysicalStorageBuffer_int = OpTypePointer PhysicalStorageBuffer %int
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %15 = OpAccessChain %_ptr_PushConstant__ptr_PhysicalStorageBuffer_BDA %_ %int_0
+         %16 = OpLoad %_ptr_PhysicalStorageBuffer_BDA %15
+         %23 = OpAccessChain %_ptr_Input_int %gl_GlobalInvocationID %uint_0
+         %24 = OpLoad %int %23
+         %27 = OpAccessChain %_ptr_PhysicalStorageBuffer_int %16 %int_0
+               OpStore %27 %24 Aligned 16
+               OpReturn
+               OpFunctionEnd
+    )";
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+}

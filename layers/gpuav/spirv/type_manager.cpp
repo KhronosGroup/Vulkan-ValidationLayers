@@ -565,6 +565,20 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
 }
 
+bool Type::IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
+
+bool Type::IsSignedInt() const { return spv_type_ == SpvType::kInt && inst_.Word(3) == 1; }
+
+bool Type::IsIVec3(const TypeManager& type_manager) const {
+    if (spv_type_ == SpvType::kVector) {
+        const Type* vector_component_type = type_manager.FindTypeById(inst_.Word(2));
+        if (vector_component_type && vector_component_type->IsSignedInt()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 uint32_t Constant::GetValueUint32() const {
     assert(inst_.Opcode() == spv::OpConstant);
     return inst_.Word(3);
