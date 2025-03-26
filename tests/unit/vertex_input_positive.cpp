@@ -1275,3 +1275,49 @@ TEST_F(PositiveVertexInput, UnsupportedDivisorEXT) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveVertexInput, AttribDivisorExtAndKhr) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexAttributeInstanceRateDivisor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(pdvad_props);
+
+    VkVertexInputBindingDivisorDescription vertex_binding_divisor;
+    vertex_binding_divisor.binding = 0u;
+    vertex_binding_divisor.divisor = 2u;
+
+    VkPipelineVertexInputDivisorStateCreateInfo vertex_input_divisor_state = vku::InitStructHelper();
+    vertex_input_divisor_state.vertexBindingDivisorCount = 1u;
+    vertex_input_divisor_state.pVertexBindingDivisors = &vertex_binding_divisor;
+
+    if (pdvad_props.maxVertexAttribDivisor < vertex_input_divisor_state.vertexBindingDivisorCount) {
+        GTEST_SKIP() << "This device does not support vertexBindingDivisors";
+    }
+
+    VkVertexInputBindingDescription input_vertex_binding_description;
+    input_vertex_binding_description.binding = 0u;
+    input_vertex_binding_description.stride = 32u;
+    input_vertex_binding_description.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+    CreatePipelineHelper pipe(*this);
+    pipe.vi_ci_.pNext = &vertex_input_divisor_state;
+    pipe.vi_ci_.vertexBindingDescriptionCount = 1u;
+    pipe.vi_ci_.pVertexBindingDescriptions = &input_vertex_binding_description;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Buffer buffer(*m_device, 1027u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 1u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
