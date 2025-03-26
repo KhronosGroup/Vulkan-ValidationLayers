@@ -830,62 +830,65 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
     return skip;
 }
 
-bool CoreChecks::UpdateCommandBufferImageLayoutMap(const vvl::CommandBuffer &cb_state, const Location &image_loc,
-                                                   const ImageBarrier &img_barrier, const vvl::CommandBuffer::ImageLayoutMap &current_map,
-                                                   vvl::CommandBuffer::ImageLayoutMap &layout_updates) const {
+bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
+                                           const Location &image_loc, const ImageBarrier &image_barrier,
+                                           vvl::CommandBuffer::ImageLayoutMap &local_layout_map) const {
     bool skip = false;
-    auto image_state = Get<vvl::Image>(img_barrier.image);
-    ASSERT_AND_RETURN_SKIP(image_state);
+
+    const vvl::CommandBuffer::ImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
 
     std::shared_ptr<ImageLayoutRegistry> image_layout_registry;
-    auto iter = layout_updates.find(image_state->VkHandle());
+    auto iter = local_layout_map.find(image_state.VkHandle());
     bool new_write = false;
-    if (iter == layout_updates.end()) {
-        image_layout_registry = std::make_shared<ImageLayoutRegistry>(*image_state);
+    if (iter == local_layout_map.end()) {
+        image_layout_registry = std::make_shared<ImageLayoutRegistry>(image_state);
         new_write = true;
-        layout_updates.emplace(image_state->VkHandle(), image_layout_registry);
-    } else if (iter->second->GetImageId() != image_state->GetId()) {
-        image_layout_registry = std::make_shared<ImageLayoutRegistry>(*image_state);
+        local_layout_map.emplace(image_state.VkHandle(), image_layout_registry);
+    } else if (iter->second->GetImageId() != image_state.GetId()) {
+        image_layout_registry = std::make_shared<ImageLayoutRegistry>(image_state);
         iter->second = image_layout_registry;
         new_write = true;
     } else {
         image_layout_registry = iter->second;
     }
-    const auto &current_subresource_map = current_map.find(image_state->VkHandle());
+    const auto &current_subresource_map = cb_layout_map.find(image_state.VkHandle());
     const auto read_subresource_map =
-        (new_write && current_subresource_map != current_map.end()) ? current_subresource_map->second : image_layout_registry;
+        (new_write && current_subresource_map != cb_layout_map.end()) ? current_subresource_map->second : image_layout_registry;
     // Validate aspects in isolation.
     // This is required when handling separate depth-stencil layouts.
     for (uint32_t aspect_index = 0; aspect_index < 32; aspect_index++) {
         VkImageAspectFlags test_aspect = 1u << aspect_index;
-        if ((img_barrier.subresourceRange.aspectMask & test_aspect) == 0) {
+        if ((image_barrier.subresourceRange.aspectMask & test_aspect) == 0) {
             continue;
         }
-        auto old_layout = NormalizeSynchronization2Layout(img_barrier.subresourceRange.aspectMask, img_barrier.oldLayout);
+        auto old_layout = NormalizeSynchronization2Layout(image_barrier.subresourceRange.aspectMask, image_barrier.oldLayout);
 
         LayoutUseCheckAndMessage layout_check(old_layout, test_aspect);
-        auto normalized_isr = image_state->NormalizeSubresourceRange(img_barrier.subresourceRange);
+        auto normalized_isr = image_state.NormalizeSubresourceRange(image_barrier.subresourceRange);
         normalized_isr.aspectMask = test_aspect;
         skip |=
             read_subresource_map->AnyInRange(normalized_isr, [this, read_subresource_map, &cb_state, &layout_check, &image_loc,
-                                                              &img_barrier](const LayoutRange &range, const LayoutEntry &state) {
+                                                              &image_barrier](const LayoutRange &range, const LayoutEntry &state) {
                 bool subres_skip = false;
                 if (!layout_check.Check(state)) {
                     const auto &vuid = GetImageBarrierVUID(image_loc, sync_vuid_maps::ImageError::kConflictingLayout);
                     auto subres = read_subresource_map->Decode(range.begin);
-                    const LogObjectList objlist(cb_state.Handle(), img_barrier.image);
+                    const LogObjectList objlist(cb_state.Handle(), image_barrier.image);
                     subres_skip =
                         LogError(vuid, objlist, image_loc,
                                  "(%s) cannot transition the layout of aspect=%" PRIu32 ", level=%" PRIu32 ", layer=%" PRIu32
                                  " from %s when the "
                                  "%s layout is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), subres.aspectMask, subres.mipLevel, subres.arrayLayer,
-                                 string_VkImageLayout(img_barrier.oldLayout), layout_check.message,
+                                 FormatHandle(image_barrier.image).c_str(), subres.aspectMask, subres.mipLevel, subres.arrayLayer,
+                                 string_VkImageLayout(image_barrier.oldLayout), layout_check.message,
                                  string_VkImageLayout(layout_check.layout));
                 }
                 return subres_skip;
             });
-        image_layout_registry->SetSubresourceRangeLayout(cb_state, normalized_isr, img_barrier.newLayout);
+
+        // This updates only local layout map. This is a validation phase and it's not possible to modify command buffer
+        // layout map. Use common technique that introduces local helper object that can be modified (local_layout_map).
+        image_layout_registry->SetSubresourceRangeLayout(cb_state, normalized_isr, image_barrier.newLayout);
     }
     return skip;
 }

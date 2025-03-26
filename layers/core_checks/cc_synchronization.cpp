@@ -1577,9 +1577,9 @@ bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const L
     return skip;
 }
 
-// Verify an ImageMemoryBarrier's old/new ImageLayouts are compatible with the Image's ImageUsageFlags.
-bool CoreChecks::ValidateBarrierLayoutToImageUsage(const Location &layout_loc, VkImage image, VkImageLayout layout,
-                                                   VkImageUsageFlags usage_flags) const {
+// Verify an image barrier's old/new layouts are compatible with the image's usage flags.
+bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc, VkImage image, VkImageLayout layout,
+                                                      VkImageUsageFlags usage_flags) const {
     bool skip = false;
     bool is_error = false;
     switch (layout) {
@@ -1686,166 +1686,164 @@ std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
     return attachments;
 }
 
-// Verify image barriers are compatible with the images they reference.
-bool CoreChecks::ValidateBarriersToImages(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
-                                          const ImageBarrier &img_barrier,
-                                          vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
-    bool skip = false;
+// Verify image barrier is compatible with the image it references.
+bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
+                                                  const Location &barrier_loc, const vvl::Image &image_state,
+                                                  vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
-    const auto &current_map = cb_state.GetImageLayoutMap();
+    bool skip = false;
 
-    {
-        auto image_state = Get<vvl::Image>(img_barrier.image);
-        ASSERT_AND_RETURN_SKIP(image_state);
+    const VkImage image = image_state.VkHandle();
+    assert(image == barrier.image);
 
-        auto image_loc = barrier_loc.dot(Field::image);
+    const VkImageCreateInfo &image_ci = image_state.create_info;
+    const Location image_loc = barrier_loc.dot(Field::image);
+    const VkFormat image_format = image_ci.format;
+    const VkImageLayout old_layout = barrier.oldLayout;
+    const VkImageLayout new_layout = barrier.newLayout;
 
-        if ((img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) ||
-            (img_barrier.oldLayout != img_barrier.newLayout)) {
-            VkImageUsageFlags usage_flags = image_state->create_info.usage;
-            skip |= ValidateBarrierLayoutToImageUsage(barrier_loc.dot(Field::oldLayout), img_barrier.image, img_barrier.oldLayout,
-                                                      usage_flags);
-            skip |= ValidateBarrierLayoutToImageUsage(barrier_loc.dot(Field::newLayout), img_barrier.image, img_barrier.newLayout,
-                                                      usage_flags);
-        }
+    const VkImageAspectFlags barrier_aspect_mask = barrier.subresourceRange.aspectMask;
+    const bool has_depth_aspect = (barrier_aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
+    const bool has_stencil_aspect = (barrier_aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
 
-        // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
-        if (image_state->layout_locked) {
-            // TODO: waiting for VUID https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5078
-            skip |= LogError("UNASSIGNED-barrier-shared-presentable", img_barrier.image, image_loc,
-                             "(%s) is a shared presentable and attempting to transition from layout %s to layout %s, but image has "
-                             "already been presented and cannot have its layout transitioned.",
-                             FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.oldLayout),
-                             string_VkImageLayout(img_barrier.newLayout));
-        }
+    skip |= ValidateBarrierQueueFamilies(cb_state.Handle(), barrier_loc, image_loc, barrier, image_state.Handle(),
+                                         image_ci.sharingMode, cb_state.command_pool->queueFamilyIndex);
+    const auto &vuid_aspect = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kAspectMask);
+    skip |= ValidateImageAspectMask(image_state.VkHandle(), image_ci.format, barrier.subresourceRange.aspectMask,
+                                    image_state.disjoint, image_loc, vuid_aspect.c_str());
+    skip |= ValidateImageBarrierSubresourceRange(image_ci, barrier.subresourceRange, cb_state.Handle(),
+                                                 barrier_loc.dot(Field::subresourceRange));
 
-        const VkImageCreateInfo &image_create_info = image_state->create_info;
-        const VkFormat image_format = image_create_info.format;
-        const VkImageAspectFlags aspect_mask = img_barrier.subresourceRange.aspectMask;
-        const bool has_depth_mask = (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0;
-        const bool has_stencil_mask = (aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0;
+    if ((barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) || (old_layout != new_layout)) {
+        const VkImageUsageFlags usage_flags = image_ci.usage;
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::oldLayout), image, old_layout, usage_flags);
+        skip |= ValidateImageLayoutAgainstImageUsage(barrier_loc.dot(Field::newLayout), image, new_layout, usage_flags);
+    }
 
-        if (vkuFormatIsDepthAndStencil(image_format)) {
-            if (enabled_features.separateDepthStencilLayouts) {
-                if (!has_depth_mask && !has_stencil_mask) {
-                    auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotDepthOrStencilAspect);
-                    skip |=
-                        LogError(vuid, img_barrier.image, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
-                }
-            } else {
-                if (!has_depth_mask || !has_stencil_mask) {
-                    auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotDepthAndStencilAspect);
-                    skip |=
-                        LogError(vuid, img_barrier.image, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
-                }
+    // Make sure layout is able to be transitioned, currently only presented shared presentable images are locked
+    if (image_state.layout_locked) {
+        // TODO: waiting for VUID https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/5078
+        skip |= LogError("UNASSIGNED-barrier-shared-presentable", image, image_loc,
+                         "(%s) is a shared presentable and attempting to transition from layout %s to layout %s, but image has "
+                         "already been presented and cannot have its layout transitioned.",
+                         FormatHandle(image).c_str(), string_VkImageLayout(old_layout), string_VkImageLayout(new_layout));
+    }
+
+    if (vkuFormatIsDepthAndStencil(image_format)) {
+        if (enabled_features.separateDepthStencilLayouts) {
+            if (!has_depth_aspect && !has_stencil_aspect) {
+                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotDepthOrStencilAspect);
+                skip |= LogError(vuid, image, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.",
+                                 FormatHandle(image).c_str(), string_VkFormat(image_format),
+                                 string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+            }
+        } else {
+            if (!has_depth_aspect || !has_stencil_aspect) {
+                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotDepthAndStencilAspect);
+                skip |= LogError(vuid, image, image_loc, "(%s) has depth/stencil format %s, but its aspectMask is %s.",
+                                 FormatHandle(image).c_str(), string_VkFormat(image_format),
+                                 string_VkImageAspectFlags(barrier_aspect_mask).c_str());
             }
         }
+    }
 
-        if (has_depth_mask) {
-            if (IsImageLayoutStencilOnly(img_barrier.oldLayout) || IsImageLayoutStencilOnly(img_barrier.newLayout)) {
-                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kSeparateDepthWithStencilLayout);
-                skip |= LogError(
-                    vuid, img_barrier.image, image_loc,
-                    "(%s) has stencil format %s has depth aspect with stencil only layouts, oldLayout = %s and newLayout = %s.",
-                    FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                    string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
-            }
+    if (has_depth_aspect) {
+        if (IsImageLayoutStencilOnly(old_layout) || IsImageLayoutStencilOnly(new_layout)) {
+            auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kSeparateDepthWithStencilLayout);
+            skip |= LogError(
+                vuid, image, image_loc,
+                "(%s) has stencil format %s has depth aspect with stencil only layouts, oldLayout = %s and newLayout = %s.",
+                FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
+                string_VkImageLayout(new_layout));
         }
-        if (has_stencil_mask) {
-            if (IsImageLayoutDepthOnly(img_barrier.oldLayout) || IsImageLayoutDepthOnly(img_barrier.newLayout)) {
-                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kSeparateStencilhWithDepthLayout);
-                skip |= LogError(
-                    vuid, img_barrier.image, image_loc,
-                    "(%s) has depth format %s has stencil aspect with depth only layouts, oldLayout = %s and newLayout = %s.",
-                    FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                    string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout));
-            }
+    }
+    if (has_stencil_aspect) {
+        if (IsImageLayoutDepthOnly(old_layout) || IsImageLayoutDepthOnly(new_layout)) {
+            auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kSeparateStencilhWithDepthLayout);
+            skip |=
+                LogError(vuid, image, image_loc,
+                         "(%s) has depth format %s has stencil aspect with depth only layouts, oldLayout = %s and newLayout = %s.",
+                         FormatHandle(image).c_str(), string_VkFormat(image_format), string_VkImageLayout(old_layout),
+                         string_VkImageLayout(new_layout));
         }
+    }
 
-        if (!enabled_features.dynamicRenderingLocalRead) {
-            if (img_barrier.newLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
-                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadNew);
-                skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) cannot have newLayout = %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.newLayout));
-            }
-            if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
-                auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadOld);
-                skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) cannot have oldLayout = %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkImageLayout(img_barrier.oldLayout));
-            }
+    if (!enabled_features.dynamicRenderingLocalRead) {
+        if (new_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
+            auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadNew);
+            skip |= LogError(vuid, image, image_loc, "(%s) cannot have newLayout = %s.", FormatHandle(image).c_str(),
+                             string_VkImageLayout(new_layout));
         }
-
-        if (img_barrier.oldLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-            // TODO: Set memory invalid which is in mem_tracker currently
-        } else if (!IsQueueFamilyExternal(img_barrier.srcQueueFamilyIndex)) {
-            skip |= UpdateCommandBufferImageLayoutMap(cb_state, image_loc, img_barrier, current_map, layout_updates_state);
+        if (old_layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ) {
+            auto vuid = GetImageBarrierVUID(barrier_loc, ImageError::kDynamicRenderingLocalReadOld);
+            skip |= LogError(vuid, image, image_loc, "(%s) cannot have oldLayout = %s.", FormatHandle(image).c_str(),
+                             string_VkImageLayout(old_layout));
         }
+    }
 
-        const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-        if (enabled_features.dynamicRenderingLocalRead && rp_state) {
-            const auto &img_barrier_image = img_barrier.image;
-            const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
-            std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        // TODO: Set memory invalid which is in mem_tracker currently
+    } else if (!IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+        skip |= VerifyImageBarrierLayouts(cb_state, image_state, image_loc, barrier, layout_updates_state);
+    }
 
-            for (auto color_attachment_idx : used_attachments) {
-                if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
-                    continue;
-                }
-                const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
-                if (color_attachment.imageView == VK_NULL_HANDLE) {
-                    continue;
-                }
-                const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-                ASSERT_AND_CONTINUE(image_view_state);
-                const auto &image_view_image_state = image_view_state->image_state;
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    if (enabled_features.dynamicRenderingLocalRead && rp_state) {
+        const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
+        std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
 
-                if (img_barrier_image == image_view_image_state->VkHandle()) {
-                    auto guard = image_view_image_state->layout_range_map->ReadLock();
+        for (auto color_attachment_idx : used_attachments) {
+            if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
+                continue;
+            }
+            const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
+            if (color_attachment.imageView == VK_NULL_HANDLE) {
+                continue;
+            }
+            const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+            ASSERT_AND_CONTINUE(image_view_state);
+            const auto &image_view_image_state = image_view_state->image_state;
 
-                    for (const auto &entry : *image_view_image_state->layout_range_map) {
-                        if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
-                            const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
-                                barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
-                            skip |= LogError(vuid, img_barrier.image, barrier_loc, "image layout is %s.",
-                                             string_VkImageLayout(entry.second));
-                        }
+            if (image == image_view_image_state->VkHandle()) {
+                auto guard = image_view_image_state->layout_range_map->ReadLock();
+
+                for (const auto &entry : *image_view_image_state->layout_range_map) {
+                    if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
+                        const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
+                            barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
+                        skip |= LogError(vuid, image, barrier_loc, "image layout is %s.", string_VkImageLayout(entry.second));
                     }
                 }
             }
         }
+    }
 
-        // checks color format and (single-plane or non-disjoint)
-        // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
-
-        if (vkuFormatIsColor(image_format) && (aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
-            if (!vkuFormatIsMultiplane(image_format)) {
-                const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotColorAspectSinglePlane);
-                skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) has color format %s, but its aspectMask is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
-            } else if (!image_state->disjoint) {
-                const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotColorAspectNonDisjoint);
-                skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) has color format %s, but its aspectMask is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
-            }
-        }
-
-        if ((vkuFormatIsMultiplane(image_format)) && (image_state->disjoint == true)) {
-            if (!IsValidPlaneAspect(image_format, aspect_mask) && ((aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
-                const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kBadMultiplanarAspect);
-                skip |= LogError(vuid, img_barrier.image, image_loc, "(%s) has Multiplane format %s, but its aspectMask is %s.",
-                                 FormatHandle(img_barrier.image).c_str(), string_VkFormat(image_format),
-                                 string_VkImageAspectFlags(aspect_mask).c_str());
-            }
+    // checks color format and (single-plane or non-disjoint)
+    // if ycbcr extension is not supported then single-plane and non-disjoint are always both true
+    if (vkuFormatIsColor(image_format) && (barrier_aspect_mask != VK_IMAGE_ASPECT_COLOR_BIT)) {
+        if (!vkuFormatIsMultiplane(image_format)) {
+            const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotColorAspectSinglePlane);
+            skip |=
+                LogError(vuid, image, image_loc, "(%s) has color format %s, but its aspectMask is %s.", FormatHandle(image).c_str(),
+                         string_VkFormat(image_format), string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+        } else if (!image_state.disjoint) {
+            const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kNotColorAspectNonDisjoint);
+            skip |=
+                LogError(vuid, image, image_loc, "(%s) has color format %s, but its aspectMask is %s.", FormatHandle(image).c_str(),
+                         string_VkFormat(image_format), string_VkImageAspectFlags(barrier_aspect_mask).c_str());
         }
     }
+    if ((vkuFormatIsMultiplane(image_format)) && (image_state.disjoint == true)) {
+        if (!IsValidPlaneAspect(image_format, barrier_aspect_mask) && ((barrier_aspect_mask & VK_IMAGE_ASPECT_COLOR_BIT) == 0)) {
+            const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kBadMultiplanarAspect);
+            skip |= LogError(vuid, image, image_loc, "(%s) has Multiplane format %s, but its aspectMask is %s.",
+                             FormatHandle(image).c_str(), string_VkFormat(image_format),
+                             string_VkImageAspectFlags(barrier_aspect_mask).c_str());
+        }
+    }
+
     return skip;
 }
 
@@ -2293,12 +2291,12 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
     return skip;
 }
 
-bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
-                                      const ImageBarrier &mem_barrier) const {
+bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
+                                      const Location &barrier_loc, vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
     bool skip = false;
 
-    const VkImageLayout old_layout = mem_barrier.oldLayout;
-    const VkImageLayout new_layout = mem_barrier.newLayout;
+    const VkImageLayout old_layout = barrier.oldLayout;
+    const VkImageLayout new_layout = barrier.newLayout;
 
     bool is_ilt = true;
     if (enabled_features.synchronization2) {
@@ -2306,12 +2304,12 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     } else {
         if (old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || old_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadSync2OldLayout);
-            skip |= LogError(vuid, objects, barrier_loc.dot(Field::oldLayout),
+            skip |= LogError(vuid, objlist, barrier_loc.dot(Field::oldLayout),
                              "is %s, but the synchronization2 feature was not enabled.", string_VkImageLayout(old_layout));
         }
         if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || new_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadSync2NewLayout);
-            skip |= LogError(vuid, objects, barrier_loc.dot(Field::newLayout),
+            skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout),
                              "is %s, but the synchronization2 feature was not enabled.", string_VkImageLayout(new_layout));
         }
     }
@@ -2319,7 +2317,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
     if (is_ilt) {
         if (new_layout == VK_IMAGE_LAYOUT_UNDEFINED || new_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadLayout);
-            skip |= LogError(vuid, objects, barrier_loc.dot(Field::newLayout), "is %s.", string_VkImageLayout(new_layout));
+            skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout), "is %s.", string_VkImageLayout(new_layout));
         }
     }
 
@@ -2327,28 +2325,17 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objects, const Locati
         if (!enabled_features.attachmentFeedbackLoopLayout) {
             const auto &vuid =
                 sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadAttFeedbackLoopLayout);
-            skip |= LogError(vuid, objects, barrier_loc.dot(Field::newLayout),
+            skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout),
                              "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, but the attachmentFeedbackLoopLayout "
                              "feature was not enabled.");
         }
     }
 
-    if (auto image_data = Get<vvl::Image>(mem_barrier.image)) {
-        auto image_loc = barrier_loc.dot(Field::image);
-        // TODO - use LocationVuidAdapter
+    if (auto image_state = Get<vvl::Image>(barrier.image)) {
         const auto &vuid_no_memory = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kNoMemory);
-        skip |= ValidateMemoryIsBoundToImage(objects, *image_data, image_loc, vuid_no_memory.c_str());
-
-        skip |= ValidateBarrierQueueFamilies(objects, barrier_loc, image_loc, mem_barrier, image_data->Handle(),
-                                             image_data->create_info.sharingMode, cb_state.command_pool->queueFamilyIndex);
-
-        const auto &vuid_aspect = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kAspectMask);
         skip |=
-            ValidateImageAspectMask(image_data->VkHandle(), image_data->create_info.format, mem_barrier.subresourceRange.aspectMask,
-                                    image_data->disjoint, image_loc, vuid_aspect.c_str());
-
-        skip |= ValidateImageBarrierSubresourceRange(image_data->create_info, mem_barrier.subresourceRange, objects,
-                                                     barrier_loc.dot(Field::subresourceRange));
+            ValidateMemoryIsBoundToImage(cb_state.Handle(), *image_state, barrier_loc.dot(Field::image), vuid_no_memory.c_str());
+        skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, layout_updates_state);
     }
     return skip;
 }
@@ -2375,8 +2362,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
         const ImageBarrier barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
-        skip |= ValidateImageBarrier(objects, barrier_loc, cb_state, barrier);
-        skip |= ValidateBarriersToImages(barrier_loc, cb_state, barrier, layout_updates_state);
+        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, layout_updates_state);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
@@ -2406,8 +2392,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         const ImageBarrier barrier(dep_info.pImageMemoryBarriers[i]);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
-        skip |= ValidateImageBarrier(objects, barrier_loc, cb_state, barrier);
-        skip |= ValidateBarriersToImages(barrier_loc, cb_state, barrier, layout_updates_state);
+        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, layout_updates_state);
     }
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
