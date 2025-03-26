@@ -3776,7 +3776,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
         auto image_create_info = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                                VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
         image_create_info.pNext = &compression_control;
-
+        m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-pNext-06744");
         CreateImageTest(image_create_info, "VUID-VkImageCompressionControlEXT-flags-06748");
     }
 

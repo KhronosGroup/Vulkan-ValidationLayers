@@ -170,6 +170,398 @@ bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo
     return skip;
 }
 
+bool CoreChecks::ValidateImageVideo(const VkImageCreateInfo &create_info, const Location &create_info_loc,
+                                    const ErrorObject &error_obj) const {
+    bool skip = false;
+
+    const bool has_decode_usage =
+        create_info.usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
+                             VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR);
+    const bool has_encode_usage =
+        create_info.usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
+                             VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
+    const bool has_quantization_map_usage = create_info.usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
+                                                                 VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR);
+    const bool video_profile_independent = create_info.flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
+
+    if (video_profile_independent && !enabled_features.videoMaintenance1) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08328", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR is set but the videoMaintenance1 "
+                         "device feature is not enabled.");
+    }
+
+    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
+        (create_info.usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                         "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR without also containing "
+                         "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR.",
+                         string_VkImageUsageFlags(create_info.usage).c_str());
+    }
+
+    if (video_profile_independent && (create_info.usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
+        skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                         "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.",
+                         string_VkImageUsageFlags(create_info.usage).c_str());
+    }
+
+    // There are stronger VUs for the format properties of quantization maps (i.e. no INDEPENDENT, must be 2D, etc.).
+    // If any of these are triggered, then the video profile compatibility check can be skipped.
+    bool valid_quantization_map_format = has_quantization_map_usage;
+    if (has_quantization_map_usage) {
+        if (!enabled_features.videoEncodeQuantizationMap) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10251", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the "
+                             "videoEncodeQuantizationMap device feature is not enabled.");
+            valid_quantization_map_format = false;
+        }
+
+        if (video_profile_independent) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
+                             "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR.",
+                             string_VkImageUsageFlags(create_info.usage).c_str());
+            valid_quantization_map_format = false;
+        }
+
+        if (create_info.imageType != VK_IMAGE_TYPE_2D) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10252", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but imageType (%s) "
+                             "is not VK_IMAGE_TYPE_2D.",
+                             string_VkImageType(create_info.imageType));
+            valid_quantization_map_format = false;
+        }
+
+        if (create_info.samples != VK_SAMPLE_COUNT_1_BIT) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10253", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but samples (%s) "
+                             "is not VK_SAMPLE_COUNT_1_BIT_KHR.",
+                             string_VkSampleCountFlagBits(create_info.samples));
+            valid_quantization_map_format = false;
+        }
+
+        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(create_info.pNext);
+        if (video_profiles == nullptr) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the pNext chain does not "
+                             "contain a VkVideoProfileListInfoKHR structure.");
+            valid_quantization_map_format = false;
+        } else if (video_profiles->profileCount != 1) {
+            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%u) does not equal 1.",
+                             create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::profileCount).Fields().c_str(),
+                             video_profiles->profileCount);
+            valid_quantization_map_format = false;
+        } else {
+            const Location profile_info_loc = create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::pProfiles, 0);
+            skip |= core::ValidateVideoProfileInfo(*this, &video_profiles->pProfiles[0], error_obj,
+                                                   create_info_loc.dot(Field::pProfiles, 0));
+
+            vvl::VideoProfileDesc profile_desc(physical_device, &video_profiles->pProfiles[0]);
+            const auto &profile_caps = profile_desc.GetCapabilities();
+
+            if (profile_desc.IsEncode()) {
+                if (create_info.usage == VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR &&
+                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR) == 0) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10255", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR set but "
+                                     "the encode profile specified in %s does not support "
+                                     "VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR.",
+                                     profile_info_loc.Fields().c_str());
+                    valid_quantization_map_format = false;
+                }
+
+                if (create_info.usage == VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR &&
+                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR) == 0) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10256", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but "
+                                     "the encode profile specified in %s does not support "
+                                     "VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR.",
+                                     profile_info_loc.Fields().c_str());
+                    valid_quantization_map_format = false;
+                }
+
+                if (valid_quantization_map_format &&
+                    create_info.extent.width > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width) {
+                    skip |=
+                        LogError("VUID-VkImageCreateInfo-usage-10257", device, create_info_loc.dot(Field::usage),
+                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%u) "
+                                 "larger than the maxQuantizationMapExtent.width (%u) supported by the "
+                                 "encode profile specified in %s.",
+                                 create_info.extent.width, profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width,
+                                 profile_info_loc.Fields().c_str());
+                }
+
+                if (valid_quantization_map_format &&
+                    create_info.extent.height > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height) {
+                    skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, create_info_loc.dot(Field::usage),
+                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                     "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%u) "
+                                     "larger than the maxQuantizationMapExtent.height (%u) supported by the "
+                                     "encode profile specified in %s.",
+                                     create_info.extent.height,
+                                     profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height,
+                                     profile_info_loc.Fields().c_str());
+                }
+            } else {
+                skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
+                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
+                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s does not specify a "
+                                 "video encode operation (videoCodecOperation is %s).",
+                                 profile_info_loc.Fields().c_str(),
+                                 string_VkVideoCodecOperationFlagBitsKHR(video_profiles->pProfiles[0].videoCodecOperation));
+                valid_quantization_map_format = false;
+            }
+        }
+    }
+
+    if (has_decode_usage || has_encode_usage || valid_quantization_map_format) {
+        const bool expect_decode_profile = has_decode_usage && !video_profile_independent;
+        const bool expect_encode_profile = has_encode_usage && !video_profile_independent;
+
+        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(create_info.pNext);
+        // Quantization map video profile list info validation happens in the previous block
+        if (!has_quantization_map_usage) {
+            skip |= core::ValidateVideoProfileListInfo(
+                *this, video_profiles, error_obj, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR), expect_decode_profile,
+                "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile, "VUID-VkImageCreateInfo-usage-04816");
+        }
+
+        if (video_profiles && video_profiles->profileCount > 0) {
+            if (!IsSupportedVideoFormat(create_info, video_profiles)) {
+                skip |= LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
+                                 "specifies flags (%s), format (%s), imageType (%s), and tiling (%s) which are not "
+                                 "supported by any of the supported video format properties for the video profiles "
+                                 "specified in the VkVideoProfileListInfoKHR structure included in the "
+                                 "pCreateInfo->pNext chain, as reported by "
+                                 "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
+                                 "and the image usage flags specified in pCreateInfo->usage (%s).",
+                                 string_VkImageCreateFlags(create_info.flags).c_str(), string_VkFormat(create_info.format),
+                                 string_VkImageType(create_info.imageType), string_VkImageTiling(create_info.tiling),
+                                 string_VkImageUsageFlags(create_info.usage).c_str());
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateImageSwapchain(const VkImageCreateInfo &create_info, const Location &create_info_loc) const {
+    bool skip = false;
+
+    const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext);
+    if (!swapchain_create_info || swapchain_create_info->swapchain == VK_NULL_HANDLE) {
+        return skip;
+    }
+    auto swapchain_state = Get<vvl::Swapchain>(swapchain_create_info->swapchain);
+    if (!swapchain_state) {
+        return skip;
+    }
+
+    const VkSwapchainCreateFlagsKHR swapchain_flags = swapchain_state->create_info.flags;
+
+    // Validate rest of Swapchain Image create check that require swapchain state
+    const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
+    if (((swapchain_flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) != 0) &&
+        ((create_info.flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) == 0)) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR flag so "
+                         "all swapchain images must have the VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT flag set.");
+    }
+    if (((swapchain_flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) != 0) &&
+        ((create_info.flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0)) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR flag so all "
+                         "swapchain images must have the VK_IMAGE_CREATE_PROTECTED_BIT flag set.");
+    }
+    const VkImageCreateFlags mutable_flags = (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
+    if (((swapchain_flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) &&
+        ((create_info.flags & mutable_flags) != mutable_flags)) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR flag so "
+                         "all swapchain images must have the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and "
+                         "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT flags both set.");
+    }
+    if (create_info.format != swapchain_state->create_info.imageFormat) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with format %s which doesn't match pCreateInfo->format %s.",
+                         string_VkFormat(swapchain_state->create_info.imageFormat), string_VkFormat(create_info.format));
+    }
+    if (create_info.extent.width != swapchain_state->create_info.imageExtent.width ||
+        create_info.extent.height != swapchain_state->create_info.imageExtent.height || create_info.extent.depth != 1u) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with extent (%" PRIu32 ", %" PRIu32 ", 1) which doesn't match pCreateInfo->extent (%" PRIu32
+                         ", %" PRIu32 ", %" PRIu32 ").",
+                         swapchain_state->create_info.imageExtent.width, swapchain_state->create_info.imageExtent.height,
+                         create_info.extent.width, create_info.extent.height, create_info.extent.depth);
+    }
+    if (create_info.arrayLayers != swapchain_state->create_info.imageArrayLayers) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with imageArrayLayers %" PRIu32 " which doesn't match pCreateInfo->arrayLayers %" PRIu32 ".",
+                         swapchain_state->create_info.imageArrayLayers, create_info.arrayLayers);
+    }
+    if (create_info.usage != swapchain_state->create_info.imageUsage) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with imageUsage %s which doesn't match pCreateInfo->usage %s.",
+                         string_VkImageUsageFlags(swapchain_state->create_info.imageUsage).c_str(),
+                         string_VkImageUsageFlags(create_info.usage).c_str());
+    }
+    if (create_info.sharingMode != swapchain_state->create_info.imageSharingMode) {
+        skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                         "was created with imageSharingMode %s which doesn't match pCreateInfo->sharingMode %s.",
+                         string_VkSharingMode(swapchain_state->create_info.imageSharingMode),
+                         string_VkSharingMode(create_info.sharingMode));
+    }
+    if (create_info.sharingMode == VK_SHARING_MODE_CONCURRENT) {
+        if (create_info.queueFamilyIndexCount != swapchain_state->create_info.queueFamilyIndexCount) {
+            skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                             "was created with queueFamilyIndexCount %" PRIu32
+                             " which doesn't match pCreateInfo->queueFamilyIndexCount %" PRIu32 ".",
+                             swapchain_state->create_info.queueFamilyIndexCount, create_info.queueFamilyIndexCount);
+        } else {
+            for (uint32_t i = 0; i < create_info.queueFamilyIndexCount; ++i) {
+                bool found = false;
+                for (uint32_t j = 0; j < create_info.queueFamilyIndexCount; ++j) {
+                    if (create_info.pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
+                                     "was created with pQueueFamilyIndices containing index %" PRIu32
+                                     " which is not included in pCreateInfo->pQueueFamilyIndices.",
+                                     i);
+                }
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateImageExternalMemory(const VkImageCreateInfo &create_info, const Location &create_info_loc,
+                                             VkPhysicalDeviceImageFormatInfo2 &image_format_info) const {
+    bool skip = false;
+
+    const auto external_memory_create_info_nv = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfoNV>(create_info.pNext);
+    const auto external_memory_create_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext);
+    if (external_memory_create_info_nv != nullptr && external_memory_create_info != nullptr) {
+        skip |= LogError("VUID-VkImageCreateInfo-pNext-00988", device, create_info_loc,
+                         "has both VkExternalMemoryImageCreateInfoNV and "
+                         "VkExternalMemoryImageCreateInfo chained structs.");
+    }
+
+    VkResult result = VK_SUCCESS;
+    // No way to pass external format into vkGetPhysicalDeviceImageFormatProperties2 so invalid to check
+    if (external_memory_create_info && external_memory_create_info->handleTypes != 0 && create_info.format != VK_FORMAT_UNDEFINED) {
+        if (create_info.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
+                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
+                             "is %" PRIu32 " but the initialLayout is %s.", external_memory_create_info->handleTypes,
+                             string_VkImageLayout(create_info.initialLayout));
+        }
+        // Check external memory handle types compatibility
+        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
+        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
+        external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
+        vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
+
+        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper();
+        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
+        VkExternalMemoryHandleTypeFlags compatible_types = 0;
+        if (create_info.tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
+                                                                           &image_properties);
+            compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+        } else {
+            auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(create_info.pNext);
+            auto explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext);
+            VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
+            drm_format_modifier.sharingMode = create_info.sharingMode;
+            drm_format_modifier.queueFamilyIndexCount = create_info.queueFamilyIndexCount;
+            drm_format_modifier.pQueueFamilyIndices = create_info.pQueueFamilyIndices;
+            vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
+
+            if (modifier_list) {
+                for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
+                    drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
+                    result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
+                                                                                   &image_properties);
+                    if (result == VK_SUCCESS) {
+                        compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+                        if ((external_memory_create_info->handleTypes & compatible_types) ==
+                            external_memory_create_info->handleTypes)
+                            break;
+                    }
+                }
+                if (compatible_types != 0) result = VK_SUCCESS;
+            } else if (explicit_modifier) {
+                drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
+                result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
+                                                                               &image_properties);
+                compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
+            }
+        }
+
+        if (result != VK_SUCCESS) {
+            skip |= LogError(
+                "VUID-VkImageCreateInfo-pNext-00990", device, create_info_loc,
+                "The handle type (%s) with VkImageCreateInfo\n%s"
+                "is not supported combination of parameters and vkGetPhysicalDeviceImageFormatProperties2 returned back %s.",
+                string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType),
+                string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
+        } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
+            skip |= LogError(
+                "VUID-VkImageCreateInfo-pNext-00990", device,
+                create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
+                "(%s) is not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2. Compatible types are %s.",
+                string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str(),
+                string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());
+        }
+    } else if (external_memory_create_info_nv && external_memory_create_info_nv->handleTypes != 0) {
+        if (create_info.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
+                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfoNV, Field::handleTypes),
+                             "is %" PRIu32 " but pCreateInfo->initialLayout is %s.", external_memory_create_info_nv->handleTypes,
+                             string_VkImageLayout(create_info.initialLayout));
+        }
+        // Check external memory handle types compatibility
+        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info_nv->handleTypes);
+        auto handle_type = static_cast<VkExternalMemoryHandleTypeFlagBitsNV>(any_type);
+        VkExternalImageFormatPropertiesNV external_image_properties = {};
+        result = DispatchGetPhysicalDeviceExternalImageFormatPropertiesNV(
+            physical_device, create_info.format, create_info.imageType, create_info.tiling, create_info.usage, create_info.flags,
+            handle_type, &external_image_properties);
+        const auto compatible_types = external_image_properties.compatibleHandleTypes;
+
+        if (result != VK_SUCCESS) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device, create_info_loc,
+                             "The handle type (%s) with VkImageCreateInfo\n%s"
+                             "is not supported combination of parameters and vkGetPhysicalDeviceExternalImageFormatPropertiesNV "
+                             "returned back %s.",
+                             string_VkExternalMemoryHandleTypeFlagBitsNV(handle_type),
+                             string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
+        } else if ((external_memory_create_info_nv->handleTypes & compatible_types) !=
+                   external_memory_create_info_nv->handleTypes) {
+            skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device,
+                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfoNV, Field::handleTypes),
+                             "(%s) is not reported as compatible by vkGetPhysicalDeviceExternalImageFormatPropertiesNV.",
+                             string_VkExternalMemoryHandleTypeFlagsNV(external_memory_create_info_nv->handleTypes).c_str());
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkImage *pImage,
                                             const ErrorObject &error_obj) const {
@@ -432,241 +824,11 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                          string_VkFormat(pCreateInfo->format), string_VkImageCreateFlags(pCreateInfo->flags).c_str());
     }
 
-    const auto swapchain_create_info = vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(pCreateInfo->pNext);
-    if (swapchain_create_info != nullptr && swapchain_create_info->swapchain != VK_NULL_HANDLE) {
-        if (auto swapchain_state = Get<vvl::Swapchain>(swapchain_create_info->swapchain)) {
-            const VkSwapchainCreateFlagsKHR swapchain_flags = swapchain_state->create_info.flags;
-
-            // Validate rest of Swapchain Image create check that require swapchain state
-            const char *vuid = "VUID-VkImageSwapchainCreateInfoKHR-swapchain-00995";
-            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR) != 0) &&
-                ((pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) == 0)) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with VK_SWAPCHAIN_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT_KHR flag so "
-                                 "all swapchain images must have the VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT flag set.");
-            }
-            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR) != 0) &&
-                ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) == 0)) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with VK_SWAPCHAIN_CREATE_PROTECTED_BIT_KHR flag so all "
-                                 "swapchain images must have the VK_IMAGE_CREATE_PROTECTED_BIT flag set.");
-            }
-            const VkImageCreateFlags mutable_flags = (VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT);
-            if (((swapchain_flags & VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR) != 0) &&
-                ((pCreateInfo->flags & mutable_flags) != mutable_flags)) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR flag so "
-                                 "all swapchain images must have the VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT and "
-                                 "VK_IMAGE_CREATE_EXTENDED_USAGE_BIT flags both set.");
-            }
-            if (pCreateInfo->format != swapchain_state->create_info.imageFormat) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with format %s which doesn't match pCreateInfo->format %s.",
-                                 string_VkFormat(swapchain_state->create_info.imageFormat), string_VkFormat(pCreateInfo->format));
-            }
-            if (pCreateInfo->extent.width != swapchain_state->create_info.imageExtent.width ||
-                pCreateInfo->extent.height != swapchain_state->create_info.imageExtent.height || pCreateInfo->extent.depth != 1u) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with extent (%" PRIu32 ", %" PRIu32
-                                 ", 1) which doesn't match pCreateInfo->extent (%" PRIu32 ", %" PRIu32 ", %" PRIu32 ").",
-                                 swapchain_state->create_info.imageExtent.width, swapchain_state->create_info.imageExtent.height,
-                                 pCreateInfo->extent.width, pCreateInfo->extent.height, pCreateInfo->extent.depth);
-            }
-            if (pCreateInfo->arrayLayers != swapchain_state->create_info.imageArrayLayers) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with imageArrayLayers %" PRIu32
-                                 " which doesn't match pCreateInfo->arrayLayers %" PRIu32 ".",
-                                 swapchain_state->create_info.imageArrayLayers, pCreateInfo->arrayLayers);
-            }
-            if (pCreateInfo->usage != swapchain_state->create_info.imageUsage) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with imageUsage %s which doesn't match pCreateInfo->usage %s.",
-                                 string_VkImageUsageFlags(swapchain_state->create_info.imageUsage).c_str(),
-                                 string_VkImageUsageFlags(pCreateInfo->usage).c_str());
-            }
-            if (pCreateInfo->sharingMode != swapchain_state->create_info.imageSharingMode) {
-                skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                 "was created with imageSharingMode %s which doesn't match pCreateInfo->sharingMode %s.",
-                                 string_VkSharingMode(swapchain_state->create_info.imageSharingMode),
-                                 string_VkSharingMode(pCreateInfo->sharingMode));
-            }
-            if (pCreateInfo->sharingMode == VK_SHARING_MODE_CONCURRENT) {
-                if (pCreateInfo->queueFamilyIndexCount != swapchain_state->create_info.queueFamilyIndexCount) {
-                    skip |= LogError(vuid, device, create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                     "was created with queueFamilyIndexCount %" PRIu32
-                                     " which doesn't match pCreateInfo->queueFamilyIndexCount %" PRIu32 ".",
-                                     swapchain_state->create_info.queueFamilyIndexCount, pCreateInfo->queueFamilyIndexCount);
-                } else {
-                    for (uint32_t i = 0; i < pCreateInfo->queueFamilyIndexCount; ++i) {
-                        bool found = false;
-                        for (uint32_t j = 0; j < pCreateInfo->queueFamilyIndexCount; ++j) {
-                            if (pCreateInfo->pQueueFamilyIndices[j] == swapchain_state->create_info.pQueueFamilyIndices[i]) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found) {
-                            skip |= LogError(vuid, device,
-                                             create_info_loc.pNext(Struct::VkImageSwapchainCreateInfoKHR, Field::swapchain),
-                                             "was created with pQueueFamilyIndices containing index %" PRIu32
-                                             " which is not included in pCreateInfo->pQueueFamilyIndices.",
-                                             i);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if ((pCreateInfo->flags & VK_IMAGE_CREATE_PROTECTED_BIT) != 0) {
-        if (enabled_features.protectedMemory == VK_FALSE) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-01890", device, create_info_loc.dot(Field::flags),
-                             "has VK_IMAGE_CREATE_PROTECTED_BIT set, but the protectedMemory device feature is not enabled.");
-        }
-        const VkImageCreateFlags invalid_flags =
-            VK_IMAGE_CREATE_SPARSE_BINDING_BIT | VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_ALIASED_BIT;
-        if ((pCreateInfo->flags & invalid_flags) != 0) {
-            skip |= LogError("VUID-VkImageCreateInfo-None-01891", device, create_info_loc.dot(Field::flags),
-                             "can't have both protected and sparse flags set.");
-        }
-    }
-
-    if ((pCreateInfo->flags & VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) != 0) {
-        if (!(enabled_features.multisampledRenderToSingleSampled)) {
-            skip |= LogError("VUID-VkImageCreateInfo-multisampledRenderToSingleSampled-06882", device,
-                             create_info_loc.dot(Field::flags),
-                             "contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT but the "
-                             "multisampledRenderToSingleSampled feature is not enabled.");
-        }
-        if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-06883", device, create_info_loc.dot(Field::flags),
-                             "contains VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT but samples (%s) is not equal "
-                             "to VK_SAMPLE_COUNT_1_BIT.",
-                             string_VkSampleCountFlagBits(pCreateInfo->samples));
-        }
-    }
-
     skip |= ValidateImageFormatFeatures(*pCreateInfo, create_info_loc);
     skip |= ValidateImageAlignmentControlCreateInfo(*pCreateInfo, create_info_loc);
-
-    // Check compatibility with VK_KHR_portability_subset
-    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
-        if (VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT & pCreateInfo->flags && VK_FALSE == enabled_features.imageView2DOn3DImage) {
-            skip |= LogError("VUID-VkImageCreateInfo-imageView2DOn3DImage-04459", device, create_info_loc,
-                             "(portability error) VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT is not supported.");
-        }
-        if ((VK_SAMPLE_COUNT_1_BIT != pCreateInfo->samples) && (1 != pCreateInfo->arrayLayers) &&
-            (VK_FALSE == enabled_features.multisampleArrayImage)) {
-            skip |= LogError("VUID-VkImageCreateInfo-multisampleArrayImage-04460", device, create_info_loc,
-                             "(portability error) Cannot create an image with samples/texel > 1 && arrayLayers != 1");
-        }
-    }
-
-    const auto external_memory_create_info_nv = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfoNV>(pCreateInfo->pNext);
-    const auto external_memory_create_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
-    if (external_memory_create_info_nv != nullptr && external_memory_create_info != nullptr) {
-        skip |= LogError("VUID-VkImageCreateInfo-pNext-00988", device, create_info_loc,
-                         "has both VkExternalMemoryImageCreateInfoNV and "
-                         "VkExternalMemoryImageCreateInfo chained structs.");
-    }
-
-    // No way to pass external format into vkGetPhysicalDeviceImageFormatProperties2 so invalid to check
-    if (external_memory_create_info && external_memory_create_info->handleTypes != 0 && pCreateInfo->format != VK_FORMAT_UNDEFINED) {
-        if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
-                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
-                             "is %" PRIu32 " but the initialLayout is %s.", external_memory_create_info->handleTypes,
-                             string_VkImageLayout(pCreateInfo->initialLayout));
-        }
-        // Check external memory handle types compatibility
-        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info->handleTypes);
-        VkPhysicalDeviceExternalImageFormatInfo external_image_info = vku::InitStructHelper();
-        external_image_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
-        vvl::PnextChainScopedAdd scoped_add_ext_img_info(&image_format_info, &external_image_info);
-
-        VkExternalImageFormatProperties external_image_properties = vku::InitStructHelper();
-        VkImageFormatProperties2 image_properties = vku::InitStructHelper(&external_image_properties);
-        VkExternalMemoryHandleTypeFlags compatible_types = 0;
-        if (pCreateInfo->tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
-                                                                           &image_properties);
-            compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
-        } else {
-            auto modifier_list = vku::FindStructInPNextChain<VkImageDrmFormatModifierListCreateInfoEXT>(pCreateInfo->pNext);
-            auto explicit_modifier = vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(pCreateInfo->pNext);
-            VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
-            drm_format_modifier.sharingMode = pCreateInfo->sharingMode;
-            drm_format_modifier.queueFamilyIndexCount = pCreateInfo->queueFamilyIndexCount;
-            drm_format_modifier.pQueueFamilyIndices = pCreateInfo->pQueueFamilyIndices;
-            vvl::PnextChainScopedAdd scoped_add_drm_fmt_mod(&image_format_info, &drm_format_modifier);
-
-            if (modifier_list) {
-                for (uint32_t i = 0; i < modifier_list->drmFormatModifierCount; i++) {
-                    drm_format_modifier.drmFormatModifier = modifier_list->pDrmFormatModifiers[i];
-                    result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
-                                                                                   &image_properties);
-                    if (result == VK_SUCCESS) {
-                        compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
-                        if ((external_memory_create_info->handleTypes & compatible_types) ==
-                            external_memory_create_info->handleTypes)
-                            break;
-                    }
-                }
-                if (compatible_types != 0) result = VK_SUCCESS;
-            } else if (explicit_modifier) {
-                drm_format_modifier.drmFormatModifier = explicit_modifier->drmFormatModifier;
-                result = DispatchGetPhysicalDeviceImageFormatProperties2Helper(api_version, physical_device, &image_format_info,
-                                                                               &image_properties);
-                compatible_types = external_image_properties.externalMemoryProperties.compatibleHandleTypes;
-            }
-        }
-
-        if (result != VK_SUCCESS) {
-            skip |= LogError(
-                "VUID-VkImageCreateInfo-pNext-00990", device, create_info_loc,
-                "The handle type (%s) with VkImageCreateInfo\n%s"
-                "is not supported combination of parameters and vkGetPhysicalDeviceImageFormatProperties2 returned back %s.",
-                string_VkExternalMemoryHandleTypeFlagBits(external_image_info.handleType),
-                string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
-        } else if ((external_memory_create_info->handleTypes & compatible_types) != external_memory_create_info->handleTypes) {
-            skip |= LogError(
-                "VUID-VkImageCreateInfo-pNext-00990", device,
-                create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfo, Field::handleTypes),
-                "(%s) is not reported as compatible by vkGetPhysicalDeviceImageFormatProperties2. Compatible types are %s.",
-                string_VkExternalMemoryHandleTypeFlags(external_memory_create_info->handleTypes).c_str(),
-                string_VkExternalMemoryHandleTypeFlags(compatible_types).c_str());
-        }
-    } else if (external_memory_create_info_nv && external_memory_create_info_nv->handleTypes != 0) {
-        if (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-01443", device,
-                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfoNV, Field::handleTypes),
-                             "is %" PRIu32 " but pCreateInfo->initialLayout is %s.", external_memory_create_info_nv->handleTypes,
-                             string_VkImageLayout(pCreateInfo->initialLayout));
-        }
-        // Check external memory handle types compatibility
-        const uint32_t any_type = 1u << MostSignificantBit(external_memory_create_info_nv->handleTypes);
-        auto handle_type = static_cast<VkExternalMemoryHandleTypeFlagBitsNV>(any_type);
-        VkExternalImageFormatPropertiesNV external_image_properties = {};
-        result = DispatchGetPhysicalDeviceExternalImageFormatPropertiesNV(
-            physical_device, pCreateInfo->format, pCreateInfo->imageType, pCreateInfo->tiling, pCreateInfo->usage,
-            pCreateInfo->flags, handle_type, &external_image_properties);
-        const auto compatible_types = external_image_properties.compatibleHandleTypes;
-
-        if (result != VK_SUCCESS) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device, create_info_loc,
-                             "The handle type (%s) with VkImageCreateInfo\n%s"
-                             "is not supported combination of parameters and vkGetPhysicalDeviceExternalImageFormatPropertiesNV "
-                             "returned back %s.",
-                             string_VkExternalMemoryHandleTypeFlagBitsNV(handle_type),
-                             string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result));
-        } else if ((external_memory_create_info_nv->handleTypes & compatible_types) !=
-                   external_memory_create_info_nv->handleTypes) {
-            skip |= LogError("VUID-VkImageCreateInfo-pNext-00991", device,
-                             create_info_loc.pNext(Struct::VkExternalMemoryImageCreateInfoNV, Field::handleTypes),
-                             "(%s) is not reported as compatible by vkGetPhysicalDeviceExternalImageFormatPropertiesNV.",
-                             string_VkExternalMemoryHandleTypeFlagsNV(external_memory_create_info_nv->handleTypes).c_str());
-        }
-    }
+    skip |= ValidateImageVideo(*pCreateInfo, create_info_loc, error_obj);
+    skip |= ValidateImageSwapchain(*pCreateInfo, create_info_loc);
+    skip |= ValidateImageExternalMemory(*pCreateInfo, create_info_loc, image_format_info);
 
     if (device_group_create_info.physicalDeviceCount == 1) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
@@ -674,220 +836,6 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, but the device was created with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1. Device creation with "
                              "VkDeviceGroupDeviceCreateInfo::physicalDeviceCount equal to 1 may have been implicit.");
-        }
-    }
-
-    if ((pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT) &&
-        !enabled_features.descriptorBufferCaptureReplay) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08104", device, create_info_loc.dot(Field::flags),
-                         "contains VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but the descriptorBufferCaptureReplay "
-                         "feature is not enabled.");
-    }
-
-    auto opaque_capture_descriptor_buffer = vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext);
-    if (opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
-        skip |= LogError("VUID-VkImageCreateInfo-pNext-08105", device, create_info_loc.dot(Field::flags),
-                         "(%s) does not have VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                         string_VkImageCreateFlags(pCreateInfo->flags).c_str());
-    }
-
-    const bool has_decode_usage =
-        pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_DECODE_SRC_BIT_KHR |
-                              VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR);
-    const bool has_encode_usage =
-        pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_DST_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR |
-                              VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR);
-    const bool has_quantization_map_usage = pCreateInfo->usage & (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR |
-                                                                  VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR);
-    const bool video_profile_independent = pCreateInfo->flags & VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
-
-    if (video_profile_independent && !enabled_features.videoMaintenance1) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08328", device, create_info_loc.dot(Field::flags),
-                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR is set but the videoMaintenance1 "
-                         "device feature is not enabled.");
-    }
-
-    if (video_profile_independent && (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR) &&
-        (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR) == 0) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08329", device, create_info_loc.dot(Field::flags),
-                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
-                         "VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR without also containing "
-                         "VK_IMAGE_USAGE_VIDEO_DECODE_DST_BIT_KHR.",
-                         string_VkImageUsageFlags(pCreateInfo->usage).c_str());
-    }
-
-    if (video_profile_independent && (pCreateInfo->usage & VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR)) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
-                         "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
-                         "VK_IMAGE_USAGE_VIDEO_ENCODE_DPB_BIT_KHR.",
-                         string_VkImageUsageFlags(pCreateInfo->usage).c_str());
-    }
-
-    // There are stronger VUs for the format properties of quantization maps (i.e. no INDEPENDENT, must be 2D, etc.).
-    // If any of these are triggered, then the video profile compatibility check can be skipped.
-    bool valid_quantization_map_format = has_quantization_map_usage;
-    if (has_quantization_map_usage) {
-        if (!enabled_features.videoEncodeQuantizationMap) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10251", device, create_info_loc.dot(Field::usage),
-                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the "
-                             "videoEncodeQuantizationMap device feature is not enabled.");
-            valid_quantization_map_format = false;
-        }
-
-        if (video_profile_independent) {
-            skip |= LogError("VUID-VkImageCreateInfo-flags-08331", device, create_info_loc.dot(Field::flags),
-                             "has VK_IMAGE_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR set but usage (%s) contains "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR.",
-                             string_VkImageUsageFlags(pCreateInfo->usage).c_str());
-            valid_quantization_map_format = false;
-        }
-
-        if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10252", device, create_info_loc.dot(Field::usage),
-                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but imageType (%s) "
-                             "is not VK_IMAGE_TYPE_2D.",
-                             string_VkImageType(pCreateInfo->imageType));
-            valid_quantization_map_format = false;
-        }
-
-        if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10253", device, create_info_loc.dot(Field::usage),
-                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but samples (%s) "
-                             "is not VK_SAMPLE_COUNT_1_BIT_KHR.",
-                             string_VkSampleCountFlagBits(pCreateInfo->samples));
-            valid_quantization_map_format = false;
-        }
-
-        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        if (video_profiles == nullptr) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
-                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but the pNext chain does not "
-                             "contain a VkVideoProfileListInfoKHR structure.");
-            valid_quantization_map_format = false;
-        } else if (video_profiles->profileCount != 1) {
-            skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
-                             "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                             "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s (%u) does not equal 1.",
-                             create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::profileCount).Fields().c_str(),
-                             video_profiles->profileCount);
-            valid_quantization_map_format = false;
-        } else {
-            const Location profile_info_loc = create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR, Field::pProfiles, 0);
-            skip |= core::ValidateVideoProfileInfo(*this, &video_profiles->pProfiles[0], error_obj,
-                                                   create_info_loc.dot(Field::pProfiles, 0));
-
-            vvl::VideoProfileDesc profile_desc(physical_device, &video_profiles->pProfiles[0]);
-            const auto &profile_caps = profile_desc.GetCapabilities();
-
-            if (profile_desc.IsEncode()) {
-                if (pCreateInfo->usage == VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR &&
-                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR) == 0) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10255", device, create_info_loc.dot(Field::usage),
-                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR set but "
-                                     "the encode profile specified in %s does not support "
-                                     "VK_VIDEO_ENCODE_CAPABILITY_QUANTIZATION_DELTA_MAP_BIT_KHR.",
-                                     profile_info_loc.Fields().c_str());
-                    valid_quantization_map_format = false;
-                }
-
-                if (pCreateInfo->usage == VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR &&
-                    (profile_caps.encode.flags & VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR) == 0) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10256", device, create_info_loc.dot(Field::usage),
-                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but "
-                                     "the encode profile specified in %s does not support "
-                                     "VK_VIDEO_ENCODE_CAPABILITY_EMPHASIS_MAP_BIT_KHR.",
-                                     profile_info_loc.Fields().c_str());
-                    valid_quantization_map_format = false;
-                }
-
-                if (valid_quantization_map_format &&
-                    pCreateInfo->extent.width > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width) {
-                    skip |=
-                        LogError("VUID-VkImageCreateInfo-usage-10257", device, create_info_loc.dot(Field::usage),
-                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.width (%u) "
-                                 "larger than the maxQuantizationMapExtent.width (%u) supported by the "
-                                 "encode profile specified in %s.",
-                                 pCreateInfo->extent.width, profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.width,
-                                 profile_info_loc.Fields().c_str());
-                }
-
-                if (valid_quantization_map_format &&
-                    pCreateInfo->extent.height > profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height) {
-                    skip |= LogError("VUID-VkImageCreateInfo-usage-10258", device, create_info_loc.dot(Field::usage),
-                                     "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                                     "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but has extent.height (%u) "
-                                     "larger than the maxQuantizationMapExtent.height (%u) supported by the "
-                                     "encode profile specified in %s.",
-                                     pCreateInfo->extent.height,
-                                     profile_caps.encode_ext.quantization_map.maxQuantizationMapExtent.height,
-                                     profile_info_loc.Fields().c_str());
-                }
-            } else {
-                skip |= LogError("VUID-VkImageCreateInfo-usage-10254", device, create_info_loc.dot(Field::usage),
-                                 "has VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR or "
-                                 "VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR set but %s does not specify a "
-                                 "video encode operation (videoCodecOperation is %s).",
-                                 profile_info_loc.Fields().c_str(),
-                                 string_VkVideoCodecOperationFlagBitsKHR(video_profiles->pProfiles[0].videoCodecOperation));
-                valid_quantization_map_format = false;
-            }
-        }
-    }
-
-    if (has_decode_usage || has_encode_usage || valid_quantization_map_format) {
-        const bool expect_decode_profile = has_decode_usage && !video_profile_independent;
-        const bool expect_encode_profile = has_encode_usage && !video_profile_independent;
-
-        const auto *video_profiles = vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext);
-        // Quantization map video profile list info validation happens in the previous block
-        if (!has_quantization_map_usage) {
-            skip |= core::ValidateVideoProfileListInfo(
-                *this, video_profiles, error_obj, create_info_loc.pNext(Struct::VkVideoProfileListInfoKHR), expect_decode_profile,
-                "VUID-VkImageCreateInfo-usage-04815", expect_encode_profile, "VUID-VkImageCreateInfo-usage-04816");
-        }
-
-        if (video_profiles && video_profiles->profileCount > 0) {
-            if (!IsSupportedVideoFormat(*pCreateInfo, video_profiles)) {
-                skip |= LogError("VUID-VkImageCreateInfo-pNext-06811", device, create_info_loc,
-                                 "specifies flags (%s), format (%s), imageType (%s), and tiling (%s) which are not "
-                                 "supported by any of the supported video format properties for the video profiles "
-                                 "specified in the VkVideoProfileListInfoKHR structure included in the "
-                                 "pCreateInfo->pNext chain, as reported by "
-                                 "vkGetPhysicalDeviceVideoFormatPropertiesKHR for the same video profiles "
-                                 "and the image usage flags specified in pCreateInfo->usage (%s).",
-                                 string_VkImageCreateFlags(pCreateInfo->flags).c_str(), string_VkFormat(pCreateInfo->format),
-                                 string_VkImageType(pCreateInfo->imageType), string_VkImageTiling(pCreateInfo->tiling),
-                                 string_VkImageUsageFlags(pCreateInfo->usage).c_str());
-            }
-        }
-    }
-
-    const auto image_compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(pCreateInfo->pNext);
-    if (image_compression_control && (image_compression_control->flags & VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT) != 0) {
-        if (vkuFormatIsMultiplane(pCreateInfo->format)) {
-            if (image_compression_control->compressionControlPlaneCount != vkuFormatPlaneCount(pCreateInfo->format)) {
-                skip |= LogError("VUID-VkImageCreateInfo-pNext-06743", device, create_info_loc,
-                                 "VkImageCompressionControlEXT::flags contain VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT, but "
-                                 "VkImageCompressionControlEXT::compressionControlPlaneCount (%" PRIu32
-                                 ") is not equal to the number of planes in the multi-planar format %s (%" PRIu32 ")",
-                                 image_compression_control->compressionControlPlaneCount, string_VkFormat(pCreateInfo->format),
-                                 vkuFormatPlaneCount(pCreateInfo->format));
-            }
-        } else {
-            if (image_compression_control->compressionControlPlaneCount != 1) {
-                skip |= LogError("VUID-VkImageCreateInfo-pNext-06744", device, create_info_loc,
-                                 "VkImageCompressionControlEXT::flags contain VK_IMAGE_COMPRESSION_FIXED_RATE_EXPLICIT_EXT and "
-                                 "VkImageCreateInfo::format is a not a multi-planar format (%s), but "
-                                 "VkImageCompressionControlEXT::compressionControlPlaneCount is %" PRIu32,
-                                 string_VkFormat(pCreateInfo->format), image_compression_control->compressionControlPlaneCount);
-            }
         }
     }
 
