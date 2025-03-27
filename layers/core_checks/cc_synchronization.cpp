@@ -1655,37 +1655,6 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc
     return skip;
 }
 
-std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
-    std::set<uint32_t> unique;
-
-    for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); ++i) {
-        const uint32_t unmapped_color_attachment = cb_state.rendering_attachments.color_locations[i];
-        if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
-            unique.insert(unmapped_color_attachment);
-        }
-    }
-
-    for (size_t i = 0; i < cb_state.rendering_attachments.color_indexes.size(); ++i) {
-        const uint32_t unmapped_color_index = cb_state.rendering_attachments.color_indexes[i];
-        if (unmapped_color_index != VK_ATTACHMENT_UNUSED) {
-            unique.insert(unmapped_color_index);
-        }
-    }
-
-    if (cb_state.rendering_attachments.depth_index) {
-        unique.insert(*cb_state.rendering_attachments.depth_index);
-    }
-    if (cb_state.rendering_attachments.stencil_index) {
-        unique.insert(*cb_state.rendering_attachments.stencil_index);
-    }
-
-    std::vector<uint32_t> attachments;
-    for (auto x : unique) {
-        attachments.push_back(x);
-    }
-    return attachments;
-}
-
 // Verify image barrier is compatible with the image it references.
 bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
                                                   const Location &barrier_loc, const vvl::Image &image_state,
@@ -1790,34 +1759,9 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
     }
 
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-    if (enabled_features.dynamicRenderingLocalRead && rp_state) {
-        const auto &rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
-        std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
-
-        for (auto color_attachment_idx : used_attachments) {
-            if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
-                continue;
-            }
-            const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
-            if (color_attachment.imageView == VK_NULL_HANDLE) {
-                continue;
-            }
-            const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-            ASSERT_AND_CONTINUE(image_view_state);
-            const auto &image_view_image_state = image_view_state->image_state;
-
-            if (image == image_view_image_state->VkHandle()) {
-                auto guard = image_view_image_state->layout_range_map->ReadLock();
-
-                for (const auto &entry : *image_view_image_state->layout_range_map) {
-                    if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
-                        const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
-                            barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
-                        skip |= LogError(vuid, image, barrier_loc, "image layout is %s.", string_VkImageLayout(entry.second));
-                    }
-                }
-            }
-        }
+    if (rp_state && rp_state->UsesDynamicRendering()) {
+        skip |= VerifyDynamicRenderingImageBarrierLayouts(cb_state, image_state,
+                                                          *rp_state->dynamic_rendering_begin_rendering_info.ptr(), barrier_loc);
     }
 
     // checks color format and (single-plane or non-disjoint)

@@ -893,6 +893,70 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
     return skip;
 }
 
+static std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
+    vvl::unordered_set<uint32_t> unique;
+
+    for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); ++i) {
+        const uint32_t unmapped_color_attachment = cb_state.rendering_attachments.color_locations[i];
+        if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
+            unique.insert(unmapped_color_attachment);
+        }
+    }
+
+    for (size_t i = 0; i < cb_state.rendering_attachments.color_indexes.size(); ++i) {
+        const uint32_t unmapped_color_index = cb_state.rendering_attachments.color_indexes[i];
+        if (unmapped_color_index != VK_ATTACHMENT_UNUSED) {
+            unique.insert(unmapped_color_index);
+        }
+    }
+
+    if (cb_state.rendering_attachments.depth_index) {
+        unique.insert(*cb_state.rendering_attachments.depth_index);
+    }
+    if (cb_state.rendering_attachments.stencil_index) {
+        unique.insert(*cb_state.rendering_attachments.stencil_index);
+    }
+
+    std::vector<uint32_t> attachments;
+    for (auto x : unique) {
+        attachments.push_back(x);
+    }
+    return attachments;
+}
+
+bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
+                                                           const VkRenderingInfo &rendering_info,
+                                                           const Location &barrier_loc) const {
+    bool skip = false;
+    std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
+
+    for (auto color_attachment_idx : used_attachments) {
+        if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
+            continue;
+        }
+        const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
+        if (color_attachment.imageView == VK_NULL_HANDLE) {
+            continue;
+        }
+        const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+        ASSERT_AND_CONTINUE(image_view_state);
+
+        if (image_state.VkHandle() == image_view_state->image_state->VkHandle()) {
+            auto guard = image_state.layout_range_map->ReadLock();
+
+            for (const auto &entry : *image_state.layout_range_map) {
+                if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
+                    const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
+                        barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
+                    skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
+                                     string_VkImageLayout(entry.second));
+                }
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::FindLayouts(const vvl::Image &image_state, std::vector<VkImageLayout> &layouts) const {
     const auto *layout_range_map = image_state.layout_range_map.get();
     if (!layout_range_map) return false;
