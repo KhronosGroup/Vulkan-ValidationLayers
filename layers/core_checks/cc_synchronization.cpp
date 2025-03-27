@@ -1752,9 +1752,12 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
         }
     }
 
-    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
-        // TODO: Set memory invalid which is in mem_tracker currently
-    } else if (!IsQueueFamilyExternal(barrier.srcQueueFamilyIndex)) {
+    const bool validate_barrier_layouts =
+        (old_layout != new_layout)                               // barrier defines layout transtion
+        && (old_layout != VK_IMAGE_LAYOUT_UNDEFINED)             // undefined allows any layout
+        && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex);  // do not validate layouts of external resources
+
+    if (validate_barrier_layouts) {
         skip |= VerifyImageBarrierLayouts(cb_state, image_state, image_loc, barrier, layout_updates_state);
     }
 

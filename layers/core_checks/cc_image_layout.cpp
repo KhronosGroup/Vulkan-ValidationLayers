@@ -930,6 +930,13 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
     bool skip = false;
     std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
 
+    const vvl::CommandBuffer::ImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
+    auto it = cb_layout_map.find(image_state.VkHandle());
+    if (it == cb_layout_map.end()) {
+        return skip;
+    }
+    ImageLayoutRegistry &cb_image_layouts = *it->second;
+
     for (auto color_attachment_idx : used_attachments) {
         if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
             continue;
@@ -942,16 +949,19 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
         ASSERT_AND_CONTINUE(image_view_state);
 
         if (image_state.VkHandle() == image_view_state->image_state->VkHandle()) {
-            auto guard = image_state.layout_range_map->ReadLock();
-
-            for (const auto &entry : *image_state.layout_range_map) {
-                if (entry.second != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && entry.second != VK_IMAGE_LAYOUT_GENERAL) {
-                    const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
-                        barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
-                    skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
-                                     string_VkImageLayout(entry.second));
-                }
-            }
+            skip |= cb_image_layouts.AnyInRange(
+                image_view_state->normalized_subresource_range,
+                [this, &image_state, &barrier_loc](const LayoutRange &range, const LayoutEntry &state) {
+                    bool local_skip = false;
+                    if (state.current_layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ &&
+                        state.current_layout != VK_IMAGE_LAYOUT_GENERAL) {
+                        const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
+                            barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
+                        local_skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
+                                               string_VkImageLayout(state.current_layout));
+                    }
+                    return local_skip;
+                });
         }
     }
     return skip;
