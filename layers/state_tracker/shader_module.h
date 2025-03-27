@@ -499,9 +499,7 @@ struct EntryPoint {
 
     // All ids that can be accessed from the entry point
     // being accessed doesn't guarantee it is statically used
-    // From https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8501 we found that using robin hood here will produce
-    // overflows, this shouldn't be a perf critical section that it is ok using STL
-    const std::unordered_set<uint32_t> accessible_ids;
+    const vvl::unordered_set<uint32_t> accessible_ids;
 
     // only one Push Constant block is allowed per entry point
     std::shared_ptr<const PushConstantVariable> push_constant_variable;
@@ -546,7 +544,7 @@ struct EntryPoint {
     bool HasBuiltIn(spv::BuiltIn built_in) const;
 
   protected:
-    static std::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
+    static vvl::unordered_set<uint32_t> GetAccessibleIds(const Module &module_state, EntryPoint &entrypoint);
     static std::vector<StageInterfaceVariable> GetStageInterfaceVariables(const Module &module_state, const EntryPoint &entrypoint,
                                                                           const VariableAccessMap &variable_access_map,
                                                                           const DebugNameMap &debug_name_map);

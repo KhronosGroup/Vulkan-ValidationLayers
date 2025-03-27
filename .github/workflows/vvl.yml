@@ -57,7 +57,7 @@ jobs:
       fail-fast: false
       matrix:
         config: [ release ]
-        # Test with Robin Hood disabled
+        # Test with Custom hash map both enabled and disabled
         # Chromium build, and some package managers don't use it.
         custom_hash_map: [ "ON", "OFF" ]
     steps:

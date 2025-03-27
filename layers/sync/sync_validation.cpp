@@ -57,7 +57,7 @@ ResourceUsageRange SyncValidator::ReserveGlobalTagRange(size_t tag_count) const 
 void SyncValidator::EnsureTimelineSignalsLimit(uint32_t signals_per_queue_limit, QueueId queue) {
     for (auto &[_, signals] : timeline_signals_) {
         const size_t initial_signal_count = signals.size();
-        std::unordered_map<QueueId, uint32_t> signals_per_queue;
+        vvl::unordered_map<QueueId, uint32_t> signals_per_queue;
         for (const SignalInfo &signal : signals) {
             ++signals_per_queue[signal.first_scope.queue];
         }

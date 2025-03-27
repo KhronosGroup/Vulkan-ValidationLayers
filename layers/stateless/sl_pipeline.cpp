@@ -469,7 +469,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         }
 
         // <VkDynamicState, index in pDynamicStates, hash for enum key>
-        vvl::unordered_map<VkDynamicState, uint32_t, std::hash<int>> dynamic_state_map;
+        vvl::unordered_map<VkDynamicState, uint32_t, vvl::hash<int>> dynamic_state_map;
         // TODO probably should check dynamic state from graphics libraries, at least when creating an "executable pipeline"
         if (create_info.pDynamicState != nullptr) {
             const auto &dynamic_state_info = *create_info.pDynamicState;
