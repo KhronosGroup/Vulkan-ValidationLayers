@@ -54,7 +54,7 @@ bool inst_buffer_device_address(
     const uvec4 stage_info,
     const uint64_t addr,
     const uint access_byte_size,
-    const uint is_write,
+    const uint access_type,
     const uint alignment)
 {
     uint error_sub_code = kErrorSubCodeBufferDeviceAddressUnallocRef;
@@ -116,7 +116,7 @@ bool inst_buffer_device_address(
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
 
-        const uint payload = access_byte_size | (alignment << kInstBuffAddrAccessPayloadShiftAlignment) | (is_write << kInstBuffAddrAccessPayloadShiftIsWrite);
+        const uint payload = access_byte_size | (alignment << kInstBuffAddrAccessPayloadShiftAlignment) | access_type;
         inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = payload;
     }
 

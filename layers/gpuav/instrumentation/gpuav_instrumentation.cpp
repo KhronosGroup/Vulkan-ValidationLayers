@@ -807,7 +807,8 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     std::ostringstream strm;
 
     const uint32_t payload = error_record[kInstBuffAddrAccessPayloadOffset];
-    const bool is_write = (payload >> kInstBuffAddrAccessPayloadShiftIsWrite) != 0;
+    const bool is_write = ((payload >> kInstBuffAddrAccessPayloadShiftIsWrite) & 1) != 0;
+    const bool is_struct = ((payload >> kInstBuffAddrAccessPayloadShiftIsStruct) & 1) != 0;
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
@@ -817,6 +818,12 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x" << std::hex
                  << address << '.';
+            if (is_struct) {
+                // Added because glslang currently has no way to seperate out the struct (Slang does as of 2025.6.2)
+                strm << " This " << (is_write ? "write" : "read")
+                     << " corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, it is up "
+                        "to the source language or tooling to detect that and reflect it in the SPIR-V.";
+            }
             out_vuid_msg = "UNASSIGNED-Device address out of bounds";
         } break;
         case kErrorSubCodeBufferDeviceAddressAlignment: {

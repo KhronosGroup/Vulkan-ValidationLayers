@@ -1141,8 +1141,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     }
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089
-TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
+TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
 
@@ -1200,6 +1199,174 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, DISABLED_ProxyStructLoad) {
 
     // One for each of the 2 access
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 2);
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8073");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_scalar_block_layout : require
+        #extension GL_EXT_buffer_reference2 : require
+
+        struct RealCamera {
+            mat4 viewProjection; // [0, 63]
+            vec4 frustum[6]; // [64, 160]
+        };
+        layout(buffer_reference, scalar, buffer_reference_align = 4) restrict readonly buffer CameraBuffer {
+            RealCamera camera;
+        };
+
+        layout(binding = 0, set = 0) buffer OutData {
+            CameraBuffer cameraBuffer;
+            mat4 out_mat;
+        };
+
+        void main() {
+            // While only the first 64 bytese are accessed, glslang loads the entire struct here and while the compiler may be smart, it is still possible it might load in the whole struct
+            restrict const RealCamera camera = cameraBuffer.camera;
+            out_mat = camera.viewProjection;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    VkDeviceAddress buffer_ptr = bda_buffer.Address();
+    uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
+    memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
+    in_buffer.Memory().Unmap();
+
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // UNASSIGNED-Device address out of bounds
+    m_errorMonitor->SetDesiredError(
+        "This read corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, it is up to the "
+        "source language or tooling to detect that and reflect it in the SPIR-V");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadSlang) {
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    // Note this was with Slang 2025.2.2 but trying 2025.6.2 it is smart enough to only load a single int, but test as it is still
+    // plausable SPIR-V to seee struct Foo {
+    //     uint x;
+    //     uint y; // never used
+    // }
+    // RWStructuredBuffer<uint> result;
+    // struct Data{
+    //     Foo* node;
+    // };
+    // [[vk::push_constant]] Data pc;
+    // [shader("compute")]
+    // void main(uint3 threadId : SV_DispatchThreadID) {
+    //     Foo a = pc.node[0];
+    //     result[0] = a.x;
+    // }
+    char const *shader_source = R"(
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Shader
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %pc %result
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_ptr_PhysicalStorageBuffer_Foo_natural ArrayStride 8
+               OpDecorate %Data_std430 Block
+               OpMemberDecorate %Data_std430 0 Offset 0
+               OpMemberDecorate %Foo_natural 0 Offset 0
+               OpMemberDecorate %Foo_natural 1 Offset 4
+               OpDecorate %_runtimearr_uint ArrayStride 4
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %result Binding 0
+               OpDecorate %result DescriptorSet 0
+       %void = OpTypeVoid
+       %uint = OpTypeInt 32 0
+         %12 = OpTypeFunction %void
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_Foo_natural PhysicalStorageBuffer
+%Data_std430 = OpTypeStruct %_ptr_PhysicalStorageBuffer_Foo_natural
+%_ptr_PushConstant_Data_std430 = OpTypePointer PushConstant %Data_std430
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_PushConstant_52 = OpTypePointer PushConstant %_ptr_PhysicalStorageBuffer_Foo_natural
+%Foo_natural = OpTypeStruct %uint %uint
+    %uint_15 = OpConstant %uint 15
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+%_runtimearr_uint = OpTypeRuntimeArray %uint
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_uint
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+%_ptr_PhysicalStorageBuffer_Foo_natural = OpTypePointer PhysicalStorageBuffer %Foo_natural
+         %pc = OpVariable %_ptr_PushConstant_Data_std430 PushConstant
+     %result = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+%_ptr_Function_uint = OpTypePointer Function %uint
+      %int_1 = OpConstant %int 1
+       %main = OpFunction %void None %12
+         %13 = OpLabel
+        %113 = OpVariable %_ptr_Function_uint Function
+        %112 = OpVariable %_ptr_Function_uint Function
+         %58 = OpAccessChain %_ptr_PushConstant_52 %pc %int_0
+         %59 = OpLoad %_ptr_PhysicalStorageBuffer_Foo_natural %58
+         %60 = OpPtrAccessChain %_ptr_PhysicalStorageBuffer_Foo_natural %59 %int_0
+        %a_0 = OpLoad %Foo_natural %60 Aligned 4
+         %96 = OpCompositeExtract %uint %a_0 0
+         %97 = OpCompositeExtract %uint %a_0 1
+               OpStore %112 %96
+               OpStore %113 %97
+         %75 = OpAccessChain %_ptr_StorageBuffer_uint %result %int_0 %int_0
+               OpStore %75 %96
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    vkt::Buffer bda_buffer(*m_device, 4, 0, vkt::device_address);
+    vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    descriptor_set.WriteDescriptorBufferInfo(0, out_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    VkDeviceAddress bda_buffer_addr = bda_buffer.Address();
+    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                         sizeof(VkDeviceAddress), &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

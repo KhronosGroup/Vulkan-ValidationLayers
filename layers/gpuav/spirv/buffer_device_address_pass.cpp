@@ -18,6 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 #include "utils/math_utils.h"
+#include "gpuav/shaders/gpuav_error_header.h"
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
 
@@ -54,8 +55,15 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
     const uint32_t opcode = meta.target_instruction->Opcode();
-    const uint32_t is_write_value = opcode == spv::OpStore ? 1 : 0;
-    const Constant& is_write = module_.type_manager_.GetConstantUInt32(is_write_value);
+
+    uint32_t access_type_value = 0;
+    if (opcode == spv::OpStore) {
+        access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsWrite;
+    }
+    if (meta.type_is_struct) {
+        access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsStruct;
+    }
+    const Constant& access_type = module_.type_manager_.GetConstantUInt32(access_type_value);
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
@@ -66,7 +74,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, convert_id,
-         length_constant.Id(), is_write.Id(), alignment_constant.Id()},
+         length_constant.Id(), access_type.Id(), alignment_constant.Id()},
         inst_it);
 
     return function_result;
@@ -107,33 +115,27 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
 
     // Get the OpTypePointer
     const Type* op_type_pointer = module_.type_manager_.FindTypeById(pointer_inst->TypeId());
-    if (!op_type_pointer || op_type_pointer->spv_type_ != SpvType::kPointer) {
+    if (!op_type_pointer || op_type_pointer->spv_type_ != SpvType::kPointer ||
+        op_type_pointer->inst_.Operand(0) != spv::StorageClassPhysicalStorageBuffer) {
         return false;
     }
 
     // The OpTypePointer's type
     uint32_t accessed_type_id = op_type_pointer->inst_.Operand(1);
     const Type* accessed_type = module_.type_manager_.FindTypeById(accessed_type_id);
-
-    // Most common case we will just spot the access directly using the PhysicalStorageBuffer pointer
-    if (op_type_pointer->inst_.Operand(0) == spv::StorageClassPhysicalStorageBuffer) {
-        // If loading the struct, this is likely just saving it
-        // Shown from RADV/Intel NIR compiler, the compiler gets an offset and then dereference just the member, it never "loads the
-        // whole struct"
-        if (accessed_type->spv_type_ == SpvType::kStruct) {
-            // If the struct is only a single element, then everything works and the size will be the same
-            if (accessed_type->inst_.Length() > 3) {
-                return false;
-            }
-        }
-    } else {
-        // TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089
+    if (!accessed_type) {
+        assert(false);
         return false;
     }
 
-    // Save information to be used to make the Function
-    meta.target_instruction = &inst;
+    // This might be an OpTypeStruct, even if some compilers are smart enough (know Mesa is) to detect only the first part of a
+    // struct is loaded, we have to assume the entire struct is loaded and the entire memory is accessed (see
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089)
     meta.type_length = module_.type_manager_.TypeLength(*accessed_type);
+    // Will mark this is a struct acess to inform the user
+    meta.type_is_struct = accessed_type->spv_type_ == SpvType::kStruct;
+
+    meta.target_instruction = &inst;
     return true;
 }
 
