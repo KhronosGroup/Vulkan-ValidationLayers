@@ -71,6 +71,8 @@ class QueryPool;
 struct DedicatedBinding;
 struct ShaderModule;
 struct ShaderObject;
+class VideoSession;
+class VideoSessionParameters;
 }  // namespace vvl
 
 namespace chassis {

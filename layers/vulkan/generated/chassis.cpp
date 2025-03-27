@@ -31,6 +31,7 @@
 #include "chassis/dispatch_object.h"
 #include "chassis/validation_object.h"
 #include "generated/dispatch_vector.h"
+#include "utils/vk_layer_extension_utils.h"
 #include "layer_options.h"
 
 #include "profiling/profiling.h"
