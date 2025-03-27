@@ -20,34 +20,28 @@
  ****************************************************************************/
 #pragma once
 
-#include <atomic>
-#include <shared_mutex>
+// This is just a "simple" way to make sure everyone has access to things like PRIu32
 #include <cinttypes>
+
+#include <shared_mutex>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <algorithm>
 #include <memory>
-#include <string_view>
 
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <vulkan/utility/vk_safe_struct.hpp>
-#include "utils/cast_utils.h"
 #include "layer_options.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
-#include "error_message/log_message_type.h"
-#include "utils/vk_layer_extension_utils.h"
 #include "utils/vk_layer_utils.h"
 #include "generated/vk_dispatch_table_helper.h"
 #include "chassis/dispatch_object.h"
 #include "generated/vk_extension_helper.h"
-#include "gpuav/core/gpuav_settings.h"
-#include "sync/sync_settings.h"
 
 namespace chassis {
 struct CreateGraphicsPipelines;
@@ -64,6 +58,10 @@ namespace vvl {
 struct AllocateDescriptorSetsData;
 class Pipeline;
 }  // namespace vvl
+
+struct GlobalSettings;
+struct GpuAVSettings;
+struct SyncValSettings;
 
 // Because of GPL, we currently create our Pipeline state objects before the PreCallValidate
 // Each chassis layer will need to track its own state

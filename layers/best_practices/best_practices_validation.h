@@ -164,9 +164,7 @@ enum class ZcullDirection {
 
 namespace bp_state {
 class CommandBufferSubState;
-}  // namespace bp_state
 
-namespace bp_state {
 template <typename StateObject, typename Handle>
 void LogResult(const StateObject& state, Handle handle, const RecordObject& record_obj) {
     if (record_obj.result == VK_SUCCESS) {

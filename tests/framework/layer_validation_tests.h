@@ -37,7 +37,6 @@
 
 #include "binding.h"
 #include "containers/limits.h"
-#include "generated/vk_extension_helper.h"
 #include "render.h"
 
 #include <cmath>
@@ -45,6 +44,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <array> // Required for Windows in many tests
 
 // MSVC and GCC define __SANITIZE_ADDRESS__ when compiling with address sanitization
 // However, clang doesn't. Instead you have to use __has_feature to check.
