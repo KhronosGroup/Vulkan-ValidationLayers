@@ -1048,6 +1048,9 @@ class CoreChecks : public vvl::Device {
     bool VerifyImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                    const ImageBarrier& image_barrier, vvl::CommandBuffer::ImageLayoutMap& local_layout_map) const;
 
+    bool VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                                   const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
+
     bool ValidateImageLayoutAgainstImageUsage(const Location& layout_loc, VkImage image, VkImageLayout layout,
                                               VkImageUsageFlags usage) const;
 
