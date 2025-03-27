@@ -1810,3 +1810,84 @@ TEST_F(PositiveRayTracing, ZeroPrimitiveCountIndirect) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(PositiveRayTracing, BuildIndirectWithoutIndexBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::accelerationStructureIndirectBuild);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::as::GeometryKHR triangle_geometry;
+
+    triangle_geometry.SetType(vkt::as::GeometryKHR::Type::Triangle);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+    const VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+                                            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+    vkt::Buffer vertex_buffer(*m_device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    vkt::Buffer transform_buffer(*m_device, sizeof(VkTransformMatrixKHR), buffer_usage, kHostVisibleMemProps, &alloc_flags);
+
+    triangle_geometry.SetPrimitiveCount(1);
+    constexpr std::array vertices = {10.0f, 10.0f, 0.0f, -10.0f, 10.0f, 0.0f, 0.0f, -10.0f, 0.0f};
+    auto vertex_buffer_ptr = static_cast<float*>(vertex_buffer.Memory().Map());
+    std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
+    vertex_buffer.Memory().Unmap();
+
+    VkTransformMatrixKHR transform_matrix = {{
+        {1.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+    }};
+
+    auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR*>(transform_buffer.Memory().Map());
+    std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
+    transform_buffer.Memory().Unmap();
+
+    triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1);
+    triangle_geometry.SetTrianglesIndexType(VK_INDEX_TYPE_UINT32);
+    triangle_geometry.SetTrianglesTransformBuffer(std::move(transform_buffer));
+    triangle_geometry.SetFlags(VK_GEOMETRY_OPAQUE_BIT_KHR);
+
+    vkt::as::BuildGeometryInfoKHR out_build_info(m_device);
+
+    out_build_info.SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    out_build_info.SetBuildType(VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR);
+    out_build_info.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+
+    std::vector<vkt::as::GeometryKHR> geometries;
+    geometries.emplace_back(std::move(triangle_geometry));
+    out_build_info.SetGeometries(std::move(geometries));
+    out_build_info.SetBuildRanges(out_build_info.GetBuildRangeInfosFromGeometries());
+
+    auto null_as = std::make_shared<vkt::as::AccelerationStructureKHR>(m_device);
+    null_as->SetNull(true);
+
+    out_build_info.SetSrcAS(null_as);
+    auto dstAsSize = out_build_info.GetSizeInfo().accelerationStructureSize;
+
+    auto as = std::make_shared<vkt::as::AccelerationStructureKHR>(m_device);
+    as->SetSize(dstAsSize);
+    as->SetType(VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR);
+    as->SetDeviceBufferMemoryAllocateFlags(VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT);
+    as->SetDeviceBufferMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    as->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
+                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    as->SetDeviceBufferInitNoMem(false);
+
+    out_build_info.SetDstAS(as);
+    out_build_info.SetUpdateDstAccelStructSizeBeforeBuild(true);
+
+    out_build_info.SetInfoCount(1);
+    out_build_info.SetNullInfos(false);
+    out_build_info.SetNullBuildRangeInfos(false);
+
+    m_command_buffer.Begin();
+    out_build_info.BuildCmdBufferIndirect(m_command_buffer.handle());
+    m_command_buffer.End();
+}
