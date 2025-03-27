@@ -36,6 +36,7 @@ class BufferDeviceAddressPass : public Pass {
         const Instruction* target_instruction = nullptr;
         uint32_t alignment_literal = 0;
         uint32_t type_length = 0;
+        bool type_is_struct = false;
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
