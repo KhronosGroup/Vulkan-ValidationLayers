@@ -519,6 +519,8 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         const Location p_geom_geom_loc = p_geom_loc.dot(Field::geometry);
         const Location p_geom_geom_triangles_loc = p_geom_geom_loc.dot(Field::triangles);
         const VkAccelerationStructureGeometryKHR &geom_data = rt::GetGeometry(info, geom_i);
+        const uint32_t geometry_build_range_primitive_count =
+            geometry_build_ranges ? geometry_build_ranges[geom_i].primitiveCount : 0;
 
         switch (geom_data.geometryType) {
             case VK_GEOMETRY_TYPE_TRIANGLES_KHR:  // == VK_GEOMETRY_TYPE_TRIANGLES_NV
@@ -531,7 +533,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                      p_geom_geom_triangles_loc.dot(Field::transformData));
 
                 auto vertex_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.vertexData.deviceAddress);
-                if (vertex_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
+                if (vertex_buffer_states.empty() && geometry_build_range_primitive_count > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03804",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03804"),
                                      cmd_buffer, p_geom_geom_triangles_loc.dot(Field::vertexData).dot(Field::deviceAddress),
@@ -553,7 +555,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
 
                 if (geom_data.geometry.triangles.indexType != VK_INDEX_TYPE_NONE_KHR) {
                     auto index_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.indexData.deviceAddress);
-                    if (index_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
+                    if (index_buffer_states.empty() && geometry_build_range_primitive_count > 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03806",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03806"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::indexData).dot(Field::deviceAddress),
@@ -582,7 +584,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                             if (geom_i < src_as_state->build_range_infos.size()) {
                                 if (const uint32_t recorded_primitive_count =
                                         src_as_state->build_range_infos[geom_i].primitiveCount;
-                                    recorded_primitive_count != geometry_build_ranges[geom_i].primitiveCount) {
+                                    recorded_primitive_count != geometry_build_range_primitive_count) {
                                     const LogObjectList objlist(cmd_buffer, info.srcAccelerationStructure);
                                     skip |= LogError("VUID-vkCmdBuildAccelerationStructuresKHR-primitiveCount-03769", objlist,
                                                      p_geom_loc,
@@ -590,7 +592,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                                                      "], but this build range has its primitiveCount member set to (%" PRIu32
                                                      ") when it was last specified as (%" PRIu32 ").",
                                                      pp_build_range_info_loc.Fields().c_str(), geom_i,
-                                                     geometry_build_ranges[geom_i].primitiveCount, recorded_primitive_count);
+                                                     geometry_build_range_primitive_count, recorded_primitive_count);
                                 }
                             }
                         }
@@ -636,7 +638,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 }
                 if (geom_data.geometry.triangles.transformData.deviceAddress != 0) {
                     auto tranform_buffer_states = GetBuffersByAddress(geom_data.geometry.triangles.transformData.deviceAddress);
-                    if (tranform_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
+                    if (tranform_buffer_states.empty() && geometry_build_range_primitive_count > 0) {
                         skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03808",
                                                    "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03808"),
                                          cmd_buffer, p_geom_geom_triangles_loc.dot(Field::transformData).dot(Field::deviceAddress),
@@ -667,7 +669,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 skip |= buffer_check(geom_i, geom_data.geometry.instances.data, instances_data_loc);
 
                 auto buffer_states = GetBuffersByAddress(geom_data.geometry.instances.data.deviceAddress);
-                if (buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
+                if (buffer_states.empty() && geometry_build_range_primitive_count > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03813",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03813"),
                                      cmd_buffer, instances_data_loc.dot(Field::deviceAddress),
@@ -694,7 +696,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 skip |= buffer_check(geom_i, geom_data.geometry.aabbs.data, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data));
 
                 auto aabb_buffer_states = GetBuffersByAddress(geom_data.geometry.aabbs.data.deviceAddress);
-                if (aabb_buffer_states.empty() && geometry_build_ranges[geom_i].primitiveCount > 0) {
+                if (aabb_buffer_states.empty() && geometry_build_range_primitive_count > 0) {
                     skip |= LogError(pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03811",
                                                "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03811"),
                                      cmd_buffer, p_geom_geom_loc.dot(Field::aabbs).dot(Field::data).dot(Field::deviceAddress),
