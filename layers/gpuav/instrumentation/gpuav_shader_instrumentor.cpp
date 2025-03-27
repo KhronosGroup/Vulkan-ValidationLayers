@@ -48,6 +48,7 @@
 
 #include <cassert>
 #include <string>
+#include <filesystem>
 
 namespace gpuav {
 
@@ -1129,8 +1130,10 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     }
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
-        DumpSpirvToFile(file_name, reinterpret_cast<const char *>(input_spirv.data()), input_spirv.size() * sizeof(uint32_t));
+        const std::filesystem::path non_instrumented_spirv_file =
+            std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+        DumpSpirvToFile(non_instrumented_spirv_file, reinterpret_cast<const char *>(input_spirv.data()),
+                        input_spirv.size() * sizeof(uint32_t));
     }
 
     spirv::Settings module_settings{};
@@ -1216,8 +1219,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module.ToBinary(out_instrumented_spirv);
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        std::string file_name = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
-        DumpSpirvToFile(file_name, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
+        const std::filesystem::path instrumented_spirv_file =
+            std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_after.spv");
+        DumpSpirvToFile(instrumented_spirv_file, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
                         out_instrumented_spirv.size() * sizeof(uint32_t));
     }
 
@@ -1227,9 +1231,15 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         std::string spirv_val_error;
         if (!GpuValidateShader(out_instrumented_spirv, extensions.vk_khr_relaxed_block_layout,
                                extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error)) {
+            const std::filesystem::path instrumented_spirv_file =
+                std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv");
+            DumpSpirvToFile(instrumented_spirv_file, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
+                            out_instrumented_spirv.size() * sizeof(uint32_t));
+
             std::ostringstream strm;
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
-                 << spirv_val_error << " Proceeding with non instrumented shader.";
+                 << spirv_val_error << "\nInvalid spirv dumped to " << instrumented_spirv_file
+                 << "\nProceeding with non instrumented shader.";
             InternalError(device, loc, strm.str().c_str());
             return false;
         }

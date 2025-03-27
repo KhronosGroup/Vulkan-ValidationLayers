@@ -25,6 +25,7 @@
 #include "containers/custom_containers.h"
 
 #include <spirv-tools/libspirv.hpp>
+#include <filesystem>
 
 struct DeviceFeatures;
 struct DeviceExtensions;
@@ -115,4 +116,4 @@ spv_target_env PickSpirvEnv(const APIVersion &api_version, bool spirv_1_4);
 void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const DeviceFeatures &enabled_features,
                             spvtools::ValidatorOptions &out_options, uint32_t *out_hash);
 
-void DumpSpirvToFile(std::string file_name, const char *spirv_data, size_t spirv_size);
+void DumpSpirvToFile(const std::filesystem::path &file_path, const char *spirv_data, size_t spirv_size);
