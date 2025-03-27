@@ -43,8 +43,11 @@ uint32_t BufferDeviceAddressPass::GetLinkFunctionId() {
 
 uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                                      const InstructionMeta& meta) {
-    // Convert reference pointer to uint64
+    // The Pointer ID Operand is always the first operand for Load/Store/Atomics
+    // We can just take it and cast to a uint64 here to examine the ptr value
     const uint32_t pointer_id = meta.target_instruction->Operand(0);
+
+    // Convert reference pointer to uint64
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
     const uint32_t convert_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
@@ -97,12 +100,10 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
         return false;
     }
 
-    // TODO - Should have loop to walk Load/Store to the Pointer,
-    // this case will not cover things such as OpCopyObject or double OpAccessChains
-    const Instruction* pointer_inst = function.FindInstruction(inst.Operand(0));
-    if (!pointer_inst || !pointer_inst->IsAccessChain()) {
-        return false;
-    }
+    // While the Pointer Id might not be an OpAccessChain (can be OpLoad, OpCopyObject, etc), we can just examine its result type to
+    // see if it is a PhysicalStorageBuffer pointer or not
+    const uint32_t pointer_id = inst.Operand(0);
+    const Instruction* pointer_inst = function.FindInstruction(pointer_id);
 
     // Get the OpTypePointer
     const Type* op_type_pointer = module_.type_manager_.FindTypeById(pointer_inst->TypeId());

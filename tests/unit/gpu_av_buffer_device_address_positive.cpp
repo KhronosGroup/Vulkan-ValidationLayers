@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "generated/vk_function_pointers.h"
 
 void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(void *p_next) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
@@ -1142,7 +1143,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
 
         struct RealCamera {
             mat4 viewProjection; // [0, 63]
-            vec4 frustum[6]; // [64, 191] - should not be factored if not accessing
+            vec4 frustum[6]; // [64, 160] - should not be factored if not accessing
         };
         layout(buffer_reference, scalar, buffer_reference_align = 4) restrict readonly buffer CameraBuffer {
             RealCamera camera;
@@ -1258,6 +1259,221 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
     auto block_buffer_ptr = static_cast<uint32_t *>(block_buffer.Memory().Map());
     ASSERT_TRUE(block_buffer_ptr[2] == 999);
     block_buffer.Memory().Unmap();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
+    TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    // Slang code
+    // struct Data {
+    //     uint x;
+    //     uint payload[16]; // last item is OOB
+    // }
+    // uniform Data* bda;
+    // [numthreads(1,1,1)]
+    // void computeMain() {
+    //    uint a = bda->payload[0] * bda->payload[14];
+    //    bda->x = a;
+    // }
+    char const *shader_source = R"(
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Shader
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %computeMain "main" %globalParams
+               OpExecutionMode %computeMain LocalSize 1 1 1
+               OpDecorate %_ptr_PhysicalStorageBuffer_Data_natural ArrayStride 68
+               OpDecorate %GlobalParams_std140 Block
+               OpMemberDecorate %GlobalParams_std140 0 Offset 0
+               OpDecorate %globalParams Binding 0
+               OpDecorate %globalParams DescriptorSet 0
+               OpDecorate %_ptr_PhysicalStorageBuffer__Array_natural_uint16 ArrayStride 64
+               OpDecorate %_arr_uint_int_16 ArrayStride 4
+               OpDecorate %_ptr_PhysicalStorageBuffer__arr_uint_int_16 ArrayStride 64
+               OpDecorate %_ptr_PhysicalStorageBuffer_uint ArrayStride 4
+               OpMemberDecorate %_Array_natural_uint16 0 Offset 0
+               OpMemberDecorate %Data_natural 0 Offset 0
+               OpMemberDecorate %Data_natural 1 Offset 4
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_Data_natural PhysicalStorageBuffer
+%GlobalParams_std140 = OpTypeStruct %_ptr_PhysicalStorageBuffer_Data_natural
+%_ptr_Uniform_GlobalParams_std140 = OpTypePointer Uniform %GlobalParams_std140
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+%_ptr_Uniform_7 = OpTypePointer Uniform %_ptr_PhysicalStorageBuffer_Data_natural
+      %int_1 = OpConstant %int 1
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer__Array_natural_uint16 PhysicalStorageBuffer
+       %uint = OpTypeInt 32 0
+     %int_16 = OpConstant %int 16
+%_arr_uint_int_16 = OpTypeArray %uint %int_16
+%_ptr_PhysicalStorageBuffer__arr_uint_int_16 = OpTypePointer PhysicalStorageBuffer %_arr_uint_int_16
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+     %int_14 = OpConstant %int 14
+%_Array_natural_uint16 = OpTypeStruct %_arr_uint_int_16
+%Data_natural = OpTypeStruct %uint %_Array_natural_uint16
+%_ptr_PhysicalStorageBuffer_Data_natural = OpTypePointer PhysicalStorageBuffer %Data_natural
+%_ptr_PhysicalStorageBuffer__Array_natural_uint16 = OpTypePointer PhysicalStorageBuffer %_Array_natural_uint16
+%globalParams = OpVariable %_ptr_Uniform_GlobalParams_std140 Uniform
+%computeMain = OpFunction %void None %3
+          %4 = OpLabel
+         %13 = OpAccessChain %_ptr_Uniform_7 %globalParams %int_0
+         %14 = OpLoad %_ptr_PhysicalStorageBuffer_Data_natural %13
+         %18 = OpAccessChain %_ptr_PhysicalStorageBuffer__Array_natural_uint16 %14 %int_1
+         %23 = OpAccessChain %_ptr_PhysicalStorageBuffer__arr_uint_int_16 %18 %int_0
+         %25 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %23 %int_0
+         %26 = OpLoad %uint %25 Aligned 4
+         %27 = OpLoad %_ptr_PhysicalStorageBuffer_Data_natural %13
+         %28 = OpAccessChain %_ptr_PhysicalStorageBuffer__Array_natural_uint16 %27 %int_1
+         %29 = OpAccessChain %_ptr_PhysicalStorageBuffer__arr_uint_int_16 %28 %int_0
+         %30 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %29 %int_14
+         %32 = OpLoad %uint %30 Aligned 4
+          %a = OpIMul %uint %26 %32
+         %34 = OpLoad %_ptr_PhysicalStorageBuffer_Data_natural %13
+         %35 = OpAccessChain %_ptr_PhysicalStorageBuffer_uint %34 %int_0
+               OpStore %35 %a Aligned 4
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    vkt::Buffer bda_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer ubo_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto ubo_buffer_ptr = static_cast<VkDeviceAddress *>(ubo_buffer.Memory().Map());
+    ubo_buffer_ptr[0] = bda_buffer.Address();
+    ubo_buffer.Memory().Unmap();
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    descriptor_set.WriteDescriptorBufferInfo(0, ubo_buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    // struct Foo {
+    //     uint pad_0;
+    //     float3 pad_1;
+    //     uint* a; // offset 16
+    //     uint* b; // offset 24
+    // }
+    //
+    // RWStructuredBuffer<uint64_t> rwNodeBuffer;
+    //
+    // [shader("compute")]
+    // void main(uint3 threadId : SV_DispatchThreadID) {
+    //     Foo* x = (Foo*)(rwNodeBuffer[0]);
+    //     Foo foo = *x;
+    //     InterlockedExchange(*foo.a, 0);
+    //     InterlockedExchange(*(x->b), 0);
+    // }
+    char const *shader_source = R"(
+               OpCapability Int64
+               OpCapability PhysicalStorageBufferAddresses
+               OpCapability Shader
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main" %rwNodeBuffer
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_runtimearr_ulong ArrayStride 8
+               OpDecorate %RWStructuredBuffer Block
+               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
+               OpDecorate %rwNodeBuffer Binding 0
+               OpDecorate %rwNodeBuffer DescriptorSet 0
+               OpDecorate %_ptr_PhysicalStorageBuffer_Foo_natural ArrayStride 32
+               OpDecorate %_ptr_PhysicalStorageBuffer_uint ArrayStride 4
+               OpDecorate %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_uint ArrayStride 8
+               OpMemberDecorate %Foo_natural 0 Offset 0
+               OpMemberDecorate %Foo_natural 1 Offset 4
+               OpMemberDecorate %Foo_natural 2 Offset 16
+               OpMemberDecorate %Foo_natural 3 Offset 24
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %ulong = OpTypeInt 64 0
+%_ptr_StorageBuffer_ulong = OpTypePointer StorageBuffer %ulong
+%_runtimearr_ulong = OpTypeRuntimeArray %ulong
+%RWStructuredBuffer = OpTypeStruct %_runtimearr_ulong
+%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
+               OpTypeForwardPointer %_ptr_PhysicalStorageBuffer_Foo_natural PhysicalStorageBuffer
+      %int_2 = OpConstant %int 2
+       %uint = OpTypeInt 32 0
+%_ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %uint
+%_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_uint = OpTypePointer PhysicalStorageBuffer %_ptr_PhysicalStorageBuffer_uint
+      %int_3 = OpConstant %int 3
+     %uint_1 = OpConstant %uint 1
+     %uint_0 = OpConstant %uint 0
+      %float = OpTypeFloat 32
+    %v3float = OpTypeVector %float 3
+%Foo_natural = OpTypeStruct %uint %v3float %_ptr_PhysicalStorageBuffer_uint %_ptr_PhysicalStorageBuffer_uint
+%_ptr_PhysicalStorageBuffer_Foo_natural = OpTypePointer PhysicalStorageBuffer %Foo_natural
+%rwNodeBuffer = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
+       %main = OpFunction %void None %3
+          %4 = OpLabel
+          %9 = OpAccessChain %_ptr_StorageBuffer_ulong %rwNodeBuffer %int_0 %int_0
+         %14 = OpLoad %ulong %9
+          %x = OpConvertUToPtr %_ptr_PhysicalStorageBuffer_Foo_natural %14
+         %22 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_uint %x %int_2
+         %23 = OpLoad %_ptr_PhysicalStorageBuffer_uint %22 Aligned 8
+         %25 = OpAccessChain %_ptr_PhysicalStorageBuffer__ptr_PhysicalStorageBuffer_uint %x %int_3
+         %28 = OpAtomicExchange %uint %23 %uint_1 %uint_0 %uint_0
+         %29 = OpLoad %_ptr_PhysicalStorageBuffer_uint %25 Aligned 8
+         %30 = OpAtomicExchange %uint %29 %uint_1 %uint_0 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    vkt::Buffer pod_buffer(*m_device, 64, 0, vkt::device_address);
+    vkt::Buffer bda_buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    in_buffer_ptr[0] = bda_buffer.Address();
+    in_buffer.Memory().Unmap();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    // Update indirect pointers here
+    VkDeviceAddress pod_buffer_addr = pod_buffer.Address();
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), bda_buffer, 16, sizeof(VkDeviceAddress), &pod_buffer_addr);
+    vk::CmdUpdateBuffer(m_command_buffer.handle(), bda_buffer, 24, sizeof(VkDeviceAddress), &pod_buffer_addr);
+    m_command_buffer.FullMemoryBarrier();
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand) {
