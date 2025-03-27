@@ -20,6 +20,7 @@
 #include "generated/instrumentation_post_process_descriptor_index_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/hash_util.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 namespace gpuav {
 namespace spirv {
@@ -202,6 +203,7 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
         }
     }
 
+    tl_instrumentation_debug_info.postp = instrumentations_count_;
     return (instrumentations_count_ != 0);
 }
 

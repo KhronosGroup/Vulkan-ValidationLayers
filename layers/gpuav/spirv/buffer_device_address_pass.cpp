@@ -20,6 +20,7 @@
 #include "utils/math_utils.h"
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 namespace gpuav {
 namespace spirv {
@@ -176,6 +177,7 @@ bool BufferDeviceAddressPass::Instrument() {
         }
     }
 
+    tl_instrumentation_debug_info.bda = instrumentations_count_;
     return instrumentations_count_ != 0;
 }
 

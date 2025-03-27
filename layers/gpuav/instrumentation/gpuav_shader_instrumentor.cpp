@@ -34,6 +34,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 #include "gpuav/spirv/module.h"
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
@@ -292,7 +293,7 @@ void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     const uint32_t unique_shader_id = unique_shader_module_id_++;
     const bool is_shader_instrumented =
         InstrumentShader(vvl::make_span(static_cast<const uint32_t *>(create_info.pCode), create_info.codeSize / sizeof(uint32_t)),
-                         unique_shader_id, instrumentation_dsl, create_info_loc, instrumented_spirv);
+                         unique_shader_id, instrumentation_dsl, create_info.stage, create_info_loc, instrumented_spirv);
 
     if (is_shader_instrumented) {
         instrumentation_data.unique_shader_id = unique_shader_id;
@@ -853,8 +854,8 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
         }
         std::vector<uint32_t> instrumented_spirv;
         const uint32_t unique_shader_id = unique_shader_module_id_++;
-        const bool is_shader_instrumented =
-            InstrumentShader(modified_module_state->spirv->words_, unique_shader_id, instrumentation_dsl, loc, instrumented_spirv);
+        const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
+                                                             instrumentation_dsl, stage_state.GetStage(), loc, instrumented_spirv);
         if (is_shader_instrumented) {
             instrumentation_metadata.unique_shader_id = unique_shader_id;
             if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
@@ -1000,8 +1001,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             // ---
             std::vector<uint32_t> instrumented_spirv;
             const uint32_t unique_shader_id = unique_shader_module_id_++;
-            const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
-                                                                 instrumentation_dsl, loc, instrumented_spirv);
+            const bool is_shader_instrumented =
+                InstrumentShader(modified_module_state->spirv->words_, unique_shader_id, instrumentation_dsl,
+                                 modified_stage_state.GetStage(), loc, instrumented_spirv);
             if (is_shader_instrumented) {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
                 if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
@@ -1120,7 +1122,8 @@ static bool GpuValidateShader(const std::vector<uint32_t> &input, bool SetRelaxB
 
 // Call the SPIR-V Optimizer to run the instrumentation pass on the shader.
 bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &input_spirv, uint32_t unique_shader_id,
-                                             const InstrumentationDescriptorSetLayouts &instrumentation_dsl, const Location &loc,
+                                             const InstrumentationDescriptorSetLayouts &instrumentation_dsl,
+                                             VkShaderStageFlagBits stage, const Location &loc,
                                              std::vector<uint32_t> &out_instrumented_spirv) {
     if (input_spirv[0] != spv::MagicNumber) return false;
 
@@ -1150,6 +1153,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                          instrumentation_dsl.set_index_to_bindings_layout_lut);
 
     bool modified = false;
+
+    tl_instrumentation_debug_info.Clear();
+    tl_instrumentation_debug_info.shader_stage = stage;
 
     // If descriptor indexing is enabled, enable length checks and updated descriptor checks
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
@@ -1219,8 +1225,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module.ToBinary(out_instrumented_spirv);
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
+        const std::string instrumentation_info = tl_instrumentation_debug_info.ToStringFileSuffix();
         const std::filesystem::path instrumented_spirv_file =
-            std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_after.spv");
+            std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_after_" + instrumentation_info + ".spv");
         DumpSpirvToFile(instrumented_spirv_file, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
                         out_instrumented_spirv.size() * sizeof(uint32_t));
     }
@@ -1231,8 +1238,9 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         std::string spirv_val_error;
         if (!GpuValidateShader(out_instrumented_spirv, extensions.vk_khr_relaxed_block_layout,
                                extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error)) {
-            const std::filesystem::path instrumented_spirv_file =
-                std::filesystem::absolute("dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv");
+            const std::string instrumentation_info = tl_instrumentation_debug_info.ToStringFileSuffix();
+            const std::filesystem::path instrumented_spirv_file = std::filesystem::absolute(
+                "dump_" + std::to_string(unique_shader_id) + "_after_invalid_" + instrumentation_info + ".spv");
             DumpSpirvToFile(instrumented_spirv_file, reinterpret_cast<const char *>(out_instrumented_spirv.data()),
                             out_instrumented_spirv.size() * sizeof(uint32_t));
 

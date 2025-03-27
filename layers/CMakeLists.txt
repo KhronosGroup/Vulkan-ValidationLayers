@@ -286,6 +286,8 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/gpuav_shader_instrumentor.h
     gpuav/instrumentation/gpuav_instrumentation.h
     gpuav/instrumentation/gpuav_instrumentation.cpp
+    gpuav/instrumentation/gpuav_instrumentation_debug.h
+    gpuav/instrumentation/gpuav_instrumentation_debug.cpp
     gpuav/resources/gpuav_state_trackers.cpp
     gpuav/resources/gpuav_state_trackers.h
     gpuav/resources/gpuav_shader_resources.h

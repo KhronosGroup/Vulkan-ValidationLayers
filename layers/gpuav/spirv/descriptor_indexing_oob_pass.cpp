@@ -23,6 +23,7 @@
 #include "generated/instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.h"
 #include "generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 namespace gpuav {
 namespace spirv {
@@ -459,6 +460,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
         }
     }
 
+    tl_instrumentation_debug_info.dioob = instrumentations_count_;
     return instrumentations_count_ != 0;
 }
 

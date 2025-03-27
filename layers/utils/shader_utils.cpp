@@ -185,9 +185,3 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
         *out_hash = hash_util::Hash32(&settings, sizeof(Settings));
     }
 }
-
-// This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
-void DumpSpirvToFile(const std::filesystem::path &file_path, const char *spirv_data, size_t spirv_size) {
-    std::ofstream debug_file(file_path, std::ios::out | std::ios::binary);
-    debug_file.write(spirv_data, spirv_size);
-}

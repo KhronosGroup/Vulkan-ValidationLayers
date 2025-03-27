@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "generated/instrumentation_ray_query_comp.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 namespace gpuav {
 namespace spirv {
@@ -109,6 +110,7 @@ bool RayQueryPass::Instrument() {
         }
     }
 
+    tl_instrumentation_debug_info.rayq = instrumentations_count_;
     return instrumentations_count_ != 0;
 }
 

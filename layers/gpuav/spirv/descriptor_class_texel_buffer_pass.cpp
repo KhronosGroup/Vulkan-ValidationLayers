@@ -20,6 +20,7 @@
 
 #include "generated/instrumentation_descriptor_class_texel_buffer_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 namespace gpuav {
 namespace spirv {
@@ -164,6 +165,7 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
     // Save information to be used to make the Function
     meta.target_instruction = &inst;
 
+    tl_instrumentation_debug_info.dctb = instrumentations_count_;
     return true;
 }
 

@@ -18,6 +18,7 @@
 #include "vertex_attribute_fetch_oob.h"
 #include "module.h"
 #include "generated/instrumentation_vertex_attribute_fetch_oob_vert.h"
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
 
 #include <iostream>
 
@@ -75,9 +76,12 @@ bool VertexAttributeFetchOob::Instrument() {
                                           &stage_info_inst_it);
 
             instrumentation_performed = true;
+            tl_instrumentation_debug_info.vaoob = 1;
             return true;
         }
     }
+
+    tl_instrumentation_debug_info.vaoob = 0;
     return false;
 }
 

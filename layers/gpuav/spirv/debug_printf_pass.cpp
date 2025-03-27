@@ -26,6 +26,8 @@
 
 #include "generated/device_features.h"
 
+#include "gpuav/instrumentation/gpuav_instrumentation_debug.h"
+
 namespace gpuav {
 namespace spirv {
 
@@ -563,6 +565,7 @@ bool DebugPrintfPass::Instrument() {
         }
     }
 
+    tl_instrumentation_debug_info.dbgpf = instrumentations_count_;
     return true;
 }
 
