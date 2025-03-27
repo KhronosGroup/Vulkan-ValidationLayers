@@ -116,8 +116,9 @@ bool inst_buffer_device_address(
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
 
-        const uint payload = access_byte_size | (alignment << kInstBuffAddrAccessPayloadShiftAlignment) | access_type;
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = payload;
+        // access_type already has the upper bits only used and payload is never using them
+        const uint payload = (error_sub_code == kErrorSubCodeBufferDeviceAddressAlignment) ? alignment : access_byte_size;
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | payload;
     }
 
     return false;

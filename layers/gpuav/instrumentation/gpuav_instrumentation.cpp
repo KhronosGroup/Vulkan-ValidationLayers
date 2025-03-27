@@ -814,7 +814,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     switch (error_sub_code) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
             const char *access_type = is_write ? "written" : "read";
-            const uint32_t byte_size = payload & kInstBuffAddrAccessPayloadMaskAccessSize;
+            const uint32_t byte_size = payload & kInstBuffAddrAccessPayloadMaskAccessInfo;
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x" << std::hex
                  << address << '.';
@@ -828,8 +828,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
         } break;
         case kErrorSubCodeBufferDeviceAddressAlignment: {
             const char *access_type = is_write ? "OpStore" : "OpLoad";
-            const uint32_t alignment =
-                (payload & kInstBuffAddrAccessPayloadMaskAlignment) >> kInstBuffAddrAccessPayloadShiftAlignment;
+            const uint32_t alignment = (payload & kInstBuffAddrAccessPayloadMaskAccessInfo);
             uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex << address
                  << " is not aligned to the instruction Aligned operand of " << std::dec << alignment << '.';

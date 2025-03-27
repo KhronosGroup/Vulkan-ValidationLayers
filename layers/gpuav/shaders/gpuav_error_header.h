@@ -138,14 +138,13 @@ const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
 const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
 const int kInstBuffAddrAccessPayloadOffset = kHeaderSize + 2;
 // Payload contains 3 pieces of data, compressed into a single uint32_t
-// We can be safe that assume alignment is never near 2k and the composite access is well under 512k
-// |    31    |     30    | 29 ... 19 | 18 ........... 0 |
-// | is write | is struct | Alignment | Access Byte Size |
+// We can be safe that assume alignment we don't need these upper 2 bytes
+// Note - if needed, we could use log2(alignment) as it must be a Power-of-Two
+// |    31    |     30    | 29 ........................ 0 |
+// | is write | is struct | Alignment OR Access Byte Size |
 const uint kInstBuffAddrAccessPayloadShiftIsWrite = 31;
 const uint kInstBuffAddrAccessPayloadShiftIsStruct = 30;
-const uint kInstBuffAddrAccessPayloadShiftAlignment = 19;
-const uint kInstBuffAddrAccessPayloadMaskAlignment = 0x7FF << kInstBuffAddrAccessPayloadShiftAlignment;
-const uint kInstBuffAddrAccessPayloadMaskAccessSize = 0x7FFFF;
+const uint kInstBuffAddrAccessPayloadMaskAccessInfo = 0x3FFFFFFF;
 
 // Ray query
 // ---
