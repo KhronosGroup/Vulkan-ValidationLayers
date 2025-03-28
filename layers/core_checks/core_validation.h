@@ -231,7 +231,7 @@ class CoreChecks : public vvl::Device {
                                 const LogObjectList& objlist, const Location& loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo& submit,
                                      const Location& submit_loc) const;
-    bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo2KHR& submit,
+    bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkSubmitInfo2& submit,
                                      const Location& submit_loc) const;
     bool ValidateSemaphoresForSubmit(struct SemaphoreSubmitState& state, const VkBindSparseInfo& submit,
                                      const Location& submit_loc) const;
@@ -318,25 +318,27 @@ class CoreChecks : public vvl::Device {
                           uint32_t bufferBarrierCount, const VkBufferMemoryBarrier* pBufferMemBarriers,
                           uint32_t imageMemBarrierCount, const VkImageMemoryBarrier* pImageMemBarriers) const;
 
-    bool IsShaderTileImageUsageValid(VkImageUsageFlags image_usage) const;
-    bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
-                                         const VkDependencyInfo& dep_info) const;
+    bool IsDynamicRenderingImageUsageValid(VkImageUsageFlags image_usage) const;
 
-    bool ValidateShaderTileImageBarriers(const LogObjectList& objlist, const Location& outer_loc,
-                                         VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
-                                         const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
-                                         uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
-                                         VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const;
+    bool ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
+                                          const VkDependencyInfo& dep_info) const;
 
-    bool ValidateShaderTileImageCommon(const LogObjectList& objlist, const Location& outer_loc, VkDependencyFlags dependency_flags,
-                                       uint32_t buffer_barrier_count, uint32_t image_barrier_count) const;
+    bool ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
+                                          VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
+                                          const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
+                                          uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
+                                          VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const;
+
+    bool ValidateDynamicRenderingBarriersCommon(const LogObjectList& objlist, const Location& outer_loc,
+                                                VkDependencyFlags dependency_flags, uint32_t buffer_barrier_count,
+                                                uint32_t image_barrier_count) const;
 
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& stage_mask_loc,
                                              VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidatePipelineStage(const LogObjectList& objlist, const Location& stage_mask_loc, VkQueueFlags queue_flags,
                                VkPipelineStageFlags2KHR stage_mask) const;
-    bool ValidatePipelineStageForShaderTileImage(const LogObjectList& objlist, const Location& loc,
-                                                 VkPipelineStageFlags2KHR stage_mask, VkDependencyFlags dependency_flags) const;
+    bool ValidateDynamicRenderingPipelineStage(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2 stage_mask,
+                                               VkDependencyFlags dependency_flags) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
                             VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
@@ -434,14 +436,13 @@ class CoreChecks : public vvl::Device {
 
     bool ValidateRenderPassPipelineStage(VkRenderPass render_pass, const Location& barrier_loc,
                                          VkPipelineStageFlags2 src_stage_mask, VkPipelineStageFlags2 dst_stage_mask) const;
-    bool ValidateRenderPassPipelineBarriers(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                            VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask,
-                                            VkDependencyFlags dependency_flags, uint32_t mem_barrier_count,
-                                            const VkMemoryBarrier* mem_barriers, uint32_t buffer_mem_barrier_count,
-                                            const VkBufferMemoryBarrier* buffer_mem_barriers, uint32_t image_mem_barrier_count,
-                                            const VkImageMemoryBarrier* image_barriers) const;
-    bool ValidateRenderPassPipelineBarriers(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                            const VkDependencyInfo& dep_info) const;
+    bool ValidateRenderPassBarriers(const Location& loc, const vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
+                                    VkPipelineStageFlags dst_stage_mask, VkDependencyFlags dependency_flags,
+                                    uint32_t mem_barrier_count, const VkMemoryBarrier* mem_barriers,
+                                    uint32_t buffer_mem_barrier_count, const VkBufferMemoryBarrier* buffer_mem_barriers,
+                                    uint32_t image_mem_barrier_count, const VkImageMemoryBarrier* image_barriers) const;
+    bool ValidateRenderPassBarriers(const Location& loc, const vvl::CommandBuffer& cb_state,
+                                    const VkDependencyInfo& dep_info) const;
 
     bool ValidateStageMasksAgainstQueueCapabilities(const LogObjectList& objlist, const Location& stage_mask_loc,
                                                     VkQueueFlags queue_flags, VkPipelineStageFlags2KHR stage_mask) const;

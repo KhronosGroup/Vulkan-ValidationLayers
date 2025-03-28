@@ -1381,36 +1381,36 @@ const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error) {
     return result;
 }
 
-const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error) {
-    static const vvl::unordered_map<ShaderTileImageError, std::vector<Entry>> kShaderTileImageErrors{
-        {ShaderTileImageError::kShaderTileImageFeatureError,
+const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRenderingBarrierError error) {
+    static const vvl::unordered_map<DynamicRenderingBarrierError, std::vector<Entry>> kDynamicRenderingBarrierErrors{
+        {DynamicRenderingBarrierError::kFeatureError,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09553"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09553"},
          }},
-        {ShaderTileImageError::kShaderTileImageFramebufferSpace,
+        {DynamicRenderingBarrierError::kFramebufferSpace,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-srcStageMask-09556"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-srcStageMask-09556"},
          }},
-        {ShaderTileImageError::kShaderTileImageNoBuffersOrImages,
+        {DynamicRenderingBarrierError::kNoBuffersOrImages,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-None-09554"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-None-09554"},
          }},
-        {ShaderTileImageError::kShaderTileImageLayout,
+        {DynamicRenderingBarrierError::kImageLayout,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09555"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-09555"},
          }},
-        {ShaderTileImageError::kShaderTileImageDependencyFlags,
+        {DynamicRenderingBarrierError::kDependencyFlags,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-dependencyFlags-07891"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-dependencyFlags-07891"},
          }},
     };
 
-    const auto &result = FindVUID(error, loc, kShaderTileImageErrors);
+    const auto &result = FindVUID(error, loc, kDynamicRenderingBarrierErrors);
     assert(!result.empty());
     if (result.empty()) {
         static const std::string unhandled("UNASSIGNED-CoreChecks-unhandled-barrier-error");

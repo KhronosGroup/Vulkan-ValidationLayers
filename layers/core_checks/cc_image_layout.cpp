@@ -421,7 +421,7 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
                !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
         skip = true;
-    } else if (layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && !IsShaderTileImageUsageValid(image_usage)) {
+    } else if (layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && !IsDynamicRenderingImageUsageValid(image_usage)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-09538" : "VUID-vkCmdBeginRenderPass-initialLayout-09537";
         skip = true;
     } else if ((IsImageLayoutDepthOnly(layout) || IsImageLayoutStencilOnly(layout)) &&
@@ -955,8 +955,8 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
                     bool local_skip = false;
                     if (state.current_layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ &&
                         state.current_layout != VK_IMAGE_LAYOUT_GENERAL) {
-                        const auto &vuid = sync_vuid_maps::GetShaderTileImageVUID(
-                            barrier_loc, sync_vuid_maps::ShaderTileImageError::kShaderTileImageLayout);
+                        const auto &vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(
+                            barrier_loc, sync_vuid_maps::DynamicRenderingBarrierError::kImageLayout);
                         local_skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
                                                string_VkImageLayout(state.current_layout));
                     }
