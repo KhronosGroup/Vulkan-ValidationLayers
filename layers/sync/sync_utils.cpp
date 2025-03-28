@@ -21,31 +21,32 @@
 namespace sync_utils {
 static constexpr uint32_t kNumPipelineStageBits = sizeof(VkPipelineStageFlags2) * 8;
 
+// IMPORTANT: the features listed here should also be reflected in GetFeatureNameMap()
 VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, const DeviceExtensions &device_extensions) {
     VkPipelineStageFlags2 result = 0;
     if (!features.geometryShader) {
-        result |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+        result |= VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT;
     }
     if (!features.tessellationShader) {
-        result |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
+        result |= VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT | VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT;
     }
     if (!features.conditionalRendering) {
-        result |= VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT;
+        result |= VK_PIPELINE_STAGE_2_CONDITIONAL_RENDERING_BIT_EXT;
     }
     if (!features.fragmentDensityMap) {
-        result |= VK_PIPELINE_STAGE_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
+        result |= VK_PIPELINE_STAGE_2_FRAGMENT_DENSITY_PROCESS_BIT_EXT;
     }
     if (!features.transformFeedback) {
-        result |= VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT;
+        result |= VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT;
     }
     if (!features.meshShader) {
-        result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_EXT;
+        result |= VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT;
     }
     if (!features.taskShader) {
-        result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_EXT;
+        result |= VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT;
     }
     if (!features.attachmentFragmentShadingRate && !features.shadingRateImage) {
-        result |= VK_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
+        result |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     }
     if (!features.subpassShading) {
         result |= VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI;
@@ -54,10 +55,10 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
         result |= VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI;
     }
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline) {
-        result |= VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+        result |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     }
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
-        result |= VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+        result |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     }
     if (!features.rayTracingMaintenance1) {
         result |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;

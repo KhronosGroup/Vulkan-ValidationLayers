@@ -1052,9 +1052,9 @@ bool CoreChecks::ValidateStageMasksAgainstQueueCapabilities(const LogObjectList 
 }
 
 bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlist, const Location &stage_mask_loc,
-                                                     VkPipelineStageFlags2KHR stage_mask) const {
+                                                     VkPipelineStageFlags2 stage_mask) const {
     bool skip = false;
-    if (!enabled_features.synchronization2 && stage_mask == 0) {
+    if (!enabled_features.synchronization2 && stage_mask == VK_PIPELINE_STAGE_2_NONE) {
         const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, 0, extensions);
         skip |= LogError(vuid, objlist, stage_mask_loc, "must not be 0 unless synchronization2 is enabled.");
     }
@@ -1065,12 +1065,19 @@ bool CoreChecks::ValidatePipelineStageFeatureEnables(const LogObjectList &objlis
         return skip;
     }
     for (size_t i = 0; i < sizeof(bad_bits) * 8; i++) {
-        VkPipelineStageFlags2KHR bit = 1ULL << i;
+        VkPipelineStageFlags2 bit = 1ULL << i;
         if (bit & bad_bits) {
             const auto &vuid = sync_vuid_maps::GetBadFeatureVUID(stage_mask_loc, bit, extensions);
-            skip |=
-                LogError(vuid, objlist, stage_mask_loc, "includes %s when the device does not have %s feature enabled.",
-                         sync_utils::StringPipelineStageFlags(bit).c_str(), sync_vuid_maps::GetFeatureNameMap().at(bit).c_str());
+            const auto &feature_names = sync_vuid_maps::GetFeatureNameMap();
+            auto feature_it = feature_names.find(bit);
+
+            // If hit this assert just ensure that features in DisabledPipelineStages() match features in GetFeatureNameMap()
+            assert(feature_it != feature_names.end());
+
+            const std::string feature_name = (feature_it != feature_names.end()) ? feature_it->second : "corresponding";
+
+            skip |= LogError(vuid, objlist, stage_mask_loc, "includes %s when the device does not have %s feature enabled.",
+                             sync_utils::StringPipelineStageFlags(bit).c_str(), feature_name.c_str());
         }
     }
     return skip;
