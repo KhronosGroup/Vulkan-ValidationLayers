@@ -104,6 +104,9 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // see if it is a PhysicalStorageBuffer pointer or not
     const uint32_t pointer_id = inst.Operand(0);
     const Instruction* pointer_inst = function.FindInstruction(pointer_id);
+    if (!pointer_inst) {
+        return false;  // Can be pointing to a Workgroup variable out of the function
+    }
 
     // Get the OpTypePointer
     const Type* op_type_pointer = module_.type_manager_.FindTypeById(pointer_inst->TypeId());
