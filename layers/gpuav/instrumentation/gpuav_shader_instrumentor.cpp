@@ -985,6 +985,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                         vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(modified_stage_ci->pNext)));
 
+                // TODO - this is in need of testing with when the all shaders in the pipeline and only some are selected
                 if (gpuav_settings.select_instrumented_shaders) {
                     if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
                         continue;
@@ -1001,15 +1002,24 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             const uint32_t unique_shader_id = unique_shader_module_id_++;
             const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
                                                                  instrumentation_dsl, loc, instrumented_spirv);
-            if (is_shader_instrumented) {
+            {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
                 if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
                     // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
                     // shader
                     VkShaderModule instrumented_shader_module;
                     VkShaderModuleCreateInfo create_info = vku::InitStructHelper();
-                    create_info.pCode = instrumented_spirv.data();
-                    create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
+                    if (is_shader_instrumented) {
+                        create_info.pCode = instrumented_spirv.data();
+                        create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
+                    } else {
+                        // We need to replace the shader regardless as the user may have destroyed the original VkShaderModule and
+                        // we will crash trying to unwrap it. So just make a duplicate VkShaderModule. (This is rare we hit this,
+                        // only when the user has a shader with nothing to instrument, which tends to be passthrough vertex shaders
+                        // which are quick enough to re-create)
+                        create_info.pCode = modified_module_state->spirv->words_.data();
+                        create_info.codeSize = modified_module_state->spirv->words_.size() * sizeof(uint32_t);
+                    }
                     VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &instrumented_shader_module);
                     if (result == VK_SUCCESS) {
                         modified_pipeline_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
@@ -1047,6 +1057,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             return false;
         }
 
+        // Even if active_shaders has both a vertex and fragment, this is ok because as the goal is just to destroy these later
         if (modified_lib->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) {
             pipeline_state.instrumentation_data.frag_out_lib = instrumented_pipeline_lib;
         } else {
