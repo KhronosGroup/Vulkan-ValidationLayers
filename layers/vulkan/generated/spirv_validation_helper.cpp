@@ -257,12 +257,9 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
         {spv::CapabilityFloatControls2, {0, &DeviceFeatures::shaderFloatControls2, nullptr, ""}},
         {spv::CapabilityQuadControlKHR, {0, &DeviceFeatures::shaderQuadControl, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityBFloat16TypeKHR, {0, &DeviceFeatures::shaderBFloat16Type, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityBFloat16DotProductKHR, {0, &DeviceFeatures::shaderBFloat16DotProduct, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityBFloat16CooperativeMatrixKHR, {0, &DeviceFeatures::shaderBFloat16CooperativeMatrix, nullptr, ""}},
+        {spv::CapabilityBFloat16TypeKHR, {0, &DeviceFeatures::shaderBFloat16Type, nullptr, ""}},
+        {spv::CapabilityBFloat16DotProductKHR, {0, &DeviceFeatures::shaderBFloat16DotProduct, nullptr, ""}},
+        {spv::CapabilityBFloat16CooperativeMatrixKHR, {0, &DeviceFeatures::shaderBFloat16CooperativeMatrix, nullptr, ""}},
         {spv::CapabilityRawAccessChainsNV, {0, &DeviceFeatures::shaderRawAccessChains, nullptr, ""}},
         {spv::CapabilityReplicatedCompositesEXT, {0, &DeviceFeatures::shaderReplicatedComposites, nullptr, ""}},
         {spv::CapabilityTensorAddressingNV, {0, &DeviceFeatures::cooperativeMatrixTensorAddressing, nullptr, ""}},
@@ -622,6 +619,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
 #endif
         case spv::CapabilityQuadControlKHR:
             return "QuadControlKHR";
+        case spv::CapabilityBFloat16TypeKHR:
+            return "BFloat16TypeKHR";
+        case spv::CapabilityBFloat16DotProductKHR:
+            return "BFloat16DotProductKHR";
+        case spv::CapabilityBFloat16CooperativeMatrixKHR:
+            return "BFloat16CooperativeMatrixKHR";
         case spv::CapabilitySampleMaskOverrideCoverageNV:
             return "SampleMaskOverrideCoverageNV";
         case spv::CapabilityGeometryShaderPassthroughNV:
@@ -782,6 +785,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "AtomicFloat16AddEXT";
         case spv::CapabilityArithmeticFenceEXT:
             return "ArithmeticFenceEXT";
+        case spv::CapabilityTaskSequenceINTEL:
+            return "TaskSequenceINTEL";
         case spv::CapabilitySubgroupBufferPrefetchINTEL:
             return "SubgroupBufferPrefetchINTEL";
         case spv::CapabilitySubgroup2DBlockIOINTEL:
@@ -792,8 +797,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "Subgroup2DBlockTransposeINTEL";
         case spv::CapabilitySubgroupMatrixMultiplyAccumulateINTEL:
             return "SubgroupMatrixMultiplyAccumulateINTEL";
+        case spv::CapabilityTernaryBitwiseFunctionINTEL:
+            return "TernaryBitwiseFunctionINTEL";
         case spv::CapabilityGroupUniformArithmeticKHR:
             return "GroupUniformArithmeticKHR";
+        case spv::CapabilityTensorFloat32RoundingINTEL:
+            return "TensorFloat32RoundingINTEL";
         default:
             return "Unhandled OpCapability";
     };
@@ -1137,6 +1146,9 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityExpectAssumeKHR, "VkPhysicalDeviceVulkan14Features::shaderExpectAssume OR VkPhysicalDeviceShaderExpectAssumeFeatures::shaderExpectAssume"},
     {spv::CapabilityFloatControls2, "VkPhysicalDeviceVulkan14Features::shaderFloatControls2 OR VkPhysicalDeviceShaderFloatControls2Features::shaderFloatControls2"},
     {spv::CapabilityQuadControlKHR, "VkPhysicalDeviceShaderQuadControlFeaturesKHR::shaderQuadControl"},
+    {spv::CapabilityBFloat16TypeKHR, "VkPhysicalDeviceShaderBfloat16FeaturesKHR::shaderBFloat16Type"},
+    {spv::CapabilityBFloat16DotProductKHR, "VkPhysicalDeviceShaderBfloat16FeaturesKHR::shaderBFloat16DotProduct"},
+    {spv::CapabilityBFloat16CooperativeMatrixKHR, "VkPhysicalDeviceShaderBfloat16FeaturesKHR::shaderBFloat16CooperativeMatrix"},
     {spv::CapabilityRawAccessChainsNV, "VkPhysicalDeviceRawAccessChainsFeaturesNV::shaderRawAccessChains"},
     {spv::CapabilityReplicatedCompositesEXT, "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT::shaderReplicatedComposites"},
     {spv::CapabilityTensorAddressingNV, "VkPhysicalDeviceCooperativeMatrix2FeaturesNV::cooperativeMatrixTensorAddressing"},

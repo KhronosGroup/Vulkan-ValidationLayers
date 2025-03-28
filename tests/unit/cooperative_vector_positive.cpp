@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  * Copyright (c) 2015-2025 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -136,7 +136,7 @@ TEST_F(PositiveCooperativeVector, CooperativeVectorSPIRV) {
 
     {
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
         pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
         pipe.CreateComputePipeline();
     }
@@ -157,7 +157,7 @@ TEST_F(PositiveCooperativeVector, CooperativeVectorSPIRV) {
            }
         )glsl";
         CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource2, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
         pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
         pipe.CreateComputePipeline();
     }

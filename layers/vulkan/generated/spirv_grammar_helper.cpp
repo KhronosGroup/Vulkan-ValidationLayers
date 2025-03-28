@@ -999,6 +999,16 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpAtomicFAddEXT";
         case spv::OpArithmeticFenceEXT:
             return "OpArithmeticFenceEXT";
+        case spv::OpTaskSequenceCreateINTEL:
+            return "OpTaskSequenceCreateINTEL";
+        case spv::OpTaskSequenceAsyncINTEL:
+            return "OpTaskSequenceAsyncINTEL";
+        case spv::OpTaskSequenceGetINTEL:
+            return "OpTaskSequenceGetINTEL";
+        case spv::OpTaskSequenceReleaseINTEL:
+            return "OpTaskSequenceReleaseINTEL";
+        case spv::OpTypeTaskSequenceINTEL:
+            return "OpTypeTaskSequenceINTEL";
         case spv::OpSubgroupBlockPrefetchINTEL:
             return "OpSubgroupBlockPrefetchINTEL";
         case spv::OpSubgroup2DBlockLoadINTEL:
@@ -1013,6 +1023,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpSubgroup2DBlockStoreINTEL";
         case spv::OpSubgroupMatrixMultiplyAccumulateINTEL:
             return "OpSubgroupMatrixMultiplyAccumulateINTEL";
+        case spv::OpBitwiseFunctionINTEL:
+            return "OpBitwiseFunctionINTEL";
         case spv::OpGroupIMulKHR:
             return "OpGroupIMulKHR";
         case spv::OpGroupFMulKHR:
@@ -1029,6 +1041,8 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpGroupLogicalOrKHR";
         case spv::OpGroupLogicalXorKHR:
             return "OpGroupLogicalXorKHR";
+        case spv::OpRoundFToTF32INTEL:
+            return "OpRoundFToTF32INTEL";
 
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         case spv::OpTypeUntypedPointerKHR:
@@ -2470,6 +2484,11 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpRayQueryGetIntersectionWorldToObjectKHR, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpAtomicFAddEXT, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpArithmeticFenceEXT, {{OperandKind::Id}}},
+        {spv::OpTaskSequenceCreateINTEL, {{OperandKind::Id, OperandKind::Literal, OperandKind::Literal, OperandKind::Literal, OperandKind::Literal}}},
+        {spv::OpTaskSequenceAsyncINTEL, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTaskSequenceGetINTEL, {{OperandKind::Id}}},
+        {spv::OpTaskSequenceReleaseINTEL, {{OperandKind::Id}}},
+        {spv::OpTypeTaskSequenceINTEL, {{}}},
         {spv::OpSubgroupBlockPrefetchINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpSubgroup2DBlockLoadINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroup2DBlockLoadTransformINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
@@ -2477,6 +2496,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpSubgroup2DBlockPrefetchINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroup2DBlockStoreINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpSubgroupMatrixMultiplyAccumulateINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpBitwiseFunctionINTEL, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
         {spv::OpGroupIMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupFMulKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupBitwiseAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
@@ -2485,6 +2505,7 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpGroupLogicalAndKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalOrKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
         {spv::OpGroupLogicalXorKHR, {{OperandKind::Id, OperandKind::ValueEnum, OperandKind::Id}}},
+        {spv::OpRoundFToTF32INTEL, {{OperandKind::Id}}},
     };  // clang-format on
 
     auto info = kOperandTable.find(opcode);
