@@ -1,7 +1,7 @@
-/* Copyright (c) 2021-2024 The Khronos Group Inc.
- * Copyright (c) 2021-2024 Valve Corporation
- * Copyright (c) 2021-2024 LunarG, Inc.
- * Copyright (C) 2021-2024 Google Inc.
+/* Copyright (c) 2021-2025 The Khronos Group Inc.
+ * Copyright (c) 2021-2025 Valve Corporation
+ * Copyright (c) 2021-2025 LunarG, Inc.
+ * Copyright (C) 2021-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,15 +115,15 @@ enum class SubmitError {
 
 const std::string &GetQueueSubmitVUID(const Location &loc, SubmitError error);
 
-enum class ShaderTileImageError {
-    kShaderTileImageFeatureError,
-    kShaderTileImageFramebufferSpace,
-    kShaderTileImageNoBuffersOrImages,
-    kShaderTileImageLayout,
-    kShaderTileImageDependencyFlags,
+enum class DynamicRenderingBarrierError {
+    kFeatureError,
+    kFramebufferSpace,
+    kNoBuffersOrImages,
+    kImageLayout,
+    kDependencyFlags,
 };
 
-const std::string &GetShaderTileImageVUID(const Location &loc, ShaderTileImageError error);
+const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRenderingBarrierError error);
 
 const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions);
 
