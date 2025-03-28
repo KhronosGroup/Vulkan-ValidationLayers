@@ -24,7 +24,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
+static thread_local LinkInfo link_info = {instrumentation_buffer_device_address_comp, instrumentation_buffer_device_address_comp_size, 0,
                              "inst_buffer_device_address", ZeroInitializeUintPrivateVariables};
 
 BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module) {

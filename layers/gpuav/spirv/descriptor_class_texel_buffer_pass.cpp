@@ -24,7 +24,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
+static thread_local LinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
                              instrumentation_descriptor_class_texel_buffer_comp_size, 0, "inst_descriptor_class_texel_buffer"};
 
 DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) {

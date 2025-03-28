@@ -24,7 +24,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
+static thread_local LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
                              instrumentation_post_process_descriptor_index_comp_size, 0, "inst_post_process_descriptor_index"};
 
 PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) {

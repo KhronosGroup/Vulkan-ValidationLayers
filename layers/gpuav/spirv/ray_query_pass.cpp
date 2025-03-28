@@ -23,7 +23,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, 0, "inst_ray_query"};
+static thread_local LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, 0, "inst_ray_query"};
 
 RayQueryPass::RayQueryPass(Module& module) : Pass(module) {
     module.use_bda_ = true;

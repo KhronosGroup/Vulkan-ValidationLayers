@@ -26,7 +26,7 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_vertex_attribute_fetch_oob_vert, instrumentation_vertex_attribute_fetch_oob_vert_size,
+static thread_local LinkInfo link_info = {instrumentation_vertex_attribute_fetch_oob_vert, instrumentation_vertex_attribute_fetch_oob_vert_size,
                              0, "inst_vertex_attribute_fetch_oob"};
 
 VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module) {

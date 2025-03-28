@@ -28,16 +28,16 @@ namespace gpuav {
 namespace spirv {
 
 // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
+static thread_local LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
                                       instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
                                       "inst_descriptor_indexing_oob_bindless"};
 
-static LinkInfo link_info_bindless_combined_image_sampler = {
+static thread_local LinkInfo link_info_bindless_combined_image_sampler = {
     instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
     instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size, 0,
     "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
 
-static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
+static thread_local LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
                                           instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
                                           "inst_descriptor_indexing_oob_non_bindless"};
 
