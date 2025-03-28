@@ -28,43 +28,30 @@ namespace gpuav {
 namespace spirv {
 
 // This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-static LinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
-                                      instrumentation_descriptor_indexing_oob_bindless_comp_size, 0,
-                                      "inst_descriptor_indexing_oob_bindless"};
+const static OfflineLinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
+                                                   instrumentation_descriptor_indexing_oob_bindless_comp_size,
+                                                   "inst_descriptor_indexing_oob_bindless"};
 
-static LinkInfo link_info_bindless_combined_image_sampler = {
+const static OfflineLinkInfo link_info_bindless_combined_image_sampler = {
     instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
-    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size, 0,
+    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size,
     "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
 
-static LinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
-                                          instrumentation_descriptor_indexing_oob_non_bindless_comp_size, 0,
-                                          "inst_descriptor_indexing_oob_non_bindless"};
+const static OfflineLinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
+                                                       instrumentation_descriptor_indexing_oob_non_bindless_comp_size,
+                                                       "inst_descriptor_indexing_oob_non_bindless"};
 
-DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : Pass(module) {
-    module.use_bda_ = true;
-    // reset each pass
-    link_info_bindless.function_id = 0;
-    link_info_bindless_combined_image_sampler.function_id = 0;
-    link_info_non_bindless.function_id = 0;
-}
+DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sampler) {
-    LinkInfo* link_info = nullptr;
     if (!module_.has_bindless_descriptors_) {
-        link_info = &link_info_non_bindless;
+        return module_.GetLinkFunction(link_non_bindless_id_, link_info_non_bindless);
     } else if (is_combined_image_sampler) {
-        link_info = &link_info_bindless_combined_image_sampler;
+        return module_.GetLinkFunction(link_bindless_combined_image_sampler_id_, link_info_bindless_combined_image_sampler);
     } else {
-        link_info = &link_info_bindless;
+        return module_.GetLinkFunction(link_bindless_id_, link_info_bindless);
     }
-
-    if (link_info->function_id == 0) {
-        link_info->function_id = module_.TakeNextId();
-        module_.link_info_.push_back(*link_info);
-    }
-    return link_info->function_id;
 }
 
 uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,

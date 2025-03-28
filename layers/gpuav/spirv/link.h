@@ -26,20 +26,25 @@ enum LinkFlags {
     ZeroInitializeUintPrivateVariables = 0x00000001,
 };
 
-struct LinkInfo {
+// This struct is for things that are generated and therefor can be created once statically
+struct OfflineLinkInfo {
     // SPIR-V module to link in
     const uint32_t* words;
     const uint32_t word_count;
-
-    // Information about the function it has
-    // (Will change each time pass is ran)
-    uint32_t function_id;
 
     // used for debugging
     const char* opname;
 
     // Optional things to be done when linking
-    uint32_t flags = 0;
+    const uint32_t flags = 0;
+};
+
+struct LinkInfo {
+    // If it's not in generated offline, it will change each pass
+    const OfflineLinkInfo& offline;
+
+    // The result ID of OpFunction
+    const uint32_t function_id;
 };
 
 }  // namespace spirv

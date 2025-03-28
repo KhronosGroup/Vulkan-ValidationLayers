@@ -24,22 +24,14 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
-                             instrumentation_post_process_descriptor_index_comp_size, 0, "inst_post_process_descriptor_index"};
+const static OfflineLinkInfo link_info = {instrumentation_post_process_descriptor_index_comp,
+                                          instrumentation_post_process_descriptor_index_comp_size,
+                                          "inst_post_process_descriptor_index"};
 
-PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) {
-    module.use_bda_ = true;
-    link_info.function_id = 0;  // reset each pass
-}
+PostProcessDescriptorIndexingPass::PostProcessDescriptorIndexingPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() {
-    if (link_info.function_id == 0) {
-        link_info.function_id = module_.TakeNextId();
-        module_.link_info_.push_back(link_info);
-    }
-    return link_info.function_id;
-}
+uint32_t PostProcessDescriptorIndexingPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
 
 void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);

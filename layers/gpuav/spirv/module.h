@@ -23,6 +23,7 @@
 
 class DebugReport;
 struct DeviceFeatures;
+struct OfflineLinkInfo;
 
 namespace gpuav {
 namespace spirv {
@@ -86,6 +87,7 @@ class Module {
     // Order of functions that will try to be linked in
     std::vector<LinkInfo> link_info_;
     void LinkFunction(const LinkInfo& info);
+    uint32_t GetLinkFunction(uint32_t& link_function_id, const OfflineLinkInfo& offline_info);
     void PostProcess();
 
     // The class is designed to be written out to a binary file.
