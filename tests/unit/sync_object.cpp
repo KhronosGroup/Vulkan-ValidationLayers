@@ -4890,3 +4890,37 @@ TEST_F(NegativeSyncObject, AccessFlags3) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncObject, AccelerationCopyStageWithoutEnabledFeature) {
+    TEST_DESCRIPTION("Use VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR without enabling rayTracingMaintenance1 feature");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreChecks-missing-rayTracingMaintenance1-feature");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, MicromapBuildStageWithoutEnabledFeature) {
+    TEST_DESCRIPTION("Use VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT without enabling micromap feature");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_OPACITY_MICROMAP_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreChecks-missing-micromap-feature");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
