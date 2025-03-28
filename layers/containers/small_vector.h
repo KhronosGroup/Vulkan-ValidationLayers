@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
+#include <utility>
 
 // A vector class with "small string optimization" -- meaning that the class contains a fixed working store for N elements.
 // Useful in in situations where the needed size is unknown, but the typical size is known  If size increases beyond the
