@@ -51,16 +51,6 @@ WriteLockGuard BestPractices::WriteLock() {
     }
 }
 
-std::shared_ptr<vvl::CommandBuffer> BestPractices::CreateCmdBufferState(VkCommandBuffer handle,
-                                                                        const VkCommandBufferAllocateInfo* allocate_info,
-                                                                        const vvl::CommandPool* pool) {
-    auto cb = BaseClass::CreateCmdBufferState(handle, allocate_info, pool);
-    if (cb) {
-        cb->SetSubState(container_type, std::make_unique<bp_state::CommandBufferSubState>(*cb));
-    }
-    return cb;
-}
-
 bool bp_state::VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors) {
     for (const auto& vendor : GetVendorInfo()) {
         if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {

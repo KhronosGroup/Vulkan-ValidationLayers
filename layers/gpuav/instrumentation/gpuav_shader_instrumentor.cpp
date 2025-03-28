@@ -1247,6 +1247,7 @@ void GpuShaderInstrumentor::InternalError(LogObjectList objlist, const Location 
 
     LogError(vuid, objlist, loc, "Internal Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
 
+    device_state->RemoveProxy(this);
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed
     // with errors making it hard to see the first error with the real source of the problem).

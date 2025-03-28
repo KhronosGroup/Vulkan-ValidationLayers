@@ -295,21 +295,6 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     }
 }
 
-std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
-                                                            VkFormatFeatureFlags2 features) {
-    auto image = BaseClass::CreateImageState(handle, create_info, features);
-    if (image) {
-        image->SetSubState(container_type, std::make_unique<bp_state::ImageSubState>(*image));
-    }
-    return image;
-}
-
-std::shared_ptr<vvl::Image> BestPractices::CreateImageState(VkImage handle, const VkImageCreateInfo* create_info,
-                                                            VkSwapchainKHR swapchain, uint32_t swapchain_index,
-                                                            VkFormatFeatureFlags2 features) {
-    auto image = BaseClass::CreateImageState(handle, create_info, swapchain, swapchain_index, features);
-    if (image) {
-        image->SetSubState(container_type, std::make_unique<bp_state::ImageSubState>(*image));
-    }
-    return image;
+void BestPractices::Created(vvl::Image& image_state) {
+    image_state.SetSubState(container_type, std::make_unique<bp_state::ImageSubState>(image_state));
 }

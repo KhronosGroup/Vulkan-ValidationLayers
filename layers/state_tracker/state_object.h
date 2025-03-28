@@ -149,6 +149,8 @@ class RefcountedStateObject : public StateObject {
 template <typename T>
 class SubStateManager {
   public:
+    using SubStateType = T;
+
     void SetSubState(LayerObjectTypeId id, std::unique_ptr<T> &&substate) { sub_states_.emplace(id, std::move(substate)); }
     void RemoveSubState(LayerObjectTypeId id) { sub_states_.erase(id); }
 

@@ -19,7 +19,7 @@
 
 #include "state_tracker/device_generated_commands_state.h"
 
-vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::Device &dev, VkIndirectExecutionSetEXT handle,
+vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::DeviceState &dev, VkIndirectExecutionSetEXT handle,
                                                 const VkIndirectExecutionSetCreateInfoEXT *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectExecutionSetEXT),
       safe_create_info(pCreateInfo),
@@ -35,7 +35,7 @@ vvl::IndirectExecutionSet::IndirectExecutionSet(vvl::Device &dev, VkIndirectExec
     }
 }
 
-vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::Device &dev, VkIndirectCommandsLayoutEXT handle,
+vvl::IndirectCommandsLayout::IndirectCommandsLayout(vvl::DeviceState &dev, VkIndirectCommandsLayoutEXT handle,
                                                     const VkIndirectCommandsLayoutCreateInfoEXT *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeIndirectCommandsLayoutEXT),
       safe_create_info(pCreateInfo),

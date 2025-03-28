@@ -47,8 +47,8 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
         // VU 01975 states format can't be undefined unless an android externalFormat
         const uint64_t external_format = GetExternalFormat(create_info.pNext);
         if ((image_tiling == VK_IMAGE_TILING_OPTIMAL) && (0 != external_format)) {
-            auto it = ahb_ext_formats_map.find(external_format);
-            if (it != ahb_ext_formats_map.end()) {
+            auto it = device_state->ahb_ext_formats_map.find(external_format);
+            if (it != device_state->ahb_ext_formats_map.end()) {
                 tiling_features = it->second;
             }
         }
@@ -69,7 +69,7 @@ bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_inf
             }
         }
 
-        if (has_format_feature2) {
+        if (device_state->has_format_feature2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, image_format, &fmt_props_2);
@@ -830,7 +830,7 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
     skip |= ValidateImageSwapchain(*pCreateInfo, create_info_loc);
     skip |= ValidateImageExternalMemory(*pCreateInfo, create_info_loc, image_format_info);
 
-    if (device_group_create_info.physicalDeviceCount == 1) {
+    if (device_state->device_group_create_info.physicalDeviceCount == 1) {
         if (pCreateInfo->flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
             skip |= LogError("VUID-VkImageCreateInfo-physicalDeviceCount-01421", device, create_info_loc.dot(Field::flags),
                              "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT, but the device was created with "
@@ -1679,7 +1679,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
         VkImageDrmFormatModifierPropertiesEXT drm_format_properties = vku::InitStructHelper();
         DispatchGetImageDrmFormatModifierPropertiesEXT(device, image_state.VkHandle(), &drm_format_properties);
 
-        if (has_format_feature2) {
+        if (device_state->has_format_feature2) {
             VkDrmFormatModifierPropertiesList2EXT fmt_drm_props = vku::InitStructHelper();
             VkFormatProperties2 fmt_props_2 = vku::InitStructHelper(&fmt_drm_props);
             DispatchGetPhysicalDeviceFormatProperties2Helper(api_version, physical_device, view_format, &fmt_props_2);
@@ -1754,7 +1754,7 @@ bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, 
     } else if ((image_usage & VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) &&
                !(tiling_features & (VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT |
                                     VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV))) {
-        if (!enabled_features.externalFormatResolve && !android_external_format_resolve_null_color_attachment_prop &&
+        if (!enabled_features.externalFormatResolve && !device_state->android_external_format_resolve_null_color_attachment_prop &&
             !image_state.HasAHBFormat()) {
             skip |= LogError("VUID-VkImageViewCreateInfo-usage-08932", image_state.Handle(), create_info_loc.dot(Field::format),
                              "%s with tiling %s doesn't support one of the required formats.\n."

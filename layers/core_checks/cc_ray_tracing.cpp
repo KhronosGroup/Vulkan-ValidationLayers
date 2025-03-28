@@ -459,7 +459,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevic
         skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-accelerationStructure-08935", device, error_obj.location,
                          "accelerationStructure feature was not enabled.");
     }
-    if (physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
+    if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
         skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-device-03504", device, error_obj.location,
                          "bufferDeviceAddressMultiDevice feature was not enabled.");
@@ -1543,9 +1543,11 @@ bool CoreChecks::PreCallValidateDestroyAccelerationStructureKHR(VkDevice device,
     return skip;
 }
 
-void CoreChecks::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
-    VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
-    VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject &record_obj) {
+void CoreChecks::PreCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
+                                                                          uint32_t accelerationStructureCount,
+                                                                          const VkAccelerationStructureKHR *pAccelerationStructures,
+                                                                          VkQueryType queryType, VkQueryPool queryPool,
+                                                                          uint32_t firstQuery, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in BaseClass::PostCall...
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);

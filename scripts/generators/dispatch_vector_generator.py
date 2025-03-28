@@ -25,92 +25,7 @@ import os
 from vulkan_object import Command
 from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
-
-# This class is a container for any source code, data, or other behavior that is necessary to
-# customize the generator script for a specific target API variant (e.g. Vulkan SC). As such,
-# all of these API-specific interfaces and their use in the generator script are part of the
-# contract between this repository and its downstream users. Changing or removing any of these
-# interfaces or their use in the generator script will have downstream effects and thus
-# should be avoided unless absolutely necessary.
-class APISpecific:
-    # Generates source code for InitObjectDispatchVector
-    @staticmethod
-    def genInitObjectDispatchVectorSource(targetApiName: str) -> str:
-        match targetApiName:
-
-            # Vulkan specific InitObjectDispatchVector
-            case 'vulkan':
-                return '''
-// Include layer validation object definitions
-#include "generated/dispatch_vector.h"
-#include "chassis/dispatch_object.h"
-#include "thread_tracker/thread_safety_validation.h"
-#include "stateless/stateless_validation.h"
-#include "object_tracker/object_lifetime_validation.h"
-#include "core_checks/core_validation.h"
-#include "best_practices/best_practices_validation.h"
-#include "gpuav/core/gpuav.h"
-#include "sync/sync_validation.h"
-
-namespace vvl {
-namespace dispatch {
-
-void Device::InitObjectDispatchVectors() {
-
-#define BUILD_DISPATCH_VECTOR(name) \\
-    init_object_dispatch_vector(InterceptId ## name, \\
-                                typeid(&vvl::base::Device::name), \\
-                                typeid(&threadsafety::Device::name), \\
-                                typeid(&stateless::Device::name), \\
-                                typeid(&object_lifetimes::Device::name), \\
-                                typeid(&CoreChecks::name), \\
-                                typeid(&BestPractices::name), \\
-                                typeid(&gpuav::Validator::name), \\
-                                typeid(&SyncValidator::name));
-
-    auto init_object_dispatch_vector = [this](InterceptId id,
-                                              const std::type_info& vo_typeid,
-                                              const std::type_info& tt_typeid,
-                                              const std::type_info& tpv_typeid,
-                                              const std::type_info& tot_typeid,
-                                              const std::type_info& tcv_typeid,
-                                              const std::type_info& tbp_typeid,
-                                              const std::type_info& tga_typeid,
-                                              const std::type_info& tsv_typeid) {
-        for (auto& vo: this->object_dispatch) {
-            auto *item = vo.get();
-            auto intercept_vector = &this->intercept_vectors[id];
-            switch (item->container_type) {
-            case LayerObjectTypeThreading:
-                if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeParameterValidation:
-                if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeObjectTracker:
-                if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeCoreValidation:
-                if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeBestPractices:
-                if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeGpuAssisted:
-                if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            case LayerObjectTypeSyncValidation:
-                if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                break;
-            default:
-                /* Chassis codegen needs to be updated for unknown validation object type */
-                assert(0);
-            }
-        }
-    };
-
-    intercept_vectors.resize(InterceptIdCount);
-'''
+from generators.dispatch_object_generator import APISpecific
 
 class DispatchVectorGenerator(BaseGenerator):
     # will skip all 3 functions
@@ -219,17 +134,96 @@ class DispatchVectorGenerator(BaseGenerator):
             #include "chassis/dispatch_object.h"
             ''')
 
-        out.append(APISpecific.genInitObjectDispatchVectorSource(self.targetApiName))
+        layer_list = APISpecific.getValidationLayerList(self.targetApiName)
+        for layer in layer_list:
+            include = layer['include']
+            out.append(f'#include "{include}"\n')
+
+        out.append('''
+namespace vvl {
+namespace dispatch {
+
+void Device::InitObjectDispatchVectors() {
+
+#define BUILD_DISPATCH_VECTOR(name) \\
+    init_object_dispatch_vector(InterceptId ## name, \\
+                                typeid(&vvl::base::Device::name), \\
+        ''')
+        params = [f'typeid(&{layer["device"]}::name)' for layer in layer_list]
+        out.append(',\\\n'.join(params))
+        out.append(', false);')
+        out.append('''
+#define BUILD_DESTROY_DISPATCH_VECTOR(name) \\
+    init_object_dispatch_vector(InterceptId ## name, \\
+                                typeid(&vvl::base::Device::name), \\
+        ''')
+        out.append(',\\\n'.join(params))
+        out.append(', true);\n')
+        out.append('''
+    auto init_object_dispatch_vector = [this](InterceptId id,
+                                              const std::type_info& vo_typeid,
+        ''')
+        for i in range(len(layer_list)):
+            type_name = layer_list[i]['type'].replace('LayerObjectType', '')
+            lambda_param = ''.join([c for c in type_name if c.isupper()]).lower() + '_typeid'
+            layer_list[i]['lambda_param'] = lambda_param
+            out.append(f'const std::type_info& {lambda_param},\n')
+
+        out.append('bool is_destroy) {\n')
+        out.append('''
+        vvl::base::Device *state_tracker = nullptr;
+        auto *intercept_vector = &this->intercept_vectors[id];
+        for (auto& vo: this->object_dispatch) {
+            auto *item = vo.get();
+            switch (item->container_type) {
+        ''')
+        for layer in layer_list:
+            if layer['type'] == 'LayerObjectTypeStateTracker':
+               out.append(f'''
+                   case {layer['type']}:
+                       if ({layer['lambda_param']} != vo_typeid) {{
+                           // For destroy/free commands, the state tracker must run last so that
+                           // other validation objects can still access the state object which
+                           // is being destroyed.
+                           if (is_destroy) {{
+                               state_tracker = item;
+                           }} else {{
+                               intercept_vector->push_back(item);
+                           }}
+                       }}
+                       break;
+                   ''')
+            else:
+               out.append(f'''
+                   case {layer['type']}:
+                       if ({layer['lambda_param']} != vo_typeid) intercept_vector->push_back(item);
+                       break;
+                   ''')
+        out.append('''
+            default:
+                /* Chassis codegen needs to be updated for unknown validation object type */
+                assert(0);
+            }
+        }
+        if (state_tracker) {
+            intercept_vector->push_back(state_tracker);
+        }
+    };
+
+    intercept_vectors.resize(InterceptIdCount);
+    ''')
+
 
         guard_helper = PlatformGuardHelper()
         for command in [x for x in self.vk.commands.values() if not x.instance and x.name not in self.skip_intercept_id_functions]:
             out.extend(guard_helper.add_guard(command.protect))
+            macro = 'BUILD_DESTROY_DISPATCH_VECTOR' if ('Destroy' in command.name or 'Free' in command.name) else 'BUILD_DISPATCH_VECTOR'
             if command.name not in self.skip_intercept_id_pre_validate:
-                out.append(f'    BUILD_DISPATCH_VECTOR(PreCallValidate{command.name[2:]});\n')
+                out.append(f'    {macro}(PreCallValidate{command.name[2:]});\n')
             if command.name not in self.skip_intercept_id_pre_record:
-                out.append(f'    BUILD_DISPATCH_VECTOR(PreCallRecord{command.name[2:]});\n')
+                out.append(f'    {macro}(PreCallRecord{command.name[2:]});\n')
             if command.name not in self.skip_intercept_id_post_record:
-                out.append(f'    BUILD_DISPATCH_VECTOR(PostCallRecord{command.name[2:]});\n')
+                out.append(f'    {macro}(PostCallRecord{command.name[2:]});\n')
         out.extend(guard_helper.add_guard(None))
         out.append('}\n')
         out.append('} // namespace dispatch\n')

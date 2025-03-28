@@ -23,7 +23,7 @@ bool syncval_state::ImageSubState::IsSimplyBound() const {
     return simple;
 }
 
-void syncval_state::ImageSubState::SetOpaqueBaseAddress(vvl::Device &dev_data) {
+void syncval_state::ImageSubState::SetOpaqueBaseAddress(vvl::DeviceState &dev_data) {
     // This is safe to call if already called to simplify caller logic
     // NOTE: Not asserting IsTiled, as there could in future be other reasons for opaque representations
     if (opaque_base_address_) return;

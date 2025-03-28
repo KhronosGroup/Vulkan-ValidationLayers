@@ -32,13 +32,10 @@
 
 #include "generated/dispatch_vector.h"
 #include "chassis/dispatch_object.h"
-
-// Include layer validation object definitions
-#include "generated/dispatch_vector.h"
-#include "chassis/dispatch_object.h"
 #include "thread_tracker/thread_safety_validation.h"
 #include "stateless/stateless_validation.h"
 #include "object_tracker/object_lifetime_validation.h"
+#include "state_tracker/state_tracker.h"
 #include "core_checks/core_validation.h"
 #include "best_practices/best_practices_validation.h"
 #include "gpuav/core/gpuav.h"
@@ -51,44 +48,73 @@ void Device::InitObjectDispatchVectors() {
 #define BUILD_DISPATCH_VECTOR(name)                                                                                       \
     init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
                                 typeid(&stateless::Device::name), typeid(&object_lifetimes::Device::name),                \
-                                typeid(&CoreChecks::name), typeid(&BestPractices::name), typeid(&gpuav::Validator::name), \
-                                typeid(&SyncValidator::name));
+                                typeid(&vvl::DeviceState::name), typeid(&CoreChecks::name), typeid(&BestPractices::name), \
+                                typeid(&gpuav::Validator::name), typeid(&SyncValidator::name), false);
+#define BUILD_DESTROY_DISPATCH_VECTOR(name)                                                                               \
+    init_object_dispatch_vector(InterceptId##name, typeid(&vvl::base::Device::name), typeid(&threadsafety::Device::name), \
+                                typeid(&stateless::Device::name), typeid(&object_lifetimes::Device::name),                \
+                                typeid(&vvl::DeviceState::name), typeid(&CoreChecks::name), typeid(&BestPractices::name), \
+                                typeid(&gpuav::Validator::name), typeid(&SyncValidator::name), true);
 
-    auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& tt_typeid,
-                                              const std::type_info& tpv_typeid, const std::type_info& tot_typeid,
-                                              const std::type_info& tcv_typeid, const std::type_info& tbp_typeid,
-                                              const std::type_info& tga_typeid, const std::type_info& tsv_typeid) {
-        for (auto& vo : this->object_dispatch) {
-            auto* item = vo.get();
-            auto intercept_vector = &this->intercept_vectors[id];
-            switch (item->container_type) {
-                case LayerObjectTypeThreading:
-                    if (tt_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeParameterValidation:
-                    if (tpv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeObjectTracker:
-                    if (tot_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeCoreValidation:
-                    if (tcv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeBestPractices:
-                    if (tbp_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeGpuAssisted:
-                    if (tga_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                case LayerObjectTypeSyncValidation:
-                    if (tsv_typeid != vo_typeid) intercept_vector->push_back(item);
-                    break;
-                default:
-                    /* Chassis codegen needs to be updated for unknown validation object type */
-                    assert(0);
+    auto init_object_dispatch_vector =
+        [this](InterceptId id, const std::type_info& vo_typeid, const std::type_info& t_typeid, const std::type_info& pv_typeid,
+               const std::type_info& ot_typeid, const std::type_info& st_typeid, const std::type_info& cv_typeid,
+               const std::type_info& bp_typeid, const std::type_info& ga_typeid, const std::type_info& sv_typeid, bool is_destroy) {
+            vvl::base::Device* state_tracker = nullptr;
+            auto* intercept_vector = &this->intercept_vectors[id];
+            for (auto& vo : this->object_dispatch) {
+                auto* item = vo.get();
+                switch (item->container_type) {
+                    case LayerObjectTypeThreading:
+                        if (t_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeParameterValidation:
+                        if (pv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeObjectTracker:
+                        if (ot_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeStateTracker:
+                        if (st_typeid != vo_typeid) {
+                            // For destroy/free commands, the state tracker must run last so that
+                            // other validation objects can still access the state object which
+                            // is being destroyed.
+                            if (is_destroy) {
+                                state_tracker = item;
+                            } else {
+                                intercept_vector->push_back(item);
+                            }
+                        }
+                        break;
+
+                    case LayerObjectTypeCoreValidation:
+                        if (cv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeBestPractices:
+                        if (bp_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeGpuAssisted:
+                        if (ga_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    case LayerObjectTypeSyncValidation:
+                        if (sv_typeid != vo_typeid) intercept_vector->push_back(item);
+                        break;
+
+                    default:
+                        /* Chassis codegen needs to be updated for unknown validation object type */
+                        assert(0);
+                }
             }
-        }
-    };
+            if (state_tracker) {
+                intercept_vector->push_back(state_tracker);
+            }
+        };
 
     intercept_vectors.resize(InterceptIdCount);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeviceQueue);
@@ -106,9 +132,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateAllocateMemory);
     BUILD_DISPATCH_VECTOR(PreCallRecordAllocateMemory);
     BUILD_DISPATCH_VECTOR(PostCallRecordAllocateMemory);
-    BUILD_DISPATCH_VECTOR(PreCallValidateFreeMemory);
-    BUILD_DISPATCH_VECTOR(PreCallRecordFreeMemory);
-    BUILD_DISPATCH_VECTOR(PostCallRecordFreeMemory);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateFreeMemory);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordFreeMemory);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordFreeMemory);
     BUILD_DISPATCH_VECTOR(PreCallValidateMapMemory);
     BUILD_DISPATCH_VECTOR(PreCallRecordMapMemory);
     BUILD_DISPATCH_VECTOR(PostCallRecordMapMemory);
@@ -145,9 +171,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateFence);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateFence);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateFence);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyFence);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyFence);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyFence);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyFence);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyFence);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyFence);
     BUILD_DISPATCH_VECTOR(PreCallValidateResetFences);
     BUILD_DISPATCH_VECTOR(PreCallRecordResetFences);
     BUILD_DISPATCH_VECTOR(PostCallRecordResetFences);
@@ -160,15 +186,15 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSemaphore);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSemaphore);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSemaphore);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySemaphore);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySemaphore);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySemaphore);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroySemaphore);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroySemaphore);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroySemaphore);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateEvent);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateEvent);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateEvent);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyEvent);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyEvent);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyEvent);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyEvent);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyEvent);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyEvent);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetEventStatus);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetEventStatus);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetEventStatus);
@@ -181,119 +207,119 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateQueryPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateQueryPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateQueryPool);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyQueryPool);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyQueryPool);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyQueryPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyQueryPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyQueryPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyQueryPool);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetQueryPoolResults);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetQueryPoolResults);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetQueryPoolResults);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateBuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateBuffer);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyBuffer);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyBuffer);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyBuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyBuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyBuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyBuffer);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateBufferView);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateBufferView);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateBufferView);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyBufferView);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyBufferView);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyBufferView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyBufferView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyBufferView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyBufferView);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateImage);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateImage);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateImage);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyImage);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyImage);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyImage);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyImage);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyImage);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyImage);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetImageSubresourceLayout);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetImageSubresourceLayout);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetImageSubresourceLayout);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateImageView);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateImageView);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateImageView);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyImageView);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyImageView);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyImageView);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyShaderModule);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyShaderModule);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyShaderModule);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyImageView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyImageView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyImageView);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyShaderModule);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyShaderModule);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyShaderModule);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePipelineCache);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreatePipelineCache);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePipelineCache);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipelineCache);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipelineCache);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipelineCache);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPipelineCache);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPipelineCache);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPipelineCache);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineCacheData);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineCacheData);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineCacheData);
     BUILD_DISPATCH_VECTOR(PreCallValidateMergePipelineCaches);
     BUILD_DISPATCH_VECTOR(PreCallRecordMergePipelineCaches);
     BUILD_DISPATCH_VECTOR(PostCallRecordMergePipelineCaches);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipeline);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipeline);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipeline);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPipeline);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPipeline);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPipeline);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePipelineLayout);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePipelineLayout);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipelineLayout);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipelineLayout);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipelineLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPipelineLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPipelineLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPipelineLayout);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSampler);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSampler);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSampler);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySampler);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySampler);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySampler);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroySampler);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroySampler);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroySampler);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDescriptorSetLayout);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDescriptorSetLayout);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDescriptorSetLayout);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorSetLayout);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorSetLayout);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorSetLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorSetLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorSetLayout);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorSetLayout);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDescriptorPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDescriptorPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDescriptorPool);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorPool);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorPool);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorPool);
     BUILD_DISPATCH_VECTOR(PreCallValidateResetDescriptorPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordResetDescriptorPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordResetDescriptorPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordAllocateDescriptorSets);
-    BUILD_DISPATCH_VECTOR(PreCallValidateFreeDescriptorSets);
-    BUILD_DISPATCH_VECTOR(PreCallRecordFreeDescriptorSets);
-    BUILD_DISPATCH_VECTOR(PostCallRecordFreeDescriptorSets);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateFreeDescriptorSets);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordFreeDescriptorSets);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordFreeDescriptorSets);
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateDescriptorSets);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateDescriptorSets);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateDescriptorSets);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateFramebuffer);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateFramebuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateFramebuffer);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyFramebuffer);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyFramebuffer);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyFramebuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyFramebuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyFramebuffer);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyFramebuffer);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateRenderPass);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateRenderPass);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateRenderPass);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyRenderPass);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyRenderPass);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyRenderPass);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyRenderPass);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyRenderPass);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyRenderPass);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetRenderAreaGranularity);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetRenderAreaGranularity);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetRenderAreaGranularity);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateCommandPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateCommandPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateCommandPool);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCommandPool);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCommandPool);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCommandPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyCommandPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyCommandPool);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyCommandPool);
     BUILD_DISPATCH_VECTOR(PreCallValidateResetCommandPool);
     BUILD_DISPATCH_VECTOR(PreCallRecordResetCommandPool);
     BUILD_DISPATCH_VECTOR(PostCallRecordResetCommandPool);
     BUILD_DISPATCH_VECTOR(PreCallValidateAllocateCommandBuffers);
     BUILD_DISPATCH_VECTOR(PreCallRecordAllocateCommandBuffers);
     BUILD_DISPATCH_VECTOR(PostCallRecordAllocateCommandBuffers);
-    BUILD_DISPATCH_VECTOR(PreCallValidateFreeCommandBuffers);
-    BUILD_DISPATCH_VECTOR(PreCallRecordFreeCommandBuffers);
-    BUILD_DISPATCH_VECTOR(PostCallRecordFreeCommandBuffers);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateFreeCommandBuffers);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordFreeCommandBuffers);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordFreeCommandBuffers);
     BUILD_DISPATCH_VECTOR(PreCallValidateBeginCommandBuffer);
     BUILD_DISPATCH_VECTOR(PreCallRecordBeginCommandBuffer);
     BUILD_DISPATCH_VECTOR(PostCallRecordBeginCommandBuffer);
@@ -468,15 +494,15 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSamplerYcbcrConversion);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSamplerYcbcrConversion);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSamplerYcbcrConversion);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySamplerYcbcrConversion);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySamplerYcbcrConversion);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySamplerYcbcrConversion);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroySamplerYcbcrConversion);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroySamplerYcbcrConversion);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroySamplerYcbcrConversion);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDescriptorUpdateTemplate);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDescriptorUpdateTemplate);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDescriptorUpdateTemplate);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorUpdateTemplate);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorUpdateTemplate);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorUpdateTemplate);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorUpdateTemplate);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorUpdateTemplate);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorUpdateTemplate);
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateDescriptorSetWithTemplate);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateDescriptorSetWithTemplate);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateDescriptorSetWithTemplate);
@@ -525,9 +551,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePrivateDataSlot);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreatePrivateDataSlot);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePrivateDataSlot);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPrivateDataSlot);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPrivateDataSlot);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPrivateDataSlot);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPrivateDataSlot);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPrivateDataSlot);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPrivateDataSlot);
     BUILD_DISPATCH_VECTOR(PreCallValidateSetPrivateData);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetPrivateData);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetPrivateData);
@@ -690,9 +716,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSwapchainKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSwapchainKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSwapchainKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySwapchainKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySwapchainKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySwapchainKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroySwapchainKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroySwapchainKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroySwapchainKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetSwapchainImagesKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetSwapchainImagesKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetSwapchainImagesKHR);
@@ -717,9 +743,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateVideoSessionKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateVideoSessionKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateVideoSessionKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetVideoSessionMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetVideoSessionMemoryRequirementsKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetVideoSessionMemoryRequirementsKHR);
@@ -732,9 +758,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateVideoSessionParametersKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionParametersKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionParametersKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionParametersKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyVideoSessionParametersKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyVideoSessionParametersKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyVideoSessionParametersKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginVideoCodingKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginVideoCodingKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginVideoCodingKHR);
@@ -802,9 +828,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDescriptorUpdateTemplateKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDescriptorUpdateTemplateKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDescriptorUpdateTemplateKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorUpdateTemplateKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorUpdateTemplateKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorUpdateTemplateKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyDescriptorUpdateTemplateKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyDescriptorUpdateTemplateKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyDescriptorUpdateTemplateKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateDescriptorSetWithTemplateKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateDescriptorSetWithTemplateKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateDescriptorSetWithTemplateKHR);
@@ -855,9 +881,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateSamplerYcbcrConversionKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateSamplerYcbcrConversionKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateSamplerYcbcrConversionKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroySamplerYcbcrConversionKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroySamplerYcbcrConversionKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroySamplerYcbcrConversionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroySamplerYcbcrConversionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroySamplerYcbcrConversionKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroySamplerYcbcrConversionKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateBindBufferMemory2KHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordBindBufferMemory2KHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordBindBufferMemory2KHR);
@@ -906,9 +932,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateDeferredOperationKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateDeferredOperationKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateDeferredOperationKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyDeferredOperationKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyDeferredOperationKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyDeferredOperationKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyDeferredOperationKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyDeferredOperationKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyDeferredOperationKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetDeferredOperationMaxConcurrencyKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetDeferredOperationMaxConcurrencyKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetDeferredOperationMaxConcurrencyKHR);
@@ -1002,9 +1028,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePipelineBinariesKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreatePipelineBinariesKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePipelineBinariesKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPipelineBinaryKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPipelineBinaryKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPipelineBinaryKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPipelineBinaryKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPipelineBinaryKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPipelineBinaryKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetPipelineKeyKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetPipelineKeyKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetPipelineKeyKHR);
@@ -1077,12 +1103,12 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateCuFunctionNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateCuFunctionNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateCuFunctionNVX);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCuModuleNVX);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCuModuleNVX);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCuModuleNVX);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCuFunctionNVX);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCuFunctionNVX);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCuFunctionNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyCuModuleNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyCuModuleNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyCuModuleNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyCuFunctionNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyCuFunctionNVX);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyCuFunctionNVX);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdCuLaunchKernelNVX);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdCuLaunchKernelNVX);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdCuLaunchKernelNVX);
@@ -1221,9 +1247,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyAccelerationStructureNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyAccelerationStructureNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyAccelerationStructureNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyAccelerationStructureNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyAccelerationStructureNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyAccelerationStructureNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetAccelerationStructureMemoryRequirementsNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetAccelerationStructureMemoryRequirementsNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetAccelerationStructureMemoryRequirementsNV);
@@ -1409,18 +1435,18 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateIndirectCommandsLayoutNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateIndirectCommandsLayoutNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateIndirectCommandsLayoutNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyIndirectCommandsLayoutNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyIndirectCommandsLayoutNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyIndirectCommandsLayoutNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyIndirectCommandsLayoutNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyIndirectCommandsLayoutNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyIndirectCommandsLayoutNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdSetDepthBias2EXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdSetDepthBias2EXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdSetDepthBias2EXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreatePrivateDataSlotEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreatePrivateDataSlotEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreatePrivateDataSlotEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyPrivateDataSlotEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyPrivateDataSlotEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyPrivateDataSlotEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyPrivateDataSlotEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyPrivateDataSlotEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyPrivateDataSlotEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateSetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetPrivateDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetPrivateDataEXT);
@@ -1437,12 +1463,12 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateCudaFunctionNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateCudaFunctionNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateCudaFunctionNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCudaModuleNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCudaModuleNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCudaModuleNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyCudaFunctionNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyCudaFunctionNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyCudaFunctionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyCudaModuleNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyCudaModuleNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyCudaModuleNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyCudaFunctionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyCudaFunctionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyCudaFunctionNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdCudaLaunchKernelNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdCudaLaunchKernelNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdCudaLaunchKernelNV);
@@ -1516,9 +1542,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateSetBufferCollectionBufferConstraintsFUCHSIA);
     BUILD_DISPATCH_VECTOR(PreCallRecordSetBufferCollectionBufferConstraintsFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordSetBufferCollectionBufferConstraintsFUCHSIA);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyBufferCollectionFUCHSIA);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyBufferCollectionFUCHSIA);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyBufferCollectionFUCHSIA);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyBufferCollectionFUCHSIA);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyBufferCollectionFUCHSIA);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyBufferCollectionFUCHSIA);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetBufferCollectionPropertiesFUCHSIA);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetBufferCollectionPropertiesFUCHSIA);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetBufferCollectionPropertiesFUCHSIA);
@@ -1565,9 +1591,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateMicromapEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateMicromapEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateMicromapEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyMicromapEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyMicromapEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyMicromapEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyMicromapEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyMicromapEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyMicromapEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildMicromapsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildMicromapsEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildMicromapsEXT);
@@ -1742,9 +1768,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateOpticalFlowSessionNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateOpticalFlowSessionNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateOpticalFlowSessionNV);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyOpticalFlowSessionNV);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyOpticalFlowSessionNV);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyOpticalFlowSessionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyOpticalFlowSessionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyOpticalFlowSessionNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyOpticalFlowSessionNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateBindOpticalFlowSessionImageNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordBindOpticalFlowSessionImageNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordBindOpticalFlowSessionImageNV);
@@ -1754,9 +1780,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateAntiLagUpdateAMD);
     BUILD_DISPATCH_VECTOR(PreCallRecordAntiLagUpdateAMD);
     BUILD_DISPATCH_VECTOR(PostCallRecordAntiLagUpdateAMD);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyShaderEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyShaderEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyShaderEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyShaderEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyShaderEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyShaderEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderBinaryDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderBinaryDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderBinaryDataEXT);
@@ -1825,15 +1851,15 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateIndirectCommandsLayoutEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateIndirectCommandsLayoutEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateIndirectCommandsLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyIndirectCommandsLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyIndirectCommandsLayoutEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyIndirectCommandsLayoutEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyIndirectCommandsLayoutEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyIndirectCommandsLayoutEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyIndirectCommandsLayoutEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateIndirectExecutionSetEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateIndirectExecutionSetEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateIndirectExecutionSetEXT);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyIndirectExecutionSetEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyIndirectExecutionSetEXT);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyIndirectExecutionSetEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyIndirectExecutionSetEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyIndirectExecutionSetEXT);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyIndirectExecutionSetEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateUpdateIndirectExecutionSetPipelineEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordUpdateIndirectExecutionSetPipelineEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordUpdateIndirectExecutionSetPipelineEXT);
@@ -1854,9 +1880,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateAccelerationStructureKHR);
-    BUILD_DISPATCH_VECTOR(PreCallValidateDestroyAccelerationStructureKHR);
-    BUILD_DISPATCH_VECTOR(PreCallRecordDestroyAccelerationStructureKHR);
-    BUILD_DISPATCH_VECTOR(PostCallRecordDestroyAccelerationStructureKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyAccelerationStructureKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyAccelerationStructureKHR);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyAccelerationStructureKHR);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBuildAccelerationStructuresKHR);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBuildAccelerationStructuresKHR);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdBuildAccelerationStructuresKHR);

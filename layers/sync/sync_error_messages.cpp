@@ -29,7 +29,7 @@
 
 namespace syncval {
 
-ErrorMessages::ErrorMessages(vvl::Device& validator) : validator_(validator) {}
+ErrorMessages::ErrorMessages(SyncValidator& validator) : validator_(validator) {}
 
 std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecutionContext& context, vvl::Func command,
                                  const std::string& resource_description, const char* message_type,

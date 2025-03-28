@@ -593,6 +593,11 @@ Instance::Instance(const VkInstanceCreateInfo *pCreateInfo) : HandleWrapper(new 
 }
 
 Instance::~Instance() {
+    // Destroy validation objects in reverse order so that state tracker clients
+    // are destroyed before it is.
+    while (!object_dispatch.empty()) {
+        object_dispatch.pop_back();
+    }
     vku::FreePnextChain(debug_report->instance_pnext_chain);
     delete debug_report;
 }
@@ -753,7 +758,16 @@ Device::Device(Instance *instance, VkPhysicalDevice gpu, const VkDeviceCreateInf
     }
 }
 
-Device::~Device() {}
+Device::~Device() {
+    // Destroy validation objects in reverse order so that state tracker clients
+    // are destroyed before it is.
+    while (!aborted_object_dispatch.empty()) {
+        aborted_object_dispatch.pop_back();
+    }
+    while (!object_dispatch.empty()) {
+        object_dispatch.pop_back();
+    }
+}
 
 base::Device *Device::GetValidationObject(LayerObjectTypeId object_type) const {
     for (auto &validation_object : object_dispatch) {

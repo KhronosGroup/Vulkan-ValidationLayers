@@ -264,11 +264,11 @@ void BestPractices::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount
 
 namespace {
 struct EventValidator {
-    const vvl::Device& state_tracker;
+    const BestPractices& bp;
 
     vvl::unordered_map<VkEvent, bool> signaling_state;
 
-    EventValidator(const vvl::Device& state_tracker) : state_tracker(state_tracker) {}
+    EventValidator(const BestPractices& bp_) : bp(bp_) {}
 
     bool ValidateSubmittedCbSignalingState(const bp_state::CommandBufferSubState& cb, const Location& cb_loc) {
         bool skip = false;
@@ -280,18 +280,18 @@ struct EventValidator {
                     signaled = *p_signaled;
                 } else {
                     // check global event state
-                    auto event_state = state_tracker.Get<vvl::Event>(event);
+                    auto event_state = bp.Get<vvl::Event>(event);
                     if (event_state) {
                         signaled = event_state->signaled;
                     }
                 }
                 if (signaled) {
                     const LogObjectList objlist(cb.VkHandle(), event);
-                    skip |= state_tracker.LogWarning(
+                    skip |= bp.LogWarning(
                         "BestPractices-Event-SignalSignaledEvent", objlist, cb_loc,
                         "%s sets event %s which is already in the signaled state (set by previously submitted command buffers or "
                         "from the host). If this is not the desired behavior, the event must be reset before it is set again.",
-                        state_tracker.FormatHandle(cb.VkHandle()).c_str(), state_tracker.FormatHandle(event).c_str());
+                        bp.FormatHandle(cb.VkHandle()).c_str(), bp.FormatHandle(event).c_str());
                 }
             }
             signaling_state[event] = info.signaled;
