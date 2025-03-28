@@ -69,7 +69,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SpecInfo) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specInfo);
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -108,7 +108,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageUint32) {
     )glsl";
 
     CreatePipelineHelper pipe(*this);
-    pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixSupportedStages-08985");
@@ -150,7 +150,7 @@ TEST_F(NegativeShaderCooperativeMatrix, UnsupportedStageFloat16) {
     )glsl";
 
     CreatePipelineHelper pipe(*this);
-    pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT);
+    pipe.vs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_3);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-cooperativeMatrixSupportedStages-08985");
@@ -193,7 +193,7 @@ TEST_F(NegativeShaderCooperativeMatrix, ParametersMatchProperties) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
@@ -206,6 +206,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
 
     AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::maintenance4);
     RETURN_IF_SKIP(InitCooperativeMatrixKHR());
 
     if (!HasValidProperty(VK_SCOPE_SUBGROUP_KHR, 16, 16, 16, VK_COMPONENT_TYPE_FLOAT16_KHR)) {
@@ -244,7 +245,7 @@ TEST_F(NegativeShaderCooperativeMatrix, DimXMultipleSubgroupSize) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specInfo);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-module-08987", 3);
     pipe.CreateComputePipeline();
@@ -362,7 +363,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SameScope) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, &specInfo);
+        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_GLSL, &specInfo);
 
     // SPIR-V code is expected to be bad after specialization, due to scopes are different
     // Need to ignore the spirv-val
@@ -616,7 +617,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         OpExtension "SPV_KHR_vulkan_memory_model"
         %1 = OpExtInstImport "GLSL.std.450"
         OpMemoryModel Logical Vulkan
-        OpEntryPoint GLCompute %4 "main"
+        OpEntryPoint GLCompute %4 "main" %13 %17 %22 %24
         OpExecutionMode %4 LocalSize 64 1 1
         OpDecorate %29 BuiltIn WorkgroupSize
         %2 = OpTypeVoid
@@ -674,7 +675,7 @@ TEST_F(NegativeShaderCooperativeMatrix, SignedCheck) {
         const char *css = csSourceStr.c_str();
         CreateComputePipelineHelper pipe(*this);
 
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, css, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3, SPV_SOURCE_ASM);
 
         for (const auto &y : subtests) {
             if (x.remove == y.remove) {

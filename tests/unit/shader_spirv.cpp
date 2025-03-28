@@ -2054,7 +2054,7 @@ TEST_F(NegativeShaderSpirv, QueueFamilyMemoryScope) {
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-vulkanMemoryModel-06266");
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
-    VkShaderObj const cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    VkShaderObj const cs(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     m_errorMonitor->VerifyFound();
 }
 

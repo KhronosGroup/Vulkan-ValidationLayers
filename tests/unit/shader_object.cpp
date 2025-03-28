@@ -5640,7 +5640,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
         }
     )glsl";
 
-    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src);
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, comp_src, SPV_ENV_VULKAN_1_3);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shader;
