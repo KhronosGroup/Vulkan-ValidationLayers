@@ -1954,7 +1954,7 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
     rp.CreateRenderPass();
 
     vkt::ImageView iv = m_renderTargets[0]->CreateView();
-    // Create the framebuffer then destory the view it uses.
+    // Create the framebuffer then destroy the view it uses.
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &iv.handle(), 100, 100);
     iv.destroy();
 
