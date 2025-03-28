@@ -44,6 +44,9 @@ class BufferDeviceAddressPass : public Pass {
                                 const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
+
+    // Function IDs to link in
+    uint32_t link_function_id_ = 0;
 };
 
 }  // namespace spirv

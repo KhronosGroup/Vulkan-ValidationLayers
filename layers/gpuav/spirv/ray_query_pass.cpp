@@ -23,21 +23,12 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, 0, "inst_ray_query"};
+const static OfflineLinkInfo link_info = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size, "inst_ray_query"};
 
-RayQueryPass::RayQueryPass(Module& module) : Pass(module) {
-    module.use_bda_ = true;
-    link_info.function_id = 0;  // reset each pass
-}
+RayQueryPass::RayQueryPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t RayQueryPass::GetLinkFunctionId() {
-    if (link_info.function_id == 0) {
-        link_info.function_id = module_.TakeNextId();
-        module_.link_info_.push_back(link_info);
-    }
-    return link_info.function_id;
-}
+uint32_t RayQueryPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
 
 uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                           const InstructionMeta& meta) {

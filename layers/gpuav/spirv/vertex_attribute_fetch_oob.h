@@ -36,6 +36,9 @@ class VertexAttributeFetchOob : public Pass {
     uint32_t GetLinkFunctionId();
 
     bool instrumentation_performed = false;
+
+    // Function IDs to link in
+    uint32_t link_function_id_ = 0;
 };
 
 }  // namespace spirv

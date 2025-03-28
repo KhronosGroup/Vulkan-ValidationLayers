@@ -24,22 +24,14 @@
 namespace gpuav {
 namespace spirv {
 
-static LinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
-                             instrumentation_descriptor_class_texel_buffer_comp_size, 0, "inst_descriptor_class_texel_buffer"};
+const static OfflineLinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
+                                          instrumentation_descriptor_class_texel_buffer_comp_size,
+                                          "inst_descriptor_class_texel_buffer"};
 
-DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) {
-    module.use_bda_ = true;
-    link_info.function_id = 0;  // reset each pass
-}
+DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() {
-    if (link_info.function_id == 0) {
-        link_info.function_id = module_.TakeNextId();
-        module_.link_info_.push_back(link_info);
-    }
-    return link_info.function_id;
-}
+uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
 
 uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
                                                             const InjectionData& injection_data, const InstructionMeta& meta) {

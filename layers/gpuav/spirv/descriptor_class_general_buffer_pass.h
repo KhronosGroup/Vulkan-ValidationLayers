@@ -71,6 +71,9 @@ class DescriptorClassGeneralBufferPass : public Pass {
     //
     // < Descriptor SSA ID, Highest offset byte that will be accessed >
     vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map_;
+
+    // Function IDs to link in
+    uint32_t link_function_id_ = 0;
 };
 
 }  // namespace spirv

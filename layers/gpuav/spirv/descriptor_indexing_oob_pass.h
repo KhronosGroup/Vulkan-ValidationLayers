@@ -61,6 +61,11 @@ class DescriptorIndexingOOBPass : public Pass {
     // index into it once to see if the descriptor is valid or not . We marks which variables were already instrumented
     // < Variable ID, [descriptor index IDs accessed with this variable >
     vvl::unordered_map<uint32_t, vvl::unordered_set<uint32_t>> block_instrumented_table_;
+
+    // Function IDs to link in
+    uint32_t link_bindless_id_ = 0;
+    uint32_t link_bindless_combined_image_sampler_id_ = 0;
+    uint32_t link_non_bindless_id_ = 0;
 };
 
 }  // namespace spirv

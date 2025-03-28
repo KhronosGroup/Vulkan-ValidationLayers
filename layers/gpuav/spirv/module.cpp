@@ -344,6 +344,16 @@ void Module::AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class)
     }
 }
 
+// Helper for passes with multiple linked functions they may grab
+// Pass in cached link_function_id and only update it the first time
+uint32_t Module::GetLinkFunction(uint32_t& link_function_id, const OfflineLinkInfo& offline_info) {
+    if (link_function_id == 0) {
+        link_function_id = TakeNextId();
+        link_info_.emplace_back(LinkInfo{offline_info, link_function_id});
+    }
+    return link_function_id;
+}
+
 // Takes the current module and injects the function into it
 // This is done by first apply any new Types/Constants/Variables and then copying in the instructions of the Function
 void Module::LinkFunction(const LinkInfo& info) {
@@ -357,8 +367,8 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     // find all constant and types, add any the module doesn't have
     uint32_t offset = 5;  // skip header
-    while (offset < info.word_count) {
-        const uint32_t* inst_word = &info.words[offset];
+    while (offset < info.offline.word_count) {
+        const uint32_t* inst_word = &info.offline.words[offset];
         const uint32_t opcode = *inst_word & 0x0ffffu;
         const uint32_t length = *inst_word >> 16;
         if (opcode == spv::OpFunction) {
@@ -545,7 +555,7 @@ void Module::LinkFunction(const LinkInfo& info) {
             const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
 
             if (storage_class == spv::StorageClassPrivate && type->spv_type_ == SpvType::kPointer &&
-                ((info.flags & ZeroInitializeUintPrivateVariables) != 0)) {
+                ((info.offline.flags & ZeroInitializeUintPrivateVariables) != 0)) {
                 const Type* pointer_type = type_manager_.FindTypeById(type->inst_.Word(3));
                 // If we hit this assert, we need to add support for another type
                 assert(pointer_type && pointer_type->spv_type_ == SpvType::kInt);
@@ -588,8 +598,8 @@ void Module::LinkFunction(const LinkInfo& info) {
     // because flow-control instructions (ex. OpBranch) do forward references to IDs, do an initial loop to get all OpLabel to have
     // in id_swap_map
     uint32_t offset_copy = offset;
-    while (offset_copy < info.word_count) {
-        const uint32_t* inst_word = &info.words[offset_copy];
+    while (offset_copy < info.offline.word_count) {
+        const uint32_t* inst_word = &info.offline.words[offset_copy];
         const uint32_t opcode = *inst_word & 0x0ffffu;
         const uint32_t length = *inst_word >> 16;
         if (opcode == spv::OpLabel) {
@@ -600,15 +610,15 @@ void Module::LinkFunction(const LinkInfo& info) {
         offset_copy += length;
     }
 
-    AddDebugName(info.opname, info.function_id);
+    AddDebugName(info.offline.opname, info.function_id);
 
     // Add function and copy all instructions to it, while adjusting any IDs
     auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
     // We make things simpler by just putting everything in the first BasicBlock
     // (We need it in a block incase we want to alter this function later with something like DebugPrintf)
     BasicBlock* link_basic_block = nullptr;
-    while (offset < info.word_count) {
-        const uint32_t* inst_word = &info.words[offset];
+    while (offset < info.offline.word_count) {
+        const uint32_t* inst_word = &info.offline.words[offset];
         auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
         const uint32_t opcode = new_inst->Opcode();
         const uint32_t length = new_inst->Length();
