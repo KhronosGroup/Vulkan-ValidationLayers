@@ -961,6 +961,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         // if the driver does not find it in its cache, GPU-AV needs to succeed in the instrumented pipeline library
         // creation process no matter caching state.
         modified_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+        bool need_new_pipeline = false;
 
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(modified_lib->stage_states.size());
              ++stage_state_i) {
@@ -986,6 +987,7 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                         vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(modified_stage_ci->pNext)));
 
+                // TODO - this is in need of testing, when only selecting various library as well as selecting everything
                 if (gpuav_settings.select_instrumented_shaders) {
                     if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
                         continue;
@@ -1002,27 +1004,42 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
             const uint32_t unique_shader_id = unique_shader_module_id_++;
             const bool is_shader_instrumented = InstrumentShader(modified_module_state->spirv->words_, unique_shader_id,
                                                                  instrumentation_dsl, loc, instrumented_spirv);
+
             if (is_shader_instrumented) {
                 instrumentation_metadata.unique_shader_id = unique_shader_id;
-                if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
-                    // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
-                    // shader
-                    VkShaderModule instrumented_shader_module;
-                    VkShaderModuleCreateInfo create_info = vku::InitStructHelper();
+                need_new_pipeline = true;
+            }
+
+            if (modified_module_state->VkHandle() != VK_NULL_HANDLE) {
+                // If the user used vkCreateShaderModule, we create a new VkShaderModule to replace with the instrumented
+                // shader
+                VkShaderModule instrumented_shader_module;
+                VkShaderModuleCreateInfo create_info = vku::InitStructHelper();
+                if (is_shader_instrumented) {
                     create_info.pCode = instrumented_spirv.data();
                     create_info.codeSize = instrumented_spirv.size() * sizeof(uint32_t);
-                    VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &instrumented_shader_module);
-                    if (result == VK_SUCCESS) {
-                        modified_pipeline_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
-                        modified_pipeline_ci.pStages[stage_state_i].module = instrumented_shader_module;
+                } else {
+                    // We need to replace the shader regardless as the user may have destroyed the original VkShaderModule and
+                    // we will crash trying to unwrap it. So just make a duplicate VkShaderModule. (This is rare we hit this,
+                    // only when the user has a shader with nothing to instrument, which tends to be passthrough vertex shaders
+                    // which are quick enough to re-create)
+                    create_info.pCode = modified_module_state->spirv->words_.data();
+                    create_info.codeSize = modified_module_state->spirv->words_.size() * sizeof(uint32_t);
+                }
+                VkResult result = DispatchCreateShaderModule(device, &create_info, pAllocator, &instrumented_shader_module);
+                if (result == VK_SUCCESS) {
+                    modified_pipeline_ci.pStages[stage_state_i] = *modified_stage_state.pipeline_create_info;
+                    modified_pipeline_ci.pStages[stage_state_i].module = instrumented_shader_module;
 
-                        modified_lib->instrumentation_data.instrumented_shader_modules.emplace_back(
-                            std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
-                    } else {
-                        InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
-                        return false;
-                    }
-                } else if (modified_shader_module_ci) {
+                    modified_lib->instrumentation_data.instrumented_shader_modules.emplace_back(
+                        std::pair<uint32_t, VkShaderModule>{unique_shader_id, instrumented_shader_module});
+                } else {
+                    InternalError(device, loc, "Unable to replace non-instrumented shader with instrumented one.");
+                    return false;
+                }
+            } else if (modified_shader_module_ci) {
+                // If inlining and not instrumented, leave it alone
+                if (is_shader_instrumented) {
                     // The user is inlining the Shader Module into the pipeline, so just need to update the spirv
                     instrumentation_metadata.passed_in_shader_stage_ci = true;
                     // TODO - This makes a copy, but could save on Chassis stack instead (then remove function from VUL).
@@ -1031,30 +1048,33 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     // not double-free the memory on us. If making any changes, we have to consider a case where the user inlines
                     // the fragment shader, but use a normal VkShaderModule in the vertex shader.
                     modified_shader_module_ci->SetCode(instrumented_spirv);
-                } else {
-                    assert(false);
-                    return false;
                 }
+            } else {
+                assert(false);
+                return false;
             }
         }
 
-        // Create instrumented pipeline library
-        // ---
-        VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
-        const VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, modified_pipeline_ci.ptr(), pAllocator,
-                                                                &instrumented_pipeline_lib);
-        if (result != VK_SUCCESS || instrumented_pipeline_lib == VK_NULL_HANDLE) {
-            InternalError(device, loc, "Failed to create instrumentde pipeline library.");
-            return false;
-        }
+        // Create instrumented pipeline library if we have instrumented one of the libraries inside of it
+        if (need_new_pipeline) {
+            VkPipeline instrumented_pipeline_lib = VK_NULL_HANDLE;
+            const VkResult result = DispatchCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, modified_pipeline_ci.ptr(),
+                                                                    pAllocator, &instrumented_pipeline_lib);
+            if (result != VK_SUCCESS || instrumented_pipeline_lib == VK_NULL_HANDLE) {
+                // could just check result, but being extra cautious around GPL and checking handle as well
+                InternalError(device, loc, "Failed to recreate instrumented pipeline library.");
+                return false;
+            }
 
-        if (modified_lib->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) {
-            pipeline_state.instrumentation_data.frag_out_lib = instrumented_pipeline_lib;
-        } else {
-            pipeline_state.instrumentation_data.pre_raster_lib = instrumented_pipeline_lib;
-        }
+            // Even if active_shaders has both a vertex and fragment, this is ok because as the goal is just to destroy these later
+            if (modified_lib->active_shaders & VK_SHADER_STAGE_FRAGMENT_BIT) {
+                pipeline_state.instrumentation_data.frag_out_lib = instrumented_pipeline_lib;
+            } else {
+                pipeline_state.instrumentation_data.pre_raster_lib = instrumented_pipeline_lib;
+            }
 
-        const_cast<VkPipeline *>(modified_pipeline_lib_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
+            const_cast<VkPipeline *>(modified_pipeline_lib_ci->pLibraries)[modified_lib_i] = instrumented_pipeline_lib;
+        }
     }
     return true;
 }

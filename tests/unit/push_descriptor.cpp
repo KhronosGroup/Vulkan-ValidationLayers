@@ -902,7 +902,7 @@ TEST_F(NegativePushDescriptor, SetCmdPush14) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePushDescriptor, DestoryLayout) {
+TEST_F(NegativePushDescriptor, DestroyLayout) {
     TEST_DESCRIPTION("Attempt to push a push descriptor set with incorrect arguments.");
     AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 
