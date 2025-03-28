@@ -1715,6 +1715,31 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicsWorkgroups) {
+    TEST_DESCRIPTION("Found case where a potential BDA points to a variable not in the function");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+
+        shared int x;
+
+        layout(set = 0, binding = 0) buffer SSBO {
+            int y;
+        };
+
+        void main() {
+            atomicAdd(x, 1);
+            y = x;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     TEST_DESCRIPTION("Slang can have a BDA pointer of a int that is not wrapped in a struct");
     SetTargetApiVersion(VK_API_VERSION_1_2);
