@@ -334,7 +334,7 @@ class CoreChecks : public vvl::Device {
                                                 uint32_t image_barrier_count) const;
 
     bool ValidatePipelineStageFeatureEnables(const LogObjectList& objlist, const Location& stage_mask_loc,
-                                             VkPipelineStageFlags2KHR stage_mask) const;
+                                             VkPipelineStageFlags2 stage_mask) const;
     bool ValidatePipelineStage(const LogObjectList& objlist, const Location& stage_mask_loc, VkQueueFlags queue_flags,
                                VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateDynamicRenderingPipelineStage(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2 stage_mask,

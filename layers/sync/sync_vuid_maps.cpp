@@ -29,6 +29,7 @@ using vvl::Func;
 using vvl::Key;
 using vvl::Struct;
 
+// IMPORTANT: this map should be in sync with features enumerated in DisabledPipelineStages()
 const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap() {
     static const vvl::unordered_map<VkPipelineStageFlags2, std::string> feature_name_map{
         {VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT, "geometryShader"},
@@ -39,12 +40,13 @@ const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap(
         {VK_PIPELINE_STAGE_2_TRANSFORM_FEEDBACK_BIT_EXT, "transformFeedback"},
         {VK_PIPELINE_STAGE_2_MESH_SHADER_BIT_EXT, "meshShader"},
         {VK_PIPELINE_STAGE_2_TASK_SHADER_BIT_EXT, "taskShader"},
-        {VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "shadingRate"},
-        {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "rayTracing"},
-        {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracing"},
         {VK_PIPELINE_STAGE_2_SUBPASS_SHADER_BIT_HUAWEI, "subpassShading"},
         {VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI, "invocationMask"},
-    };
+        {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracing"},
+        {VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "shadingRate"},
+        {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "rayTracing"},
+        {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR, "rayTracingMaintenance1"},
+        {VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT, "micromap"}};
     return feature_name_map;
 }
 // commonvalidity/pipeline_stage_common.txt
@@ -378,6 +380,12 @@ const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 
         return FindVUID(loc, GetStageMaskErrorsSubpassShader());
     } else if (bit == VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI) {
         return FindVUID(loc, GetStageMaskErrorsInvocationMask());
+    } else if (bit == VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR) {
+        static const std::string missing_rt_maintenance1_feature = "UNASSIGNED-CoreChecks-missing-rayTracingMaintenance1-feature";
+        return missing_rt_maintenance1_feature;
+    } else if (bit == VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT) {
+        static const std::string missing_micromap_feature = "UNASSIGNED-CoreChecks-missing-micromap-feature";
+        return missing_micromap_feature;
     }
 
     const auto &result = FindVUID(bit, loc, GetStageMaskErrorsMap());
