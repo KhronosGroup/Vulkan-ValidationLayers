@@ -1140,7 +1140,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     module_settings.unsafe_mode = gpuav_settings.unsafe_mode;
     module_settings.print_debug_info = gpuav_settings.debug_print_instrumentation_info;
     module_settings.max_instrumentations_count = gpuav_settings.debug_max_instrumentations_count;
-    module_settings.support_non_semantic_info = IsExtEnabled(extensions.vk_khr_shader_non_semantic_info);
+    module_settings.support_non_semantic_info =
+        IsExtEnabled(extensions.vk_khr_shader_non_semantic_info) && !IsExtEnabled(extensions.vk_khr_portability_subset);
     module_settings.has_bindless_descriptors = instrumentation_dsl.has_bindless_descriptors;
 
     spirv::Module module(input_spirv, debug_report, module_settings, modified_features,
