@@ -377,3 +377,29 @@ TEST_F(PositiveSyncValRayTracing, WriteIndexDataThenBuild) {
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncValRayTracing, InvalidMaxVertexValue) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9810
+    TEST_DESCRIPTION("Test invalid maxVertex does not break internal tracking");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+
+    // SyncVal operates with the assumption that API usage is valid according to core validation.
+    // For invalid input synval does basic checks to prevent crashes but usually does not do much above that.
+    // For out of bounds buffer access syncval does range clamp to avoid false positives but otherwise
+    // relies on the core checks to report such issues.
+    //
+    // Test that large maxVertex value does not cause invalid internal tracking when the range of AS geometry
+    // data overlaps with another resource tracked by syncval (in this case it's a regular buffer).
+    // In the case of regression it's possible to have false positive when access to one resource can be tracked
+    // as access to another resource (completed unrelated).
+    blas.GetGeometries()[0].SetTrianglesMaxVertex(vvl::kU32Max - 10000);
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, VK_WHOLE_SIZE, 0x314159);
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_command_buffer.End();
+}
