@@ -71,9 +71,9 @@ using BasicBlockIt = BasicBlockList::iterator;
 
 struct Function {
     // Used to add functions building up SPIR-V the first time
-    Function(Module& module, std::unique_ptr<Instruction> function_inst);
+    Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point);
     // Used to link in new functions
-    Function(Module& module) : module_(module), instrumentation_added_(true) {}
+    Function(Module& module) : module_(module), is_entry_point_(false), instrumentation_added_(true) {}
 
     void ToBinary(std::vector<uint32_t>& out);
 
@@ -85,6 +85,8 @@ struct Function {
     BasicBlock& InsertNewBlockEnd();
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
+
+    bool IsShaderExiting(const Instruction& inst) const;
 
     Module& module_;
     // OpFunction and parameters
@@ -109,6 +111,9 @@ struct Function {
     uint32_t stage_info_y_id_ = 0;
     uint32_t stage_info_z_id_ = 0;
     uint32_t stage_info_w_id_ = 0;
+
+    // Lets us know if the function on OpReturn will exit the shader or nor
+    const bool is_entry_point_;
 
     // The main usage of this is for things like DebugPrintf that might want to actually run over previously instrumented functions
     const bool instrumentation_added_;

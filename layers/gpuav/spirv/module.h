@@ -94,6 +94,7 @@ class Module {
     void ToBinary(std::vector<uint32_t>& out);
 
     void AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class);
+    vvl::unordered_set<uint32_t> added_interface_variables_;
 
     // Helpers
     bool HasCapability(spv::Capability capability);
