@@ -103,6 +103,9 @@ class Semaphore : public RefcountedStateObject {
     // Process signal by retiring timeline timepoints up to the specified payload
     void RetireSignal(uint64_t payload);
 
+    void SetInUseBySwapchain(bool in_use_by_swapchain);
+    bool IsInUseBySwapchain() const;
+
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
@@ -164,8 +167,13 @@ class Semaphore : public RefcountedStateObject {
 
     // the most recently completed operation
     SemOp completed_;
+
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
+
+    // True, if this semaphore was used in QueuePresent but has not been re-acquired yet
+    // and the presentation fence (if provided) has not been waited on.
+    bool in_use_by_swapchain_ = false;
 
     // Set of pending operations ordered by payload.
     // Timeline operations can be added in any order and multiple wait operations

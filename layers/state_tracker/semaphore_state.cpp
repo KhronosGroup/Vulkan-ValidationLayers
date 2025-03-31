@@ -430,6 +430,16 @@ void vvl::Semaphore::RetireSignal(uint64_t payload) {
     RetireTimePoint(payload, completed_op, completed_submit);
 }
 
+void vvl::Semaphore::SetInUseBySwapchain(bool in_use_by_swapchain) {
+    auto guard = WriteLock();
+    in_use_by_swapchain_ = in_use_by_swapchain;
+}
+
+bool vvl::Semaphore::IsInUseBySwapchain() const {
+    auto guard = ReadLock();
+    return in_use_by_swapchain_;
+}
+
 void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, SubmissionReference completed_submit) {
     auto it = timeline_.begin();
     while (it != timeline_.end() && it->first <= payload) {

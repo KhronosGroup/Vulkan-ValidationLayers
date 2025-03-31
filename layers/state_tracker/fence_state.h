@@ -21,12 +21,14 @@
 
 #include "state_tracker/state_object.h"
 #include "state_tracker/submission_reference.h"
+#include "containers/span.h"
 #include <optional>
 #include <future>
 
 class Logger;
 
 namespace vvl {
+class Semaphore;
 class Queue;
 
 class Fence : public RefcountedStateObject {
@@ -65,7 +67,11 @@ class Fence : public RefcountedStateObject {
     void Export(VkExternalFenceHandleTypeFlagBits handle_type);
     std::optional<VkExternalFenceHandleTypeFlagBits> ImportedHandleType() const;
 
+    // Called on AcquireNextImage fence
     void SetPresentSubmissionRef(const SubmissionReference &present_submission_ref);
+
+    // Called on VkSwapchainPresentFenceInfoEXT fence
+    void SetPresentWaitSemaphores(vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores);
 
     const VkFenceCreateFlags flags;
     const VkExternalFenceHandleTypeFlags export_handle_types;
@@ -101,6 +107,8 @@ class Fence : public RefcountedStateObject {
     // submit batch from step e) and also to ensure that the semaphore from step e) is no longer in use.
     //
     std::optional<SubmissionReference> present_submission_ref_;
+
+    small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores_;
 };
 
 }  // namespace vvl

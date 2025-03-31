@@ -243,6 +243,19 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         vuid, objlist, signal_semaphore_loc,
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
                         core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
+                } else if (semaphore_state.IsInUseBySwapchain()) {
+                    const auto &vuid = GetQueueSubmitVUID(signal_semaphore_loc, sync_vuid_maps::SubmitError::kSemAlreadySignalled);
+                    skip |= core.LogError(
+                        vuid, objlist, signal_semaphore_loc,
+                        "(%s) is being signaled by %s, but it may still be in use by the swapchain because the "
+                        "corresponding swapchain image has not yet been re-acquired.\n"
+                        "Vulkan insight: Common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in "
+                        "use and can be safely reused:\n"
+                        "\ta) Use a separate semaphore per swapchain image. Index these semaphores using the "
+                        "index of the acquired image.\n"
+                        "\tb) Consider the VK_EXT_swapchain_maintenance1 extension. It allows using VkFence with the presentation "
+                        "operation.",
+                        core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str());
                 } else {
                     binary_signaling_state[handle] = true;
                 }

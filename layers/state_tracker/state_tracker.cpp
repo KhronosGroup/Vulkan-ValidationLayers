@@ -1367,6 +1367,7 @@ void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject 
     if (auto queue_state = Get<Queue>(queue)) {
         queue_state->NotifyAndWait(record_obj.location);
     }
+    // TODO: Reset semaphore's in-use-by-swapchain state (similar to DeviceWaitIdle) if this queue was used for presentation
 }
 
 void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
@@ -1388,6 +1389,11 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
     // All possible forward progress is initiated. Now it's safe to wait.
     for (auto &queue : queues) {
         queue->Wait(record_obj.location);
+    }
+    // Reset semaphore's in-use-by-swapchain state
+    for (const auto &entry : semaphore_map_.snapshot()) {
+        const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
+        semaphore_state->SetInUseBySwapchain(false);
     }
 }
 
@@ -3635,8 +3641,12 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         }
     }
 
+    small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         if (auto semaphore_state = Get<Semaphore>(pPresentInfo->pWaitSemaphores[i])) {
+            semaphore_state->SetInUseBySwapchain(true);
+            present_wait_semaphores.emplace_back(semaphore_state);
+
             // Register present wait semaphores only in the first present batch.
             // NOTE: when presenting images from multiple swapchains, if some swapchains use
             // present fences, waiting on any present fence will retire all previous present batches.
@@ -3644,6 +3654,15 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
             if (!present_submissions.empty()) {
                 present_submissions[0].AddWaitSemaphore(std::move(semaphore_state), 0);
             }
+        }
+    }
+
+    // Provide present fences with information about present wait semaphores.
+    // If we wait on the present fence, then it can update present semaphores
+    // that they are no longer in use by the swapchain.
+    for (QueueSubmission &present_submission : present_submissions) {
+        if (present_submission.fence) {
+            present_submission.fence->SetPresentWaitSemaphores(present_wait_semaphores);
         }
     }
 
@@ -3660,7 +3679,8 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         // Mark the image as having been released to the WSI
         if (auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i])) {
             uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
-            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref);
+            swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref,
+                                         present_wait_semaphores);
         }
     }
 
