@@ -3707,8 +3707,9 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
                 geometry_info.vertex_data = p_vertex_data;
                 const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
                 const VkDeviceSize local_offset = range_info.primitiveOffset + range_info.firstVertex * triangles.vertexStride;
+                const VkDeviceSize offset = base_vertex_offset + local_offset;
                 const VkDeviceSize vertex_data_size = 3 * range_info.primitiveCount * triangles.vertexStride;
-                geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, vertex_data_size);
+                geometry_info.vertex_range = MakeRange(*p_vertex_data, offset, vertex_data_size);
             }
         } else {
             // Vertex data
@@ -3716,9 +3717,10 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
                 geometry_info.vertex_data = p_vertex_data;
                 const VkDeviceSize base_vertex_offset = triangles.vertexData.deviceAddress - p_vertex_data->deviceAddress;
                 const VkDeviceSize local_offset = range_info.firstVertex * triangles.vertexStride;
+                const VkDeviceSize offset = base_vertex_offset + local_offset;
                 const VkDeviceSize all_vertex_data_size = (triangles.maxVertex + 1) * triangles.vertexStride;
                 const VkDeviceSize potentially_accessed_vertex_data_size = all_vertex_data_size - local_offset;
-                geometry_info.vertex_range = MakeRange(base_vertex_offset + local_offset, potentially_accessed_vertex_data_size);
+                geometry_info.vertex_range = MakeRange(*p_vertex_data, offset, potentially_accessed_vertex_data_size);
             }
             // Index data
             const auto p_index_data = GetSingleBufferFromDeviceAddress(device, triangles.indexData.deviceAddress);
@@ -3726,15 +3728,17 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
                 geometry_info.index_data = p_index_data;
                 const VkDeviceSize base_index_offset = triangles.indexData.deviceAddress - p_index_data->deviceAddress;
                 const uint32_t index_size = GetIndexBitsSize(triangles.indexType) / 8;
+                const VkDeviceSize offset = base_index_offset + range_info.primitiveOffset;
                 const uint32_t index_data_size = 3 * range_info.primitiveCount * index_size;
-                geometry_info.index_range = MakeRange(base_index_offset + range_info.primitiveOffset, index_data_size);
+                geometry_info.index_range = MakeRange(*p_index_data, offset, index_data_size);
             }
         }
         // Transform data
         if (const vvl::Buffer *p_transform_data = GetSingleBufferFromDeviceAddress(device, triangles.transformData.deviceAddress)) {
             const VkDeviceSize base_offset = triangles.transformData.deviceAddress - p_transform_data->deviceAddress;
+            const VkDeviceSize offset = base_offset + range_info.transformOffset;
             geometry_info.transform_data = p_transform_data;
-            geometry_info.transform_range = MakeRange(base_offset + range_info.transformOffset, sizeof(VkTransformMatrixKHR));
+            geometry_info.transform_range = MakeRange(*p_transform_data, offset, sizeof(VkTransformMatrixKHR));
         }
         return geometry_info;
     } else if (geometry.geometryType == VK_GEOMETRY_TYPE_AABBS_KHR) {
@@ -3744,8 +3748,9 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
             AccelerationStructureGeometryInfo geometry_info;
             geometry_info.aabb_data = p_aabbs;
             const VkDeviceSize base_offset = aabbs.data.deviceAddress - p_aabbs->deviceAddress;
+            const VkDeviceSize offset = base_offset + range_info.primitiveOffset;
             const VkDeviceSize aabb_data_size = range_info.primitiveCount * sizeof(VkAabbPositionsKHR);
-            geometry_info.aabb_range = MakeRange(base_offset + range_info.primitiveOffset, aabb_data_size);
+            geometry_info.aabb_range = MakeRange(*p_aabbs, offset, aabb_data_size);
             return geometry_info;
         }
     } else if (geometry.geometryType == VK_GEOMETRY_TYPE_INSTANCES_KHR) {
@@ -3754,10 +3759,11 @@ static std::optional<AccelerationStructureGeometryInfo> GetValidGeometryInfo(
             AccelerationStructureGeometryInfo geometry_info;
             geometry_info.instance_data = p_instances;
             const VkDeviceSize base_offset = instances.data.deviceAddress - p_instances->deviceAddress;
+            const VkDeviceSize offset = base_offset + range_info.primitiveOffset;
             const VkDeviceSize instance_data_size =
                 range_info.primitiveCount *
                 (instances.arrayOfPointers ? sizeof(VkDeviceAddress) : sizeof(VkAccelerationStructureInstanceKHR));
-            geometry_info.instance_range = MakeRange(base_offset + range_info.primitiveOffset, instance_data_size);
+            geometry_info.instance_range = MakeRange(*p_instances, offset, instance_data_size);
             return geometry_info;
         }
     }
@@ -3778,16 +3784,8 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
         if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            // Skip invalid configurations
-            {
-                const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                             info.scratchData.deviceAddress + scratch_size);
-                if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
-                    continue;  // [core validation check]: invalid scratch range
-                }
-            }
-            const ResourceAccessRange range =
-                MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+            const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer.deviceAddress;
+            const ResourceAccessRange range = MakeRange(scratch_buffer, offset, scratch_size);
             auto hazard =
                 context.DetectHazard(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, range);
             if (hazard.IsHazard()) {
@@ -3905,16 +3903,8 @@ void SyncValidator::PreCallRecordCmdBuildAccelerationStructuresKHR(
         if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*this, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
             const VkDeviceSize scratch_size = rt::ComputeScratchSize(rt::BuildType::Device, device, info, ppBuildRangeInfos[i]);
-            // Skip invalid configurations
-            {
-                const vvl::range<VkDeviceSize> scratch_range(info.scratchData.deviceAddress,
-                                                             info.scratchData.deviceAddress + scratch_size);
-                if (!scratch_buffer.DeviceAddressRange().includes(scratch_range)) {
-                    continue;  // [core validation check]: invalid scratch range
-                }
-            }
-            const ResourceAccessRange scratch_range =
-                MakeRange(info.scratchData.deviceAddress - scratch_buffer.deviceAddress, scratch_size);
+            const VkDeviceSize offset = info.scratchData.deviceAddress - scratch_buffer.deviceAddress;
+            const ResourceAccessRange scratch_range = MakeRange(scratch_buffer, offset, scratch_size);
             const ResourceUsageTagEx scratch_tag_ex = cb_context.AddCommandHandle(tag, scratch_buffer.Handle());
             context.UpdateAccessState(scratch_buffer, SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE,
                                       SyncOrdering::kNonAttachment, scratch_range, scratch_tag_ex);
