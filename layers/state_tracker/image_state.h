@@ -329,6 +329,8 @@ class ImageView : public StateObject {
 
 struct SwapchainImage {
     vvl::Image *image_state = nullptr;
+
+    // Acquire state
     bool acquired = false;
     std::shared_ptr<vvl::Semaphore> acquire_semaphore;
     std::shared_ptr<vvl::Fence> acquire_fence;
@@ -336,6 +338,10 @@ struct SwapchainImage {
     // Queue location (seq) for present operation that presented this image.
     // When this image is reacquired, the acquire fence can synchronize with this location.
     std::optional<SubmissionReference> present_submission_ref;
+
+    // Wait semaphores from the presentation request
+    small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores;
+    void ResetPresentWaitSemaphores();
 };
 
 // State for VkSwapchainKHR objects.
@@ -369,7 +375,8 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
 
     VkSwapchainKHR VkHandle() const { return handle_.Cast<VkSwapchainKHR>(); }
 
-    void PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref);
+    void PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,
+                      vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores);
 
     void ReleaseImage(uint32_t image_index);
 

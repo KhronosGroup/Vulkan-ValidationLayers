@@ -84,6 +84,11 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
             }
             present_submission_ref = std::move(present_submission_ref_);
             present_submission_ref_.reset();
+
+            for (auto &semaphore : present_wait_semaphores_) {
+                semaphore->SetInUseBySwapchain(false);
+            }
+            present_wait_semaphores_.clear();
         }
     }
     if (waiter.valid()) {
@@ -125,6 +130,10 @@ void vvl::Fence::Reset() {
     completed_ = std::promise<void>();
     waiter_ = std::shared_future<void>(completed_.get_future());
     present_submission_ref_.reset();
+
+    // Do not reset swapchain-in-use state of each semaphore here, only stop the tracking.
+    // In order to reset swapchain-in-use state we need to wait on the fence.
+    present_wait_semaphores_.clear();
 }
 
 void vvl::Fence::Import(VkExternalFenceHandleTypeFlagBits handle_type, VkFenceImportFlags flags) {
@@ -182,4 +191,11 @@ void vvl::Fence::SetPresentSubmissionRef(const SubmissionReference &present_subm
 
     assert(present_submission_ref.queue != nullptr);
     present_submission_ref_ = present_submission_ref;
+}
+
+void vvl::Fence::SetPresentWaitSemaphores(vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores) {
+    present_wait_semaphores_.clear();
+    for (const auto &semaphore : present_wait_semaphores) {
+        present_wait_semaphores_.emplace_back(semaphore);
+    }
 }

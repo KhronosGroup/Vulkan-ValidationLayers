@@ -20,6 +20,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/semaphore_state.h"
 #include "state_tracker/shader_module.h"
 #include "generated/dispatch_functions.h"
 
@@ -550,6 +551,13 @@ static vku::safe_VkImageCreateInfo GetImageCreateInfo(const VkSwapchainCreateInf
 
 namespace vvl {
 
+void SwapchainImage::ResetPresentWaitSemaphores() {
+    for (auto &semaphore : present_wait_semaphores) {
+        semaphore->SetInUseBySwapchain(false);
+    }
+    present_wait_semaphores.clear();
+}
+
 Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle)
     : StateObject(handle, kVulkanObjectTypeSwapchainKHR),
       safe_create_info(pCreateInfo),
@@ -561,7 +569,8 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
       image_create_info(GetImageCreateInfo(pCreateInfo)),
       dev_data(dev_data_) {}
 
-void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference& present_submission_ref) {
+void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,
+                             vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores) {
     if (image_index >= images.size()) return;
     assert(acquired_images > 0);
     if (!shared_presentable) {
@@ -573,6 +582,12 @@ void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const Su
         images[image_index].image_state->layout_locked = true;
     }
     images[image_index].present_submission_ref = present_submission_ref;
+
+    images[image_index].present_wait_semaphores.clear();
+    for (const auto &semaphore : present_wait_semaphores) {
+        images[image_index].present_wait_semaphores.emplace_back(semaphore);
+    }
+
     if (present_id > max_present_id) {
         max_present_id = present_id;
     }
@@ -585,6 +600,7 @@ void Swapchain::ReleaseImage(uint32_t image_index) {
     images[image_index].acquired = false;
     images[image_index].acquire_semaphore.reset();
     images[image_index].acquire_fence.reset();
+    images[image_index].ResetPresentWaitSemaphores();
 }
 
 void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Semaphore> &semaphore_state,
@@ -600,10 +616,12 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
     if (shared_presentable) {
         images[image_index].image_state->shared_presentable = shared_presentable;
     }
+    images[image_index].ResetPresentWaitSemaphores();
 }
 
 void Swapchain::Destroy() {
     for (auto &swapchain_image : images) {
+        swapchain_image.ResetPresentWaitSemaphores();
         RemoveParent(swapchain_image.image_state);
         dev_data.Destroy<vvl::Image>(swapchain_image.image_state->VkHandle());
         // NOTE: We don't have access to dev_data.fake_memory.Free() here, but it is currently a no-op
