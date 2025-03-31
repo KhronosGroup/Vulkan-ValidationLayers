@@ -1070,7 +1070,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
     TEST_DESCRIPTION("Touching every part of a SSBO");
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    AddRequiredFeature(vkt::Feature::robustBufferAccess);
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
@@ -1085,7 +1084,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
     //     a += dot(vec4(m[0].x, m[0].y, m[0].z, m[0].w), b);
     //     a += dot(vec4(m[31].x, m[31].y, m[31].z, m[31].w), b);
     // }
-    const uint32_t array_count = 2;
+    const uint32_t array_count = 32;
     std::stringstream cs_source;
     cs_source << R"glsl(
         #version 450

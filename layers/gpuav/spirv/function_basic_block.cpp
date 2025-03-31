@@ -104,7 +104,8 @@ void BasicBlock::CreateInstruction(spv::Op opcode, const std::vector<uint32_t>& 
     }
 }
 
-Function::Function(Module& module, std::unique_ptr<Instruction> function_inst) : module_(module), instrumentation_added_(false) {
+Function::Function(Module& module, std::unique_ptr<Instruction> function_inst, bool is_entry_point)
+    : module_(module), is_entry_point_(is_entry_point), instrumentation_added_(false) {
     // Used when loading initial SPIR-V
     pre_block_inst_.emplace_back(std::move(function_inst));  // OpFunction
 }
@@ -151,6 +152,13 @@ void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
             inst->ReplaceOperandId(old_word, new_word);
         }
     }
+}
+
+// This is a hard thing to fully get right, as things like OpTerminateInvocation/OpKill can end the invocation, but not the shader.
+// The main thing we are trying to find here is if this is our last chance to report an error message
+bool Function::IsShaderExiting(const Instruction& inst) const {
+    const bool is_return_inst = inst.Opcode() == spv::OpReturn || inst.Opcode() == spv::OpReturnValue;
+    return is_entry_point_ && is_return_inst;
 }
 
 }  // namespace spirv

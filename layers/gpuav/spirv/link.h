@@ -24,6 +24,8 @@ enum LinkFlags {
     // This will make all private variables set to zero
     // Currently only does Uint32, but could expand to be all types if we find more usecases
     ZeroInitializeUintPrivateVariables = 0x00000001,
+    // Swap the private variable with private_variable_id
+    SwapPrivateVariable = 0x00000002,
 };
 
 // This struct is for things that are generated and therefor can be created once statically
@@ -45,6 +47,9 @@ struct LinkInfo {
 
     // The result ID of OpFunction
     const uint32_t function_id;
+
+    // Used when SwapPrivateVariable is used
+    uint32_t private_variable_id = 0;
 };
 
 }  // namespace spirv
