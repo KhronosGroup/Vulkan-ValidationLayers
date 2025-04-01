@@ -1,6 +1,6 @@
-/* Copyright (c) 2021-2024 The Khronos Group Inc.
- * Copyright (c) 2021-2024 Valve Corporation
- * Copyright (c) 2021-2024 LunarG, Inc.
+/* Copyright (c) 2021-2025 The Khronos Group Inc.
+ * Copyright (c) 2021-2025 Valve Corporation
+ * Copyright (c) 2021-2025 LunarG, Inc.
  * Copyright (C) 2021-2022 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -86,6 +86,18 @@ LocationCapture::LocationCapture(LocationCapture&& other)
     for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
         capture[i].prev = &capture[i - 1];
     }
+}
+
+LocationCapture& LocationCapture::operator=(const LocationCapture& other) {
+    capture.PushBackFrom(other.capture);
+    if (capture.empty()) {
+        return *this;
+    }
+    capture[0].prev = nullptr;
+    for (CaptureStore::size_type i = 1; i < capture.size(); i++) {
+        capture[i].prev = &capture[i - 1];
+    }
+    return *this;
 }
 
 const Location* LocationCapture::Capture(const Location& loc, CaptureStore::size_type depth) {

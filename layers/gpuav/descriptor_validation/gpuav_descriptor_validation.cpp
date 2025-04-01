@@ -154,7 +154,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 }  // namespace descriptor
 
 // After the GPU executed, we know which descriptor indexes were accessed and can validate with normal Core Validation logic
-[[nodiscard]] bool CommandBufferSubState::ValidateBindlessDescriptorSets(const Location &loc) {
+[[nodiscard]] bool CommandBufferSubState::ValidateBindlessDescriptorSets(const Location &loc, const LabelLogging &label_logging) {
     VVL_ZoneScoped;
     // Only check a VkDescriptorSet once, might be bound multiple times in a single command buffer
     vvl::unordered_set<VkDescriptorSet> validated_desc_sets;
@@ -215,11 +215,11 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                 if (it->second.pipeline != VK_NULL_HANDLE) {
                     // We use pipeline over vkShaderModule as likely they will have been destroyed by now
                     pipeline_state = state_.Get<vvl::Pipeline>(it->second.pipeline).get();
-                    context.shader_handle = &pipeline_state->Handle();
+                    context.SetShaderHandleForGpuAv(&pipeline_state->Handle());
                 } else if (it->second.shader_object != VK_NULL_HANDLE) {
                     shader_object_state = state_.Get<vvl::ShaderObject>(it->second.shader_object).get();
                     ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
-                    context.shader_handle = &shader_object_state->Handle();
+                    context.SetShaderHandleForGpuAv(&shader_object_state->Handle());
                 } else {
                     assert(false);
                     continue;
@@ -257,8 +257,16 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 
                     // This will represent the Set that was accessed in the shader, which might not match the vkCmdBindDescriptorSet
                     // index if sets are aliased
-                    context.set_index = resource_variable->decorations.set;
-                    assert(context.shader_handle);
+                    context.SetSetIndexForGpuAv(resource_variable->decorations.set);
+
+                    std::string debug_region_name;
+                    if (auto found_label_cmd_i = label_logging.action_cmd_i_to_label_cmd_i_map.find(descriptor_access.action_index);
+                        found_label_cmd_i != label_logging.action_cmd_i_to_label_cmd_i_map.end()) {
+                        debug_region_name = GetDebugLabelRegion(found_label_cmd_i->second, label_logging.initial_label_stack);
+                    }
+
+                    Location access_loc(loc, debug_region_name);
+                    context.SetLocationForGpuAv(access_loc);
                     context.ValidateBindingDynamic(*resource_variable, *descriptor_binding, descriptor_access.index);
                 }
             }

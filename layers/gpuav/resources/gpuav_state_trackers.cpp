@@ -434,7 +434,8 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
     // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
     bool gpuav_success = false;
     if (!skip && state_.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
-        gpuav_success = ValidateBindlessDescriptorSets(loc);
+        LabelLogging label_logging = {initial_label_stack, action_cmd_i_to_label_cmd_i_map};
+        gpuav_success = ValidateBindlessDescriptorSets(loc, label_logging);
     }
 
     if (gpuav_success) {

@@ -611,6 +611,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
             return skip;
         };
 
+    cb_state.action_cmd_i_to_label_cmd_i_map[cb_state.action_command_count] = last_label_command_i;
     cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 

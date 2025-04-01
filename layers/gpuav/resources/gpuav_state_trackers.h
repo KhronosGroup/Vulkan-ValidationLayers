@@ -73,7 +73,11 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     bool PreProcess(const Location &loc);
     void PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
-    [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc);
+    struct LabelLogging {
+        const std::vector<std::string> &initial_label_stack;
+        const vvl::unordered_map<uint32_t, uint32_t> &action_cmd_i_to_label_cmd_i_map;
+    };
+    [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc, const LabelLogging &label_logging);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -121,6 +125,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack),
                                  280 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
+    vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
 
     using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb_state), 192>;
 
