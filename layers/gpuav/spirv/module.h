@@ -85,9 +85,8 @@ class Module {
     uint32_t TakeNextId();
 
     // Order of functions that will try to be linked in
-    std::vector<LinkInfo> link_info_;
-    void LinkFunction(const LinkInfo& info);
-    uint32_t GetLinkFunction(uint32_t& link_function_id, const OfflineLinkInfo& offline_info);
+    std::vector<LinkInfo> link_infos_;
+    void LinkFunctions(const LinkInfo& info);
     void PostProcess();
 
     // The class is designed to be written out to a binary file.

@@ -26,12 +26,15 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineLinkInfo link_info = {instrumentation_vertex_attribute_fetch_oob_vert,
-                                          instrumentation_vertex_attribute_fetch_oob_vert_size, "inst_vertex_attribute_fetch_oob"};
+const static OfflineModule kOfflineModule = {instrumentation_vertex_attribute_fetch_oob_vert,
+                                             instrumentation_vertex_attribute_fetch_oob_vert_size};
 
-VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module) {}
+const static OfflineFunction kOfflineFunction = {"inst_vertex_attribute_fetch_oob",
+                                                 instrumentation_vertex_attribute_fetch_oob_vert_function_0_offset};
 
-uint32_t VertexAttributeFetchOob::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
+VertexAttributeFetchOob::VertexAttributeFetchOob(Module& module) : Pass(module, kOfflineModule) {}
+
+uint32_t VertexAttributeFetchOob::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 bool VertexAttributeFetchOob::Instrument() {
     for (const auto& entry_point_inst : module_.entry_points_) {

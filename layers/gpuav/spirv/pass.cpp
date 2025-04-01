@@ -18,6 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "function_basic_block.h"
 #include "generated/spirv_grammar_helper.h"
+#include "link.h"
 #include "state_tracker/shader_instruction.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -29,6 +30,11 @@ bool Pass::Run() {
     const bool modified = Instrument();
     if (module_.settings_.print_debug_info) {
         PrintDebugInfo();
+    }
+
+    // Detect if any functions were applied that we need to add now
+    if (modified && !link_info_.functions.empty()) {
+        module_.link_infos_.emplace_back(link_info_);
     }
     return modified;
 }
@@ -737,6 +743,16 @@ void Pass::ControlFlow::Update(const BasicBlock& block) {
         in_loop = true;
         merge_target_id = block.loop_header_merge_target_;
     }
+}
+
+// Helper for passes with multiple linked functions they may grab
+// Pass in cached link_function_id and only update it the first time
+uint32_t Pass::GetLinkFunction(uint32_t& link_function_id, const OfflineFunction& offline) {
+    if (link_function_id == 0) {
+        link_function_id = module_.TakeNextId();
+        link_info_.functions.emplace_back(LinkFunction{offline, link_function_id});
+    }
+    return link_function_id;
 }
 
 }  // namespace spirv

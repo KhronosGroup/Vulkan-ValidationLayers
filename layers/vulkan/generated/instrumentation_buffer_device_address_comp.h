@@ -25,6 +25,9 @@
 
 #include <cstdint>
 
-// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
+// We have found having the data in the header can lead to MSVC not recognizing changes
 extern const uint32_t instrumentation_buffer_device_address_comp_size;
 extern const uint32_t instrumentation_buffer_device_address_comp[];
+
+// These offset match the function in the order they are declared in the GLSL source
+extern const uint32_t instrumentation_buffer_device_address_comp_function_0_offset;

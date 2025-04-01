@@ -1193,8 +1193,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here
-    for (const auto &info : module.link_info_) {
-        module.LinkFunction(info);
+    for (const auto &info : module.link_infos_) {
+        module.LinkFunctions(info);
     }
 
     // DebugPrintf goes at the end for 2 reasons:

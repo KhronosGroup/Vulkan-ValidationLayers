@@ -47,12 +47,8 @@ target_sources(gpu_av_spirv PRIVATE
     pass.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/spirv_grammar_helper.cpp
 
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.cpp
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h
-    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.cpp
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_comp.h
+    ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_indexing_oob_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_general_buffer_comp.h
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_general_buffer_comp.cpp
     ${VVL_SOURCE_DIR}/layers/${API_TYPE}/generated/instrumentation_descriptor_class_texel_buffer_comp.h
