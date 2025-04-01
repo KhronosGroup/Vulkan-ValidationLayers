@@ -3483,14 +3483,14 @@ TEST_F(NegativeCopyBufferImage, BlitInvalidDepth) {
     region.dstOffsets[1] = {32, 32, 2};
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10579");
-    vk::CmdBlitImage(m_command_buffer.handle(), src_image.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_3d,
+    vk::CmdBlitImage(m_command_buffer.handle(), src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image_3d,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     region.srcOffsets[1] = {32, 32, 2};
     region.dstOffsets[1] = {32, 32, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-maintenance8-10580");
-    vk::CmdBlitImage(m_command_buffer.handle(), src_image_3d.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+    vk::CmdBlitImage(m_command_buffer.handle(), src_image_3d, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
