@@ -480,7 +480,7 @@ bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Mod
             return skip;
         }
 
-        const uint32_t var_id = insn.Word(2);
+        const uint32_t var_id = insn.ResultId();
         const auto decorations = module_state.GetDecorationSet(var_id);
 
         if (!enabled_features.shaderStorageImageReadWithoutFormat && !decorations.Has(spirv::DecorationSet::nonreadable_bit)) {

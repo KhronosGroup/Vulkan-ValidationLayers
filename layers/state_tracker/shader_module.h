@@ -694,8 +694,6 @@ struct Module {
         return (it != static_data_.execution_modes.end()) ? it->second : static_data_.empty_execution_mode;
     }
 
-    std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(uint32_t struct_id) const;
-    // Overload to walk down and find the OpTypeStruct
     std::shared_ptr<const TypeStructInfo> GetTypeStructInfo(const Instruction *insn) const;
 
     // Used to get human readable strings for error messages

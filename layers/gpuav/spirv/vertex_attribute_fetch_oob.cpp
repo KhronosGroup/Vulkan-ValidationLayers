@@ -41,7 +41,7 @@ bool VertexAttributeFetchOob::Instrument() {
         const uint32_t vertex_shader_entry_point_id = entry_point_inst->Word(2);
         for (const auto& function : module_.functions_) {
             if (function->instrumentation_added_) continue;
-            const uint32_t function_id = function->GetDef().Word(2);
+            const uint32_t function_id = function->GetDef().ResultId();
             if (vertex_shader_entry_point_id != function_id) continue;
 
             BasicBlock& first_block = function->GetFirstBlock();
