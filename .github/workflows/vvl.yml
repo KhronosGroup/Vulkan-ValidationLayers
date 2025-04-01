@@ -63,8 +63,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-address-${{matrix.custom_hash_map}}
@@ -103,8 +101,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-thread-${{matrix.custom_hash_map}}
@@ -133,8 +129,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: linux-ubsan
@@ -180,8 +174,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: linux-upload-ccache
@@ -204,8 +196,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -319,8 +309,6 @@ jobs:
       steps:
         - uses: actions/checkout@v4
         - uses: lukka/get-cmake@latest
-          with:
-            cmakeVersion: '3.31.6' # until we fix jsoncpp bug
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -350,8 +338,6 @@ jobs:
       steps:
         - uses: actions/checkout@v4
         - uses: lukka/get-cmake@latest
-          with:
-            cmakeVersion: '3.31.6' # until we fix jsoncpp bug
         - name: Setup ccache
           uses: hendrikmuhs/ccache-action@v1.2
           with:
@@ -395,8 +381,6 @@ jobs:
         with:
           key: iOS-cache
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - name: Configure for iOS
         run: |
           cmake -S . -B build/ \
@@ -432,8 +416,6 @@ jobs:
         with:
           python-version: '3.10'
       - uses: lukka/get-cmake@latest
-        with:
-          cmakeVersion: '3.31.6' # until we fix jsoncpp bug
       - run: |
           cmake -S. -B build \
           -D BUILD_WERROR=ON \
