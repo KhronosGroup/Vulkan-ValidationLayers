@@ -174,7 +174,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
         // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-        while (access_chain_inst && access_chain_inst->Opcode() == spv::OpAccessChain) {
+        while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
             const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
             variable = module_.type_manager_.FindVariableById(access_chain_base_id);
             if (variable) {
@@ -252,11 +252,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
             meta.var_inst = global_var ? &global_var->inst_ : nullptr;
         }
-        if (!meta.var_inst || (meta.var_inst->Opcode() != spv::OpAccessChain && meta.var_inst->Opcode() != spv::OpVariable)) {
+        if (!meta.var_inst || (!meta.var_inst->IsNonPtrAccessChain() && meta.var_inst->Opcode() != spv::OpVariable)) {
             return false;
         }
 
-        if (meta.var_inst->Opcode() == spv::OpAccessChain) {
+        if (meta.var_inst->IsNonPtrAccessChain()) {
             array_found = true;
             meta.descriptor_index_id = meta.var_inst->Operand(1);
 
@@ -322,11 +322,11 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
             meta.sampler_var_inst = global_var ? &global_var->inst_ : nullptr;
         }
         if (!meta.sampler_var_inst ||
-            (meta.sampler_var_inst->Opcode() != spv::OpAccessChain && meta.sampler_var_inst->Opcode() != spv::OpVariable)) {
+            (!meta.sampler_var_inst->IsNonPtrAccessChain() && meta.sampler_var_inst->Opcode() != spv::OpVariable)) {
             return false;
         }
 
-        if (meta.sampler_var_inst->Opcode() == spv::OpAccessChain) {
+        if (meta.sampler_var_inst->IsNonPtrAccessChain()) {
             array_found = true;
             meta.sampler_descriptor_index_id = meta.sampler_var_inst->Operand(1);
 

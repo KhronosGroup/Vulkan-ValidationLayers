@@ -75,6 +75,7 @@ class Instruction {
     spv::BuiltIn GetBuiltIn() const;
     uint32_t GetPositionIndex() const { return position_index_; }
     bool IsArray() const;
+    bool IsNonPtrAccessChain() const;
     bool IsAccessChain() const;
     // Helpers for OpTypeImage
     spv::Dim FindImageDim() const;
