@@ -348,6 +348,8 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
             break;
         case spv::OpAccessChain:
         case spv::OpInBoundsAccessChain:
+        case spv::OpPtrAccessChain:
+        case spv::OpInBoundsPtrAccessChain:
             result.insert(insn.Word(3));  // base ptr
             break;
         case spv::OpArrayLength:
@@ -410,11 +412,7 @@ static void FindPointersAndObjects(const Instruction& insn, vvl::unordered_set<u
 
         default: {
             if (AtomicOperation(insn.Opcode())) {
-                if (insn.Opcode() == spv::OpAtomicStore) {
-                    result.insert(insn.Word(1));  // ptr
-                } else {
-                    result.insert(insn.Word(3));  // ptr
-                }
+                result.insert(insn.Operand(0));  // ptr
             }
             break;
         }
@@ -1155,9 +1153,9 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                         stateless_data->atomic_inst.push_back(&insn);
                     }
                     if (opcode == spv::OpAtomicStore) {
-                        atomic_store_pointer_ids.emplace_back(insn.Word(1));
+                        atomic_store_pointer_ids.emplace_back(insn.Operand(0));
                     } else {
-                        atomic_load_pointer_ids.emplace_back(insn.Word(3));
+                        atomic_load_pointer_ids.emplace_back(insn.Operand(0));
                     }
                 }
                 if (GroupOperation(opcode)) {
@@ -1263,22 +1261,18 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
     }
 }
 
-std::shared_ptr<const TypeStructInfo> Module::GetTypeStructInfo(uint32_t struct_id) const {
-    // return the actual execution modes for this id, or a default empty set.
-    const auto it = static_data_.type_struct_map.find(struct_id);
-    return (it != static_data_.type_struct_map.end()) ? it->second : nullptr;
-}
-
 std::shared_ptr<const TypeStructInfo> Module::GetTypeStructInfo(const Instruction* insn) const {
     while (true) {
         if (insn->Opcode() == spv::OpVariable) {
-            insn = FindDef(insn->Word(1));
+            insn = FindDef(insn->TypeId());
         } else if (insn->Opcode() == spv::OpTypePointer) {
             insn = FindDef(insn->Word(3));
         } else if (insn->IsArray()) {
             insn = FindDef(insn->Word(2));
         } else if (insn->Opcode() == spv::OpTypeStruct) {
-            return GetTypeStructInfo(insn->Word(1));
+            // return the actual execution modes for this id, or a default empty set.
+            const auto it = static_data_.type_struct_map.find(insn->ResultId());
+            return (it != static_data_.type_struct_map.end()) ? it->second : nullptr;
         } else {
             return nullptr;
         }
@@ -1517,9 +1511,8 @@ uint32_t Module::CalculateWorkgroupSharedMemory() const {
             const Instruction* type = GetVariablePointerType(*insn);
 
             // structs might have an offset padding
-            const uint32_t variable_shared_size = (type->Opcode() == spv::OpTypeStruct)
-                                                      ? GetTypeStructInfo(type->Word(1))->GetSize(*this).size
-                                                      : GetTypeBytesSize(type);
+            const uint32_t variable_shared_size =
+                (type->Opcode() == spv::OpTypeStruct) ? GetTypeStructInfo(type)->GetSize(*this).size : GetTypeBytesSize(type);
 
             if (find_max_block) {
                 total_size = std::max(total_size, variable_shared_size);
@@ -1746,8 +1739,8 @@ const char* VariableBase::FindDebugName(const VariableBase& variable, const Debu
 
 VariableBase::VariableBase(const Module& module_state, const Instruction& insn, VkShaderStageFlagBits stage,
                            const VariableAccessMap& variable_access_map, const DebugNameMap& debug_name_map)
-    : id(insn.Word(2)),
-      type_id(insn.Word(1)),
+    : id(insn.ResultId()),
+      type_id(insn.TypeId()),
       storage_class(static_cast<spv::StorageClass>(insn.Word(3))),
       decorations(module_state.GetDecorationSet(id)),
       type_struct_info(module_state.GetTypeStructInfo(&insn)),
@@ -2293,7 +2286,7 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
             bit_size = GetTypeBitsSize(type);
         }
     } else if (opcode == spv::OpVariable) {
-        const Instruction* type = FindDef(insn->Word(1));
+        const Instruction* type = FindDef(insn->TypeId());
         bit_size = GetTypeBitsSize(type);
     } else if (opcode == spv::OpTypeImage) {
         const Instruction* type = FindDef(insn->Word(2));
@@ -2408,7 +2401,7 @@ AtomicInstructionInfo Module::GetAtomicInfo(const Instruction& insn) const {
 
     // spirv-val will catch if not OpTypePointer
     const Instruction* pointer = FindDef(access->Word(1));
-    info.storage_class = pointer->Word(2);
+    info.storage_class = pointer->StorageClass();
 
     const Instruction* data_type = FindDef(pointer->Word(3));
 

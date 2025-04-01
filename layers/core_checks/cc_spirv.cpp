@@ -201,7 +201,7 @@ static void TypeToDescriptorTypeSet(const spirv::Module &module_state, uint32_t 
     switch (type->Opcode()) {
         case spv::OpTypeStruct: {
             for (const spirv::Instruction *insn : module_state.static_data_.decoration_inst) {
-                if (insn->Word(1) == type->Word(1)) {
+                if (insn->Word(1) == type->ResultId()) {
                     if (insn->Word(2) == spv::DecorationBlock) {
                         if (is_storage_buffer) {
                             descriptor_type_set.insert(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -453,7 +453,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
         const spirv::Instruction &insn = *cooperative_matrix_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeMatrixKHR: {
-                CoopMatType m(insn.Word(1), module_state, stage_state, IsSignedIntType(insn.Word(2)));
+                CoopMatType m(insn.ResultId(), module_state, stage_state, IsSignedIntType(insn.Word(2)));
 
                 if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
                     if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
@@ -682,7 +682,7 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 break;
             }
             case spv::OpTypeCooperativeMatrixNV: {
-                CoopMatType m(insn.Word(1), module_state, stage_state, IsSignedIntType(insn.Word(2)));
+                CoopMatType m(insn.ResultId(), module_state, stage_state, IsSignedIntType(insn.Word(2)));
 
                 if (!m.all_constant) {
                     break;
