@@ -3391,15 +3391,18 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      string_LayerCount(src_image_state->create_info, src_subresource).c_str(),
                                      string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
                 }
-            } else if (uint32_t diff = static_cast<uint32_t>(abs(region.dstOffsets[0].z - region.dstOffsets[1].z));
-                       diff != normalized_src_layer_count) {
-                vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10579" : "VUID-vkCmdBlitImage-maintenance8-10579";
-                skip |= LogError(vuid, all_objlist, region_loc,
-                                 "has the absolute difference of %" PRIu32 " between dstOffsets[0].z (%" PRIu32
-                                 ") and dstOffsets[1].z (%" PRIu32 "), which is not equal to srcSubresource.layerCount (%s)",
-                                 diff, region.dstOffsets[0].z, region.dstOffsets[1].z,
-                                 string_LayerCount(src_image_state->create_info, src_subresource).c_str());
+            } else if (dst_type == VK_IMAGE_TYPE_3D) {
+                const uint32_t abs_diff = static_cast<uint32_t>(abs(region.dstOffsets[0].z - region.dstOffsets[1].z));
+                if (abs_diff != normalized_src_layer_count) {
+                    vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10579" : "VUID-vkCmdBlitImage-maintenance8-10579";
+                    skip |= LogError(vuid, all_objlist, region_loc,
+                                     "has the absolute difference of %" PRIu32 " between dstOffsets[0].z (%" PRIu32
+                                     ") and dstOffsets[1].z (%" PRIu32 "), which is not equal to srcSubresource.layerCount (%s)",
+                                     abs_diff, region.dstOffsets[0].z, region.dstOffsets[1].z,
+                                     string_LayerCount(src_image_state->create_info, src_subresource).c_str());
+                }
             }
+
             if (dst_type == VK_IMAGE_TYPE_3D) {
                 if (dst_subresource.baseArrayLayer != 0 || normalized_dst_layer_count != 1 || normalized_src_layer_count != 1) {
                     vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10208" : "VUID-vkCmdBlitImage-maintenance8-10208";
@@ -3411,14 +3414,16 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
                                      dst_subresource.baseArrayLayer,
                                      string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
                 }
-            } else if (uint32_t diff = static_cast<uint32_t>(abs(region.srcOffsets[0].z - region.srcOffsets[1].z));
-                       diff != normalized_dst_layer_count) {
-                vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10580" : "VUID-vkCmdBlitImage-maintenance8-10580";
-                skip |= LogError(vuid, all_objlist, region_loc,
-                                 "has the absolute difference of %" PRIu32 " between srcOffsets[0].z (%" PRIu32
-                                 ") and srcOffsets[1].z (%" PRIu32 "), which is not equal to dstSubresource.layerCount (%s)",
-                                 diff, region.srcOffsets[0].z, region.srcOffsets[1].z,
-                                 string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
+            } else if (src_type == VK_IMAGE_TYPE_3D) {
+                const uint32_t abs_diff = static_cast<uint32_t>(abs(region.srcOffsets[0].z - region.srcOffsets[1].z));
+                if (abs_diff != normalized_dst_layer_count) {
+                    vuid = is_2 ? "VUID-VkBlitImageInfo2-maintenance8-10580" : "VUID-vkCmdBlitImage-maintenance8-10580";
+                    skip |= LogError(vuid, all_objlist, region_loc,
+                                     "has the absolute difference of %" PRIu32 " between srcOffsets[0].z (%" PRIu32
+                                     ") and srcOffsets[1].z (%" PRIu32 "), which is not equal to dstSubresource.layerCount (%s)",
+                                     abs_diff, region.srcOffsets[0].z, region.srcOffsets[1].z,
+                                     string_LayerCount(dst_image_state->create_info, dst_subresource).c_str());
+                }
             }
         }
 
