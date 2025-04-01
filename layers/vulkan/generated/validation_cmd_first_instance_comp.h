@@ -25,6 +25,8 @@
 
 #include <cstdint>
 
-// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
+// We have found having the data in the header can lead to MSVC not recognizing changes
 extern const uint32_t validation_cmd_first_instance_comp_size;
 extern const uint32_t validation_cmd_first_instance_comp[];
+
+// These offset match the function in the order they are declared in the GLSL source

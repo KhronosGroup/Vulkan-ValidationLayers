@@ -106,6 +106,17 @@ def write(words, filename, apiname, outdir = None):
     name = os.path.basename(head_tail[0]) + "_" + head_tail[1]
     name = identifierize(name)
 
+    function_offsets = []
+    if "instrumentation" in filename:
+        offset = 5  # First 5 words are the header
+        while offset < len(words):
+            instruction = words[offset]
+            length = instruction >> 16
+            opcode = instruction & 0xFFFF
+            if opcode == 54:  # OpFunction
+                function_offsets.append(offset)
+            offset += length  # Move to the next instruction
+
     literals = []
     for i in range(0, len(words), COLUMNS):
         columns = ["0x%08x" % word for word in words[i:(i + COLUMNS)]]
@@ -139,10 +150,12 @@ def write(words, filename, apiname, outdir = None):
 
 #include <cstdint>
 
-// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
+// We have found having the data in the header can lead to MSVC not recognizing changes
 extern const uint32_t {name}_size;
 extern const uint32_t {name}[];
-'''
+
+// These offset match the function in the order they are declared in the GLSL source
+''' + ''.join(f'extern const uint32_t {name}_function_{index}_offset;\n' for index, offset in enumerate(function_offsets))
 
     source = f'''// *** THIS FILE IS GENERATED - DO NOT EDIT ***
 // See generate_spirv.py for modifications
@@ -172,7 +185,7 @@ extern const uint32_t {name}[];
 // To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
 [[maybe_unused]] const uint32_t {name}_size = {len(words)};
 [[maybe_unused]] const uint32_t {name}[{len(words)}] = {{\n{literals}\n}};
-'''
+''' + ''.join(f'[[maybe_unused]] const uint32_t {name}_function_{index}_offset = {offset};\n' for index, offset in enumerate(function_offsets))
 
     if outdir:
       out_file_dir = os.path.join(outdir, f'layers/{apiname}/generated')

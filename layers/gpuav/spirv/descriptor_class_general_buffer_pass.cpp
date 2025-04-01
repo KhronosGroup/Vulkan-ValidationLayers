@@ -28,17 +28,19 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineLinkInfo link_info = {instrumentation_descriptor_class_general_buffer_comp,
-                                          instrumentation_descriptor_class_general_buffer_comp_size,
-                                          "inst_descriptor_class_general_buffer"};
+const static OfflineModule kOfflineModule = {instrumentation_descriptor_class_general_buffer_comp,
+                                             instrumentation_descriptor_class_general_buffer_comp_size};
+
+const static OfflineFunction kOfflineFunction = {"inst_descriptor_class_general_buffer",
+                                                 instrumentation_descriptor_class_general_buffer_comp_function_0_offset};
 
 DescriptorClassGeneralBufferPass::DescriptorClassGeneralBufferPass(Module& module)
-    : Pass(module), unsafe_mode_(module.settings_.unsafe_mode) {
+    : Pass(module, kOfflineModule), unsafe_mode_(module.settings_.unsafe_mode) {
     module.use_bda_ = true;
 }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
+uint32_t DescriptorClassGeneralBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 // Finds the offset into the SSBO/UBO an instruction would access
 // If it is a non-constant value, will return zero to indicate its a runtime value

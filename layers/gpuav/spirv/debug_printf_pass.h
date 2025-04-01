@@ -21,13 +21,16 @@
 namespace gpuav {
 namespace spirv {
 
+// This pass has no linking, it is all done inplace at runtime
+static const OfflineModule kNullOffline{nullptr, 0};
+
 struct Type;
 
 // Create a pass to instrument NonSemantic.DebugPrintf (GL_EXT_debug_printf) instructions
 class DebugPrintfPass : public Pass {
   public:
     DebugPrintfPass(Module& module, std::vector<InternalOnlyDebugPrintf>& debug_printf, uint32_t binding_slot = 0)
-        : Pass(module), intenral_only_debug_printf_(debug_printf), binding_slot_(binding_slot) {}
+        : Pass(module, kNullOffline), intenral_only_debug_printf_(debug_printf), binding_slot_(binding_slot) {}
     const char* Name() const final { return "DebugPrintfPass"; }
 
     bool Instrument() final;

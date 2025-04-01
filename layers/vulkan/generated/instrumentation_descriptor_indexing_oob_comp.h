@@ -25,6 +25,11 @@
 
 #include <cstdint>
 
-// To view SPIR-V, copy contents of array and paste in https://www.khronos.org/spir/visualizer/
-extern const uint32_t instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size;
-extern const uint32_t instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp[];
+// We have found having the data in the header can lead to MSVC not recognizing changes
+extern const uint32_t instrumentation_descriptor_indexing_oob_comp_size;
+extern const uint32_t instrumentation_descriptor_indexing_oob_comp[];
+
+// These offset match the function in the order they are declared in the GLSL source
+extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_0_offset;
+extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_1_offset;
+extern const uint32_t instrumentation_descriptor_indexing_oob_comp_function_2_offset;

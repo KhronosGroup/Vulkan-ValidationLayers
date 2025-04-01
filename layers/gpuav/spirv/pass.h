@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <spirv/unified1/spirv.hpp>
 #include "function_basic_block.h"
+#include "link.h"
 
 namespace gpuav {
 namespace spirv {
@@ -81,7 +82,7 @@ class Pass {
     void InjectFunctionPost(BasicBlock& original_block, const InjectConditionalData& ic_data);
 
   protected:
-    Pass(Module& module) : module_(module) {}
+    Pass(Module& module, const OfflineModule& offline) : module_(module), link_info_(offline) {}
     Module& module_;
 
     // As various things are modifiying the instruction streams, we need to get back to where we were.
@@ -96,6 +97,10 @@ class Pass {
         uint32_t merge_target_id = 0;
         void Update(const BasicBlock& block);
     } cf_;
+
+    // Build up link info for each pass and the pass will apply it to the module if it contains functions
+    LinkInfo link_info_;
+    uint32_t GetLinkFunction(uint32_t& link_function_id, const OfflineFunction& offline);
 
     // Currently a just used to quickly see GPU runtime diff if the entire loop is not instrumented
     // (Still deciding how to properly handle slow loops, but need examine more traces)

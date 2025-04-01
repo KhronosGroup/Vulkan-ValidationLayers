@@ -14,6 +14,7 @@
  */
 
 #include "buffer_device_address_pass.h"
+#include "link.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
@@ -25,14 +26,16 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineLinkInfo link_info = {instrumentation_buffer_device_address_comp,
-                                          instrumentation_buffer_device_address_comp_size, "inst_buffer_device_address",
-                                          ZeroInitializeUintPrivateVariables};
+const static OfflineModule kOfflineModule = {instrumentation_buffer_device_address_comp,
+                                             instrumentation_buffer_device_address_comp_size, ZeroInitializeUintPrivateVariables};
 
-BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+const static OfflineFunction kOfflineFunction = {"inst_buffer_device_address",
+                                                 instrumentation_buffer_device_address_comp_function_0_offset};
+
+BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t BufferDeviceAddressPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
+uint32_t BufferDeviceAddressPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
                                                      const InstructionMeta& meta) {

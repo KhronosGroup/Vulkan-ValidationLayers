@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <vector>
 
 namespace gpuav {
 namespace spirv {
@@ -28,28 +29,41 @@ enum LinkFlags {
     SwapPrivateVariable = 0x00000002,
 };
 
-// This struct is for things that are generated and therefor can be created once statically
-struct OfflineLinkInfo {
-    // SPIR-V module to link in
+// SPIR-V module to link in
+struct OfflineModule {
     const uint32_t* words;
     const uint32_t word_count;
 
+    // Optional things to be done when linking
+    const uint32_t flags = 0;  // LinkFlags
+};
+
+struct OfflineFunction {
     // used for debugging
     const char* opname;
+    // Number of bytes into module the OpFunction starts
+    const uint32_t offset;
+};
 
-    // Optional things to be done when linking
-    const uint32_t flags = 0;
+struct LinkFunction {
+    // Information about the function known offline
+    const OfflineFunction& offline;
+    // The result ID of OpFunction, different each pass
+    const uint32_t id;
 };
 
 struct LinkInfo {
+    // This struct is for things that are generated and therefor can be created once statically
     // If it's not in generated offline, it will change each pass
-    const OfflineLinkInfo& offline;
+    const OfflineModule& module;
 
-    // The result ID of OpFunction
-    const uint32_t function_id;
+    std::vector<LinkFunction> functions;
 
     // Used when SwapPrivateVariable is used
     uint32_t private_variable_id = 0;
+
+    // This is created once per pass and handed to the module to be linked afterwards
+    explicit LinkInfo(const OfflineModule& module) : module(module) {}
 };
 
 }  // namespace spirv

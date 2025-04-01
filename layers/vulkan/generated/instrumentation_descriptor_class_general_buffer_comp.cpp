@@ -141,3 +141,4 @@
     0x000000ab, 0x00000056, 0x00000064, 0x000000a9, 0x0003003e, 0x000000ab, 0x000000aa, 0x000200f9, 0x00000063, 0x000200f8,
     0x00000063, 0x000200fe, 0x00000050, 0x000200f8, 0x00000037, 0x000200fe, 0x000000ad, 0x00010038,
 };
+[[maybe_unused]] const uint32_t instrumentation_descriptor_class_general_buffer_comp_function_0_offset = 689;

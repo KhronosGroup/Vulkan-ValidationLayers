@@ -354,19 +354,9 @@ void Module::AddInterfaceVariables(uint32_t id, spv::StorageClass storage_class)
     }
 }
 
-// Helper for passes with multiple linked functions they may grab
-// Pass in cached link_function_id and only update it the first time
-uint32_t Module::GetLinkFunction(uint32_t& link_function_id, const OfflineLinkInfo& offline_info) {
-    if (link_function_id == 0) {
-        link_function_id = TakeNextId();
-        link_info_.emplace_back(LinkInfo{offline_info, link_function_id});
-    }
-    return link_function_id;
-}
-
-// Takes the current module and injects the function into it
-// This is done by first apply any new Types/Constants/Variables and then copying in the instructions of the Function
-void Module::LinkFunction(const LinkInfo& info) {
+// Link functions into this module
+// First, any new Types/Constants/Variables are inserted, then functions' instructions
+void Module::LinkFunctions(const LinkInfo& info) {
     // track the incoming SSA IDs with what they are in the module
     // < old_id, new_id >
     vvl::unordered_map<uint32_t, uint32_t> id_swap_map;
@@ -377,8 +367,8 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     // find all constant and types, add any the module doesn't have
     uint32_t offset = 5;  // skip header
-    while (offset < info.offline.word_count) {
-        const uint32_t* inst_word = &info.offline.words[offset];
+    while (offset < info.module.word_count) {
+        const uint32_t* inst_word = &info.module.words[offset];
         const uint32_t opcode = *inst_word & 0x0ffffu;
         const uint32_t length = *inst_word >> 16;
         if (opcode == spv::OpFunction) {
@@ -471,8 +461,10 @@ void Module::LinkFunction(const LinkInfo& info) {
                     break;
                 }
                 case SpvType::kStruct: {
-                    // For OpTypeStruct, unless asked for, we just add it regardless since low chance to find for the amount of time
-                    // to search all struct (which there can be quite a bit of)
+                    // For OpTypeStruct, always add them.
+                    // Only try to look for definition duplication if asked explicitly.
+                    // Chances of adding a struct already defined in original SPIR-V are low, and struct definitions exploration can
+                    // be expensive
                     type_id = type_manager_.FindLinkingStructType(*new_inst, id_swap_map);
                     if (type_id == 0) {
                         type_id = TakeNextId();
@@ -558,12 +550,11 @@ void Module::LinkFunction(const LinkInfo& info) {
             id_swap_map[old_result_id] = constant->Id();
         } else if (opcode == spv::OpVariable) {
             const spv::StorageClass storage_class = new_inst->StorageClass();
-            if (storage_class == spv::StorageClassPrivate && ((info.offline.flags & SwapPrivateVariable) != 0)) {
+            if (storage_class == spv::StorageClassPrivate && ((info.module.flags & SwapPrivateVariable) != 0)) {
                 // Variable already is in shader, just mark the new result ID
                 AddInterfaceVariables(info.private_variable_id, storage_class);
                 id_swap_map[old_result_id] = info.private_variable_id;
             } else {
-                // Add in all variables outside of functions
                 const uint32_t new_result_id = TakeNextId();
                 AddInterfaceVariables(new_result_id, storage_class);
                 id_swap_map[old_result_id] = new_result_id;
@@ -574,7 +565,7 @@ void Module::LinkFunction(const LinkInfo& info) {
                 const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
 
                 if (storage_class == spv::StorageClassPrivate && type->spv_type_ == SpvType::kPointer &&
-                    ((info.offline.flags & ZeroInitializeUintPrivateVariables) != 0)) {
+                    ((info.module.flags & ZeroInitializeUintPrivateVariables) != 0)) {
                     const Type* pointer_type = type_manager_.FindTypeById(type->inst_.Word(3));
                     // If we hit this assert, we need to add support for another type
                     assert(pointer_type && pointer_type->spv_type_ == SpvType::kInt);
@@ -616,9 +607,8 @@ void Module::LinkFunction(const LinkInfo& info) {
 
     // because flow-control instructions (ex. OpBranch) do forward references to IDs, do an initial loop to get all OpLabel to have
     // in id_swap_map
-    uint32_t offset_copy = offset;
-    while (offset_copy < info.offline.word_count) {
-        const uint32_t* inst_word = &info.offline.words[offset_copy];
+    while (offset < info.module.word_count) {
+        const uint32_t* inst_word = &info.module.words[offset];
         const uint32_t opcode = *inst_word & 0x0ffffu;
         const uint32_t length = *inst_word >> 16;
         if (opcode == spv::OpLabel) {
@@ -626,67 +616,74 @@ void Module::LinkFunction(const LinkInfo& info) {
             uint32_t new_result_id = TakeNextId();
             id_swap_map[inst.ResultId()] = new_result_id;
         }
-        offset_copy += length;
+        offset += length;
     }
 
-    AddDebugName(info.offline.opname, info.function_id);
+    for (const LinkFunction& link_function : info.functions) {
+        AddDebugName(link_function.offline.opname, link_function.id);
 
-    // Add function and copy all instructions to it, while adjusting any IDs
-    auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
-    // We make things simpler by just putting everything in the first BasicBlock
-    // (We need it in a block incase we want to alter this function later with something like DebugPrintf)
-    BasicBlock* link_basic_block = nullptr;
-    while (offset < info.offline.word_count) {
-        const uint32_t* inst_word = &info.offline.words[offset];
-        auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
-        const uint32_t opcode = new_inst->Opcode();
-        const uint32_t length = new_inst->Length();
+        // Add function and copy all instructions to it, while adjusting any IDs
+        auto& new_function = functions_.emplace_back(std::make_unique<Function>(*this));
+        // We make things simpler by just putting everything in the first BasicBlock
+        // (We need it in a block incase we want to alter this function later with something like DebugPrintf)
+        BasicBlock* link_basic_block = nullptr;
+        offset = link_function.offline.offset;
+        while (offset < info.module.word_count) {
+            const uint32_t* inst_word = &info.module.words[offset];
+            auto new_inst = std::make_unique<Instruction>(inst_word, kLinkedInstruction);
+            const uint32_t opcode = new_inst->Opcode();
+            const uint32_t length = new_inst->Length();
 
-        if (opcode == spv::OpFunction) {
-            new_inst->UpdateWord(1, id_swap_map[new_inst->Word(1)]);
-            new_inst->UpdateWord(2, info.function_id);
-            // We can easily inject the same function hundreds of times and really don't want to inline it.
-            // Have found that if drivers don't inline, can get a 20x speed-up at compiling large bloated shaders.
-            // There is no way to query this or test if the driver does consume this, also currently most drivers
-            // will ignore this as it is not hooked up... but worth trying
-            new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
-            new_inst->UpdateWord(4, function_type_id);
-        } else if (opcode == spv::OpLabel) {
-            uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
-            new_inst->ReplaceResultId(new_result_id);
-
-            // Only do on first label at top of function
-            if (!link_basic_block) {
-                auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *new_function);
-                auto& added_block = new_function->blocks_.emplace_back(std::move(new_block));
-                link_basic_block = &(*added_block);
-                offset += length;
-                continue;  // prevent adding a null new_inst below
-            }
-        } else {
-            uint32_t result_id = new_inst->ResultId();
-            if (result_id != 0) {
-                uint32_t new_result_id = TakeNextId();
-                id_swap_map[result_id] = new_result_id;
+            if (opcode == spv::OpFunction) {
+                new_inst->UpdateWord(1, id_swap_map[new_inst->Word(1)]);
+                new_inst->UpdateWord(2, link_function.id);
+                // We can easily inject the same function hundreds of times and really don't want to inline it.
+                // Have found that if drivers don't inline, can get a 20x speed-up at compiling large bloated shaders.
+                // There is no way to query this or test if the driver does consume this, also currently most drivers
+                // will ignore this as it is not hooked up... but worth trying
+                new_inst->UpdateWord(3, spv::FunctionControlDontInlineMask);
+                new_inst->UpdateWord(4, function_type_id);
+            } else if (opcode == spv::OpLabel) {
+                uint32_t new_result_id = id_swap_map[new_inst->ResultId()];
                 new_inst->ReplaceResultId(new_result_id);
+
+                // Only do on first label at top of function
+                if (!link_basic_block) {
+                    auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *new_function);
+                    auto& added_block = new_function->blocks_.emplace_back(std::move(new_block));
+                    link_basic_block = &(*added_block);
+                    offset += length;
+                    continue;  // prevent adding a null new_inst below
+                }
+            } else {
+                uint32_t result_id = new_inst->ResultId();
+                if (result_id != 0) {
+                    uint32_t new_result_id = TakeNextId();
+                    id_swap_map[result_id] = new_result_id;
+                    new_inst->ReplaceResultId(new_result_id);
+                }
+                new_inst->ReplaceLinkedId(id_swap_map);
             }
-            new_inst->ReplaceLinkedId(id_swap_map);
-        }
 
-        // For a future FindInstruction() make sure everything is added to the inst_map
-        const uint32_t result_id = new_inst->ResultId();
-        if (result_id != 0) {
-            new_function->inst_map_[result_id] = new_inst.get();
-        }
+            // For a future FindInstruction() make sure everything is added to the inst_map
+            const uint32_t result_id = new_inst->ResultId();
+            if (result_id != 0) {
+                new_function->inst_map_[result_id] = new_inst.get();
+            }
 
-        if (link_basic_block) {
-            // Need for a possible FindInstruction() lookup
-            link_basic_block->instructions_.emplace_back(std::move(new_inst));
-        } else {
-            new_function->pre_block_inst_.emplace_back(std::move(new_inst));
-        }
+            if (link_basic_block) {
+                // Need for a possible FindInstruction() lookup
+                link_basic_block->instructions_.emplace_back(std::move(new_inst));
+            } else {
+                new_function->pre_block_inst_.emplace_back(std::move(new_inst));
+            }
 
-        offset += length;
+            if (opcode == spv::OpFunctionEnd) {
+                break;
+            }
+
+            offset += length;
+        }
     }
 
     // if 2 OpTypeRuntimeArray are combined, we can't have ArrayStride twice

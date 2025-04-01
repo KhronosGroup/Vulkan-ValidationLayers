@@ -19,38 +19,33 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
-#include "generated/instrumentation_descriptor_indexing_oob_bindless_comp.h"
-#include "generated/instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp.h"
-#include "generated/instrumentation_descriptor_indexing_oob_non_bindless_comp.h"
+#include "generated/instrumentation_descriptor_indexing_oob_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 
 namespace gpuav {
 namespace spirv {
 
-// This pass has 2 variations of GLSL we can pull in. Non-Bindless is simpler and we want to use when possible
-const static OfflineLinkInfo link_info_bindless = {instrumentation_descriptor_indexing_oob_bindless_comp,
-                                                   instrumentation_descriptor_indexing_oob_bindless_comp_size,
-                                                   "inst_descriptor_indexing_oob_bindless"};
+const static OfflineModule kOfflineModule = {instrumentation_descriptor_indexing_oob_comp,
+                                             instrumentation_descriptor_indexing_oob_comp_size, 0};
 
-const static OfflineLinkInfo link_info_bindless_combined_image_sampler = {
-    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp,
-    instrumentation_descriptor_indexing_oob_bindless_combined_image_sampler_comp_size,
-    "inst_descriptor_indexing_oob_bindless_combined_image_sampler"};
+// Non-Bindless is simpler and we want to use when possible
+const static OfflineFunction kOfflineFunctionNonBindless = {"inst_descriptor_indexing_oob_non_bindless",
+                                                            instrumentation_descriptor_indexing_oob_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctionBindless = {"inst_descriptor_indexing_oob_bindless",
+                                                         instrumentation_descriptor_indexing_oob_comp_function_1_offset};
+const static OfflineFunction kOfflineFunctionBindlessCombined = {"inst_descriptor_indexing_oob_bindless_combined_image_sampler",
+                                                                 instrumentation_descriptor_indexing_oob_comp_function_2_offset};
 
-const static OfflineLinkInfo link_info_non_bindless = {instrumentation_descriptor_indexing_oob_non_bindless_comp,
-                                                       instrumentation_descriptor_indexing_oob_non_bindless_comp_size,
-                                                       "inst_descriptor_indexing_oob_non_bindless"};
-
-DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+DescriptorIndexingOOBPass::DescriptorIndexingOOBPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sampler) {
     if (!module_.has_bindless_descriptors_) {
-        return module_.GetLinkFunction(link_non_bindless_id_, link_info_non_bindless);
+        return GetLinkFunction(link_non_bindless_id_, kOfflineFunctionNonBindless);
     } else if (is_combined_image_sampler) {
-        return module_.GetLinkFunction(link_bindless_combined_image_sampler_id_, link_info_bindless_combined_image_sampler);
+        return GetLinkFunction(link_bindless_combined_image_sampler_id_, kOfflineFunctionBindlessCombined);
     } else {
-        return module_.GetLinkFunction(link_bindless_id_, link_info_bindless);
+        return GetLinkFunction(link_bindless_id_, kOfflineFunctionBindless);
     }
 }
 

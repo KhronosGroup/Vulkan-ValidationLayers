@@ -24,14 +24,18 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineLinkInfo link_info = {instrumentation_descriptor_class_texel_buffer_comp,
-                                          instrumentation_descriptor_class_texel_buffer_comp_size,
-                                          "inst_descriptor_class_texel_buffer"};
+const static OfflineModule kOfflineModule = {instrumentation_descriptor_class_texel_buffer_comp,
+                                             instrumentation_descriptor_class_texel_buffer_comp_size};
 
-DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module) { module.use_bda_ = true; }
+const static OfflineFunction kOfflineFunction = {"inst_descriptor_class_texel_buffer",
+                                                 instrumentation_descriptor_class_texel_buffer_comp_function_0_offset};
+
+DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) : Pass(module, kOfflineModule) {
+    module.use_bda_ = true;
+}
 
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return module_.GetLinkFunction(link_function_id_, link_info); }
+uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
 uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
                                                             const InjectionData& injection_data, const InstructionMeta& meta) {
