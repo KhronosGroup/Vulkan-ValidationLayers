@@ -36,7 +36,7 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std43
 void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset, const uint variable_id) {
     DescriptorIndexPostProcess descriptor_index_post_process = gpuav.descriptor_index_post_process_buffers[desc_set];
 
-    const uint cmd_id = inst_cmd_resource_index_buffer.index[0] << kPostProcessMetaShiftActionIndex;
+    const uint cmd_id = inst_action_index_buffer.index[0] << kPostProcessMetaShiftActionIndex;
 
     // The index has been accessed, write out for post processing
     const uint binding_layout_index = binding_layout_offset + desc_index;

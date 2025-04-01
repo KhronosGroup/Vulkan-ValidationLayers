@@ -128,6 +128,7 @@ struct LocationCapture {
     LocationCapture(const Location& loc);
     LocationCapture(const LocationCapture &other);
     LocationCapture(LocationCapture &&other);
+    LocationCapture& operator=(const LocationCapture& other);
 
     const Location& Get() const { return capture.back(); }
 

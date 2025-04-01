@@ -2532,3 +2532,153 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleDrawsMixDescriptorSets) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
+    TEST_DESCRIPTION("Detect that the index image is 3D but VkImage is only 2D - Make sure debug labels are printed");
+    AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    char const *fs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+        layout(set = 0, binding = 0) uniform sampler3D s[];
+        layout(set = 0, binding = 1) readonly buffer StorageBuffer {
+            uint data; // will be zero
+        };
+        layout(location=0) out vec4 color;
+        void main() {
+            color = texture(s[data], vec3(0));
+        }
+    )glsl";
+    VkShaderObj vs(this, kVertexDrawPassthroughGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, fs_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    *buffer_ptr = 0;
+    buffer.Memory().Unmap();
+
+    vkt::Image image(*m_device, 16, 16, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                  {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler);
+    descriptor_set.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateGraphicsPipeline();
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
+    cb_1.Begin();
+    cb_1.BeginRenderPass(m_renderPassBeginInfo);
+
+    label.pLabelName = "render_pass_label_cb_1";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_1, &label);
+
+    vk::CmdBindPipeline(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(cb_1.handle(), 3, 1, 0, 0);
+    cb_1.EndRenderPass();
+    vk::CmdEndDebugUtilsLabelEXT(cb_1);
+
+    cb_1.End();
+
+    vkt::CommandBuffer cb_2(*m_device, m_command_pool);
+    cb_2.Begin();
+    cb_2.BeginRenderPass(m_renderPassBeginInfo);
+
+    label.pLabelName = "render_pass_label_cb_2";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_2, &label);
+
+    vk::CmdBindPipeline(cb_2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    label.pLabelName = "nested_label_cb_2";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_2, &label);
+    vk::CmdDraw(cb_2.handle(), 3, 1, 0, 0);
+    cb_2.EndRenderPass();
+    vk::CmdEndDebugUtilsLabelEXT(cb_2);
+    vk::CmdEndDebugUtilsLabelEXT(cb_2);
+
+    cb_2.End();
+
+    vkt::CommandBuffer cb_3(*m_device, m_command_pool);
+    cb_3.Begin();
+    cb_3.BeginRenderPass(m_renderPassBeginInfo);
+
+    label.pLabelName = "render_pass_label_cb_3";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_3, &label);
+
+    vk::CmdBindPipeline(cb_3.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_3.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(cb_3.handle(), 3, 1, 0, 0);
+    label.pLabelName = "nested_label_cb_3";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_3, &label);
+    cb_3.EndRenderPass();
+    vk::CmdEndDebugUtilsLabelEXT(cb_3);
+    vk::CmdEndDebugUtilsLabelEXT(cb_3);
+
+    cb_3.End();
+
+    vkt::CommandBuffer cb_4(*m_device, m_command_pool);
+    cb_4.Begin();
+    label.pLabelName = "label_start_cb_4";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_4, &label);
+    cb_4.End();
+
+    vkt::CommandBuffer cb_5(*m_device, m_command_pool);
+    cb_5.Begin();
+    cb_5.BeginRenderPass(m_renderPassBeginInfo);
+
+    label.pLabelName = "render_pass_label_cb_5";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_5, &label);
+
+    vk::CmdBindPipeline(cb_5.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_5.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(cb_5.handle(), 3, 1, 0, 0);
+    label.pLabelName = "nested_label_cb_5";
+    vk::CmdBeginDebugUtilsLabelEXT(cb_5, &label);
+    cb_5.EndRenderPass();
+    vk::CmdEndDebugUtilsLabelEXT(cb_5);
+    vk::CmdEndDebugUtilsLabelEXT(cb_5);
+    vk::CmdEndDebugUtilsLabelEXT(cb_5);
+
+    cb_5.End();
+
+    m_errorMonitor->SetDesiredError("render_pass_label_cb_1");
+    m_default_queue->Submit(cb_1);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("render_pass_label_cb_2");
+    m_default_queue->Submit(cb_2);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("render_pass_label_cb_3");
+    m_default_queue->Submit(cb_3);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("label_start_cb_4::render_pass_label_cb_5");
+    std::array cbs = {&cb_4, &cb_5};
+    m_default_queue->Submit(cbs);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

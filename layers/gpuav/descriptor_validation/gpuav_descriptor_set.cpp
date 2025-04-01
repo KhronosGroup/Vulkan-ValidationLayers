@@ -323,7 +323,8 @@ DescriptorAccessMap DescriptorSetSubState::GetDescriptorAccesses(const Location 
             const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
             if (slot.meta_data & glsl::kPostProcessMetaMaskAccessed) {
                 const uint32_t shader_id = slot.meta_data & glsl::kShaderIdMask;
-                const uint32_t action_index = slot.meta_data & glsl::kPostProcessMetaMaskActionIndex;
+                const uint32_t action_index =
+                    (slot.meta_data & glsl::kPostProcessMetaMaskActionIndex) >> glsl::kPostProcessMetaShiftActionIndex;
                 descriptor_access_map[shader_id].emplace_back(
                     DescriptorAccess{binding, descriptor_i, slot.variable_id, action_index});
             }

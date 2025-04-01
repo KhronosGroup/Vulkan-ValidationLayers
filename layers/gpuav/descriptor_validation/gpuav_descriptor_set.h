@@ -24,6 +24,7 @@
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/spirv/interface.h"
 #include "containers/custom_containers.h"
+#include "containers/limits.h"
 
 namespace gpuav {
 class DescriptorHeap;
@@ -31,15 +32,15 @@ class Validator;
 
 // Information about how each descriptor was accessed
 struct DescriptorAccess {
-    uint32_t binding;      // binding number in the descriptor set
-    uint32_t index;        // index into descriptor array
-    uint32_t variable_id;  // OpVariableID
-    uint32_t action_index;  // Index of action command access occured
+    uint32_t binding = vvl::kU32Max;       // binding number in the descriptor set
+    uint32_t index = vvl::kU32Max;         // index into descriptor array
+    uint32_t variable_id = vvl::kU32Max;   // OpVariableID
+    uint32_t action_index = vvl::kU32Max;  // Index of action command access occured
 };
 
 // We create a map with the |unique_shader_id| as the key so we can only do the state object lookup once per
 // pipeline/shaderModule/shaderObject
-typedef vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>> DescriptorAccessMap;
+using DescriptorAccessMap = vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>>;
 
 class DescriptorSetSubState : public vvl::DescriptorSetSubState {
   public:
