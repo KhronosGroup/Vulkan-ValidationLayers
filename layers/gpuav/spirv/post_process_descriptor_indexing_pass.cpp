@@ -62,7 +62,7 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         const Variable* variable = nullptr;
         const Instruction* access_chain_inst = function.FindInstruction(inst.Operand(0));
         // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-        while (access_chain_inst && access_chain_inst->Opcode() == spv::OpAccessChain) {
+        while (access_chain_inst && access_chain_inst->IsNonPtrAccessChain()) {
             const uint32_t access_chain_base_id = access_chain_inst->Operand(0);
             variable = module_.type_manager_.FindVariableById(access_chain_base_id);
             if (variable) {
@@ -113,11 +113,11 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
             const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
             var_inst = global_var ? &global_var->inst_ : nullptr;
         }
-        if (!var_inst || (var_inst->Opcode() != spv::OpAccessChain && var_inst->Opcode() != spv::OpVariable)) {
+        if (!var_inst || (!var_inst->IsNonPtrAccessChain() && var_inst->Opcode() != spv::OpVariable)) {
             return false;
         }
 
-        if (var_inst->Opcode() == spv::OpAccessChain) {
+        if (var_inst->IsNonPtrAccessChain()) {
             meta.descriptor_index_id = var_inst->Operand(1);
 
             if (var_inst->Length() > 5) {

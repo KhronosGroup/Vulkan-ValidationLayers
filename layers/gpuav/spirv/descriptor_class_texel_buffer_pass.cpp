@@ -111,14 +111,14 @@ bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& fun
         const Variable* global_var = module_.type_manager_.FindVariableById(load_inst->Operand(0));
         meta.var_inst = global_var ? &global_var->inst_ : nullptr;
     }
-    if (!meta.var_inst || (meta.var_inst->Opcode() != spv::OpAccessChain && meta.var_inst->Opcode() != spv::OpVariable)) {
+    if (!meta.var_inst || (!meta.var_inst->IsNonPtrAccessChain() && meta.var_inst->Opcode() != spv::OpVariable)) {
         return false;
     }
 
     // If OpVariable, access_chain_inst_ is never checked because it should be a direct image access
     meta.access_chain_inst = meta.var_inst;
 
-    if (meta.var_inst->Opcode() == spv::OpAccessChain) {
+    if (meta.var_inst->IsNonPtrAccessChain()) {
         meta.descriptor_index_id = meta.var_inst->Operand(1);
 
         if (meta.var_inst->Length() > 5) {

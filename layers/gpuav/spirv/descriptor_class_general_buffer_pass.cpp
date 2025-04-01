@@ -208,13 +208,13 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
     }
 
     const Instruction* next_access_chain = function.FindInstruction(inst.Operand(0));
-    if (!next_access_chain || next_access_chain->Opcode() != spv::OpAccessChain) {
+    if (!next_access_chain || !next_access_chain->IsNonPtrAccessChain()) {
         return false;
     }
 
     const Variable* variable = nullptr;
     // We need to walk down possibly multiple chained OpAccessChains or OpCopyObject to get the variable
-    while (next_access_chain && next_access_chain->Opcode() == spv::OpAccessChain) {
+    while (next_access_chain && next_access_chain->IsNonPtrAccessChain()) {
         meta.access_chain_insts.push_back(next_access_chain);
         const uint32_t access_chain_base_id = next_access_chain->Operand(0);
         variable = module_.type_manager_.FindVariableById(access_chain_base_id);

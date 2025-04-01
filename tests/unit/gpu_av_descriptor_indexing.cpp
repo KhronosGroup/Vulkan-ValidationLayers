@@ -4237,3 +4237,61 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, OpInBoundsAccessChain) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    OneOffDescriptorIndexingSet descriptor_set(m_device, {
+                                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr,
+                                                              VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT},
+                                                         });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    // Use OpInBoundsAccessChain instead of normal generated OpAccessChain
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %SSBO Block
+               OpMemberDecorate %SSBO 0 Offset 0
+               OpDecorate %x Binding 0
+               OpDecorate %x DescriptorSet 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+       %SSBO = OpTypeStruct %uint
+     %uint_2 = OpConstant %uint 2
+%_arr_SSBO_uint_2 = OpTypeArray %SSBO %uint_2
+%_ptr_StorageBuffer__arr_SSBO_uint_2 = OpTypePointer StorageBuffer %_arr_SSBO_uint_2
+          %x = OpVariable %_ptr_StorageBuffer__arr_SSBO_uint_2 StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_1 = OpConstant %int 1
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+         %17 = OpInBoundsAccessChain %_ptr_StorageBuffer_uint %x %int_1 %int_0
+               OpStore %17 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}

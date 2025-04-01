@@ -183,6 +183,11 @@ spv::BuiltIn Instruction::GetBuiltIn() const {
 
 bool Instruction::IsArray() const { return (Opcode() == spv::OpTypeArray || Opcode() == spv::OpTypeRuntimeArray); }
 
+bool Instruction::IsNonPtrAccessChain() const {
+    const uint32_t opcode = Opcode();
+    return opcode == spv::OpAccessChain || opcode == spv::OpInBoundsAccessChain;
+}
+
 bool Instruction::IsAccessChain() const {
     const uint32_t opcode = Opcode();
     return opcode == spv::OpAccessChain || opcode == spv::OpPtrAccessChain || opcode == spv::OpInBoundsAccessChain ||
