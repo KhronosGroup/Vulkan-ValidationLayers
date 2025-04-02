@@ -4295,3 +4295,62 @@ TEST_F(NegativeGpuAVDescriptorIndexing, OpInBoundsAccessChain) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, MiddleBindingOOB) {
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    buffer_ptr[0] = 3;
+    buffer.Memory().Unmap();
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {4, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    descriptor_set.WriteDescriptorBufferInfo(5, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(5, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.WriteDescriptorBufferInfo(3, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(3, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.WriteDescriptorBufferInfo(4, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.WriteDescriptorBufferInfo(4, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    descriptor_set.UpdateDescriptorSets();
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_nonuniform_qualifier : enable
+
+        layout(set = 0, binding = 5) buffer SSBO_5 { uint index; } a[2];
+        layout(set = 0, binding = 3) buffer SSBO_3 { uint index; } b[2];
+        layout(set = 0, binding = 4) buffer SSBO_4 { uint index; } c[2];
+        layout(set = 0, binding = 0) buffer SSBO_0 { uint index; } d;
+
+        void main() {
+            uint x = d.index;
+            b[x].index = 0;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // VUID-vkCmdDispatch-None-10068
+    m_errorMonitor->SetDesiredError("(set = 0, binding = 3) Index of 3 used to index descriptor array of length 2");
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+}
