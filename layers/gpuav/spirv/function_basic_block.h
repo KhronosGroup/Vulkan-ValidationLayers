@@ -86,8 +86,6 @@ struct Function {
 
     void ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word);
 
-    bool IsShaderExiting(const Instruction& inst) const;
-
     Module& module_;
     // OpFunction and parameters
     InstructionList pre_block_inst_;

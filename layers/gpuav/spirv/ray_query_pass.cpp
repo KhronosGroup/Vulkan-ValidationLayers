@@ -23,7 +23,8 @@
 namespace gpuav {
 namespace spirv {
 
-const static OfflineModule kOfflineModule = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size};
+const static OfflineModule kOfflineModule = {instrumentation_ray_query_comp, instrumentation_ray_query_comp_size,
+                                             UseErrorPayloadVariable};
 
 const static OfflineFunction kOfflineFunction = {"inst_ray_query", instrumentation_ray_query_comp_function_0_offset};
 
@@ -45,10 +46,10 @@ uint32_t RayQueryPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst
     const uint32_t ray_tmax_id = meta.target_instruction->Operand(7);
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, injection_data.inst_position_id,
-                             injection_data.stage_info_id, ray_flags_id, ray_origin_id, ray_tmin_id, ray_direction_id, ray_tmax_id},
+                            {bool_type, function_result, function_def, injection_data.inst_position_id, ray_flags_id, ray_origin_id,
+                             ray_tmin_id, ray_direction_id, ray_tmax_id},
                             inst_it);
-
+    module_.need_log_error_ = true;
     return function_result;
 }
 

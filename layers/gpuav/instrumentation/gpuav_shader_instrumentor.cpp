@@ -26,6 +26,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
+#include "gpuav/spirv/log_error_pass.h"
 #include "utils/vk_layer_utils.h"
 #include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
@@ -1190,6 +1191,13 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
             spirv::VertexAttributeFetchOob pass(module);
             modified |= pass.Run();
         }
+    }
+
+    // If we have passes that require inject LogError before the shader end we do it now.
+    // We have a dedicated pass to ensure the LogError is only added once
+    if (module.need_log_error_) {
+        spirv::LogErrorPass log_error_pass(module);
+        modified |= log_error_pass.Run();
     }
 
     // If there were GLSL written function injected, we will grab them and link them in here

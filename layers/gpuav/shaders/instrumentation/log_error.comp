@@ -1,0 +1,50 @@
+// Copyright (c) 2024-2025 The Khronos Group Inc.
+// Copyright (c) 2024-2025 Valve Corporation
+// Copyright (c) 2024-2025 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// NOTE: This file doesn't contain any entrypoints and should be compiled with the --no-link option for glslang
+
+#version 450
+#extension GL_GOOGLE_include_directive : enable
+#include "common_descriptor_sets.h"
+#include "error_payload.h"
+
+void inst_log_error(const uvec4 stage_info) {
+    if (error_payload.inst_num != 0) {
+        const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
+        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+        const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
+        if (!max_cmd_errors_count_reached) {
+
+            uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
+            const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+
+            if (errors_buffer_not_filled) {
+                inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+                inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = error_payload.shader_error_encoding;
+                inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = error_payload.inst_num | (stage_info.x << kStageIdShift);
+                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+
+                inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
+
+                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_0] = error_payload.parameter_0;
+                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_1] = error_payload.parameter_1;
+                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_2] = error_payload.parameter_2;
+            }
+        }
+    }
+}

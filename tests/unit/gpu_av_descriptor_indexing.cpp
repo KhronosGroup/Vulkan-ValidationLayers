@@ -955,7 +955,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         buffer_ptr[0] = 25;
         buffer0.Memory().Unmap();
         // Invalid read and invalid write
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068", 2);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
         m_default_queue->Submit(m_command_buffer);
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
@@ -1805,7 +1805,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Index of 3 used to index descriptor array of length 2");
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Index of 5 used to index descriptor array of length 2");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -2000,8 +1999,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     m_default_queue->Submit(cb_1);
 
     m_errorMonitor->SetDesiredError(
-        "vkCmdDispatch(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
-    m_errorMonitor->SetDesiredError(
         "vkCmdDispatch(): (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
     m_default_queue->Submit(cb_2);
 
@@ -2184,8 +2181,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
     m_errorMonitor->SetDesiredError("vkCmdDraw(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
                                     gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_errorMonitor->SetDesiredFailureMsg(
-        kErrorBit, "vkCmdDispatch(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6");
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "vkCmdDispatch(): (set = 0, binding = 1) Index of 24 used to index descriptor array of length 6");
     m_default_queue->Submit(m_command_buffer);
@@ -3531,8 +3526,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MixedCombinedImageSampler) {
     m_command_buffer.End();
 
     // All VUID-vkCmdDispatch-None-08114
-    m_errorMonitor->SetDesiredError("(set = 0, binding = 0) Descriptor index 0 is uninitialized");
-    m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 0 is uninitialized");
     m_errorMonitor->SetDesiredError("(set = 0, binding = 2) Descriptor index 0 is uninitialized");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -3739,7 +3732,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImagePartiallyBound) {
     m_command_buffer.End();
 
     // One for the store, load, and exchange
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114", 3);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -3791,7 +3784,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
     m_command_buffer.End();
 
     // One for the store, load, and exchange
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114", 3);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

@@ -25,7 +25,7 @@ namespace gpuav {
 namespace spirv {
 
 const static OfflineModule kOfflineModule = {instrumentation_descriptor_class_texel_buffer_comp,
-                                             instrumentation_descriptor_class_texel_buffer_comp_size};
+                                             instrumentation_descriptor_class_texel_buffer_comp_size, UseErrorPayloadVariable};
 
 const static OfflineFunction kOfflineFunction = {"inst_descriptor_class_texel_buffer",
                                                  instrumentation_descriptor_class_texel_buffer_comp_function_0_offset};
@@ -37,8 +37,8 @@ DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) :
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                            const InjectionData& injection_data, const InstructionMeta& meta) {
+void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                        const InjectionData& injection_data, const InstructionMeta& meta) {
     assert(meta.access_chain_inst && meta.var_inst);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
@@ -61,15 +61,14 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {void_type, function_result, function_def, injection_data.inst_position_id, set_constant.Id(),
+                             descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
+                            inst_it);
 
-    return function_result;
+    module_.need_log_error_ = true;
 }
 
 bool DescriptorClassTexelBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,

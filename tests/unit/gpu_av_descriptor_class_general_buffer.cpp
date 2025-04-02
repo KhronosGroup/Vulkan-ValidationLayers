@@ -554,7 +554,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);  // write
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-uniformBuffers-06935", 3);  // read
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -1468,7 +1467,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936", 2);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-storageBuffers-06936");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
@@ -2054,7 +2053,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsHoistable) {
             result = x;
         }
     )glsl";
-    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936", 4);
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNestedHoistable) {
@@ -2077,7 +2076,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsNestedHoistable) {
             result = x;
         }
     )glsl";
-    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936", 4);
+    ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsWithBranch) {

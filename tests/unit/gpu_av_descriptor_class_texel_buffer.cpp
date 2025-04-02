@@ -306,7 +306,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoadStoreIndependentSets
     m_command_buffer.End();
 
     // one for Load and one for Store
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 2);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();

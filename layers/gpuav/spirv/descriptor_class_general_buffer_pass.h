@@ -50,8 +50,8 @@ class DescriptorClassGeneralBufferPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta, bool pre_pass);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                const InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
+                            const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
 

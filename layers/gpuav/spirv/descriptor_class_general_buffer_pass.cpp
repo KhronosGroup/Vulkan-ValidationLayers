@@ -29,7 +29,7 @@ namespace gpuav {
 namespace spirv {
 
 const static OfflineModule kOfflineModule = {instrumentation_descriptor_class_general_buffer_comp,
-                                             instrumentation_descriptor_class_general_buffer_comp_size};
+                                             instrumentation_descriptor_class_general_buffer_comp_size, UseErrorPayloadVariable};
 
 const static OfflineFunction kOfflineFunction = {"inst_descriptor_class_general_buffer",
                                                  instrumentation_descriptor_class_general_buffer_comp_function_0_offset};
@@ -175,8 +175,8 @@ uint32_t DescriptorClassGeneralBufferPass::FindLastByteOffset(uint32_t descripto
     return last_byte_offset;
 }
 
-uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                              const InjectionData& injection_data, const InstructionMeta& meta) {
+void DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
+                                                          const InjectionData& injection_data, const InstructionMeta& meta) {
     assert(!meta.access_chain_insts.empty());
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
@@ -189,15 +189,14 @@ uint32_t DescriptorClassGeneralBufferPass::CreateFunctionCall(BasicBlock& block,
 
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {void_type, function_result, function_def, injection_data.inst_position_id, set_constant.Id(),
+                             descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
+                            inst_it);
 
-    return function_result;
+    module_.need_log_error_ = true;
 }
 
 bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
@@ -321,6 +320,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
+
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 

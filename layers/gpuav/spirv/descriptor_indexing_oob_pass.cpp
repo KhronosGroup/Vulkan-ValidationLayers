@@ -26,7 +26,7 @@ namespace gpuav {
 namespace spirv {
 
 const static OfflineModule kOfflineModule = {instrumentation_descriptor_indexing_oob_comp,
-                                             instrumentation_descriptor_indexing_oob_comp_size, 0};
+                                             instrumentation_descriptor_indexing_oob_comp_size, UseErrorPayloadVariable};
 
 // Non-Bindless is simpler and we want to use when possible
 const static OfflineFunction kOfflineFunctionNonBindless = {"inst_descriptor_indexing_oob_non_bindless",
@@ -91,11 +91,12 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const uint32_t function_def = GetLinkFunctionId(meta.is_combined_image_sampler);
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
-        inst_it);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_result, function_def, injection_data.inst_position_id, set_constant.Id(),
+                             binding_constant.Id(), descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
+                            inst_it);
+
+    module_.need_log_error_ = true;
 
     // If there is a SAMPLER as well, we will inject a second function and combined boolean:
     //     bool valid_image = inst_descriptor_indexing_oob(image);
@@ -116,9 +117,9 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
         const Constant& sampler_binding_layout_offset = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.start);
 
         block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, valid_sampler, function_def, injection_data.inst_position_id,
-                                 injection_data.stage_info_id, sampler_set_constant.Id(), sampler_binding_constant.Id(),
-                                 sampler_descriptor_index_id, sampler_binding_layout_size.Id(), sampler_binding_layout_offset.Id()},
+                                {bool_type, valid_sampler, function_def, injection_data.inst_position_id, sampler_set_constant.Id(),
+                                 sampler_binding_constant.Id(), sampler_descriptor_index_id, sampler_binding_layout_size.Id(),
+                                 sampler_binding_layout_offset.Id()},
                                 inst_it);
 
         function_result = module_.TakeNextId();  // valid_both

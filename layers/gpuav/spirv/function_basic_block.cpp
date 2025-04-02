@@ -154,12 +154,5 @@ void Function::ReplaceAllUsesWith(uint32_t old_word, uint32_t new_word) {
     }
 }
 
-// This is a hard thing to fully get right, as things like OpTerminateInvocation/OpKill can end the invocation, but not the shader.
-// The main thing we are trying to find here is if this is our last chance to report an error message
-bool Function::IsShaderExiting(const Instruction& inst) const {
-    const bool is_return_inst = inst.Opcode() == spv::OpReturn || inst.Opcode() == spv::OpReturnValue;
-    return is_entry_point_ && is_return_inst;
-}
-
 }  // namespace spirv
 }  // namespace gpuav
