@@ -27,6 +27,7 @@
 
 #include "shader_helper.h"
 #include "sync_helper.h"
+#include "shader_object_helper.h"
 
 #define NON_DISPATCHABLE_HANDLE_INIT(create_func, dev, ...)                                                \
     do {                                                                                                   \
@@ -258,7 +259,9 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
     // Let VkPhysicalDeviceFeatures2 take priority over VkPhysicalDeviceFeatures,
     // since it supports extensions
 
-    if (!(vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(dev_info.pNext))) {
+    if (auto features2 = vku::FindStructInPNextChain<VkPhysicalDeviceFeatures2>(dev_info.pNext)) {
+        features_ = features2->features;
+    } else {
         if (features) {
             dev_info.pEnabledFeatures = features;
         } else {
@@ -266,6 +269,7 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
             all_features = Physical().Features();
             dev_info.pEnabledFeatures = &all_features;
         }
+        features_ = *dev_info.pEnabledFeatures;
     }
 
     init(dev_info);
@@ -1606,6 +1610,7 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
                const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
+    SetNextStage(createInfo, dev.GetFeatures().tessellationShader, dev.GetFeatures().geometryShader);
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
     createInfo.pCode = spv.data();
@@ -1633,6 +1638,7 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const char 
 
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
+    SetNextStage(createInfo, dev.GetFeatures().tessellationShader, dev.GetFeatures().geometryShader);
     createInfo.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     createInfo.codeSize = spv.size() * sizeof(spv[0]);
     createInfo.pCode = spv.data();
@@ -1652,6 +1658,7 @@ Shader::Shader(const Device &dev, const VkShaderStageFlagBits stage, const std::
                const VkDescriptorSetLayout *descriptorSetLayout, const VkPushConstantRange *pushConstRange) {
     VkShaderCreateInfoEXT createInfo = vku::InitStructHelper();
     createInfo.stage = stage;
+    SetNextStage(createInfo, dev.GetFeatures().tessellationShader, dev.GetFeatures().geometryShader);
     createInfo.codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
     createInfo.codeSize = binary.size();
     createInfo.pCode = binary.data();

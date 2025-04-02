@@ -266,6 +266,7 @@ class Device : public internal::Handle<VkDevice> {
 
     std::vector<const char *> GetEnabledExtensions() { return enabled_extensions_; }
     bool IsEnabledExtension(const char *extension) const;
+    const VkPhysicalDeviceFeatures &GetFeatures() const { return features_; }
 
     const std::vector<Queue *> &QueuesWithGraphicsCapability() const { return queues_[GRAPHICS]; }
     const std::vector<Queue *> &QueuesWithComputeCapability() const { return queues_[COMPUTE]; }
@@ -343,6 +344,7 @@ class Device : public internal::Handle<VkDevice> {
     void InitQueues(const VkDeviceCreateInfo &info);
 
     std::vector<const char *> enabled_extensions_;
+    VkPhysicalDeviceFeatures features_;
 
     std::vector<QueueFamilyQueues> queue_families_;
     std::vector<Queue *> queues_[QUEUE_CAPABILITY_COUNT];

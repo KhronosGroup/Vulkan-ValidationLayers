@@ -458,14 +458,14 @@ TEST_F(NegativeShaderObject, CreateShadersWithoutEnabledFeatures) {
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08419");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, kTessellationControlMinimalGlsl);
-        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
+        vkt::Shader shader(*m_device, ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT));
         m_errorMonitor->VerifyFound();
     }
 
     {
         m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08420");
         const auto spv = GLSLToSPV(VK_SHADER_STAGE_GEOMETRY_BIT, kGeometryMinimalGlsl);
-        vkt::Shader shader(*m_device, ShaderCreateInfo(spv, VK_SHADER_STAGE_GEOMETRY_BIT));
+        vkt::Shader shader(*m_device, ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_GEOMETRY_BIT));
         m_errorMonitor->VerifyFound();
     }
 }
@@ -7018,4 +7018,43 @@ TEST_F(NegativeShaderObject, MeshShaderPayloadMemoryOverLimit) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-maxMeshPayloadAndSharedMemorySize-08755");
     vkt::Shader mesh_shader(*m_device, ShaderCreateInfo(mesh_spv, VK_SHADER_STAGE_MESH_BIT_EXT));
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, DrawMissingNextStage) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+
+    std::vector<uint32_t> vspv;
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl, vspv);
+
+    VkShaderCreateInfoEXT vert_ci = vku::InitStructHelper();
+    vert_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vert_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    vert_ci.codeSize = vspv.size() * sizeof(vspv[0]);
+    vert_ci.pCode = vspv.data();
+    vert_ci.pName = "main";
+    const vkt::Shader vert_shader(*m_device, vert_ci);
+
+    std::vector<uint32_t> fspv;
+    GLSLtoSPV(m_device->Physical().limits_, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl, fspv);
+
+    VkShaderCreateInfoEXT frag_ci = vku::InitStructHelper();
+    frag_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    frag_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    frag_ci.codeSize = fspv.size() * sizeof(fspv[0]);
+    frag_ci.pCode = fspv.data();
+    frag_ci.pName = "main";
+    const vkt::Shader frag_shader(*m_device, frag_ci);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08607");
+    m_command_buffer.BindShaders(vert_shader, frag_shader);
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
 }

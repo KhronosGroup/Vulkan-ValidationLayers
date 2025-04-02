@@ -1677,6 +1677,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
 
     VkShaderCreateInfoEXT shader_obj_ci = vku::InitStructHelper();
     shader_obj_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    shader_obj_ci.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
     shader_obj_ci.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     shader_obj_ci.codeSize = vs_spv_1.size() * sizeof(uint32_t);
     shader_obj_ci.pCode = vs_spv_1.data();
@@ -1691,6 +1692,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     vkt::Shader vs_2(*m_device, shader_obj_ci);
 
     shader_obj_ci.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    shader_obj_ci.nextStage = 0u;
     shader_obj_ci.codeSize = fs_spv_2.size() * sizeof(uint32_t);
     shader_obj_ci.pCode = fs_spv_2.data();
     vkt::Shader fs_2(*m_device, shader_obj_ci);
