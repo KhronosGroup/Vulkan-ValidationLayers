@@ -269,7 +269,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                 shader_resources.push_constants.flags |= glsl::kFirstInstanceFlags_DrawCountFromBuffer;
                 shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
                 shader_resources.push_constants.api_count_buffer_offset_dwords =
-                    (uint32_t)api_count_buffer_offset / sizeof(uint32_t);
+                    uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
             } else {
                 shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(), 0,
@@ -459,7 +459,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
             shader_resources.push_constants.device_limit_max_draw_indirect_count = gpuav.phys_dev_props.limits.maxDrawIndirectCount;
 
             shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
-            shader_resources.push_constants.api_count_buffer_offset_dwords = (uint32_t)api_count_buffer_offset / sizeof(uint32_t);
+            shader_resources.push_constants.api_count_buffer_offset_dwords = uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
             validation_pipeline.BindShaderResources(gpuav, cb_state, draw_i, error_logger_i, shader_resources);
         }
@@ -632,12 +632,12 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                 }
 
                 shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
-                shader_resources.push_constants.api_offset_dwords = (uint32_t)api_offset / sizeof(uint32_t);
+                shader_resources.push_constants.api_offset_dwords = uint32_t(api_offset / sizeof(uint32_t));
                 if (api_count_buffer != VK_NULL_HANDLE) {
                     shader_resources.push_constants.flags |= glsl::kDrawMeshFlags_DrawCountFromBuffer;
                     shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
                     shader_resources.push_constants.api_count_buffer_offset_dwords =
-                        (uint32_t)api_count_buffer_offset / sizeof(uint32_t);
+                        uint32_t(api_count_buffer_offset / sizeof(uint32_t));
                 } else {
                     shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(), 0,
                                                                   VK_WHOLE_SIZE};
@@ -948,11 +948,12 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         glsl::DrawIndexedIndirectIndexBufferPushData push_constants{};
         if (api_count_buffer != VK_NULL_HANDLE) {
             push_constants.flags |= glsl::kIndexedIndirectDrawFlags_DrawCountFromBuffer;
-            push_constants.api_count_buffer_offset_dwords = (uint32_t)api_count_buffer_offset / sizeof(uint32_t);
+            push_constants.api_count_buffer_offset_dwords = uint32_t(api_count_buffer_offset / sizeof(uint32_t));
         }
         push_constants.api_stride_dwords = api_stride / sizeof(uint32_t);
         push_constants.bound_index_buffer_indices_count = max_indices_in_buffer;
         push_constants.api_draw_count = api_draw_count;
+        push_constants.api_offset_dwords = uint32_t(api_offset / sizeof(uint32_t));
 
         // Draw count being stored in a GPU buffer,
         // setup a compute pipeline to determine the size of the validation indirect dispatch
@@ -1058,7 +1059,12 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                     vuid, objlist, loc_with_debug_region,
                     "Index %" PRIu32 " is not within the bound index buffer. Computed from VkDrawIndexedIndirectCommand[%" PRIu32
                     "] (.firstIndex = %" PRIu32 ", .indexCount = %" PRIu32
-                    "), stored in %s\n"
+                    ")\n"
+
+                    "VkDrawIndexedIndirectCommand buffer:\n"
+                    "- Buffer: %s\n"
+                    "- Buffer offset: %" PRIu64
+                    "\n"
 
                     "Index buffer binding info:\n"
                     "- Buffer: %s\n"
@@ -1070,7 +1076,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
 
                     "Supplied buffer parameters in indirect command: offset = %" PRIu64 ", stride = %" PRIu32 " bytes.",
                     // OOB index info
-                    highest_accessed_index, draw_i, first_index, index_count, gpuav.FormatHandle(api_buffer).c_str(),
+                    highest_accessed_index, draw_i, first_index, index_count,
+
+                    // Draw parameters buffer
+                    gpuav.FormatHandle(api_buffer).c_str(), api_offset,
 
                     // Index buffer binding info
                     gpuav.FormatHandle(index_buffer_binding.buffer).c_str(), string_VkIndexType(index_buffer_binding.index_type),
