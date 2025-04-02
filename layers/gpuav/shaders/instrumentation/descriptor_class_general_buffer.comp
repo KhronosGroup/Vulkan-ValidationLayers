@@ -48,17 +48,15 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexing
 //
 // We might have only bound 4 bytes to the buffer, so 'b' is OOB and this function will detect it
 bool inst_descriptor_class_general_buffer(const uint inst_num, const uvec4 stage_info,
-                        const uint desc_set, const uint binding, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
+                        const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
     uint error = 0u;
-    uint param_1 = 0;
 
     DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
-    uint binding_layout_index = binding_layout_offset + desc_index;
+    const uint global_descriptor_index = binding_layout_offset + desc_index;
     // check that the offset is in bounds
-    uint resource_size = descriptor_set_type.data[binding_layout_index].y;
+    uint resource_size = descriptor_set_type.data[global_descriptor_index].y;
     if (byte_offset >= resource_size) {
         error = kErrorSubCodeDescriptorClassGeneralBufferBounds;
-        param_1 = resource_size;
     }
 
     if (0u != error) {
@@ -82,11 +80,9 @@ bool inst_descriptor_class_general_buffer(const uint inst_num, const uvec4 stage
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstDescriptorClassDescIndexOffset] = desc_index;
-            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_0] = byte_offset;
-            inst_errors_buffer.data[write_pos + kInstDescriptorClassParamOffset_1] = param_1;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingSetAndIndexOffset] = (desc_set << kInstDescriptorIndexingSetShift) | global_descriptor_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = byte_offset;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_1] = resource_size;
         }
         return false;
     }

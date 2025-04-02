@@ -936,6 +936,8 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
     // The caller has to ensure that binding has dynamic descriptor type.
     uint32_t GetDynamicOffsetIndexFromBinding(uint32_t dynamic_binding) const;
 
+    std::pair<uint32_t, uint32_t> GetBinidngAndIndex(const uint32_t global_descriptor_index) const;
+
     uint64_t GetChangeCount() const { return change_count_; }
 
     const std::vector<vku::safe_VkWriteDescriptorSet> &GetWrites() const { return push_descriptor_set_writes; }

@@ -116,19 +116,20 @@ const int kCommandResourceIdMask = 0xFFFF;
 
 // Descriptor Indexing
 // ---
-const int kInstDescriptorIndexingDescSetOffset = kHeaderSize;
-const int kInstDescriptorIndexingDescBindingOffset = kHeaderSize + 1;
-const int kInstDescriptorIndexingDescIndexOffset = kHeaderSize + 2;
-const int kInstDescriptorIndexingParamOffset_0 = kHeaderSize + 3;
-const int kInstDescriptorIndexingParamOffset_1 = kHeaderSize + 4;
+const int kInstDescriptorIndexingSetAndIndexOffset = kHeaderSize;
+const int kInstDescriptorIndexingParamOffset_0 = kHeaderSize + 1;
+const int kInstDescriptorIndexingParamOffset_1 = kHeaderSize + 2;
 
-// Descriptor Class
+// kInstDescriptorIndexingSetAndIndexOffset
 // ---
-const int kInstDescriptorClassDescSetOffset = kHeaderSize;
-const int kInstDescriptorClassDescBindingOffset = kHeaderSize + 1;
-const int kInstDescriptorClassDescIndexOffset = kHeaderSize + 2;
-const int kInstDescriptorClassParamOffset_0 = kHeaderSize + 3;
-const int kInstDescriptorClassParamOffset_1 = kHeaderSize + 4;
+// This dword is split up as
+// | 31 ........ 27 | 26 ............................................ 0 |
+// | Descriptor Set | Global Descriptor index (with binding LUT offset) |
+// We only allow for 32 sets (see kDebugInputBindlessMaxDescSets)
+// We use a LUT per set that knows which binding the "global" Descriptor Index value lives
+const int kInstDescriptorIndexingSetShift = 27;
+const int kInstDescriptorIndexingSetMask = 0x1F << kInstDescriptorIndexingSetShift;  // 32 slot
+const int kInstDescriptorIndexingIndexMask = 0x7FFFFFF;
 
 // Buffer device addresses
 // ---

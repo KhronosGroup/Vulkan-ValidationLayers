@@ -677,10 +677,15 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const uint32_t *error
     bool error_found = true;
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
-    const uint32_t set_num = error_record[kInstDescriptorIndexingDescSetOffset];
-    const uint32_t binding_num = error_record[kInstDescriptorIndexingDescBindingOffset];
 
-    const uint32_t descriptor_index = error_record[kInstDescriptorIndexingDescIndexOffset];
+    // Currently we only encode the descriptor index here and save the binding in a parameter slot
+    // The issue becomes if the user has kErrorSubCodeDescriptorIndexingBounds then we can't back track to the exact binding because
+    // they have gone over it
+    const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
+    const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
+    const uint32_t descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
+    const uint32_t binding_num = error_record[kInstDescriptorIndexingParamOffset_1];
+
     const uint32_t array_length = error_record[kInstDescriptorIndexingParamOffset_0];
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
@@ -740,21 +745,24 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     std::ostringstream strm;
     const GpuVuid &vuid = GetGpuVuid(loc.function);
 
-    const uint32_t set_num = error_record[kInstDescriptorClassDescSetOffset];
-    const uint32_t binding_num = error_record[kInstDescriptorClassDescBindingOffset];
-    const uint32_t desc_index = error_record[kInstDescriptorClassDescIndexOffset];
+    const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
+    const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
+    const uint32_t global_descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
+
+    const auto descriptor_set_state = descriptor_sets[set_num];
+    auto [binding_num, desc_index] = descriptor_set_state->GetBinidngAndIndex(global_descriptor_index);
 
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
         case kErrorSubCodeDescriptorClassGeneralBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
+            const auto *binding_state = descriptor_set_state->GetBinding(binding_num);
             const vvl::Buffer *buffer_state =
                 static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
             if (buffer_state) {
-                const uint32_t byte_offset = error_record[kInstDescriptorClassParamOffset_0];
-                const uint32_t resource_size = error_record[kInstDescriptorClassParamOffset_1];
+                const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
+                const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
                 strm << " access out of bounds. The descriptor buffer (" << gpuav.FormatHandle(buffer_state->Handle())
                      << ") size is " << buffer_state->create_info.size << " bytes, " << resource_size
                      << " bytes were bound, and the highest out of bounds access was at [" << byte_offset << "] bytes";
@@ -773,12 +781,12 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
         } break;
 
         case kErrorSubCodeDescriptorClassTexelBufferBounds: {
-            const auto *binding_state = descriptor_sets[set_num]->GetBinding(binding_num);
+            const auto *binding_state = descriptor_set_state->GetBinding(binding_num);
             const vvl::BufferView *buffer_view_state =
                 static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
             if (buffer_view_state) {
-                const uint32_t byte_offset = error_record[kInstDescriptorClassParamOffset_0];
-                const uint32_t resource_size = error_record[kInstDescriptorClassParamOffset_1];
+                const uint32_t byte_offset = error_record[kInstDescriptorIndexingParamOffset_0];
+                const uint32_t resource_size = error_record[kInstDescriptorIndexingParamOffset_1];
 
                 strm << " access out of bounds. The descriptor texel buffer (" << gpuav.FormatHandle(buffer_view_state->Handle())
                      << ") size is " << resource_size << " texels and the highest out of bounds access was at [" << byte_offset

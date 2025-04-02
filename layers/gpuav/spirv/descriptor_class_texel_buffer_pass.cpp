@@ -41,7 +41,6 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
                                                             const InjectionData& injection_data, const InstructionMeta& meta) {
     assert(meta.access_chain_inst && meta.var_inst);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
-    const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
 
     const uint32_t opcode = meta.target_instruction->Opcode();
@@ -67,7 +66,7 @@ uint32_t DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, I
     block.CreateInstruction(
         spv::OpFunctionCall,
         {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, set_constant.Id(),
-         binding_constant.Id(), descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
+         descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
         inst_it);
 
     return function_result;

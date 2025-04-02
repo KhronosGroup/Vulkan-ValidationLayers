@@ -71,10 +71,9 @@ bool inst_descriptor_indexing_oob_non_bindless(const uint inst_num, const uvec4 
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingSetAndIndexOffset] = (desc_set << kInstDescriptorIndexingSetShift) | desc_index;
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = binding_layout_size;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_1] = binding;
         }
         return false;
     }
@@ -93,8 +92,8 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stag
         DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
 
         // check if the descriptor was ever initialized
-        uint binding_layout_index = binding_layout_offset + desc_index;
-        uint desc_id = descriptor_set_type.data[binding_layout_index].x & kNullDescriptor;
+        const uint global_descriptor_index = binding_layout_offset + desc_index;
+        uint desc_id = descriptor_set_type.data[global_descriptor_index].x & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCodeDescriptorIndexingUninitialized;
         } else if (desc_id != kNullDescriptor) {
@@ -128,10 +127,9 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uvec4 stag
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingSetAndIndexOffset] = (desc_set << kInstDescriptorIndexingSetShift) | desc_index;
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = binding_layout_size;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_1] = binding;
         }
         return false;
     }
@@ -150,8 +148,8 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
         DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
 
         // check if the descriptor was ever initialized
-        uint binding_layout_index = binding_layout_offset + desc_index;
-        uvec2 descriptor_state = descriptor_set_type.data[binding_layout_index];
+        const uint global_descriptor_index = binding_layout_offset + desc_index;
+        uvec2 descriptor_state = descriptor_set_type.data[global_descriptor_index];
         uint desc_id = descriptor_state.x & kNullDescriptor;
         if (desc_id == 0u) {
             error = kErrorSubCodeDescriptorIndexingUninitialized;
@@ -203,10 +201,9 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
 
             inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
 
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescSetOffset] = desc_set;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescBindingOffset] = binding;
-            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingDescIndexOffset] = desc_index;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingSetAndIndexOffset] = (desc_set << kInstDescriptorIndexingSetShift) | desc_index;
             inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_0] = binding_layout_size;
+            inst_errors_buffer.data[write_pos + kInstDescriptorIndexingParamOffset_1] = binding;
         }
         return false;
     }

@@ -19,6 +19,7 @@
 #include "state_tracker/descriptor_sets.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -606,6 +607,25 @@ uint32_t vvl::DescriptorSet::GetDynamicOffsetIndexFromBinding(uint32_t dynamic_b
         }
     }
     return dynamic_offset_index;
+}
+
+std::pair<uint32_t, uint32_t> vvl::DescriptorSet::GetBinidngAndIndex(const uint32_t global_descriptor_index) const {
+    uint32_t current_offset = 0;
+    for (const auto &binding_state : bindings_) {
+        const uint32_t binding_index = binding_state->binding;
+        // maps to BuildBindingLayouts()
+        const uint32_t count = (binding_state->type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) ? 1 : binding_state->count;
+
+        if ((current_offset + count) > global_descriptor_index) {
+            const uint32_t descriptor_index = global_descriptor_index - current_offset;
+            return {binding_index, descriptor_index};
+        }
+
+        current_offset += count;  // keep searching
+    }
+
+    assert(false);
+    return {0, 0};
 }
 
 void vvl::DescriptorSet::Destroy() {
