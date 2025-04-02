@@ -1856,7 +1856,11 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
     vkt::Semaphore acquire_semaphore2(*m_device);
     const VkSemaphore acquire_semaphore_handles[2] = {acquire_semaphore, acquire_semaphore2};
 
-    vkt::Semaphore submit_semaphore(*m_device);
+    std::vector<vkt::Semaphore> submit_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        submit_semaphores.emplace_back(*m_device);
+    }
+
     vkt::Fence frame_fence(*m_device);
 
     const VkPipelineStageFlags wait_stage_masks[2] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT};
@@ -1886,12 +1890,12 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
         submit_info.pWaitSemaphores = acquire_semaphore_handles;
         submit_info.pWaitDstStageMask = wait_stage_masks;
         submit_info.signalSemaphoreCount = 1;
-        submit_info.pSignalSemaphores = &submit_semaphore.handle();
+        submit_info.pSignalSemaphores = &submit_semaphores[image_index].handle();
         vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, frame_fence);
 
         VkPresentInfoKHR present = vku::InitStructHelper();
         present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &submit_semaphore.handle();
+        present.pWaitSemaphores = &submit_semaphores[image_index].handle();
         present.swapchainCount = 2;
         present.pSwapchains = swapchain_handles;
         present.pImageIndices = image_indices;
@@ -1916,11 +1920,11 @@ TEST_F(PositiveWsi, MultiSwapchainPresentWithOneBadSwapchain) {
         // image_index presentation should succeed, image_index2 should fail.
         const uint32_t image_indices[2] = {image_index, image_index2};
 
-        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphore), frame_fence);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(submit_semaphores[image_index]), frame_fence);
 
         VkPresentInfoKHR present = vku::InitStructHelper();
         present.waitSemaphoreCount = 1;
-        present.pWaitSemaphores = &submit_semaphore.handle();
+        present.pWaitSemaphores = &submit_semaphores[image_index].handle();
         present.swapchainCount = 2;
         present.pSwapchains = swapchain_handles;
         present.pImageIndices = image_indices;
@@ -2204,6 +2208,81 @@ TEST_F(PositiveWsi, UseAcquireFenceToDeletePresentSemaphore) {
 
     // This test checks that destroying present semaphore from frame 0 does not generate in-use error.
     present_semaphore0.destroy();
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, ExampleHowToReusePresentSemaphores) {
+    TEST_DESCRIPTION("Example of how to safely reuse present semaphores by allocating one per swapchain image");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    // Use single fence to wait for every frame (not very effective but it's fine for testing purposes)
+    vkt::Fence frame_fence(*m_device, VK_FENCE_CREATE_SIGNALED_BIT);
+
+    // The acquire semaphore should be buffered according to the command buffer buffering scheme (double, tripple, etc).
+    // In this example we synchronize after each frame (no buffering), that's why it's enough
+    // to have a single acquire semaphore (it is available after frame fence wait finished).
+    // For double buffered command buffer there should be two acquire semaphores.
+    //
+    // The acquire semaphore should be indexed by the current frame buffering index (0 in this case, 0/1 for double buffering).
+    vkt::Semaphore acquire_semaphore(*m_device);
+
+    // Present semaphores (signaled by submit and waited on by present) are allocated per swapchain image.
+    // When a swapchain image is acquired, we know that the previous presentation of this image has finished,
+    // so the associated semaphore is no longer in use.
+    //
+    // IMPORTANT: Present semaphores array should be indexed by the acquired image index.
+    std::vector<vkt::Semaphore> present_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        present_semaphores.emplace_back(*m_device);
+    }
+
+    for (uint32_t i = 0; i < 10; i++) {
+        frame_fence.Wait(kWaitTimeout);
+        frame_fence.Reset();
+
+        uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+        m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphores[image_index]),
+                                frame_fence);
+        m_default_queue->Present(m_swapchain, image_index, present_semaphores[image_index]);
+    }
+
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, SignalPresentSemaphoreAfterFenceWait) {
+    TEST_DESCRIPTION("Signal present wait semaphore after waiting on the presentation fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    vkt::Fence present_fence(*m_device);
+    VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+    present_fence_info.swapchainCount = 1;
+    present_fence_info.pFences = &present_fence.handle();
+
+    vkt::Semaphore present_semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore, &present_fence_info);
+
+    // Test that after waiting on the present fence it's safe to signal present semaphore again
+    vk::WaitForFences(device(), 1, &present_fence.handle(), VK_TRUE, kWaitTimeout);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(present_semaphore));
 
     m_default_queue->Wait();
 }
