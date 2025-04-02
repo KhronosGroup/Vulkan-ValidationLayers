@@ -77,6 +77,10 @@ const int kHeaderActionIdOffset = 6;
 
 const int kHeaderSize = 7;
 
+const int kInstLogErrorParameterOffset_0 = kHeaderSize;
+const int kInstLogErrorParameterOffset_1 = kHeaderSize + 1;
+const int kInstLogErrorParameterOffset_2 = kHeaderSize + 2;
+
 // kHeaderShaderIdErrorOffset
 // ---
 // This dword is split up as

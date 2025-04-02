@@ -442,6 +442,8 @@ def main(argv):
         'instrumentation_post_process_descriptor_index_comp.cpp',
         'instrumentation_vertex_attribute_fetch_oob_vert.cpp',
         'instrumentation_vertex_attribute_fetch_oob_vert.h',
+        'instrumentation_log_error_comp.cpp',
+        'instrumentation_log_error_comp.h',
         'feature_requirements_helper.h', # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8969
         'feature_requirements_helper.cpp'
     ]

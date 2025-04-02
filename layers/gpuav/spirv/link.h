@@ -25,8 +25,8 @@ enum LinkFlags {
     // This will make all private variables set to zero
     // Currently only does Uint32, but could expand to be all types if we find more usecases
     ZeroInitializeUintPrivateVariables = 0x00000001,
-    // Swap the private variable with private_variable_id
-    SwapPrivateVariable = 0x00000002,
+    // Swap the private ErrorPayload struct variable with error_payload_variable_id
+    UseErrorPayloadVariable = 0x00000002,
 };
 
 // SPIR-V module to link in
@@ -58,9 +58,6 @@ struct LinkInfo {
     const OfflineModule& module;
 
     std::vector<LinkFunction> functions;
-
-    // Used when SwapPrivateVariable is used
-    uint32_t private_variable_id = 0;
 
     // This is created once per pass and handed to the module to be linked afterwards
     explicit LinkInfo(const OfflineModule& module) : module(module) {}

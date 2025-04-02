@@ -16,6 +16,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "containers/custom_containers.h"
 #include "link.h"
 #include "interface.h"
 #include "function_basic_block.h"
@@ -123,6 +124,12 @@ class Module {
 
     // < set, [ bindings ] >
     const std::vector<std::vector<BindingLayout>>& set_index_to_bindings_layout_lut_;
+
+    // Prevent adding function if nothing was instrumented
+    bool need_log_error_ = false;
+    // Used when UseErrorPayloadVariable is set. Needs to be same for all passes.
+    // Will be set in the LogErrorPass
+    uint32_t error_payload_variable_id_ = 0;
 };
 
 }  // namespace spirv

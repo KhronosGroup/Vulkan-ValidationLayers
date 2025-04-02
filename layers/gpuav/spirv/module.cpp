@@ -550,10 +550,10 @@ void Module::LinkFunctions(const LinkInfo& info) {
             id_swap_map[old_result_id] = constant->Id();
         } else if (opcode == spv::OpVariable) {
             const spv::StorageClass storage_class = new_inst->StorageClass();
-            if (storage_class == spv::StorageClassPrivate && ((info.module.flags & SwapPrivateVariable) != 0)) {
+            if (storage_class == spv::StorageClassPrivate && ((info.module.flags & UseErrorPayloadVariable) != 0)) {
                 // Variable already is in shader, just mark the new result ID
-                AddInterfaceVariables(info.private_variable_id, storage_class);
-                id_swap_map[old_result_id] = info.private_variable_id;
+                AddInterfaceVariables(error_payload_variable_id_, storage_class);
+                id_swap_map[old_result_id] = error_payload_variable_id_;
             } else {
                 const uint32_t new_result_id = TakeNextId();
                 AddInterfaceVariables(new_result_id, storage_class);

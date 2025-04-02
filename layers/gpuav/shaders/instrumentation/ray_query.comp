@@ -19,8 +19,9 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
 #include "common_descriptor_sets.h"
+#include "error_payload.h"
 
-bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
+bool inst_ray_query_comp(const uint inst_num, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)
 {
     uint error = 0u;
     uint param_0 = 0u;
@@ -71,27 +72,13 @@ bool inst_ray_query_comp(const uint inst_num, const uvec4 stage_info, const uint
     }
 
     if (0u != error) {
-        const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
-        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
-        const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
-
-        if (max_cmd_errors_count_reached) return false;
-
-        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
-
-        if (errors_buffer_not_filled) {
-            inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-            inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstRayQuery << kErrorGroupShift) | (error << kErrorSubCodeShift);
-            inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
-
-            inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
-
-            inst_errors_buffer.data[write_pos + kInstRayQueryParamOffset_0] = param_0;
-        }
+         error_payload = ErrorPayload(
+                            inst_num,
+                            SpecConstantLinkShaderId | (kErrorGroupInstRayQuery << kErrorGroupShift) | (error << kErrorSubCodeShift),
+                            param_0,
+                            0,
+                            0
+                        );
         return false;
     }
 
