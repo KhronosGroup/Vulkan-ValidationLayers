@@ -206,7 +206,12 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
     // Main thread submits empty batches and presents images
     {
         vkt::Semaphore acquire_semaphore(*m_device);
-        vkt::Semaphore submit_semaphore(*m_device);
+
+        std::vector<vkt::Semaphore> submit_semaphores;
+        for (size_t i = 0; i < swapchain_images.size(); i++) {
+            submit_semaphores.emplace_back(*m_device);
+        }
+
         vkt::Fence fence(*m_device);
 
         for (int i = 0; i < N; i++) {
@@ -214,8 +219,8 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
                 m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT),
-                                        vkt::Signal(submit_semaphore), fence);
-                m_default_queue->Present(m_swapchain, image_index, submit_semaphore);
+                                        vkt::Signal(submit_semaphores[image_index]), fence);
+                m_default_queue->Present(m_swapchain, image_index, submit_semaphores[image_index]);
             }
             vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
             vk::ResetFences(device(), 1, &fence.handle());
