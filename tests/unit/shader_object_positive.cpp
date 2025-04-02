@@ -44,6 +44,13 @@ void ShaderObjectTest::CreateMinimalShaders() {
     std::vector<uint32_t> vert_spirv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
     VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
     create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    create_info.nextStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    if (m_device->GetFeatures().tessellationShader) {
+        create_info.nextStage |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+    }
+    if (m_device->GetFeatures().geometryShader) {
+        create_info.nextStage |= VK_SHADER_STAGE_GEOMETRY_BIT;
+    }
     create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
     create_info.codeSize = vert_spirv.size() * sizeof(uint32_t);
     create_info.pCode = vert_spirv.data();
@@ -52,6 +59,7 @@ void ShaderObjectTest::CreateMinimalShaders() {
 
     std::vector<uint32_t> frag_spirv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    create_info.nextStage = 0u;
     create_info.codeSize = frag_spirv.size() * sizeof(uint32_t);
     create_info.pCode = frag_spirv.data();
     m_frag_shader.init(*m_device, create_info);

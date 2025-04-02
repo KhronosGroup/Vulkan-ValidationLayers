@@ -474,19 +474,10 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     )glsl";
 
     std::vector<uint32_t> vert_spirv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexGlsl);
-    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
-    create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
-    create_info.codeSize = vert_spirv.size() * sizeof(uint32_t);
-    create_info.pCode = vert_spirv.data();
-    create_info.pName = "main";
-    vkt::Shader vert_shader(*m_device, create_info);
+    vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_spirv);
 
     std::vector<uint32_t> frag_spirv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
-    create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    create_info.codeSize = frag_spirv.size() * sizeof(uint32_t);
-    create_info.pCode = frag_spirv.data();
-    vkt::Shader frag_shader(*m_device, create_info);
+    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_spirv);
 
     m_vertex_buffer = new vkt::Buffer(*m_device, sizeof(float) * 12u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
