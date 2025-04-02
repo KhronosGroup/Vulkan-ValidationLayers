@@ -224,12 +224,10 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             has_tess = true;
-            if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
-                if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
-                    topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-                } else {
-                    topology = stage_state.entrypoint->execution_mode.primitive_topology;
-                }
+            if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
+                topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            } else {
+                topology = stage_state.entrypoint->execution_mode.primitive_topology;
             }
         }
     }
@@ -252,7 +250,7 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     if (mismatch) {
         if (has_tess) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
-                             "SPIR-V (Geometry stage) expects input topology %s, but tessellation evaluation shader output topology is %s.",
+                             "SPIR-V (Geometry stage) expects input topology %s, but tessellation shader output topology is %s.",
                              string_VkPrimitiveTopology(geom_topology), string_VkPrimitiveTopology(topology));
         } else {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00738", module_state.handle(), loc,
