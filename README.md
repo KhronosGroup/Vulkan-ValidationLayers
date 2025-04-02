@@ -29,7 +29,7 @@ See [documentation](./docs/khronos_validation_layer.md#configuring-the-validatio
 ### Internals
 
 The Validation Layers are broken up as many smaller internal "Validation Objects" each tasked with their own job.
-[Core Checks](./docs/core_checks.md) is what is enabled by default, but there are other validation objects that can be additionally enabled, such as [Synchronization Validation](./docs/synchronization_design.md), [GPU Assisted Validation](./docs/gpu_validation.md), and [more](./docs/README.md).
+[Core Checks](./docs/core_checks.md) is what is enabled by default, but there are other validation objects that can be additionally enabled, such as [Synchronization Validation](./docs/syncval_design.md), [GPU Assisted Validation](./docs/gpu_validation.md), and [more](./docs/README.md).
 There are also a few [limitations](./docs/limitations.md) stemming from the Validation layers being a Vulkan layer.
 
 ## Community Assistance
