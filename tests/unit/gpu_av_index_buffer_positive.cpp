@@ -975,3 +975,40 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState(nullptr));
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    const uint32_t offset = sizeof(VkDrawIndexedIndirectCommand);
+    const uint32_t size = sizeof(VkDrawIndexedIndirectCommand) + offset;
+
+    vkt::Buffer draw_params_buffer = vkt::Buffer(*m_device, size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    uint8_t *data = (uint8_t *)draw_params_buffer.Memory().Map();
+    memset(data, 255, size);
+    auto indirect_command = reinterpret_cast<VkDrawIndexedIndirectCommand *>(data + offset);
+    indirect_command->indexCount = 3u;
+    indirect_command->instanceCount = 1u;
+    indirect_command->firstIndex = 0u;
+    indirect_command->vertexOffset = 0;
+    indirect_command->firstInstance = 0u;
+    draw_params_buffer.Memory().Unmap();
+
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+
+    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), offset, 1u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->Wait();
+}
