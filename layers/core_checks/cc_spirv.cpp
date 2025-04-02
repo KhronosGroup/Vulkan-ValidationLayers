@@ -2030,16 +2030,40 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
     spv_diagnostic diag = nullptr;
     const spv_result_t spv_valid = spvValidateWithOptions(ctx, spirv_val_options, &binary, &diag);
     if (spv_valid != SPV_SUCCESS) {
-        // VkShaderModuleCreateInfo can come from many functions
+        const char *error_message = diag && diag->error ? diag->error : "(no error text)";
+
+        // Umbrella VUID if we can't find one in spirv-val
         const char *vuid = loc.function == Func::vkCreateShadersEXT ? "VUID-VkShaderCreateInfoEXT-pCode-08737"
                                                                     : "VUID-VkShaderModuleCreateInfo-pCode-08737";
 
+        // We want to search inside the spirv-val error message to see if there is VUID in it as it allows people to silence just
+        // that VUID and not the whole spirv-val check
+        char *spirv_val_vuid = nullptr;
+        if (diag && diag->error) {
+            // Note: Will always start with "[VUID-xxx-00000]" if there is one
+            if (std::strncmp(error_message, "[VUID", 5) == 0) {
+                const char *bracket_end = std::strchr(error_message, ']');
+                if (bracket_end) {
+                    const size_t vuid_len = bracket_end - error_message - 1;
+                    spirv_val_vuid = new char[vuid_len + 1];  // +1 for null-terminator
+                    std::strncpy(spirv_val_vuid, error_message + 1, vuid_len);
+                    spirv_val_vuid[vuid_len] = '\0';
+
+                    // Remove VUID from error message now
+                    error_message = bracket_end + 2;
+                }
+                vuid = spirv_val_vuid;
+            }
+        }
+
         if (spv_valid == SPV_WARNING) {
-            skip |= LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s",
-                               diag && diag->error ? diag->error : "(no error text)");
+            skip |= LogWarning(vuid, device, loc.dot(Field::pCode), "(spirv-val produced a warning):\n%s", error_message);
         } else {
-            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s",
-                             diag && diag->error ? diag->error : "(no error text)");
+            skip |= LogError(vuid, device, loc.dot(Field::pCode), "(spirv-val produced an error):\n%s", error_message);
+        }
+
+        if (spirv_val_vuid) {
+            delete[] spirv_val_vuid;
         }
     } else if (cache) {
         // No point to cache anything that is not valid, or it will get supressed on the next run

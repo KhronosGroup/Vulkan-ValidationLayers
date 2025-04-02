@@ -2086,8 +2086,7 @@ TEST_F(NegativeShaderInterface, InvalidStaticSpirv) {
                OpFunctionEnd
         )";
 
-    // VUID-StandaloneSpirv-Location-04919
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08737");
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-Location-04919");
     auto fs = VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_FRAGMENT_BIT);
     m_errorMonitor->VerifyFound();
 }

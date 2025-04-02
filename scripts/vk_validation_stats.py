@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Copyright (c) 2015-2024 The Khronos Group Inc.
-# Copyright (c) 2015-2024 Valve Corporation
-# Copyright (c) 2015-2024 LunarG, Inc.
-# Copyright (c) 2015-2024 Google Inc.
-# Copyright (c) 2023-2024 RasterGrid Kft.
+# Copyright (c) 2015-2025 The Khronos Group Inc.
+# Copyright (c) 2015-2025 Valve Corporation
+# Copyright (c) 2015-2025 LunarG, Inc.
+# Copyright (c) 2015-2025 Google Inc.
+# Copyright (c) 2023-2025 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ class ValidationSource:
                 for line in f:
                     line_num = line_num + 1
                     if True in [line.strip().startswith(comment) for comment in ['//', '/*']]:
-                        if 'VUID-' not in line or 'TODO:' in line:
+                        if 'VUID-' not in line or 'TODO:' in line or 'Note:' in line:
                             continue
                     # Find vuid strings
                     if prepend is not None:
