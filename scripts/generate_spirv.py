@@ -218,6 +218,7 @@ def main():
     parser.add_argument('--spirv-opt', action='store', dest='spirv_opt', type=str, help='Path to spirv-opt to use')
     parser.add_argument('--outdir', action='store', type=str, help='Optional path to output directory')
     parser.add_argument('--targetenv', action='store', type=str, help='Optional --target-env argument passed down to glslangValidator')
+    parser.add_argument('--single-thread', action='store_true', help='Only run on a single thread')
     args = parser.parse_args()
 
     shaders_to_compile = []
@@ -260,16 +261,22 @@ def main():
             sys.exit("Cannot find infilename " + args.shader)
         shaders_to_compile = [args.shader]
 
-    # glslang will take almost 1 second per shader on Windows (likely due to File I/O issues)
-    # We multi-thread the list of |shaders_to_compile| to help speed things up
-    with ThreadPoolExecutor() as executor:
-        executor.map(process_shader, shaders_to_compile,
-                     [gpu_shaders_dir] * len(shaders_to_compile),
-                     [glslang] * len(shaders_to_compile),
-                     [spirv_opt] * len(shaders_to_compile),
-                     [args.targetenv] * len(shaders_to_compile),
-                     [args.api] * len(shaders_to_compile),
-                     [args.outdir] * len(shaders_to_compile))
+    if len(shaders_to_compile) == 1 or args.single_thread:
+        for shader in shaders_to_compile:
+            process_shader(shader, gpu_shaders_dir, glslang, spirv_opt, args.targetenv, args.api, args.outdir)
+    else:
+        # glslang will take almost 1 second per shader on Windows (likely due to File I/O issues)
+        # We multi-thread the list of |shaders_to_compile| to help speed things up
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            for shader in shaders_to_compile:
+                futures.append(executor.submit(process_shader, shader, gpu_shaders_dir, glslang, spirv_opt, args.targetenv, args.api, args.outdir))
+
+            for future in futures:
+                try:
+                    future.result()  # This will raise exceptions if any occurred inside process_shader
+                except Exception as e:
+                    print(f"Error processing shader: {e}", file=sys.stdout)
 
 if __name__ == '__main__':
   main()
