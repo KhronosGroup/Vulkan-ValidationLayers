@@ -25,8 +25,8 @@ import subprocess
 import struct
 import re
 import argparse
-import hashlib
 import common_ci
+from concurrent.futures import ThreadPoolExecutor
 
 SPIRV_MAGIC = 0x07230203
 COLUMNS = 10
@@ -189,6 +189,11 @@ extern const uint32_t {name}[];
     with open(out_file_source, "w") as f:
         print(source, end="", file=f)
 
+# Will be ran multi-threaded
+def process_shader(shader, gpu_shaders_dir, glslang, spirv_opt, targetenv, api, outdir):
+    words = compile(gpu_shaders_dir, shader, glslang, spirv_opt, targetenv)
+    write(words, shader, api, outdir)
+
 def main():
     parser = argparse.ArgumentParser(description='Generate spirv code for this repository, see layers/gpuav/shaders/README.md for more deatils')
     parser.add_argument('--api',
@@ -242,9 +247,16 @@ def main():
             sys.exit("Cannot find infilename " + args.shader)
         shaders_to_compile = [args.shader]
 
-    for shader in shaders_to_compile:
-        words = compile(gpu_shaders_dir, shader, glslang, spirv_opt, args.targetenv)
-        write(words, shader, args.api, args.outdir)
+    # glslang will take almost 1 second per shader on Windows (likely due to File I/O issues)
+    # We multi-thread the list of |shaders_to_compile| to help speed things up
+    with ThreadPoolExecutor() as executor:
+        executor.map(process_shader, shaders_to_compile,
+                     [gpu_shaders_dir] * len(shaders_to_compile),
+                     [glslang] * len(shaders_to_compile),
+                     [spirv_opt] * len(shaders_to_compile),
+                     [args.targetenv] * len(shaders_to_compile),
+                     [args.api] * len(shaders_to_compile),
+                     [args.outdir] * len(shaders_to_compile))
 
 if __name__ == '__main__':
   main()
