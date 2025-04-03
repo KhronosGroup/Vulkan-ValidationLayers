@@ -30,6 +30,7 @@ namespace vvl {
 class DeviceState;
 class Queue;
 class Semaphore;
+class Swapchain;
 
 struct SemaphoreInfo {
     SemaphoreInfo(std::shared_ptr<Semaphore> &&sem, uint64_t pl) : semaphore(std::move(sem)), payload(pl) {}
@@ -49,6 +50,13 @@ class Semaphore : public RefcountedStateObject {
         kInternal,
         kExternalTemporary,
         kExternalPermanent,
+    };
+
+    // Swapchain information associated with QueuePresent wait semaphore
+    struct SwapchainWaitInfo {
+        std::shared_ptr<vvl::Swapchain> swapchain;
+        uint32_t image_index = vvl::kU32Max;  // image being presented
+        uint32_t acquire_counter_value = 0;   // value of vvl::Swapchain::acquire_count when the image was acquired
     };
 
     struct SemOp {
@@ -103,9 +111,6 @@ class Semaphore : public RefcountedStateObject {
     // Process signal by retiring timeline timepoints up to the specified payload
     void RetireSignal(uint64_t payload);
 
-    void SetInUseBySwapchain(bool in_use_by_swapchain);
-    bool IsInUseBySwapchain() const;
-
     // Look for most recent / highest payload operation that matches
     std::optional<SemOp> LastOp(const std::function<bool(OpType op_type, uint64_t payload, bool is_pending)> &filter) const;
 
@@ -127,6 +132,10 @@ class Semaphore : public RefcountedStateObject {
 
     void GetLastBinarySignalSource(VkQueue &queue, vvl::Func &acquire_command) const;
     bool HasResolvingTimelineSignal(uint64_t wait_payload) const;
+
+    void SetSwapchainWaitInfo(const SwapchainWaitInfo &info);
+    void ClearSwapchainWaitInfo();
+    std::optional<SwapchainWaitInfo> GetSwapchainWaitInfo() const;
 
     void Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags);
     void Export(VkExternalSemaphoreHandleTypeFlagBits handle_type);
@@ -171,16 +180,16 @@ class Semaphore : public RefcountedStateObject {
     // next payload value for binary semaphore operations
     uint64_t next_payload_;
 
-    // True, if this semaphore was used in QueuePresent but has not been re-acquired yet
-    // and the presentation fence (if provided) has not been waited on.
-    bool in_use_by_swapchain_ = false;
-
     // Set of pending operations ordered by payload.
     // Timeline operations can be added in any order and multiple wait operations
     // can use the same payload value.
     std::map<uint64_t, TimePoint> timeline_;
     mutable std::shared_mutex lock_;
     DeviceState &dev_data_;
+
+    // Not empty when semaphore was used in QueuePresent but has not been re-acquired yet
+    // and the presentation fence (if provided) has not been waited on.
+    std::optional<SwapchainWaitInfo> swapchain_wait_info_;
 };
 
 }  // namespace vvl

@@ -430,16 +430,6 @@ void vvl::Semaphore::RetireSignal(uint64_t payload) {
     RetireTimePoint(payload, completed_op, completed_submit);
 }
 
-void vvl::Semaphore::SetInUseBySwapchain(bool in_use_by_swapchain) {
-    auto guard = WriteLock();
-    in_use_by_swapchain_ = in_use_by_swapchain;
-}
-
-bool vvl::Semaphore::IsInUseBySwapchain() const {
-    auto guard = ReadLock();
-    return in_use_by_swapchain_;
-}
-
 void vvl::Semaphore::RetireTimePoint(uint64_t payload, OpType completed_op, SubmissionReference completed_submit) {
     auto it = timeline_.begin();
     while (it != timeline_.end() && it->first <= payload) {
@@ -469,6 +459,22 @@ void vvl::Semaphore::WaitTimePoint(std::shared_future<void> &&waiter, uint64_t p
                            "likely a validation bug). completed_.payload=%" PRIu64 " wait_payload=%" PRIu64,
                            completed_.payload, payload);
     }
+}
+
+void vvl::Semaphore::SetSwapchainWaitInfo(const SwapchainWaitInfo &info) {
+    auto guard = WriteLock();
+    swapchain_wait_info_.emplace(info);
+}
+
+void vvl::Semaphore::ClearSwapchainWaitInfo() {
+    auto guard = WriteLock();
+    swapchain_wait_info_.reset();
+}
+
+std::optional<vvl::Semaphore::SwapchainWaitInfo> vvl::Semaphore::GetSwapchainWaitInfo() const {
+    auto guard = ReadLock();
+    // Return by value due to locking (not safe to access reference when unlocked)
+    return swapchain_wait_info_;
 }
 
 void vvl::Semaphore::Import(VkExternalSemaphoreHandleTypeFlagBits handle_type, VkSemaphoreImportFlags flags) {

@@ -365,6 +365,11 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     DeviceState &dev_data;
     uint32_t acquired_images = 0;
 
+    // Image acquire history
+    static constexpr uint32_t acquire_history_max_length = 16;
+    std::array<uint32_t, acquire_history_max_length> acquire_history;  // ring buffer contanis the last acquired images
+    uint32_t acquire_count = 0;                                        // total number of image acquire requests
+
     Swapchain(DeviceState &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);
 
     ~Swapchain() {
@@ -388,6 +393,9 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
     SwapchainImage GetSwapChainImage(uint32_t index) const;
 
     std::shared_ptr<const vvl::Image> GetSwapChainImageShared(uint32_t index) const;
+
+    uint32_t GetAcquireHistoryLength() const;
+    uint32_t GetAcquiredImageIndexFromHistory(uint32_t acquire_history_index) const;
 
     std::shared_ptr<const Swapchain> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<Swapchain> shared_from_this() { return SharedFromThisImpl(this); }
