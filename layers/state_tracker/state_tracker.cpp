@@ -1393,7 +1393,7 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
     // Reset semaphore's in-use-by-swapchain state
     for (const auto &entry : semaphore_map_.snapshot()) {
         const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
-        semaphore_state->SetInUseBySwapchain(false);
+        semaphore_state->ClearSwapchainWaitInfo();
     }
 }
 
@@ -3641,10 +3641,35 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         }
     }
 
+    vvl::Semaphore::SwapchainWaitInfo semaphore_swapchain_info;
+    // Swapchain semaphore tracking reports additional details for the common case of a single swapchain.
+    // For multi-swapchain presentation, the semaphore error will also be reported but without some details.
+    if (pPresentInfo->swapchainCount == 1) {
+        semaphore_swapchain_info.swapchain = Get<Swapchain>(pPresentInfo->pSwapchains[0]);
+        semaphore_swapchain_info.image_index = pPresentInfo->pImageIndices[0];
+
+        // Store the value of the acquire counter that corresponds to the presented image.
+        // When we get an error we can find where in the acquire history this semaphore was used the last time.
+        semaphore_swapchain_info.acquire_counter_value = semaphore_swapchain_info.swapchain->acquire_count;
+
+        // Usually acquire_counter_value it's the current vvl::Swapchain::acquire_count but for the case when
+        // application acquires multiple images before presenting we iterate to find specific image index.
+        if (uint32_t history_length = semaphore_swapchain_info.swapchain->GetAcquireHistoryLength(); history_length > 0) {
+            for (int32_t history_index = int32_t(history_length - 1); history_index >= 0; history_index--) {
+                uint32_t image_index =
+                    semaphore_swapchain_info.swapchain->GetAcquiredImageIndexFromHistory(uint32_t(history_index));
+                if (image_index == pPresentInfo->pImageIndices[0]) {
+                    break;
+                }
+                semaphore_swapchain_info.acquire_counter_value--;
+            }
+        }
+    }
+
     small_vector<std::shared_ptr<vvl::Semaphore>, 1> present_wait_semaphores;
     for (uint32_t i = 0; i < pPresentInfo->waitSemaphoreCount; ++i) {
         if (auto semaphore_state = Get<Semaphore>(pPresentInfo->pWaitSemaphores[i])) {
-            semaphore_state->SetInUseBySwapchain(true);
+            semaphore_state->SetSwapchainWaitInfo(semaphore_swapchain_info);
             present_wait_semaphores.emplace_back(semaphore_state);
 
             // Register present wait semaphores only in the first present batch.

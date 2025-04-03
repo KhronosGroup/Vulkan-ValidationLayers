@@ -553,7 +553,7 @@ namespace vvl {
 
 void SwapchainImage::ResetPresentWaitSemaphores() {
     for (auto &semaphore : present_wait_semaphores) {
-        semaphore->SetInUseBySwapchain(false);
+        semaphore->ClearSwapchainWaitInfo();
     }
     present_wait_semaphores.clear();
 }
@@ -567,7 +567,12 @@ Swapchain::Swapchain(vvl::DeviceState &dev_data_, const VkSwapchainCreateInfoKHR
       shared_presentable(VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR == pCreateInfo->presentMode ||
                          VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR == pCreateInfo->presentMode),
       image_create_info(GetImageCreateInfo(pCreateInfo)),
-      dev_data(dev_data_) {}
+      dev_data(dev_data_) {
+
+    // Initialize with visible values for debugging purposes.
+    // This helps to show used slots during the first few frames.
+    acquire_history.fill(vvl::kU32Max);
+}
 
 void Swapchain::PresentImage(uint32_t image_index, uint64_t present_id, const SubmissionReference &present_submission_ref,
                              vvl::span<std::shared_ptr<vvl::Semaphore>> present_wait_semaphores) {
@@ -617,6 +622,9 @@ void Swapchain::AcquireImage(uint32_t image_index, const std::shared_ptr<vvl::Se
         images[image_index].image_state->shared_presentable = shared_presentable;
     }
     images[image_index].ResetPresentWaitSemaphores();
+
+    acquire_history[acquire_count % acquire_history_max_length] = image_index;
+    acquire_count++;
 }
 
 void Swapchain::Destroy() {
@@ -654,6 +662,23 @@ std::shared_ptr<const vvl::Image> Swapchain::GetSwapChainImageShared(uint32_t in
         return swapchain_image.image_state->shared_from_this();
     }
     return std::shared_ptr<const vvl::Image>();
+}
+
+uint32_t Swapchain::GetAcquireHistoryLength() const {
+    return (acquire_count >= acquire_history_max_length) ? acquire_history_max_length : acquire_count;
+}
+
+uint32_t Swapchain::GetAcquiredImageIndexFromHistory(uint32_t acquire_history_index) const {
+    const uint32_t history_length = GetAcquireHistoryLength();
+    assert(acquire_history_index < history_length);
+
+    const uint32_t global_start_index = acquire_count - history_length;
+    const uint32_t global_index = global_start_index + acquire_history_index;
+    const uint32_t ring_buffer_index = global_index % acquire_history_max_length;
+
+    const uint32_t acquire_image_index = acquire_history[ring_buffer_index];
+    assert(acquire_image_index != vvl::kU32Max);
+    return acquire_image_index;
 }
 
 void Surface::Destroy() {

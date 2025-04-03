@@ -86,7 +86,7 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
             present_submission_ref_.reset();
 
             for (auto &semaphore : present_wait_semaphores_) {
-                semaphore->SetInUseBySwapchain(false);
+                semaphore->ClearSwapchainWaitInfo();
             }
             present_wait_semaphores_.clear();
         }
