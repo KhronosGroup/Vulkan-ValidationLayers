@@ -338,6 +338,12 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
     bool skip = false;
     const auto workgroup_size = local_size_x * local_size_y * local_size_z;
 
+    uint32_t effective_subgroup_size = phys_dev_props_core11.subgroupSize;
+    if (const auto *required_subgroup_size_ci =
+            vku::FindStructInPNextChain<VkPipelineShaderStageRequiredSubgroupSizeCreateInfo>(stage_state.GetPNext())) {
+        effective_subgroup_size = required_subgroup_size_ci->requiredSubgroupSize;
+    }
+
     const auto &IsSignedIntType = [&module_state](const uint32_t type_id) {
         const spirv::Instruction *type = module_state.FindDef(type_id);
         if (type->Opcode() == spv::OpTypeCooperativeMatrixKHR || type->Opcode() == spv::OpTypeCooperativeMatrixNV) {
@@ -456,14 +462,14 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
                 CoopMatType m(insn.ResultId(), module_state, stage_state, IsSignedIntType(insn.Word(2)));
 
                 if ((entrypoint.stage & VK_SHADER_STAGE_COMPUTE_BIT) != 0) {
-                    if (SafeModulo(local_size_x, phys_dev_props_core11.subgroupSize) != 0) {
+                    if (SafeModulo(local_size_x, effective_subgroup_size) != 0) {
                         const auto vuid_string = m.scope == VK_SCOPE_SUBGROUP_KHR
                                                      ? "VUID-VkPipelineShaderStageCreateInfo-module-08987"
                                                      : "VUID-VkPipelineShaderStageCreateInfo-module-10169";
                         skip |= LogError(vuid_string, module_state.handle(), loc,
                                          "SPIR-V (compute stage) Local workgroup size in the X dimension (%" PRIu32
                                          ") is not a multiple of subgroupSize (%" PRIu32 ").",
-                                         local_size_x, phys_dev_props_core11.subgroupSize);
+                                         local_size_x, effective_subgroup_size);
                     }
                     if (m.scope == VK_SCOPE_WORKGROUP_KHR) {
                         if (workgroup_size >

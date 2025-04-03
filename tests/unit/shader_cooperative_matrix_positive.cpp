@@ -267,3 +267,60 @@ TEST_F(PositiveShaderCooperativeMatrix, CooperativeMatrixKHR) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9843");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::subgroupSizeControl);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
+    }
+
+    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+
+    const char *cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_shader_subgroup_basic : enable
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+         layout(local_size_x = 16) in;
+         layout(set=0, binding=0) coherent buffer InputA { uint32_t x[]; } inputA;
+         coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+         void main() {
+             coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+
+    VkPhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_properties = vku::InitStructHelper();
+    VkPhysicalDeviceVulkan11Properties props11 = vku::InitStructHelper(&subgroup_properties);
+    GetPhysicalDeviceProperties2(props11);
+    if ((subgroup_properties.requiredSubgroupSizeStages & VK_SHADER_STAGE_COMPUTE_BIT) == 0) {
+        GTEST_SKIP() << "Required shader stage not present in requiredSubgroupSizeStages";
+    }
+
+    if (subgroup_properties.minSubgroupSize != 16) {
+        GTEST_SKIP() << "Testing when we go under the limit";
+    }
+
+    VkPipelineShaderStageRequiredSubgroupSizeCreateInfo subgroup_size_control = vku::InitStructHelper();
+    subgroup_size_control.requiredSubgroupSize = subgroup_properties.minSubgroupSize;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.stage = cs.GetStageCreateInfo();
+    pipe.cp_ci_.stage.pNext = &subgroup_size_control;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline(false);
+}
