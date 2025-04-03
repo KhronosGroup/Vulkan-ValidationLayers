@@ -1187,6 +1187,40 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoadLinkedList) {
+    TEST_DESCRIPTION("Make sure we don't get in an infinite loop searching for BDA length");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference : enable
+                #extension GL_ARB_gpu_shader_int64 : enable
+
+        layout(buffer_reference) buffer Node;
+        layout(buffer_reference, std430) buffer Node {
+            uint payload;
+            Node next;
+            uint64_t next2;
+        };
+
+        layout(set = 0, binding = 0) buffer foo {
+            Node node_0;
+            Node node_1;
+        };
+
+        void main() {
+            node_0 = node_1;
+            node_0.next = Node(node_1.next2);
+            node_0.next.payload = 3;
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
     TEST_DESCRIPTION("Slang allows BDA pointers to be with POD instead of a struct");
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
