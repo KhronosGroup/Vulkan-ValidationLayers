@@ -41,12 +41,11 @@ class BufferDeviceAddressPass : public Pass {
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                const InstructionMeta& meta);
-
-    uint32_t GetLinkFunctionId();
+                                const InstructionMeta& meta, bool safe_mode);
 
     // Function IDs to link in
-    uint32_t link_function_id_ = 0;
+    uint32_t function_range_id_ = 0;
+    uint32_t function_align_id_ = 0;
 };
 
 }  // namespace spirv
