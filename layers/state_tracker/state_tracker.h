@@ -2031,7 +2031,7 @@ class DeviceState : public vvl::base::Device {
     template <typename State, std::enable_if_t<HasSubStates<State>::value, bool> = true>
     void NotifyCreated(State& state_object);
 
-    template <typename State, std::enable_if_t<not HasSubStates<State>::value, bool> = true>
+    template <typename State, std::enable_if_t<!HasSubStates<State>::value, bool> = true>
     void NotifyCreated(State& state_object) {}
 
     std::atomic<uint32_t> object_id_{1};  // 0 is an invalid id
