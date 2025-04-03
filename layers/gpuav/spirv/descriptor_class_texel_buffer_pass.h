@@ -44,8 +44,7 @@ class DescriptorClassTexelBufferPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
-    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                            const InstructionMeta& meta);
+    void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
 

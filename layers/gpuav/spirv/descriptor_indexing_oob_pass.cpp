@@ -49,8 +49,7 @@ uint32_t DescriptorIndexingOOBPass::GetLinkFunctionId(bool is_combined_image_sam
     }
 }
 
-uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                       const InjectionData& injection_data, const InstructionMeta& meta) {
+uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
     const Constant& binding_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_binding);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
@@ -87,13 +86,16 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     const Constant& binding_layout_size = module_.type_manager_.GetConstantUInt32(binding_layout.count);
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
+    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+
     uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId(meta.is_combined_image_sampler);
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_result, function_def, injection_data.inst_position_id, set_constant.Id(),
-                             binding_constant.Id(), descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
+                            {bool_type, function_result, function_def, inst_position_id, set_constant.Id(), binding_constant.Id(),
+                             descriptor_index_id, binding_layout_size.Id(), binding_layout_offset.Id()},
                             inst_it);
 
     module_.need_log_error_ = true;
@@ -116,11 +118,11 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
         const Constant& sampler_binding_layout_size = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.count);
         const Constant& sampler_binding_layout_offset = module_.type_manager_.GetConstantUInt32(sampler_binding_layout.start);
 
-        block.CreateInstruction(spv::OpFunctionCall,
-                                {bool_type, valid_sampler, function_def, injection_data.inst_position_id, sampler_set_constant.Id(),
-                                 sampler_binding_constant.Id(), sampler_descriptor_index_id, sampler_binding_layout_size.Id(),
-                                 sampler_binding_layout_offset.Id()},
-                                inst_it);
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, valid_sampler, function_def, inst_position_id, sampler_set_constant.Id(), sampler_binding_constant.Id(),
+             sampler_descriptor_index_id, sampler_binding_layout_size.Id(), sampler_binding_layout_offset.Id()},
+            inst_it);
 
         function_result = module_.TakeNextId();  // valid_both
         block.CreateInstruction(spv::OpLogicalAnd, {bool_type, function_result, valid_image, valid_sampler}, inst_it);
@@ -424,13 +426,11 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
-
                 if (module_.settings_.unsafe_mode) {
-                    CreateFunctionCall(current_block, &inst_it, injection_data, meta);
+                    CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
-                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block
                     block_it++;

@@ -137,11 +137,6 @@ const int kInstDescriptorIndexingIndexMask = 0x7FFFFFF;
 
 // Buffer device addresses
 // ---
-// A buffer address unalloc error will output the 64-bit pointer in
-// two 32-bit pieces, lower bits first.
-const int kInstBuffAddrUnallocDescPtrLoOffset = kHeaderSize;
-const int kInstBuffAddrUnallocDescPtrHiOffset = kHeaderSize + 1;
-const int kInstBuffAddrAccessPayloadOffset = kHeaderSize + 2;
 // Payload contains 3 pieces of data, compressed into a single uint32_t
 // We can be safe that assume alignment we don't need these upper 2 bytes
 // Note - if needed, we could use log2(alignment) as it must be a Power-of-Two

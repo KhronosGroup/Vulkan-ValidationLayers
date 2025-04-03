@@ -27,12 +27,6 @@ struct Variable;
 struct BasicBlock;
 struct Type;
 
-// Info we know is the same regardless what pass is consuming the CreateFunctionCall()
-struct InjectionData {
-    uint32_t stage_info_id;
-    uint32_t inst_position_id;
-};
-
 // The goal is to have the complex conditional inject control flow to be in a single spot
 // To allow this, we create all the pieces for Pass, let it make its own function call, then use this data to apply the final
 // control flow logic
@@ -62,8 +56,6 @@ class Pass {
 
     // Returns the ID for OpCompositeConstruct it creates
     uint32_t GetStageInfo(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it);
-    InjectionData GetInjectionData(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it,
-                                   const Instruction& target_instruction);
 
     const Instruction* GetDecoration(uint32_t id, spv::Decoration decoration) const;
     const Instruction* GetMemberDecoration(uint32_t id, uint32_t member_index, spv::Decoration decoration) const;

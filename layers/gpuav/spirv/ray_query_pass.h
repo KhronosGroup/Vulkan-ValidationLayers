@@ -35,8 +35,7 @@ class RayQueryPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
-    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                const InstructionMeta& meta);
+    uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
 
