@@ -17,6 +17,7 @@
 #include <cassert>
 #include <spirv/unified1/spirv.hpp>
 #include "containers/custom_containers.h"
+#include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
@@ -550,7 +551,16 @@ void Module::LinkFunctions(const LinkInfo& info) {
             id_swap_map[old_result_id] = constant->Id();
         } else if (opcode == spv::OpVariable) {
             const spv::StorageClass storage_class = new_inst->StorageClass();
-            if (storage_class == spv::StorageClassPrivate && ((info.module.flags & UseErrorPayloadVariable) != 0)) {
+            const bool is_private_var = storage_class == spv::StorageClassPrivate;
+
+            new_inst->ReplaceLinkedId(id_swap_map);  // replace so we can grab the type
+            const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
+            assert(type->spv_type_ == SpvType::kPointer);
+            const Type* pointer_type = type_manager_.FindTypeById(type->inst_.Word(3));
+
+            // Currently we use the fact the only private variable that are struct are for error payload
+            if (pointer_type->spv_type_ == SpvType::kStruct && is_private_var &&
+                ((info.module.flags & UseErrorPayloadVariable) != 0)) {
                 // Variable already is in shader, just mark the new result ID
                 AddInterfaceVariables(error_payload_variable_id_, storage_class);
                 id_swap_map[old_result_id] = error_payload_variable_id_;
@@ -559,21 +569,15 @@ void Module::LinkFunctions(const LinkInfo& info) {
                 AddInterfaceVariables(new_result_id, storage_class);
                 id_swap_map[old_result_id] = new_result_id;
                 new_inst->ReplaceResultId(new_result_id);
-                new_inst->ReplaceLinkedId(id_swap_map);
 
-                // Can't grab until after we run ReplaceLinkedId()
-                const Type* type = type_manager_.FindTypeById(new_inst->TypeId());
-
-                if (storage_class == spv::StorageClassPrivate && type->spv_type_ == SpvType::kPointer &&
-                    ((info.module.flags & ZeroInitializeUintPrivateVariables) != 0)) {
-                    const Type* pointer_type = type_manager_.FindTypeById(type->inst_.Word(3));
+                if (is_private_var && ((info.module.flags & ZeroInitializeUintPrivateVariables) != 0)) {
                     // If we hit this assert, we need to add support for another type
-                    assert(pointer_type && pointer_type->spv_type_ == SpvType::kInt);
                     if (pointer_type->spv_type_ == SpvType::kInt) {
                         const uint32_t uint32_0_id = type_manager_.GetConstantZeroUint32().Id();
                         new_inst->AppendWord(uint32_0_id);
                     }
                 }
+
                 type_manager_.AddVariable(std::move(new_inst), *type);
             }
         } else if (opcode == spv::OpDecorate || opcode == spv::OpMemberDecorate) {

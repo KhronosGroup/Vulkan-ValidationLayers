@@ -19,6 +19,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : enable
 #include "common_descriptor_sets.h"
+#include "error_payload.h"
 
 // Represent a [begin, end) range, where end is one past the last element held in range
 struct Range {
@@ -51,7 +52,6 @@ uint index_cache;
 
 bool inst_buffer_device_address_range(
     const uint inst_num,
-    const uvec4 stage_info,
     const uint64_t addr,
     const uint access_type,
     const uint access_byte_size)
@@ -84,73 +84,33 @@ bool inst_buffer_device_address_range(
         // If at loop end, address is invalid.
     }
 
-    // addr is invalid, try to print error
-    // ---
-    const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
-    const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
-    const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
-
-    if (max_cmd_errors_count_reached) return false;
-
-    uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-    const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
-
-    if (errors_buffer_not_filled) {
-        inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressUnallocRef << kErrorSubCodeShift);
-        inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
-
-        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
-
-        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
-        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | access_byte_size;
-    }
-
+    error_payload = ErrorPayload(
+                        inst_num,
+                        SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressUnallocRef << kErrorSubCodeShift),
+                        uint(addr),
+                        uint(addr >> 32u),
+                        access_type | access_byte_size
+                    );
     return false;
 }
 
 bool inst_buffer_device_address_align(
     const uint inst_num,
-    const uvec4 stage_info,
     const uint64_t addr,
     const uint access_type,
     const uint alignment)
 {
     // alignment is guaranteed to be a power of 2
     // this is a valid way in GLSL to have it do OpUConvert for us
-    if ((addr & (alignment - 1)) == 0) {
-        return true;
+    if ((addr & (alignment - 1)) != 0) {
+        error_payload = ErrorPayload(
+                            inst_num,
+                            SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressAlignment << kErrorSubCodeShift),
+                            uint(addr),
+                            uint(addr >> 32u),
+                            access_type | alignment
+                        );
+        return false;
     }
-
-    // addr is invalid, try to print error
-    // ---
-    const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
-    const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
-    const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
-
-    if (max_cmd_errors_count_reached) return false;
-
-    uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-    const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
-
-    if (errors_buffer_not_filled) {
-        inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressAlignment << kErrorSubCodeShift);
-        inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
-
-        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
-
-        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
-        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | alignment;
-    }
-
-    return false;
+    return true;
 }

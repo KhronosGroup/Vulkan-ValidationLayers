@@ -815,16 +815,17 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     bool error_found = true;
     std::ostringstream strm;
 
-    const uint32_t payload = error_record[kInstBuffAddrAccessPayloadOffset];
+    const uint32_t payload = error_record[kInstLogErrorParameterOffset_2];
     const bool is_write = ((payload >> kInstBuffAddrAccessPayloadShiftIsWrite) & 1) != 0;
     const bool is_struct = ((payload >> kInstBuffAddrAccessPayloadShiftIsStruct) & 1) != 0;
+
+    uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstLogErrorParameterOffset_0);
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
         case kErrorSubCodeBufferDeviceAddressUnallocRef: {
             const char *access_type = is_write ? "written" : "read";
             const uint32_t byte_size = payload & kInstBuffAddrAccessPayloadMaskAccessInfo;
-            uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Out of bounds access: " << byte_size << " bytes " << access_type << " at buffer device address 0x" << std::hex
                  << address << '.';
             if (is_struct) {
@@ -838,7 +839,6 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
         case kErrorSubCodeBufferDeviceAddressAlignment: {
             const char *access_type = is_write ? "OpStore" : "OpLoad";
             const uint32_t alignment = (payload & kInstBuffAddrAccessPayloadMaskAccessInfo);
-            uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstBuffAddrUnallocDescPtrLoOffset);
             strm << "Unaligned pointer access: The " << access_type << " at buffer device address 0x" << std::hex << address
                  << " is not aligned to the instruction Aligned operand of " << std::dec << alignment << '.';
             out_vuid_msg = "VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315";

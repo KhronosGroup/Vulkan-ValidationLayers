@@ -244,17 +244,6 @@ uint32_t Pass::GetStageInfo(Function& function, const BasicBlock& target_block_i
     return function.stage_info_id_;
 }
 
-InjectionData Pass::GetInjectionData(Function& function, const BasicBlock& target_block_it, InstructionIt& out_inst_it,
-                                     const Instruction& target_instruction) {
-    // Add any debug information to pass into the function call
-    InjectionData injection_data;
-    injection_data.stage_info_id = GetStageInfo(function, target_block_it, out_inst_it);
-    const uint32_t inst_position = target_instruction.GetPositionIndex();
-    auto inst_position_constant = module_.type_manager_.CreateConstantUInt32(inst_position);
-    injection_data.inst_position_id = inst_position_constant.Id();
-    return injection_data;
-}
-
 const Instruction* Pass::GetDecoration(uint32_t id, spv::Decoration decoration) const {
     for (const auto& annotation : module_.annotations_) {
         if (annotation->Opcode() == spv::OpDecorate && annotation->Word(1) == id &&

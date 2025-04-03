@@ -37,8 +37,7 @@ DescriptorClassTexelBufferPass::DescriptorClassTexelBufferPass(Module& module) :
 // By appending the LinkInfo, it will attempt at linking stage to add the function.
 uint32_t DescriptorClassTexelBufferPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
 
-void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it,
-                                                        const InjectionData& injection_data, const InstructionMeta& meta) {
+void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     assert(meta.access_chain_inst && meta.var_inst);
     const Constant& set_constant = module_.type_manager_.GetConstantUInt32(meta.descriptor_set);
     const uint32_t descriptor_index_id = CastToUint32(meta.descriptor_index_id, block, inst_it);  // might be int32
@@ -59,13 +58,16 @@ void DescriptorClassTexelBufferPass::CreateFunctionCall(BasicBlock& block, Instr
     BindingLayout binding_layout = module_.set_index_to_bindings_layout_lut_[meta.descriptor_set][meta.descriptor_binding];
     const Constant& binding_layout_offset = module_.type_manager_.GetConstantUInt32(binding_layout.start);
 
+    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+
     const uint32_t function_result = module_.TakeNextId();
     const uint32_t function_def = GetLinkFunctionId();
     const uint32_t void_type = module_.type_manager_.GetTypeVoid().Id();
 
     block.CreateInstruction(spv::OpFunctionCall,
-                            {void_type, function_result, function_def, injection_data.inst_position_id, set_constant.Id(),
-                             descriptor_index_id, descriptor_offset_id, binding_layout_offset.Id()},
+                            {void_type, function_result, function_def, inst_position_id, set_constant.Id(), descriptor_index_id,
+                             descriptor_offset_id, binding_layout_offset.Id()},
                             inst_it);
 
     module_.need_log_error_ = true;
@@ -189,10 +191,8 @@ bool DescriptorClassTexelBufferPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
-
                 // inst_it is updated to the instruction after the new function call, it will not add/remove any Blocks
-                CreateFunctionCall(current_block, &inst_it, injection_data, meta);
+                CreateFunctionCall(current_block, &inst_it, meta);
             }
         }
     }

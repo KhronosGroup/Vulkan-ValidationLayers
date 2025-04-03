@@ -27,7 +27,8 @@ namespace gpuav {
 namespace spirv {
 
 const static OfflineModule kOfflineModule = {instrumentation_buffer_device_address_comp,
-                                             instrumentation_buffer_device_address_comp_size, ZeroInitializeUintPrivateVariables};
+                                             instrumentation_buffer_device_address_comp_size,
+                                             ZeroInitializeUintPrivateVariables | UseErrorPayloadVariable};
 
 const static OfflineFunction kOfflineFunctionRange = {"inst_buffer_device_address_range",
                                                       instrumentation_buffer_device_address_comp_function_0_offset};
@@ -36,8 +37,8 @@ const static OfflineFunction kOfflineFunctionAlign = {"inst_buffer_device_addres
 
 BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                                     const InstructionMeta& meta, bool safe_mode) {
+uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
+                                                     bool safe_mode) {
     // The Pointer ID Operand is always the first operand for Load/Store/Atomics
     // We can just take it and cast to a uint64 here to examine the ptr value
     const uint32_t pointer_id = meta.target_instruction->Operand(0);
@@ -60,21 +61,26 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const Constant& access_type = module_.type_manager_.GetConstantUInt32(access_type_value);
     const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
 
+    const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+    const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
+
     const uint32_t function_range_result = module_.TakeNextId();
     const uint32_t function_range_id = GetLinkFunction(function_range_id_, kOfflineFunctionRange);
-    block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_range_result, function_range_id, injection_data.inst_position_id,
-                             injection_data.stage_info_id, address_id, access_type.Id(), length_constant.Id()},
-                            inst_it);
+    block.CreateInstruction(
+        spv::OpFunctionCall,
+        {bool_type, function_range_result, function_range_id, inst_position_id, address_id, access_type.Id(), length_constant.Id()},
+        inst_it);
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
     const uint32_t function_align_result = module_.TakeNextId();
     const uint32_t function_align_id = GetLinkFunction(function_align_id_, kOfflineFunctionAlign);
     block.CreateInstruction(spv::OpFunctionCall,
-                            {bool_type, function_align_result, function_align_id, injection_data.inst_position_id,
-                             injection_data.stage_info_id, address_id, access_type.Id(), alignment_constant.Id()},
+                            {bool_type, function_align_result, function_align_id, inst_position_id, address_id, access_type.Id(),
+                             alignment_constant.Id()},
                             inst_it);
+
+    module_.need_log_error_ = true;
 
     // Will return bool that will look like (FuncRange() && FuncAlign()) { }
     if (safe_mode) {
@@ -171,13 +177,11 @@ bool BufferDeviceAddressPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
-
                 if (module_.settings_.unsafe_mode) {
-                    CreateFunctionCall(current_block, &inst_it, injection_data, meta, false);
+                    CreateFunctionCall(current_block, &inst_it, meta, false);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
-                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta, true);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta, true);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block
                     block_it++;
