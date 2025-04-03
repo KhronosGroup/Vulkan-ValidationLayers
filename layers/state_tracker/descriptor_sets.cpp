@@ -609,7 +609,7 @@ uint32_t vvl::DescriptorSet::GetDynamicOffsetIndexFromBinding(uint32_t dynamic_b
     return dynamic_offset_index;
 }
 
-std::pair<uint32_t, uint32_t> vvl::DescriptorSet::GetBinidngAndIndex(const uint32_t global_descriptor_index) const {
+std::pair<uint32_t, uint32_t> vvl::DescriptorSet::GetBindingAndIndex(const uint32_t global_descriptor_index) const {
     uint32_t current_offset = 0;
     for (const auto &binding_state : bindings_) {
         const uint32_t binding_index = binding_state->binding;

@@ -750,7 +750,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     const uint32_t global_descriptor_index = encoded_set_index & kInstDescriptorIndexingIndexMask;
 
     const auto descriptor_set_state = descriptor_sets[set_num];
-    auto [binding_num, desc_index] = descriptor_set_state->GetBinidngAndIndex(global_descriptor_index);
+    auto [binding_num, desc_index] = descriptor_set_state->GetBindingAndIndex(global_descriptor_index);
 
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
 
@@ -819,7 +819,7 @@ bool LogMessageInstBufferDeviceAddress(const uint32_t *error_record, std::string
     const bool is_write = ((payload >> kInstBuffAddrAccessPayloadShiftIsWrite) & 1) != 0;
     const bool is_struct = ((payload >> kInstBuffAddrAccessPayloadShiftIsStruct) & 1) != 0;
 
-    uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstLogErrorParameterOffset_0);
+    const uint64_t address = *reinterpret_cast<const uint64_t *>(error_record + kInstLogErrorParameterOffset_0);
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {

@@ -14,8 +14,10 @@
  */
 #pragma once
 
+#include <cstdint>
 #include <vector>
 #include <memory>
+#include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"
 #include "generated/spirv_grammar_helper.h"
 
@@ -193,6 +195,10 @@ class TypeManager {
 
     std::vector<const Variable*> input_variables_;
     std::vector<const Variable*> output_variables_;
+
+    // Save the length of a struct so we don't have to look it up everytime
+    // <struct_id, struct size>
+    vvl::unordered_map<uint32_t, uint32_t> struct_size_map_;
 };
 
 }  // namespace spirv
