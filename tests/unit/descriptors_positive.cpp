@@ -1576,3 +1576,32 @@ TEST_F(PositiveDescriptors, AllocateOverDescriptorCountVariableAllocate2) {
     VkDescriptorSet ds = VK_NULL_HANDLE;
     vk::AllocateDescriptorSets(device(), &ds_alloc_info, &ds);
 }
+
+TEST_F(PositiveDescriptors, DescriptorSetLayoutBinding0Count) {
+    TEST_DESCRIPTION("With maintenance1, allocate descriptor with type not in pool");
+    SetTargetApiVersion(VK_API_VERSION_1_1);  // Needed VK_KHR_maintenance1
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Create Pool with 2 Sampler descriptors, but try to alloc an Uniform Buffer
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_SAMPLER, 2};
+
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 2;
+    ds_pool_ci.poolSizeCount = 1;
+    ds_pool_ci.pPoolSizes = &ds_type_count;
+
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding_sampler = {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding dsl_binding_uniform = {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, VK_SHADER_STAGE_ALL, nullptr};
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {dsl_binding_sampler, dsl_binding_uniform});
+
+    VkDescriptorSet descriptor_set;
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorSetCount = 1;
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.pSetLayouts = &ds_layout.handle();
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit);
+    vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_set);
+}
