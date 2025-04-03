@@ -29,24 +29,23 @@ namespace spirv {
 const static OfflineModule kOfflineModule = {instrumentation_buffer_device_address_comp,
                                              instrumentation_buffer_device_address_comp_size, ZeroInitializeUintPrivateVariables};
 
-const static OfflineFunction kOfflineFunction = {"inst_buffer_device_address",
-                                                 instrumentation_buffer_device_address_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctionRange = {"inst_buffer_device_address_range",
+                                                      instrumentation_buffer_device_address_comp_function_0_offset};
+const static OfflineFunction kOfflineFunctionAlign = {"inst_buffer_device_address_align",
+                                                      instrumentation_buffer_device_address_comp_function_1_offset};
 
 BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-// By appending the LinkInfo, it will attempt at linking stage to add the function.
-uint32_t BufferDeviceAddressPass::GetLinkFunctionId() { return GetLinkFunction(link_function_id_, kOfflineFunction); }
-
 uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InjectionData& injection_data,
-                                                     const InstructionMeta& meta) {
+                                                     const InstructionMeta& meta, bool safe_mode) {
     // The Pointer ID Operand is always the first operand for Load/Store/Atomics
     // We can just take it and cast to a uint64 here to examine the ptr value
     const uint32_t pointer_id = meta.target_instruction->Operand(0);
 
     // Convert reference pointer to uint64
     const Type& uint64_type = module_.type_manager_.GetTypeInt(64, 0);
-    const uint32_t convert_id = module_.TakeNextId();
-    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), convert_id, pointer_id}, inst_it);
+    const uint32_t address_id = module_.TakeNextId();
+    block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), address_id, pointer_id}, inst_it);
 
     const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
     const uint32_t opcode = meta.target_instruction->Opcode();
@@ -59,20 +58,32 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
         access_type_value |= 1 << glsl::kInstBuffAddrAccessPayloadShiftIsStruct;
     }
     const Constant& access_type = module_.type_manager_.GetConstantUInt32(access_type_value);
+    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+
+    const uint32_t function_range_result = module_.TakeNextId();
+    const uint32_t function_range_id = GetLinkFunction(function_range_id_, kOfflineFunctionRange);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_range_result, function_range_id, injection_data.inst_position_id,
+                             injection_data.stage_info_id, address_id, access_type.Id(), length_constant.Id()},
+                            inst_it);
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
-    const uint32_t function_result = module_.TakeNextId();
-    const uint32_t function_def = GetLinkFunctionId();
-    const uint32_t bool_type = module_.type_manager_.GetTypeBool().Id();
+    const uint32_t function_align_result = module_.TakeNextId();
+    const uint32_t function_align_id = GetLinkFunction(function_align_id_, kOfflineFunctionAlign);
+    block.CreateInstruction(spv::OpFunctionCall,
+                            {bool_type, function_align_result, function_align_id, injection_data.inst_position_id,
+                             injection_data.stage_info_id, address_id, access_type.Id(), alignment_constant.Id()},
+                            inst_it);
 
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_result, function_def, injection_data.inst_position_id, injection_data.stage_info_id, convert_id,
-         length_constant.Id(), access_type.Id(), alignment_constant.Id()},
-        inst_it);
-
-    return function_result;
+    // Will return bool that will look like (FuncRange() && FuncAlign()) { }
+    if (safe_mode) {
+        const uint32_t logical_and_id = module_.TakeNextId();
+        block.CreateInstruction(spv::OpLogicalAnd, {bool_type, logical_and_id, function_range_result, function_align_result},
+                                inst_it);
+        return logical_and_id;
+    }
+    return 0;  // unsafe mode, we don't care what this is
 }
 
 bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
@@ -163,10 +174,10 @@ bool BufferDeviceAddressPass::Instrument() {
                 InjectionData injection_data = GetInjectionData(*function, current_block, inst_it, *meta.target_instruction);
 
                 if (module_.settings_.unsafe_mode) {
-                    CreateFunctionCall(current_block, &inst_it, injection_data, meta);
+                    CreateFunctionCall(current_block, &inst_it, injection_data, meta, false);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
-                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, injection_data, meta, true);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block
                     block_it++;

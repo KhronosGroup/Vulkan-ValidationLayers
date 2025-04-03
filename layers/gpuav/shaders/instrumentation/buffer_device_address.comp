@@ -49,47 +49,39 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddres
 //        we will adjust the SPIR-V to set this to zero to start
 uint index_cache;
 
-bool inst_buffer_device_address(
+bool inst_buffer_device_address_range(
     const uint inst_num,
     const uvec4 stage_info,
     const uint64_t addr,
-    const uint access_byte_size,
     const uint access_type,
-    const uint alignment)
+    const uint access_byte_size)
 {
-    uint error_sub_code = kErrorSubCodeBufferDeviceAddressUnallocRef;
-    // alignment is guaranteed to be a power of 2
-    // this is a valid way in GLSL to have it do OpUConvert for us
-    if ((addr & (alignment - 1)) != 0) {
-        error_sub_code = kErrorSubCodeBufferDeviceAddressAlignment;
-    } else {
-        const Range cache_range = bda_ranges[index_cache];
-        if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
+    const Range cache_range = bda_ranges[index_cache];
+    if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
+        return true;
+    }
+
+    // Find out if addr is valid
+    // ---
+    for (uint range_i = 0; range_i < bda_range_count; ++range_i) {
+        const Range range = bda_ranges[range_i];
+        if (addr < range.begin) {
+            // Invalid address, proceed to error logging
+            break;
+        }
+        if ((addr < range.end) && (addr + access_byte_size > range.end)) {
+            // Ranges do not overlap,
+            // so if current range holds addr but not (add + access_byte_size), access is invalid
+            break;
+        }
+        if ((addr + access_byte_size) <= range.end) {
+            // addr >= range.begin && addr + access_byte_size <= range.end
+            // ==> valid access
+            index_cache = range_i;
             return true;
         }
-
-        // Find out if addr is valid
-        // ---
-        for (uint range_i = 0; range_i < bda_range_count; ++range_i) {
-            const Range range = bda_ranges[range_i];
-            if (addr < range.begin) {
-                // Invalid address, proceed to error logging
-                break;
-            }
-            if ((addr < range.end) && (addr + access_byte_size > range.end)) {
-                // Ranges do not overlap,
-                // so if current range holds addr but not (add + access_byte_size), access is invalid
-                break;
-            }
-            if ((addr + access_byte_size) <= range.end) {
-                // addr >= range.begin && addr + access_byte_size <= range.end
-                // ==> valid access
-                index_cache = range_i;
-                return true;
-            }
-            // Address is above current range, proceed to next range.
-            // If at loop end, address is invalid.
-        }
+        // Address is above current range, proceed to next range.
+        // If at loop end, address is invalid.
     }
 
     // addr is invalid, try to print error
@@ -105,7 +97,7 @@ bool inst_buffer_device_address(
 
     if (errors_buffer_not_filled) {
         inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (error_sub_code << kErrorSubCodeShift);
+        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressUnallocRef << kErrorSubCodeShift);
         inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
         inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
@@ -115,10 +107,49 @@ bool inst_buffer_device_address(
 
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
         inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | access_byte_size;
+    }
 
-        // access_type already has the upper bits only used and payload is never using them
-        const uint payload = (error_sub_code == kErrorSubCodeBufferDeviceAddressAlignment) ? alignment : access_byte_size;
-        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | payload;
+    return false;
+}
+
+bool inst_buffer_device_address_align(
+    const uint inst_num,
+    const uvec4 stage_info,
+    const uint64_t addr,
+    const uint access_type,
+    const uint alignment)
+{
+    // alignment is guaranteed to be a power of 2
+    // this is a valid way in GLSL to have it do OpUConvert for us
+    if ((addr & (alignment - 1)) == 0) {
+        return true;
+    }
+
+    // addr is invalid, try to print error
+    // ---
+    const uint cmd_id = inst_cmd_resource_index_buffer.index[0];
+    const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+    const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
+
+    if (max_cmd_errors_count_reached) return false;
+
+    uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
+    const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+
+    if (errors_buffer_not_filled) {
+        inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+        inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstBufferDeviceAddress << kErrorGroupShift) | (kErrorSubCodeBufferDeviceAddressAlignment << kErrorSubCodeShift);
+        inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = inst_num | (stage_info.x << kStageIdShift);
+        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+        inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+
+        inst_errors_buffer.data[write_pos + kHeaderActionIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_cmd_resource_index_buffer.index[0];
+
+        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrLoOffset] = uint(addr);
+        inst_errors_buffer.data[write_pos + kInstBuffAddrUnallocDescPtrHiOffset] = uint(addr >> 32u);
+        inst_errors_buffer.data[write_pos + kInstBuffAddrAccessPayloadOffset] = access_type | alignment;
     }
 
     return false;
