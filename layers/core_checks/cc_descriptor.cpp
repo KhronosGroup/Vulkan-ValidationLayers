@@ -3375,7 +3375,8 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
             const uint32_t binding_count = ds_layout_state->GetBindingCount();
             for (uint32_t j = 0; j < binding_count; ++j) {
                 const VkDescriptorType type = ds_layout_state->GetTypeFromIndex(j);
-                if (!ds_pool_state->IsAvailableType(type)) {
+                // If descriptorCount is 0 no descriptors are allocated for that binding
+                if (!ds_pool_state->IsAvailableType(type) && ds_layout_state->GetDescriptorCountFromIndex(j) > 0) {
                     const LogObjectList objlist(pAllocateInfo->descriptorPool, pAllocateInfo->pSetLayouts[i]);
                     skip |=
                         LogWarning("WARNING-CoreValidation-AllocateDescriptorSets-WrongType", objlist, set_layout_loc,
