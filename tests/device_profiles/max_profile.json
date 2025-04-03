@@ -1723,8 +1723,8 @@
                     "maxTimelineSemaphoreValueDifference": 4294967000
                 },
                 "VkPhysicalDeviceVulkan13Properties": {
-                    "minSubgroupSize": 32,
-                    "maxSubgroupSize": 32,
+                    "minSubgroupSize": 16,
+                    "maxSubgroupSize": 64,
                     "maxComputeWorkgroupSubgroups": 2097152,
                     "requiredSubgroupSizeStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
