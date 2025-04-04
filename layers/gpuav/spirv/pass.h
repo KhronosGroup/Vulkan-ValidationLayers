@@ -63,6 +63,9 @@ class Pass {
     uint32_t FindTypeByteSize(uint32_t type_id, uint32_t matrix_stride = 0, bool col_major = false, bool in_matrix = false) const;
     uint32_t GetLastByte(const Type& descriptor_type, const std::vector<const Instruction*>& access_chain_insts, BasicBlock& block,
                          InstructionIt* inst_it);
+    uint32_t FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
+                                const std::vector<const Instruction*>& access_chain_insts) const;
+
     // Generate SPIR-V needed to help convert things to be uniformly uint32_t
     // If no inst_it is passed in, any new instructions will be added to end of the Block
     uint32_t ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const;

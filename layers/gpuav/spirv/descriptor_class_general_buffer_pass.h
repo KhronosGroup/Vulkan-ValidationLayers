@@ -41,35 +41,24 @@ class DescriptorClassGeneralBufferPass : public Pass {
 
         // The Type of the OpVariable that is being accessed
         const Type* descriptor_type = nullptr;
+        // Id to the descriptor, will have array stripped if descriptor indexing
+        uint32_t descriptor_id = 0;
 
         // List of OpAccessChains fom the Store/Load down to the OpVariable
         // The front() will be closet to the exact spot accesssed
         // The back() will be closest to the OpVariable
         // (note GLSL will try to always create a single large OpAccessChain)
         std::vector<const Instruction*> access_chain_insts;
+
+        // Capture the upper bound offset into the struct the instruction accesses
+        // Will be zero if we can't determine it (or in Safe Mode)
+        uint32_t access_offset = 0;
     };
 
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta, bool pre_pass);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();
-
-    // Finds the offset into the SSBO/UBO
-    uint32_t FindLastByteOffset(uint32_t descriptor_id, bool is_descriptor_array,
-                                const std::vector<const Instruction*>& access_chain_insts) const;
-
-    // If robustBufferAccess is turned on, we can use that to ensure the hardware will handle OOB accesses (in this case it is very
-    // "safe" actually)
-    uint32_t unsafe_mode_;
-    // If there is a shader like
-    //    if (x)
-    //        ssbo.data[6] = 0;
-    //    else
-    //        ssbo.data[8] = 0;
-    // We don't know which will actually execute, but by definition a Block must execute from start to finish
-    //
-    // < Descriptor SSA ID, Highest offset byte that will be accessed >
-    vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map_;
 
     // Function IDs to link in
     uint32_t link_function_id_ = 0;
