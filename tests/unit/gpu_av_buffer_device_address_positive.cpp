@@ -2328,9 +2328,11 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
 
 // Used to test large accesses to a single struct from a single pointer
 // If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
-TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_Stress) {
+TEST_F(PositiveGpuAVBufferDeviceAddress, Stress) {
+    // About a 5x speed up to run in unsafe mode
     RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
+    const uint32_t count = 32;
 
     std::stringstream cs_source;
     cs_source << R"glsl(
@@ -2357,7 +2359,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_Stress) {
             // ptr.x = a;
     )glsl";
 
-    for (uint32_t i = 0; i < 512; i += 3) {
+    for (uint32_t i = 0; i < count; i += 3) {
         cs_source << "a += fma(vec3(ptr.payload[" << i << "].x, ptr.payload[" << i << "].y, ptr.payload[" << i << "].z), ";
         cs_source << "vec3(ptr.payload[" << i + 1 << "].x, ptr.payload[" << i + 1 << "].y, ptr.payload[" << i + 1 << "].z), ";
         cs_source << "vec3(ptr.payload[" << i + 2 << "].x, ptr.payload[" << i + 2 << "].y, ptr.payload[" << i + 2 << "].z));\n";

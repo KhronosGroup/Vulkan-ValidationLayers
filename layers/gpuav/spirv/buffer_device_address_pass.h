@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "containers/limits.h"
 #include "pass.h"
 
 namespace gpuav {
@@ -34,8 +35,9 @@ class BufferDeviceAddressPass : public Pass {
     // This is metadata tied to a single instruction gathered during RequiresInstrumentation() to be used later
     struct InstructionMeta {
         const Instruction* target_instruction = nullptr;
+        const Instruction* pointer_inst = nullptr;
         uint32_t alignment_literal = 0;
-        uint32_t type_length = 0;
+        uint32_t access_size = 0;
         bool type_is_struct = false;
     };
 
@@ -45,6 +47,18 @@ class BufferDeviceAddressPass : public Pass {
     // Function IDs to link in
     uint32_t function_range_id_ = 0;
     uint32_t function_align_id_ = 0;
+
+    // This is find the range of the statically accessed members in a BDA struct
+    // We track for each struct, the offsets into it that are statically accessed.
+    // From here, we can do the BDA range check just once.
+    // (example https://godbolt.org/z/v6boos6Yr)
+    struct Range {
+        uint32_t min_instruction = 0;  // used to only instrument at the lowest offset
+        uint32_t min_struct_offsets = vvl::kU32Max;
+        uint32_t max_struct_offsets = 0;
+    };
+    vvl::unordered_map<uint32_t, Range> block_struct_range_map_;
+    vvl::unordered_set<uint32_t> block_skip_list_;
 };
 
 }  // namespace spirv

@@ -47,7 +47,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const uint32_t address_id = module_.TakeNextId();
     block.CreateInstruction(spv::OpConvertPtrToU, {uint64_type.Id(), address_id, pointer_id}, inst_it);
 
-    const Constant& length_constant = module_.type_manager_.GetConstantUInt32(meta.type_length);
+    const uint32_t access_size_id = module_.type_manager_.GetConstantUInt32(meta.access_size).Id();
     const uint32_t opcode = meta.target_instruction->Opcode();
 
     uint32_t access_type_value = 0;
@@ -63,12 +63,35 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     const uint32_t inst_position = meta.target_instruction->GetPositionIndex();
     const uint32_t inst_position_id = module_.type_manager_.CreateConstantUInt32(inst_position).Id();
 
-    const uint32_t function_range_result = module_.TakeNextId();
+    uint32_t function_range_result = 0;  // only take next ID if needed
     const uint32_t function_range_id = GetLinkFunction(function_range_id_, kOfflineFunctionRange);
-    block.CreateInstruction(
-        spv::OpFunctionCall,
-        {bool_type, function_range_result, function_range_id, inst_position_id, address_id, access_type.Id(), length_constant.Id()},
-        inst_it);
+
+    if (module_.settings_.safe_mode || block_skip_list_.find(inst_position) == block_skip_list_.end()) {
+        // "normal" check
+        function_range_result = module_.TakeNextId();
+        block.CreateInstruction(
+            spv::OpFunctionCall,
+            {bool_type, function_range_result, function_range_id, inst_position_id, address_id, access_type.Id(), access_size_id},
+            inst_it);
+    } else {
+        // Find if this is the lowest pointer access in the struct
+        for (const auto& [struct_id, range] : block_struct_range_map_) {
+            // This is only for unsafe mode, so we can ignore all other instructions
+            if (range.min_instruction != inst_position) {
+                continue;
+            }
+
+            function_range_result = module_.TakeNextId();
+            // If there is only a single access found, range diff is zero and this becomes a "normal" check automatically
+            const uint32_t full_access_range = (range.min_struct_offsets - range.max_struct_offsets) + meta.access_size;
+            const uint32_t full_range_id = module_.type_manager_.GetConstantUInt32(full_access_range).Id();
+            block.CreateInstruction(spv::OpFunctionCall,
+                                    {bool_type, function_range_result, function_range_id, inst_position_id, address_id,
+                                     access_type.Id(), full_range_id},
+                                    inst_it);
+            break;
+        }
+    }
 
     const Constant& alignment_constant = module_.type_manager_.GetConstantUInt32(meta.alignment_literal);
 
@@ -122,13 +145,13 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // While the Pointer Id might not be an OpAccessChain (can be OpLoad, OpCopyObject, etc), we can just examine its result type to
     // see if it is a PhysicalStorageBuffer pointer or not
     const uint32_t pointer_id = inst.Operand(0);
-    const Instruction* pointer_inst = function.FindInstruction(pointer_id);
-    if (!pointer_inst) {
+    meta.pointer_inst = function.FindInstruction(pointer_id);
+    if (!meta.pointer_inst) {
         return false;  // Can be pointing to a Workgroup variable out of the function
     }
 
     // Get the OpTypePointer
-    const Type* op_type_pointer = module_.type_manager_.FindTypeById(pointer_inst->TypeId());
+    const Type* op_type_pointer = module_.type_manager_.FindTypeById(meta.pointer_inst->TypeId());
     if (!op_type_pointer || op_type_pointer->spv_type_ != SpvType::kPointer ||
         op_type_pointer->inst_.Operand(0) != spv::StorageClassPhysicalStorageBuffer) {
         return false;
@@ -145,7 +168,7 @@ bool BufferDeviceAddressPass::RequiresInstrumentation(const Function& function, 
     // This might be an OpTypeStruct, even if some compilers are smart enough (know Mesa is) to detect only the first part of a
     // struct is loaded, we have to assume the entire struct is loaded and the entire memory is accessed (see
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8089)
-    meta.type_length = module_.type_manager_.TypeLength(*accessed_type);
+    meta.access_size = module_.type_manager_.TypeLength(*accessed_type);
     // Will mark this is a struct acess to inform the user
     meta.type_is_struct = accessed_type->spv_type_ == SpvType::kStruct;
 
@@ -167,6 +190,52 @@ bool BufferDeviceAddressPass::Instrument() {
                 continue;  // Currently can't properly handle injecting CFG logic into a loop header block
             }
             auto& block_instructions = current_block.instructions_;
+
+            if (!module_.settings_.safe_mode) {
+                // Pre-Pass optimization where we detect statically all the offsets inside a BDA Struct that are accessed.
+                // From here we can create a range and only do the check once since there is no real way to split a VkBuffer mid
+                // struct.
+                block_struct_range_map_.clear();
+                block_skip_list_.clear();
+                for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                    InstructionMeta meta;
+                    if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
+
+                    if (!meta.pointer_inst->IsAccessChain()) continue;
+                    // OpAccesschain -> OpLoad/OpBitcast -> OpTypePointer (PSB) -> OpTypeStruct
+                    std::vector<const Instruction*> access_chain_insts;
+
+                    const Instruction* next_inst = meta.pointer_inst;
+                    // First walk back to the outer most access chain
+                    while (next_inst && next_inst->IsAccessChain()) {
+                        access_chain_insts.push_back(next_inst);
+                        const uint32_t access_chain_base_id = next_inst->Operand(0);
+                        next_inst = function->FindInstruction(access_chain_base_id);
+                    }
+                    if (access_chain_insts.empty() || !next_inst) continue;
+
+                    const Type* load_type_pointer = module_.type_manager_.FindTypeById(next_inst->TypeId());
+                    if (load_type_pointer && load_type_pointer->spv_type_ == SpvType::kPointer &&
+                        load_type_pointer->inst_.StorageClass() == spv::StorageClassPhysicalStorageBuffer) {
+                        const Type* struct_type = module_.type_manager_.FindTypeById(load_type_pointer->inst_.Operand(1));
+                        if (struct_type && struct_type->spv_type_ == SpvType::kStruct) {
+                            const uint32_t struct_offset = FindOffsetInStruct(struct_type->Id(), false, access_chain_insts);
+                            if (struct_offset == 0) continue;
+                            uint32_t inst_position = meta.target_instruction->GetPositionIndex();
+                            block_skip_list_.insert(inst_position);
+
+                            Range& range = block_struct_range_map_[struct_type->Id()];
+                            // If there is only a single item in the struct used, we want the begin/end to be the same.
+                            // The final range is ((end - begin) + min_instruction_offset)
+                            if (struct_offset < range.min_struct_offsets) {
+                                range.min_instruction = inst_position;
+                                range.min_struct_offsets = struct_offset;
+                            }
+                            range.max_struct_offsets = std::max(range.max_struct_offsets, struct_offset);
+                        }
+                    }
+                }
+            }
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 InstructionMeta meta;
