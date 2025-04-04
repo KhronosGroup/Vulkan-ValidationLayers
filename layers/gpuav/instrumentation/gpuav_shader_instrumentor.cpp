@@ -733,11 +733,15 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
     }
 
     // will hit with using GPL without shaders in them (ex. fragment output)
-    if (pipeline_state.stage_states.empty()) return false;
+    if (pipeline_state.stage_states.empty()) {
+        return false;
+    }
 
     // Move all instrumentation until the final linking time
     // This still needs to create a copy of the create_info (we *could* have a mix of GPL and non-GPL)
-    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) return false;
+    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
+        return false;
+    }
 
     // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
     // already instrumented shaders need to be replaced with uninstrumented shaders
@@ -803,6 +807,42 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     }
 }
 
+bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
+                                                               const std::shared_ptr<vvl::ShaderModule> modified_module_state,
+                                                               const Location &loc) {
+    if (!gpuav_settings.select_instrumented_shaders) {
+        return true;
+    }
+
+    bool should_instrument_shader = false;
+    {
+        if (modified_shader_module_ci && IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
+            should_instrument_shader = true;
+        } else if (selected_instrumented_shaders.find(modified_module_state->VkHandle()) != selected_instrumented_shaders.end()) {
+            should_instrument_shader = true;
+        } else {
+            std::string shader_debug_name;
+            {
+                std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
+                shader_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(modified_module_state->VkHandle()));
+            }
+            if (!shader_debug_name.empty()) {
+                for (const std::regex &shader_selection_regex : gpuav_settings.shader_selection_regexes) {
+                    if (std::regex_match(shader_debug_name, shader_selection_regex)) {
+                        should_instrument_shader = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (should_instrument_shader) {
+            LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation",
+                    FormatHandle(modified_module_state->VkHandle()).c_str());
+        }
+    }
+    return should_instrument_shader;
+}
+
 // Instrument all SPIR-V that is sent through pipeline. This can be done in various ways
 // 1. VkCreateShaderModule and passed in VkShaderModule.
 //    For this we create our own VkShaderModule with instrumented shader and manage it inside the pipeline state
@@ -842,13 +882,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                     vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
 
-            if (gpuav_settings.select_instrumented_shaders) {
-                if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
-                    continue;
-                } else if (selected_instrumented_shaders.find(modified_module_state->VkHandle()) ==
-                           selected_instrumented_shaders.end()) {
-                    continue;
-                }
+            if (!IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state,
+                                                    loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+                continue;
             }
         }
         std::vector<uint32_t> instrumented_spirv;
@@ -986,13 +1022,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                     const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                         vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(modified_stage_ci->pNext)));
 
-                if (gpuav_settings.select_instrumented_shaders) {
-                    if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
-                        continue;
-                    } else if (selected_instrumented_shaders.find(modified_module_state->VkHandle()) ==
-                               selected_instrumented_shaders.end()) {
-                        continue;
-                    }
+                if (!IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state,
+                                                        loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+                    continue;
                 }
             }
 

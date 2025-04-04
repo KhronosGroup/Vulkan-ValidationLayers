@@ -17,6 +17,7 @@
  */
 #pragma once
 #include <cstdint>
+#include <regex>
 // Default values for those settings should match layers/VkLayer_khronos_validation.json.in
 
 struct GpuAVSettings {
@@ -25,6 +26,7 @@ struct GpuAVSettings {
     bool force_on_robustness = false;
     uint32_t max_bda_in_use = 10000;
     bool select_instrumented_shaders = false;
+    std::vector<std::regex> shader_selection_regexes{};
 
     bool validate_indirect_draws_buffers = true;
     bool validate_indirect_dispatches_buffers = true;
@@ -80,6 +82,12 @@ struct GpuAVSettings {
         validate_indirect_trace_rays_buffers = enabled;
         validate_buffer_copies = enabled;
         validate_index_buffers = enabled;
+    }
+    void GetShaderSelectionRegexes(const std::vector<std::string>& instrumented_shaders) {
+        for (const std::string& shader_name_pattern : instrumented_shaders) {
+            shader_selection_regexes.emplace_back(
+                std::regex(shader_name_pattern, std::regex_constants::ECMAScript | std::regex_constants::optimize));
+        }
     }
 
     // For people who are using VkValidationFeatureEnableEXT to set only DebugPrintf (and want the rest of GPU-AV off)

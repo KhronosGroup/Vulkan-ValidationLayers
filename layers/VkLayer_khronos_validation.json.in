@@ -708,7 +708,25 @@
                                                     { "key": "gpuav_enable", "value": true },
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
-                                            }
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "gpuav_shaders_to_instrument",
+                                                    "label": "Shader name regexes",
+                                                    "description": "Any shader debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented. Regex grammar: Modified ECMAScript.",
+                                                    "type": "LIST",
+                                                    "default": [],
+                                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            { "key": "gpuav_enable", "value": true },
+                                                            { "key": "gpuav_shader_instrumentation", "value": true },
+                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
                                         }
                                     ]
                                 },

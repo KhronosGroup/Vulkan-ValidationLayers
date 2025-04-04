@@ -199,6 +199,7 @@ const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char *VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB = "gpuav_vertex_attribute_fetch_oob";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";
+const char *VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT = "gpuav_shaders_to_instrument";
 
 const char *VK_LAYER_GPUAV_BUFFERS_VALIDATION = "gpuav_buffers_validation";
 const char *VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS = "gpuav_indirect_draws_buffers";
@@ -606,6 +607,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_STRING_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_BUFFERS_VALIDATION, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_INDIRECT_DRAWS_BUFFERS, setting.pSettingName) == 0) {
@@ -1091,6 +1094,13 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_SELECT_INSTRUMENTED_SHADERS) +
                                           " setting was set, use " + std::string(VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS) +
                                           " instead.");
+        }
+        if (gpuav_settings.select_instrumented_shaders) {
+            std::vector<std::string> shaders_to_instrument;
+            if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT)) {
+                vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, shaders_to_instrument);
+            }
+            gpuav_settings.GetShaderSelectionRegexes(shaders_to_instrument);
         }
 
         // No need to enable shader instrumentation options is no instrumentation is done

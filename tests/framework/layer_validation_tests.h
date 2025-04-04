@@ -266,7 +266,7 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
 
 class GpuAVRayQueryTest : public GpuAVTest {
   public:
-    void InitGpuAVRayQuery();
+    void InitGpuAVRayQuery(void *p_next = nullptr);
 };
 
 class GpuAVImageLayout : public GpuAVTest {
