@@ -2286,3 +2286,12 @@ TEST_F(PositiveWsi, SignalPresentSemaphoreAfterFenceWait) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveWsi, GetDeviceGroupSurfacePresentModes) {
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    VkDeviceGroupPresentModeFlagsKHR present_mode_flags;
+    vk::GetDeviceGroupSurfacePresentModesKHR(m_device->handle(), m_surface.Handle(), &present_mode_flags);
+}
