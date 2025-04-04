@@ -412,6 +412,17 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
             # Generate post-call object processing source code
             out.append(f'{{\nVVL_ZoneScopedN("PostCallRecord_{command.name}");\n')
 
+            # Because each intercept is a copy of vvl::base::Device, we need to update it for each,
+            # even if they don't intercept this command.
+            if not command.instance and command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
+                out.append(f'''
+                    if (result == VK_ERROR_DEVICE_LOST) {{
+                       for (auto& vo : {dispatch}->object_dispatch) {{
+                            vo->is_device_lost = true;
+                        }}
+                    }}
+                ''')
+
             if not command.instance:
                 out.append(f'for (auto& vo : {dispatch}->intercept_vectors[InterceptIdPostCallRecord{command.name[2:]}]) {{\n')
             else:
@@ -439,14 +450,6 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateDeviceExtensionProperties(VkPhysicalDevi
                     out.append('auto lock = vo->WriteLock();\n')
                 else:
                     out.append('vvl::base::Device::BlockingOperationGuard lock(vo);\n')
-
-            # Because each intercept is a copy of vvl::base::Device, we need to update it for each
-            if not command.instance and command.errorCodes and 'VK_ERROR_DEVICE_LOST' in command.errorCodes:
-                out.append('''
-                    if (result == VK_ERROR_DEVICE_LOST) {
-                        vo->is_device_lost = true;
-                    }
-                ''')
 
             out.append(f'vo->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('    }\n')
