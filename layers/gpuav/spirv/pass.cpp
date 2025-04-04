@@ -522,6 +522,140 @@ uint32_t Pass::GetLastByte(const Type& descriptor_type, const std::vector<const 
     return new_sum_id;
 }
 
+// Finds the upper bound offset into the struct an instruction would access
+// If it is a non-constant value, will return zero to indicate its a runtime value
+//
+// If shader looks for 'b' in a descriptor like
+//
+// struct X {
+//    uint a;
+//    uint b;
+//    uint c;
+// }
+//
+// it will return `7` because it covers [4, 7] bytes of the descriptor
+// (This matches the GetLastByte() check)
+uint32_t Pass::FindOffsetInStruct(uint32_t struct_id, bool is_descriptor_array,
+                                  const std::vector<const Instruction*>& access_chain_insts) const {
+    assert(!access_chain_insts.empty());
+    uint32_t last_byte_offset = 0;
+    const uint32_t reset_ac_word = 4;  // points to first "Index" operand of an OpAccessChain
+    uint32_t ac_word_index = reset_ac_word;
+
+    if (is_descriptor_array) {
+        ac_word_index++;  // this jumps over the array of descriptors so we first start on the descriptor itself
+    }
+
+    uint32_t matrix_stride = 0;
+    bool col_major = false;
+    bool in_matrix = false;
+
+    auto access_chain_iter = access_chain_insts.rbegin();
+
+    // This occurs in things like Slang where they have a single OpAccessChain for the descriptor
+    // (GLSL/HLSL will combine 2 indexes into the last OpAccessChain)
+    if (ac_word_index >= (*access_chain_iter)->Length()) {
+        ++access_chain_iter;
+        ac_word_index = reset_ac_word;
+    }
+
+    uint32_t current_type_id = struct_id;
+    // Walk down access chains to build up the offset
+    while (access_chain_iter != access_chain_insts.rend()) {
+        const uint32_t ac_index_id = (*access_chain_iter)->Word(ac_word_index);
+        const Constant* index_constant = module_.type_manager_.FindConstantById(ac_index_id);
+        if (!index_constant || index_constant->inst_.Opcode() != spv::OpConstant) {
+            return 0;  // Access Chain has dynamic value
+        }
+        const uint32_t constant_value = index_constant->GetValueUint32();
+
+        uint32_t current_offset = 0;
+
+        const Type* current_type = module_.type_manager_.FindTypeById(current_type_id);
+        switch (current_type->spv_type_) {
+            case SpvType::kArray:
+            case SpvType::kRuntimeArray: {
+                // Get array stride and multiply by current index
+                const uint32_t array_stride = GetDecoration(current_type_id, spv::DecorationArrayStride)->Word(3);
+                current_offset = constant_value * array_stride;
+
+                current_type_id = current_type->inst_.Operand(0);  // Get element type for next step
+            } break;
+            case SpvType::kMatrix: {
+                if (matrix_stride == 0) {
+                    module_.InternalError(Name(), "FindOffsetInStruct is missing matrix stride");
+                }
+                in_matrix = true;
+                uint32_t vec_type_id = current_type->inst_.Operand(0);
+
+                // If column major, multiply column index by matrix stride, otherwise by vector component size and save matrix
+                // stride for vector (row) index
+                uint32_t col_stride = 0;
+                if (col_major) {
+                    col_stride = matrix_stride;
+                } else {
+                    const uint32_t component_type_id = module_.type_manager_.FindTypeById(vec_type_id)->inst_.Operand(0);
+                    col_stride = FindTypeByteSize(component_type_id);
+                }
+
+                current_offset = constant_value * col_stride;
+
+                current_type_id = vec_type_id;  // Get element type for next step
+            } break;
+            case SpvType::kVector: {
+                // If inside a row major matrix type, multiply index by matrix stride,
+                // else multiply by component size
+                const uint32_t component_type_id = current_type->inst_.Operand(0);
+
+                if (in_matrix && !col_major) {
+                    current_offset = constant_value * matrix_stride;
+                } else {
+                    const uint32_t component_type_size = FindTypeByteSize(component_type_id);
+                    current_offset = constant_value * component_type_size;
+                }
+
+                current_type_id = component_type_id;  // Get element type for next step
+            } break;
+            case SpvType::kStruct: {
+                // Get buffer byte offset for the referenced member
+                current_offset = GetMemberDecoration(current_type_id, constant_value, spv::DecorationOffset)->Word(4);
+
+                // Look for matrix stride for this member if there is one. The matrix
+                // stride is not on the matrix type, but in a OpMemberDecorate on the
+                // enclosing struct type at the member index. If none is found, reset
+                // stride to 0.
+                const Instruction* decoration_matrix_stride =
+                    GetMemberDecoration(current_type_id, constant_value, spv::DecorationMatrixStride);
+                matrix_stride = decoration_matrix_stride ? decoration_matrix_stride->Word(4) : 0;
+
+                const Instruction* decoration_col_major =
+                    GetMemberDecoration(current_type_id, constant_value, spv::DecorationColMajor);
+                col_major = decoration_col_major != nullptr;
+
+                current_type_id = current_type->inst_.Operand(constant_value);  // Get element type for next step
+            } break;
+            default: {
+                module_.InternalError(Name(), "FindOffsetInStruct has unexpected non-composite type");
+            } break;
+        }
+
+        last_byte_offset += current_offset;
+
+        ac_word_index++;
+        if (ac_word_index >= (*access_chain_iter)->Length()) {
+            ++access_chain_iter;
+            ac_word_index = reset_ac_word;
+        }
+    }
+
+    // Add in offset of last byte of referenced object
+    const uint32_t accessed_type_size = FindTypeByteSize(current_type_id, matrix_stride, col_major, in_matrix);
+    const uint32_t last_byte_index = accessed_type_size - 1;
+    last_byte_offset += last_byte_index;
+
+    return last_byte_offset;
+}
+
 // Generate code to convert integer id to 32bit, if needed.
 uint32_t Pass::ConvertTo32(uint32_t id, BasicBlock& block, InstructionIt* inst_it) const {
     // Find type doing the indexing into the access chain
