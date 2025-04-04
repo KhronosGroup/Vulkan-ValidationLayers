@@ -19,7 +19,6 @@
 #include <string>
 #include <cstring>
 
-// TODO https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9384
 // Fix GCC 13 issues with regex
 #if defined(__GNUC__) && (__GNUC__ > 12)
 #pragma GCC diagnostic push
