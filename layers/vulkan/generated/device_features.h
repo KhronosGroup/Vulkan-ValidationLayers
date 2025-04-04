@@ -884,6 +884,34 @@ struct DeviceFeatures {
     bool textureCompressionASTC_HDR;
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM
     bool tileProperties;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShading;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingAnisotropicApron;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingApron;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingAtomicOps;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingColorAttachments;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingDepthAttachments;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingDispatchTile;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingFragmentStage;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingImageProcessing;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingInputAttachments;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingPerTileDispatch;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingPerTileDraw;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingSampledAttachments;
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    bool tileShadingStencilAttachments;
     // VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceVulkan12Features
     bool timelineSemaphore;
     // VkPhysicalDeviceTransformFeedbackFeaturesEXT

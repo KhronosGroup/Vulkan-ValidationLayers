@@ -1751,6 +1751,44 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
         } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+        // Validation code for VkPhysicalDeviceTileShadingFeaturesQCOM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_FEATURES_QCOM: {  // Covers
+                                                                              // VUID-VkPhysicalDeviceTileShadingFeaturesQCOM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTileShadingFeaturesQCOM);
+                VkPhysicalDeviceTileShadingFeaturesQCOM* structure = (VkPhysicalDeviceTileShadingFeaturesQCOM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShading), structure->tileShading);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingFragmentStage), structure->tileShadingFragmentStage);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingColorAttachments), structure->tileShadingColorAttachments);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingDepthAttachments), structure->tileShadingDepthAttachments);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::tileShadingStencilAttachments), structure->tileShadingStencilAttachments);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingInputAttachments), structure->tileShadingInputAttachments);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::tileShadingSampledAttachments), structure->tileShadingSampledAttachments);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingPerTileDraw), structure->tileShadingPerTileDraw);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingPerTileDispatch), structure->tileShadingPerTileDispatch);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingDispatchTile), structure->tileShadingDispatchTile);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingApron), structure->tileShadingApron);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingAnisotropicApron), structure->tileShadingAnisotropicApron);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingAtomicOps), structure->tileShadingAtomicOps);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tileShadingImageProcessing), structure->tileShadingImageProcessing);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceDescriptorBufferFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: {  // Covers
                                                                                   // VUID-VkPhysicalDeviceDescriptorBufferFeaturesEXT-sType-sType
@@ -6126,6 +6164,18 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkRenderPassTileShadingCreateInfoQCOM structure members
+        case VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM: {  // Covers
+                                                                             // VUID-VkRenderPassTileShadingCreateInfoQCOM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkRenderPassTileShadingCreateInfoQCOM);
+                VkRenderPassTileShadingCreateInfoQCOM* structure = (VkRenderPassTileShadingCreateInfoQCOM*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::flags), vvl::FlagBitmask::VkTileShadingRenderPassFlagBitsQCOM,
+                                      AllVkTileShadingRenderPassFlagBitsQCOM, structure->flags, kOptionalFlags,
+                                      "VUID-VkRenderPassTileShadingCreateInfoQCOM-flags-parameter");
+            }
+        } break;
+
         // Validation code for VkQueryLowLatencySupportNV structure members
         case VK_STRUCTURE_TYPE_QUERY_LOW_LATENCY_SUPPORT_NV: {  // Covers VUID-VkQueryLowLatencySupportNV-sType-sType
             if (is_const_param) {
@@ -6867,6 +6917,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkDisplayModeStereoPropertiesNV structure members  -- Covers
         // VUID-VkDisplayModeStereoPropertiesNV-sType-sType
 
+        // No Validation code for VkExternalComputeQueueDeviceCreateInfoNV structure members  -- Covers
+        // VUID-VkExternalComputeQueueDeviceCreateInfoNV-sType-sType
+
         // Validation code for VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV structure members
         case VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CLUSTER_ACCELERATION_STRUCTURE_CREATE_INFO_NV: {  // Covers
                                                                                                       // VUID-VkRayTracingPipelineClusterAccelerationStructureCreateInfoNV-sType-sType
@@ -7140,6 +7193,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_DEVICE_PIPELINE_BINARY_INTERNAL_CACHE_CONTROL_KHR,
             VK_STRUCTURE_TYPE_DEVICE_PRIVATE_DATA_CREATE_INFO,
             VK_STRUCTURE_TYPE_DEVICE_QUEUE_SHADER_CORE_CONTROL_CREATE_INFO_ARM,
+            VK_STRUCTURE_TYPE_EXTERNAL_COMPUTE_QUEUE_DEVICE_CREATE_INFO_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_4444_FORMATS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES,
@@ -7333,6 +7387,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_PROPERTIES_FEATURES_QCOM,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES,
@@ -9114,7 +9169,8 @@ bool Device::PreCallValidateCreateRenderPass(VkDevice device, const VkRenderPass
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkRenderPassCreateInfo = {
             VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT,
-            VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO};
+            VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO, VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
+            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkRenderPassCreateInfo.size(),
                                             allowed_structs_VkRenderPassCreateInfo.data(), GeneratedVulkanHeaderVersion,
@@ -10572,6 +10628,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRM_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_SPARSE_ADDRESS_SPACE_PROPERTIES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_COMPUTE_QUEUE_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_FORMAT_RESOLVE_PROPERTIES_ANDROID,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
@@ -10640,6 +10697,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_PROPERTIES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_PROPERTIES,
@@ -11293,7 +11351,8 @@ bool Device::PreCallValidateCreateRenderPass2(VkDevice device, const VkRenderPas
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkRenderPassCreateInfo2 = {
             VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_CONTROL_EXT, VK_STRUCTURE_TYPE_RENDER_PASS_CREATION_FEEDBACK_CREATE_INFO_EXT,
-            VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT};
+            VK_STRUCTURE_TYPE_RENDER_PASS_FRAGMENT_DENSITY_MAP_CREATE_INFO_EXT,
+            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkRenderPassCreateInfo2.size(),
                                             allowed_structs_VkRenderPassCreateInfo2.data(), GeneratedVulkanHeaderVersion,
@@ -12829,6 +12888,7 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR};
 
@@ -21270,6 +21330,51 @@ bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer,
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+bool Device::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_shading});
+    // No xml-driven validation
+    return skip;
+}
+
+bool Device::PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                         const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_shading});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pPerTileBeginInfo), pPerTileBeginInfo, VK_STRUCTURE_TYPE_PER_TILE_BEGIN_INFO_QCOM, true,
+        "VUID-vkCmdBeginPerTileExecutionQCOM-pPerTileBeginInfo-parameter", "VUID-VkPerTileBeginInfoQCOM-sType-sType");
+    if (pPerTileBeginInfo != nullptr) {
+        [[maybe_unused]] const Location pPerTileBeginInfo_loc = loc.dot(Field::pPerTileBeginInfo);
+        skip |=
+            context.ValidateStructPnext(pPerTileBeginInfo_loc, pPerTileBeginInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                        "VUID-VkPerTileBeginInfoQCOM-pNext-pNext", kVUIDUndefined, true);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_shading});
+    skip |= context.ValidateStructType(loc.dot(Field::pPerTileEndInfo), pPerTileEndInfo, VK_STRUCTURE_TYPE_PER_TILE_END_INFO_QCOM,
+                                       true, "VUID-vkCmdEndPerTileExecutionQCOM-pPerTileEndInfo-parameter",
+                                       "VUID-VkPerTileEndInfoQCOM-sType-sType");
+    if (pPerTileEndInfo != nullptr) {
+        [[maybe_unused]] const Location pPerTileEndInfo_loc = loc.dot(Field::pPerTileEndInfo);
+        skip |= context.ValidateStructPnext(pPerTileEndInfo_loc, pPerTileEndInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkPerTileEndInfoQCOM-pNext-pNext", kVUIDUndefined, true);
+    }
+    return skip;
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 bool Device::PreCallValidateExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                   const ErrorObject& error_obj) const {
@@ -23889,6 +23994,7 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
             VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_BEGIN_INFO_ARM,
+            VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_DENSITY_MAP_ATTACHMENT_INFO_EXT,
             VK_STRUCTURE_TYPE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR};
 
@@ -24298,6 +24404,70 @@ bool Device::PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const 
     return skip;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+bool Device::PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator,
+                                                         VkExternalComputeQueueNV* pExternalQueue,
+                                                         const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_external_compute_queue))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_compute_queue});
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_EXTERNAL_COMPUTE_QUEUE_CREATE_INFO_NV, true,
+        "VUID-vkCreateExternalComputeQueueNV-pCreateInfo-parameter", "VUID-VkExternalComputeQueueCreateInfoNV-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkExternalComputeQueueCreateInfoNV-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pCreateInfo_loc.dot(Field::preferredQueue), pCreateInfo->preferredQueue);
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pExternalQueue), pExternalQueue,
+                                            "VUID-vkCreateExternalComputeQueueNV-pExternalQueue-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                          const VkAllocationCallbacks* pAllocator,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_external_compute_queue))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_compute_queue});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::externalQueue), externalQueue);
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                          VkExternalComputeQueueDataParamsNV* params, void* pData,
+                                                          const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_nv_external_compute_queue))
+        skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_compute_queue});
+    skip |= context.ValidateStructType(loc.dot(Field::params), params, VK_STRUCTURE_TYPE_EXTERNAL_COMPUTE_QUEUE_DATA_PARAMS_NV,
+                                       true, "VUID-vkGetExternalComputeQueueDataNV-params-parameter",
+                                       "VUID-VkExternalComputeQueueDataParamsNV-sType-sType");
+    if (params != nullptr) {
+        [[maybe_unused]] const Location params_loc = loc.dot(Field::params);
+        skip |= context.ValidateStructPnext(params_loc, params->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkExternalComputeQueueDataParamsNV-pNext-pNext", kVUIDUndefined, false);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pData), pData, "VUID-vkGetExternalComputeQueueDataNV-pData-parameter");
+    return skip;
+}
 
 bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                         const VkClusterAccelerationStructureInputInfoNV* pInfo,
@@ -26324,6 +26494,7 @@ bool Device::ValidateCommandBufferInheritanceInfo(const Context& context, const 
         VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_VIEWPORT_SCISSOR_INFO_NV,
         VK_STRUCTURE_TYPE_EXTERNAL_FORMAT_ANDROID,
         VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_ATTRIBUTES_INFO_NVX,
+        VK_STRUCTURE_TYPE_RENDER_PASS_TILE_SHADING_CREATE_INFO_QCOM,
         VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_LOCATION_INFO,
         VK_STRUCTURE_TYPE_RENDERING_INPUT_ATTACHMENT_INDEX_INFO};
 

@@ -874,6 +874,34 @@ enum class Feature {
     textureCompressionASTC_HDR,
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM
     tileProperties,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShading,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingAnisotropicApron,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingApron,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingAtomicOps,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingColorAttachments,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingDepthAttachments,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingDispatchTile,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingFragmentStage,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingImageProcessing,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingInputAttachments,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingPerTileDispatch,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingPerTileDraw,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingSampledAttachments,
+    // VkPhysicalDeviceTileShadingFeaturesQCOM
+    tileShadingStencilAttachments,
     // VkPhysicalDeviceTimelineSemaphoreFeatures, VkPhysicalDeviceVulkan12Features
     timelineSemaphore,
     // VkPhysicalDeviceTransformFeedbackFeaturesEXT

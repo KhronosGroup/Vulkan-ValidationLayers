@@ -3397,6 +3397,22 @@ static inline void DispatchCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
     dispatch->CmdCudaLaunchKernelNV(commandBuffer, pLaunchInfo);
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+
+static inline void DispatchCmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatchTileQCOM(commandBuffer);
+}
+
+static inline void DispatchCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                        const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);
+}
+
+static inline void DispatchCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
+}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 
 static inline void DispatchExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
@@ -4157,6 +4173,25 @@ static inline VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, con
     return dispatch->GetScreenBufferPropertiesQNX(device, buffer, pProperties);
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+static inline VkResult DispatchCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkExternalComputeQueueNV* pExternalQueue) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
+}
+
+static inline void DispatchDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                         const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyExternalComputeQueueNV(device, externalQueue, pAllocator);
+}
+
+static inline void DispatchGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                         VkExternalComputeQueueDataParamsNV* params, void* pData) {
+    auto dispatch = vvl::dispatch::GetData(externalQueue);
+    dispatch->GetExternalComputeQueueDataNV(externalQueue, params, pData);
+}
 
 static inline void DispatchGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                        const VkClusterAccelerationStructureInputInfoNV* pInfo,

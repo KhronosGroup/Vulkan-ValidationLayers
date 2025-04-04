@@ -177,6 +177,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const {
             return IsExtEnabled(extensions.vk_ext_shader_object) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return IsExtEnabled(extensions.vk_khr_pipeline_binary) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
+            return IsExtEnabled(extensions.vk_nv_external_compute_queue) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
             return IsExtEnabled(extensions.vk_ext_device_generated_commands) ? ValidValue::Valid : ValidValue::NoExtension;
@@ -2331,6 +2333,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkObjectType value) const 
             return {vvl::Extension::_VK_EXT_shader_object};
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return {vvl::Extension::_VK_KHR_pipeline_binary};
+        case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
+            return {vvl::Extension::_VK_NV_external_compute_queue};
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
             return {vvl::Extension::_VK_EXT_device_generated_commands};

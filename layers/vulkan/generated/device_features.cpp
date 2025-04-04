@@ -1042,6 +1042,25 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 break;
             }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_FEATURES_QCOM: {
+                const VkPhysicalDeviceTileShadingFeaturesQCOM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTileShadingFeaturesQCOM *>(pNext);
+                features->tileShading |= enabled->tileShading == VK_TRUE;
+                features->tileShadingFragmentStage |= enabled->tileShadingFragmentStage == VK_TRUE;
+                features->tileShadingColorAttachments |= enabled->tileShadingColorAttachments == VK_TRUE;
+                features->tileShadingDepthAttachments |= enabled->tileShadingDepthAttachments == VK_TRUE;
+                features->tileShadingStencilAttachments |= enabled->tileShadingStencilAttachments == VK_TRUE;
+                features->tileShadingInputAttachments |= enabled->tileShadingInputAttachments == VK_TRUE;
+                features->tileShadingSampledAttachments |= enabled->tileShadingSampledAttachments == VK_TRUE;
+                features->tileShadingPerTileDraw |= enabled->tileShadingPerTileDraw == VK_TRUE;
+                features->tileShadingPerTileDispatch |= enabled->tileShadingPerTileDispatch == VK_TRUE;
+                features->tileShadingDispatchTile |= enabled->tileShadingDispatchTile == VK_TRUE;
+                features->tileShadingApron |= enabled->tileShadingApron == VK_TRUE;
+                features->tileShadingAnisotropicApron |= enabled->tileShadingAnisotropicApron == VK_TRUE;
+                features->tileShadingAtomicOps |= enabled->tileShadingAtomicOps == VK_TRUE;
+                features->tileShadingImageProcessing |= enabled->tileShadingImageProcessing == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT: {
                 const VkPhysicalDeviceDescriptorBufferFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDescriptorBufferFeaturesEXT *>(pNext);

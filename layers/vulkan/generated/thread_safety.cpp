@@ -6347,6 +6347,36 @@ void Device::PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+void Device::PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PreCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                       const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                       const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PostCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                        const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                        const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PreCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                     const RecordObject& record_obj) {
+    StartReadObject(commandBuffer, record_obj.location);
+}
+
+void Device::PostCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                                      const RecordObject& record_obj) {
+    FinishReadObject(commandBuffer, record_obj.location);
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                                 const RecordObject& record_obj) {
@@ -7919,6 +7949,45 @@ void Device::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const s
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void Device::PreCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       VkExternalComputeQueueNV* pExternalQueue, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator,
+                                                        VkExternalComputeQueueNV* pExternalQueue, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pExternalQueue);
+    }
+}
+
+void Device::PreCallRecordDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                        const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartReadObject(externalQueue, record_obj.location);
+}
+
+void Device::PostCallRecordDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                         const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishReadObject(externalQueue, record_obj.location);
+}
+
+void Device::PreCallRecordGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                        VkExternalComputeQueueDataParamsNV* params, void* pData,
+                                                        const RecordObject& record_obj) {
+    StartReadObject(externalQueue, record_obj.location);
+}
+
+void Device::PostCallRecordGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                         VkExternalComputeQueueDataParamsNV* params, void* pData,
+                                                         const RecordObject& record_obj) {
+    FinishReadObject(externalQueue, record_obj.location);
+}
+
 void Device::PreCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                       const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                                       VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,

@@ -6832,6 +6832,222 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->tileProperties, "VkPhysicalDeviceTilePropertiesFeaturesQCOM::tileProperties"};
         }
 
+        case Feature::tileShading: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShading, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading"};
+        }
+
+        case Feature::tileShadingAnisotropicApron: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingAnisotropicApron,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingAnisotropicApron"};
+        }
+
+        case Feature::tileShadingApron: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingApron, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingApron"};
+        }
+
+        case Feature::tileShadingAtomicOps: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingAtomicOps, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingAtomicOps"};
+        }
+
+        case Feature::tileShadingColorAttachments: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingColorAttachments,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingColorAttachments"};
+        }
+
+        case Feature::tileShadingDepthAttachments: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingDepthAttachments,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingDepthAttachments"};
+        }
+
+        case Feature::tileShadingDispatchTile: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingDispatchTile, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingDispatchTile"};
+        }
+
+        case Feature::tileShadingFragmentStage: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingFragmentStage, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingFragmentStage"};
+        }
+
+        case Feature::tileShadingImageProcessing: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingImageProcessing, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingImageProcessing"};
+        }
+
+        case Feature::tileShadingInputAttachments: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingInputAttachments,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingInputAttachments"};
+        }
+
+        case Feature::tileShadingPerTileDispatch: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingPerTileDispatch, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDispatch"};
+        }
+
+        case Feature::tileShadingPerTileDraw: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingPerTileDraw, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingPerTileDraw"};
+        }
+
+        case Feature::tileShadingSampledAttachments: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingSampledAttachments,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingSampledAttachments"};
+        }
+
+        case Feature::tileShadingStencilAttachments: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileShadingFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileShadingFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileShadingFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileShadingStencilAttachments,
+                    "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShadingStencilAttachments"};
+        }
+
         case Feature::timelineSemaphore:
             if (api_version >= VK_API_VERSION_1_2) {
                 auto vk_struct = const_cast<VkPhysicalDeviceVulkan12Features *>(

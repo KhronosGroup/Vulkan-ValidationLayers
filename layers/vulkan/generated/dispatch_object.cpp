@@ -540,6 +540,7 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
         case VK_OBJECT_TYPE_DEVICE:
         case VK_OBJECT_TYPE_QUEUE:
         case VK_OBJECT_TYPE_COMMAND_BUFFER:
+        case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
             return false;
         default:
             return true;
@@ -6837,6 +6838,16 @@ void Device::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLa
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+void Device::CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdDispatchTileQCOM(commandBuffer); }
+
+void Device::CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
+    device_dispatch_table.CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);
+}
+
+void Device::CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
+    device_dispatch_table.CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
+}
+
 void Device::GetDescriptorSetLayoutSizeEXT(VkDevice device, VkDescriptorSetLayout layout, VkDeviceSize* pLayoutSizeInBytes) {
     if (!wrap_handles) return device_dispatch_table.GetDescriptorSetLayoutSizeEXT(device, layout, pLayoutSizeInBytes);
     { layout = Unwrap(layout); }
@@ -8120,6 +8131,23 @@ VkResult Device::GetScreenBufferPropertiesQNX(VkDevice device, const struct _scr
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+VkResult Device::CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue) {
+    VkResult result = device_dispatch_table.CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
+
+    return result;
+}
+
+void Device::DestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                           const VkAllocationCallbacks* pAllocator) {
+    device_dispatch_table.DestroyExternalComputeQueueNV(device, externalQueue, pAllocator);
+}
+
+void Device::GetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue, VkExternalComputeQueueDataParamsNV* params,
+                                           void* pData) {
+    device_dispatch_table.GetExternalComputeQueueDataNV(externalQueue, params, pData);
+}
 
 void Device::GetClusterAccelerationStructureBuildSizesNV(VkDevice device, const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                          VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {

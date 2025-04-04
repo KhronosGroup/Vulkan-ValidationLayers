@@ -58,6 +58,7 @@ const char* String(Func func) {
     {"vkBuildMicromapsEXT", 20},
     {"vkCmdBeginConditionalRenderingEXT", 34},
     {"vkCmdBeginDebugUtilsLabelEXT", 29},
+    {"vkCmdBeginPerTileExecutionQCOM", 31},
     {"vkCmdBeginQuery", 16},
     {"vkCmdBeginQueryIndexedEXT", 26},
     {"vkCmdBeginRenderPass", 21},
@@ -136,6 +137,7 @@ const char* String(Func func) {
     {"vkCmdDispatchGraphIndirectAMDX", 31},
     {"vkCmdDispatchGraphIndirectCountAMDX", 36},
     {"vkCmdDispatchIndirect", 22},
+    {"vkCmdDispatchTileQCOM", 22},
     {"vkCmdDraw", 10},
     {"vkCmdDrawClusterHUAWEI", 23},
     {"vkCmdDrawClusterIndirectHUAWEI", 31},
@@ -160,6 +162,7 @@ const char* String(Func func) {
     {"vkCmdEncodeVideoKHR", 20},
     {"vkCmdEndConditionalRenderingEXT", 32},
     {"vkCmdEndDebugUtilsLabelEXT", 27},
+    {"vkCmdEndPerTileExecutionQCOM", 29},
     {"vkCmdEndQuery", 14},
     {"vkCmdEndQueryIndexedEXT", 24},
     {"vkCmdEndRenderPass", 19},
@@ -365,6 +368,7 @@ const char* String(Func func) {
     {"vkCreateDisplayPlaneSurfaceKHR", 31},
     {"vkCreateEvent", 14},
     {"vkCreateExecutionGraphPipelinesAMDX", 36},
+    {"vkCreateExternalComputeQueueNV", 31},
     {"vkCreateFence", 14},
     {"vkCreateFramebuffer", 20},
     {"vkCreateGraphicsPipelines", 26},
@@ -433,6 +437,7 @@ const char* String(Func func) {
     {"vkDestroyDescriptorUpdateTemplateKHR", 37},
     {"vkDestroyDevice", 16},
     {"vkDestroyEvent", 15},
+    {"vkDestroyExternalComputeQueueNV", 32},
     {"vkDestroyFence", 15},
     {"vkDestroyFramebuffer", 21},
     {"vkDestroyImage", 15},
@@ -542,6 +547,7 @@ const char* String(Func func) {
     {"vkGetEventStatus", 17},
     {"vkGetExecutionGraphPipelineNodeIndexAMDX", 41},
     {"vkGetExecutionGraphPipelineScratchSizeAMDX", 43},
+    {"vkGetExternalComputeQueueDataNV", 32},
     {"vkGetFenceFdKHR", 16},
     {"vkGetFenceStatus", 17},
     {"vkGetFenceWin32HandleKHR", 25},
@@ -1003,6 +1009,7 @@ const char* String(Struct structure) {
     {"VkDispatchGraphCountInfoAMDX", 29},
     {"VkDispatchGraphInfoAMDX", 24},
     {"VkDispatchIndirectCommand", 26},
+    {"VkDispatchTileInfoQCOM", 23},
     {"VkDisplayEventInfoEXT", 22},
     {"VkDisplayModeCreateInfoKHR", 27},
     {"VkDisplayModeParametersKHR", 27},
@@ -1053,6 +1060,9 @@ const char* String(Struct structure) {
     {"VkExtent2D", 11},
     {"VkExtent3D", 11},
     {"VkExternalBufferProperties", 27},
+    {"VkExternalComputeQueueCreateInfoNV", 35},
+    {"VkExternalComputeQueueDataParamsNV", 35},
+    {"VkExternalComputeQueueDeviceCreateInfoNV", 41},
     {"VkExternalFenceProperties", 26},
     {"VkExternalFormatANDROID", 24},
     {"VkExternalFormatQNX", 20},
@@ -1243,6 +1253,8 @@ const char* String(Struct structure) {
     {"VkPartitionedAccelerationStructureWriteInstanceDataNV", 54},
     {"VkPartitionedAccelerationStructureWritePartitionTranslationDataNV", 66},
     {"VkPastPresentationTimingGOOGLE", 31},
+    {"VkPerTileBeginInfoQCOM", 23},
+    {"VkPerTileEndInfoQCOM", 21},
     {"VkPerformanceConfigurationAcquireInfoINTEL", 43},
     {"VkPerformanceCounterDescriptionKHR", 35},
     {"VkPerformanceCounterKHR", 24},
@@ -1336,6 +1348,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExtendedSparseAddressSpaceFeaturesNV", 53},
     {"VkPhysicalDeviceExtendedSparseAddressSpacePropertiesNV", 55},
     {"VkPhysicalDeviceExternalBufferInfo", 35},
+    {"VkPhysicalDeviceExternalComputeQueuePropertiesNV", 49},
     {"VkPhysicalDeviceExternalFenceInfo", 34},
     {"VkPhysicalDeviceExternalFormatResolveFeaturesANDROID", 53},
     {"VkPhysicalDeviceExternalFormatResolvePropertiesANDROID", 55},
@@ -1561,6 +1574,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceTexelBufferAlignmentProperties", 47},
     {"VkPhysicalDeviceTextureCompressionASTCHDRFeatures", 50},
     {"VkPhysicalDeviceTilePropertiesFeaturesQCOM", 43},
+    {"VkPhysicalDeviceTileShadingFeaturesQCOM", 40},
+    {"VkPhysicalDeviceTileShadingPropertiesQCOM", 42},
     {"VkPhysicalDeviceTimelineSemaphoreFeatures", 42},
     {"VkPhysicalDeviceTimelineSemaphoreProperties", 44},
     {"VkPhysicalDeviceToolProperties", 31},
@@ -1711,6 +1726,7 @@ const char* String(Struct structure) {
     {"VkRenderPassStripeSubmitInfoARM", 32},
     {"VkRenderPassSubpassFeedbackCreateInfoEXT", 41},
     {"VkRenderPassSubpassFeedbackInfoEXT", 35},
+    {"VkRenderPassTileShadingCreateInfoQCOM", 38},
     {"VkRenderPassTransformBeginInfoQCOM", 35},
     {"VkRenderingAreaInfo", 20},
     {"VkRenderingAttachmentInfo", 26},
@@ -2523,6 +2539,7 @@ const char* String(Field field) {
     {"extendedSparseImageUsageFlags", 30},
     {"extensionName", 14},
     {"extent", 7},
+    {"externalDataSize", 17},
     {"externalFenceFeatures", 22},
     {"externalFormat", 15},
     {"externalFormatResolve", 22},
@@ -2532,6 +2549,7 @@ const char* String(Field field) {
     {"externalMemoryFeatures", 23},
     {"externalMemoryProperties", 25},
     {"externalMemoryRDMA", 19},
+    {"externalQueue", 14},
     {"externalSemaphoreFeatures", 26},
     {"extraCount", 11},
     {"extraPrimitiveOverestimationSize", 33},
@@ -2913,6 +2931,7 @@ const char* String(Field field) {
     {"maxAccelerationStructureCount", 30},
     {"maxActiveReferencePictures", 27},
     {"maxAnisotropy", 14},
+    {"maxApronSize", 13},
     {"maxArrayLayers", 15},
     {"maxBPictureL0ReferenceCount", 28},
     {"maxBidirectionalCompoundGroup1ReferenceCount", 45},
@@ -2995,6 +3014,7 @@ const char* String(Field field) {
     {"maxExecutionGraphWorkgroupCount", 32},
     {"maxExecutionGraphWorkgroups", 28},
     {"maxExtent", 10},
+    {"maxExternalQueues", 18},
     {"maxExtraPrimitiveOverestimationSize", 36},
     {"maxFPS", 7},
     {"maxFragmentCombinedOutputResources", 35},
@@ -3172,6 +3192,7 @@ const char* String(Field field) {
     {"maxTexelBufferElements", 23},
     {"maxTexelGatherOffset", 21},
     {"maxTexelOffset", 15},
+    {"maxTileShadingRate", 19},
     {"maxTileSize", 12},
     {"maxTiles", 9},
     {"maxTimelineSemaphoreValueDifference", 36},
@@ -3573,6 +3594,7 @@ const char* String(Field field) {
     {"pExternalFenceInfo", 19},
     {"pExternalFenceProperties", 25},
     {"pExternalImageFormatProperties", 31},
+    {"pExternalQueue", 15},
     {"pExternalSemaphoreInfo", 23},
     {"pExternalSemaphoreProperties", 29},
     {"pExtras", 8},
@@ -3716,6 +3738,8 @@ const char* String(Field field) {
     {"pParametersAddInfo", 19},
     {"pParams", 8},
     {"pPeerMemoryFeatures", 20},
+    {"pPerTileBeginInfo", 18},
+    {"pPerTileEndInfo", 16},
     {"pPerViewRenderAreas", 20},
     {"pPerformanceQueryCreateInfo", 28},
     {"pPhysicalDeviceCount", 21},
@@ -3940,6 +3964,7 @@ const char* String(Field field) {
     {"paramCount", 11},
     {"parameter", 10},
     {"parameters", 11},
+    {"params", 7},
     {"partitionCount", 15},
     {"partitionIndex", 15},
     {"partitionTranslation", 21},
@@ -4043,6 +4068,7 @@ const char* String(Field field) {
     {"predictionMode", 15},
     {"predictiveFrameSize", 20},
     {"predictiveQIndex", 17},
+    {"preferNonCoherent", 18},
     {"preferredBidirectionalCompoundReferenceNameMask", 48},
     {"preferredConsecutiveBFrameCount", 32},
     {"preferredConsecutiveBipredictiveFrameCount", 43},
@@ -4059,6 +4085,7 @@ const char* String(Field field) {
     {"preferredMaxSingleReferenceCount", 33},
     {"preferredMaxUnidirectionalCompoundGroup1ReferenceCount", 55},
     {"preferredMaxUnidirectionalCompoundReferenceCount", 49},
+    {"preferredQueue", 15},
     {"preferredRateControlFlags", 26},
     {"preferredRateControlLayerCount", 31},
     {"preferredRateControlMode", 25},
@@ -4234,6 +4261,7 @@ const char* String(Field field) {
     {"requiresDedicatedAllocation", 28},
     {"requiresGopRemainingFrames", 27},
     {"reserved", 9},
+    {"reservedExternalQueues", 23},
     {"residencyAlignedMipSize", 24},
     {"residencyNonResidentStrict", 27},
     {"residencyStandard2DBlockShape", 30},
@@ -4694,8 +4722,24 @@ const char* String(Field field) {
     {"textureCompressionBC", 21},
     {"textureCompressionETC2", 23},
     {"textureSampleWeighted", 22},
+    {"tileApronSize", 14},
     {"tileCount", 10},
+    {"tileGranularity", 16},
     {"tileProperties", 15},
+    {"tileShading", 12},
+    {"tileShadingAnisotropicApron", 28},
+    {"tileShadingApron", 17},
+    {"tileShadingAtomicOps", 21},
+    {"tileShadingColorAttachments", 28},
+    {"tileShadingDepthAttachments", 28},
+    {"tileShadingDispatchTile", 24},
+    {"tileShadingFragmentStage", 25},
+    {"tileShadingImageProcessing", 27},
+    {"tileShadingInputAttachments", 28},
+    {"tileShadingPerTileDispatch", 27},
+    {"tileShadingPerTileDraw", 23},
+    {"tileShadingSampledAttachments", 30},
+    {"tileShadingStencilAttachments", 30},
     {"tileSize", 9},
     {"tiling", 7},
     {"timeDomain", 11},
@@ -5144,6 +5188,7 @@ const char* String(FlagBitmask value) {
     {"VkSurfaceCounterFlagBitsEXT", 28},
     {"VkSurfaceTransformFlagBitsKHR", 30},
     {"VkSwapchainCreateFlagBitsKHR", 29},
+    {"VkTileShadingRenderPassFlagBitsQCOM", 36},
     {"VkToolPurposeFlagBits", 22},
     {"VkVideoCapabilityFlagBitsKHR", 29},
     {"VkVideoChromaSubsamplingFlagBitsKHR", 36},
@@ -5523,6 +5568,7 @@ const char* String(Extension extension) {
     {"VK_NV_displacement_micromap", 28},
     {"VK_NV_display_stereo", 21},
     {"VK_NV_extended_sparse_address_space", 36},
+    {"VK_NV_external_compute_queue", 29},
     {"VK_NV_external_memory", 22},
     {"VK_NV_external_memory_capabilities", 35},
     {"VK_NV_external_memory_rdma", 27},
@@ -5574,6 +5620,7 @@ const char* String(Extension extension) {
     {"VK_QCOM_render_pass_transform", 30},
     {"VK_QCOM_rotated_copy_commands", 30},
     {"VK_QCOM_tile_properties", 24},
+    {"VK_QCOM_tile_shading", 21},
     {"VK_QCOM_ycbcr_degamma", 22},
     {"VK_QNX_external_memory_screen_buffer", 37},
     {"VK_QNX_screen_surface", 22},
@@ -5766,6 +5813,7 @@ bool IsFieldPointer(Field field) {
     case Field::pExternalFenceInfo:
     case Field::pExternalFenceProperties:
     case Field::pExternalImageFormatProperties:
+    case Field::pExternalQueue:
     case Field::pExternalSemaphoreInfo:
     case Field::pExternalSemaphoreProperties:
     case Field::pExtras:
@@ -5909,6 +5957,8 @@ bool IsFieldPointer(Field field) {
     case Field::pParametersAddInfo:
     case Field::pParams:
     case Field::pPeerMemoryFeatures:
+    case Field::pPerTileBeginInfo:
+    case Field::pPerTileEndInfo:
     case Field::pPerViewRenderAreas:
     case Field::pPerformanceQueryCreateInfo:
     case Field::pPhysicalDeviceCount:
@@ -6129,6 +6179,7 @@ bool IsFieldPointer(Field field) {
     case Field::pWaitSemaphores:
     case Field::pYcbcrConversion:
     case Field::pZirconHandle:
+    case Field::params:
     case Field::pfnAllocation:
     case Field::pfnCallback:
     case Field::pfnFree:

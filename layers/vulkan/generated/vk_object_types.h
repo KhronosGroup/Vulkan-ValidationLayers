@@ -80,9 +80,10 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeMicromapEXT = 49,
     kVulkanObjectTypeOpticalFlowSessionNV = 50,
     kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 52,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 53,
-    kVulkanObjectTypeMax = 54
+    kVulkanObjectTypeExternalComputeQueueNV = 52,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 53,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 54,
+    kVulkanObjectTypeMax = 55
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -194,6 +195,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
         case kVulkanObjectTypeShaderEXT:
             return VK_OBJECT_TYPE_SHADER_EXT;
+        case kVulkanObjectTypeExternalComputeQueueNV:
+            return VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV;
         case kVulkanObjectTypeIndirectExecutionSetEXT:
             return VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT;
         case kVulkanObjectTypeIndirectCommandsLayoutEXT:
@@ -308,6 +311,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeOpticalFlowSessionNV;
         case VK_OBJECT_TYPE_SHADER_EXT:
             return kVulkanObjectTypeShaderEXT;
+        case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
+            return kVulkanObjectTypeExternalComputeQueueNV;
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
             return kVulkanObjectTypeIndirectExecutionSetEXT;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
@@ -595,6 +600,18 @@ struct VkHandleInfo<VkCommandBuffer> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeCommandBuffer> {
     typedef VkCommandBuffer Type;
+};
+
+template <>
+struct VkHandleInfo<VkExternalComputeQueueNV> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeExternalComputeQueueNV;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV;
+    static const char* Typename() { return "VkExternalComputeQueueNV"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeExternalComputeQueueNV> {
+    typedef VkExternalComputeQueueNV Type;
 };
 #ifdef TYPESAFE_NONDISPATCHABLE_HANDLES
 

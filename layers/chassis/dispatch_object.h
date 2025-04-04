@@ -156,6 +156,7 @@ void SetData(VkDevice dev, std::unique_ptr<Device>&&);
 Device* GetData(VkDevice);
 Device* GetData(VkQueue);
 Device* GetData(VkCommandBuffer);
+Device* GetData(VkExternalComputeQueueNV);
 void FreeData(void* key, VkDevice device);
 
 void FreeAllData();
