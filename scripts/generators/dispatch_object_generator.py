@@ -333,7 +333,7 @@ class DispatchObjectGenerator(BaseGenerator):
             out.extend(guard_helper.add_guard(command.protect))
             out.append(f'\n{prototype}\n')
             out.append(f'auto dispatch = vvl::dispatch::GetData({command.params[0].name});\n')
-            returnResult = f'return ' if (command.returnType != 'void') else ''
+            returnResult = 'return ' if (command.returnType != 'void') else ''
             paramsList = ', '.join([param.name for param in command.params])
             out.append(f'{returnResult}{command.name.replace("vk", "dispatch->")}({paramsList}{call_extra});\n')
             out.append('}\n')

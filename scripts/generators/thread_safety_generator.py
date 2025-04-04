@@ -382,9 +382,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
         out.append('#endif  // DISTINCT_NONDISPATCHABLE_HANDLES\n')
         out.append('}\n')
 
-        for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist]:
-            if command.instance != want_instance:
-                continue
+        for command in [x for x in self.vk.commands.values() if x.name not in self.blacklist and x.instance == want_instance]:
             # Determine first if this function needs to be intercepted
             startThreadSafety = self.makeThreadUseBlock(command, start=True)
             finishThreadSafety = self.makeThreadUseBlock(command, finish=True)

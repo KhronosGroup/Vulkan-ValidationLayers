@@ -34,7 +34,7 @@ class SpirvToolCommitIdOutputGenerator(BaseGenerator):
             commit_id = [x for x in json_data['repos'] if x['name'] == 'SPIRV-Tools'][0]['commit']
 
         try:
-            str_as_int = int(commit_id, 16)
+            int(commit_id, 16)
         except ValueError:
             raise ValueError(f'commit ID for SPIRV_TOOLS_COMMIT_ID ({commit_id}) must be a SHA1 hash.')
         if len(commit_id) != 40:

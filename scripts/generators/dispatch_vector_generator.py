@@ -22,9 +22,10 @@
 # layers and interceptors.
 
 import os
-from vulkan_object import Command
 from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
+# Normally we don't like to have generator depend on other generator
+# But for this, the logic makes sense in 2 seperate file and its only including encapsulated data
 from generators.dispatch_object_generator import APISpecific
 
 class DispatchVectorGenerator(BaseGenerator):
@@ -140,28 +141,27 @@ class DispatchVectorGenerator(BaseGenerator):
             out.append(f'#include "{include}"\n')
 
         out.append('''
-namespace vvl {
-namespace dispatch {
+            namespace vvl {
+            namespace dispatch {
 
-void Device::InitObjectDispatchVectors() {
+            void Device::InitObjectDispatchVectors() {
 
-#define BUILD_DISPATCH_VECTOR(name) \\
-    init_object_dispatch_vector(InterceptId ## name, \\
-                                typeid(&vvl::base::Device::name), \\
+            #define BUILD_DISPATCH_VECTOR(name) \\
+                init_object_dispatch_vector(InterceptId ## name, \\
+                                            typeid(&vvl::base::Device::name), \\
         ''')
         params = [f'typeid(&{layer["device"]}::name)' for layer in layer_list]
         out.append(',\\\n'.join(params))
         out.append(', false);')
         out.append('''
-#define BUILD_DESTROY_DISPATCH_VECTOR(name) \\
-    init_object_dispatch_vector(InterceptId ## name, \\
-                                typeid(&vvl::base::Device::name), \\
+            #define BUILD_DESTROY_DISPATCH_VECTOR(name) \\
+                init_object_dispatch_vector(InterceptId ## name, \\
+                                            typeid(&vvl::base::Device::name), \\
         ''')
         out.append(',\\\n'.join(params))
         out.append(', true);\n')
         out.append('''
-    auto init_object_dispatch_vector = [this](InterceptId id,
-                                              const std::type_info& vo_typeid,
+            auto init_object_dispatch_vector = [this](InterceptId id, const std::type_info& vo_typeid,
         ''')
         for i in range(len(layer_list)):
             type_name = layer_list[i]['type'].replace('LayerObjectType', '')
@@ -171,12 +171,12 @@ void Device::InitObjectDispatchVectors() {
 
         out.append('bool is_destroy) {\n')
         out.append('''
-        vvl::base::Device *state_tracker = nullptr;
-        auto *intercept_vector = &this->intercept_vectors[id];
-        for (auto& vo: this->object_dispatch) {
-            auto *item = vo.get();
-            switch (item->container_type) {
-        ''')
+            vvl::base::Device *state_tracker = nullptr;
+            auto *intercept_vector = &this->intercept_vectors[id];
+            for (auto& vo: this->object_dispatch) {
+                auto *item = vo.get();
+                switch (item->container_type) {
+            ''')
         for layer in layer_list:
             if layer['type'] == 'LayerObjectTypeStateTracker':
                out.append(f'''
