@@ -80,12 +80,12 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
     if (!modified_features.fragmentStoresAndAtomics) {
         InternalError(
             device, loc,
-            "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow writting out data inside the fragment shader.");
+            "GPU Shader Instrumentation requires fragmentStoresAndAtomics to allow witting out data inside the fragment shader.");
         return;
     }
     if (!modified_features.vertexPipelineStoresAndAtomics) {
         InternalError(device, loc,
-                      "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow writting out data inside the "
+                      "GPU Shader Instrumentation requires vertexPipelineStoresAndAtomics to allow witting out data inside the "
                       "vertex shader.");
         return;
     }
@@ -96,7 +96,7 @@ void GpuShaderInstrumentor::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateI
         return;
     }
     if (!modified_features.bufferDeviceAddress) {
-        InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage writting out of the shader.");
+        InternalError(device, loc, "GPU Shader Instrumentation requires bufferDeviceAddress to manage witting out of the shader.");
         return;
     }
     if (modified_features.vulkanMemoryModel && !modified_features.vulkanMemoryModelDeviceScope) {
@@ -283,7 +283,9 @@ void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, co
 void GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
     VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
     chassis::ShaderObjectInstrumentationData &instrumentation_data) {
-    if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(create_info.pNext)) return;
+    if (gpuav_settings.select_instrumented_shaders && !IsSelectiveInstrumentationEnabled(create_info.pNext)) {
+        return;
+    }
 
     std::vector<uint32_t> &instrumented_spirv = instrumentation_data.instrumented_spirv;
     InstrumentationDescriptorSetLayouts instrumentation_dsl;
@@ -733,11 +735,15 @@ bool GpuShaderInstrumentor::NeedPipelineCreationShaderInstrumentation(vvl::Pipel
     }
 
     // will hit with using GPL without shaders in them (ex. fragment output)
-    if (pipeline_state.stage_states.empty()) return false;
+    if (pipeline_state.stage_states.empty()) {
+        return false;
+    }
 
     // Move all instrumentation until the final linking time
     // This still needs to create a copy of the create_info (we *could* have a mix of GPL and non-GPL)
-    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) return false;
+    if (pipeline_state.create_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) {
+        return false;
+    }
 
     // If the app requests all available sets, the pipeline layout was not modified at pipeline layout creation and the
     // already instrumented shaders need to be replaced with uninstrumented shaders
@@ -803,6 +809,69 @@ void GpuShaderInstrumentor::BuildDescriptorSetLayoutInfo(const vvl::DescriptorSe
     }
 }
 
+bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(VkPipeline pipeline, const Location &loc) {
+    if (!gpuav_settings.select_instrumented_shaders) {
+        return true;
+    }
+
+    bool should_instrument_pipeline = false;
+    {
+        std::string pipeline_debug_name;
+        {
+            std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
+            pipeline_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(pipeline));
+        }
+        if (!pipeline_debug_name.empty()) {
+            for (const std::regex &shader_selection_regex : gpuav_settings.shader_selection_regexes) {
+                if (std::regex_match(pipeline_debug_name, shader_selection_regex)) {
+                    should_instrument_pipeline = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (should_instrument_pipeline) {
+        LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
+                FormatHandle(pipeline).c_str());
+    }
+    return should_instrument_pipeline;
+}
+
+bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
+                                                               VkShaderModule modified_shader, const Location &loc) {
+    if (!gpuav_settings.select_instrumented_shaders) {
+        return true;
+    }
+
+    bool should_instrument_shader = false;
+    {
+        if (modified_shader_module_ci && IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
+            should_instrument_shader = true;
+        } else if (selected_instrumented_shaders.find(modified_shader) != selected_instrumented_shaders.end()) {
+            should_instrument_shader = true;
+        } else {
+            std::string shader_debug_name;
+            {
+                std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
+                shader_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(modified_shader));
+            }
+            if (!shader_debug_name.empty()) {
+                for (const std::regex &shader_selection_regex : gpuav_settings.shader_selection_regexes) {
+                    if (std::regex_match(shader_debug_name, shader_selection_regex)) {
+                        should_instrument_shader = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (should_instrument_shader) {
+            LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
+                    FormatHandle(modified_shader).c_str());
+        }
+    }
+    return should_instrument_shader;
+}
+
 // Instrument all SPIR-V that is sent through pipeline. This can be done in various ways
 // 1. VkCreateShaderModule and passed in VkShaderModule.
 //    For this we create our own VkShaderModule with instrumented shader and manage it inside the pipeline state
@@ -842,13 +911,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentation(
                 const_cast<vku::safe_VkShaderModuleCreateInfo *>(reinterpret_cast<const vku::safe_VkShaderModuleCreateInfo *>(
                     vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(stage_ci.pNext)));
 
-            if (gpuav_settings.select_instrumented_shaders) {
-                if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
-                    continue;
-                } else if (selected_instrumented_shaders.find(modified_module_state->VkHandle()) ==
-                           selected_instrumented_shaders.end()) {
-                    continue;
-                }
+            if (!IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                                                    loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+                continue;
             }
         }
         std::vector<uint32_t> instrumented_spirv;
@@ -953,8 +1018,12 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
     // This outer loop is the main difference between the GPL and non-GPL version and why its hard to merge them
     for (uint32_t modified_lib_i = 0; modified_lib_i < modified_pipeline_lib_ci->libraryCount; ++modified_lib_i) {
         const auto modified_lib = Get<vvl::Pipeline>(modified_pipeline_lib_ci->pLibraries[modified_lib_i]);
-        if (!modified_lib) continue;
-        if (modified_lib->stage_states.empty()) continue;
+        if (!modified_lib) {
+            continue;
+        }
+        if (modified_lib->stage_states.empty()) {
+            continue;
+        }
 
         vku::safe_VkGraphicsPipelineCreateInfo modified_pipeline_ci(modified_lib->GraphicsCreateInfo());
         // If the application supplied pipeline might be interested in failing to be created
@@ -963,6 +1032,9 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
         modified_pipeline_ci.flags &= ~VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
         bool need_new_pipeline = false;
 
+        // If pipeline library is selected for instrumentation, force instrumentation of all its shaders
+        const bool should_instrument_pipeline =
+            IsPipelineSelectedForInstrumentation(modified_lib->VkHandle(), loc.dot(vvl::Field::pLibraries, modified_lib_i));
         for (uint32_t stage_state_i = 0; stage_state_i < static_cast<uint32_t>(modified_lib->stage_states.size());
              ++stage_state_i) {
             const ShaderStageState &modified_stage_state = modified_lib->stage_states[stage_state_i];
@@ -988,13 +1060,10 @@ bool GpuShaderInstrumentor::PreCallRecordPipelineCreationShaderInstrumentationGP
                         vku::FindStructInPNextChain<VkShaderModuleCreateInfo>(modified_stage_ci->pNext)));
 
                 // TODO - this is in need of testing, when only selecting various library as well as selecting everything
-                if (gpuav_settings.select_instrumented_shaders) {
-                    if (modified_shader_module_ci && !IsSelectiveInstrumentationEnabled(modified_shader_module_ci->pNext)) {
-                        continue;
-                    } else if (selected_instrumented_shaders.find(modified_module_state->VkHandle()) ==
-                               selected_instrumented_shaders.end()) {
-                        continue;
-                    }
+                if (!should_instrument_pipeline &&
+                    !IsShaderSelectedForInstrumentation(modified_shader_module_ci, modified_module_state->VkHandle(),
+                                                        loc.dot(vvl::Field::pStages, stage_state_i).dot(vvl::Field::module))) {
+                    continue;
                 }
             }
 

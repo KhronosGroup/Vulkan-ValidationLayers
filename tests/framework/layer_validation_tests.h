@@ -268,7 +268,7 @@ class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {
 
 class GpuAVRayQueryTest : public GpuAVTest {
   public:
-    void InitGpuAVRayQuery();
+    void InitGpuAVRayQuery(std::vector<VkLayerSettingEXT> layer_settings = {});
 };
 
 class GpuAVImageLayout : public GpuAVTest {

@@ -340,6 +340,7 @@ class Pipeline {
 
     // Get
     // ---
+    VkShaderObj& GetRayGenShader(uint32_t ray_gen_i);
     const auto& Handle() { return rt_pipeline_; }
     vkt::PipelineLayout& GetPipelineLayout() { return pipeline_layout_; }
     OneOffDescriptorSet& GetDescriptorSet() {
