@@ -159,6 +159,56 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
         }
     }
 
+    if (!phys_dev_props_core12.robustBufferAccessUpdateAfterBind) {
+        if (enabled_features.descriptorBindingStorageBufferUpdateAfterBind ||
+            enabled_features.descriptorBindingStorageTexelBufferUpdateAfterBind) {
+            if (pipeline_robustness_info.storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS ||
+                pipeline_robustness_info.storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
+                skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-storageBuffers-10636", device,
+                                 loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::storageBuffers),
+                                 "is %s, descriptorBindingStorageBufferUpdateAfterBind is %s, "
+                                 "descriptorBindingStorageTexelBufferUpdateAfterBind is %s, but robustBufferAccessUpdateAfterBind "
+                                 "is not supported.",
+                                 string_VkPipelineRobustnessBufferBehavior(pipeline_robustness_info.storageBuffers),
+                                 enabled_features.descriptorBindingStorageBufferUpdateAfterBind ? "enabled" : "disabled",
+                                 enabled_features.descriptorBindingStorageTexelBufferUpdateAfterBind ? "enabled" : "disabled");
+            }
+        }
+
+        if (enabled_features.descriptorBindingInlineUniformBlockUpdateAfterBind ||
+            enabled_features.descriptorBindingUniformBufferUpdateAfterBind ||
+            enabled_features.descriptorBindingUniformTexelBufferUpdateAfterBind) {
+            if (pipeline_robustness_info.uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS ||
+                pipeline_robustness_info.uniformBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
+                skip |= LogError(
+                    "VUID-VkPipelineRobustnessCreateInfo-uniformBuffers-10637", device,
+                    loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::uniformBuffers),
+                    "is %s, descriptorBindingInlineUniformBlockUpdateAfterBind is %s, "
+                    "descriptorBindingUniformBufferUpdateAfterBind is %s, descriptorBindingUniformTexelBufferUpdateAfterBind is "
+                    "%s, but robustBufferAccessUpdateAfterBind is not supported.",
+                    string_VkPipelineRobustnessBufferBehavior(pipeline_robustness_info.uniformBuffers),
+                    enabled_features.descriptorBindingInlineUniformBlockUpdateAfterBind ? "enabled" : "disabled",
+                    enabled_features.descriptorBindingUniformBufferUpdateAfterBind ? "enabled" : "disabled",
+                    enabled_features.descriptorBindingUniformTexelBufferUpdateAfterBind ? "enabled" : "disabled");
+            }
+        }
+
+        if (enabled_features.descriptorBindingStorageImageUpdateAfterBind ||
+            enabled_features.descriptorBindingSampledImageUpdateAfterBind) {
+            if (pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS ||
+                pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2) {
+                skip |= LogError(
+                    "VUID-VkPipelineRobustnessCreateInfo-images-10638", device,
+                    loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::images),
+                    "is %s, descriptorBindingStorageImageUpdateAfterBind is %s, descriptorBindingSampledImageUpdateAfterBind is "
+                    "%s, but robustBufferAccessUpdateAfterBind is not supported.",
+                    string_VkPipelineRobustnessImageBehavior(pipeline_robustness_info.images),
+                    enabled_features.descriptorBindingStorageImageUpdateAfterBind ? "enabled" : "disabled",
+                    enabled_features.descriptorBindingSampledImageUpdateAfterBind ? "enabled" : "disabled");
+            }
+        }
+    }
+
     return skip;
 }
 
