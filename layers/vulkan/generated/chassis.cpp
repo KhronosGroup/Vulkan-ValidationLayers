@@ -25253,6 +25253,141 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDispatchTileQCOM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDispatchTileQCOM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDispatchTileQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDispatchTileQCOM(commandBuffer, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchTileQCOM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDispatchTileQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdDispatchTileQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDispatchTileQCOM(commandBuffer, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDispatchTileQCOM");
+        device_dispatch->CmdDispatchTileQCOM(commandBuffer);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDispatchTileQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDispatchTileQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDispatchTileQCOM(commandBuffer, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
+                                                        const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBeginPerTileExecutionQCOM,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBeginPerTileExecutionQCOM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBeginPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBeginPerTileExecutionQCOM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBeginPerTileExecutionQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBeginPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdBeginPerTileExecutionQCOM");
+        device_dispatch->CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBeginPerTileExecutionQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBeginPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdEndPerTileExecutionQCOM,
+                          VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdEndPerTileExecutionQCOM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdEndPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdEndPerTileExecutionQCOM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdEndPerTileExecutionQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdEndPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdEndPerTileExecutionQCOM");
+        device_dispatch->CmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdEndPerTileExecutionQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdEndPerTileExecutionQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdEndPerTileExecutionQCOM(commandBuffer, pPerTileEndInfo, record_obj);
+        }
+    }
+}
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 VKAPI_ATTR void VKAPI_CALL ExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo) {
     VVL_ZoneScoped;
@@ -31076,6 +31211,146 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                            const VkAllocationCallbacks* pAllocator,
+                                                            VkExternalComputeQueueNV* pExternalQueue) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateExternalComputeQueueNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateExternalComputeQueueNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateExternalComputeQueueNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateExternalComputeQueueNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCreateExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateExternalComputeQueueNV");
+        result = device_dispatch->CreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateExternalComputeQueueNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                         const VkAllocationCallbacks* pAllocator) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyExternalComputeQueueNV, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkDestroyExternalComputeQueueNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateDestroyExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateDestroyExternalComputeQueueNV(device, externalQueue, pAllocator, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyExternalComputeQueueNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkDestroyExternalComputeQueueNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordDestroyExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordDestroyExternalComputeQueueNV(device, externalQueue, pAllocator, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkDestroyExternalComputeQueueNV");
+        device_dispatch->DestroyExternalComputeQueueNV(device, externalQueue, pAllocator);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkDestroyExternalComputeQueueNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordDestroyExternalComputeQueueNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordDestroyExternalComputeQueueNV(device, externalQueue, pAllocator, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL GetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue,
+                                                         VkExternalComputeQueueDataParamsNV* params, void* pData) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(externalQueue);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetExternalComputeQueueDataNV,
+                          VulkanTypedHandle(externalQueue, kVulkanObjectTypeExternalComputeQueueNV));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetExternalComputeQueueDataNV");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetExternalComputeQueueDataNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetExternalComputeQueueDataNV(externalQueue, params, pData, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetExternalComputeQueueDataNV);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetExternalComputeQueueDataNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetExternalComputeQueueDataNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetExternalComputeQueueDataNV(externalQueue, params, pData, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetExternalComputeQueueDataNV");
+        device_dispatch->GetExternalComputeQueueDataNV(externalQueue, params, pData);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetExternalComputeQueueDataNV");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetExternalComputeQueueDataNV]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetExternalComputeQueueDataNV(externalQueue, params, pData, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL GetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                                        const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                                        VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo) {
@@ -33719,6 +33994,9 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkDestroyCudaFunctionNV", {kFuncTypeDev, (void*)DestroyCudaFunctionNV}},
         {"vkCmdCudaLaunchKernelNV", {kFuncTypeDev, (void*)CmdCudaLaunchKernelNV}},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+        {"vkCmdDispatchTileQCOM", {kFuncTypeDev, (void*)CmdDispatchTileQCOM}},
+        {"vkCmdBeginPerTileExecutionQCOM", {kFuncTypeDev, (void*)CmdBeginPerTileExecutionQCOM}},
+        {"vkCmdEndPerTileExecutionQCOM", {kFuncTypeDev, (void*)CmdEndPerTileExecutionQCOM}},
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {"vkExportMetalObjectsEXT", {kFuncTypeDev, (void*)ExportMetalObjectsEXT}},
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -33859,6 +34137,9 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+        {"vkCreateExternalComputeQueueNV", {kFuncTypeDev, (void*)CreateExternalComputeQueueNV}},
+        {"vkDestroyExternalComputeQueueNV", {kFuncTypeDev, (void*)DestroyExternalComputeQueueNV}},
+        {"vkGetExternalComputeQueueDataNV", {kFuncTypeDev, (void*)GetExternalComputeQueueDataNV}},
         {"vkGetClusterAccelerationStructureBuildSizesNV", {kFuncTypeDev, (void*)GetClusterAccelerationStructureBuildSizesNV}},
         {"vkCmdBuildClusterAccelerationStructureIndirectNV", {kFuncTypeDev, (void*)CmdBuildClusterAccelerationStructureIndirectNV}},
         {"vkGetPartitionedAccelerationStructuresBuildSizesNV",

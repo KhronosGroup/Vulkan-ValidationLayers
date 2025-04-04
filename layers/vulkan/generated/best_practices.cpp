@@ -2117,6 +2117,15 @@ void BestPractices::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, 
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+void BestPractices::PostCallRecordCreateExternalComputeQueueNV(VkDevice device,
+                                                               const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               VkExternalComputeQueueNV* pExternalQueue,
+                                                               const RecordObject& record_obj) {
+    BaseClass::PostCallRecordCreateExternalComputeQueueNV(device, pCreateInfo, pAllocator, pExternalQueue, record_obj);
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordCreateIndirectCommandsLayoutEXT(VkDevice device,
                                                                   const VkIndirectCommandsLayoutCreateInfoEXT* pCreateInfo,
                                                                   const VkAllocationCallbacks* pAllocator,

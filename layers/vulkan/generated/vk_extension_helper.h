@@ -530,6 +530,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_device_diagnostics_config{kNotEnabled};
     ExtEnabled vk_qcom_render_pass_store_ops{kNotEnabled};
     ExtEnabled vk_nv_cuda_kernel_launch{kNotEnabled};
+    ExtEnabled vk_qcom_tile_shading{kNotEnabled};
     ExtEnabled vk_nv_low_latency{kNotEnabled};
     ExtEnabled vk_ext_metal_objects{kNotEnabled};
     ExtEnabled vk_ext_descriptor_buffer{kNotEnabled};
@@ -628,6 +629,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_msft_layered_driver{kNotEnabled};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
     ExtEnabled vk_nv_raw_access_chains{kNotEnabled};
+    ExtEnabled vk_nv_external_compute_queue{kNotEnabled};
     ExtEnabled vk_nv_command_buffer_inheritance{kNotEnabled};
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
     ExtEnabled vk_ext_shader_replicated_composites{kNotEnabled};
@@ -1374,6 +1376,11 @@ struct DeviceExtensions : public InstanceExtensions {
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             {vvl::Extension::_VK_NV_cuda_kernel_launch, Info(&DeviceExtensions::vk_nv_cuda_kernel_launch, {})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+            {vvl::Extension::_VK_QCOM_tile_shading,
+             Info(&DeviceExtensions::vk_qcom_tile_shading,
+                  {{{&DeviceExtensions::vk_qcom_tile_properties, VK_QCOM_TILE_PROPERTIES_EXTENSION_NAME},
+                    {&DeviceExtensions::vk_khr_get_physical_device_properties2,
+                     VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
             {vvl::Extension::_VK_NV_low_latency, Info(&DeviceExtensions::vk_nv_low_latency, {})},
 #ifdef VK_USE_PLATFORM_METAL_EXT
             {vvl::Extension::_VK_EXT_metal_objects, Info(&DeviceExtensions::vk_ext_metal_objects, {})},
@@ -1717,6 +1724,7 @@ struct DeviceExtensions : public InstanceExtensions {
              Info(&DeviceExtensions::vk_nv_descriptor_pool_overallocation,
                   {{{&DeviceExtensions::vk_feature_version_1_1, "VK_VERSION_1_1"}}})},
             {vvl::Extension::_VK_NV_raw_access_chains, Info(&DeviceExtensions::vk_nv_raw_access_chains, {})},
+            {vvl::Extension::_VK_NV_external_compute_queue, Info(&DeviceExtensions::vk_nv_external_compute_queue, {})},
             {vvl::Extension::_VK_NV_command_buffer_inheritance, Info(&DeviceExtensions::vk_nv_command_buffer_inheritance, {})},
             {vvl::Extension::_VK_NV_shader_atomic_float16_vector, Info(&DeviceExtensions::vk_nv_shader_atomic_float16_vector, {})},
             {vvl::Extension::_VK_EXT_shader_replicated_composites,
@@ -2102,6 +2110,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_device_diagnostics_config:
         case vvl::Extension::_VK_QCOM_render_pass_store_ops:
         case vvl::Extension::_VK_NV_cuda_kernel_launch:
+        case vvl::Extension::_VK_QCOM_tile_shading:
         case vvl::Extension::_VK_NV_low_latency:
         case vvl::Extension::_VK_EXT_metal_objects:
         case vvl::Extension::_VK_EXT_descriptor_buffer:
@@ -2200,6 +2209,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_MSFT_layered_driver:
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
         case vvl::Extension::_VK_NV_raw_access_chains:
+        case vvl::Extension::_VK_NV_external_compute_queue:
         case vvl::Extension::_VK_NV_command_buffer_inheritance:
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_EXT_shader_replicated_composites:

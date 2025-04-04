@@ -728,6 +728,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QCOM_render_pass_shader_resolve};
                 }
             }
+            if (value & (VK_SUBPASS_DESCRIPTION_TILE_SHADING_APRON_BIT_QCOM)) {
+                if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) {
+                    return {vvl::Extension::_VK_QCOM_tile_shading};
+                }
+            }
             if (value & (VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_COLOR_ACCESS_BIT_EXT |
                          VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_DEPTH_ACCESS_BIT_EXT |
                          VK_SUBPASS_DESCRIPTION_RASTERIZATION_ORDER_ATTACHMENT_STENCIL_ACCESS_BIT_EXT)) {
@@ -1007,6 +1012,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_KHR_video_encode_queue};
                 }
             }
+            if (value & (VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM | VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM)) {
+                if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) {
+                    return {vvl::Extension::_VK_QCOM_tile_shading};
+                }
+            }
             if (value & (VK_ACCESS_2_DESCRIPTOR_BUFFER_READ_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_descriptor_buffer)) {
                     return {vvl::Extension::_VK_EXT_descriptor_buffer};
@@ -1265,6 +1275,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkIndirectCommandsLayoutUsageFlagsNV(value);
         case vvl::FlagBitmask::VkDeviceDiagnosticsConfigFlagBitsNV:
             return string_VkDeviceDiagnosticsConfigFlagsNV(value);
+        case vvl::FlagBitmask::VkTileShadingRenderPassFlagBitsQCOM:
+            return string_VkTileShadingRenderPassFlagsQCOM(value);
 #ifdef VK_USE_PLATFORM_METAL_EXT
         case vvl::FlagBitmask::VkExportMetalObjectTypeFlagBitsEXT:
             return string_VkExportMetalObjectTypeFlagsEXT(value);

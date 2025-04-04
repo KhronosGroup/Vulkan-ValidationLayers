@@ -24,6 +24,7 @@
 // NOLINTBEGIN
 Counter<VkQueue> c_VkQueue;
 Counter<VkCommandBuffer> c_VkCommandBuffer;
+Counter<VkExternalComputeQueueNV> c_VkExternalComputeQueueNV;
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
 Counter<VkBuffer> c_VkBuffer;
 Counter<VkImage> c_VkImage;
@@ -77,6 +78,7 @@ Counter<uint64_t> c_uint64_t;
 #endif  // DISTINCT_NONDISPATCHABLE_HANDLES
 
 WRAPPER(VkQueue)
+WRAPPER(VkExternalComputeQueueNV)
 WRAPPER_PARENT_INSTANCE(VkInstance)
 WRAPPER_PARENT_INSTANCE(VkPhysicalDevice)
 WRAPPER_PARENT_INSTANCE(VkDevice)
@@ -141,6 +143,7 @@ WRAPPER_PARENT_INSTANCE(uint64_t)
 void InitCounters() {
     c_VkQueue.Init(kVulkanObjectTypeQueue, this);
     c_VkCommandBuffer.Init(kVulkanObjectTypeCommandBuffer, this);
+    c_VkExternalComputeQueueNV.Init(kVulkanObjectTypeExternalComputeQueueNV, this);
 #ifdef DISTINCT_NONDISPATCHABLE_HANDLES
     c_VkBuffer.Init(kVulkanObjectTypeBuffer, this);
     c_VkImage.Init(kVulkanObjectTypeImage, this);
@@ -3225,6 +3228,22 @@ void PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const Vk
                                          const RecordObject& record_obj) override;
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+void PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+
+void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+
+void PreCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                               const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
+                                                const RecordObject& record_obj) override;
+
+void PreCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                             const RecordObject& record_obj) override;
+
+void PostCallRecordCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
+                                              const RecordObject& record_obj) override;
+
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void PreCallRecordExportMetalObjectsEXT(VkDevice device, VkExportMetalObjectsInfoEXT* pMetalObjectsInfo,
                                         const RecordObject& record_obj) override;
@@ -4011,6 +4030,26 @@ void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _s
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void PreCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue,
+                                               const RecordObject& record_obj) override;
+
+void PostCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue,
+                                                const RecordObject& record_obj) override;
+
+void PreCallRecordDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
+
+void PostCallRecordDestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,
+                                                 const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) override;
+
+void PreCallRecordGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue, VkExternalComputeQueueDataParamsNV* params,
+                                                void* pData, const RecordObject& record_obj) override;
+
+void PostCallRecordGetExternalComputeQueueDataNV(VkExternalComputeQueueNV externalQueue, VkExternalComputeQueueDataParamsNV* params,
+                                                 void* pData, const RecordObject& record_obj) override;
+
 void PreCallRecordGetClusterAccelerationStructureBuildSizesNV(VkDevice device,
                                                               const VkClusterAccelerationStructureInputInfoNV* pInfo,
                                                               VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo,

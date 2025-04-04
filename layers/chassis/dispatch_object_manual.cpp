@@ -531,6 +531,8 @@ Device *GetData(VkQueue queue) { return GetDeviceFromKey(GetDispatchKey(queue));
 
 Device *GetData(VkCommandBuffer cb) { return GetDeviceFromKey(GetDispatchKey(cb)); }
 
+Device *GetData(VkExternalComputeQueueNV queue) { return GetDeviceFromKey(GetDispatchKey(queue)); }
+
 void SetData(VkDevice device, std::unique_ptr<Device> &&data) {
     void *key = GetDispatchKey(device);
     WriteLockGuard lock(device_mutex);
@@ -787,7 +789,7 @@ void Device::DestroyDevice(VkDevice device, const VkAllocationCallbacks *pAlloca
 void Device::ReleaseValidationObject(LayerObjectTypeId type_id) const {
     for (auto object_it = object_dispatch.begin(); object_it != object_dispatch.end(); object_it++) {
         if ((*object_it)->container_type == LayerObjectTypeStateTracker) {
-            auto &state_tracker = dynamic_cast<vvl::DeviceState&>(**object_it);
+            auto &state_tracker = dynamic_cast<vvl::DeviceState &>(**object_it);
             state_tracker.RemoveProxy(type_id);
         }
         if ((*object_it)->container_type == type_id) {

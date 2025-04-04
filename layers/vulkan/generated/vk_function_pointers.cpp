@@ -676,6 +676,9 @@ PFN_vkDestroyCudaModuleNV DestroyCudaModuleNV;
 PFN_vkDestroyCudaFunctionNV DestroyCudaFunctionNV;
 PFN_vkCmdCudaLaunchKernelNV CmdCudaLaunchKernelNV;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+PFN_vkCmdDispatchTileQCOM CmdDispatchTileQCOM;
+PFN_vkCmdBeginPerTileExecutionQCOM CmdBeginPerTileExecutionQCOM;
+PFN_vkCmdEndPerTileExecutionQCOM CmdEndPerTileExecutionQCOM;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkExportMetalObjectsEXT ExportMetalObjectsEXT;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -813,6 +816,9 @@ PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+PFN_vkCreateExternalComputeQueueNV CreateExternalComputeQueueNV;
+PFN_vkDestroyExternalComputeQueueNV DestroyExternalComputeQueueNV;
+PFN_vkGetExternalComputeQueueDataNV GetExternalComputeQueueDataNV;
 PFN_vkGetClusterAccelerationStructureBuildSizesNV GetClusterAccelerationStructureBuildSizesNV;
 PFN_vkCmdBuildClusterAccelerationStructureIndirectNV CmdBuildClusterAccelerationStructureIndirectNV;
 PFN_vkGetPartitionedAccelerationStructuresBuildSizesNV GetPartitionedAccelerationStructuresBuildSizesNV;
@@ -2213,6 +2219,13 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+        {
+            "VK_QCOM_tile_shading", [](VkInstance , VkDevice device) {
+                CmdDispatchTileQCOM = reinterpret_cast<PFN_vkCmdDispatchTileQCOM>(GetDeviceProcAddr(device, "vkCmdDispatchTileQCOM"));
+                CmdBeginPerTileExecutionQCOM = reinterpret_cast<PFN_vkCmdBeginPerTileExecutionQCOM>(GetDeviceProcAddr(device, "vkCmdBeginPerTileExecutionQCOM"));
+                CmdEndPerTileExecutionQCOM = reinterpret_cast<PFN_vkCmdEndPerTileExecutionQCOM>(GetDeviceProcAddr(device, "vkCmdEndPerTileExecutionQCOM"));
+            }
+        },
 #ifdef VK_USE_PLATFORM_METAL_EXT
         {
             "VK_EXT_metal_objects", [](VkInstance , VkDevice device) {
@@ -2528,6 +2541,13 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+        {
+            "VK_NV_external_compute_queue", [](VkInstance , VkDevice device) {
+                CreateExternalComputeQueueNV = reinterpret_cast<PFN_vkCreateExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkCreateExternalComputeQueueNV"));
+                DestroyExternalComputeQueueNV = reinterpret_cast<PFN_vkDestroyExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkDestroyExternalComputeQueueNV"));
+                GetExternalComputeQueueDataNV = reinterpret_cast<PFN_vkGetExternalComputeQueueDataNV>(GetDeviceProcAddr(device, "vkGetExternalComputeQueueDataNV"));
+            }
+        },
         {
             "VK_NV_cluster_acceleration_structure", [](VkInstance , VkDevice device) {
                 GetClusterAccelerationStructureBuildSizesNV = reinterpret_cast<PFN_vkGetClusterAccelerationStructureBuildSizesNV>(GetDeviceProcAddr(device, "vkGetClusterAccelerationStructureBuildSizesNV"));
@@ -2987,6 +3007,9 @@ void ResetAllExtensions() {
     DestroyCudaFunctionNV = nullptr;
     CmdCudaLaunchKernelNV = nullptr;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    CmdDispatchTileQCOM = nullptr;
+    CmdBeginPerTileExecutionQCOM = nullptr;
+    CmdEndPerTileExecutionQCOM = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     ExportMetalObjectsEXT = nullptr;
 #endif  // VK_USE_PLATFORM_METAL_EXT
@@ -3124,6 +3147,9 @@ void ResetAllExtensions() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    CreateExternalComputeQueueNV = nullptr;
+    DestroyExternalComputeQueueNV = nullptr;
+    GetExternalComputeQueueDataNV = nullptr;
     GetClusterAccelerationStructureBuildSizesNV = nullptr;
     CmdBuildClusterAccelerationStructureIndirectNV = nullptr;
     GetPartitionedAccelerationStructuresBuildSizesNV = nullptr;

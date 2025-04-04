@@ -1474,6 +1474,15 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdCudaLaunchKernelNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCmdCudaLaunchKernelNV);
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdDispatchTileQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdDispatchTileQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdDispatchTileQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBeginPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBeginPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBeginPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdEndPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdEndPerTileExecutionQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdEndPerTileExecutionQCOM);
 #ifdef VK_USE_PLATFORM_METAL_EXT
     BUILD_DISPATCH_VECTOR(PreCallValidateExportMetalObjectsEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordExportMetalObjectsEXT);
@@ -1828,6 +1837,15 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetScreenBufferPropertiesQNX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetScreenBufferPropertiesQNX);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    BUILD_DISPATCH_VECTOR(PreCallValidateCreateExternalComputeQueueNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCreateExternalComputeQueueNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCreateExternalComputeQueueNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateDestroyExternalComputeQueueNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyExternalComputeQueueNV);
+    BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyExternalComputeQueueNV);
+    BUILD_DISPATCH_VECTOR(PreCallValidateGetExternalComputeQueueDataNV);
+    BUILD_DISPATCH_VECTOR(PreCallRecordGetExternalComputeQueueDataNV);
+    BUILD_DISPATCH_VECTOR(PostCallRecordGetExternalComputeQueueDataNV);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetClusterAccelerationStructureBuildSizesNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordGetClusterAccelerationStructureBuildSizesNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetClusterAccelerationStructureBuildSizesNV);
