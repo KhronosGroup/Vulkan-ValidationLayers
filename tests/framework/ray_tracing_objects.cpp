@@ -1805,6 +1805,8 @@ void Pipeline::DeferBuild() {
     }
 }
 
+VkShaderObj &Pipeline::GetRayGenShader(uint32_t ray_gen_i) { return *ray_gen_shaders_[ray_gen_i]; }
+
 vkt::rt::TraceRaysSbt Pipeline::GetTraceRaysSbt(uint32_t ray_gen_shader_i /*= 0*/) {
     // As of now, no function support if not using any ray generation shader
     assert(!ray_gen_shaders_.empty());

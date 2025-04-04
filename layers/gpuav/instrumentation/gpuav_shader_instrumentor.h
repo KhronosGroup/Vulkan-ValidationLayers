@@ -232,6 +232,8 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     DeviceFeatures modified_features;
 
   private:
+    bool IsShaderSelectedForInstrumentation(vku::safe_VkShaderModuleCreateInfo *modified_shader_module_ci,
+                                            const std::shared_ptr<vvl::ShaderModule> modified_module_state, const Location &loc);
     void Cleanup();
     // These are objects used to inject our descriptor set into the command buffer
     VkDescriptorSetLayout instrumentation_desc_layout_ = VK_NULL_HANDLE;
