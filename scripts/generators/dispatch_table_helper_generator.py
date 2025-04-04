@@ -70,7 +70,7 @@ class DispatchTableHelperOutputGenerator(BaseGenerator):
             #include <cstring>
             #include <string>
             #include "vk_layer_dispatch_table.h"
-            
+
             struct DeviceExtensions;
             \n''')
 

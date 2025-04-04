@@ -115,9 +115,7 @@ class BestPracticesOutputGenerator(BaseGenerator):
         out = []
         guard_helper = PlatformGuardHelper()
         # List all Function declarations
-        for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list]:
-            if command.instance != want_instance:
-                continue
+        for command in [x for x in self.vk.commands.values() if x.name not in self.no_autogen_list and x.instance == want_instance]:
             out.extend(guard_helper.add_guard(command.protect))
             prototype = command.cPrototype.split("VKAPI_CALL ")[1]
             prototype = f'void PostCallRecord{prototype[2:]}'

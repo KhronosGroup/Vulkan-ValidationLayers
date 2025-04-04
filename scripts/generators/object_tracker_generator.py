@@ -315,9 +315,7 @@ class ObjectTrackerOutputGenerator(BaseGenerator):
     def generateHeader(self, want_instance):
         out = []
         guard_helper = PlatformGuardHelper()
-        for command in self.vk.commands.values():
-            if command.instance != want_instance:
-                continue
+        for command in [x for x in self.vk.commands.values() if x.instance == want_instance]:
             out.extend(guard_helper.add_guard(command.protect))
             (pre_call_validate, pre_call_record, post_call_record) = self.generateFunctionBody(command)
 
