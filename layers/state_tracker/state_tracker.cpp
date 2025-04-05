@@ -5158,8 +5158,9 @@ void DeviceState::PostCallRecordCmdSetRenderingInputAttachmentIndices(VkCommandB
 
     cb_state->rendering_attachments.set_color_indexes = true;
     cb_state->rendering_attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
-    for (size_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
-        cb_state->rendering_attachments.color_indexes[i] = pLocationInfo->pColorAttachmentInputIndices[i];
+    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        cb_state->rendering_attachments.color_indexes[i] =
+            pLocationInfo->pColorAttachmentInputIndices ? pLocationInfo->pColorAttachmentInputIndices[i] : i;
     }
     cb_state->rendering_attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
     cb_state->rendering_attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
