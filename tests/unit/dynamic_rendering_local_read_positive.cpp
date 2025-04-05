@@ -332,3 +332,17 @@ TEST_F(PositiveDynamicRenderingLocalRead, PipelineBarrierAllowedImageLayouts2) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicRenderingLocalRead, NullColorAttachmentInputIndices) {
+    RETURN_IF_SKIP(InitBasicDynamicRenderingLocalRead());
+    InitDynamicRenderTarget();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    VkRenderingInputAttachmentIndexInfo input_info = vku::InitStructHelper();
+    input_info.colorAttachmentCount = 1u;
+    vk::CmdSetRenderingInputAttachmentIndicesKHR(m_command_buffer.handle(), &input_info);
+
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
