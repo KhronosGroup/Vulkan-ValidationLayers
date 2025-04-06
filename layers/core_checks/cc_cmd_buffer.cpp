@@ -1100,7 +1100,7 @@ bool CoreChecks::ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::
                     location_info->pColorAttachmentLocations[idx] != cb_state.rendering_attachments.color_locations[idx]) {
                     skip |= LogError(
                         "VUID-vkCmdExecuteCommands-pCommandBuffers-09504", objlist,
-                        cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfo, Field::pColorAttachmentInputIndices, idx),
+                        cb_loc.pNext(Struct::VkRenderingAttachmentLocationInfo, Field::pColorAttachmentLocations, idx),
                         "(%" PRIu32 ") does not match the implicit or explicit state in the primary command buffer (%" PRIu32 ").",
                         location_info->pColorAttachmentLocations[idx], cb_state.rendering_attachments.color_locations[idx]);
                 }
