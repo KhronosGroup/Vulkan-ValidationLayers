@@ -2715,6 +2715,22 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                      string_VkFormat(image_format));
                 }
             }
+        } else if (vkuFormatIsDepthOnly(image_format)) {
+            if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00001", objlist,
+                                 transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
+                                 "is %s and image was created with format %s.", string_VkImageAspectFlags(aspect_mask).c_str(),
+                                 string_VkFormat(image_format));
+            }
+        } else if (vkuFormatIsStencilOnly(image_format)) {
+            if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT) {
+                const LogObjectList objlist(device, image_state->Handle());
+                skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00002", objlist,
+                                 transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
+                                 "is %s and image was created with format %s.", string_VkImageAspectFlags(aspect_mask).c_str(),
+                                 string_VkFormat(image_format));
+            }
         }
         if (aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) {
             if ((transition.oldLayout == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL) ||
