@@ -370,3 +370,45 @@ TEST_F(PositiveHostImageCopy, CompressedFormat) {
     VkResult result = vk::CopyMemoryToImageEXT(*m_device, &copy_to_image);
     ASSERT_EQ(VK_SUCCESS, result);
 }
+
+TEST_F(PositiveHostImageCopy, TransitionImageLayoutDepthWrongAspect) {
+    RETURN_IF_SKIP(InitHostImageCopyTest());
+
+    VkImageCreateInfo depth_image_ci = vku::InitStructHelper();
+    depth_image_ci.imageType = VK_IMAGE_TYPE_2D;
+    depth_image_ci.format = VK_FORMAT_D32_SFLOAT;
+    depth_image_ci.extent = {32u, 32u, 1u};
+    depth_image_ci.mipLevels = 1u;
+    depth_image_ci.arrayLayers = 1u;
+    depth_image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    depth_image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depth_image_ci.usage = VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
+    depth_image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkPhysicalDeviceImageFormatInfo2 image_format_info = vku::InitStructHelper();
+    image_format_info.format = depth_image_ci.format;
+    image_format_info.type = depth_image_ci.imageType;
+    image_format_info.tiling = depth_image_ci.tiling;
+    image_format_info.usage = depth_image_ci.usage;
+    image_format_info.flags = depth_image_ci.flags;
+
+    VkImageFormatProperties2 image_format_properties = vku::InitStructHelper();
+    VkResult res =
+        vk::GetPhysicalDeviceImageFormatProperties2(m_device->physical_device_, &image_format_info, &image_format_properties);
+    if (res == VK_ERROR_FORMAT_NOT_SUPPORTED) {
+        GTEST_SKIP() << "Required format not supported";
+    }
+    if (!(m_device->FormatFeaturesOptimal(depth_image_ci.format) & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT)) {
+        GTEST_SKIP() << "Device does not support host image on depth format";
+    }
+
+    vkt::Image image(*m_device, depth_image_ci, vkt::set_layout);
+
+    VkImageSubresourceRange range = {VK_IMAGE_ASPECT_DEPTH_BIT, 0u, 1u, 0u, 1u};
+    VkHostImageLayoutTransitionInfo transition_info = vku::InitStructHelper();
+    transition_info.image = image;
+    transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition_info.subresourceRange = range;
+    vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
+}
