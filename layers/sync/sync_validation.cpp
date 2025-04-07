@@ -1519,9 +1519,7 @@ bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
-    assert(cb_state);
-    if (!cb_state) return skip;
-
+    ASSERT_AND_RETURN_SKIP(cb_state);
     skip |= syncval_state::AccessContext(*cb_state)->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE,
                                                                                        error_obj.location);
     return skip;
@@ -1567,6 +1565,41 @@ void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuff
     cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
     RecordIndirectBuffer(*cb_access_context, tag, sizeof(VkDispatchIndirectCommand), buffer, offset, 1,
                          sizeof(VkDispatchIndirectCommand));
+}
+
+bool SyncValidator::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                   uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                   uint32_t groupCountZ, const ErrorObject &error_obj) const {
+    bool skip = false;
+    const auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    skip |= syncval_state::AccessContext(*cb_state)->ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE,
+                                                                                       error_obj.location);
+    return skip;
+}
+
+bool SyncValidator::PreCallValidateCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                      uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                      uint32_t groupCountZ, const ErrorObject &error_obj) const {
+    return PreCallValidateCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
+                                          error_obj);
+}
+
+void SyncValidator::PostCallRecordCmdDispatchBase(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                  uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                  uint32_t groupCountZ, const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto cb_access_context = syncval_state::AccessContext(*cb_state);
+    const ResourceUsageTag tag = cb_access_context->NextCommandTag(record_obj.location.function);
+    cb_access_context->RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_COMPUTE, tag);
+}
+
+void SyncValidator::PostCallRecordCmdDispatchBaseKHR(VkCommandBuffer commandBuffer, uint32_t baseGroupX, uint32_t baseGroupY,
+                                                     uint32_t baseGroupZ, uint32_t groupCountX, uint32_t groupCountY,
+                                                     uint32_t groupCountZ, const RecordObject &record_obj) {
+    PostCallRecordCmdDispatchBase(commandBuffer, baseGroupX, baseGroupY, baseGroupZ, groupCountX, groupCountY, groupCountZ,
+                                  record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
