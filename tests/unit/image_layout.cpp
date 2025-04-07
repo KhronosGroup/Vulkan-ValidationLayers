@@ -13,6 +13,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include "../framework/render_pass_helper.h"
 
 class NegativeImageLayout : public ImageTest {};
 
@@ -871,4 +872,183 @@ TEST_F(NegativeImageLayout, DescriptorArrayStaticIndex) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeImageLayout, LayoutTransitionDynamicRendering) {
+    TEST_DESCRIPTION("Image barrier must not perform layout transition inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::ImageView imageView = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = imageView;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {m_width, m_height}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkImageMemoryBarrier local_read_barrier = vku::InitStructHelper();
+    local_read_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    local_read_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // Attempt to perform image layout transition. It is forbidden if the barrier is inside
+    // render pass instance (either started with vkCmdBeginRenderPass or vkCmdBeginRendering).
+    local_read_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    local_read_barrier.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
+    local_read_barrier.image = image;
+    local_read_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
+                           &local_read_barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImageLayout, LayoutTransitionDynamicRendering2) {
+    TEST_DESCRIPTION("Image barrier must not perform layout transition inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_LOCAL_READ_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::dynamicRenderingLocalRead);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+    vkt::ImageView imageView = image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = imageView;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {m_width, m_height}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    VkImageMemoryBarrier2 local_read_barrier = vku::InitStructHelper();
+    local_read_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    local_read_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    local_read_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    local_read_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // Attempt to perform image layout transition. It is forbidden if the barrier is inside
+    // render pass instance (either started with vkCmdBeginRenderPass or vkCmdBeginRendering).
+    local_read_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    local_read_barrier.newLayout = VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ;
+    local_read_barrier.image = image;
+    local_read_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_command_buffer.Barrier(local_read_barrier, VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImageLayout, LayoutTransitionRenderPassObject) {
+    TEST_DESCRIPTION("Image barrier must not perform layout transition inside render pass instance");
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDependency subpass_dep{};
+    subpass_dep.srcSubpass = 0;
+    subpass_dep.dstSubpass = 0;
+    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dep.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency(subpass_dep);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+
+    VkImageMemoryBarrier render_pass_barrier = vku::InitStructHelper();
+    render_pass_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    render_pass_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // Attempt to perform image layout transition. It is forbidden if the barrier is inside
+    // render pass instance (either started with vkCmdBeginRenderPass or vkCmdBeginRendering).
+    render_pass_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    render_pass_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    render_pass_barrier.image = image;
+    render_pass_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-01181");
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+                           VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
+                           &render_pass_barrier);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeImageLayout, LayoutTransitionRenderPassObject2) {
+    TEST_DESCRIPTION("Image barrier must not perform layout transition inside render pass instance");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDependency subpass_dep{};
+    subpass_dep.srcSubpass = 0;
+    subpass_dep.dstSubpass = 0;
+    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpass_dep.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dep.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.AddSubpassDependency(subpass_dep);
+    rp.CreateRenderPass();
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView view = image.CreateView();
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+
+    VkImageMemoryBarrier2 render_pass_barrier = vku::InitStructHelper();
+    render_pass_barrier.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    render_pass_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    render_pass_barrier.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    render_pass_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    // Attempt to perform image layout transition. It is forbidden if the barrier is inside
+    // render pass instance (either started with vkCmdBeginRenderPass or vkCmdBeginRendering).
+    render_pass_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    render_pass_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    render_pass_barrier.image = image;
+    render_pass_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier2-oldLayout-01181");
+    m_command_buffer.Barrier(render_pass_barrier, VK_DEPENDENCY_BY_REGION_BIT);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
