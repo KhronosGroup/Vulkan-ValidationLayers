@@ -439,16 +439,24 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
 
 void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                                 const Location &loc) {
-    if (!gpuav.gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav.gpuav_settings.IsSpirvModified()) {
+        return;
+    }
 
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
 
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
 
     // If nothing was updated, we don't want to bind anything
-    if (!last_bound.WasInstrumented()) return;
+    if (!last_bound.WasInstrumented()) {
+        return;
+    }
 
     if (!last_bound.pipeline_state && !last_bound.HasShaderObjects()) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "Neither pipeline state nor shader object states were found.");

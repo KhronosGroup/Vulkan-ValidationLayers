@@ -207,6 +207,11 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
     if (!gpuav.modified_features.shaderInt64) {
         return;
     }
+
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
+
     auto& shared_trace_rays_resources =
         gpuav.shared_resources_manager.Get<SharedTraceRaysValidationResources>(gpuav, cb_state.GetErrorLoggingDescSetLayout(), loc);
 

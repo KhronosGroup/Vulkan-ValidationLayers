@@ -63,6 +63,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     VkBuffer post_process_buffer_lut = VK_NULL_HANDLE;
 
     // Used to track which spot in the command buffer the error came from
+    bool max_actions_cmd_validation_reached_ = false;
     uint32_t draw_index = 0;
     uint32_t compute_index = 0;
     uint32_t trace_rays_index = 0;
@@ -111,7 +112,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     const vko::Buffer &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
 
-    void IncrementCommandCount(VkPipelineBindPoint bind_point);
+    void IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc);
 
     std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
 
@@ -142,7 +143,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     [[nodiscard]] bool UpdateBdaRangesBuffer(const Location &loc);
 
     Validator &state_;
-
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
