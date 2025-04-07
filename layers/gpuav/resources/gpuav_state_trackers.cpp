@@ -270,6 +270,8 @@ void CommandBufferSubState::Reset(const Location &loc) {
 }
 
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
+    max_actions_cmd_validation_reached_ = false;
+
     // Free the device memory and descriptor set(s) associated with a command buffer.
     for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
         printf_buffer_info.output_mem_buffer.Destroy();
@@ -318,9 +320,17 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     action_command_count = 0;
 }
 
-void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point) {
+void CommandBufferSubState::IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc) {
     action_command_count++;
-    assert(action_command_count < glsl::kMaxActionsPerCommandBuffer);
+    if (action_command_count >= glsl::kMaxActionsPerCommandBuffer) {
+        if (action_command_count == glsl::kMaxActionsPerCommandBuffer) {
+            gpuav.LogWarning("GPU-AV::Max action per command buffer reached", VkHandle(), loc,
+                             "Reached maximum validation commands count for command buffer ( %" PRIu32
+                             " ). No more draw/dispatch/trace rays commands will be validated inside this command buffer.",
+                             glsl::kMaxActionsPerCommandBuffer);
+        }
+        max_actions_cmd_validation_reached_ = true;
+    }
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         draw_index++;
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
@@ -328,6 +338,7 @@ void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         trace_rays_index++;
     }
+    
 }
 
 std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,

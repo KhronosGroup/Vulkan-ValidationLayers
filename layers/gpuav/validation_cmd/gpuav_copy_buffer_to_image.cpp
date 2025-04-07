@@ -147,6 +147,10 @@ void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, Co
         return;
     }
 
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
+
     auto image_state = gpuav.Get<vvl::Image>(copy_buffer_to_img_info->dstImage);
     if (!image_state) {
         gpuav.InternalError(cb_state.VkHandle(), loc, "AllocatePreCopyBufferToImageValidationResources: Unrecognized image.");

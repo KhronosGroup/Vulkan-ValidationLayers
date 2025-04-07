@@ -235,7 +235,13 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         return;
     }
 
-    if (gpuav.enabled_features.drawIndirectFirstInstance) return;
+    if (gpuav.enabled_features.drawIndirectFirstInstance) {
+        return;
+    }
+
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
 
     ValidationCommandFunc validation_cmd = [api_buffer, api_offset, api_stride, first_instance_member_pos, api_draw_count,
                                             api_count_buffer, api_count_buffer_offset, draw_i = cb_state.draw_index,
@@ -429,6 +435,10 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         return;
     }
 
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
+
     auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
     if (!draw_buffer_state) {
         gpuav.InternalError(LogObjectList(cb_state.VkHandle(), api_buffer), loc, "buffer must be a valid VkBuffer handle");
@@ -584,6 +594,10 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                       VkDeviceSize api_offset, uint32_t api_stride, VkBuffer api_count_buffer, VkDeviceSize api_count_buffer_offset,
                       uint32_t api_draw_count) {
     if (!gpuav.gpuav_settings.validate_indirect_draws_buffers) {
+        return;
+    }
+
+    if (cb_state.max_actions_cmd_validation_reached_) {
         return;
     }
 
@@ -896,6 +910,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                 return;
             }
         }
+    }
+
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
     }
 
     if (!cb_state.base.IsPrimary()) {

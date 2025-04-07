@@ -378,14 +378,20 @@ void Validator::PreCallRecordCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 // Common logic before any draw/dispatch/traceRays
 void Validator::PreCallActionCommand(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                      const Location &loc) {
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
     PreCallSetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
 }
 
 // Common logic after any draw/dispatch/traceRays
 void Validator::PostCallActionCommand(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                       const Location &loc) {
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
     PostCallSetupShaderInstrumentationResources(gpuav, cb_state, bind_point, loc);
-    cb_state.IncrementCommandCount(bind_point);
+    cb_state.IncrementCommandCount(gpuav, bind_point, loc);
 }
 
 void Validator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

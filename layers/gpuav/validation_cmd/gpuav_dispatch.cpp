@@ -149,6 +149,10 @@ void InsertIndirectDispatchValidation(Validator &gpuav, const Location &loc, Com
         return;
     }
 
+    if (cb_state.max_actions_cmd_validation_reached_) {
+        return;
+    }
+
     // Insert a dispatch that can examine some device memory right before the dispatch we're validating
     //
     // NOTE that this validation does not attempt to abort invalid api calls as most other validation does. A crash
