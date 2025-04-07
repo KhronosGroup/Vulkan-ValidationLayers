@@ -142,6 +142,9 @@ class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 
+    void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
+
     void PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                        const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                        const RecordObject &record_obj) override;

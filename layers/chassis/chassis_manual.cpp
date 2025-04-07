@@ -264,13 +264,20 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         }
         vo->PreCallValidateDestroyInstance(instance, pAllocator, error_obj);
     }
-
+    vvl::base::Instance* state_tracker = nullptr;
     RecordObject record_obj(vvl::Func::vkDestroyInstance);
     for (auto& vo : instance_dispatch->object_dispatch) {
         if (!vo) {
             continue;
         }
+        if (vo->container_type == LayerObjectTypeStateTracker) {
+            state_tracker = vo.get();
+            continue;
+        }
         vo->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
+    }
+    if (state_tracker) {
+        state_tracker->PreCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
     VVL_TracyCZoneEnd(tracy_zone_precall);
@@ -283,7 +290,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyInstance(VkInstance instance, const VkAllocati
         if (!vo) {
             continue;
         }
+        if (vo->container_type == LayerObjectTypeStateTracker) {
+            continue;
+        }
         vo->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
+    }
+    if (state_tracker) {
+        state_tracker->PostCallRecordDestroyInstance(instance, pAllocator, record_obj);
     }
 
     DeactivateInstanceDebugCallbacks(instance_dispatch->debug_report);
@@ -403,15 +416,18 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         }
         vo->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
     }
-
+    vvl::base::Device* state_tracker = nullptr;
     RecordObject record_obj(vvl::Func::vkDestroyDevice);
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
             continue;
         }
+        if (vo->container_type == LayerObjectTypeStateTracker) {
+            state_tracker = vo.get(); 
+            continue;
+        }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
-
     // Before device is destroyed, allow aborted objects to clean up
     for (auto& vo : device_dispatch->aborted_object_dispatch) {
         if (!vo) {
@@ -419,6 +435,10 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
+    if (state_tracker) {
+        state_tracker->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
+    }
+
 
 #if defined(VVL_TRACY_GPU)
     CleanupTracyVk(device);
@@ -430,7 +450,19 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         if (!vo) {
             continue;
         }
+        if (vo->container_type == LayerObjectTypeStateTracker) {
+            continue;
+        }
         vo->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
+    }
+    for (auto& vo : device_dispatch->aborted_object_dispatch) {
+        if (!vo) {
+            continue;
+        }
+        vo->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
+    }
+    if (state_tracker) {
+        state_tracker->PostCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
 
     auto instance_dispatch = vvl::dispatch::GetData(device_dispatch->physical_device);

@@ -755,6 +755,15 @@ void SyncValidator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, con
     text::ToLower(debug_cmdbuf_pattern);
 }
 
+void SyncValidator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
+                                               const RecordObject &record_obj) {
+    queue_sync_states_.clear();
+    binary_signals_.clear();
+    timeline_signals_.clear();
+    waitable_fences_.clear();
+    host_waitable_semaphores_.clear();
+}
+
 void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
                                                   const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                   const RecordObject &record_obj) {
