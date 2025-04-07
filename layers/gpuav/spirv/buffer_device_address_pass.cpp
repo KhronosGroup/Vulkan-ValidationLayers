@@ -37,8 +37,7 @@ const static OfflineFunction kOfflineFunctionAlign = {"inst_buffer_device_addres
 
 BufferDeviceAddressPass::BufferDeviceAddressPass(Module& module) : Pass(module, kOfflineModule) { module.use_bda_ = true; }
 
-uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta,
-                                                     bool safe_mode) {
+uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta) {
     // The Pointer ID Operand is always the first operand for Load/Store/Atomics
     // We can just take it and cast to a uint64 here to examine the ptr value
     const uint32_t pointer_id = meta.target_instruction->Operand(0);
@@ -83,7 +82,7 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
     module_.need_log_error_ = true;
 
     // Will return bool that will look like (FuncRange() && FuncAlign()) { }
-    if (safe_mode) {
+    if (module_.settings_.safe_mode) {
         const uint32_t logical_and_id = module_.TakeNextId();
         block.CreateInstruction(spv::OpLogicalAnd, {bool_type, logical_and_id, function_range_result, function_align_result},
                                 inst_it);
@@ -177,11 +176,11 @@ bool BufferDeviceAddressPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                if (module_.settings_.unsafe_mode) {
-                    CreateFunctionCall(current_block, &inst_it, meta, false);
+                if (!module_.settings_.safe_mode) {
+                    CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
-                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta, true);
+                    ic_data.function_result_id = CreateFunctionCall(current_block, nullptr, meta);
                     InjectFunctionPost(current_block, ic_data);
                     // Skip the newly added valid and invalid block. Start searching again from newly split merge block
                     block_it++;

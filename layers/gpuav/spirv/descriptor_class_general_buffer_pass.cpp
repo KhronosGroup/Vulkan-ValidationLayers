@@ -148,7 +148,7 @@ bool DescriptorClassGeneralBufferPass::RequiresInstrumentation(const Function& f
         return false;
     }
 
-    if (module_.settings_.unsafe_mode) {
+    if (!module_.settings_.safe_mode) {
         meta.access_offset = FindOffsetInStruct(meta.descriptor_id, is_descriptor_array, meta.access_chain_insts);
     }
 
@@ -183,7 +183,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
             // < Descriptor SSA ID, Highest offset byte that will be accessed >
             vvl::unordered_map<uint32_t, uint32_t> block_highest_offset_map;
 
-            if (module_.settings_.unsafe_mode) {
+            if (!module_.settings_.safe_mode) {
                 // Pre-pass loop the Block to get the highest offset accessed (statically known)
                 // Do here before we inject instructions into the block list below
                 for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
@@ -208,7 +208,7 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
                 if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) continue;
 
-                if (module_.settings_.unsafe_mode && meta.access_offset != 0) {
+                if (!module_.settings_.safe_mode && meta.access_offset != 0) {
                     const uint32_t block_highest_offset = block_highest_offset_map[meta.descriptor_id];
                     if (meta.access_offset < block_highest_offset) {
                         continue;  // skipping because other instruction in block will be a higher offset

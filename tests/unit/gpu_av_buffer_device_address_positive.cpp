@@ -17,13 +17,13 @@
 #include "../framework/descriptor_helper.h"
 #include "generated/vk_function_pointers.h"
 
-void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(void *p_next) {
+void GpuAVBufferDeviceAddressTest::InitGpuVUBufferDeviceAddress(bool safe_mode) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::shaderInt64);
 
-    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
     RETURN_IF_SKIP(InitState());
 }
 
@@ -2329,7 +2329,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
 // Used to test large accesses to a single struct from a single pointer
 // If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
 TEST_F(PositiveGpuAVBufferDeviceAddress, DISABLED_Stress) {
-    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress());
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
     InitRenderTarget();
 
     std::stringstream cs_source;

@@ -88,7 +88,7 @@ bool RayQueryPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                if (module_.settings_.unsafe_mode) {
+                if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);

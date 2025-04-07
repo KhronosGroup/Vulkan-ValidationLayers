@@ -301,7 +301,7 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
         return false;
     }
 
-    if (module_.settings_.unsafe_mode) {
+    if (!module_.settings_.safe_mode) {
         auto variable_found_it = block_instrumented_table_.find(variable_id);
         if (variable_found_it == block_instrumented_table_.end()) {
             block_instrumented_table_[variable_id] = {meta.descriptor_index_id};
@@ -426,7 +426,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
 
-                if (module_.settings_.unsafe_mode) {
+                if (!module_.settings_.safe_mode) {
                     CreateFunctionCall(current_block, &inst_it, meta);
                 } else {
                     InjectConditionalData ic_data = InjectFunctionPre(*function.get(), block_it, inst_it);
