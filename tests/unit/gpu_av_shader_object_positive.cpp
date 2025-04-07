@@ -373,13 +373,10 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     InitBasicShaderObject();
 
     AddRequiredFeature(vkt::Feature::robustBufferAccess);
-    const VkBool32 value = true;
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                       &value};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &setting};
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
-    InitState();
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
 
     static const char comp_src[] = R"glsl(
         #version 450

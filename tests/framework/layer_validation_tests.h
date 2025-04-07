@@ -76,9 +76,11 @@
 
 #define OBJECT_LAYER_NAME "VK_LAYER_KHRONOS_validation"
 
+[[maybe_unused]] static const VkBool32 kVkFalse = VK_FALSE;
+[[maybe_unused]] static const VkBool32 kVkTrue = VK_TRUE;
+
 // This is only for tests where you have a good reason to have more than the default (10) duplicate message limit.
 // It is highly suggested you first try to breakup your test up into smaller tests if you are trying to use this.
-static VkBool32 kVkFalse = VK_FALSE;
 static const VkLayerSettingEXT kDisableMessageLimitSetting = {OBJECT_LAYER_NAME, "enable_message_limit",
                                                               VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse};
 [[maybe_unused]] static VkLayerSettingsCreateInfoEXT kDisableMessageLimit = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT,
@@ -243,19 +245,19 @@ class VkBestPracticesLayerTest : public VkLayerTest {
 
 class GpuAVTest : public virtual VkLayerTest {
   public:
-    void InitGpuAvFramework(void *p_next = nullptr);
+    void InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settings = {}, bool safe_mode = true);
 
     VkValidationFeaturesEXT GetGpuAvValidationFeatures();
 };
 
 class GpuAVBufferDeviceAddressTest : public GpuAVTest {
   public:
-    void InitGpuVUBufferDeviceAddress(void *p_next = nullptr);
+    void InitGpuVUBufferDeviceAddress(bool safe_mode = true);
 };
 
 class GpuAVDescriptorIndexingTest : public GpuAVTest {
   public:
-    void InitGpuVUDescriptorIndexing();
+    void InitGpuVUDescriptorIndexing(bool safe_mode = true);
 };
 
 class GpuAVDescriptorClassGeneralBuffer : public GpuAVTest {

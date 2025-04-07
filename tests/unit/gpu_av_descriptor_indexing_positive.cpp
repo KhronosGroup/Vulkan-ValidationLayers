@@ -20,10 +20,10 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 
-void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing() {
+void GpuAVDescriptorIndexingTest::InitGpuVUDescriptorIndexing(bool safe_mode) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE_4_EXTENSION_NAME);
     SetTargetApiVersion(VK_API_VERSION_1_2);
-    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitGpuAvFramework({}, safe_mode));
     AddRequiredFeature(vkt::Feature::maintenance4);
     AddRequiredFeature(vkt::Feature::shaderInt64);
     AddRequiredFeature(vkt::Feature::runtimeDescriptorArray);
@@ -833,7 +833,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
 // If on Mesa, also add MESA_SHADER_CACHE_DISABLE=1
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
     TEST_DESCRIPTION("Do many indexing into the shader");
-    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing(false));
     InitRenderTarget();
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
@@ -949,7 +949,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
 // Disabled as this is a perf testing test, not much value in normal CI
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
     TEST_DESCRIPTION("Do many indexing into the shader");
-    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing(false));
 
     // Will look like
     //     layout(set = 0, binding = 0) buffer SSBO {
@@ -1015,7 +1015,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
 // Disabled as this is a perf testing test, not much value in normal CI
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
     TEST_DESCRIPTION("Show the GPU overhead of doing redundant checks inside a loop");
-    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing(false));
 
     char const *cs_source = R"glsl(
         #version 450

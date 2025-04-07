@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vector>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
@@ -43,10 +44,21 @@ VkValidationFeaturesEXT GpuAVTest::GetGpuAvValidationFeatures() {
 }
 
 // This checks any requirements needed for GPU-AV are met otherwise devices not meeting them will "fail" the tests
-void GpuAVTest::InitGpuAvFramework(void *p_next) {
+void GpuAVTest::InitGpuAvFramework(std::vector<VkLayerSettingEXT> layer_settings, bool safe_mode) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    // We have defaulted GPU-AV to use unsafe mode, but all negative tests need to be "safe" or they will crash
+    if (safe_mode) {
+        layer_settings.emplace_back(
+            VkLayerSettingEXT{OBJECT_LAYER_NAME, "gpuav_safe_mode", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue});
+    }
+
+    VkLayerSettingsCreateInfoEXT layer_setting_ci = vku::InitStructHelper();
+    layer_setting_ci.settingCount = layer_settings.size();
+    layer_setting_ci.pSettings = layer_settings.data();
+
     VkValidationFeaturesEXT validation_features = GetGpuAvValidationFeatures();
-    validation_features.pNext = p_next;
+    validation_features.pNext = &layer_setting_ci;
     RETURN_IF_SKIP(InitFramework(&validation_features));
     if (!CanEnableGpuAV(*this)) {
         GTEST_SKIP() << "Requirements for GPU-AV are not met";
@@ -759,12 +771,9 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
 
-    const VkBool32 value = true;
-    const VkLayerSettingEXT setting = {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                       &value};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &setting};
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_select_instrumented_shaders", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
 
     // Robust buffer access will be on by default
     VkCommandPoolCreateFlags pool_flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -1113,11 +1122,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
         layer_setting = {OBJECT_LAYER_NAME, setting_name, VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &layer_setting_value};
     }
 
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = vku::InitStructHelper();
-    layer_settings_create_info.settingCount = static_cast<uint32_t>(layer_settings.size());
-    layer_settings_create_info.pSettings = layer_settings.data();
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
-
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

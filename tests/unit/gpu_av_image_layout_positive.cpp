@@ -11,6 +11,7 @@
  */
 
 #include <vulkan/vulkan_core.h>
+#include <vector>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
@@ -21,13 +22,9 @@ void GpuAVImageLayout::InitGpuAVImageLayout() {
     // Turned off because things like https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8688 and
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8869 are still showing false positives Need to manually turn
     // on settings while the default is "off"
-    const VkBool32 value_true = true;
-    const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "gpuav_image_layout", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                             &value_true};
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
-                                                               &layer_setting};
-
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_image_layout", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue}};
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
 }
 

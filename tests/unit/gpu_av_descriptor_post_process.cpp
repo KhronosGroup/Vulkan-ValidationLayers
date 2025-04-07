@@ -13,6 +13,7 @@
 
 #include <spirv-tools/libspirv.h>
 #include <vulkan/vulkan_core.h>
+#include <vector>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
@@ -77,18 +78,14 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, UpdateAfterBindImageViewTypeMismatch)
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnly) {
     TEST_DESCRIPTION("Test only using Post Processing and turning off other shader instrumentation checks");
-    const VkBool32 value_false = false;
-    const VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
     };
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3,
-                                                               layer_settings};
-
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -143,14 +140,11 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnly) {
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyShaderObject) {
     TEST_DESCRIPTION("Test only using Post Processing and turning off other shader instrumentation checks");
-    const VkBool32 value_false = false;
-    const VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
     };
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3,
-                                                               layer_settings};
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -158,7 +152,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyShaderObject) {
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::dynamicRendering);
     AddRequiredFeature(vkt::Feature::shaderObject);
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
 
@@ -211,20 +205,17 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyShaderObject) {
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyGPL) {
     TEST_DESCRIPTION("Test only using Post Processing and turning off other shader instrumentation checks");
-    const VkBool32 value_false = false;
-    const VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
     };
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3,
-                                                               layer_settings};
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::graphicsPipelineLibrary);
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
@@ -271,20 +262,17 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyGPL) {
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyPipelineInline) {
     TEST_DESCRIPTION("Test only using Post Processing and turning off other shader instrumentation checks");
-    const VkBool32 value_false = false;
-    const VkLayerSettingEXT layer_settings[3] = {
-        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
-        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &value_false},
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_buffer_address_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+        {OBJECT_LAYER_NAME, "gpuav_vertex_attribute_fetch_oob", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
     };
-    VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 3,
-                                                               layer_settings};
 
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingSampledImageUpdateAfterBind);
     AddRequiredFeature(vkt::Feature::maintenance5);
-    RETURN_IF_SKIP(InitGpuAvFramework(&layer_settings_create_info));
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
