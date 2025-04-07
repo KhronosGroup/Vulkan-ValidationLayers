@@ -21,6 +21,7 @@
 
 #include "generated/instrumentation_descriptor_indexing_oob_comp.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "utils/hash_util.h"
 
 namespace gpuav {
 namespace spirv {
@@ -131,7 +132,9 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
-bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
+bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
+                                                        vvl::unordered_set<uint32_t>& found_in_block_set,
+                                                        const DescriptroIndexPushConstantAccess& pc_access) {
     const uint32_t opcode = inst.Opcode();
 
     bool array_found = false;
@@ -313,6 +316,15 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
                 descriptor_index_set.emplace(meta.descriptor_index_id);
             }
         }
+
+        const uint32_t hash_descriptor_index_id =
+            pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
+        uint32_t hash_content[3] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id};
+        const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
+        if (found_in_block_set.find(hash) != found_in_block_set.end()) {
+            return false;  // duplicate detected
+        }
+        found_in_block_set.insert(hash);
     }
 
     // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors at the same time
@@ -399,10 +411,18 @@ bool DescriptorIndexingOOBPass::Instrument() {
             }
             is_original_new_block = true;  // Always reset once we start
 
+            // We only need to instrument the set/binding/index combo once per block (in unsafe mode)
+            vvl::unordered_set<uint32_t> found_in_block_set;
+            DescriptroIndexPushConstantAccess pc_access;
+
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                if (module_.settings_.safe_mode) {
+                    pc_access.Update(module_, inst_it);
+                }
+
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set, pc_access)) {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler

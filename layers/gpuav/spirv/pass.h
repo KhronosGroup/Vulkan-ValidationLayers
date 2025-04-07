@@ -102,5 +102,24 @@ class Pass {
     const bool debug_disable_loops_ = false;
 };
 
+// Push Constants can be used to determine the index into descriptor arrays (Example: https://godbolt.org/z/jTEaaExov)
+// From examining many large shaders, the same access is made, but generated as a different OpLoad.
+// spirv-opt is not going to remove the duplicate loads because it is designed to allow the compiler to decide how long
+// it wants a single OpLoad to "live" (for register spilling algorithms)
+struct DescriptroIndexPushConstantAccess {
+    // The "final" ID that will determine the descriptor index
+    uint32_t descriptor_index_id = 0;
+    // We exploit the fact we only need to track the next ID that is an alias to |descriptor_index_id|
+    // The goal is this is only updated as we keep finding a matching descriptor index
+    uint32_t next_alias_id = 0;
+
+    // Which member inside the PC Block (expressed as ID of the OpConsant)
+    uint32_t member_index = 0;
+    // Sometimes a single OpIAdd is applied to the PC value
+    uint32_t add_id_value = 0;
+
+    void Update(const Module& module, InstructionIt inst_it);
+};
+
 }  // namespace spirv
 }  // namespace gpuav

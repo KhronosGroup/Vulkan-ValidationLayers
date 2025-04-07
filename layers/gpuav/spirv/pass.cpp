@@ -878,5 +878,70 @@ uint32_t Pass::GetLinkFunction(uint32_t& link_function_id, const OfflineFunction
     return link_function_id;
 }
 
+void DescriptroIndexPushConstantAccess::Update(const Module& module, InstructionIt inst_it) {
+    if (!(*inst_it)->IsNonPtrAccessChain()) {
+        return;
+    }
+
+    const Variable* pc_variable = module.type_manager_.FindPushConstantVariable();
+    if (!pc_variable) {
+        return;  // shader doesn't use Push Constant
+    }
+
+    if ((*inst_it)->Operand(0) != pc_variable->Id()) {
+        return;  // Access chain is not aimmed at the Push Constant
+    }
+
+    const Constant* member_index_constant = module.type_manager_.FindConstantById((*inst_it)->Operand(1));
+    if (!member_index_constant) {
+        return;  // dynamic access into Push Constant (which is crazy and not likely)
+    }
+    const uint32_t found_member_index = member_index_constant->Id();
+
+    // We save memory/time tracking every instruction and know from viewing SPIR-V this pattern always will look like
+    // %a = OpAccessChain %ptr %pc %uint_x
+    // %b = OpLoad %uint %a
+    // %c = OpIAdd %uint %b %uint_y (optional)
+    //
+    // We use this and just do a quick look ahead for load
+    const uint32_t access_chain_id = (*inst_it)->ResultId();
+    inst_it++;
+    if ((*inst_it)->Opcode() != spv::OpLoad || (*inst_it)->Operand(0) != access_chain_id) {
+        return;
+    }
+
+    const Type* access_type = module.type_manager_.FindTypeById((*inst_it)->TypeId());
+    if (!access_type || access_type->spv_type_ != SpvType::kInt) {
+        return;  // might be grabbing a uvec2 or float instead we want to ignore
+    }
+
+    uint32_t found_descriptor_index_id = (*inst_it)->ResultId();
+    uint32_t found_add_id_value = 0;
+    inst_it++;
+
+    if ((*inst_it)->Opcode() == spv::OpIAdd) {
+        const uint32_t add_0_id = (*inst_it)->Operand(0);
+        const uint32_t add_1_id = (*inst_it)->Operand(1);
+        // Might be (pc + constant) or (constant + pc)
+        if (add_0_id == found_descriptor_index_id) {
+            found_add_id_value = add_1_id;
+        } else if (add_1_id == found_descriptor_index_id) {
+            found_add_id_value = add_0_id;
+        } else {
+            return;  // we have hit a strange case and rather be safe and exit
+        }
+        found_descriptor_index_id = (*inst_it)->ResultId();
+    }
+
+    next_alias_id = found_descriptor_index_id;
+    if (add_id_value != found_add_id_value || member_index != found_member_index) {
+        // First time seeing the Push Constant, set starting values.
+        // Also if found a new uint being used, need to reset.
+        descriptor_index_id = found_descriptor_index_id;
+        add_id_value = found_add_id_value;
+        member_index = found_member_index;
+    }
+}
+
 }  // namespace spirv
 }  // namespace gpuav
