@@ -959,6 +959,21 @@ bool CoreChecks::ValidateRenderPassPipelineStage(VkRenderPass render_pass, const
     return skip;
 }
 
+bool CoreChecks::ValidateRenderPassInstanceNoLayoutChange(const LogObjectList &objlist, const Location &barrier_loc,
+                                                          VkImageLayout old_layout, VkImageLayout new_layout) const {
+    using sync_vuid_maps::GetImageBarrierVUID;
+    using sync_vuid_maps::ImageError;
+    bool skip = false;
+    if (old_layout != new_layout) {
+        const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassInstanceLayoutChange);
+        skip |= LogError(
+            vuid, objlist, barrier_loc,
+            "defines image layout transition (oldLayout = %s, newLayout = %s) within a render pass instance, which is not allowed.",
+            string_VkImageLayout(old_layout), string_VkImageLayout(new_layout));
+    }
+    return skip;
+}
+
 // Validate VUs for Pipeline Barriers that are within a renderPass
 // Pre: cb_state->active_render_pass must be a pointer to valid renderPass state
 bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl::CommandBuffer &cb_state,
@@ -997,9 +1012,10 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
 
     for (uint32_t i = 0; i < image_mem_barrier_count; ++i) {
         const auto img_barrier = ImageBarrier(image_barriers[i], src_stage_mask, dst_stage_mask);
-        const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
+        const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
-
+        skip |= ValidateRenderPassInstanceNoLayoutChange(LogObjectList(cb_state.Handle(), rp_state->Handle(), img_barrier.image),
+                                                         barrier_loc, img_barrier.oldLayout, img_barrier.newLayout);
         if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdPipelineBarrier-srcQueueFamilyIndex-01182", state.rp_handle,
                              barrier_loc.dot(Field::srcQueueFamilyIndex),
@@ -1056,11 +1072,13 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         const auto img_barrier = ImageBarrier(dep_info.pImageMemoryBarriers[i]);
-        const Location barrier_loc = outer_loc.dot(Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
+        const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
 
         skip |= state.ValidateStage(barrier_loc, img_barrier.srcStageMask, img_barrier.dstStageMask);
         skip |= state.ValidateAccess(barrier_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
         skip |= ValidateRenderPassPipelineStage(state.rp_handle, outer_loc, img_barrier.srcAccessMask, img_barrier.dstAccessMask);
+        skip |= ValidateRenderPassInstanceNoLayoutChange(LogObjectList(cb_state.Handle(), rp_state->Handle(), img_barrier.image),
+                                                         barrier_loc, img_barrier.oldLayout, img_barrier.newLayout);
 
         if (img_barrier.srcQueueFamilyIndex != img_barrier.dstQueueFamilyIndex) {
             skip |= LogError("VUID-vkCmdPipelineBarrier2-srcQueueFamilyIndex-01182", state.rp_handle,
@@ -1960,17 +1978,13 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
         skip |= LogError(vuid, fb_state.Handle(), image_loc, "(%s) does not match an image from the current %s.",
                          FormatHandle(img_bar_image).c_str(), FormatHandle(fb_state.Handle()).c_str());
     }
-    if (img_barrier.oldLayout != img_barrier.newLayout) {
-        const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassLayoutChange);
-        skip |= LogError(vuid, cb_state.Handle(), barrier_loc.dot(Field::oldLayout),
-                         "is %s and newLayout is %s, but %s is being executed within a render pass instance.",
-                         string_VkImageLayout(img_barrier.oldLayout), string_VkImageLayout(img_barrier.newLayout),
-                         FormatHandle(img_barrier.image).c_str());
-    } else {
+    // This check is only valid in sync1 because in sync2 if oldLayout==newLayout then layout
+    // is ignored and not checked against current layout
+    if (barrier_loc.function == vvl::Func::vkCmdPipelineBarrier) {
+        // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
             const LogObjectList objlist(rp_handle, img_bar_image);
-            const auto &vuid = GetImageBarrierVUID(barrier_loc, ImageError::kRenderPassLayoutChange);
-            skip |= LogError(vuid, objlist, image_loc,
+            skip |= LogError("UNASSIGNED-sync1-render-pass-barrier-layout-mismatch", objlist, image_loc,
                              "(%s) is referenced by the VkSubpassDescription for active "
                              "subpass (%" PRIu32 ") of current %s as having layout %s, but image barrier has layout %s.",
                              FormatHandle(img_bar_image).c_str(), active_subpass, FormatHandle(rp_handle).c_str(),
@@ -2480,6 +2494,13 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList &objlist, 
         skip |= ValidateDynamicRenderingPipelineStage(objlist, loc.dot(Field::dstStageMask), mem_barrier.dstStageMask,
                                                       dep_info.dependencyFlags);
     }
+    for (const auto [i, image_barrier] : vvl::enumerate(dep_info.pImageMemoryBarriers, dep_info.imageMemoryBarrierCount)) {
+        const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
+        LogObjectList layout_check_objlist(objlist);
+        layout_check_objlist.add(image_barrier.image);
+        skip |= ValidateRenderPassInstanceNoLayoutChange(layout_check_objlist, barrier_loc, image_barrier.oldLayout,
+                                                         image_barrier.newLayout);
+    }
     return skip;
 }
 
@@ -2492,6 +2513,15 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList &objlist, 
     skip |= ValidateDynamicRenderingBarriersCommon(objlist, outer_loc, dependency_flags, buffer_barrier_count, image_barrier_count);
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, dependency_flags);
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::dstStageMask), dst_stage_mask, dependency_flags);
+
+    for (const auto [i, image_barrier] : vvl::enumerate(image_barriers, image_barrier_count)) {
+        const Location barrier_loc = outer_loc.dot(Field::pImageMemoryBarriers, i);
+        LogObjectList layout_check_objlist(objlist);
+        layout_check_objlist.add(image_barrier.image);
+        skip |= ValidateRenderPassInstanceNoLayoutChange(layout_check_objlist, barrier_loc, image_barrier.oldLayout,
+                                                         image_barrier.newLayout);
+    }
+
     return skip;
 }
 

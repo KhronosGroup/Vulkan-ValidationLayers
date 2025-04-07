@@ -1248,7 +1248,7 @@ const vvl::unordered_map<ImageError, std::vector<Entry>> &GetImageErrorsMap() {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-image-09374"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-image-09374"},
          }},
-        {ImageError::kRenderPassLayoutChange,
+        {ImageError::kRenderPassInstanceLayoutChange,
          {
              {Key(Func::vkCmdPipelineBarrier), "VUID-vkCmdPipelineBarrier-oldLayout-01181"},
              {Key(Func::vkCmdPipelineBarrier2), "VUID-vkCmdPipelineBarrier2-oldLayout-01181"},

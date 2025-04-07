@@ -82,7 +82,7 @@ enum class ImageError {
     kRenderPassMismatch,
     kRenderPassMismatchColorUnused,
     kRenderPassMismatchAhbZero,
-    kRenderPassLayoutChange,
+    kRenderPassInstanceLayoutChange,
     kDynamicRenderingLocalReadNew,
     kDynamicRenderingLocalReadOld,
     kAspectMask,
