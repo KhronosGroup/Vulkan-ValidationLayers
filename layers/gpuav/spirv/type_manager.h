@@ -154,6 +154,7 @@ class TypeManager {
 
     const Variable& AddVariable(std::unique_ptr<Instruction> new_inst, const Type& type);
     const Variable* FindVariableById(uint32_t id) const;
+    const Variable* FindPushConstantVariable() const;
 
   private:
     Module& module_;
@@ -195,6 +196,8 @@ class TypeManager {
 
     std::vector<const Variable*> input_variables_;
     std::vector<const Variable*> output_variables_;
+    // There is invalid to have more than 1 push constant variable per entrypoint
+    const Variable* push_constant_variable_ = nullptr;
 
     // Save the length of a struct so we don't have to look it up everytime
     // <struct_id, struct size>

@@ -41,7 +41,8 @@ class PostProcessDescriptorIndexingPass : public Pass {
     };
 
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
-                                 vvl::unordered_set<uint32_t>& found_in_block_set);
+                                 vvl::unordered_set<uint32_t>& found_in_block_set,
+                                 const DescriptroIndexPushConstantAccess& pc_access);
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId();

@@ -1012,6 +1012,54 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
     m_default_queue->Wait();
 }
 
+// If test starts to take too long, we are messing up the optimization
+TEST_F(PositiveGpuAVDescriptorIndexing, StressDescriptroIndexPushConstantAccess) {
+    TEST_DESCRIPTION("Test DescriptroIndexPushConstantAccess optimization");
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing(false));
+    InitRenderTarget();
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 64};
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 64, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    const uint32_t count = 150;
+    std::stringstream cs_source;
+    cs_source << R"glsl(
+        #version 450
+        #extension GL_EXT_buffer_reference2 : require
+        #extension GL_EXT_buffer_reference_uvec2 : require
+        #extension GL_EXT_nonuniform_qualifier : require
+
+        layout(set = 0, binding = 0, std430) buffer SSBO {
+            uint _m0[];
+        } data[];
+
+
+        layout(push_constant, std430) uniform PC {
+            uint a;
+            uint b;
+        };
+
+        void main() {
+            // data[b]._m0[a + 0] = 0;
+            // data[b]._m0[a + 1] = 1;
+            // data[b]._m0[a + 2] = 2;
+            // ...
+    )glsl";
+
+    for (uint32_t i = 0; i < count; i++) {
+        cs_source << "data[b + 1]._m0[" << i << "] = " << i << ";\n";
+    }
+    cs_source << "\n}";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.CreateComputePipeline();
+}
+
 // Disabled as this is a perf testing test, not much value in normal CI
 TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
     TEST_DESCRIPTION("Show the GPU overhead of doing redundant checks inside a loop");

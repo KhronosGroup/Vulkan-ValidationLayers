@@ -614,6 +614,8 @@ const Variable& TypeManager::AddVariable(std::unique_ptr<Instruction> new_inst, 
         input_variables_.push_back(new_variable);
     } else if (new_variable->StorageClass() == spv::StorageClassOutput) {
         output_variables_.push_back(new_variable);
+    } else if (new_variable->StorageClass() == spv::StorageClassPushConstant) {
+        push_constant_variable_ = new_variable;
     }
 
     return *new_variable;
@@ -623,6 +625,8 @@ const Variable* TypeManager::FindVariableById(uint32_t id) const {
     auto variable = id_to_variable_.find(id);
     return (variable == id_to_variable_.end()) ? nullptr : variable->second.get();
 }
+
+const Variable* TypeManager::FindPushConstantVariable() const { return push_constant_variable_; }
 
 bool Type::IsArray() const { return spv_type_ == SpvType::kArray || spv_type_ == SpvType::kRuntimeArray; }
 

@@ -58,7 +58,8 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
                                                                 InstructionMeta& meta,
-                                                                vvl::unordered_set<uint32_t>& found_in_block_set) {
+                                                                vvl::unordered_set<uint32_t>& found_in_block_set,
+                                                                const DescriptroIndexPushConstantAccess& pc_access) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -157,7 +158,9 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         return false;
     }
 
-    uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, meta.descriptor_index_id, meta.variable_id};
+    const uint32_t hash_descriptor_index_id =
+        pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
+    uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id, meta.variable_id};
     const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
     if (found_in_block_set.find(hash) != found_in_block_set.end()) {
         return false;  // duplicate detected
@@ -184,11 +187,16 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
 
             auto& block_instructions = current_block.instructions_;
 
-            // We only need to instrument the set/binding/inde/variable combo once per block
+            // We only need to instrument the set/binding/index/variable combo once per block
             vvl::unordered_set<uint32_t> found_in_block_set;
+            DescriptroIndexPushConstantAccess pc_access;
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
+                pc_access.Update(module_, inst_it);
+
                 InstructionMeta meta;
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set)) continue;
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set, pc_access)) {
+                    continue;
+                }
 
                 if (IsMaxInstrumentationsCount()) continue;
                 instrumentations_count_++;
