@@ -69,6 +69,14 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     return result;
 }
 
+VkAccessFlags2 DisabledAccesses(const DeviceExtensions &device_extensions) {
+    VkAccessFlags2 result = 0;
+    if (!IsExtEnabled(device_extensions.vk_qcom_tile_shading)) {
+        result |= VK_ACCESS_2_SHADER_TILE_ATTACHMENT_READ_BIT_QCOM | VK_ACCESS_2_SHADER_TILE_ATTACHMENT_WRITE_BIT_QCOM;
+    }
+    return result;
+}
+
 VkPipelineStageFlags2 ExpandPipelineStages(VkPipelineStageFlags2 stage_mask, VkQueueFlags queue_flags,
                                            const VkPipelineStageFlags2 disabled_feature_mask) {
     VkPipelineStageFlags2 expanded = stage_mask;
@@ -211,7 +219,7 @@ std::string StringAccessFlags(VkAccessFlags2 mask) {
 }
 
 void ReplaceExpandBitsWithMetaMask(VkFlags64 &mask, VkFlags64 expand_bits, VkFlags64 meta_mask) {
-    if ((mask & expand_bits) == expand_bits) {
+    if (expand_bits && (mask & expand_bits) == expand_bits) {
         mask &= ~expand_bits;
         mask |= meta_mask;
     }

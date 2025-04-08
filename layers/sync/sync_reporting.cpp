@@ -167,13 +167,15 @@ static VkPipelineStageFlags2 GetAllowedStages(VkQueueFlags queue_flags, VkPipeli
     return allowed_stages;
 }
 
-static SyncAccessFlags FilterSyncAccessesByAllowedVkStages(const SyncAccessFlags &accesses, VkPipelineStageFlags2 allowed_stages) {
+static SyncAccessFlags FilterSyncAccessesByAllowedVkStages(const SyncAccessFlags &accesses, VkPipelineStageFlags2 allowed_stages,
+                                                           VkAccessFlags2 disabled_accesses) {
     SyncAccessFlags filtered_accesses = accesses;
     const auto &access_infos = GetSyncAccessInfos();
     for (size_t i = 0; i < access_infos.size(); i++) {
         const SyncAccessInfo &access_info = access_infos[i];
         const bool is_stage_allowed = (access_info.stage_mask & allowed_stages) != 0;
-        if (!is_stage_allowed) {
+        const bool is_access_allowed = (access_info.access_mask & disabled_accesses) == 0;
+        if (!is_stage_allowed || !is_access_allowed) {
             filtered_accesses.reset(i);
         }
     }
@@ -204,17 +206,23 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
     const VkPipelineStageFlags2 disabled_stages = sync_utils::DisabledPipelineStages(device.enabled_features, device.extensions);
     const VkPipelineStageFlags2 all_transfer_expand_bits = kAllTransferExpandBits & ~disabled_stages;
 
+    const VkAccessFlags2 disabled_accesses = sync_utils::DisabledAccesses(device.extensions);
+    const VkAccessFlags2 all_shader_read_bits = kShaderReadExpandBits & ~disabled_accesses;
+
     // Build stage -> accesses mapping. OR-merge accesses that happen on the same stage.
     // Also handle ALL_COMMANDS accesses.
     vvl::unordered_map<VkPipelineStageFlagBits2, VkAccessFlags2> stage_to_accesses;
     {
         const VkPipelineStageFlags2 allowed_stages = GetAllowedStages(allowed_queue_flags, disabled_stages);
-        const SyncAccessFlags filtered_accesses = FilterSyncAccessesByAllowedVkStages(sync_accesses, allowed_stages);
+        const SyncAccessFlags filtered_accesses =
+            FilterSyncAccessesByAllowedVkStages(sync_accesses, allowed_stages, disabled_accesses);
 
-        const SyncAccessFlags all_reads = FilterSyncAccessesByAllowedVkStages(syncAccessReadMask, allowed_stages);
+        const SyncAccessFlags all_reads =
+            FilterSyncAccessesByAllowedVkStages(syncAccessReadMask, allowed_stages, disabled_accesses);
         const SyncAccessFlags all_shader_reads = FilterSyncAccessesByAllowedVkAccesses(all_reads, kShaderReadExpandBits);
 
-        const SyncAccessFlags all_writes = FilterSyncAccessesByAllowedVkStages(syncAccessWriteMask, allowed_stages);
+        const SyncAccessFlags all_writes =
+            FilterSyncAccessesByAllowedVkStages(syncAccessWriteMask, allowed_stages, disabled_accesses);
         const SyncAccessFlags all_shader_writes = FilterSyncAccessesByAllowedVkAccesses(all_writes, kShaderWriteExpandBits);
 
         if (filtered_accesses == all_reads) {
@@ -248,29 +256,32 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
         VkAccessFlags2 accesses = entry.first;
         VkPipelineStageFlags2 stages = entry.second;
 
-        // Detect if ALL allowed accesses for the given stage are used.
-        // This is an opportunity to use a compact message form.
+        VkAccessFlags2 all_accesses_supported_by_stages = sync_utils::CompatibleAccessMask(stages);
         {
-            VkAccessFlags2 all_supported_accesses = sync_utils::CompatibleAccessMask(stages);
             // Remove meta stages.
             // TODO: revisit CompatibleAccessMask helper. SyncVal works with expanded representation.
             // Meta stages are needed for core checks in this case, update function so serve both purposes well.
-            all_supported_accesses &= ~VK_ACCESS_2_SHADER_READ_BIT;
-            all_supported_accesses &= ~VK_ACCESS_2_SHADER_WRITE_BIT;
+            all_accesses_supported_by_stages &= ~VK_ACCESS_2_SHADER_READ_BIT;
+            all_accesses_supported_by_stages &= ~VK_ACCESS_2_SHADER_WRITE_BIT;
             // Remove unsupported accesses, otherwise the access mask won't be detected as the one that covers ALL accesses
             // TODO: ideally this should be integrated into utilities logic (need to revisit all use cases)
             if (!IsExtEnabled(device.extensions.vk_ext_blend_operation_advanced)) {
-                all_supported_accesses &= ~VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
-            }
-            if (accesses == all_supported_accesses) {
-                stages_with_all_supported_accesses |= stages;
-                all_accesses |= all_supported_accesses;
-                continue;
+                all_accesses_supported_by_stages &= ~VK_ACCESS_2_COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT;
             }
         }
 
+        // Check if ALL supported accesses for the given stage are used.
+        // This is an opportunity to use a compact message form.
+        if (accesses == all_accesses_supported_by_stages) {
+            stages_with_all_supported_accesses |= stages;
+            all_accesses |= all_accesses_supported_by_stages;
+            continue;
+        }
+
         sync_utils::ReplaceExpandBitsWithMetaMask(stages, all_transfer_expand_bits, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
-        sync_utils::ReplaceExpandBitsWithMetaMask(accesses, kShaderReadExpandBits, VK_ACCESS_2_SHADER_READ_BIT);
+
+        const VkAccessFlags2 all_shader_reads_supported_by_stages = all_shader_read_bits & all_accesses_supported_by_stages;
+        sync_utils::ReplaceExpandBitsWithMetaMask(accesses, all_shader_reads_supported_by_stages, VK_ACCESS_2_SHADER_READ_BIT);
         result.emplace_back(stages, accesses);
     }
     if (stages_with_all_supported_accesses) {
