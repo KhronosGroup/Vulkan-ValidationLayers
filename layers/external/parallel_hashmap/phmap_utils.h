@@ -244,7 +244,7 @@ struct Combiner<H, 4> {
     H operator()(H h1, size_t k1) {
         // Copyright 2005-2014 Daniel James.
         // Distributed under the Boost Software License, Version 1.0. (See accompanying
-        // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        // file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
         const uint32_t c1 = 0xcc9e2d51;
         const uint32_t c2 = 0x1b873593;
@@ -266,7 +266,7 @@ struct Combiner<H, 8> {
     H operator()(H h, size_t k) {
         // Copyright 2005-2014 Daniel James.
         // Distributed under the Boost Software License, Version 1.0. (See accompanying
-        // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+        // file LICENSE.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
         const uint64_t m = (uint64_t(0xc6a4a793) << 32) + 0x5bd1e995;
         const int r = 47;
 
