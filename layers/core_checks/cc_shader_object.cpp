@@ -556,7 +556,7 @@ bool CoreChecks::PreCallValidateGetShaderBinaryDataEXT(VkDevice device, VkShader
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectNextStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawShaderObjectNextStage(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
     const auto& stages = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX)
@@ -572,14 +572,16 @@ bool CoreChecks::ValidateShaderObjectNextStage(const LastBound& last_bound_state
             if ((previous_state->create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) == 0 &&
                 (previous_state->create_info.nextStage & stage) == 0) {
                 const auto state = last_bound_state.GetShaderStateIfValid(shader_object_stage);
-                skip |= LogError(vuid.pipeline_or_shaders_bound_08607, last_bound_state.cb_state.Handle(), vuid.loc(),
-                                 "The combination of shader objects bound to VK_PIPELINE_BIND_POINT_GRAPHICS is invalid, because "
-                                 "shader stages %s (%s) and %s (%s) are bound with no other stages between them, but %s is not "
-                                 "included in the nextStage of %s (nextStage: %s).",
+                // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7280
+                skip |= LogError("UNASSIGNED-draw-missing-next-shader", last_bound_state.cb_state.Handle(), vuid.loc(),
+                                 "The combination of graphic shader objects bound is invalid, because "
+                                 "shader stages %s (%s) and %s (%s) are bound with no other stages between them.\nThe %s shader "
+                                 "was created with nextStage of %s but needs to be %s.",
                                  string_VkShaderStageFlagBits(previous_stage), FormatHandle(previous_state->Handle()).c_str(),
                                  string_VkShaderStageFlagBits(stage), FormatHandle(state->Handle()).c_str(),
-                                 string_VkShaderStageFlagBits(stage), string_VkShaderStageFlagBits(previous_stage),
-                                 string_VkShaderStageFlags(previous_state->create_info.nextStage).c_str());
+                                 string_VkShaderStageFlagBits(previous_stage),
+                                 string_VkShaderStageFlags(previous_state->create_info.nextStage).c_str(),
+                                 string_VkShaderStageFlagBits(stage));
                 break;
             }
         }
@@ -589,69 +591,56 @@ bool CoreChecks::ValidateShaderObjectNextStage(const LastBound& last_bound_state
     return skip;
 }
 
-bool CoreChecks::ValidateShaderObjectBoundShader(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
-                                                 const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawShaderObjectBoundShader(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    if (!last_bound_state.ValidShaderObjectCombination(bind_point, enabled_features)) {
-        skip |= LogError(vuid.pipeline_or_shaders_bound_08607, cb_state.Handle(), vuid.loc(),
-                         "A valid %s pipeline must be bound with vkCmdBindPipeline or shader objects with "
-                         "vkCmdBindShadersEXT before calling this command.",
-                         string_VkPipelineBindPoint(bind_point));
+    if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
+        const bool tried_mesh = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH);
+        skip |= LogError(
+            vuid.vertex_shader_08684, cb_state.Handle(), vuid.loc(),
+            "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+            "VK_SHADER_STAGE_VERTEX_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_VERTEX_BIT shader%s.",
+            tried_mesh ? " (Even if you are using a mesh shader, a VK_NULL_HANDLE must be bound to the vertex stage)" : "");
     }
-
-    skip |= ValidateShaderObjectNextStage(last_bound_state, vuid);
-
-    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
-        if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) {
-            const bool tried_mesh = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH);
-            skip |= LogError(
-                vuid.vertex_shader_08684, cb_state.Handle(), vuid.loc(),
-                "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                "VK_SHADER_STAGE_VERTEX_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_VERTEX_BIT shader%s.",
-                tried_mesh ? " (Even if you are using a mesh shader, a VK_NULL_HANDLE must be bound to the vertex stage)" : "");
-        }
-        if (enabled_features.tessellationShader &&
-            !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
-            skip |= LogError(vuid.tessellation_control_shader_08685, cb_state.Handle(), vuid.loc(),
-                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                             "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT and either VK_NULL_HANDLE or a valid "
-                             "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT shader. (If the tessellationShader is enabled, the stage "
-                             "needs to be provided)");
-        }
-        if (enabled_features.tessellationShader &&
-            !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
-            skip |= LogError(vuid.tessellation_evaluation_shader_08686, cb_state.Handle(), vuid.loc(),
-                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                             "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT and either VK_NULL_HANDLE or a valid "
-                             "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT shader. (If the tessellationShader is enabled, the stage "
-                             "needs to be provided)");
-        }
-        if (enabled_features.geometryShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) {
-            skip |= LogError(vuid.geometry_shader_08687, cb_state.Handle(), vuid.loc(),
-                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                             "VK_SHADER_STAGE_GEOMETRY_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_GEOMETRY_BIT "
-                             "shader. (If the geometryShader is enabled, the stage needs to be provided)");
-        }
-        if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) {
-            skip |=
-                LogError(vuid.fragment_shader_08688, cb_state.Handle(), vuid.loc(),
+    if (enabled_features.tessellationShader &&
+        !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) {
+        skip |= LogError(vuid.tessellation_control_shader_08685, cb_state.Handle(), vuid.loc(),
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT and either VK_NULL_HANDLE or a valid "
+                         "VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT shader. (If the tessellationShader is enabled, the stage "
+                         "needs to be provided)");
+    }
+    if (enabled_features.tessellationShader &&
+        !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION)) {
+        skip |= LogError(vuid.tessellation_evaluation_shader_08686, cb_state.Handle(), vuid.loc(),
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT and either VK_NULL_HANDLE or a valid "
+                         "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT shader. (If the tessellationShader is enabled, the stage "
+                         "needs to be provided)");
+    }
+    if (enabled_features.geometryShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) {
+        skip |= LogError(vuid.geometry_shader_08687, cb_state.Handle(), vuid.loc(),
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_GEOMETRY_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_GEOMETRY_BIT "
+                         "shader. (If the geometryShader is enabled, the stage needs to be provided)");
+    }
+    if (!last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) {
+        skip |= LogError(vuid.fragment_shader_08688, cb_state.Handle(), vuid.loc(),
                          "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
                          "VK_SHADER_STAGE_FRAGMENT_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_FRAGMENT_BIT shader.");
-        }
-        if (enabled_features.taskShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TASK)) {
-            skip |= LogError(vuid.task_shader_08689, cb_state.Handle(), vuid.loc(),
-                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                             "VK_SHADER_STAGE_TASK_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_TASK_BIT shader. (If "
-                             "the taskShader is enabled, the stage needs to be provided)");
-        }
-        if (enabled_features.meshShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH)) {
-            skip |= LogError(vuid.mesh_shader_08690, cb_state.Handle(), vuid.loc(),
-                             "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
-                             "VK_SHADER_STAGE_MESH_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_MESH_BIT shader. (If "
-                             "the meshShader is enabled, the stage needs to be provided)");
-        }
+    }
+    if (enabled_features.taskShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::TASK)) {
+        skip |= LogError(vuid.task_shader_08689, cb_state.Handle(), vuid.loc(),
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_TASK_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_TASK_BIT shader. (If "
+                         "the taskShader is enabled, the stage needs to be provided)");
+    }
+    if (enabled_features.meshShader && !last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::MESH)) {
+        skip |= LogError(vuid.mesh_shader_08690, cb_state.Handle(), vuid.loc(),
+                         "There is no graphics pipeline bound and vkCmdBindShadersEXT() was not called with stage "
+                         "VK_SHADER_STAGE_MESH_BIT and either VK_NULL_HANDLE or a valid VK_SHADER_STAGE_MESH_BIT shader. (If "
+                         "the meshShader is enabled, the stage needs to be provided)");
     }
 
     return skip;
@@ -667,10 +656,11 @@ bool CoreChecks::ValidateDrawShaderObject(const LastBound& last_bound_state, con
                          FormatHandle(cb_state.active_render_pass->Handle()).c_str());
     }
 
+    skip |= ValidateDrawShaderObjectNextStage(last_bound_state, vuid);
+    skip |= ValidateDrawShaderObjectBoundShader(last_bound_state, vuid);
     skip |= ValidateDrawShaderObjectLinking(last_bound_state, vuid);
     skip |= ValidateDrawShaderObjectPushConstantAndLayout(last_bound_state, vuid);
     skip |= ValidateDrawShaderObjectMesh(last_bound_state, vuid);
-
     return skip;
 }
 
@@ -911,9 +901,8 @@ bool CoreChecks::ValidateDrawShaderObjectMesh(const LastBound& last_bound_state,
             if (has_tese_shader) msg << "Tessellation Eval shader: " << FormatHandle(tese_shader_handle) << '\n';
             if (has_tesc_shader) msg << "Tessellation Control shader: " << FormatHandle(tesc_shader_handle) << '\n';
             if (has_geom_shader) msg << "Geometry shader: " << FormatHandle(geom_shader_handle) << '\n';
-            // VU being added to https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7125
             skip |=
-                LogError("UNASSIGNED-vkCmdDrawMeshTasks-pre-raster-stages", cb_state.Handle(), vuid.loc(),
+                LogError(vuid.bound_non_mesh_10680, cb_state.Handle(), vuid.loc(),
                          "Calling a mesh draw call, but the following stages are bound, but need to be bound as VK_NULL_HANDLE\n%s",
                          msg.str().c_str());
         }

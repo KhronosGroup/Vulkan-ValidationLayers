@@ -31,7 +31,6 @@ struct DrawDispatchVuid {
     Location loc() const { return Location(function); }
 
     const char* pipeline_bound_08606 = kVUIDUndefined;
-    const char* pipeline_or_shaders_bound_08607 = kVUIDUndefined;
     const char* index_binding_07312 = kVUIDUndefined;
     const char* vertex_binding_04007 = kVUIDUndefined;
     const char* vertex_binding_null_04008 = kVUIDUndefined;
@@ -249,6 +248,7 @@ struct DrawDispatchVuid {
     const char* task_mesh_shader_08694 = kVUIDUndefined;
     const char* task_mesh_shader_08695 = kVUIDUndefined;
     const char* vert_task_mesh_shader_08696 = kVUIDUndefined;
+    const char* bound_non_mesh_10680 = kVUIDUndefined;
     const char* linked_shaders_08698 = kVUIDUndefined;
     const char* linked_shaders_08699 = kVUIDUndefined;
     const char* shaders_push_constants_08878 = kVUIDUndefined;
