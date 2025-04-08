@@ -47,6 +47,10 @@ ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &c
             }
         }
     }
+    // We need to update handle, but if using VK_SHADER_CODE_TYPE_SPIRV_EXT, it will be null
+    if (spirv_module) {
+        spirv_module->handle_ = handle_;
+    }
 }
 
 VkPrimitiveTopology ShaderObject::GetTopology() const {
