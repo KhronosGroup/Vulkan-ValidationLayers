@@ -31,6 +31,7 @@ namespace vvl {
 class DeviceState;
 class Fence;
 class ImageSubState;
+class ImageViewSubState;
 class Semaphore;
 class Surface;
 class Swapchain;
@@ -270,6 +271,7 @@ class ImageSubState {
     ImageSubState &operator=(const ImageSubState &) = delete;
     virtual ~ImageSubState() {}
     virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
     Image &base;
 };
@@ -277,7 +279,7 @@ class ImageSubState {
 // State for VkImageView objects.
 // Parent -> child relationships in the object usage tree:
 //    ImageView [N] -> [1] vv::Image
-class ImageView : public StateObject {
+class ImageView : public StateObject, public SubStateManager<ImageViewSubState> {
   public:
     const vku::safe_VkImageViewCreateInfo safe_create_info;
     const VkImageViewCreateInfo &create_info;
@@ -317,6 +319,7 @@ class ImageView : public StateObject {
     bool OverlapSubresource(const ImageView &compare_view) const;
 
     void Destroy() override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     uint32_t GetAttachmentLayerCount() const;
 
@@ -325,6 +328,18 @@ class ImageView : public StateObject {
   private:
     VkImageSubresourceRange NormalizeSubresourceRange() const;
     bool IsDepthSliced();
+};
+
+class ImageViewSubState {
+  public:
+    explicit ImageViewSubState(ImageView &view) : base(view) {}
+    ImageViewSubState(const ImageSubState &) = delete;
+    ImageViewSubState &operator=(const ImageSubState &) = delete;
+    virtual ~ImageViewSubState() {}
+    virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    ImageView &base;
 };
 
 struct SwapchainImage {

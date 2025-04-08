@@ -40,6 +40,22 @@ void Validator::Created(vvl::CommandBuffer &cb_state) {
 
 void Validator::Created(vvl::Queue &queue) { queue.SetSubState(container_type, std::make_unique<QueueSubState>(*this, queue)); }
 
+void Validator::Created(vvl::Image &obj) { obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::ImageView &obj) {
+    obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, *desc_heap_));
+}
+void Validator::Created(vvl::Buffer &obj) { obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::BufferView &obj) {
+    obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, *desc_heap_));
+}
+void Validator::Created(vvl::Sampler &obj) { obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::AccelerationStructureNV &obj) {
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, *desc_heap_));
+}
+void Validator::Created(vvl::AccelerationStructureKHR &obj) {
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, *desc_heap_));
+}
+
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {
     return DispatchGetInstanceProcAddr(inst, name);

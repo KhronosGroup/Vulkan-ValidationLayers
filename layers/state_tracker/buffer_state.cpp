@@ -80,6 +80,22 @@ Buffer::Buffer(DeviceState &dev_data, VkBuffer handle, const VkBufferCreateInfo 
     }
 }
 
+void Buffer::Destroy() {
+    if (!Destroyed()) {
+        for (auto &item : sub_states_) {
+            item.second->Destroy();
+        }
+        Bindable::Destroy();
+    }
+}
+
+void Buffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    Bindable::NotifyInvalidate(invalid_nodes, unlink);
+}
+
 #if defined(__GNUC__) && (__GNUC__ > 12)
 #pragma GCC diagnostic pop
 #endif
@@ -120,4 +136,21 @@ BufferView::BufferView(const std::shared_ptr<vvl::Buffer> &bf, VkBufferView hand
       buffer_format_features(format_features) {
 }
 
+void BufferView::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
+    if (buffer_state) {
+        buffer_state->RemoveParent(this);
+        buffer_state = nullptr;
+    }
+    StateObject::Destroy();
+}
+
+void BufferView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
+}
 }  // namespace vvl

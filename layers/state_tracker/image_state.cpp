@@ -188,6 +188,9 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
 }
 
 void Image::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
     // NOTE: due to corner cases in aliased images, the layout_range_map MUST not be cleaned up here.
     // If it is, bad local entries could be created by vvl::CommandBuffer::GetOrCreateImageLayoutRegistry()
     // If an aliasing image was being destroyed (and layout_range_map was reset()), a nullptr keyed
@@ -201,6 +204,9 @@ void Image::Destroy() {
 }
 
 void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
     Bindable::NotifyInvalidate(invalid_nodes, unlink);
     if (unlink) {
         bind_swapchain = nullptr;
@@ -425,7 +431,17 @@ ImageView::ImageView(const std::shared_ptr<vvl::Image> &image_state, VkImageView
       inherited_usage(GetInheritedUsage(ci, *image_state)) {
 }
 
+void ImageView::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
+    for (auto &item : sub_states_) {
+        item.second->NotifyInvalidate(invalid_nodes, unlink);
+    }
+    StateObject::NotifyInvalidate(invalid_nodes, unlink);
+}
+
 void ImageView::Destroy() {
+    for (auto &item : sub_states_) {
+        item.second->Destroy();
+    }
     if (image_state) {
         image_state->RemoveParent(this);
         image_state = nullptr;

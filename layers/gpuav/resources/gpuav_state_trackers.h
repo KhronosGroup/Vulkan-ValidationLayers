@@ -183,4 +183,131 @@ class QueueSubState : public vvl::QueueSubState {
     const bool timeline_khr_;
 };
 
+// Descriptor Ids are used on the GPU to identify if a given descriptor is valid.
+// In some applications there are very large bindless descriptor arrays where it isn't feasible to track validity
+// via the StateObject::parent_nodes_ map as usual. Instead, these ids are stored in a giant GPU accessible bitmap
+// so that the instrumentation can decide if a descriptor is actually valid when it is used in a shader.
+class DescriptorIdTracker {
+  public:
+    DescriptorIdTracker(DescriptorHeap &heap_, VulkanTypedHandle handle) : heap(heap_), id(heap_.NextId(handle)) {}
+
+    DescriptorIdTracker(const DescriptorIdTracker &) = delete;
+    DescriptorIdTracker &operator=(const DescriptorIdTracker &) = delete;
+
+    ~DescriptorIdTracker() { heap.DeleteId(id); }
+
+    DescriptorHeap &heap;
+    const DescriptorId id{};
+};
+
+class ImageSubState : public vvl::ImageSubState {
+  public:
+    ImageSubState(vvl::Image &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline ImageSubState &SubState(vvl::Image &obj) {
+    return *static_cast<ImageSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const ImageSubState &SubState(const vvl::Image &obj) {
+    return *static_cast<const ImageSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class ImageViewSubState : public vvl::ImageViewSubState {
+  public:
+    ImageViewSubState(vvl::ImageView &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline ImageViewSubState &SubState(vvl::ImageView &obj) {
+    return *static_cast<ImageViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const ImageViewSubState &SubState(const vvl::ImageView &obj) {
+    return *static_cast<const ImageViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class BufferSubState : public vvl::BufferSubState {
+  public:
+    BufferSubState(vvl::Buffer &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline BufferSubState &SubState(vvl::Buffer &obj) {
+    return *static_cast<BufferSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const BufferSubState &SubState(const vvl::Buffer &obj) {
+    return *static_cast<const BufferSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class BufferViewSubState : public vvl::BufferViewSubState {
+  public:
+    BufferViewSubState(vvl::BufferView &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline BufferViewSubState &SubState(vvl::BufferView &obj) {
+    return *static_cast<BufferViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const BufferViewSubState &SubState(const vvl::BufferView &obj) {
+    return *static_cast<const BufferViewSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class SamplerSubState : public vvl::SamplerSubState {
+  public:
+    SamplerSubState(vvl::Sampler &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline SamplerSubState &SubState(vvl::Sampler &obj) {
+    return *static_cast<SamplerSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const SamplerSubState &SubState(const vvl::Sampler &obj) {
+    return *static_cast<const SamplerSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
+class AccelerationStructureNVSubState : public vvl::AccelerationStructureNVSubState {
+  public:
+    AccelerationStructureNVSubState(vvl::AccelerationStructureNV &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline AccelerationStructureNVSubState &SubState(vvl::AccelerationStructureNV &obj) {
+    return *static_cast<AccelerationStructureNVSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const AccelerationStructureNVSubState &SubState(const vvl::AccelerationStructureNV &obj) {
+    return *static_cast<const AccelerationStructureNVSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+class AccelerationStructureKHRSubState : public vvl::AccelerationStructureKHRSubState {
+  public:
+    AccelerationStructureKHRSubState(vvl::AccelerationStructureKHR &obj, DescriptorHeap &heap);
+    void Destroy() override;
+    void NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) override;
+
+    DescriptorId Id() const { return id_tracker ? id_tracker->id : 0; }
+    std::optional<DescriptorIdTracker> id_tracker;
+};
+static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStructureKHR &obj) {
+    return *static_cast<AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const AccelerationStructureKHRSubState &SubState(const vvl::AccelerationStructureKHR &obj) {
+    return *static_cast<const AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
 }  // namespace gpuav

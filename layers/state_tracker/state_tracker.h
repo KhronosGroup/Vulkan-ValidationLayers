@@ -2119,11 +2119,17 @@ class DeviceProxy : public vvl::base::Device {
     }
 
     // callbacks for adding sub state information to new state objects
-    virtual void Created(vvl::CommandBuffer& cb_state) {}
-    virtual void Created(vvl::Queue& queue_state) {}
-    virtual void Created(vvl::Image& image_state) {}
-    virtual void Created(vvl::Swapchain& swapchain_state) {}
-    virtual void Created(vvl::DescriptorSet& swapchain_state) {}
+    virtual void Created(vvl::CommandBuffer& state) {}
+    virtual void Created(vvl::Queue& state) {}
+    virtual void Created(vvl::AccelerationStructureKHR& state) {}
+    virtual void Created(vvl::AccelerationStructureNV& state) {}
+    virtual void Created(vvl::Buffer& state) {}
+    virtual void Created(vvl::BufferView& state) {}
+    virtual void Created(vvl::Image& state) {}
+    virtual void Created(vvl::ImageView& state) {}
+    virtual void Created(vvl::Sampler& state) {}
+    virtual void Created(vvl::Swapchain& state) {}
+    virtual void Created(vvl::DescriptorSet& tate) {}
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,

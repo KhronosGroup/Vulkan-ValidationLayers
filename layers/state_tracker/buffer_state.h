@@ -24,10 +24,12 @@
 
 namespace vvl {
 
+class BufferSubState;
+class BufferViewSubState;
 class DeviceState;
 class VideoProfileDesc;
 
-class Buffer : public Bindable {
+class Buffer : public Bindable, public SubStateManager<BufferSubState> {
   public:
     const vku::safe_VkBufferCreateInfo safe_create_info;
     const VkBufferCreateInfo &create_info;
@@ -47,9 +49,12 @@ class Buffer : public Bindable {
     // class. So we need to do the Destroy() work before tracker_ is destroyed.
     virtual ~Buffer() {
         if (!Destroyed()) {
-            Bindable::Destroy();
+            Destroy();
         }
     }
+
+    void Destroy() override;
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 
     VkBuffer VkHandle() const { return handle_.Cast<VkBuffer>(); }
 
@@ -77,7 +82,19 @@ class Buffer : public Bindable {
     std::variant<std::monostate, BindableLinearMemoryTracker, BindableSparseMemoryTracker> tracker_;
 };
 
-class BufferView : public StateObject {
+class BufferSubState {
+  public:
+    explicit BufferSubState(Buffer &buf) : base(buf) {}
+    BufferSubState(const BufferSubState &) = delete;
+    BufferSubState &operator=(const BufferSubState &) = delete;
+    virtual ~BufferSubState() {}
+    virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    Buffer &base;
+};
+
+class BufferView : public StateObject, public SubStateManager<BufferViewSubState> {
   public:
     const vku::safe_VkBufferViewCreateInfo safe_create_info;
     const VkBufferViewCreateInfo &create_info;
@@ -107,13 +124,10 @@ class BufferView : public StateObject {
 
     VkBufferView VkHandle() const { return handle_.Cast<VkBufferView>(); }
 
-    void Destroy() override {
-        if (buffer_state) {
-            buffer_state->RemoveParent(this);
-            buffer_state = nullptr;
-        }
-        StateObject::Destroy();
-    }
+    void Destroy() override;
+
+    void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
+
     bool Invalid() const override { return Destroyed() || !buffer_state || buffer_state->Invalid(); }
 
     VkDeviceSize Size() const {
@@ -123,6 +137,18 @@ class BufferView : public StateObject {
         }
         return size;
     }
+};
+
+class BufferViewSubState {
+  public:
+    explicit BufferViewSubState(BufferView &buf) : base(buf) {}
+    BufferViewSubState(const BufferViewSubState &) = delete;
+    BufferViewSubState &operator=(const BufferViewSubState &) = delete;
+    virtual ~BufferViewSubState() {}
+    virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    BufferView &base;
 };
 
 }  // namespace vvl
