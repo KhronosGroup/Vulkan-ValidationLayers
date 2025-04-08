@@ -410,6 +410,13 @@ class Validator : public GpuShaderInstrumentor {
     void Created(vvl::DescriptorSet& set) final;
     void Created(vvl::CommandBuffer& cb_state) final;
     void Created(vvl::Queue& queue) final;
+    void Created(vvl::Image&) final;
+    void Created(vvl::ImageView&) final;
+    void Created(vvl::Buffer&) final;
+    void Created(vvl::BufferView&) final;
+    void Created(vvl::Sampler&) final;
+    void Created(vvl::AccelerationStructureNV&) final;
+    void Created(vvl::AccelerationStructureKHR&) final;
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
