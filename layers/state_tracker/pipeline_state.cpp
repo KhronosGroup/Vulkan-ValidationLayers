@@ -1247,27 +1247,6 @@ VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
     return VK_COVERAGE_MODULATION_MODE_NONE_NV;
 }
 
-bool LastBound::ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const {
-    if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-        if (!IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE) ||
-            !IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE))
-            return false;
-    } else {
-        if (!IsValidShaderOrNullBound(ShaderObjectStage::VERTEX)) return false;
-        if (device_features.tessellationShader && !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_CONTROL)) return false;
-        if (device_features.tessellationShader && !IsValidShaderOrNullBound(ShaderObjectStage::TESSELLATION_EVALUATION))
-            return false;
-        if (device_features.geometryShader && !IsValidShaderOrNullBound(ShaderObjectStage::GEOMETRY)) return false;
-        if (!IsValidShaderOrNullBound(ShaderObjectStage::FRAGMENT)) return false;
-        if (device_features.taskShader && !IsValidShaderOrNullBound(ShaderObjectStage::TASK)) return false;
-        if (device_features.meshShader && !IsValidShaderOrNullBound(ShaderObjectStage::MESH)) return false;
-        if (GetShader(ShaderObjectStage::VERTEX) == VK_NULL_HANDLE &&
-            (!device_features.meshShader || GetShader(ShaderObjectStage::MESH) == VK_NULL_HANDLE))
-            return false;
-    }
-    return true;
-}
-
 VkShaderEXT LastBound::GetShader(ShaderObjectStage stage) const {
     if (!IsValidShaderBound(stage) || GetShaderState(stage) == nullptr) return VK_NULL_HANDLE;
     return shader_object_states[static_cast<uint32_t>(stage)]->VkHandle();

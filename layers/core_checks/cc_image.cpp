@@ -2717,6 +2717,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             }
         } else if (vkuFormatIsDepthOnly(image_format)) {
             if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) {
+                // Being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7274
                 const LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00001", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
@@ -2725,6 +2726,7 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             }
         } else if (vkuFormatIsStencilOnly(image_format)) {
             if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT) {
+                // Being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7274
                 const LogObjectList objlist(device, image_state->Handle());
                 skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00002", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
