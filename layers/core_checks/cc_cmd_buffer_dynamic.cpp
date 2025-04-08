@@ -1168,6 +1168,41 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
+    // With VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY and dynamicPrimitiveTopologyUnrestricted (for pipeline) we have a runtime check that
+    // the topology makes sense
+    if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+        const VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
+        // Use over GetPrimitiveTopology() because we care what vkCmdSetPrimitiveTopology() explicitly set
+        const VkPrimitiveTopology topology = cb_state.dynamic_state_value.primitive_topology;
+
+        if (vert_entrypoint) {
+            if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
+                topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+                if (!vert_entrypoint->written_builtin_point_size && !enabled_features.maintenance5) {
+                    // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
+                    skip |= LogError("UNASSIGNED-Draw-topology-pointsize", cb_state.Handle(), vuid.loc(),
+                                     "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
+                                     "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
+                                     FormatHandle(vert_spirv_state->handle()).c_str());
+                }
+            }
+        }
+
+        const bool tess_shader_bound = (bound_stages & VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) != 0;
+        const bool patch_topology = topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        if (tess_shader_bound && !patch_topology) {
+            skip |= LogError(
+                vuid.primitive_topology_patch_list_10286, cb_state.Handle(), vuid.loc(),
+                "Tessellation shaders were bound, but the last call to vkCmdSetPrimitiveTopology set primitiveTopology to %s.",
+                string_VkPrimitiveTopology(topology));
+        } else if (!tess_shader_bound && patch_topology) {
+            // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
+            skip |= LogError("UNASSIGNED-Draw-topology-patch", cb_state.Handle(), vuid.loc(),
+                             "Tessellation shaders were not bound, but the last call to vkCmdSetPrimitiveTopology set "
+                             "primitiveTopology to VK_PRIMITIVE_TOPOLOGY_PATCH_LIST.");
+        }
+    }
+
     // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
     // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
     if ((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) ||
@@ -1531,16 +1566,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                           vuid.set_line_width_08619);
-    }
-
-    if (tessev_shader_bound) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
-            cb_state.dynamic_state_value.primitive_topology != VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
-            skip |= LogError(
-                vuid.primitive_topology_patch_list_10286, cb_state.Handle(), loc,
-                "Tessellation shaders were bound, but the last call to vkCmdSetPrimitiveTopology set primitiveTopology to %s.",
-                string_VkPrimitiveTopology(cb_state.dynamic_state_value.primitive_topology));
-        }
     }
 
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
