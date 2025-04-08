@@ -1060,7 +1060,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     command_buffer.Begin();
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    SetDefaultDynamicStatesExclude({}, true, command_buffer.handle());
+    SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
     vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
     command_buffer.EndRendering();
     command_buffer.End();
@@ -1181,7 +1181,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     begin_info.pInheritanceInfo = &hinfo;
     command_buffer.Begin(&begin_info);
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    SetDefaultDynamicStatesExclude({}, true, command_buffer.handle());
+    SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
     vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
     command_buffer.End();
 
@@ -1239,6 +1239,7 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &null_shader);
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &null_shader);
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &frag_stage, &frag_shader.handle());
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &geom_shader.handle());
@@ -1247,6 +1248,7 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tesc_stage, &tesc_shader.handle());
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &tese_shader.handle());
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &null_shader);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &frag_stage, &null_shader);
@@ -1558,6 +1560,24 @@ TEST_F(PositiveShaderObject, SetPatchControlPointsEXT) {
     m_command_buffer.BindShaders(vert_shader, tesc_shader, tese_shader, frag_shader);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdSetPatchControlPointsEXT(m_command_buffer.handle(), 3);
+    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveShaderObject, SetPointTopologyNoWrite) {
+    TEST_DESCRIPTION("Point size is ignored with maintenance5");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    InitDynamicRenderTarget();
+    CreateMinimalShaders();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+    m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
