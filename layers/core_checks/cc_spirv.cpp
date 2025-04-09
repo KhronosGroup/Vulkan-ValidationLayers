@@ -31,6 +31,7 @@
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"
 #include "state_tracker/shader_instruction.h"
+#include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
 #include "utils/hash_util.h"
 #include "chassis/chassis_modification_state.h"
@@ -39,6 +40,7 @@
 #include "spirv-tools/optimizer.hpp"
 #include "containers/limits.h"
 #include "utils/math_utils.h"
+#include "utils/vk_layer_utils.h"
 
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
@@ -1367,7 +1369,8 @@ bool CoreChecks::ValidateShaderInterfaceVariable(const spirv::Module &module_sta
     return skip;
 }
 
-bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &module_state, const vvl::Pipeline &pipeline,
+bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
+                                                         const vvl::Pipeline &pipeline,
                                                          const spirv::ResourceInterfaceVariable &variable,
                                                          vvl::unordered_set<uint32_t> &descriptor_type_set,
                                                          const Location &loc) const {
@@ -1378,15 +1381,9 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     const VkDescriptorSetLayoutBinding *binding = nullptr;
     // For given pipelineLayout verify that the set_layout_node at slot.first has the requested binding at slot.second and return
     // ptr to that binding
-    {
-        const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
-        const uint32_t set = variable.decorations.set;
-        if (pipeline_layout_state && set < pipeline_layout_state->set_layouts.size()) {
-            const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = pipeline_layout_state->set_layouts[set];
-            if (set_layout) {
-                binding = set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
-            }
-        }
+    const vvl::PipelineLayout *pipeline_layout_state = pipeline.PipelineLayoutState().get();
+    if (pipeline_layout_state) {
+        binding = pipeline_layout_state->FindBinding(variable);
     }
 
     if (!binding) {
@@ -1431,6 +1428,79 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
         skip |= ValidateShaderInputAttachment(module_state, pipeline, variable, loc);
     }
 
+    // TODO - Need to add Shader Object variation of these checks
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9893
+    const bool possible_ycbcr = (pipeline_layout_state && pipeline_layout_state->has_immutable_samplers) &&
+                                // IsAccessed() will prevent things like textureSize() from be marked as a false positive
+                                (variable.IsImage() && variable.IsImageAccessed()) &&
+                                // Quick check to prevent doing tons of sampler state lookup
+                                (variable.info.is_sampler_offset || !variable.info.is_sampler_sampled);
+    if (binding && possible_ycbcr) {
+        if (variable.is_type_sampled_image) {
+            // simple case if using combined image sampler
+            ValidateShaderYcbcrSamplerAccess(*binding, variable, nullptr, objlist, loc);
+        } else if (pipeline_layout_state) {
+            // otherwise we need to search for each sampler variable used with this image access
+            for (uint32_t variable_id : variable.sampled_image_sampler_variable_ids) {
+                const spirv::ResourceInterfaceVariable *sampler_variable =
+                    entrypoint.resource_interface_variable_map.at(variable_id);
+                ASSERT_AND_CONTINUE(sampler_variable);
+                const VkDescriptorSetLayoutBinding *sampler_binding = pipeline_layout_state->FindBinding(*sampler_variable);
+                ASSERT_AND_CONTINUE(sampler_binding);
+                ValidateShaderYcbcrSamplerAccess(*sampler_binding, variable, sampler_variable, objlist, loc);
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBinding &binding,
+                                                  const spirv::ResourceInterfaceVariable &image_variable,
+                                                  const spirv::ResourceInterfaceVariable *sampler_variable,
+                                                  const LogObjectList &objlist, const Location &loc) const {
+    bool skip = false;
+    if (!binding.pImmutableSamplers) {
+        return skip;
+    }
+
+    auto print_access_info = [&image_variable, &sampler_variable]() {
+        std::stringstream ss;
+        ss << image_variable.DescribeDescriptor();
+        if (sampler_variable) {
+            ss << " (sampled with " << sampler_variable->DescribeDescriptor() << ")";
+        } else {
+            ss << " (a combined image sampler)";
+        }
+        return ss.str();
+    };
+
+    for (uint32_t i = 0; i < binding.descriptorCount; i++) {
+        auto sampler_state = Get<vvl::Sampler>(binding.pImmutableSamplers[i]);
+        ASSERT_AND_CONTINUE(sampler_state);
+
+        // It is possible to use pImmutableSamplers for embedded sampler that don't use YCbCr as well.
+        if (!sampler_state->samplerConversion) {
+            continue;
+        }
+
+        if (!image_variable.info.is_sampler_sampled) {
+            skip |= LogError("VUID-RuntimeSpirv-None-10716", objlist, loc,
+                             "%s points to pImmutableSamplers[%" PRIu32
+                             "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
+                             "with a non OpImage*Sample* instruction.\nNon-sampled operations (like texelFetch) can't be used used "
+                             "because it doesn't contain the sampler YCbCr conversion information for the driver.",
+                             print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
+            break;  // only need to report a single descriptor
+        } else if (image_variable.info.is_sampler_offset) {
+            skip |= LogError("VUID-RuntimeSpirv-ConstOffset-10718", objlist, loc,
+                             "%s points to pImmutableSamplers[%" PRIu32
+                             "] (%s) that was created with a VkSamplerYcbcrConversion, but was accessed in the SPIR-V "
+                             "with ConstOffset/Offset image operands.",
+                             print_access_info().c_str(), i, FormatHandle(sampler_state->Handle()).c_str());
+            break;  // only need to report a single descriptor
+        }
+    }
     return skip;
 }
 
@@ -1920,7 +1990,8 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         TypeToDescriptorTypeSet(module_state, variable.type_id, descriptor_type_set);
         skip |= ValidateShaderInterfaceVariable(module_state, variable, descriptor_type_set, loc);
         if (pipeline) {
-            skip |= ValidateShaderInterfaceVariablePipeline(module_state, *pipeline, variable, descriptor_type_set, loc);
+            skip |=
+                ValidateShaderInterfaceVariablePipeline(module_state, entrypoint, *pipeline, variable, descriptor_type_set, loc);
         } else if (stage_state.shader_object_create_info) {
             skip |= ValidateShaderInterfaceVariableShaderObject(*stage_state.shader_object_create_info->ptr(), variable,
                                                                 descriptor_type_set, loc);

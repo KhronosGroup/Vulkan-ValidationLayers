@@ -427,9 +427,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
                                    &subpass,
                                    (uint32_t)deps.size(),
                                    deps.data()};
-    // Create Sampler
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_ci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     descriptor_set.WriteDescriptorImageInfo(0, other_view, sampler);
     descriptor_set.UpdateDescriptorSets();

@@ -1404,9 +1404,7 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView view = image.CreateView();
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    VkSampler sampler;
-    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = view;
@@ -1429,7 +1427,6 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     copy_set.dstBinding = 0;
     copy_set.descriptorCount = 1;
 
-    vk::DestroySampler(device(), sampler, nullptr);
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 

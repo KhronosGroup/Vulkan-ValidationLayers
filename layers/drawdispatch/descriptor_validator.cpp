@@ -308,6 +308,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                     descriptor_set.GetDescriptorFromBinding(sampler_used.sampler_slot.binding, sampler_used.sampler_index);
                 // TODO: This check _shouldn't_ be necessary due to the checks made in ResourceInterfaceVariable() in
                 //       shader_validation.cpp. However, without this check some traces still crash.
+                // The issue is we set dynamic image index to zero in samplers_used_by_image so will fail GPU-AV case
                 if (descriptor && (descriptor->GetClass() == DescriptorClass::PlainSampler)) {
                     const auto *sampler_state = static_cast<const SamplerDescriptor *>(descriptor)->GetSamplerState();
                     if (sampler_state) sampler_states.emplace_back(sampler_state);
@@ -496,22 +497,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             skip |= LogError(
                 "VUID-RuntimeSpirv-samples-08726", objlist, loc.Get(), "the %s has %s created with VK_SAMPLE_COUNT_1_BIT.",
                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(image_state->Handle()).c_str());
-        }
-    }
-
-    if (image_view_state->samplerConversion) {
-        if (resource_variable.info.is_not_sampler_sampled) {
-            const LogObjectList objlist(cb_state.Handle(), *shader_handle, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids.image_ycbcr_sampled_06550, objlist, loc.Get(),
-                             "the %s was created with a sampler Ycbcr conversion, but was accessed with "
-                             "a non OpImage*Sample* command.",
-                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str());
-        } else if (resource_variable.info.is_sampler_offset) {
-            const LogObjectList objlist(cb_state.Handle(), *shader_handle, descriptor_set.Handle(), image_view);
-            skip |= LogError(vuids.image_ycbcr_offset_06551, objlist, loc.Get(),
-                             "the %s was created with a sampler Ycbcr conversion, but was accessed with "
-                             "ConstOffset/Offset image operands.",
-                             DescribeDescriptor(resource_variable, index, descriptor_type).c_str());
         }
     }
 
@@ -873,24 +858,6 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
                                  "the %s (%s) is used by %s that uses invalid bias or offset operator.",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(),
                                  FormatHandle(image_view).c_str(), FormatHandle(sampler_state->Handle()).c_str());
-            }
-        }
-
-        if (sampler_state->samplerConversion) {
-            if (resource_variable.info.is_not_sampler_sampled) {
-                const LogObjectList objlist(cb_state.Handle(), *shader_handle, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
-                skip |= LogError(vuids.image_ycbcr_sampled_06550, objlist, loc.Get(),
-                                 "the %s was created with a sampler Ycbcr conversion, but was accessed "
-                                 "with a non OpImage*Sample* command.",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str());
-            } else if (resource_variable.info.is_sampler_offset) {
-                const LogObjectList objlist(cb_state.Handle(), *shader_handle, descriptor_set.Handle(), image_view,
-                                            sampler_state->Handle());
-                skip |= LogError(vuids.image_ycbcr_offset_06551, objlist, loc.Get(),
-                                 "the %s was created with a sampler Ycbcr conversion, but was accessed "
-                                 "with ConstOffset/Offset image operands.",
-                                 DescribeDescriptor(resource_variable, index, descriptor_type).c_str());
             }
         }
     }

@@ -449,8 +449,7 @@ TEST_F(NegativeSampler, LinearReductionModeMinMax) {
     VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
     reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_ci.pNext = &reduction_mode_ci;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&reduction_mode_ci);
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
@@ -588,8 +587,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_info.conversion = conversions[0].handle();
 
     // Create a sampler using conversion
-    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
-    sci.pNext = &ycbcr_info;
+    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo(&ycbcr_info);
     // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
     vkt::Sampler samplers[2];
@@ -692,9 +690,7 @@ TEST_F(NegativeSampler, ImageSamplerConversionNullImageView) {
     vkt::SamplerYcbcrConversion conversion(*m_device, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM);
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion.handle();
-    VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo();
-    sci.pNext = &ycbcr_info;
-    vkt::Sampler sampler(*m_device, sci);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&ycbcr_info));
 
     OneOffDescriptorSet descriptor_set(
         m_device, {
@@ -743,8 +739,7 @@ TEST_F(NegativeSampler, FilterMinmax) {
     VkSamplerReductionModeCreateInfo reduction_info = vku::InitStructHelper();
     reduction_info.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    sampler_info.pNext = &reduction_info;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&reduction_info);
 
     // Wrong mode with a YCbCr Conversion used
     reduction_info.pNext = &ycbcr_info;
@@ -819,11 +814,10 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefined) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_ci = vku::InitStructHelper();
+    custom_color_ci.format = VK_FORMAT_UNDEFINED;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&custom_color_ci);
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
-    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
-    custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
-    sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -872,11 +866,10 @@ TEST_F(NegativeSampler, CustomBorderColorFormatUndefinedNonCombined) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_ci = vku::InitStructHelper();
+    custom_color_ci.format = VK_FORMAT_UNDEFINED;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&custom_color_ci);
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
-    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
-    custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
-    sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -929,11 +922,10 @@ TEST_F(NegativeSampler, DISABLED_CustomBorderColorFormatUndefinedNonCombinedMult
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkSamplerCustomBorderColorCreateInfoEXT custom_color_ci = vku::InitStructHelper();
+    custom_color_ci.format = VK_FORMAT_UNDEFINED;
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo(&custom_color_ci);
     sampler_info.borderColor = VK_BORDER_COLOR_INT_CUSTOM_EXT;
-    VkSamplerCustomBorderColorCreateInfoEXT custom_color_cinfo = vku::InitStructHelper();
-    custom_color_cinfo.format = VK_FORMAT_UNDEFINED;
-    sampler_info.pNext = &custom_color_cinfo;
     vkt::Sampler sampler(*m_device, sampler_info);
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B4G4R4A4_UNORM_PACK16, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -1722,8 +1714,7 @@ TEST_F(NegativeSampler, ReductionModeFeature) {
     VkSamplerReductionModeCreateInfo sampler_reduction_mode_ci = vku::InitStructHelper();
     sampler_reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_MIN;
 
-    auto sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_ci.pNext = &sampler_reduction_mode_ci;
+    auto sampler_ci = SafeSaneSamplerCreateInfo(&sampler_reduction_mode_ci);
     CreateSamplerTest(sampler_ci, "VUID-VkSamplerCreateInfo-pNext-06726");
 }
 
@@ -1764,11 +1755,8 @@ TEST_F(NegativeSampler, BorderColorSwizzle) {
     border_color_component_mapping.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY,
                                                  VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
 
-    VkSamplerCreateInfo sampler_create_info = SafeSaneSamplerCreateInfo();
-    sampler_create_info.pNext = &border_color_component_mapping;
-
     m_errorMonitor->SetDesiredError("VUID-VkSamplerBorderColorComponentMappingCreateInfoEXT-borderColorSwizzle-06437");
-    vkt::Sampler sampler(*m_device, sampler_create_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&border_color_component_mapping));
     m_errorMonitor->VerifyFound();
 }
 

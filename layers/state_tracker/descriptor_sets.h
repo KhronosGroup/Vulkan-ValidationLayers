@@ -174,6 +174,7 @@ class DescriptorSetLayoutDef {
     uint32_t GetTotalDescriptorCount() const { return descriptor_count_; };
     uint32_t GetNonInlineDescriptorCount() const { return non_inline_descriptor_count_; };
     uint32_t GetDynamicDescriptorCount() const { return dynamic_descriptor_count_; };
+    bool HasImmutableSamplers() const { return has_immutable_samplers_; };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return flags_; }
     // For a given binding, return the number of descriptors in that binding and all successive bindings
     uint32_t GetBindingCount() const { return binding_count_; };
@@ -252,6 +253,8 @@ class DescriptorSetLayoutDef {
     uint32_t non_inline_descriptor_count_;
     uint32_t dynamic_descriptor_count_;
     BindingTypeStats binding_type_stats_;
+
+    bool has_immutable_samplers_;
 };
 
 // Canonical dictionary of DSL definitions -- independent of device or handle
@@ -321,6 +324,7 @@ class DescriptorSetLayout : public StateObject {
     uint32_t GetNonInlineDescriptorCount() const { return layout_id_->GetNonInlineDescriptorCount(); };
     uint32_t GetDynamicDescriptorCount() const { return layout_id_->GetDynamicDescriptorCount(); };
     uint32_t GetBindingCount() const { return layout_id_->GetBindingCount(); };
+    bool HasImmutableSamplers() const { return layout_id_->HasImmutableSamplers(); };
     VkDescriptorSetLayoutCreateFlags GetCreateFlags() const { return layout_id_->GetCreateFlags(); }
     uint32_t GetIndexFromBinding(uint32_t binding) const { return layout_id_->GetIndexFromBinding(binding); }
     // Various Get functions that can either be passed a binding#, which will
