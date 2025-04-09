@@ -20,6 +20,7 @@ import os
 import re
 import sys
 import struct
+import numpy as np
 from collections import defaultdict
 
 def PrintExecutionModels(execution_models: set):
@@ -67,7 +68,7 @@ def ExtractShaderId(path: str):
     match = re.search(r'dump_(\d+)_after\.spv', path)
     return int(match.group(1)) if match else None
 
-def ParseSpirv(file: str):
+def ParseSpirv(file: str, stats_collector: dict):
     with open(file, "rb") as f:
         # Read the whole binary file as uint32 words
         words = list(struct.unpack(f"{len(f.read()) // 4}I", f.seek(0) or f.read()))
@@ -107,6 +108,23 @@ def ParseSpirv(file: str):
             function_name = name_dict[function_id]
             if function_name.startswith('inst_'):
                 print(f"  {function_name}: {count}")
+                # Store count per function to later do statistics
+                if function_name not in stats_collector:
+                    stats_collector[function_name] = []
+                stats_collector[function_name].append(count)
+
+def print_statistics(stats_collector: dict):
+    print("\n=== Function Call Statistics ===")
+    for function_name, counts in stats_collector.items():            
+        counts_array = np.array(counts)
+        print(f"\nFunction: {function_name}")
+        print(f"  Count: {len(counts)}")
+        print(f"  Min: {np.min(counts_array)}")
+        print(f"  Max: {np.max(counts_array)}")
+        print(f"  Mean: {np.mean(counts_array):.2f}")
+        print(f"  Median: {np.median(counts_array):.2f}")
+        print(f"  75th percentile: {np.percentile(counts_array, 75):.2f}")
+        print(f"  95th percentile: {np.percentile(counts_array, 95):.2f}")
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Get info about a GPU-AV instrumented SPIR-V dump')
@@ -126,13 +144,15 @@ def main(argv):
                     after_files.append(full_path)
 
         spirv_list = sorted(after_files, key=ExtractShaderId)
-
     else:
         spirv_list = args.files
 
+    stats_collector = defaultdict(list)
+    
     for file in spirv_list:
-        ParseSpirv(file)
+        ParseSpirv(file, stats_collector)
+    
+    print_statistics(stats_collector)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
-
