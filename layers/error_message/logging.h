@@ -202,7 +202,6 @@ class DebugReport {
     bool force_default_log_callback{false};
     uint32_t device_created = 0;
     MessageFormatSettings message_format_settings;
-    bool debug_stable_messages{false};
 
     void SetUtilsObjectName(const VkDebugUtilsObjectNameInfoEXT *pNameInfo);
     void SetMarkerObjectName(const VkDebugMarkerObjectNameInfoEXT *pNameInfo);
