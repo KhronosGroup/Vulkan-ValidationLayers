@@ -816,6 +816,22 @@
                 "VkPhysicalDeviceTilePropertiesFeaturesQCOM": {
                     "tileProperties": true
                 },
+                "VkPhysicalDeviceTileShadingFeaturesQCOM": {
+                    "tileShading" : true,
+                    "tileShadingFragmentStage" : true,
+                    "tileShadingColorAttachments" : true,
+                    "tileShadingDepthAttachments" : true,
+                    "tileShadingStencilAttachments" : true,
+                    "tileShadingInputAttachments" : true,
+                    "tileShadingSampledAttachments" : true,
+                    "tileShadingPerTileDraw" : true,
+                    "tileShadingPerTileDispatch" : true,
+                    "tileShadingDispatchTile" : true,
+                    "tileShadingApron" : true,
+                    "tileShadingAnisotropicApron" : true,
+                    "tileShadingAtomicOps" : true,
+                    "tileShadingImageProcessing" : true
+                },
                 "VkPhysicalDeviceAmigoProfilingFeaturesSEC": {
                     "amigoProfiling": true
                 },
@@ -2329,6 +2345,7 @@
                 "VK_QCOM_rotated_copy_commands": 1,
                 "VK_QCOM_tile_properties": 1,
                 "VK_QCOM_ycbcr_degamma": 1,
+                "VK_QCOM_tile_shading": 1,
                 "VK_QNX_screen_surface": 1,
                 "VK_SEC_amigo_profiling": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
