@@ -343,9 +343,7 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
             oss << line_start << line_start;
             oss << "{\"type\" : \"" << string_VkObjectTypeHandleName(src_object.objectType) << "\", \"handle\" : \"";
             if (0 != src_object.objectHandle) {
-                if (!debug_stable_messages) {
-                    oss << "0x" << std::hex << src_object.objectHandle;
-                }
+                oss << "0x" << std::hex << src_object.objectHandle;
                 oss << "\", \"name\" : \"";
                 if (src_object.pObjectName) {
                     oss << src_object.pObjectName;
@@ -474,21 +472,10 @@ std::string DebugReport::FormatHandle(const char *handle_type_name, uint64_t han
         handle_name = GetMarkerObjectNameNoLock(handle);
     }
 
-    bool print_handle = true;
-    if (debug_stable_messages) {
-        if (!strcmp(handle_type_name, "VkInstance") || !strcmp(handle_type_name, "VkPhysicalDevice") ||
-            !strcmp(handle_type_name, "VkDevice") || !strcmp(handle_type_name, "VkQueue") ||
-            !strcmp(handle_type_name, "VkCommandBuffer")) {
-            // In stable message mode do not print dispatchable handles because they vary
-            print_handle = false;
-        }
-    }
-
     std::ostringstream str;
     str << handle_type_name << " ";
-    if (print_handle) {
-        str << "0x" << std::hex << handle;
-    }
+    str << "0x" << std::hex << handle;
+
     if (!handle_name.empty()) {
         str << "[" << handle_name.c_str() << "]";
     }
