@@ -6963,6 +6963,7 @@ TEST_F(NegativeShaderObject, LineRasterization) {
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
     vk::CmdSetLineRasterizationModeEXT(m_command_buffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10608");
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);

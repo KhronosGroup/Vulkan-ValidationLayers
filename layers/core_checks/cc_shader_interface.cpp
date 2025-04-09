@@ -235,18 +235,8 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     VkPrimitiveTopology geom_topology = entrypoint.execution_mode.input_primitive_topology;
     bool mismatch = false;
     mismatch |= (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST && geom_topology != VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    mismatch |=
-        IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                             VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY}) &&
-        !IsValueIn(geom_topology,
-                   {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                    VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY});
-    mismatch |= IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY}) &&
-                !IsValueIn(geom_topology, {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
-                                           VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
-                                           VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY});
+    mismatch |= IsLineTopology(topology) && !IsLineTopology(geom_topology);
+    mismatch |= IsTriangleTopology(topology) && !IsTriangleTopology(geom_topology);
     if (mismatch) {
         if (has_tess) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
