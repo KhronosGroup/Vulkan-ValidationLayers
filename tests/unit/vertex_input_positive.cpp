@@ -1285,6 +1285,9 @@ TEST_F(PositiveVertexInput, AttribDivisorExtAndKhr) {
 
     VkPhysicalDeviceVertexAttributeDivisorPropertiesKHR pdvad_props = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(pdvad_props);
+    if (!pdvad_props.supportsNonZeroFirstInstance) {
+        GTEST_SKIP() << "Test requires supportsNonZeroFirstInstance to be VK_FALSE";
+    }
 
     VkVertexInputBindingDivisorDescription vertex_binding_divisor;
     vertex_binding_divisor.binding = 0u;
