@@ -603,9 +603,7 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     if (pipeline.RasterizationState()) {
         // Any line topology
         const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-        if (IsValueIn(topology,
-                      {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                       VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
+        if (IsLineTopology(topology)) {
             skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                               vuid.dynamic_line_width_07833);
         }
@@ -1271,17 +1269,20 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
     if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) &&
         (cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM ||
          cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)) {
-        bool alphaToCoverageEnable = last_bound_state.IsAlphaToCoverageEnable();
-        bool alphaToOneEnable = last_bound_state.IsAlphaToOneEnable();
-        bool sampleShadingEnable =
-            pipeline_state && pipeline_state->MultisampleState() && pipeline_state->MultisampleState()->sampleShadingEnable;
-        if (alphaToCoverageEnable || alphaToOneEnable || sampleShadingEnable) {
-            skip |= LogError(vuid.line_rasterization_10608, cb_state.Handle(), vuid.loc(),
-                             "lineRasterizationMode is %s, but alphaToCoverageEnable (%s), alphaToOneEnable (%s) and "
-                             "sampleShadingEnable (%s) are not all VK_FALSE.",
-                             string_VkLineRasterizationMode(cb_state.dynamic_state_value.line_rasterization_mode),
-                             alphaToCoverageEnable ? "VK_TRUE" : "VK_FALSE", alphaToOneEnable ? "VK_TRUE" : "VK_FALSE",
-                             sampleShadingEnable ? "VK_TRUE" : "VK_FALSE");
+        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
+        if (IsLineTopology(topology)) {
+            const bool alpha_to_coverage_enable = last_bound_state.IsAlphaToCoverageEnable();
+            const bool alpha_to_one_enable = last_bound_state.IsAlphaToOneEnable();
+            const bool sample_shading_enable =
+                pipeline_state && pipeline_state->MultisampleState() && pipeline_state->MultisampleState()->sampleShadingEnable;
+            if (alpha_to_coverage_enable || alpha_to_one_enable || sample_shading_enable) {
+                skip |= LogError(vuid.line_rasterization_10608, cb_state.Handle(), vuid.loc(),
+                                 "lineRasterizationMode is %s, but alphaToCoverageEnable (%s), alphaToOneEnable (%s) and "
+                                 "sampleShadingEnable (%s) are not all VK_FALSE.",
+                                 string_VkLineRasterizationMode(cb_state.dynamic_state_value.line_rasterization_mode),
+                                 alpha_to_coverage_enable ? "VK_TRUE" : "VK_FALSE", alpha_to_one_enable ? "VK_TRUE" : "VK_FALSE",
+                                 sample_shading_enable ? "VK_TRUE" : "VK_FALSE");
+            }
         }
     }
 
@@ -1448,17 +1449,11 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         return skip;
     }
 
-    const auto isLineTopology = [](VkPrimitiveTopology topology) {
-        return IsValueIn(topology,
-                         {VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                          VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY});
-    };
-
     bool tess_shader_line_topology =
         tessev_shader_bound &&
-        isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
+        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
     bool geom_shader_line_topology =
-        geom_shader_bound && isLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
+        geom_shader_bound && IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
 
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
@@ -1500,7 +1495,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
         if (vertex_shader_bound) {
-            if (isLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
+            if (IsLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
                 if (stippled_lines) {
                     skip |=
                         ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,

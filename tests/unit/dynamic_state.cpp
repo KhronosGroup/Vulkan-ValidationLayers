@@ -6032,6 +6032,7 @@ TEST_F(NegativeDynamicState, LineRasterization) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
     pipe.ms_ci_.alphaToCoverageEnable = VK_TRUE;
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
