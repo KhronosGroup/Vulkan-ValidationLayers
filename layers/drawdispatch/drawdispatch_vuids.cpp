@@ -182,8 +182,6 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDraw-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDraw-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDraw-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDraw-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDraw-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDraw-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDraw-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDraw-stippledLineEnable-07495";
@@ -450,8 +448,6 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMultiEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMultiEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMultiEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMultiEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMultiEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMultiEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMultiEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMultiEXT-stippledLineEnable-07495";
@@ -719,8 +715,6 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndexed-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndexed-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndexed-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndexed-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndexed-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndexed-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndexed-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndexed-stippledLineEnable-07495";
@@ -988,8 +982,6 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMultiIndexedEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMultiIndexedEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMultiIndexedEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMultiIndexedEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMultiIndexedEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMultiIndexedEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMultiIndexedEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMultiIndexedEXT-stippledLineEnable-07495";
@@ -1257,8 +1249,6 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndirect-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndirect-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirect-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndirect-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndirect-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndirect-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndirect-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndirect-stippledLineEnable-07495";
@@ -1525,8 +1515,6 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndexedIndirect-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndexedIndirect-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndexedIndirect-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndexedIndirect-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndexedIndirect-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndexedIndirect-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndexedIndirect-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndexedIndirect-stippledLineEnable-07495";
@@ -1670,8 +1658,6 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatch-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDispatch-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatch-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDispatch-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDispatch-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDispatch-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDispatch-format-07753";
         image_layout_09600                       = "VUID-vkCmdDispatch-None-09600";
@@ -1719,8 +1705,6 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchIndirect-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDispatchIndirect-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatchIndirect-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDispatchIndirect-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDispatchIndirect-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDispatchIndirect-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDispatchIndirect-format-07753";
         image_layout_09600                       = "VUID-vkCmdDispatchIndirect-None-09600";
@@ -1892,8 +1876,6 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndirectCount-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndirectCount-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirectCount-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndirectCount-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndirectCount-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndirectCount-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndirectCount-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndirectCount-stippledLineEnable-07495";
@@ -2163,8 +2145,6 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndexedIndirectCount-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndexedIndirectCount-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndexedIndirectCount-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndexedIndirectCount-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndexedIndirectCount-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndexedIndirectCount-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndexedIndirectCount-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndexedIndirectCount-stippledLineEnable-07495";
@@ -2307,8 +2287,6 @@ struct DispatchVuidsCmdTraceRaysNV: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdTraceRaysNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdTraceRaysNV-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdTraceRaysNV-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysNV-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysNV-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysNV-format-07753";
         ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysNV-None-09458";
@@ -2355,8 +2333,6 @@ struct DispatchVuidsCmdTraceRaysKHR: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysKHR-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdTraceRaysKHR-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdTraceRaysKHR-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdTraceRaysKHR-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysKHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysKHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysKHR-format-07753";
         ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysKHR-None-09458";
@@ -2405,8 +2381,6 @@ struct DispatchVuidsCmdTraceRaysIndirectKHR: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysIndirectKHR-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdTraceRaysIndirectKHR-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdTraceRaysIndirectKHR-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdTraceRaysIndirectKHR-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysIndirectKHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysIndirectKHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysIndirectKHR-format-07753";
         ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysIndirectKHR-None-09458";
@@ -2455,8 +2429,6 @@ struct DispatchVuidsCmdTraceRaysIndirect2KHR: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdTraceRaysIndirect2KHR-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdTraceRaysIndirect2KHR-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdTraceRaysIndirect2KHR-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdTraceRaysIndirect2KHR-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdTraceRaysIndirect2KHR-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdTraceRaysIndirect2KHR-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdTraceRaysIndirect2KHR-format-07753";
         ray_tracing_pipeline_stack_size_09458    = "VUID-vkCmdTraceRaysIndirect2KHR-None-09458";
@@ -2611,8 +2583,6 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksNV-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksNV-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksNV-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksNV-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksNV-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksNV-stippledLineEnable-07495";
@@ -2866,8 +2836,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksIndirectNV-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksIndirectNV-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksIndirectNV-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksIndirectNV-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksIndirectNV-stippledLineEnable-07495";
@@ -3124,8 +3092,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stippledLineEnable-07495";
@@ -3376,8 +3342,6 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksEXT-stippledLineEnable-07495";
@@ -3631,8 +3595,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksIndirectEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksIndirectEXT-stippledLineEnable-07495";
@@ -3889,8 +3851,6 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stippledLineEnable-07495";
@@ -4156,8 +4116,6 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDrawIndirectByteCountEXT-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDrawIndirectByteCountEXT-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDrawIndirectByteCountEXT-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDrawIndirectByteCountEXT-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDrawIndirectByteCountEXT-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDrawIndirectByteCountEXT-format-07753";
         stippled_rectangular_lines_07495         = "VUID-vkCmdDrawIndirectByteCountEXT-stippledLineEnable-07495";
@@ -4301,8 +4259,6 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         descriptor_buffer_bit_set_08114          = "VUID-vkCmdDispatchBase-None-08114";
         descriptor_buffer_bit_not_set_08115      = "VUID-vkCmdDispatchBase-None-08115";
         descriptor_buffer_set_offset_missing_08117 = "VUID-vkCmdDispatchBase-None-08117";
-        image_ycbcr_sampled_06550                = "VUID-vkCmdDispatchBase-None-06550";
-        image_ycbcr_offset_06551                 = "VUID-vkCmdDispatchBase-ConstOffset-06551";
         image_view_dim_07752                     = "VUID-vkCmdDispatchBase-viewType-07752";
         image_view_numeric_format_07753          = "VUID-vkCmdDispatchBase-format-07753";
     }

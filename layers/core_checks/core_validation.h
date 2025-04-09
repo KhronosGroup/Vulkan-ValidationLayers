@@ -895,14 +895,18 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineTessellationStages(const spirv::Module& tesc_module_state, const spirv::EntryPoint& tesc_entrypoint,
                                             const spirv::Module& tese_module_state, const spirv::EntryPoint& tese_entrypoint,
                                             const Location& create_info_loc) const;
-    bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const vvl::Pipeline& pipeline,
-                                                 const spirv::ResourceInterfaceVariable& variable,
+    bool ValidateShaderInterfaceVariablePipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                                 const vvl::Pipeline& pipeline, const spirv::ResourceInterfaceVariable& variable,
                                                  vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderInterfaceVariableShaderObject(const VkShaderCreateInfoEXT& create_info,
                                                      const spirv::ResourceInterfaceVariable& variable,
                                                      vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
     bool ValidateShaderInterfaceVariable(const spirv::Module& module_state, const spirv::ResourceInterfaceVariable& variable,
                                          vvl::unordered_set<uint32_t>& descriptor_type_set, const Location& loc) const;
+    bool ValidateShaderYcbcrSamplerAccess(const VkDescriptorSetLayoutBinding& binding,
+                                          const spirv::ResourceInterfaceVariable& image_variable,
+                                          const spirv::ResourceInterfaceVariable* sampler_variable, const LogObjectList& objlist,
+                                          const Location& loc) const;
     bool ValidateTransformFeedbackPipeline(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                            const vvl::Pipeline& pipeline, const Location& loc) const;
     virtual bool ValidatePipelineShaderStage(const vvl::Pipeline& pipeline,

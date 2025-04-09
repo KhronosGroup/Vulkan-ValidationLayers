@@ -274,7 +274,8 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
       binding_count_(0),
       descriptor_count_(0),
       non_inline_descriptor_count_(0),
-      dynamic_descriptor_count_(0) {
+      dynamic_descriptor_count_(0),
+      has_immutable_samplers_(false) {
     const auto *flags_create_info = vku::FindStructInPNextChain<VkDescriptorSetLayoutBindingFlagsCreateInfo>(p_create_info->pNext);
 
     binding_type_stats_ = {0, 0};
@@ -336,6 +337,8 @@ vvl::DescriptorSetLayoutDef::DescriptorSetLayoutDef(const VkDescriptorSetLayoutC
                 binding_type_stats_.non_dynamic_buffer_count++;
             }
         }
+
+        has_immutable_samplers_ |= (binding_info.pImmutableSamplers != nullptr);
     }
     assert(bindings_.size() == binding_count_);
     assert(binding_flags_.size() == binding_count_);

@@ -276,8 +276,8 @@ void VkLayerTest::CreateImageViewTest(const VkImageViewCreateInfo &create_info, 
     Monitor().VerifyFound();
 }
 
-VkSamplerCreateInfo SafeSaneSamplerCreateInfo() {
-    VkSamplerCreateInfo sampler_create_info = vku::InitStructHelper();
+VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next) {
+    VkSamplerCreateInfo sampler_create_info = vku::InitStructHelper(p_next);
     sampler_create_info.magFilter = VK_FILTER_NEAREST;
     sampler_create_info.minFilter = VK_FILTER_NEAREST;
     sampler_create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;

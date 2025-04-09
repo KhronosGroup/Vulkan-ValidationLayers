@@ -3250,8 +3250,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
     renderpass_info.dependencyCount = 0;
     renderpass_info.pDependencies = nullptr;
 
-    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
-    vkt::Sampler sampler(*m_device, sampler_info);
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);

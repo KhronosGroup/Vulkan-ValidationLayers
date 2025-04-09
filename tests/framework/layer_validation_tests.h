@@ -119,7 +119,7 @@ bool ImageFormatIsSupported(const VkInstance inst, const VkPhysicalDevice phy, c
 bool BufferFormatAndFeaturesSupported(VkPhysicalDevice phy, VkFormat format, VkFormatFeatureFlags features);
 
 // Simple sane SamplerCreateInfo boilerplate
-VkSamplerCreateInfo SafeSaneSamplerCreateInfo();
+VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next = nullptr);
 
 // Dependent "false" type for the static assert, as GCC will evaluate
 // non-dependent static_asserts even for non-instantiated templates

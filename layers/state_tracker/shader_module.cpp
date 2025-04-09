@@ -652,8 +652,6 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
     // There is only one way to write to images, everything else is considered a read access
     access_mask |= (image_opcode == spv::OpImageWrite) ? AccessBit::image_write : AccessBit::image_read;
 
-    is_not_sampler_sampled = !is_sampler_sampled;
-
     // Find any optional Image Operands
     const uint32_t image_operand_position = OpcodeImageOperandsPosition(image_opcode);
     if (image_insn.Length() > image_operand_position) {
@@ -733,7 +731,11 @@ ImageAccess::ImageAccess(const Module& module_state, const Instruction& image_in
                     // If Image is an array (but not descriptor indexing), then need to get the index.
                     const Instruction* const_def = module_state.GetConstantDef(insn->Word(4));
                     if (const_def) {
-                        image_access_chain_index = const_def->GetConstantValue();
+                        if (sampler) {
+                            sampler_access_chain_index = const_def->GetConstantValue();
+                        } else {
+                            image_access_chain_index = const_def->GetConstantValue();
+                        }
                     }
                     insn = module_state.FindDef(insn->Word(3));
                     break;
@@ -2019,7 +2021,7 @@ const Instruction& ResourceInterfaceVariable::FindBaseType(ResourceInterfaceVari
             }
 
             if (type->Opcode() == spv::OpTypeSampledImage) {
-                variable.is_sampled_image = true;
+                variable.is_type_sampled_image = true;
             }
 
             type = module_state.FindDef(type->Word(2));  // Element type
@@ -2049,7 +2051,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                                                      const DebugNameMap& debug_name_map)
     : VariableBase(module_state, insn, entrypoint.stage, variable_access_map, debug_name_map),
       array_length(0),  // updated in FindBaseType (if array is found)
-      is_sampled_image(false),
+      is_type_sampled_image(false),
       base_type(FindBaseType(*this, module_state)),
       is_runtime_descriptor_array(module_state.HasRuntimeArray(type_id)),
       is_storage_buffer(IsStorageBuffer(*this)) {
@@ -2088,7 +2090,6 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 info.is_dref |= image_access.is_dref;
                 info.is_sampler_implicitLod_dref_proj |= image_access.is_sampler_implicitLod_dref_proj;
                 info.is_sampler_sampled |= image_access.is_sampler_sampled;
-                info.is_not_sampler_sampled |= image_access.is_not_sampler_sampled;
                 info.is_sampler_bias_offset |= image_access.is_sampler_bias_offset;
                 info.is_sampler_offset |= image_access.is_sampler_offset;
                 info.is_sign_extended |= image_access.is_sign_extended;
@@ -2124,7 +2125,7 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                 }
 
                 // if not CombinedImageSampler, need to find all Samplers that were accessed with the image
-                if (!image_access.variable_sampler_insn.empty() && !is_sampled_image) {
+                if (!image_access.variable_sampler_insn.empty() && !is_type_sampled_image) {
                     // if no AccessChain, it is same conceptually as being zero
                     const uint32_t image_index =
                         image_access.image_access_chain_index != kInvalidValue ? image_access.image_access_chain_index : 0;
@@ -2136,7 +2137,10 @@ ResourceInterfaceVariable::ResourceInterfaceVariable(const Module& module_state,
                     }
 
                     for (const Instruction* sampler_insn : image_access.variable_sampler_insn) {
-                        const auto& decoration_set = module_state.GetDecorationSet(sampler_insn->ResultId());
+                        const uint32_t sampler_variable_id = sampler_insn->ResultId();
+
+                        sampled_image_sampler_variable_ids.insert(sampler_variable_id);
+                        const auto& decoration_set = module_state.GetDecorationSet(sampler_variable_id);
                         samplers_used_by_image[image_index].emplace(
                             SamplerUsedByImage{DescriptorSlot{decoration_set.set, decoration_set.binding}, sampler_index});
                     }

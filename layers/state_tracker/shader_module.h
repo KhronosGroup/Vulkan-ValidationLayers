@@ -25,6 +25,7 @@
 #include <optional>
 #include <unordered_set>
 
+#include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/state_object.h"
 #include "state_tracker/sampler_state.h"
@@ -236,7 +237,6 @@ struct ImageAccess {
     bool is_dref = false;
     bool is_sampler_implicitLod_dref_proj = false;
     bool is_sampler_sampled = false;  // OpImageSample* or OpImageSparseSample*
-    bool is_not_sampler_sampled = false;
     bool is_sampler_bias_offset = false;
     bool is_sampler_offset = false;  // ConstOffset or Offset (not ConstOffsets)
     bool is_sign_extended = false;
@@ -340,6 +340,8 @@ struct VariableBase {
     // memory was read
     bool IsImageReadFrom() const { return access_mask & AccessBit::image_read; }
     bool IsImageWrittenTo() const { return access_mask & AccessBit::image_write; }
+    // Something like textureSize() will access the OpVariable, but not the image itself
+    bool IsImageAccessed() const { return access_mask & AccessBit::image_mask; }
 
   private:
     static const char *FindDebugName(const VariableBase &variable, const DebugNameMap &debug_name_map);
@@ -392,10 +394,13 @@ struct ResourceInterfaceVariable : public VariableBase {
     // Will be kRuntimeArray (non-zero) for runtime arrays
     uint32_t array_length;
 
-    bool is_sampled_image;  // OpTypeSampledImage
+    // OpTypeSampledImage (used for combined image samplers)
+    bool is_type_sampled_image;
 
-    // List of samplers that sample a given image. The index of array is index of image.
+    // The index of vector is index of image. (TODO - this doesn't work for GPU-AV)
     std::vector<vvl::unordered_set<SamplerUsedByImage>> samplers_used_by_image;
+    // workaround for YCbCr to track sampler variables until |samplers_used_by_image| is fixed
+    vvl::unordered_set<uint32_t> sampled_image_sampler_variable_ids;
 
     // For storage images - list of Texel component length the OpImageWrite
     std::vector<uint32_t> write_without_formats_component_count_list;
@@ -429,7 +434,6 @@ struct ResourceInterfaceVariable : public VariableBase {
         bool is_multisampled;
 
         bool is_sampler_sampled{false};  // OpImageSample* or OpImageSparseSample*
-        bool is_not_sampler_sampled{false};
         bool is_sampler_implicitLod_dref_proj{false};
         bool is_sampler_bias_offset{false};
         bool is_sampler_offset{false};        // ConstOffset or Offset (not ConstOffsets)

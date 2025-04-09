@@ -20,6 +20,7 @@
 #include "state_tracker/pipeline_layout_state.h"
 
 #include "error_message/error_strings.h"
+#include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/descriptor_sets.h"
 
@@ -232,18 +233,41 @@ static PipelineLayout::SetLayoutVector GetSetLayouts(const vvl::span<const Pipel
     return set_layouts;
 }
 
+static bool HasImmutableSamplers(const PipelineLayout::SetLayoutVector &set_layouts) {
+    for (const auto &set_layout : set_layouts) {
+        if (set_layout && set_layout->HasImmutableSamplers()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, const VkPipelineLayoutCreateInfo *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
-      create_flags(pCreateInfo->flags) {}
+      create_flags(pCreateInfo->flags),
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 
 PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
-      create_flags(GetCreateFlags(layouts)) {}
+      create_flags(GetCreateFlags(layouts)),
+      has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
+
+const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::ResourceInterfaceVariable &variable) const {
+    const VkDescriptorSetLayoutBinding *binding = nullptr;
+    const uint32_t set = variable.decorations.set;
+    if (set < set_layouts.size()) {
+        const std::shared_ptr<vvl::DescriptorSetLayout const> set_layout = set_layouts[set];
+        if (set_layout) {
+            binding = set_layout->GetDescriptorSetLayoutBindingPtrFromBinding(variable.decorations.binding);
+        }
+    }
+    return binding;
+}
 
 }  // namespace vvl

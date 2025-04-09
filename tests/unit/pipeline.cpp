@@ -2020,8 +2020,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     VkSamplerReductionModeCreateInfo reduction_mode_ci = vku::InitStructHelper();
     reduction_mode_ci.reductionMode = VK_SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
 
-    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_ci.pNext = &reduction_mode_ci;
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo(&reduction_mode_ci);
     sampler_ci.minFilter = VK_FILTER_LINEAR;  // turned off feature bit for test
     sampler_ci.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
     sampler_ci.compareEnable = VK_FALSE;
