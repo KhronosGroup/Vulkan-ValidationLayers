@@ -1450,9 +1450,9 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier(
         }
     }
     if (cb_state->active_render_pass && cb_state->active_render_pass->UsesDynamicRendering()) {
-        skip |= ValidateDynamicRenderingBarriers(objlist, error_obj.location, dependencyFlags, memoryBarrierCount, pMemoryBarriers,
-                                                 bufferMemoryBarrierCount, imageMemoryBarrierCount, pImageMemoryBarriers,
-                                                 srcStageMask, dstStageMask);
+        skip |= ValidateDynamicRenderingBarriers(objlist, error_obj.location, *cb_state, dependencyFlags, memoryBarrierCount,
+                                                 pMemoryBarriers, bufferMemoryBarrierCount, imageMemoryBarrierCount,
+                                                 pImageMemoryBarriers, srcStageMask, dstStageMask);
     }
     skip |= ValidateBarriers(error_obj.location, *cb_state, srcStageMask, dstStageMask, memoryBarrierCount, pMemoryBarriers,
                              bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
@@ -2470,6 +2470,59 @@ bool CoreChecks::ValidateDynamicRenderingPipelineStage(const LogObjectList &objl
     return skip;
 }
 
+bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::CommandBuffer &cb_state,
+                                                                    const VkImageMemoryBarrier &image_barrier,
+                                                                    const Location &image_loc) const {
+    bool skip = false;
+    const VkRenderingInfo &rendering_info = *cb_state.active_render_pass->dynamic_rendering_begin_rendering_info.ptr();
+    for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; i++) {
+        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicColorAttachmentImageIndex(i)];
+        if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
+            if (rendering_info.pColorAttachments[i].imageLayout != image_barrier.oldLayout) {
+                const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
+                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
+                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                                 "(%s) is referenced by pColorAttachments[%" PRIu32
+                                 "] of the active render pass instance as having layout %s, but image barrier has layout %s.",
+                                 FormatHandle(image_barrier.image).c_str(), i,
+                                 string_VkImageLayout(rendering_info.pColorAttachments[i].imageLayout),
+                                 string_VkImageLayout(image_barrier.oldLayout));
+            }
+        }
+    }
+    if (rendering_info.pDepthAttachment) {
+        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicDepthAttachmentImageIndex()];
+        if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
+            if (rendering_info.pDepthAttachment->imageLayout != image_barrier.oldLayout) {
+                const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
+                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
+                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                                 "(%s) is referenced by pDepthAttachment of the active render pass instance as having layout %s, "
+                                 "but image barrier has layout %s.",
+                                 FormatHandle(image_barrier.image).c_str(),
+                                 string_VkImageLayout(rendering_info.pDepthAttachment->imageLayout),
+                                 string_VkImageLayout(image_barrier.oldLayout));
+            }
+        }
+    }
+    if (rendering_info.pStencilAttachment) {
+        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicStencilAttachmentImageIndex()];
+        if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
+            if (rendering_info.pStencilAttachment->imageLayout != image_barrier.oldLayout) {
+                const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
+                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
+                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                                 "(%s) is referenced by pStencilAttachment of the active render pass instance as having layout %s, "
+                                 "but image barrier has layout %s.",
+                                 FormatHandle(image_barrier.image).c_str(),
+                                 string_VkImageLayout(rendering_info.pStencilAttachment->imageLayout),
+                                 string_VkImageLayout(image_barrier.oldLayout));
+            }
+        }
+    }
+    return skip;
+}
+
 bool CoreChecks::IsDynamicRenderingImageUsageValid(VkImageUsageFlags image_usage) const {
     bool valid = false;
 
@@ -2505,10 +2558,11 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList &objlist, 
 }
 
 bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList &objlist, const Location &outer_loc,
-                                                  VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
-                                                  const VkMemoryBarrier *memory_barriers, uint32_t buffer_barrier_count,
-                                                  uint32_t image_barrier_count, const VkImageMemoryBarrier *image_barriers,
-                                                  VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const {
+                                                  const vvl::CommandBuffer &cb_state, VkDependencyFlags dependency_flags,
+                                                  uint32_t memory_barrier_count, const VkMemoryBarrier *memory_barriers,
+                                                  uint32_t buffer_barrier_count, uint32_t image_barrier_count,
+                                                  const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
+                                                  VkPipelineStageFlags dst_stage_mask) const {
     bool skip = false;
     skip |= ValidateDynamicRenderingBarriersCommon(objlist, outer_loc, dependency_flags, buffer_barrier_count, image_barrier_count);
     skip |= ValidateDynamicRenderingPipelineStage(objlist, outer_loc.dot(Field::srcStageMask), src_stage_mask, dependency_flags);
@@ -2520,6 +2574,9 @@ bool CoreChecks::ValidateDynamicRenderingBarriers(const LogObjectList &objlist, 
         layout_check_objlist.add(image_barrier.image);
         skip |= ValidateRenderPassInstanceNoLayoutChange(layout_check_objlist, barrier_loc, image_barrier.oldLayout,
                                                          image_barrier.newLayout);
+
+        const Location image_loc = barrier_loc.dot(Field::image);
+        skip |= ValidateDynamicRenderingImageBarrierLayoutMismatch(cb_state, image_barrier, image_loc);
     }
 
     return skip;

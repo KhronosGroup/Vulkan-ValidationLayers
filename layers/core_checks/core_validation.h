@@ -324,10 +324,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                           const VkDependencyInfo& dep_info) const;
 
     bool ValidateDynamicRenderingBarriers(const LogObjectList& objlist, const Location& outer_loc,
-                                          VkDependencyFlags dependency_flags, uint32_t memory_barrier_count,
-                                          const VkMemoryBarrier* memory_barriers, uint32_t buffer_barrier_count,
-                                          uint32_t image_barrier_count, const VkImageMemoryBarrier* image_barriers,
-                                          VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask) const;
+                                          const vvl::CommandBuffer& cb_state, VkDependencyFlags dependency_flags,
+                                          uint32_t memory_barrier_count, const VkMemoryBarrier* memory_barriers,
+                                          uint32_t buffer_barrier_count, uint32_t image_barrier_count,
+                                          const VkImageMemoryBarrier* image_barriers, VkPipelineStageFlags src_stage_mask,
+                                          VkPipelineStageFlags dst_stage_mask) const;
 
     bool ValidateDynamicRenderingBarriersCommon(const LogObjectList& objlist, const Location& outer_loc,
                                                 VkDependencyFlags dependency_flags, uint32_t buffer_barrier_count,
@@ -339,6 +340,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateDynamicRenderingPipelineStage(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2 stage_mask,
                                                VkDependencyFlags dependency_flags) const;
+    bool ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::CommandBuffer& cb_state,
+                                                            const VkImageMemoryBarrier& image_barrier,
+                                                            const Location& image_loc) const;
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
                             VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
