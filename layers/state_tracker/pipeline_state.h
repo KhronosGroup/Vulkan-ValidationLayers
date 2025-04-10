@@ -703,6 +703,9 @@ struct LastBound {
 
     void UnbindAndResetPushDescriptorSet(std::shared_ptr<vvl::DescriptorSet> &&ds);
 
+    // For shaderObject, everything is dynamic
+    bool IsDynamic(const CBDynamicState state) const { return !pipeline_state || pipeline_state->IsDynamic(state); }
+
     // Dynamic State helpers that require both the Pipeline and CommandBuffer state are here
     bool IsDepthTestEnable() const;
     bool IsDepthBoundTestEnable() const;

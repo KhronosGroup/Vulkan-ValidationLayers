@@ -253,16 +253,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                           last_bound_state.pipeline_state->dynamic_state))
                      : cb_state.dynamic_state_status.cb;
 
-    // Some VUs are only if pipeline had the state dynamic (otherwise it is checked at pipeline creation time).
-    // For ShaderObject is always dynamic
-    auto has_dynamic_state = [&last_bound_state](CBDynamicState dynamic_state) {
-        if (const vvl::Pipeline* pipeline = last_bound_state.pipeline_state) {
-            return pipeline->IsDynamic(dynamic_state);
-        } else {
-            return true;
-        }
-    };
-
     skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE, vuid);
     if (!last_bound_state.IsRasterizationDisabled()) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_CULL_MODE, vuid);
@@ -393,7 +383,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, vuid);
 
-                if (has_dynamic_state(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+                if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
                     // For pipelines with VkPipelineDiscardRectangleStateCreateInfoEXT, we compare against discardRectangleCount,
                     // but for Shader Objects we compare against maxDiscardRectangles (details in
                     // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3400)
@@ -464,7 +454,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT, vuid);
     }
-    if (has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && has_dynamic_state(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
+        last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
         if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
             skip |= LogError(vuid.viewport_and_scissor_with_count_03419, cb_state.Handle(), vuid.loc(),
                              "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
@@ -485,12 +476,11 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
 
     if (tesc_shader_bound) {
         // Don't call GetPrimitiveTopology() because want to view the Topology from the dynamic state for ShaderObjects
-        const VkPrimitiveTopology topology =
-            (!last_bound_state.pipeline_state || last_bound_state.pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
-                ? cb_state.dynamic_state_value.primitive_topology
-            : last_bound_state.pipeline_state->InputAssemblyState()
-                ? last_bound_state.pipeline_state->InputAssemblyState()->topology
-                : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+        const VkPrimitiveTopology topology = (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY))
+                                                 ? cb_state.dynamic_state_value.primitive_topology
+                                             : last_bound_state.pipeline_state->InputAssemblyState()
+                                                 ? last_bound_state.pipeline_state->InputAssemblyState()->topology
+                                                 : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         if (topology == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, vuid);
         }
@@ -512,8 +502,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, vuid);
 
-        if (last_bound_state.IsViewportWScalingEnable() && has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
-            has_dynamic_state(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+        if (last_bound_state.IsViewportWScalingEnable() && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
+            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, vuid);
 
             if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
@@ -1095,7 +1085,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_st
 
 bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    const auto pipeline_state = last_bound_state.pipeline_state;
 
     const spirv::Module* vert_spirv_state = nullptr;
     const spirv::EntryPoint* vert_entrypoint = nullptr;
@@ -1115,7 +1104,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
     }
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
 
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         for (const auto* variable_ptr : vert_entrypoint->user_defined_interface_variables) {
             // Validate only input locations
             if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
@@ -1185,7 +1174,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 
     // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
     // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
         if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
             const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
             if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
@@ -1201,7 +1190,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 
     // With VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY and dynamicPrimitiveTopologyUnrestricted (for pipeline) we have a runtime check that
     // the topology makes sense
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         const VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
         // Use over GetPrimitiveTopology() because we care what vkCmdSetPrimitiveTopology() explicitly set
         const VkPrimitiveTopology topology = cb_state.dynamic_state_value.primitive_topology;
@@ -1237,7 +1226,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
 
 bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
-    const auto pipeline_state = last_bound_state.pipeline_state;
+
     const spirv::Module* frag_spirv_state = nullptr;
     if (last_bound_state.pipeline_state) {
         for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
@@ -1254,7 +1243,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
             if (rp_state && rp_state->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
@@ -1275,14 +1264,11 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                     }
                 }
             }
-            if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) &&
+            if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT) &&
                 cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT)) {
-                VkSampleCountFlagBits rasterizationSamples =
-                    (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT))
-                        ? pipeline_state->MultisampleState()->rasterizationSamples
-                        : cb_state.dynamic_state_value.rasterization_samples;
+                const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
                 VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
-                DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, rasterizationSamples, &multisample_prop);
+                DispatchGetPhysicalDeviceMultisamplePropertiesEXT(physical_device, rasterization_samples, &multisample_prop);
                 const auto& gridSize = cb_state.dynamic_state_value.sample_locations_info.sampleLocationGridSize;
                 if (SafeModulo(multisample_prop.maxSampleLocationGridSize.width, gridSize.width) != 0) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
@@ -1292,7 +1278,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                                      "sampleLocationsInfo.sampleLocationGridSize.width (%" PRIu32
                                      ") set with vkCmdSetSampleLocationsEXT().",
                                      multisample_prop.maxSampleLocationGridSize.width,
-                                     string_VkSampleCountFlagBits(rasterizationSamples), gridSize.width);
+                                     string_VkSampleCountFlagBits(rasterization_samples), gridSize.width);
                 }
                 if (SafeModulo(multisample_prop.maxSampleLocationGridSize.height, gridSize.height) != 0) {
                     const LogObjectList objlist(cb_state.Handle(), frag_spirv_state->handle());
@@ -1302,7 +1288,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
                                      "sampleLocationsInfo.sampleLocationGridSize.height (%" PRIu32
                                      ") set with vkCmdSetSampleLocationsEXT().",
                                      multisample_prop.maxSampleLocationGridSize.height,
-                                     string_VkSampleCountFlagBits(rasterizationSamples), gridSize.height);
+                                     string_VkSampleCountFlagBits(rasterization_samples), gridSize.height);
                 }
             }
             if (frag_spirv_state && frag_spirv_state->static_data_.uses_interpolate_at_sample) {
@@ -1314,7 +1300,7 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
         }
     }
 
-    if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) &&
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
         cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state) {
         const VkMultisampledRenderToSingleSampledInfoEXT* msrtss_info = rp_state->GetMSRTSSInfo(cb_state.GetActiveSubpass());
         if (msrtss_info && msrtss_info->multisampledRenderToSingleSampledEnable) {
@@ -1339,7 +1325,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const auto pipeline_state = last_bound_state.pipeline_state;
 
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
             const auto* attachment = cb_state.active_attachments[i].image_view;
             if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
@@ -1356,7 +1342,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
         }
     }
 
-    if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) &&
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT) &&
         (cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM ||
          cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)) {
         const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
