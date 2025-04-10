@@ -848,7 +848,7 @@ void LastBound::Reset() {
 }
 
 bool LastBound::IsDepthTestEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE)) {
             return cb_state.dynamic_state_value.depth_test_enable;
         }
@@ -861,7 +861,7 @@ bool LastBound::IsDepthTestEnable() const {
 }
 
 bool LastBound::IsDepthBoundTestEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE)) {
             return cb_state.dynamic_state_value.depth_bounds_test_enable;
         }
@@ -878,7 +878,7 @@ bool LastBound::IsDepthWriteEnable() const {
     if (!IsDepthTestEnable()) {
         return false;
     }
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE)) {
             return cb_state.dynamic_state_value.depth_write_enable;
         }
@@ -891,7 +891,7 @@ bool LastBound::IsDepthWriteEnable() const {
 }
 
 bool LastBound::IsDepthBiasEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE)) {
             return cb_state.dynamic_state_value.depth_bias_enable;
         }
@@ -904,7 +904,7 @@ bool LastBound::IsDepthBiasEnable() const {
 }
 
 bool LastBound::IsDepthClampEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.depth_clamp_enable;
         }
@@ -917,7 +917,7 @@ bool LastBound::IsDepthClampEnable() const {
 }
 
 bool LastBound::IsStencilTestEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE)) {
             return cb_state.dynamic_state_value.stencil_test_enable;
         }
@@ -934,10 +934,10 @@ VkStencilOpState LastBound::GetStencilOpStateFront() const {
     if (pipeline_state) {
         front = pipeline_state->DepthStencilState()->front;
     }
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         front.writeMask = cb_state.dynamic_state_value.write_mask_front;
     }
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         front.failOp = cb_state.dynamic_state_value.fail_op_front;
         front.passOp = cb_state.dynamic_state_value.pass_op_front;
         front.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_front;
@@ -950,10 +950,10 @@ VkStencilOpState LastBound::GetStencilOpStateBack() const {
     if (pipeline_state) {
         back = pipeline_state->DepthStencilState()->back;
     }
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK)) {
         back.writeMask = cb_state.dynamic_state_value.write_mask_back;
     }
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_STENCIL_OP)) {
         back.failOp = cb_state.dynamic_state_value.fail_op_back;
         back.passOp = cb_state.dynamic_state_value.pass_op_back;
         back.depthFailOp = cb_state.dynamic_state_value.depth_fail_op_back;
@@ -964,7 +964,7 @@ VkStencilOpState LastBound::GetStencilOpStateBack() const {
 VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
     // For given pipeline, return number of MSAA samples, or one if MSAA disabled
     VkSampleCountFlagBits rasterization_samples = VK_SAMPLE_COUNT_1_BIT;
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
     } else {
         if (auto ms_state = pipeline_state->MultisampleState()) {
@@ -975,7 +975,7 @@ VkSampleCountFlagBits LastBound::GetRasterizationSamples() const {
 }
 
 bool LastBound::IsRasterizationDisabled() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE)) {
             return cb_state.dynamic_state_value.rasterizer_discard_enable;
         }
@@ -986,7 +986,7 @@ bool LastBound::IsRasterizationDisabled() const {
 }
 
 bool LastBound::IsLogicOpEnabled() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.logic_op_enable;
         }
@@ -997,7 +997,7 @@ bool LastBound::IsLogicOpEnabled() const {
 }
 
 VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         if (i < cb_state.dynamic_state_value.color_write_masks.size()) {
             return cb_state.dynamic_state_value.color_write_masks[i];
         }
@@ -1010,7 +1010,7 @@ VkColorComponentFlags LastBound::GetColorWriteMask(uint32_t i) const {
 }
 
 bool LastBound::IsColorWriteEnabled(uint32_t i) const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.color_write_enabled[i];
         }
@@ -1027,7 +1027,7 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
 }
 
 VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return cb_state.dynamic_state_value.primitive_topology;
     } else {
         return pipeline_state->topology_at_rasterizer;
@@ -1035,7 +1035,7 @@ VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
 }
 
 VkCullModeFlags LastBound::GetCullMode() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_CULL_MODE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_CULL_MODE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CULL_MODE)) {
             return cb_state.dynamic_state_value.cull_mode;
         }
@@ -1048,7 +1048,7 @@ VkCullModeFlags LastBound::GetCullMode() const {
 }
 
 VkConservativeRasterizationModeEXT LastBound::GetConservativeRasterizationMode() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT)) {
             return cb_state.dynamic_state_value.conservative_rasterization_mode;
         }
@@ -1063,7 +1063,7 @@ VkConservativeRasterizationModeEXT LastBound::GetConservativeRasterizationMode()
 }
 
 bool LastBound::IsSampleLocationsEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.sample_locations_enable;
         }
@@ -1078,7 +1078,7 @@ bool LastBound::IsSampleLocationsEnable() const {
 }
 
 bool LastBound::IsExclusiveScissorEnabled() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_EXCLUSIVE_SCISSOR_ENABLE_NV)) {
             for (uint32_t i = 0; i < cb_state.dynamic_state_value.exclusive_scissor_enable_count; ++i) {
                 if (cb_state.dynamic_state_value
@@ -1094,7 +1094,7 @@ bool LastBound::IsExclusiveScissorEnabled() const {
 }
 
 bool LastBound::IsCoverageToColorEnabled() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV)) {
             return cb_state.dynamic_state_value.coverage_to_color_enable;
         }
@@ -1110,7 +1110,7 @@ bool LastBound::IsCoverageToColorEnabled() const {
 }
 
 bool LastBound::IsCoverageModulationTableEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_TABLE_ENABLE_NV)) {
             return cb_state.dynamic_state_value.coverage_modulation_table_enable;
         }
@@ -1126,7 +1126,7 @@ bool LastBound::IsCoverageModulationTableEnable() const {
 }
 
 bool LastBound::IsStippledLineEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.stippled_line_enable;
         }
@@ -1140,7 +1140,7 @@ bool LastBound::IsStippledLineEnable() const {
 }
 
 bool LastBound::IsDiscardRectangleEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.discard_rectangle_enable;
         }
@@ -1159,7 +1159,7 @@ bool LastBound::IsDiscardRectangleEnable() const {
 }
 
 bool LastBound::IsShadingRateImageEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SHADING_RATE_IMAGE_ENABLE_NV)) {
             return cb_state.dynamic_state_value.shading_rate_image_enable;
         }
@@ -1175,7 +1175,7 @@ bool LastBound::IsShadingRateImageEnable() const {
 }
 
 bool LastBound::IsViewportWScalingEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV)) {
             return cb_state.dynamic_state_value.viewport_w_scaling_enable;
         }
@@ -1191,7 +1191,7 @@ bool LastBound::IsViewportWScalingEnable() const {
 }
 
 bool LastBound::IsPrimitiveRestartEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
             return cb_state.dynamic_state_value.primitive_restart_enable;
         }
@@ -1204,7 +1204,7 @@ bool LastBound::IsPrimitiveRestartEnable() const {
 }
 
 bool LastBound::IsAlphaToCoverageEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.alpha_to_coverage_enable;
         }
@@ -1217,7 +1217,7 @@ bool LastBound::IsAlphaToCoverageEnable() const {
 }
 
 bool LastBound::IsAlphaToOneEnable() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT)) {
             return cb_state.dynamic_state_value.alpha_to_one_enable;
         }
@@ -1230,7 +1230,7 @@ bool LastBound::IsAlphaToOneEnable() const {
 }
 
 VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
+    if (IsDynamic(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_MODULATION_MODE_NV)) {
             return cb_state.dynamic_state_value.coverage_modulation_mode;
         }

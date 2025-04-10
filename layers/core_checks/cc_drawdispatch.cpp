@@ -45,7 +45,9 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                                          const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
+    const auto *pipeline_state = last_bound_state.pipeline_state;
 
     // Verify maxMultiviewInstanceIndex
     if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&
@@ -81,7 +83,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
             }
         }
 
-        if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
+        if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
             if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
                 phys_dev_props_core14.supportsNonZeroFirstInstance == VK_FALSE && firstInstance != 0u) {
                 for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
@@ -1698,8 +1700,8 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     if (max_fragment_location < phys_dev_props.limits.maxFragmentDualSrcAttachments) return skip;
 
     // If color blend is disabled, the blend equation doesn't matter
-    const bool dynamic_blend_enable = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
-    const bool dynamic_blend_equation = !pipeline || pipeline->IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    const bool dynamic_blend_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    const bool dynamic_blend_equation = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     const uint32_t attachment_count = pipeline ? pipeline->ColorBlendState()->attachmentCount
                                                : (uint32_t)cb_state.dynamic_state_value.color_blend_equations.size();
     for (uint32_t i = 0; i < attachment_count; ++i) {

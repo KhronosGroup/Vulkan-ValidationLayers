@@ -173,9 +173,8 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
     const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
     const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
-    const bool use_shader_objects = pipeline_state == nullptr;
 
-    const bool dynamic_vertex_input = use_shader_objects || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    const bool dynamic_vertex_input = last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
 
     const auto &vertex_binding_descriptions =
         dynamic_vertex_input ? cb_state.dynamic_state_value.vertex_bindings : pipeline_state->vertex_input_state->bindings;
