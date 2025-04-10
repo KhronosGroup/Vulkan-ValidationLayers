@@ -617,8 +617,50 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                   const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawDynamicStatePipelineRenderPass(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                            const vvl::RenderPass& rp_state,
+                                                            const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        if (!enabled_features.variableMultisampleRate && rp_state.UsesNoAttachment(cb_state.GetActiveSubpass())) {
+            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                    cb_state.GetActiveSubpassRasterizationSampleCount();
+                subpass_rasterization_samples &&
+                *subpass_rasterization_samples != cb_state.dynamic_state_value.rasterization_samples) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle());
+                skip |= LogError(
+                    vuid.sample_locations_07471, objlist, vuid.loc(),
+                    "VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and the rasterizationSamples set with "
+                    "vkCmdSetRasterizationSamplesEXT() were %s but a previous draw used rasterization samples %" PRIu32 ".%s",
+                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                    *subpass_rasterization_samples,
+                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
+            } else if ((cb_state.dynamic_state_value.rasterization_samples &
+                        phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) == 0) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle());
+                skip |= LogError(vuid.sample_locations_07471, objlist, vuid.loc(),
+                                 "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() are %s but this bit is not in "
+                                 "framebufferNoAttachmentsSampleCounts (%s).%s",
+                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
+                                 string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts).c_str(),
+                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
+            }
+        }
+    }
+
+    if (rp_state.UsesDynamicRendering() &&
+        (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
+        skip |= ValidateDrawRenderingAttachmentLocation(cb_state, pipeline, vuid);
+        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, pipeline, vuid);
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                       const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
@@ -713,32 +755,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
                          string_VkSampleCountFlagBits(cb_state.dynamic_state_value.sample_locations_info.sampleLocationsPerPixel),
                          string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
                          cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
-        }
-    }
-
-    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        if (!enabled_features.variableMultisampleRate && rp_state && rp_state->UsesNoAttachment(cb_state.GetActiveSubpass())) {
-            if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
-                    cb_state.GetActiveSubpassRasterizationSampleCount();
-                subpass_rasterization_samples &&
-                *subpass_rasterization_samples != cb_state.dynamic_state_value.rasterization_samples) {
-                skip |= LogError(
-                    vuid.sample_locations_07471, objlist, vuid.loc(),
-                    "VkPhysicalDeviceFeatures::variableMultisampleRate is VK_FALSE and the rasterizationSamples set with "
-                    "vkCmdSetRasterizationSamplesEXT() were %s but a previous draw used rasterization samples %" PRIu32 ".%s",
-                    string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
-                    *subpass_rasterization_samples,
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
-            } else if ((cb_state.dynamic_state_value.rasterization_samples &
-                        phys_dev_props.limits.framebufferNoAttachmentsSampleCounts) == 0) {
-                skip |= LogError(vuid.sample_locations_07471, objlist, vuid.loc(),
-                                 "rasterizationSamples set with vkCmdSetRasterizationSamplesEXT() are %s but this bit is not in "
-                                 "framebufferNoAttachmentsSampleCounts (%s).%s",
-                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
-                                 string_VkSampleCountFlags(phys_dev_props.limits.framebufferNoAttachmentsSampleCounts).c_str(),
-                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
-            }
         }
     }
 
@@ -984,8 +1000,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateValue(const LastBound& last_bound_s
     return skip;
 }
 
-bool CoreChecks::ValidateGraphicsDynamicStateViewportScissor(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                             const vvl::DrawDispatchVuid& vuid) const {
+bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                                 const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
@@ -1052,53 +1068,54 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         skip |= ValidateDrawDynamicStateShaderObject(last_bound_state, vuid);
     }
 
-    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
-    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
-        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-            const auto* attachment = cb_state.active_attachments[i].image_view;
-            if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
-                const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[i];
-                VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
-                if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
-                    skip |= LogError(vuid.color_write_mask_09116, cb_state.Handle(), vuid.loc(),
-                                     "Render pass attachment %" PRIu32
-                                     " has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but the corresponding element of "
-                                     "pColorWriteMasks is %s.",
-                                     i, string_VkColorComponentFlags(color_write_mask).c_str());
-                }
-            }
-        }
-    }
+    skip |= ValidateDrawDynamicStateVertex(last_bound_state, vuid);
+    skip |= ValidateDrawDynamicStateFragment(last_bound_state, vuid);
 
-    std::shared_ptr<const spirv::Module> vert_spirv_state;
-    std::shared_ptr<const spirv::EntryPoint> vert_entrypoint;
-    std::shared_ptr<const spirv::Module> frag_spirv_state;
+    // Once we know for sure state was set, check value is valid
+    skip |= ValidateDrawDynamicStateValue(last_bound_state, vuid);
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
+                                                  const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, pipeline, vuid);
+    // Dynamic state was not set, will produce garbage when trying to read to values
+    if (skip) return skip;
+    // Once we know for sure state was set, check value is valid
+    skip |= ValidateDrawDynamicStatePipelineValue(last_bound_state, pipeline, vuid);
+    skip |= ValidateDrawDynamicStatePipelineViewportScissor(last_bound_state, pipeline, vuid);
+
+    if (const vvl::RenderPass* rp_state = last_bound_state.cb_state.active_render_pass.get()) {
+        skip |= ValidateDrawDynamicStatePipelineRenderPass(last_bound_state, pipeline, *rp_state, vuid);
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    const auto pipeline_state = last_bound_state.pipeline_state;
+
+    const spirv::Module* vert_spirv_state = nullptr;
+    const spirv::EntryPoint* vert_entrypoint = nullptr;
     if (last_bound_state.pipeline_state) {
         for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
             if (stage_state.GetStage() == VK_SHADER_STAGE_VERTEX_BIT) {
-                vert_spirv_state = stage_state.spirv_state;
-                vert_entrypoint = stage_state.entrypoint;
-            }
-            if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
-                frag_spirv_state = stage_state.spirv_state;
+                vert_spirv_state = stage_state.spirv_state.get();
+                vert_entrypoint = stage_state.entrypoint.get();
             }
         }
-    } else {
-        const auto& vertex_state = last_bound_state.GetShaderState(ShaderObjectStage::VERTEX);
-        if (vertex_state) {
-            vert_spirv_state = vertex_state->spirv;
-            vert_entrypoint = vertex_state->entrypoint;
-        }
-        const auto& fragment_state = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT);
-        if (fragment_state) {
-            frag_spirv_state = fragment_state->spirv;
-        }
+    } else if (const auto& vertex_state = last_bound_state.GetShaderState(ShaderObjectStage::VERTEX)) {
+        vert_spirv_state = vertex_state->spirv.get();
+        vert_entrypoint = vertex_state->entrypoint.get();
     }
-    bool vertex_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
-    bool fragment_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
-    if (((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) ||
-         (!pipeline_state && vertex_shader_bound)) &&
-        vert_entrypoint) {
+    if (!vert_spirv_state || !vert_entrypoint) {
+        return skip;  // Mesh shader
+    }
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
         for (const auto* variable_ptr : vert_entrypoint->user_defined_interface_variables) {
             // Validate only input locations
             if (variable_ptr->storage_class != spv::StorageClass::StorageClassInput) {
@@ -1166,23 +1183,37 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
+    // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
+    // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) {
+        if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
+            const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
+            if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
+                skip |= LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
+                                 "the topology set is %s, the primitiveTopologyListRestart feature was not enabled, but "
+                                 "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
+                                 string_VkPrimitiveTopology(topology));
+            }
+        }
+    }
+
     // With VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY and dynamicPrimitiveTopologyUnrestricted (for pipeline) we have a runtime check that
     // the topology makes sense
-    if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         const VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
         // Use over GetPrimitiveTopology() because we care what vkCmdSetPrimitiveTopology() explicitly set
         const VkPrimitiveTopology topology = cb_state.dynamic_state_value.primitive_topology;
 
-        if (vert_entrypoint) {
-            if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
-                topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-                if (!vert_entrypoint->written_builtin_point_size && !enabled_features.maintenance5) {
-                    // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
-                    skip |= LogError("UNASSIGNED-Draw-topology-pointsize", cb_state.Handle(), vuid.loc(),
-                                     "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
-                                     "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
-                                     FormatHandle(vert_spirv_state->handle()).c_str());
-                }
+        if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
+            topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+            if (!vert_entrypoint->written_builtin_point_size && !enabled_features.maintenance5) {
+                // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
+                skip |= LogError("UNASSIGNED-Draw-topology-pointsize", cb_state.Handle(), vuid.loc(),
+                                 "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
+                                 "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
+                                 FormatHandle(vert_spirv_state->handle()).c_str());
             }
         }
 
@@ -1201,25 +1232,29 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    // "a shader object bound to the VK_SHADER_STAGE_VERTEX_BIT stage or the bound graphics pipeline state was created with the
-    // VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE"
-    if ((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE)) ||
-        (!pipeline_state && vertex_shader_bound)) {
-        if (!enabled_features.primitiveTopologyListRestart && cb_state.dynamic_state_value.primitive_restart_enable) {
-            const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-            if (IsValueIn(topology, {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
-                                     VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST})) {
-                skip |= LogError(vuid.primitive_restart_list_09637, cb_state.Handle(), vuid.loc(),
-                                 "the topology set is %s, the primitiveTopologyListRestart feature was not enabled, but "
-                                 "vkCmdSetPrimitiveRestartEnable last set primitiveRestartEnable to VK_TRUE.",
-                                 string_VkPrimitiveTopology(topology));
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+    const auto pipeline_state = last_bound_state.pipeline_state;
+    const spirv::Module* frag_spirv_state = nullptr;
+    if (last_bound_state.pipeline_state) {
+        for (const auto& stage_state : last_bound_state.pipeline_state->stage_states) {
+            if (stage_state.GetStage() == VK_SHADER_STAGE_FRAGMENT_BIT) {
+                frag_spirv_state = stage_state.spirv_state.get();
             }
         }
+    } else if (const auto& fragment_state = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT)) {
+        frag_spirv_state = fragment_state->spirv.get();
+    }
+    if (!frag_spirv_state) {
+        return skip;  // no fragment shader used
     }
 
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
-    if ((pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) || fragment_shader_bound) {
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT)) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT) &&
             cb_state.dynamic_state_value.sample_locations_enable) {
             if (rp_state && rp_state->UsesDepthStencilAttachment(cb_state.GetActiveSubpass())) {
@@ -1295,10 +1330,30 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    if (pipeline_state && rp_state && rp_state->UsesDynamicRendering() &&
-        (!IsExtEnabled(extensions.vk_ext_shader_object) || !last_bound_state.IsAnyGraphicsShaderBound())) {
-        skip |= ValidateDrawRenderingAttachmentLocation(cb_state, *pipeline_state, vuid);
-        skip |= ValidateDrawRenderingInputAttachmentIndex(cb_state, *pipeline_state, vuid);
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
+    bool skip = false;
+
+    const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    const auto pipeline_state = last_bound_state.pipeline_state;
+
+    if (!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+            const auto* attachment = cb_state.active_attachments[i].image_view;
+            if (attachment && attachment->create_info.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
+                const auto color_write_mask = cb_state.dynamic_state_value.color_write_masks[i];
+                VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+                if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
+                    skip |= LogError(vuid.color_write_mask_09116, cb_state.Handle(), vuid.loc(),
+                                     "Render pass attachment %" PRIu32
+                                     " has format VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but the corresponding element of "
+                                     "pColorWriteMasks is %s.",
+                                     i, string_VkColorComponentFlags(color_write_mask).c_str());
+                }
+            }
+        }
     }
 
     if ((!pipeline_state || pipeline_state->IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT)) &&
@@ -1321,18 +1376,6 @@ bool CoreChecks::ValidateDrawDynamicState(const LastBound& last_bound_state, con
         }
     }
 
-    return skip;
-}
-
-bool CoreChecks::ValidateDrawDynamicStatePipeline(const LastBound& last_bound_state, const vvl::Pipeline& pipeline,
-                                                  const vvl::DrawDispatchVuid& vuid) const {
-    bool skip = false;
-    skip |= ValidateGraphicsDynamicStatePipelineSetStatus(last_bound_state, pipeline, vuid);
-    // Dynamic state was not set, will produce garbage when trying to read to values
-    if (skip) return skip;
-    // Once we know for sure state was set, check value is valid
-    skip |= ValidateGraphicsDynamicStateValue(last_bound_state, pipeline, vuid);
-    skip |= ValidateGraphicsDynamicStateViewportScissor(last_bound_state, pipeline, vuid);
     return skip;
 }
 
