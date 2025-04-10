@@ -339,6 +339,49 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/2522");
+    RETURN_IF_SKIP(InitBasicExtendedDynamicState());
+
+    vkt::Image color_image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    auto color_view = color_image.CreateView();
+
+    VkFormat ds_format = FindSupportedDepthStencilFormat(Gpu());
+    vkt::Image ds_image(*m_device, m_width, m_height, ds_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    auto ds_view = ds_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM);
+    rp.AddAttachmentDescription(ds_format, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                                VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddAttachmentReference({1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.AddDepthStencilAttachment(1);
+    rp.CreateRenderPass();
+    VkImageView views[2] = {color_view.handle(), ds_view.handle()};
+    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
+
+    VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.ds_ci_ = ds_state;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
+
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    // never call vkCmdSetDepthWriteEnableEXT as not needed
+
+    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicState, SetBeforePipeline) {
     TEST_DESCRIPTION("Pipeline set state, but prior to last bound pipeline that had it");
 

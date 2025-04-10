@@ -261,7 +261,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
     if (!last_bound_state.IsRasterizationDisabled()) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_CULL_MODE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_TEST_ENABLE, vuid);
-        skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_STENCIL_TEST_ENABLE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS_ENABLE, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_POLYGON_MODE_EXT, vuid);
@@ -270,6 +269,7 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
 
         if (last_bound_state.IsDepthTestEnable()) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_COMPARE_OP, vuid);
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE, vuid);
         }
         if (last_bound_state.IsDepthBiasEnable()) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DEPTH_BIAS, vuid);
