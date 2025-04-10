@@ -3365,6 +3365,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthWriteEnableEXT) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE});
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_TRUE);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07844");
