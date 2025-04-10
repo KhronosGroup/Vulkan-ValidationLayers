@@ -28,6 +28,7 @@
 #include "containers/limits.h"
 
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/shader_module.h"
 
@@ -760,12 +761,17 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
     const auto descriptor_set_state = descriptor_sets[set_num];
     auto [binding_num, desc_index] = descriptor_set_state->GetBindingAndIndex(global_descriptor_index);
 
+    const auto *binding_state = descriptor_set_state->GetBinding(binding_num);
+
     strm << "(set = " << set_num << ", binding = " << binding_num << ", index " << desc_index << ") ";
 
     const uint32_t error_sub_code = (error_record[kHeaderShaderIdErrorOffset] & kErrorSubCodeMask) >> kErrorSubCodeShift;
     switch (error_sub_code) {
         case kErrorSubCodeDescriptorClassGeneralBufferBounds: {
-            const auto *binding_state = descriptor_set_state->GetBinding(binding_num);
+            if (binding_state->descriptor_class != vvl::DescriptorClass::GeneralBuffer) {
+                assert(false);
+                return false;
+            }
             const vvl::Buffer *buffer_state =
                 static_cast<const vvl::BufferBinding *>(binding_state)->descriptors[desc_index].GetBufferState();
             if (buffer_state) {
@@ -789,7 +795,11 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const uint32_t *error_recor
         } break;
 
         case kErrorSubCodeDescriptorClassTexelBufferBounds: {
-            const auto *binding_state = descriptor_set_state->GetBinding(binding_num);
+            if (binding_state->descriptor_class != vvl::DescriptorClass::TexelBuffer) {
+                assert(false);
+                return false;
+            }
+
             const vvl::BufferView *buffer_view_state =
                 static_cast<const vvl::TexelBinding *>(binding_state)->descriptors[desc_index].GetBufferViewState();
             if (buffer_view_state) {
