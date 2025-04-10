@@ -377,7 +377,9 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
         structMemberBlacklist = {
             'VkWriteDescriptorSet' : ['dstSet'],
             'VkAccelerationStructureGeometryKHR' :['geometry'],
-            'VkDescriptorDataEXT' :['pSampler']
+            'VkDescriptorDataEXT' :['pSampler'],
+            # https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9887
+            'VkClusterAccelerationStructureInputInfoNV' :['opInput'],
         }
         for struct in [x for x in self.vk.structs.values() if x.name in structMemberBlacklist]:
             for member in [x for x in struct.members if x.name in structMemberBlacklist[struct.name]]:

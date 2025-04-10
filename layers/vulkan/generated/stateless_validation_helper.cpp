@@ -24495,50 +24495,6 @@ bool Device::PreCallValidateGetClusterAccelerationStructureBuildSizesNV(VkDevice
 
         skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::opMode), vvl::Enum::VkClusterAccelerationStructureOpModeNV,
                                            pInfo->opMode, "VUID-VkClusterAccelerationStructureInputInfoNV-opMode-parameter");
-
-        skip |=
-            context.ValidateStructType(pInfo_loc.dot(Field::pClustersBottomLevel), pInfo->opInput.pClustersBottomLevel,
-                                       VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_CLUSTERS_BOTTOM_LEVEL_INPUT_NV, true,
-                                       kVUIDUndefined, "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-sType-sType");
-
-        if (pInfo->opInput.pClustersBottomLevel != nullptr) {
-            [[maybe_unused]] const Location pClustersBottomLevel_loc = pInfo_loc.dot(Field::pClustersBottomLevel);
-            skip |= context.ValidateStructPnext(
-                pClustersBottomLevel_loc, pInfo->opInput.pClustersBottomLevel->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-pNext-pNext", kVUIDUndefined, true);
-        }
-
-        skip |= context.ValidateStructType(pInfo_loc.dot(Field::pTriangleClusters), pInfo->opInput.pTriangleClusters,
-                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_TRIANGLE_CLUSTER_INPUT_NV, true,
-                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-sType-sType");
-
-        if (pInfo->opInput.pTriangleClusters != nullptr) {
-            [[maybe_unused]] const Location pTriangleClusters_loc = pInfo_loc.dot(Field::pTriangleClusters);
-            skip |= context.ValidateStructPnext(
-                pTriangleClusters_loc, pInfo->opInput.pTriangleClusters->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-pNext-pNext", kVUIDUndefined, true);
-
-            skip |= context.ValidateRangedEnum(pTriangleClusters_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat,
-                                               pInfo->opInput.pTriangleClusters->vertexFormat,
-                                               "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-parameter");
-        }
-
-        skip |= context.ValidateStructType(pInfo_loc.dot(Field::pMoveObjects), pInfo->opInput.pMoveObjects,
-                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_MOVE_OBJECTS_INPUT_NV, true,
-                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-sType-sType");
-
-        if (pInfo->opInput.pMoveObjects != nullptr) {
-            [[maybe_unused]] const Location pMoveObjects_loc = pInfo_loc.dot(Field::pMoveObjects);
-            skip |= context.ValidateStructPnext(
-                pMoveObjects_loc, pInfo->opInput.pMoveObjects->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-pNext-pNext", kVUIDUndefined, true);
-
-            skip |= context.ValidateRangedEnum(pMoveObjects_loc.dot(Field::type), vvl::Enum::VkClusterAccelerationStructureTypeNV,
-                                               pInfo->opInput.pMoveObjects->type,
-                                               "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-type-parameter");
-
-            skip |= context.ValidateBool32(pMoveObjects_loc.dot(Field::noMoveOverlap), pInfo->opInput.pMoveObjects->noMoveOverlap);
-        }
     }
     skip |= context.ValidateStructType(loc.dot(Field::pSizeInfo), pSizeInfo,
                                        VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR, true,
@@ -24588,54 +24544,6 @@ bool Device::PreCallValidateCmdBuildClusterAccelerationStructureIndirectNV(
         skip |= context.ValidateRangedEnum(pCommandInfos_loc.dot(Field::opMode), vvl::Enum::VkClusterAccelerationStructureOpModeNV,
                                            pCommandInfos->input.opMode,
                                            "VUID-VkClusterAccelerationStructureInputInfoNV-opMode-parameter");
-
-        skip |= context.ValidateStructType(
-            pCommandInfos_loc.dot(Field::pClustersBottomLevel), pCommandInfos->input.opInput.pClustersBottomLevel,
-            VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_CLUSTERS_BOTTOM_LEVEL_INPUT_NV, true, kVUIDUndefined,
-            "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-sType-sType");
-
-        if (pCommandInfos->input.opInput.pClustersBottomLevel != nullptr) {
-            [[maybe_unused]] const Location pClustersBottomLevel_loc = pCommandInfos_loc.dot(Field::pClustersBottomLevel);
-            skip |= context.ValidateStructPnext(pClustersBottomLevel_loc, pCommandInfos->input.opInput.pClustersBottomLevel->pNext,
-                                                0, nullptr, GeneratedVulkanHeaderVersion,
-                                                "VUID-VkClusterAccelerationStructureClustersBottomLevelInputNV-pNext-pNext",
-                                                kVUIDUndefined, true);
-        }
-
-        skip |= context.ValidateStructType(pCommandInfos_loc.dot(Field::pTriangleClusters),
-                                           pCommandInfos->input.opInput.pTriangleClusters,
-                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_TRIANGLE_CLUSTER_INPUT_NV, true,
-                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-sType-sType");
-
-        if (pCommandInfos->input.opInput.pTriangleClusters != nullptr) {
-            [[maybe_unused]] const Location pTriangleClusters_loc = pCommandInfos_loc.dot(Field::pTriangleClusters);
-            skip |= context.ValidateStructPnext(pTriangleClusters_loc, pCommandInfos->input.opInput.pTriangleClusters->pNext, 0,
-                                                nullptr, GeneratedVulkanHeaderVersion,
-                                                "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-pNext-pNext",
-                                                kVUIDUndefined, true);
-
-            skip |= context.ValidateRangedEnum(pTriangleClusters_loc.dot(Field::vertexFormat), vvl::Enum::VkFormat,
-                                               pCommandInfos->input.opInput.pTriangleClusters->vertexFormat,
-                                               "VUID-VkClusterAccelerationStructureTriangleClusterInputNV-vertexFormat-parameter");
-        }
-
-        skip |= context.ValidateStructType(pCommandInfos_loc.dot(Field::pMoveObjects), pCommandInfos->input.opInput.pMoveObjects,
-                                           VK_STRUCTURE_TYPE_CLUSTER_ACCELERATION_STRUCTURE_MOVE_OBJECTS_INPUT_NV, true,
-                                           kVUIDUndefined, "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-sType-sType");
-
-        if (pCommandInfos->input.opInput.pMoveObjects != nullptr) {
-            [[maybe_unused]] const Location pMoveObjects_loc = pCommandInfos_loc.dot(Field::pMoveObjects);
-            skip |= context.ValidateStructPnext(
-                pMoveObjects_loc, pCommandInfos->input.opInput.pMoveObjects->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-pNext-pNext", kVUIDUndefined, true);
-
-            skip |= context.ValidateRangedEnum(pMoveObjects_loc.dot(Field::type), vvl::Enum::VkClusterAccelerationStructureTypeNV,
-                                               pCommandInfos->input.opInput.pMoveObjects->type,
-                                               "VUID-VkClusterAccelerationStructureMoveObjectsInputNV-type-parameter");
-
-            skip |= context.ValidateBool32(pMoveObjects_loc.dot(Field::noMoveOverlap),
-                                           pCommandInfos->input.opInput.pMoveObjects->noMoveOverlap);
-        }
 
         // No xml-driven validation
 
