@@ -4302,6 +4302,12 @@ void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
     PreCallRecordCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
 }
 
+void InstanceState::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures *pFeatures,
+                                                            const RecordObject &record_obj) {
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    pd_state->SetCallState(record_obj.location.function, true);
+}
+
 void InstanceState::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                        void *pProperties, const RecordObject &record_obj) {
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
