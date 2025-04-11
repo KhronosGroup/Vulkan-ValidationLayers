@@ -128,6 +128,8 @@ class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
     void Created(vvl::Swapchain &swapchain_state) override;
     void Created(vvl::Image &image_state) override;
 
+    void DebugCapture() final;
+
     void PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks *pAllocator,
                                     const RecordObject &record_obj) override;
     void PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,

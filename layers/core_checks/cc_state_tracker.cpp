@@ -21,6 +21,9 @@
 #include "cc_state_tracker.h"
 #include "core_validation.h"
 
+// Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
+void CoreChecks::DebugCapture() {}
+
 void CoreChecks::Created(vvl::CommandBuffer& cb) {
     cb.SetSubState(container_type, std::make_unique<core::CommandBufferSubState>(cb));
 }

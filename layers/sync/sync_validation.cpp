@@ -42,6 +42,9 @@ SyncValidator::~SyncValidator() {
     }
 }
 
+// Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
+void SyncValidator::DebugCapture() {}
+
 bool SyncValidator::SyncError(SyncHazard hazard, const LogObjectList &objlist, const Location &loc,
                               const std::string &error_message) const {
     return LogError(string_SyncHazardVUID(hazard), objlist, loc, "%s", error_message.c_str());

@@ -116,6 +116,10 @@ class Instance : public Logger {
     void CopyDispatchState() { instance = dispatch_instance_->instance; }
     VkInstance VkHandle() const { return instance; }
 
+#if defined(DEBUG_CAPTURE_KEYBOARD)
+    void* wsi_display = nullptr;
+#endif
+
 #include "generated/validation_object_instance_methods.h"
 };
 

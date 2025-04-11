@@ -2764,4 +2764,6 @@ class CoreChecks : public vvl::DeviceProxy {
 
     void Created(vvl::CommandBuffer& cb) override;
     void Created(vvl::Queue& queue) override;
+
+    void DebugCapture() final;
 };  // Class CoreChecks

@@ -66,6 +66,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/math_utils.h
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
+    utils/keyboard.cpp
+    utils/keyboard.h
     utils/ray_tracing_utils.cpp
     utils/ray_tracing_utils.h
     utils/text_utils.cpp
@@ -127,6 +129,18 @@ elseif(MSVC)
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
     )
+endif()
+
+option(DEBUG_CAPTURE_KEYBOARD "Every QueueSubmit if F1 is pressed, a DebugCapture function will be called and a custom action can be done (default: OFF)" OFF)
+if (DEBUG_CAPTURE_KEYBOARD)
+    target_compile_definitions(VkLayer_utils PUBLIC DEBUG_CAPTURE_KEYBOARD)
+    if(WIN32)
+    else()
+        # needed for XQueryKeymap
+        find_package(X11 REQUIRED)
+        target_link_libraries(VkLayer_utils PRIVATE ${X11_LIBRARIES})
+        target_include_directories(VkLayer_utils PRIVATE ${X11_INCLUDE_DIR})
+    endif()
 endif()
 
 add_subdirectory(gpuav/spirv)
