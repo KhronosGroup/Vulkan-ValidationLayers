@@ -30,6 +30,9 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 namespace gpuav {
 
+// Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
+void Validator::DebugCapture() {}
+
 void Validator::Created(vvl::DescriptorSet &set) {
     set.SetSubState(container_type, std::make_unique<DescriptorSetSubState>(set, *this));
 }

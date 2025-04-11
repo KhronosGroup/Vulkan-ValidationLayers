@@ -418,6 +418,8 @@ class Validator : public GpuShaderInstrumentor {
     void Created(vvl::AccelerationStructureNV&) final;
     void Created(vvl::AccelerationStructureKHR&) final;
 
+    void DebugCapture() final;
+
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
     vko::SharedResourcesCache shared_resources_manager;

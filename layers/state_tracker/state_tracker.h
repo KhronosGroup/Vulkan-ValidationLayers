@@ -1129,6 +1129,7 @@ class DeviceState : public vvl::base::Device {
                                        const RecordObject& record_obj) override;
     void PostCallRecordReleaseSwapchainImagesEXT(VkDevice device, const VkReleaseSwapchainImagesInfoEXT* pReleaseInfo,
                                                  const RecordObject& record_obj) override;
+    void CheckDebugCapture() const;
     void PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                   const RecordObject& record_obj) override;
     void PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
@@ -2131,7 +2132,7 @@ class DeviceProxy : public vvl::base::Device {
     virtual void Created(vvl::ImageView& state) {}
     virtual void Created(vvl::Sampler& state) {}
     virtual void Created(vvl::Swapchain& state) {}
-    virtual void Created(vvl::DescriptorSet& tate) {}
+    virtual void Created(vvl::DescriptorSet& state) {}
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
@@ -2155,6 +2156,9 @@ class DeviceProxy : public vvl::base::Device {
                                    bool* error) const {
         return false;
     }
+
+    // Used to each proxy can report debug information related to it
+    virtual void DebugCapture() {}
 };
 
 template <typename State, std::enable_if_t<HasSubStates<State>::value, bool>>

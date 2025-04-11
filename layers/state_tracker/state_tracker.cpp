@@ -19,7 +19,6 @@
  */
 
 #include <algorithm>
-
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
@@ -42,6 +41,9 @@
 #include "state_tracker/device_generated_commands_state.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
+
+// Used for debugging
+#include "utils/keyboard.h"
 
 #include "chassis/chassis.h"
 
@@ -947,10 +949,27 @@ static void UpdateCmdBufLabelStack(const CommandBuffer &cb_state, Queue &queue_s
     }
 }
 
+// This is a common location where we can detect queue submit about to occur.
+// This is designed to capture "snapshots" of what VVL looks like, but at arbitrary time.
+void DeviceState::CheckDebugCapture() const {
+#if defined(DEBUG_CAPTURE_KEYBOARD)
+    // Incase we want to support Android for this, a future option might not be a keyboard
+    bool captured = false;
+    // This will detect if the "F1" key is pressed
+    captured |= IsDebugKeyPressed(instance_state->wsi_display);
+
+    if (captured) {
+        for (auto &item : proxies) {
+            item.second.DebugCapture();
+        }
+    }
+#endif
+}
+
 void DeviceState::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                            const RecordObject &record_obj) {
+    CheckDebugCapture();
     auto queue_state = Get<Queue>(queue);
-
     std::vector<QueueSubmission> submissions;
     submissions.reserve(submitCount);
     if (submitCount == 0) {
@@ -1018,6 +1037,7 @@ void DeviceState::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 
 void DeviceState::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                             const RecordObject &record_obj) {
+    CheckDebugCapture();
     auto queue_state = Get<Queue>(queue);
     std::vector<QueueSubmission> submissions;
     submissions.reserve(submitCount);
@@ -3990,6 +4010,9 @@ void InstanceState::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, cons
                                                        const VkAllocationCallbacks *pAllocator, VkSurfaceKHR *pSurface,
                                                        const RecordObject &record_obj) {
     if (VK_SUCCESS != record_obj.result) return;
+#if defined(DEBUG_CAPTURE_KEYBOARD)
+    wsi_display = (void *)pCreateInfo->dpy;
+#endif
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_XLIB_KHR
