@@ -1865,7 +1865,7 @@ TEST_F(NegativeMemory, DedicatedAllocation) {
 }
 
 TEST_F(NegativeMemory, MemoryRequirements) {
-    TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirments.");
+    TEST_DESCRIPTION("Create invalid requests to image and buffer memory requirements.");
     AddRequiredExtensions(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
