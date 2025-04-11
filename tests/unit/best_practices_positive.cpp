@@ -505,3 +505,49 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(VkPositiveBestPracticesLayerTest, CreateDeviceWithFeatures) {
+    RETURN_IF_SKIP(InitBestPracticesFramework());
+    const vkt::PhysicalDevice phys_device_obj(gpu_);
+
+    // Now get information correctly
+    vkt::QueueCreateInfoArray queue_info(phys_device_obj.queue_properties_, true);
+    // Only request creation with queuefamilies that have at least one queue
+    std::vector<VkDeviceQueueCreateInfo> create_queue_infos;
+    auto qci = queue_info.Data();
+    for (uint32_t j = 0; j < queue_info.Size(); ++j) {
+        if (qci[j].queueCount) {
+            create_queue_infos.push_back(qci[j]);
+        }
+    }
+
+    VkPhysicalDeviceFeatures features;
+    vk::GetPhysicalDeviceFeatures(gpu_, &features);
+
+    const char *portability_extension = VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME;
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.queueCreateInfoCount = create_queue_infos.size();
+    device_ci.pQueueCreateInfos = create_queue_infos.data();
+    device_ci.enabledLayerCount = 0;
+    device_ci.ppEnabledLayerNames = nullptr;
+    device_ci.enabledExtensionCount = 0u;
+    device_ci.ppEnabledExtensionNames = nullptr;
+    device_ci.pEnabledFeatures = &features;
+
+    uint32_t extension_count;
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &extension_count, nullptr);
+    std::vector<VkExtensionProperties> extensions(extension_count);
+    vk::EnumerateDeviceExtensionProperties(gpu_, nullptr, &extension_count, extensions.data());
+
+    for (uint32_t i = 0; i < extension_count; ++i) {
+        if (strcmp(extensions[i].extensionName, portability_extension) == 0) {
+            device_ci.enabledExtensionCount = 1u;
+            device_ci.ppEnabledExtensionNames = &portability_extension;
+            break;
+        }
+    }
+
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
+    vkt::Device device(phys_device_obj.handle(), device_ci);
+}
