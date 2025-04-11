@@ -1366,8 +1366,18 @@ void DeviceState::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQ
 void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {
     if (auto queue_state = Get<Queue>(queue)) {
         queue_state->NotifyAndWait(record_obj.location);
+
+        // Reset semaphore's in-use-by-swapchain state.
+        // Only for pre-swapchain-maintenance1 code. New code should realy on presentation fence.
+        if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
+            if (queue_state->is_used_for_presentation) {
+                for (const auto &entry : semaphore_map_.snapshot()) {
+                    const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
+                    semaphore_state->ClearSwapchainWaitInfo();
+                }
+            }
+        }
     }
-    // TODO: Reset semaphore's in-use-by-swapchain state (similar to DeviceWaitIdle) if this queue was used for presentation
 }
 
 void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
@@ -1390,10 +1400,13 @@ void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObje
     for (auto &queue : queues) {
         queue->Wait(record_obj.location);
     }
-    // Reset semaphore's in-use-by-swapchain state
-    for (const auto &entry : semaphore_map_.snapshot()) {
-        const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
-        semaphore_state->ClearSwapchainWaitInfo();
+    // Reset semaphore's in-use-by-swapchain state.
+    // Only for pre-swapchain-maintenance1 code. New code should rely on the presentation fence.
+    if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
+        for (const auto &entry : semaphore_map_.snapshot()) {
+            const std::shared_ptr<vvl::Semaphore> &semaphore_state = entry.second;
+            semaphore_state->ClearSwapchainWaitInfo();
+        }
     }
 }
 
@@ -3692,6 +3705,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     auto queue_state = Get<Queue>(queue);
+    queue_state->is_used_for_presentation = true;
     PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
     const SubmissionReference present_submission_ref(queue_state.get(), result.submission_seq);
 
