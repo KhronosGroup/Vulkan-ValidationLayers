@@ -239,8 +239,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 marked_history_index = (history_length - 1) - (swapchain.acquire_count - swapchain_info.acquire_counter_value);
             }
             // Print acquire history
-            ss << "Here are the last " << print_count << " acquired image indices (brackets mark the last use of " << semaphore_str
-               << " in a presentation operation): ";
+            ss << "Here are the last " << print_count << " acquired image indices: ";
             for (uint32_t i = 0; i < print_count; i++) {
                 uint32_t history_index = first_history_index + i;
                 uint32_t acquired_image_index = swapchain.GetAcquiredImageIndexFromHistory(history_index);
@@ -255,7 +254,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                     ss << ", ";
                 }
             }
-            ss << ".\n";
+            ss << ".\n(brackets mark the last use of " << semaphore_str << " in a presentation operation)\n";
             // Describe problem details
             ss << "Swapchain image " << swapchain_info.image_index << " was presented but not re-acquired, so " << semaphore_str
                << " may still be in use and cannot be safely reused with image index "
