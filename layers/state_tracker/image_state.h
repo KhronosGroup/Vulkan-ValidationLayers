@@ -97,7 +97,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     std::shared_ptr<vvl::Swapchain> bind_swapchain;
     uint32_t swapchain_image_index;
     const VkFormatFeatureFlags2KHR format_features;
-    // Need to memory requirments for each plane if image is disjoint
+    // Need to memory requirements for each plane if image is disjoint
     const bool disjoint;  // True if image was created with VK_IMAGE_CREATE_DISJOINT_BIT
     static constexpr int kMaxPlanes = 3;
     using MemoryReqs = std::array<VkMemoryRequirements, kMaxPlanes>;

@@ -1174,7 +1174,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
 // clang-format on
 
 // clang-format off
-static inline std::string SpvExtensionRequirments(std::string_view extension) {
+static inline std::string SpvExtensionRequirements(std::string_view extension) {
     static const vvl::unordered_map<std::string_view, vvl::Requirements> table {
     {"SPV_KHR_variable_pointers", {{vvl::Version::_VK_VERSION_1_1}, {vvl::Extension::_VK_KHR_variable_pointers}}},
     {"SPV_AMD_shader_explicit_vertex_parameter", {{vvl::Extension::_VK_AMD_shader_explicit_vertex_parameter}}},
@@ -1449,7 +1449,7 @@ bool stateless::SpirvValidator::ValidateShaderCapabilitiesAndExtensions(const sp
             const char* vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08742" : "VUID-VkShaderCreateInfoEXT-pCode-08742";
             skip |= LogError(vuid, module_state.handle(), loc,
                              "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).",
-                             extension_name.c_str(), SpvExtensionRequirments(extension_name).c_str());
+                             extension_name.c_str(), SpvExtensionRequirements(extension_name).c_str());
         }
     }  // spv::OpExtension
     return skip;
