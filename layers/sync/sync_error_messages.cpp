@@ -402,7 +402,7 @@ std::string ErrorMessages::ImageBarrierError(const HazardResult& hazard, const C
 
 std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const CommandExecutionContext& exec_context,
                                          const CommandBufferAccessContext& recorded_context, uint32_t command_buffer_index) const {
-    const ResourceUsageInfo exec_usage_info = exec_context.GetResourceUsageInfo(hazard.TagEx());
+    const ResourceUsageInfo prior_usage_info = exec_context.GetResourceUsageInfo(hazard.TagEx());
     const ResourceUsageInfo recorded_usage_info = recorded_context.GetResourceUsageInfo(hazard.RecordedAccess()->TagEx());
 
     AdditionalMessageInfo additional_info;
@@ -413,28 +413,28 @@ std::string ErrorMessages::FirstUseError(const HazardResult& hazard, const Comma
     if (!recorded_usage_info.debug_region_name.empty()) {
         ss << "[" << recorded_usage_info.debug_region_name << "]";
     }
-    if (exec_usage_info.queue) {
+    if (exec_context.Handle().type == kVulkanObjectTypeQueue) {
         ss << " (from " << validator_.FormatHandle(recorded_context.Handle());
         ss << " submitted on the current ";
-        ss << validator_.FormatHandle(exec_usage_info.queue->Handle()) << ")";
-    } else {
+        ss << validator_.FormatHandle(exec_context.Handle()) << ")";
+    } else {  // primary command buffer executes secondary one
+        assert(exec_context.Handle().type == kVulkanObjectTypeCommandBuffer);
         ss << " (from the secondary " << validator_.FormatHandle(recorded_context.Handle()) << ")";
     }
     additional_info.access_initiator = ss.str();
 
     std::stringstream ss2;
-    if (exec_context.Handle().type == kVulkanObjectTypeQueue) {
-        if (exec_usage_info.cb) {
-            ss2 << "(from " << validator_.FormatHandle(exec_usage_info.cb->Handle());
-            ss2 << " submitted on " << validator_.FormatHandle(exec_context.Handle()) << ")";
+    if (prior_usage_info.queue) {
+        if (prior_usage_info.cb) {
+            ss2 << "(from " << validator_.FormatHandle(prior_usage_info.cb->Handle());
+            ss2 << " submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
         } else {  // QueuePresent case (not recorded into command buffer)
-            ss2 << "(submitted on " << validator_.FormatHandle(exec_context.Handle()) << ")";
+            ss2 << "(submitted on " << validator_.FormatHandle(prior_usage_info.queue->Handle()) << ")";
         }
-    } else {  // primary command buffer executes secondary one
-        assert(exec_context.Handle().type == kVulkanObjectTypeCommandBuffer);
+    } else if (prior_usage_info.cb) {
         // TODO: distinuish between "native" primary command buffer commands and
         // command recorded from the secondary command buffers.
-        ss2 << "(from the primary " << validator_.FormatHandle(exec_context.Handle()) << ")";
+        ss2 << "(from the primary " << validator_.FormatHandle(prior_usage_info.cb->Handle()) << ")";
     }
     additional_info.brief_description_end_text = ss2.str();
 
