@@ -108,19 +108,14 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Basic) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 1;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 2;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 3;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -190,19 +185,14 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPL) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 1;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 2;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 3;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -229,7 +219,6 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
 
     uint32_t *offset_buffer_ptr = (uint32_t *)offset_buffer.Memory().Map();
     *offset_buffer_ptr = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -336,7 +325,6 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
-        vs_buffer.Memory().Unmap();
     }
     {
         vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.Memory().Map()),
@@ -344,7 +332,6 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
-        fs_buffer.Memory().Unmap();
     }
 
     const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
@@ -795,7 +782,6 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();

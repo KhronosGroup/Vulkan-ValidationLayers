@@ -47,7 +47,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -108,7 +107,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorIndexingSet descriptor_set(
         m_device,
@@ -229,7 +227,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 7;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -486,7 +483,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer0.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -574,7 +570,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer0.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -777,7 +772,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     storage_buffer_ptr[0] = 8;  // texture_cube_id
     storage_buffer_ptr[1] = 7;  // texture_2d_id
     storage_buffer_ptr[2] = 0;  // sampler_id
-    storage_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{4, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 16, VK_SHADER_STAGE_ALL, nullptr},
                                                   {5, VK_DESCRIPTOR_TYPE_SAMPLER, 16, VK_SHADER_STAGE_ALL, nullptr}});
@@ -840,7 +834,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 0;  // index
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -1789,7 +1782,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -1864,7 +1856,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -1947,7 +1938,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -2041,7 +2031,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfte
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source = R"glsl(
         #version 450
@@ -2132,7 +2121,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorSet ds_good(m_device, {
                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -2205,7 +2193,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorIndexingSet ds_good(
         m_device,
@@ -2279,7 +2266,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorSet ds_good(m_device, {
                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -2429,7 +2415,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 4;
-    in_buffer.Memory().Unmap();
 
     vkt::Buffer storage_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
@@ -2835,7 +2820,6 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingPartiallyBound) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     data[0] = 0;
-    buffer.Memory().Unmap();
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 

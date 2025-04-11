@@ -1095,7 +1095,6 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     ASSERT_EQ(debug_buffer_ptr[0], ray_gen_rays_count * frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 3 * ray_gen_rays_count * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], 2 * ray_gen_rays_count * frames_count);
-    debug_buffer.Memory().Unmap();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
@@ -1184,7 +1183,6 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
     ASSERT_EQ(debug_buffer_ptr[0], frames_count);
     ASSERT_EQ(debug_buffer_ptr[1], 3 * frames_count);
     ASSERT_EQ(debug_buffer_ptr[2], 2 * frames_count);
-    debug_buffer.Memory().Unmap();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
@@ -1268,7 +1266,6 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     ASSERT_EQ(debug_buffer_ptr[3], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 + 2) * frames_count);
-    debug_buffer.Memory().Unmap();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
@@ -1353,7 +1350,6 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     ASSERT_EQ(debug_buffer_ptr[3], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 + 2) * frames_count);
-    debug_buffer.Memory().Unmap();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
@@ -1443,5 +1439,4 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     ASSERT_EQ(debug_buffer_ptr[3], (1 * ray_gen_1_rays_count + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[4], (1 * ray_gen_1_rays_count + 1) * frames_count);
     ASSERT_EQ(debug_buffer_ptr[5], (1 * ray_gen_1_rays_count + 2) * frames_count);
-    debug_buffer.Memory().Unmap();
 }

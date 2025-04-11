@@ -187,7 +187,6 @@ TEST_F(PositiveSyncValRayTracing, WriteVertexDataDuringBuild) {
     vkt::Buffer vertex_buffer(*m_device, 1024, buffer_usage, kHostVisibleMemProps, &alloc_flags);
     auto vertex_buffer_ptr = static_cast<float*>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
-    vertex_buffer.Memory().Unmap();
 
     // Specify offset (4 bytes) so vertex data does not start immediately from the beginning of the buffer.
     geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1, VK_FORMAT_R32G32B32_SFLOAT,

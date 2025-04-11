@@ -1731,7 +1731,6 @@ TEST_F(NegativeDescriptorBuffer, MaxResourceDescriptorBufferBindings) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
-    descriptor_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
 

@@ -176,8 +176,6 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
 
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     ASSERT_TRUE(*data = test_data);
-    *data = 0;
-    buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
@@ -904,7 +902,6 @@ TEST_F(PositiveGpuAV, FirstInstance) {
         draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         draw_ptr++;
     }
-    draw_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -931,7 +928,6 @@ TEST_F(PositiveGpuAV, FirstInstance) {
         indexed_draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         indexed_draw_ptr++;
     }
-    indexed_draw_buffer.Memory().Unmap();
 
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -966,7 +962,6 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
             ptr[i] = 0.0f;
         }
     }
-    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -1019,8 +1014,6 @@ TEST_F(PositiveGpuAV, CopyBufferToImageD32U8) {
             *ptr_float = 0.0f;
         }
     }
-
-    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT_S8_UINT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -1136,7 +1129,6 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
         draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         draw_ptr++;
     }
-    draw_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.lineWidth = 1.0f;
@@ -1164,7 +1156,6 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
         indexed_draw_ptr->firstInstance = (i == 3) ? 1 : 0;
         indexed_draw_ptr++;
     }
-    indexed_draw_buffer.Memory().Unmap();
 
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1244,8 +1235,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-
-    indirect_draw_parameters_buffer.Memory().Unmap();
 
     constexpr int32_t int_count = 16;
     vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
@@ -1360,7 +1349,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
@@ -1457,7 +1445,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-    indirect_draw_parameters_buffer.Memory().Unmap();
 
     CreatePipelineHelper graphics_pipe(*this);
     graphics_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
@@ -1517,7 +1504,6 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
-    indirect_dispatch_parameters_buffer.Memory().Unmap();
 
     // Submit commands
     // ---
@@ -1549,13 +1535,11 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
-    compute_storage_buffer.Memory().Unmap();
 
     auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
-    graphics_storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
@@ -1572,8 +1556,6 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-
-    indirect_draw_parameters_buffer.Memory().Unmap();
 
     VkPushConstantRange push_constant_ranges = {VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(int)};
     VkPipelineLayoutCreateInfo pipe_layout_ci_1 = vku::InitStructHelper();
@@ -1969,7 +1951,6 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     indirect_command_ptr->x = 1;
     indirect_command_ptr->y = 1;
     indirect_command_ptr->z = 1;
-    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;

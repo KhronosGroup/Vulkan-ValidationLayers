@@ -91,7 +91,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ReachMaxActionsCommandValidati
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 1;
-    offset_buffer.Memory().Unmap();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
@@ -151,7 +150,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
 
     uint32_t *data = (uint32_t *)uniform_buffer.Memory().Map();
     *data = 0;
-    uniform_buffer.Memory().Unmap();
     // normally VUID-vkCmdDraw-uniformBuffers-06935
     m_errorMonitor->SetDesiredWarning("size is 4 bytes, 4 bytes were bound, and the highest out of bounds access was at [19] bytes",
                                       3);
@@ -159,9 +157,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
-    data = (uint32_t *)uniform_buffer.Memory().Map();
     *data = 1;
-    uniform_buffer.Memory().Unmap();
     // normally VUID-vkCmdDraw-storageBuffers-06936
     m_errorMonitor->SetDesiredWarning(
         "size is 16 bytes, 16 bytes were bound, and the highest out of bounds access was at [35] bytes", 3);
@@ -214,7 +210,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, Basic) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
 
@@ -475,7 +470,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWrite) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -533,7 +527,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWriteSelectPipeline) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -645,7 +638,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLWriteSelectShaders) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -817,7 +809,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLReadWriteIndependentSets) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vert_shader[] = R"glsl(
         #version 450
@@ -884,7 +875,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
 
     uint32_t *offset_buffer_ptr = (uint32_t *)offset_buffer.Memory().Map();
     *offset_buffer_ptr = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vertshader[] = R"glsl(
         #version 450
@@ -1008,7 +998,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
 
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1507,7 +1496,6 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
     block_buffer_ptr->x = 1;
     block_buffer_ptr->y = 1;
     block_buffer_ptr->z = 1;
-    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;

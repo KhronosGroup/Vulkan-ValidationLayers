@@ -1071,19 +1071,15 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
 
     uint8_t *mapped_vbo_buffer_data = (uint8_t *)vbo.Memory().Map();
     std::memcpy(mapped_vbo_buffer_data, (uint8_t *)vertices.data(), sizeof(float) * vertices.size());
-    vbo.Memory().Unmap();
 
     uint8_t *mapped_ibo_buffer_data = (uint8_t *)ibo.Memory().Map();
     std::memcpy(mapped_ibo_buffer_data, (uint8_t *)indicies.data(), sizeof(uint32_t) * indicies.size());
-    ibo.Memory().Unmap();
 
     uint8_t *mapped_tbo_buffer_data = (uint8_t *)tbo.Memory().Map();
     std::memcpy(mapped_tbo_buffer_data, (uint8_t *)transforms.data(), sizeof(float) * transforms.size());
-    tbo.Memory().Unmap();
 
     uint8_t *mapped_aabbbo_buffer_data = (uint8_t *)aabbbo.Memory().Map();
     std::memcpy(mapped_aabbbo_buffer_data, (uint8_t *)aabbs.data(), sizeof(float) * aabbs.size());
-    aabbbo.Memory().Unmap();
 
     VkGeometryNV valid_geometry_triangles = vku::InitStructHelper();
     valid_geometry_triangles.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;

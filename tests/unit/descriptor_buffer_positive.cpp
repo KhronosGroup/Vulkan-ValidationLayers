@@ -151,7 +151,6 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
-    buffer_data.Memory().Unmap();
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -179,7 +178,6 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     void *mapped_descriptor_data = descriptor_buffer.Memory().Map();
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
-    descriptor_buffer.Memory().Unmap();
 
     char const *cs_source = R"glsl(
         #version 450
@@ -219,11 +217,9 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     m_default_queue->Wait();
 
     if (!IsPlatformMockICD()) {
-        data = (uint32_t *)buffer_data.Memory().Map();
         ASSERT_TRUE(data[0] == 8);
         ASSERT_TRUE(data[1] == 12);
         ASSERT_TRUE(data[2] == 20);
-        buffer_data.Memory().Unmap();
     }
 }
 
@@ -240,7 +236,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
-    buffer_data.Memory().Unmap();
 
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
@@ -282,8 +277,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     mapped_descriptor_data += ds_layout_size;
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data);
-
-    descriptor_buffer.Memory().Unmap();
 
     char const *cs_source = R"glsl(
         #version 450
@@ -336,11 +329,9 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     m_default_queue->Wait();
 
     if (!IsPlatformMockICD()) {
-        data = (uint32_t *)buffer_data.Memory().Map();
         ASSERT_TRUE(data[0] == 8);
         ASSERT_TRUE(data[1] == 12);
         ASSERT_TRUE(data[2] == 20);
-        buffer_data.Memory().Unmap();
     }
 }
 
@@ -357,7 +348,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     data[0] = 8;
     data[1] = 12;
     data[2] = 1;
-    buffer_data.Memory().Unmap();
 
     std::vector<VkDescriptorSetLayoutBinding> bindings = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -404,8 +394,6 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     vk::GetDescriptorEXT(device(), &buffer_descriptor_info, descriptor_buffer_properties.storageBufferDescriptorSize,
                          mapped_descriptor_data + ds_layout_binding_offsets[2]);
 
-    descriptor_buffer.Memory().Unmap();
-
     char const *cs_source = R"glsl(
         #version 450
         layout (set = 0, binding = 0) buffer SSBO_0 {
@@ -449,11 +437,9 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     m_default_queue->Wait();
 
     if (!IsPlatformMockICD()) {
-        data = (uint32_t *)buffer_data.Memory().Map();
         ASSERT_TRUE(data[0] == 8);
         ASSERT_TRUE(data[1] == 12);
         ASSERT_TRUE(data[2] == 20);
-        buffer_data.Memory().Unmap();
     }
 }
 

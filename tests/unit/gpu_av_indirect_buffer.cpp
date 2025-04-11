@@ -55,12 +55,10 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
                             kHostVisibleMemProps);
     VkDrawIndirectCommand *draw_ptr = static_cast<VkDrawIndirectCommand *>(draw_buffer.Memory().Map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndirectCommand));
-    draw_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
-    count_buffer.Memory().Unmap();
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -120,11 +118,10 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
         mesh_draw_ptr->groupCountX = 0;
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
-        mesh_draw_buffer.Memory().Unmap();
+
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02717");
-        count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+
         *count_ptr = 2;
-        count_buffer.Memory().Unmap();
         m_command_buffer.Begin(&begin_info);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
@@ -163,12 +160,10 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimitSubmit2) {
                             kHostVisibleMemProps);
     VkDrawIndexedIndirectCommand *draw_ptr = static_cast<VkDrawIndexedIndirectCommand *>(draw_buffer.Memory().Map());
     memset(draw_ptr, 0, 2 * sizeof(VkDrawIndexedIndirectCommand));
-    draw_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;  // Fits in buffer but exceeds (fake) limit
-    count_buffer.Memory().Unmap();
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -220,7 +215,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     draw_ptr->firstVertex = 0;
     draw_ptr->instanceCount = 1;
     draw_ptr->vertexCount = 3;
-    draw_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
 
@@ -228,7 +222,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     pipe.CreateGraphicsPipeline();
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;
-    count_buffer.Memory().Unmap();
+
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -245,9 +239,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
-    count_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -273,11 +265,8 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     indexed_draw_ptr->instanceCount = 1;
     indexed_draw_ptr->firstInstance = 0;
     indexed_draw_ptr->vertexOffset = 0;
-    indexed_draw_buffer.Memory().Unmap();
 
-    count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 2;
-    count_buffer.Memory().Unmap();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -296,9 +285,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
-    count_buffer.Memory().Unmap();
 
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -340,14 +327,13 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
         mesh_draw_ptr->groupCountX = 0;
         mesh_draw_ptr->groupCountY = 0;
         mesh_draw_ptr->groupCountZ = 0;
-        mesh_draw_buffer.Memory().Unmap();
         m_errorMonitor->SetDesiredWarningRegex(
             "WARNING-GPU-AV-drawCount",
             "Indirect draw count of 1 would exceed size \\(12\\) of buffer .* stride = 12 offset = 8 "
             ".* = 20");
-        count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+
         *count_ptr = 1;
-        count_buffer.Memory().Unmap();
+
         m_command_buffer.Begin(&begin_info);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
@@ -363,9 +349,9 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
             "WARNING-GPU-AV-drawCount",
             "Indirect draw count of 2 would exceed size \\(12\\) of buffer .* stride = 12 offset = 4 "
             ".* = 28");
-        count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
+
         *count_ptr = 2;
-        count_buffer.Memory().Unmap();
+
         m_command_buffer.Begin(&begin_info);
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
@@ -411,7 +397,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 3;
-    count_buffer.Memory().Unmap();
+
     char const *mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
@@ -496,7 +482,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         }
     }
 #endif
-    draw_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
@@ -531,7 +516,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 3;
-    count_buffer.Memory().Unmap();
+
     char const *mesh_shader_source = R"glsl(
         #version 450
         #extension GL_EXT_mesh_shader : require
@@ -614,8 +599,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
             draw_ptr[0] = 1;
         }
     }
-
-    draw_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
@@ -747,7 +730,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     ptr->x = 3;  // over
     ptr->y = 2;
     ptr->z = 3;  // over
-    indirect_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.CreateComputePipeline();
@@ -842,7 +824,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     ptr->x = 3;  // over
     ptr->y = 2;
     ptr->z = 3;  // over
-    indirect_buffer.Memory().Unmap();
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
     vkt::Shader shader(*m_device, stage, GLSLToSPV(stage, kMinimalShaderGlsl));

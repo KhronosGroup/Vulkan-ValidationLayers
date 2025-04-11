@@ -80,7 +80,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
@@ -144,7 +143,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
@@ -168,7 +166,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
     uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.Memory().Map();
     memcpy(uniform_buffer_ptr, &invalid_buffer_address, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
-    uniform_buffer.Memory().Unmap();
 
     char const *shader_source = R"glsl(
         #version 450
@@ -215,7 +212,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
@@ -238,7 +234,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     uint8_t *uniform_buffer_ptr = (uint8_t *)uniform_buffer.Memory().Map();
     memcpy(uniform_buffer_ptr, &u_info_ptr, sizeof(VkDeviceAddress));
     memcpy(uniform_buffer_ptr + sizeof(VkDeviceAddress), &n_writes, sizeof(uint32_t));
-    uniform_buffer.Memory().Unmap();
 
     char const *shader_source = R"glsl(
         #version 450
@@ -284,7 +279,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
         ASSERT_EQ(*buffer_ptr, 42);
         buffer_ptr += 4;
     }
-    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
@@ -328,7 +322,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -415,7 +408,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
-    in_buffer.Memory().Unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
@@ -483,8 +475,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ArrayOfStruct) {
     memcpy(buffer_ptr, &index, sizeof(uint32_t));
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
-    memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
-    storage_buffer.Memory().Unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -554,7 +544,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 5;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -567,7 +556,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
@@ -640,7 +628,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer_addr;
     uniform_buffer_ptr[1] = 5;  // Will provoke a 4 bytes write past buffer end
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -653,7 +640,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
@@ -708,7 +694,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 5;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
     m_default_queue->Submit(m_command_buffer);
@@ -720,7 +705,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], 42);
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
@@ -825,7 +809,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer_addr;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
     m_default_queue->Submit(m_command_buffer);
@@ -835,7 +818,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     // Make sure shader wrote to float
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
     ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
@@ -921,7 +903,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     // The OpStore is aligned to 16 bytes, so need to substract by that
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
     m_default_queue->Submit(m_command_buffer);
@@ -982,7 +963,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     // Base buffer address is (storage_buffer_addr), so expect writing to `v.z` to cause an OOB access
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer_addr;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
     m_default_queue->Submit(m_command_buffer);
@@ -992,7 +972,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     // Make sure shader wrote to float
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
     ASSERT_EQ(storage_buffer_ptr[0], 42.0f);
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
@@ -1048,7 +1027,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
     auto uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     // The OpStore is aligned to 16 bytes, so need to substract by that
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
-    uniform_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
     m_default_queue->Submit(m_command_buffer);
@@ -1122,8 +1100,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         uniform_buffer_ptr[i] = addr;
     }
 
-    uniform_buffer.Memory().Unmap();
-
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -1136,8 +1112,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         ASSERT_EQ(storage_buffer_ptr[0], float(3 * buffer_i + 1));
         ASSERT_EQ(storage_buffer_ptr[1], float(3 * buffer_i + 2));
         ASSERT_EQ(storage_buffer_ptr[2], float(3 * buffer_i + 3));
-
-        buffer.Memory().Unmap();
     }
 }
 
@@ -1185,7 +1159,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1244,7 +1217,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1416,7 +1388,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1477,7 +1448,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address() + 256;  // wrong
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1525,7 +1495,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
     VkDeviceAddress block_ptr = block_buffer.Address();
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_ptr + 4;
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1575,7 +1544,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     VkDeviceAddress block_ptr = block_buffer.Address();
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_ptr + 4;
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1647,7 +1615,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, NonStructPointer) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1746,7 +1713,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MultipleAccessChains) {
 
     auto ubo_buffer_ptr = static_cast<VkDeviceAddress *>(ubo_buffer.Memory().Map());
     ubo_buffer_ptr[0] = bda_buffer.Address();
-    ubo_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -1830,7 +1796,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, OpCopyObject) {
 
     auto ubo_buffer_ptr = static_cast<VkDeviceAddress *>(ubo_buffer.Memory().Map());
     ubo_buffer_ptr[0] = bda_buffer.Address();
-    ubo_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -1888,8 +1853,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
-
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
@@ -1954,7 +1917,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
     in_buffer_ptr[1] = 0;  // set SSBO.a to be zero
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2005,7 +1967,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2054,7 +2015,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2104,7 +2064,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchange) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2156,7 +2115,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2207,7 +2165,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2260,7 +2217,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2455,7 +2411,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -2647,11 +2602,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_b_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
     buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
-    ssbo_b_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -2704,11 +2657,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
-    in_buffer.Memory().Unmap();
 
     buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_a_buffer.Address();
-    ssbo_b_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -2763,11 +2714,9 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
-    in_buffer.Memory().Unmap();
 
     buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_a_buffer.Address();
-    ssbo_b_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());

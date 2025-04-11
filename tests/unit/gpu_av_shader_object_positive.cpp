@@ -43,8 +43,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
 
-    indirect_draw_parameters_buffer.Memory().Unmap();
-
     constexpr int32_t int_count = 16;
     vkt::Buffer storage_buffer(*m_device, int_count * sizeof(int32_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);
 
@@ -163,7 +161,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], i);
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
@@ -263,7 +260,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     indirect_draw_parameters.instanceCount = 1;
     indirect_draw_parameters.firstVertex = 0;
     indirect_draw_parameters.firstInstance = 0;
-    indirect_draw_parameters_buffer.Memory().Unmap();
 
     VkShaderCreateInfoEXT vs_ci =
         ShaderCreateInfo(vs_spv, VK_SHADER_STAGE_VERTEX_BIT, 0, nullptr, 1, &graphics_push_constant_ranges);
@@ -327,7 +323,6 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     indirect_dispatch_parameters.x = 1;
     indirect_dispatch_parameters.y = 1;
     indirect_dispatch_parameters.z = 1;
-    indirect_dispatch_parameters_buffer.Memory().Unmap();
 
     // Submit commands
     // ---
@@ -359,13 +354,11 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(compute_storage_buffer_ptr[i], int_count + i);
     }
-    compute_storage_buffer.Memory().Unmap();
 
     auto graphics_storage_buffer_ptr = static_cast<int32_t *>(graphics_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
         ASSERT_EQ(graphics_storage_buffer_ptr[i], i);
     }
-    graphics_storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
@@ -408,7 +401,6 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     indirect_dispatch_parameters.x = 1u;
     indirect_dispatch_parameters.y = 1u;
     indirect_dispatch_parameters.z = 1u;
-    indirect_dispatch_parameters_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     SetDefaultDynamicStatesExclude();

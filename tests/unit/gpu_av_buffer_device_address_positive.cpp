@@ -81,7 +81,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -92,7 +91,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
@@ -155,7 +153,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -166,7 +163,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
         ASSERT_EQ(*storage_buffer_ptr, 42);
         storage_buffer_ptr += 4;
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
@@ -221,7 +217,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -231,7 +226,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     for (int i = 0; i < 4; ++i) {
         ASSERT_EQ(storage_buffer_ptr[i], 42);
     }
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
@@ -269,7 +263,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -286,7 +279,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
 
     uint8_t *bda_buffer_ptr = (uint8_t *)bda_buffer.Memory().Map();
     uint32_t output = *((uint32_t *)(bda_buffer_ptr + 32));
-    bda_buffer.Memory().Unmap();
     ASSERT_TRUE(output == 0xca7);
 }
 
@@ -331,7 +323,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     float expected_output = 0x00EEAADD;
     uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.Memory().Map();
     memcpy(block_buffer_ptr, &expected_output, sizeof(float));
-    block_buffer.Memory().Unmap();
 
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
@@ -339,7 +330,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
 
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -354,9 +344,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
-    in_buffer.Memory().Unmap();
     ASSERT_TRUE(output == expected_output);
 }
 
@@ -405,7 +393,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     float expected_output = 0x00EEAADD;
     uint8_t *block_buffer_ptr = (uint8_t *)block_buffer.Memory().Map();
     memcpy(block_buffer_ptr + 24, &expected_output, sizeof(float));
-    block_buffer.Memory().Unmap();
 
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
@@ -413,7 +400,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
 
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -428,9 +414,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
-    in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
-    in_buffer.Memory().Unmap();
     ASSERT_TRUE(output == expected_output);
 }
 
@@ -476,7 +460,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -540,7 +523,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ArrayOfStruct) {
     memcpy(buffer_ptr + (1 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (2 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
     memcpy(buffer_ptr + (3 * sizeof(VkDeviceAddress)), &block_ptr, sizeof(VkDeviceAddress));
-    storage_buffer.Memory().Unmap();
 
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
@@ -594,14 +576,12 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
 
     auto *buffer_ptr = static_cast<uint32_t *>(buffer_node_b.Memory().Map());
     *buffer_ptr = 1234;  // data to pass
-    buffer_node_b.Memory().Unmap();
 
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_a_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &block_b_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -618,7 +598,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
 
     buffer_ptr = static_cast<uint32_t *>(buffer_node_a.Memory().Map());
     ASSERT_TRUE(*buffer_ptr == 1234);
-    buffer_node_a.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
@@ -722,7 +701,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -733,7 +711,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     ASSERT_EQ(storage_buffer_ptr[1], 1.0f);
     ASSERT_EQ(storage_buffer_ptr[2], 2.0f);
     ASSERT_EQ(storage_buffer_ptr[3], 3.0f);
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
@@ -788,8 +765,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
-    uniform_buffer.Memory().Unmap();
-
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -799,7 +774,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     ASSERT_EQ(storage_buffer_ptr[1], 1.0f);
     ASSERT_EQ(storage_buffer_ptr[2], 2.0f);
     ASSERT_EQ(storage_buffer_ptr[3], 3.0f);
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
@@ -863,8 +837,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         uniform_buffer_ptr[i] = addr;
     }
 
-    uniform_buffer.Memory().Unmap();
-
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
@@ -875,8 +847,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         ASSERT_EQ(storage_buffer_ptr[0], float(3 * buffer_i + 1));
         ASSERT_EQ(storage_buffer_ptr[1], float(3 * buffer_i + 2));
         ASSERT_EQ(storage_buffer_ptr[2], float(3 * buffer_i + 3));
-
-        buffer.Memory().Unmap();
     }
 }
 
@@ -940,7 +910,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = foo_storage_buffer.Address();
     uniform_buffer_ptr[1] = bar_storage_buffer.Address();
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
@@ -950,8 +919,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     auto *bar_ptr = static_cast<int *>(bar_storage_buffer.Memory().Map());
     ASSERT_EQ(bar_ptr[0], 42);
     ASSERT_EQ(foo_ptr[3], bar_ptr[0]);
-    foo_storage_buffer.Memory().Unmap();
-    bar_storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
@@ -1025,17 +992,13 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     vertex_buffer_ptr[0].uv[0] = 7.0f;
     vertex_buffer_ptr[0].uv[1] = 8.0f;
 
-    storage_buffer.Memory().Unmap();
-
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     data[0] = storage_buffer.Address();
-    uniform_buffer.Memory().Unmap();
 
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 
     // Make sure shader wrote to float and vec3
-    vertex_buffer_ptr = static_cast<Vertex *>(storage_buffer.Memory().Map());
     ASSERT_EQ(vertex_buffer_ptr[0].x, 1.0f);
     ASSERT_EQ(vertex_buffer_ptr[0].y, 2.0f);
     ASSERT_EQ(vertex_buffer_ptr[0].z, 3.0f);
@@ -1062,8 +1025,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     ASSERT_EQ(vertex_buffer_ptr[2].b, 6.0f);
     ASSERT_EQ(vertex_buffer_ptr[2].uv[0], 7.0f);
     ASSERT_EQ(vertex_buffer_ptr[2].uv[1], 8.0f);
-
-    storage_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, ConcurrentAccessesToBdaBuffer) {
@@ -1171,7 +1132,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
     VkDeviceAddress buffer_ptr = bda_buffer.Address();
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1275,7 +1235,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1292,7 +1251,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
 
     auto block_buffer_ptr = static_cast<uint32_t *>(block_buffer.Memory().Map());
     ASSERT_TRUE(block_buffer_ptr[2] == 999);
-    block_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
@@ -1376,7 +1334,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
 
     auto ubo_buffer_ptr = static_cast<VkDeviceAddress *>(ubo_buffer.Memory().Map());
     ubo_buffer_ptr[0] = bda_buffer.Address();
-    ubo_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
@@ -1484,7 +1441,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1544,7 +1500,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1609,7 +1564,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
     in_buffer_ptr[1] = 0;  // set SSBO.a to be zero
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1664,7 +1618,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1729,7 +1682,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
 
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = bda_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
@@ -1839,7 +1791,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     bda_buffer_ptr[0] = 33;
     bda_buffer_ptr[1] = 66;
     bda_buffer_ptr[2] = 99;
-    bda_buffer.Memory().Unmap();
 
     VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1868,7 +1819,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
 
     auto out_buffer_ptr = static_cast<uint32_t *>(out_buffer.Memory().Map());
     ASSERT_TRUE(out_buffer_ptr[0] == 66);
-    out_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
@@ -1952,7 +1902,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
 
     auto bda_buffer_ptr = static_cast<uint32_t *>(bda_buffer.Memory().Map());
     bda_buffer_ptr[0] = 33;
-    bda_buffer.Memory().Unmap();
 
     VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, 64};
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
@@ -1981,7 +1930,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
 
     auto out_buffer_ptr = static_cast<uint32_t *>(out_buffer.Memory().Map());
     ASSERT_TRUE(out_buffer_ptr[0] == 33);
-    out_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushConstants) {
@@ -2241,15 +2189,12 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_c_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     buffer_ptr = (VkDeviceAddress *)ssbo_c_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_b_buffer.Address();
-    ssbo_c_buffer.Memory().Unmap();
 
     buffer_ptr = (VkDeviceAddress *)ssbo_b_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_a_buffer.Address();
-    ssbo_b_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -2263,7 +2208,6 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
 
     auto out_buffer_ptr = (uint32_t *)ssbo_a_buffer.Memory().Map();
     ASSERT_TRUE(out_buffer_ptr[0] == 42);
-    ssbo_a_buffer.Memory().Unmap();
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {

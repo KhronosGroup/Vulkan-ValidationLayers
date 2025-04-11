@@ -1271,9 +1271,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
         }
 
         // Index information
-        data[IndexOffset/4] = 0;
-
-        micromapDataBuffer.Memory().Unmap();
+        data[IndexOffset / 4] = 0;
     }
 
     VkMicromapBuildInfoEXT mmBuildInfo = { VK_STRUCTURE_TYPE_MICROMAP_BUILD_INFO_EXT };
@@ -1460,9 +1458,7 @@ TEST_F(PositiveRayTracing, BasicOpacityMicromapBuild) {
 
         VkAccelerationStructureDeviceAddressInfoKHR asDeviceAddressInfo = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR };
         asDeviceAddressInfo.accelerationStructure = bottomAS;
-        instance[0].accelerationStructureReference =  vk::GetAccelerationStructureDeviceAddressKHR(device(), &asDeviceAddressInfo);
-
-        instanceBuffer.Memory().Unmap();
+        instance[0].accelerationStructureReference = vk::GetAccelerationStructureDeviceAddressKHR(device(), &asDeviceAddressInfo);
     }
 
     VkAccelerationStructureGeometryKHR topASGeometry = { VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR };
@@ -1837,7 +1833,6 @@ TEST_F(PositiveRayTracing, BuildIndirectWithoutIndexBuffer) {
     constexpr std::array vertices = {10.0f, 10.0f, 0.0f, -10.0f, 10.0f, 0.0f, 0.0f, -10.0f, 0.0f};
     auto vertex_buffer_ptr = static_cast<float*>(vertex_buffer.Memory().Map());
     std::copy(vertices.begin(), vertices.end(), vertex_buffer_ptr);
-    vertex_buffer.Memory().Unmap();
 
     VkTransformMatrixKHR transform_matrix = {{
         {1.0f, 0.0f, 0.0f, 0.0f},
@@ -1847,7 +1842,6 @@ TEST_F(PositiveRayTracing, BuildIndirectWithoutIndexBuffer) {
 
     auto transform_buffer_ptr = static_cast<VkTransformMatrixKHR*>(transform_buffer.Memory().Map());
     std::memcpy(transform_buffer_ptr, &transform_matrix, sizeof(transform_matrix));
-    transform_buffer.Memory().Unmap();
 
     triangle_geometry.SetTrianglesDeviceVertexBuffer(std::move(vertex_buffer), uint32_t(vertices.size() / 3) - 1);
     triangle_geometry.SetTrianglesIndexType(VK_INDEX_TYPE_UINT32);

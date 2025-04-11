@@ -101,7 +101,6 @@ TEST_F(NegativeGpuAVSpirv, DISABLED_LoopHeaderPhi) {
     data[1] = 32;  // data[1]
     data[2] = 32;  // data[2]
     data[3] = 32;  // data[3]
-    buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();

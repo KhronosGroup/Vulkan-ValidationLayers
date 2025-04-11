@@ -2178,8 +2178,6 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-pRegions-09062");
     vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
     m_errorMonitor->VerifyFound();
-
-    image.Memory().Unmap();
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8946
@@ -2218,8 +2216,6 @@ TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
     m_errorMonitor->SetDesiredError("VUID-VkMemoryToImageCopy-pRegions-09062");
     vk::CopyMemoryToImageEXT(*m_device, &copy_memory_to_image);
     m_errorMonitor->VerifyFound();
-
-    image.Memory().Unmap();
 }
 
 TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {

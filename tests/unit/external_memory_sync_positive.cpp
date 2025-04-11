@@ -237,7 +237,6 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     for (uint32_t i = 0; i < buffer_size; i++) {
         input_mem[i] = (i & 0xFF);
     }
-    buffer_input.Memory().Unmap();
     vkt::Buffer buffer_output(*m_device, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
