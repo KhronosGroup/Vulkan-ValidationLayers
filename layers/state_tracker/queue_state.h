@@ -162,6 +162,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Access to this variable relies on external queue synchronization.
     bool found_unbalanced_cmdbuf_label = false;
 
+    // If at any point this queue was used for presentation.
+    bool is_used_for_presentation = false;
+
   protected:
     // called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit(QueueSubmission &submission);
