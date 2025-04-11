@@ -1454,3 +1454,56 @@ TEST_F(NegativeSyncValReporting, LayoutTrasitionErrorHasImageHandle) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncValReporting, CommandBufferMatchesQueue) {
+    TEST_DESCRIPTION("Submit command buffers to different queues. Check that message correctly pairs command buffer and queue");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Queue* transfer_queue = m_device->TransferOnlyQueue();
+    if (!transfer_queue) {
+        GTEST_SKIP() << "Transfer-only queue is not present";
+    }
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 64 * 64, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageExtent = {64, 64, 1};
+
+    VkImageMemoryBarrier2 image_barrier = vku::InitStructHelper();
+    image_barrier.srcStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.srcAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.dstStageMask = VK_PIPELINE_STAGE_2_NONE;
+    image_barrier.dstAccessMask = VK_ACCESS_2_NONE;
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    image_barrier.image = image;
+    image_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_default_queue->SetName(*m_device, "GraphicsQueue");
+    m_command_buffer.SetName(*m_device, "GraphicsCB");
+
+    vkt::CommandPool transfer_pool(*m_device, transfer_queue->family_index);
+    vkt::CommandBuffer transfer_cb(*m_device, transfer_pool);
+    transfer_queue->SetName(*m_device, "TransferQueue");
+    transfer_cb.SetName(*m_device, "TransferCB");
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(image_barrier);
+    m_command_buffer.End();
+    m_default_queue->Submit2(m_command_buffer);
+
+    transfer_cb.Begin();
+    vk::CmdCopyBufferToImage(transfer_cb, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    transfer_cb.End();
+    // Transfer command buffer should be paired with transfer queue (and the same for grapics).
+    const char* transfer_cb_then_q_graphics_cb_then_q = ".*TransferCB.*TransferQueue.*GraphicsCB.*GraphicsQueue.*";
+    m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-RACING-WRITE", transfer_cb_then_q_graphics_cb_then_q);
+    transfer_queue->Submit2(transfer_cb);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
