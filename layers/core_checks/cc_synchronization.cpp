@@ -1267,7 +1267,8 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
     }
     // TODO: Need to validate that host_bit is only set if set event is called
     // but set event can be called at any time.
-    if (sourceStageMask != stage_mask && sourceStageMask != (stage_mask | VK_PIPELINE_STAGE_HOST_BIT)) {
+    if (sourceStageMask != stage_mask && sourceStageMask != (stage_mask | VK_PIPELINE_STAGE_HOST_BIT) &&
+        loc.function == Func::vkCmdWaitEvents) {
         skip |= state_data.LogError(
             "VUID-vkCmdWaitEvents-srcStageMask-parameter", cb_state.Handle(), loc,
             "Submitting cmdbuffer with call to VkCmdWaitEvents using srcStageMask %s which must be the bitwise OR of the stageMask "
