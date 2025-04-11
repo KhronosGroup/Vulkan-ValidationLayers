@@ -84,12 +84,15 @@ void vvl::Fence::NotifyAndWait(const Location &loc) {
             }
             present_submission_ref = std::move(present_submission_ref_);
             present_submission_ref_.reset();
-
-            for (auto &semaphore : present_wait_semaphores_) {
-                semaphore->ClearSwapchainWaitInfo();
-            }
-            present_wait_semaphores_.clear();
         }
+        // Cleanup wait semaphores.
+        // NOTE: Functions like QueueWaitIdle put fence in the retired state, still it can have
+        // the list of present semaphores, which are not cleared by QueueWaitIdle when swapchain
+        // maintenance extension is enabled. That's the reason this code is not under kInflight condition.
+        for (auto &semaphore : present_wait_semaphores_) {
+            semaphore->ClearSwapchainWaitInfo();
+        }
+        present_wait_semaphores_.clear();
     }
     if (waiter.valid()) {
         auto result = waiter.wait_until(GetCondWaitTimeout());
