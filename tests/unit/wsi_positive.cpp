@@ -2287,6 +2287,28 @@ TEST_F(PositiveWsi, SignalPresentSemaphoreAfterFenceWait) {
     m_default_queue->Wait();
 }
 
+TEST_F(PositiveWsi, SignalPresentSemaphoreAfterQueueWait) {
+    TEST_DESCRIPTION("Signal present wait semaphore after waiting on device queue. Only works for pre-swapchain-maintenance1");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    vkt::Semaphore present_semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore);
+
+    m_default_queue->Wait();
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(present_semaphore));
+    m_default_queue->Wait();
+}
+
 TEST_F(PositiveWsi, GetDeviceGroupSurfacePresentModes) {
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
