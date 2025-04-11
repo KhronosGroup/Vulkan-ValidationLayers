@@ -109,11 +109,10 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
     pipeline.descriptor_set_->UpdateDescriptorSets();
 
     // Ray query with t_min dynamically set to 0
+    auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
     {
-        auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 0.0f;   // t_min
         uniform_buffer_ptr[1] = 42.0f;  // t_max
-        uniform_buffer.Memory().Unmap();
     }
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -127,10 +126,8 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicTminTmax) {
 
     // Ray query with both t_min and t_max dynamically set to 42
     {
-        auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 42.0f;  // t_min
         uniform_buffer_ptr[1] = 42.0f;  // t_max
-        uniform_buffer.Memory().Unmap();
     }
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
@@ -176,7 +173,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlags) {
     {
         auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 4u | 16u;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsCullBackFacingTrianglesEXT
-        uniform_buffer.Memory().Unmap();
     }
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -230,7 +226,6 @@ TEST_F(PositiveGpuAVRayQuery, ComputeDynamicRayFlagsSkipTriangles) {
     {
         auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
         uniform_buffer_ptr[0] = 4u | 0x100;  // gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsSkipTrianglesEXT
-        uniform_buffer.Memory().Unmap();
     }
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());

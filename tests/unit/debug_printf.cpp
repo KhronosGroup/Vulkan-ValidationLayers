@@ -878,7 +878,6 @@ TEST_F(NegativeDebugPrintf, Pointers) {
     auto in_buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = block_buffer.Address();
     in_buffer_ptr[1] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1161,7 +1160,6 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 0;
-    buffer_in.Memory().Unmap();
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
@@ -1174,7 +1172,6 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
-    buffer.Memory().Unmap();
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -1185,9 +1182,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 1;
-    buffer_in.Memory().Unmap();
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here's a smaller float value 3.14");
     }
@@ -1521,7 +1516,6 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 0;
-    buffer_in.Memory().Unmap();
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
@@ -1534,7 +1528,6 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
-    buffer.Memory().Unmap();
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
@@ -1545,9 +1538,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 1;
-    buffer_in.Memory().Unmap();
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here's a smaller float value 3.14");
     }
@@ -1610,24 +1601,19 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
 
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 0;
-    buffer_in.Memory().Unmap();
     m_errorMonitor->SetDesiredInfo("Here's an unsigned long 0x2000000000000001");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 1;
-    buffer_in.Memory().Unmap();
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 2;
-    buffer_in.Memory().Unmap();
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
     m_default_queue->Submit(m_command_buffer);
@@ -1662,7 +1648,6 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
-        vs_buffer.Memory().Unmap();
     }
     {
         vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.Memory().Map()),
@@ -1670,7 +1655,6 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
-        fs_buffer.Memory().Unmap();
     }
 
     const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
@@ -1759,7 +1743,6 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         for (auto &v : vert_data) {
             v = 0x01030507;
         }
-        vs_buffer.Memory().Unmap();
     }
     {
         vvl::span<uint32_t> frag_data(static_cast<uint32_t *>(fs_buffer.Memory().Map()),
@@ -1767,7 +1750,6 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
         for (auto &v : frag_data) {
             v = 0x02040608;
         }
-        fs_buffer.Memory().Unmap();
     }
 
     const std::array<VkDescriptorSet, 2> desc_sets = {vertex_set.set_, fragment_set.set_};
@@ -2041,7 +2023,6 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     ptr[0] = 0;
     ptr[1] = 1;
     ptr[2] = 2;
-    buffer.Memory().Unmap();
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
@@ -3703,7 +3684,6 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
     indirect_command->x = 1;
     indirect_command->y = 1;
     indirect_command->z = 1;
-    indirect_buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
@@ -3836,7 +3816,6 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
     indirect_command->firstIndex = 1;
     indirect_command->vertexOffset = 1;
     indirect_command->firstInstance = 1;
-    indirect_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -3885,12 +3864,10 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
     indirect_command->firstIndex = 1;
     indirect_command->vertexOffset = 1;
     indirect_command->firstInstance = 1;
-    indirect_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
-    count_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -3941,12 +3918,10 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
     indirect_command->firstIndex = 1;
     indirect_command->vertexOffset = 1;
     indirect_command->firstInstance = 1;
-    indirect_buffer.Memory().Unmap();
 
     vkt::Buffer count_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *count_ptr = static_cast<uint32_t *>(count_buffer.Memory().Map());
     *count_ptr = 1;
-    count_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -4030,7 +4005,6 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
     block_buffer_ptr->x = 2;
     block_buffer_ptr->y = 1;
     block_buffer_ptr->z = 1;
-    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -4126,7 +4100,6 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     block_buffer_ptr->instanceCount = 1;
     block_buffer_ptr->firstVertex = 0;
     block_buffer_ptr->firstInstance = 0;
-    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
     generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
@@ -4260,7 +4233,6 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     indirect_command_ptr->x = 1;
     indirect_command_ptr->y = 1;
     indirect_command_ptr->z = 1;
-    block_buffer.Memory().Unmap();
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -4410,7 +4382,6 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     VkDeviceAddress *buffer_ptr = (VkDeviceAddress *)buffer.Memory().Map();
     buffer_ptr[0] = 3;
-    buffer.Memory().Unmap();
 
     VkDescriptorPoolInlineUniformBlockCreateInfo pool_inline_info = vku::InitStructHelper();
     pool_inline_info.maxInlineUniformBlockBindings = 1;

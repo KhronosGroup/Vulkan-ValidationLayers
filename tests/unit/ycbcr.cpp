@@ -1759,7 +1759,6 @@ TEST_F(NegativeYcbcr, TexelFetchNonArrayPartiallyBound) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorIndexingSet descriptor_set(
         m_device, {

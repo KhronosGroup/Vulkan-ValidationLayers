@@ -131,8 +131,6 @@ TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 35;
-    buffer0.Memory().Unmap();
-
     // VUID-vkCmdDraw-None-09600
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL.");
@@ -163,7 +161,6 @@ TEST_F(NegativeGpuAVImageLayout, DISABLED_Mutable) {
     vkt::Buffer storage_buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *storage_buffer_ptr = (uint32_t *)storage_buffer.Memory().Map();
     storage_buffer_ptr[0] = 1;
-    storage_buffer.Memory().Unmap();
 
     VkDescriptorType desc_types[2] = {
         VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -254,7 +251,6 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1;
-    in_buffer.Memory().Unmap();
 
     vkt::Image bad_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image good_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -340,7 +336,6 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1;
-    in_buffer.Memory().Unmap();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -427,8 +422,6 @@ TEST_F(NegativeGpuAVImageLayout, MultipleCommandBuffersSameDescriptorSet) {
 
     uint32_t *in_buffer_ptr = (uint32_t *)buffer.Memory().Map();
     in_buffer_ptr[0] = 0;
-    buffer.Memory().Unmap();
-
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

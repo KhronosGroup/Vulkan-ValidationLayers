@@ -997,7 +997,6 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     indirect_command->firstIndex = 0u;
     indirect_command->vertexOffset = 0;
     indirect_command->firstInstance = 0u;
-    draw_params_buffer.Memory().Unmap();
 
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);

@@ -583,7 +583,6 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 1;
-    in_buffer.Memory().Unmap();
 
     vkt::Image bad_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image good_image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);

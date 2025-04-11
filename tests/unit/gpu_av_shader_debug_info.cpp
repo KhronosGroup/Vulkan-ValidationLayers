@@ -38,8 +38,6 @@ void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
-
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
@@ -1479,7 +1477,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1530,7 +1527,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -1597,7 +1593,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1665,7 +1660,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1721,7 +1715,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1784,7 +1777,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1849,7 +1841,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -1928,7 +1919,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -2017,7 +2007,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -2113,7 +2102,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
@@ -2205,7 +2193,6 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();

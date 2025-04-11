@@ -61,7 +61,6 @@ TEST_F(NegativeGpuAVRayQuery, NegativeTmin) {
     auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = -2.0f;  // t_min
     uniform_buffer_ptr[1] = 42.0f;  // t_max
-    uniform_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -114,8 +113,6 @@ TEST_F(NegativeGpuAVRayQuery, TMaxLessThenTmin) {
     auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 9.9f;  // t_min
     uniform_buffer_ptr[1] = 9.8f;  // t_max
-    uniform_buffer.Memory().Unmap();
-
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
     vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_.handle(), 0, 1,
@@ -164,7 +161,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsBothSkip) {
 
     auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 0x100 | 0x200;  // SkipTrianglesKHR and SkipAABBsKHR
-    uniform_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -214,7 +210,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayFlagsOpaque) {
 
     auto uniform_buffer_ptr = static_cast<uint32_t *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 0x1 | 0x2;  // OpaqueKHR and NoOpaqueKHR
-    uniform_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -268,7 +263,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNaN) {
     auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 1.0f;  // x
     uniform_buffer_ptr[1] = 0.0f;  // y
-    uniform_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -322,7 +316,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeRayOriginNonFinite) {
     auto uniform_buffer_ptr = static_cast<float *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 0.0f;  // t_min
     uniform_buffer_ptr[1] = 0.0f;  // t_max
-    uniform_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -376,7 +369,6 @@ TEST_F(NegativeGpuAVRayQuery, ComputeUseQueryUninit) {
 
     auto buffer_ptr = static_cast<float *>(buffer.Memory().Map());
     buffer_ptr[0] = -4.0f;  // t_min
-    buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
@@ -430,7 +422,7 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
     vkt::Buffer ssbo(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto buffer_ptr = static_cast<float *>(ssbo.Memory().Map());
     buffer_ptr[0] = -16.0f;
-    ssbo.Memory().Unmap();
+
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
@@ -507,7 +499,7 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninitSelectShaders) {
     vkt::Buffer ssbo(*m_device, 4096, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto buffer_ptr = static_cast<float *>(ssbo.Memory().Map());
     buffer_ptr[0] = -16.0f;
-    ssbo.Memory().Unmap();
+
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
@@ -575,7 +567,6 @@ TEST_F(NegativeGpuAVRayQuery, FragmentUseQueryUninit) {
 
     auto buffer_ptr = static_cast<float *>(buffer.Memory().Map());
     buffer_ptr[0] = -4.0f;  // t_min
-    buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);

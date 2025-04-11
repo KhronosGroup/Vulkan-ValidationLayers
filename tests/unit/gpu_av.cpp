@@ -344,7 +344,6 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    in_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -419,7 +418,6 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     vkt::Buffer storage_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(storage_buffer.Memory().Map());
     data[0] = index_buffer.Address();
-    storage_buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
@@ -543,7 +541,6 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
         ptr[i] = 0.1f;
     }
     ptr[4094] = 42.0f;
-    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -595,7 +592,6 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32Vk13) {
         ptr[i] = 0.1f;
     }
     ptr[4094] = 42.0f;
-    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -656,8 +652,6 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
         }
     }
 
-    copy_src_buffer.Memory().Unmap();
-
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT_S8_UINT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -705,8 +699,6 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
             *ptr_float = 0.1f;
         }
     }
-
-    copy_src_buffer.Memory().Unmap();
 
     vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT_S8_UINT,
                               VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);

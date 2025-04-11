@@ -114,7 +114,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
         m_command_buffer.End();
         uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0.Memory().Unmap();
 
         SCOPED_TRACE("Out of Bounds");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
@@ -122,9 +121,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
         m_default_queue->Wait();
         m_errorMonitor->VerifyFound();
 
-        buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 5;
-        buffer0.Memory().Unmap();
 
         SCOPED_TRACE("uninitialized");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
@@ -225,7 +222,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
     m_command_buffer.End();
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 25;
-    buffer0.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 2 * 3);
 
@@ -327,7 +323,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     m_command_buffer.End();
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 25;
-    buffer0.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->Submit(m_command_buffer);
@@ -454,7 +449,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     m_command_buffer.End();
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 25;
-    buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
@@ -463,9 +457,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 5;
-    buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
@@ -546,7 +538,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
 
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 2;
-    buffer.Memory().Unmap();
 
     // VUID-vkCmdDraw-None-10068
     m_errorMonitor->SetDesiredError(
@@ -628,7 +619,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocateU
 
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
     m_default_queue->Submit(m_command_buffer);
@@ -729,7 +719,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     m_command_buffer.End();
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 25;
-    buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
@@ -737,9 +726,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 5;
-    buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", 3);
@@ -841,8 +828,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     m_command_buffer.End();
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 25;
-    buffer0.Memory().Unmap();
-
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068");
     // On Windows Arm, it re-runs the geometry shader 3 times on same primitive
@@ -852,9 +837,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 
-    buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 5;
-    buffer0.Memory().Unmap();
 
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
@@ -937,11 +920,10 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
+    uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     {
         SCOPED_TRACE("Uninitialized");
-        uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 5;
-        buffer0.Memory().Unmap();
         // Invalid read
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
         m_default_queue->Submit(m_command_buffer);
@@ -951,9 +933,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
 
     {
         SCOPED_TRACE("Out of Bounds");
-        uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0.Memory().Unmap();
         // Invalid read and invalid write
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
         m_default_queue->Submit(m_command_buffer);
@@ -1066,7 +1046,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer0.Memory().Unmap();
 
     // NOTE: object in use checking is entirely disabled for bindless descriptor sets so
     // destroying before submit still needs to be caught by GPU-AV. Once GPU-AV no
@@ -1188,7 +1167,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer0.Memory().Unmap();
 
     // NOTE: object in use checking is entirely disabled for bindless descriptor sets so
     // destroying before submit still needs to be caught by GPU-AV. Once GPU-AV no
@@ -1404,7 +1382,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *in_buffer_ptr = (uint32_t *)in_buffer.Memory().Map();
     in_buffer_ptr[0] = 7;  // point to index that no longer exsist because the variable count shrunk it
-    in_buffer.Memory().Unmap();
 
     vkt::Buffer storage_buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
@@ -1452,7 +1429,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSL) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 5;  // go past textures[4]
-    buffer.Memory().Unmap();
 
     OneOffDescriptorIndexingSet descriptor_set(
         m_device,
@@ -1573,7 +1549,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 7;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -1755,7 +1730,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     buffer_ptr[0] = 3;
     buffer_ptr[1] = 0;  // valid
     buffer_ptr[2] = 5;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -1913,7 +1887,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     {
         uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0.Memory().Unmap();
     }
 
     // 2nd Command Buffer
@@ -1991,7 +1964,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBInMultipleCmdBuffers) {
     {
         uint32_t *buffer_ptr = (uint32_t *)buffer0_cb_2.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0_cb_2.Memory().Unmap();
     }
 
     m_errorMonitor->SetDesiredError("vkCmdDraw(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
@@ -2103,7 +2075,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
     {
         uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0.Memory().Unmap();
     }
 
     // Make a uniform buffer to be passed to the shader that contains the invalid array index.
@@ -2175,7 +2146,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleOOBTypesInOneCmdBuffer) {
     {
         uint32_t *buffer_ptr = (uint32_t *)buffer0_cb_2.Memory().Map();
         buffer_ptr[0] = 25;
-        buffer0_cb_2.Memory().Unmap();
     }
 
     m_errorMonitor->SetDesiredError("vkCmdDraw(): (set = 0, binding = 1) Index of 25 used to index descriptor array of length 6",
@@ -2198,7 +2168,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BindingOOB) {
     // send index to select in image array
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 1;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(
         m_device, {
@@ -2262,7 +2231,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSetFirst) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -2338,7 +2306,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSetLast) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -2417,7 +2384,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBindF
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -2511,7 +2477,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBindL
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // will be valid for both shaders
-    input_buffer.Memory().Unmap();
 
     char const *cs_source_1 = R"glsl(
         #version 450
@@ -2603,7 +2568,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorSet ds_good(m_device, {
                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -2686,7 +2650,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorIndexingSet ds_good(
         m_device,
@@ -2770,7 +2733,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     vkt::Buffer input_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *input_buffer_ptr = (uint32_t *)input_buffer.Memory().Map();
     input_buffer_ptr[0] = 1;  // storage_buffers[1]
-    input_buffer.Memory().Unmap();
 
     OneOffDescriptorSet ds_good(m_device, {
                                               {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -3209,7 +3171,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ConstantArrayOOBBuffer) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
 
@@ -3681,7 +3642,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetchConstantArrayOOB) {
 
     uint32_t *data = (uint32_t *)storage_buffer.Memory().Map();
     *data = 8;
-    storage_buffer.Memory().Unmap();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
@@ -4028,8 +3988,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleCommandBuffersSameDescriptorSet)
     buffer_ptr[0] = 0;
     m_default_queue->Submit(cb_0);
     m_default_queue->Wait();
-
-    buffer.Memory().Unmap();
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) {
@@ -4048,7 +4006,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) 
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 0;
     buffer_ptr[1] = 1;
-    buffer.Memory().Unmap();
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -4211,7 +4168,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
 
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 9;
-    buffer.Memory().Unmap();
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout.handle();
@@ -4295,7 +4251,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MiddleBindingOOB) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 3;
-    buffer.Memory().Unmap();
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {5, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},

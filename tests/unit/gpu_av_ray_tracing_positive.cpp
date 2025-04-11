@@ -280,7 +280,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicTminTmax) {
     auto uniform_buffer_ptr = static_cast<float*>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 0.1f;   // t_min
     uniform_buffer_ptr[1] = 42.0f;  // t_max
-    uniform_buffer.Memory().Unmap();
 
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
@@ -387,7 +386,6 @@ TEST_F(PositiveGpuAVRayTracing, BasicTraceRaysDynamicRayFlags) {
 
     auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 16;  // gl_RayFlagsCullBackFacingTrianglesEXT
-    uniform_buffer.Memory().Unmap();
 
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
@@ -499,7 +497,6 @@ TEST_F(PositiveGpuAVRayTracing, DynamicRayFlagsSkipTriangle) {
 
     auto uniform_buffer_ptr = static_cast<uint32_t*>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = 0x100;  // gl_RayFlagsSkipTrianglesEXT, or RayFlagsSkipTrianglesKHRMask in SPIR-V
-    uniform_buffer.Memory().Unmap();
 
     pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 

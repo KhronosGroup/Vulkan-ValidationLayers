@@ -192,7 +192,6 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetchIndependentSets) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
-    offset_buffer.Memory().Unmap();
 
     static const char vert_shader[] = R"glsl(
         #version 450
