@@ -209,7 +209,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             ''')
 
         #
-        # Build the struct with all the requirments for the spirv capabilities
+        # Build the struct with all the requirements for the spirv capabilities
         out.append('const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites() {\n')
         out.append('// clang-format off\n')
         out.append('    static const std::unordered_multimap<uint32_t, RequiredSpirvInfo> spirv_capabilities = {')
@@ -231,7 +231,7 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
         out.append('\n')
 
         #
-        # Build the struct with all the requirments for the spirv extensions
+        # Build the struct with all the requirements for the spirv extensions
         out.append('const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExtensions() {\n')
         out.append('// clang-format off\n')
         out.append('    static const std::unordered_multimap<std::string_view, RequiredSpirvInfo> spirv_extensions = {')
@@ -324,7 +324,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
 
         out.append('''
 // clang-format off
-static inline std::string SpvExtensionRequirments(std::string_view extension) {
+static inline std::string SpvExtensionRequirements(std::string_view extension) {
     static const vvl::unordered_map<std::string_view, vvl::Requirements> table {
 ''')
         for spirv in [x for x in self.vk.spirv if x.extension]:
@@ -488,7 +488,7 @@ static inline std::string SpvExtensionRequirments(std::string_view extension) {
                 if (has_support == false) {
                     const char *vuid = pipeline ? "VUID-VkShaderModuleCreateInfo-pCode-08742" : "VUID-VkShaderCreateInfoEXT-pCode-08742";
                     skip |= LogError(vuid, module_state.handle(), loc,
-                        "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirments(extension_name).c_str());
+                        "SPIR-V Extension %s was declared, but one of the following requirements is required (%s).", extension_name.c_str(), SpvExtensionRequirements(extension_name).c_str());
                 }
             } //spv::OpExtension
             return skip;
