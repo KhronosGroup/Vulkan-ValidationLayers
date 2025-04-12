@@ -958,8 +958,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
 
         m_command_buffer.End();
 
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     };
 
     const auto start_and_end_renderpass = [&](vkt::CommandBuffer& command_buffer) {
@@ -1065,8 +1064,7 @@ TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassClear) {
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     m_errorMonitor->VerifyFound();
 
@@ -1158,8 +1156,7 @@ TEST_F(VkArmBestPracticesLayerTest, InefficientRenderPassClear) {
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     m_errorMonitor->VerifyFound();
 
@@ -1311,8 +1308,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     for (auto fb : framebuffers) {
         vk::DestroyFramebuffer(device(), fb, nullptr);
@@ -1423,9 +1419,7 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

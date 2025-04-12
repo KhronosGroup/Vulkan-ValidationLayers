@@ -60,8 +60,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, ImageLoadStoreTexelFetch) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, AtomicImageLoadStore) {
@@ -109,8 +108,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, AtomicImageLoadStore) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, TexelFetchArray) {
@@ -168,8 +166,7 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, TexelFetchArray) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, Robustness) {
@@ -215,6 +212,5 @@ TEST_F(PositiveGpuAVDescriptorClassTexelBuffer, Robustness) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

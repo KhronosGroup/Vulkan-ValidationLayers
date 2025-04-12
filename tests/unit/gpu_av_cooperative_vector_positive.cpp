@@ -75,6 +75,5 @@ TEST_F(PositiveGpuAVCooperativeVector, CooperativeVector) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

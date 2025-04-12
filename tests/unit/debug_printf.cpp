@@ -62,8 +62,7 @@ void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *messa
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo(message);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -897,8 +896,7 @@ TEST_F(NegativeDebugPrintf, Pointers) {
     m_errorMonitor->SetDesiredInfo("address2 = 0x");
 #endif
     m_errorMonitor->SetDesiredInfo("address3 = 0x");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -927,8 +925,7 @@ TEST_F(NegativeDebugPrintf, Empty) {
 
     m_errorMonitor->SetDesiredInfo("First printf with a % and no value");
     m_errorMonitor->SetDesiredInfo("Second printf with a value -135");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -976,8 +973,7 @@ TEST_F(NegativeDebugPrintf, MultipleFunctions) {
     m_errorMonitor->SetDesiredInfo("fn2 x [1]");
     m_errorMonitor->SetDesiredInfo("fn2 !x [2]");
     m_errorMonitor->SetDesiredInfo("END");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1015,8 +1011,7 @@ TEST_F(NegativeDebugPrintf, Fragment) {
 
     m_errorMonitor->SetDesiredInfo("gl_FragCoord.xy 10.50, 10.50");
     m_errorMonitor->SetDesiredInfo("gl_FragCoord.xy 10.50, 11.50");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1094,8 +1089,7 @@ TEST_F(NegativeDebugPrintf, HLSL) {
 
     m_errorMonitor->SetDesiredInfo("launchIndex 2, 0");
     m_errorMonitor->SetDesiredInfo("launchIndex 3, 0");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1163,8 +1157,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1186,8 +1179,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here's a smaller float value 3.14");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1254,8 +1246,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShadersNV) {
 
     m_errorMonitor->SetDesiredInfo("hello from task shader");
     m_errorMonitor->SetDesiredInfo("hello from mesh shader");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1299,8 +1290,7 @@ TEST_F(NegativeDebugPrintf, MeshShaders) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_DrawID = 0");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1342,8 +1332,7 @@ TEST_F(NegativeDebugPrintf, TaskShaders) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_NumWorkGroups = 1, 1, 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1451,8 +1440,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
             m_errorMonitor->SetDesiredInfo(messages[i + 1]);
             i++;
         }
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1519,8 +1507,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -1542,8 +1529,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here's a smaller float value 3.14");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1602,22 +1588,19 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     VkDeviceAddress *data = (VkDeviceAddress *)buffer_in.Memory().Map();
     data[0] = 0;
     m_errorMonitor->SetDesiredInfo("Here's an unsigned long 0x2000000000000001");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     data[0] = 1;
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     data[0] = 2;
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1702,8 +1685,7 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     m_errorMonitor->SetDesiredInfo("Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredInfo("Fragment shader 0x2040608");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1835,8 +1817,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     m_errorMonitor->SetDesiredInfo("Vertex shader 0, 0x1030507");
     m_errorMonitor->SetDesiredInfo("Fragment shader 0x2040608");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1875,8 +1856,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
     m_errorMonitor->SetDesiredInfo("vertex 0 with value 3.141500");
     m_errorMonitor->SetDesiredInfo("vertex 1 with value 3.141500");
     m_errorMonitor->SetDesiredInfo("vertex 2 with value 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1926,8 +1906,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
     m_errorMonitor->SetDesiredInfo("Here's a float in sn 3.14e+00");
     m_errorMonitor->SetDesiredInfo("Here's a float in shortest 3.1415");
     m_errorMonitor->SetDesiredInfo("Here's a float in hex 0x1.921cac000p+1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1963,8 +1942,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsInt64) {
         kInformationBit, "Here's a vector of ul 2000000000000001, 2000000000000001, 2000000000000001, 2000000000000001");
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Unsigned long as decimal 2305843009213693953 and as hex 0x2000000000000001");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2014,8 +1992,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -2035,8 +2012,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     for (auto i = 0; i < 3; i++) {
         m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
     }
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2107,8 +2083,7 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
 
     m_errorMonitor->SetDesiredInfo("hello from task shader");
     m_errorMonitor->SetDesiredInfo("hello from mesh shader");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2159,8 +2134,7 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
         m_errorMonitor->SetDesiredInfo("Vertex value is 4");
     }
     m_errorMonitor->SetDesiredInfo("Fragment value is 8");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2272,8 +2246,7 @@ TEST_F(NegativeDebugPrintf, VertexFragmentMultiEntrypoint) {
         m_errorMonitor->SetDesiredInfo("Vertex value is 4");
     }
     m_errorMonitor->SetDesiredInfo("Fragment value is 8");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2313,8 +2286,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2340,8 +2312,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2391,8 +2362,7 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeDebugPrintf, LocalSizeId) {
@@ -2473,8 +2443,7 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("TEST");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2519,8 +2488,7 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2565,8 +2533,8 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2588,8 +2556,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2634,8 +2601,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2657,8 +2623,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2707,8 +2672,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2734,8 +2698,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2782,8 +2745,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2805,8 +2767,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2854,8 +2815,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2869,8 +2829,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2917,8 +2876,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     // Reduce by one (so there is room now) and print something
@@ -2932,8 +2890,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -2983,8 +2940,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     for (uint32_t i = 0; i < 2; ++i) {
@@ -3017,8 +2973,7 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
 
     m_errorMonitor->SetDesiredWarning(
         "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3049,8 +3004,7 @@ TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
 
     m_errorMonitor->SetDesiredWarning(
         "Debug Printf message was truncated due to a buffer size (1024) being too small for the messages");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3473,8 +3427,7 @@ TEST_F(NegativeDebugPrintf, ValidationAbort) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeDebugPrintf, DualPipelines) {
@@ -3516,8 +3469,7 @@ TEST_F(NegativeDebugPrintf, DualPipelines) {
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3695,8 +3647,7 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3724,8 +3675,7 @@ TEST_F(NegativeDebugPrintf, DispatchBase) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3778,8 +3728,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexed) {
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 1");
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 2");
     m_errorMonitor->SetDesiredInfo("Hit Fragment");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3826,8 +3775,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Hit Fragment");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3878,8 +3826,7 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Hit Fragment");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3933,8 +3880,7 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Hit Fragment");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4024,8 +3970,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
 
     m_errorMonitor->SetDesiredInfo("gl_NumWorkGroups 2, 1, 1");
     m_errorMonitor->SetDesiredInfo("gl_NumWorkGroups 2, 1, 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4120,8 +4065,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 0");
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 1");
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 2");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4251,8 +4195,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("IndirectExecutionSet Pipeline 2");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4306,8 +4249,7 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
 
     m_errorMonitor->SetDesiredInfo("float x ==");
     m_errorMonitor->SetDesiredInfo("float y ==");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4357,8 +4299,7 @@ TEST_F(NegativeDebugPrintf, SpecConstant) {
     m_errorMonitor->SetDesiredInfo("value is = 22");
     m_errorMonitor->SetDesiredInfo("value is = 44");
     m_errorMonitor->SetDesiredInfo("value is = 88");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4424,8 +4365,7 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("binding [0] = 3 | [1] = 5 | [2] = 3");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4473,8 +4413,7 @@ TEST_F(NegativeDebugPrintf, StorageBufferLength) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("c length = 8");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Will only have a length of 1 vec4
@@ -4492,8 +4431,7 @@ TEST_F(NegativeDebugPrintf, StorageBufferLength) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("c length = 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4547,8 +4485,7 @@ TEST_F(NegativeDebugPrintf, StorageBufferLengthUpdateAfterBind) {
     descriptor_set.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredInfo("c length = 8");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Will only have a length of 1 vec4
@@ -4558,7 +4495,6 @@ TEST_F(NegativeDebugPrintf, StorageBufferLengthUpdateAfterBind) {
     descriptor_set.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredInfo("c length = 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

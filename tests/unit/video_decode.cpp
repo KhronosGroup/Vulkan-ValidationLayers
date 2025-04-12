@@ -1636,8 +1636,7 @@ TEST_F(NegativeVideoDecode, DecodeInlineQueryUnavailable) {
     m_errorMonitor->VerifyFound();
     m_device->Wait();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Will succeed again after reset
     context.Queue().Submit(cb);

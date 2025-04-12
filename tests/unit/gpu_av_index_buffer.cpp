@@ -49,8 +49,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB) {
     vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -100,8 +99,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndexBufferOOB2) {
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -162,8 +160,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -225,8 +222,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex16) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -290,8 +286,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex8) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -350,8 +345,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -435,8 +429,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawInSecondaryCmdBufferBadVertexIndex32) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -490,8 +483,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -567,8 +559,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16_2) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -624,8 +615,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex8) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -713,8 +703,7 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex16DebugLabel) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -788,8 +777,7 @@ TEST_F(NegativeGpuAVIndexBuffer, IndirectDrawBadVertexIndex32DebugLabel) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -877,8 +865,7 @@ TEST_F(NegativeGpuAVIndexBuffer, InstanceIndex) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -978,8 +965,7 @@ TEST_F(NegativeGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1103,8 +1089,7 @@ TEST_F(NegativeGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1198,8 +1183,7 @@ TEST_F(NegativeGpuAVIndexBuffer, CmdSetVertexInputEXT) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1298,8 +1282,7 @@ TEST_F(NegativeGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1366,7 +1349,6 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32MultiDraw) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

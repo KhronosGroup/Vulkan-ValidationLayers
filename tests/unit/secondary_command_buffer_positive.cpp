@@ -70,8 +70,7 @@ TEST_F(PositiveSecondaryCommandBuffer, Barrier) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, ClearAttachmentsCalled) {
@@ -356,8 +355,7 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &scb);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, Nested) {
@@ -471,6 +469,5 @@ TEST_F(PositiveSecondaryCommandBuffer, NonNestedWithRenderPassContinue) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

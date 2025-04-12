@@ -172,8 +172,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
@@ -234,8 +233,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
@@ -268,6 +266,5 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

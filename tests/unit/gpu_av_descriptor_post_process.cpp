@@ -71,8 +71,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, UpdateAfterBindImageViewTypeMismatch)
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -133,8 +132,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnly) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -198,8 +196,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyShaderObject) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -255,8 +252,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyGPL) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -334,8 +330,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, PostProcesingOnlyPipelineInline) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -394,8 +389,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatch) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -484,8 +478,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MixingProtectedResources) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-02707");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -577,8 +570,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, InvalidAtomicStorageOperation) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -685,8 +677,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, UnnormalizedCoordinatesInBoundsAccess
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -871,8 +862,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_UnnormalizedCoordinatesSepar
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08609");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08610");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -950,8 +940,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_UnnormalizedCoordinatesSepar
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08609");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08610");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1017,8 +1006,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipelinePar
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samples-08725");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1097,8 +1085,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, NonMultisampleMismatchWithInlineShade
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samples-08725");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1166,8 +1153,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, NonMultisampleMismatchWithShaderObjec
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samples-08725");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1229,8 +1215,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageMultisample) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samples-08726");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1320,8 +1305,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-samples-08726");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1390,14 +1374,12 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleCommandBuffersSameDescriptorS
 
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler);
     descriptor_set.UpdateDescriptorSets();
-    m_default_queue->Submit(cb_0);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_0);
 
     descriptor_set.WriteDescriptorImageInfo(1, bad_view, sampler);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
     m_errorMonitor->VerifyFound();
 
     // Make sure both can still run as normal
@@ -1477,8 +1459,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-07753");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1547,8 +1528,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-format-07753");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1682,8 +1662,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1745,8 +1724,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752", 2);  // one for each descriptor
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1806,8 +1784,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, SameDescriptorAcrossSets) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1871,8 +1848,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_SameDescriptorAcrossStagesVe
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1935,8 +1911,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, SameDescriptorAcrossStagesFragment) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2096,8 +2071,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_VariableIdClash) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2245,8 +2219,7 @@ OpFunctionEnd
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2325,8 +2298,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, LotsOfBindings) {
 
     // VUID-vkCmdDraw-viewType-07752
     m_errorMonitor->SetDesiredError("Set 0, Binding 64, Index 15");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2400,8 +2372,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DISABLED_MultipleDrawsMixPipelines) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2505,8 +2476,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, MultipleDrawsMixDescriptorSets) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewType-07752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2638,18 +2608,15 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     cb_5.End();
 
     m_errorMonitor->SetDesiredError("render_pass_label_cb_1");
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("render_pass_label_cb_2");
-    m_default_queue->Submit(cb_2);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_2);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("render_pass_label_cb_3");
-    m_default_queue->Submit(cb_3);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_3);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("label_start_cb_4::render_pass_label_cb_5");

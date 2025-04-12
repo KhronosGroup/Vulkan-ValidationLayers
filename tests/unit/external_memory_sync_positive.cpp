@@ -251,8 +251,7 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
                            &mem_barrier, 0, nullptr, 0, nullptr);
     vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveExternalMemorySync, BufferDedicatedAllocation) {

@@ -103,8 +103,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
@@ -292,8 +291,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisample) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) {
@@ -373,8 +371,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPartiallyBound) {
@@ -461,8 +458,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
                               &descriptor_set0.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
@@ -536,8 +532,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     descriptor_set.WriteDescriptorImageInfo(0, ms_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE);
     descriptor_set.UpdateDescriptorSets();
@@ -548,8 +543,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDispatches) {
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms.Handle());
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
@@ -620,8 +614,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, NonMultisampleMismatchWithPipeline) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId) {
@@ -737,8 +730,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, SharedDescriptorDifferentOpVariableId
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
@@ -863,8 +855,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, ZeroBindingDescriptor) {
@@ -953,8 +944,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, ZeroBindingDescriptor) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
@@ -1014,8 +1004,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, ImageViewArrayAliasBinding) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // TODO - Need way in pipeline to distinguish which stage it came from
@@ -1177,6 +1166,5 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DISABLED_VariableIdClash) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

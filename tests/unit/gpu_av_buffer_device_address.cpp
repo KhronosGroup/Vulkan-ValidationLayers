@@ -70,8 +70,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerPushConstant) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
@@ -133,8 +132,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerPushConstant) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
@@ -202,8 +200,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadBeforePointerDescriptor) {
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the other 3 values
@@ -269,8 +266,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ReadAfterPointerDescriptor) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure we wrote the first 4 values
@@ -334,8 +330,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -422,8 +417,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, Maintenance5) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds", 6);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -487,8 +481,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ArrayOfStruct) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -546,8 +539,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer_ptr[1] = 5;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -630,8 +622,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd140NumerousRanges) {
     uniform_buffer_ptr[1] = 5;  // Will provoke a 4 bytes write past buffer end
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -696,8 +687,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430) {
     uniform_buffer_ptr[1] = 5;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote 42
@@ -811,8 +801,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     uniform_buffer_ptr[0] = storage_buffer_addr;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote to float
@@ -905,8 +894,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -965,8 +953,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     uniform_buffer_ptr[0] = storage_buffer_addr;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote to float
@@ -1029,8 +1016,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
     uniform_buffer_ptr[0] = storage_buffer_addr - 16;
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 4 bytes written");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1101,8 +1087,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     }
 
     m_errorMonitor->SetDesiredError("Out of bounds access: 12 bytes written");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Make sure shader wrote values to all nodes but the last
@@ -1172,8 +1157,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad) {
 
     // One for each of the 2 access
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1232,8 +1216,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
     m_errorMonitor->SetDesiredError(
         "This read corresponds to a full OpTypeStruct load. While not all members of the struct might be accessed, it is up to the "
         "source language or tooling to detect that and reflect it in the SPIR-V");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1339,8 +1322,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadSlang) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1400,8 +1382,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1460,8 +1441,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1507,8 +1487,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1556,8 +1535,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-PhysicalStorageBuffer64-06315");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1627,8 +1605,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, NonStructPointer) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1733,8 +1710,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MultipleAccessChains) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1816,8 +1792,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, OpCopyObject) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1869,8 +1844,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1934,8 +1908,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1983,8 +1956,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2031,8 +2003,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2080,8 +2051,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchange) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2131,8 +2101,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2181,8 +2150,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2233,8 +2201,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2322,8 +2289,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2427,8 +2393,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2559,8 +2524,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2614,8 +2578,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2670,8 +2633,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
 
     // Because 'a' is null after detect 'b' is bad and causes a 2nd OOB access
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2727,7 +2689,6 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
 
     // Because 'a' is null after detect 'b' is bad and causes a 2nd OOB access
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

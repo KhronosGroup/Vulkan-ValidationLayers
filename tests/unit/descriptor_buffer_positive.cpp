@@ -213,8 +213,7 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 8);
@@ -325,8 +324,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 8);
@@ -433,8 +431,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 8);

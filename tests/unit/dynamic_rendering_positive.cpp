@@ -579,8 +579,7 @@ TEST_F(PositiveDynamicRendering, SuspendPrimaryResumeInSecondary) {
     vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
@@ -1294,6 +1293,5 @@ TEST_F(PositiveDynamicRendering, ContentsSecondaryCommandBuffersBit) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

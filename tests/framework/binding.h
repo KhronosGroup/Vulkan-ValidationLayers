@@ -547,6 +547,12 @@ class Queue : public internal::Handle<VkQueue> {
     // vkQueueWaitIdle()
     VkResult Wait();
 
+    // Common combo for most GPU-AV test
+    void SubmitAndWait(const CommandBuffer &cmd) {
+        Submit(cmd);
+        Wait();
+    }
+
     const uint32_t family_index;
 };
 

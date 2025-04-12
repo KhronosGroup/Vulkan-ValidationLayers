@@ -1124,8 +1124,7 @@ TEST_F(NegativeQuery, PreciseBit) {
         vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, query_pool_create_info.queryCount);
         m_command_buffer.End();
 
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00800");
 
@@ -2368,8 +2367,7 @@ TEST_F(NegativeQuery, Stride) {
     vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     char data_space;
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
@@ -2487,8 +2485,7 @@ TEST_F(NegativeQuery, NoInitReset) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-00807");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2505,8 +2502,7 @@ TEST_F(NegativeQuery, CopyUnavailableQueries) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-08752");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

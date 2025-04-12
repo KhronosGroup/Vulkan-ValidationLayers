@@ -287,8 +287,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copy_region);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
@@ -400,8 +399,7 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveShaderObject, ComputeShader) {
@@ -441,8 +439,7 @@ TEST_F(PositiveShaderObject, ComputeShader) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
@@ -515,8 +512,7 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     vk::CmdEndRenderingKHR(m_command_buffer.handle());
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveShaderObject, FailCreateShaders) {

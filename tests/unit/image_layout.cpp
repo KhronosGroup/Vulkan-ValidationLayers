@@ -240,8 +240,7 @@ TEST_F(NegativeImageLayout, Compute11) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -304,8 +303,7 @@ TEST_F(NegativeImageLayout, MultipleCommandDispatches) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -365,8 +363,7 @@ TEST_F(NegativeImageLayout, DISABLED_Mutable) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -446,8 +443,7 @@ TEST_F(NegativeImageLayout, PushDescriptor) {
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -724,8 +720,7 @@ TEST_F(NegativeImageLayout, ArrayLayers) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Get layer with undefined layout
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
@@ -750,8 +745,7 @@ TEST_F(NegativeImageLayout, ArrayLayers) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -776,8 +770,7 @@ TEST_F(NegativeImageLayout, MultiArrayLayers) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Bind view to both layers
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
@@ -810,8 +803,7 @@ TEST_F(NegativeImageLayout, MultiArrayLayers) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -869,8 +861,7 @@ TEST_F(NegativeImageLayout, DescriptorArrayStaticIndex) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

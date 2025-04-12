@@ -1958,8 +1958,7 @@ TEST_F(VkBestPracticesLayerTest, GetQueryPoolResultsWithoutBegin) {
     vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     uint32_t data = 0u;
     m_errorMonitor->SetDesiredWarning("BestPractices-QueryPool-Unavailable");
@@ -2187,7 +2186,7 @@ TEST_F(VkBestPracticesLayerTest, SetSignaledEvent2) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
     barrier.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkDependencyInfo dep_info = DependencyInfo(barrier);
-    
+
     m_command_buffer.Begin();
     vk::CmdSetEvent2(m_command_buffer.handle(), event, &dep_info);
     m_errorMonitor->SetDesiredWarning("BestPractices-Event-SignalSignaledEvent");

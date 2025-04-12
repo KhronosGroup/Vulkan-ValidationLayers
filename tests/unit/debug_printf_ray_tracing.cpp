@@ -913,8 +913,7 @@ TEST_F(NegativeDebugPrintfRayTracing, Raygen) {
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
     m_command_buffer.End();
     m_errorMonitor->SetDesiredInfo("In Raygen");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -956,8 +955,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -1085,8 +1083,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
             m_errorMonitor->SetDesiredInfo(msg.c_str());
         }
 
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         m_errorMonitor->VerifyFound();
     }
@@ -1140,8 +1137,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -1174,8 +1170,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
         m_errorMonitor->SetDesiredInfo("In Raygen");
         m_errorMonitor->SetDesiredInfo("In Miss", 3);
         m_errorMonitor->SetDesiredInfo("In Closest Hit", 2);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
     m_errorMonitor->VerifyFound();
 
@@ -1207,8 +1202,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -1253,8 +1247,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
         m_errorMonitor->SetDesiredInfo("In Miss 2", 2);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 1", 2);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 2", 3);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
     m_errorMonitor->VerifyFound();
 
@@ -1292,8 +1285,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -1337,8 +1329,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
         m_errorMonitor->SetDesiredInfo("In Miss 2", 2);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 1", 2);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 2", 3);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1376,8 +1367,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
     m_command_buffer.Begin();
     vk::CmdFillBuffer(m_command_buffer.handle(), debug_buffer.handle(), 0, debug_buffer.CreateInfo().size, 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
@@ -1426,8 +1416,7 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader2CmdTrac
         m_errorMonitor->SetDesiredInfo("In Miss 2", 1 * ray_gen_1_rays_count + 1);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 1", 1 * ray_gen_1_rays_count + 1);
         m_errorMonitor->SetDesiredInfo("In Closest Hit 2", 1 * ray_gen_1_rays_count + 2);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
     m_errorMonitor->VerifyFound();
 

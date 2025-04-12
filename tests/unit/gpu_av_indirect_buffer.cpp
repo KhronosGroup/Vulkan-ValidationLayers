@@ -74,8 +74,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     if (features13.dynamicRendering) {
@@ -89,8 +88,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
 
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 
@@ -129,8 +127,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCountDeviceLimit) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -235,8 +232,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                 sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     *count_ptr = 1;
@@ -253,8 +249,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                 sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer indexed_draw_buffer(*m_device, sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -281,8 +276,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     *count_ptr = 1;
@@ -300,8 +294,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
     if (mesh_shader_enabled) {
         char const *mesh_shader_source = R"glsl(
@@ -341,8 +334,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredWarningRegex(
@@ -359,8 +351,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DrawCount) {
                                              sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -431,8 +422,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         if (mesh_shader_props.maxMeshWorkGroupCount[0] + 1 >= mesh_shader_props.maxMeshWorkGroupTotalCount) {
             m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
         }
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[8] = 1;
     }
@@ -444,8 +434,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         if (mesh_shader_props.maxMeshWorkGroupCount[1] + 1 >= mesh_shader_props.maxMeshWorkGroupTotalCount) {
             m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
         }
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[5] = 1;
     }
@@ -457,8 +446,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
         if (mesh_shader_props.maxMeshWorkGroupCount[2] + 1 >= mesh_shader_props.maxMeshWorkGroupTotalCount) {
             m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
         }
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[2] = 1;
     }
@@ -472,8 +460,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, Mesh) {
             draw_ptr[0] = (mesh_shader_props.maxMeshWorkGroupTotalCount + 2) / 2;
 
             m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07329");
-            m_default_queue->Submit(m_command_buffer);
-            m_default_queue->Wait();
+            m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
 
             draw_ptr[2] = 1;
@@ -556,8 +543,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     if (mesh_shader_props.maxTaskWorkGroupCount[0] < std::numeric_limits<uint32_t>::max()) {
         draw_ptr[4] = mesh_shader_props.maxTaskWorkGroupCount[0] + 1;
         m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07322");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[4] = 1;
     }
@@ -566,8 +552,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     if (mesh_shader_props.maxTaskWorkGroupCount[1] < std::numeric_limits<uint32_t>::max()) {
         draw_ptr[1] = mesh_shader_props.maxTaskWorkGroupCount[1] + 1;
         m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07323");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[1] = 1;
     }
@@ -576,8 +561,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
     if (mesh_shader_props.maxTaskWorkGroupCount[2] < std::numeric_limits<uint32_t>::max()) {
         draw_ptr[10] = mesh_shader_props.maxTaskWorkGroupCount[2] + 1;
         m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07324");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
         draw_ptr[10] = 1;
     }
@@ -590,8 +574,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DISABLED_MeshTask) {
             draw_ptr[0] = (mesh_shader_props.maxTaskWorkGroupTotalCount + 2) / 2;
 
             m_errorMonitor->SetDesiredError("VUID-VkDrawMeshTasksIndirectCommandEXT-TaskEXT-07325");
-            m_default_queue->Submit(m_command_buffer);
-            m_default_queue->Wait();
+            m_default_queue->SubmitAndWait(m_command_buffer);
             m_errorMonitor->VerifyFound();
 
             draw_ptr[2] = 1;
@@ -638,8 +621,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstance) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -679,8 +661,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed) {
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -754,8 +735,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Check again in a 2nd submitted command buffer
     m_command_buffer.Reset();
@@ -771,8 +751,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSize) {
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -848,8 +827,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 4 * sizeof(VkDispatchIndirectCommand));
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Check again in a 2nd submitted command buffer
     m_command_buffer.Reset();
@@ -865,8 +843,7 @@ TEST_F(NegativeGpuAVIndirectBuffer, DispatchWorkgroupSizeShaderObjects) {
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

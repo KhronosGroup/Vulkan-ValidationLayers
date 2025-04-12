@@ -108,8 +108,7 @@ void NegativeGpuAVDebugPrintf::BasicComputeTest() {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -224,8 +223,7 @@ TEST_F(NegativeGpuAVDebugPrintf, Graphics) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
     m_errorMonitor->SetDesiredInfo("b.length == 3", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -271,8 +269,7 @@ TEST_F(NegativeGpuAVDebugPrintf, GPL) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
     m_errorMonitor->SetDesiredInfo("b.length == 3", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -318,8 +315,7 @@ TEST_F(NegativeGpuAVDebugPrintf, ShaderObject) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08613");
     m_errorMonitor->SetDesiredInfo("b.length == 3");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -374,7 +370,6 @@ TEST_F(NegativeGpuAVDebugPrintf, DynamicRendering) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
     m_errorMonitor->SetDesiredInfo("b.length == 3", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

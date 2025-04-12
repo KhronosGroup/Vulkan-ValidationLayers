@@ -123,9 +123,7 @@ TEST_F(NegativeGpuAVRayTracing, CmdTraceRaysIndirect) {
                                 &trace_rays_sbt.callable_sbt, trace_ray_big_depth.Address());
 
     m_command_buffer.End();
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

@@ -144,8 +144,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &image_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Get memory size of tiled image
     VkImageSubresource2 subresource = vku::InitStructHelper();
@@ -289,8 +288,7 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &image_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Get memory size of tiled image
     VkImageSubresource2 subresource = vku::InitStructHelper();

@@ -192,8 +192,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     m_default_queue->Present(m_swapchain, current_buffer, image_acquired);
     m_default_queue->Wait();
@@ -228,8 +227,7 @@ TEST_F(PositiveImageLayout, Subresource) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveImageLayout, DescriptorSubresource) {
@@ -309,8 +307,7 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
             cmd_buf.End();
-            m_default_queue->Submit(cmd_buf);
-            m_default_queue->Wait();
+            m_default_queue->SubmitAndWait(cmd_buf);
             cmd_buf.Begin();
         }
 
@@ -325,8 +322,7 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         cmd_buf.End();
 
         // Submit cmd buffer
-        m_default_queue->Submit(cmd_buf);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(cmd_buf);
     }
 }
 
@@ -472,8 +468,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
             cmd_buf.End();
-            m_default_queue->Submit(cmd_buf);
-            m_default_queue->Wait();
+            m_default_queue->SubmitAndWait(cmd_buf);
             cmd_buf.Begin();
         }
 
@@ -491,8 +486,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
         cmd_buf.End();
 
         // Submit cmd buffer
-        m_default_queue->Submit(cmd_buf);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(cmd_buf);
     }
 }
 
@@ -517,8 +511,7 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
 
@@ -541,8 +534,7 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveImageLayout, DescriptorArray) {
@@ -608,6 +600,5 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
