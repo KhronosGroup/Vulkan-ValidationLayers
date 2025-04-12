@@ -117,16 +117,14 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBBuffer) {
 
         SCOPED_TRACE("Out of Bounds");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
 
         buffer_ptr[0] = 5;
 
         SCOPED_TRACE("uninitialized");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -225,8 +223,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVertex) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 2 * 3);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -325,8 +322,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBFragment) {
     buffer_ptr[0] = 25;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -453,8 +449,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     buffer_ptr[0] = 5;
@@ -462,8 +457,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBRuntime) {
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -545,8 +539,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocate)
         "descriptorCount (4) could have been reduced during AllocateDescriptorSets",
         gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -621,8 +614,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBVariableDescriptorCountAllocateU
     buffer_ptr[0] = 1;
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -722,16 +714,14 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBTess) {
 
     SCOPED_TRACE("Out of Bounds");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     buffer_ptr[0] = 5;
 
     SCOPED_TRACE("Uninitialized");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -833,8 +823,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     // On Windows Arm, it re-runs the geometry shader 3 times on same primitive
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-10068");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     buffer_ptr[0] = 5;
@@ -844,8 +833,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBGeom) {
     // On Windows Arm, it re-runs the geometry shader 3 times on same primitive
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08114");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDraw-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -926,8 +914,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         buffer_ptr[0] = 5;
         // Invalid read
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 
@@ -936,8 +923,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayOOBCompute) {
         buffer_ptr[0] = 25;
         // Invalid read and invalid write
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1057,8 +1043,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlyDelete) {
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
                                     gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1178,8 +1163,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ArrayEarlySamplerDelete) {
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Descriptor index 1 references a resource that was destroyed.",
                                     gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1296,8 +1280,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, UpdateAfterBind) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1415,8 +1398,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     m_errorMonitor->SetDesiredError(
         "Descriptor index 7 is uninitialized. VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT was used and the original "
         "descriptorCount (8) could have been reduced during AllocateDescriptorSets");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1535,8 +1517,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSL) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1656,8 +1637,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1714,8 +1694,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PushConstant) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1780,8 +1759,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleIndexes) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("(set = 0, binding = 1) Index of 5 used to index descriptor array of length 2");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2217,8 +2195,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, BindingOOB) {
     m_command_buffer.End();
     // VUID-vkCmdDispatch-None-08114
     m_errorMonitor->SetDesiredError("(set = 0, binding = 2) Descriptor index 1 is uninitialized");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2292,8 +2269,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSetFirst) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2368,8 +2344,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSetLast) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2460,8 +2435,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBindF
     descriptor_set_2.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2554,8 +2528,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBindL
     descriptor_set_2.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2633,8 +2606,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114", 2);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2719,8 +2691,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
     ds_bad.UpdateDescriptorSets();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114", 2);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2778,8 +2749,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // don't submit but was valid
     m_command_buffer.Begin();
@@ -2798,8 +2768,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2861,8 +2830,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SpecConstantUpdateAfterBind) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2923,8 +2891,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SpecConstantPartiallyBound) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2967,8 +2934,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SpecConstant) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3021,8 +2987,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SpecConstantNullDescriptorBindless) {
     m_errorMonitor->SetDesiredError(
         "Descriptor index 0 is uninitialized. nullDescriptor feature is on, but vkUpdateDescriptorSets was not called with "
         "VK_NULL_HANDLE for this descriptor");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3061,8 +3026,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, PartiallyBoundNoArray) {
 
     // VUID-vkCmdDispatch-None-08114
     m_errorMonitor->SetDesiredError("There is no array, but descriptor is viewed as having an array of length 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3122,8 +3086,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetch) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3174,8 +3137,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, ConstantArrayOOBBuffer) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", 3);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3246,8 +3208,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SamplersNonBindless) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3302,8 +3263,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SamplersPartiallyBound) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3373,8 +3333,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SamplersMixedBindless) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10068", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3442,8 +3401,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, SamplersMixedBindless2) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3488,8 +3446,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MixedCombinedImageSampler) {
 
     // All VUID-vkCmdDispatch-None-08114
     m_errorMonitor->SetDesiredError("(set = 0, binding = 2) Descriptor index 0 is uninitialized");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3554,8 +3511,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetchNested) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3598,8 +3554,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetchTexelBuffer) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3651,8 +3606,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, TexelFetchConstantArrayOOB) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3693,8 +3647,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImagePartiallyBound) {
 
     // One for the store, load, and exchange
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3745,8 +3698,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicImageRuntimeArray) {
 
     // One for the store, load, and exchange
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3779,8 +3731,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferPartiallyBound) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3817,8 +3768,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, AtomicBufferRuntimeArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3854,8 +3804,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, StorageImagePartiallyBound) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3891,8 +3840,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, StorageImageRuntimeArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3975,19 +3923,16 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleCommandBuffersSameDescriptorSet)
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     buffer_ptr[0] = 0;
 
-    m_default_queue->Submit(cb_0);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_0);
 
     buffer_ptr[0] = 1;
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
     m_errorMonitor->VerifyFound();
 
     // Invalid access should not carry back over
     buffer_ptr[0] = 0;
-    m_default_queue->Submit(cb_0);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_0);
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) {
@@ -4067,8 +4012,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // record with bad pipeline
     m_command_buffer.Begin();
@@ -4079,8 +4023,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) 
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // Re-record to make sure VU doesn't presist
@@ -4091,8 +4034,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
@@ -4182,8 +4124,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4240,8 +4181,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, OpInBoundsAccessChain) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08114");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4298,8 +4238,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MiddleBindingOOB) {
 
     // VUID-vkCmdDispatch-None-10068
     m_errorMonitor->SetDesiredError("(set = 0, binding = 3) Index of 3 used to index descriptor array of length 2");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4381,7 +4320,6 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DualShaderLibrary) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08114", gpuav::glsl::kMaxErrorsPerCmd);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

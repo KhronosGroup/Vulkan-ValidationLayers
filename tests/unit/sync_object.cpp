@@ -3345,8 +3345,7 @@ TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferPass) {
                       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeSyncObject, EventStageMaskOneCommandBufferFail) {

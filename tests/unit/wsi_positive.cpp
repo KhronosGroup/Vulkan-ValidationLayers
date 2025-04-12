@@ -420,8 +420,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveWsi, SwapchainAcquireImageAndPresent) {

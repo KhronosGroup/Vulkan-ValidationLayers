@@ -245,8 +245,7 @@ TEST_F(NegativeSyncValRayTracing, WriteInstanceDataDuringBuild) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
     const auto& instance = tlas.GetGeometries()[0].GetInstance();
@@ -284,8 +283,7 @@ TEST_F(NegativeSyncValRayTracing, DISABLED_TraceAfterBuild) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
     tlas.SetupBuild(true);
 
@@ -337,8 +335,7 @@ TEST_F(NegativeSyncValRayTracing, RayQueryAfterBuild) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Create TLAS (but not build it yet)
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
@@ -392,8 +389,7 @@ TEST_F(NegativeSyncValRayTracing, CopyAfterRayQuery) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Build TLAS
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
@@ -402,8 +398,7 @@ TEST_F(NegativeSyncValRayTracing, CopyAfterRayQuery) {
     m_command_buffer.Begin();
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Create compute pipeline
     char const* cs_source = R"glsl(

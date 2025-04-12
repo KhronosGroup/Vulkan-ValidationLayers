@@ -232,8 +232,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
     vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Image transition ensures that image data is made visible and available when necessary.
@@ -627,8 +626,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
@@ -692,8 +690,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
@@ -758,8 +755,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveSyncVal, QSBufferCopyHazardsDisabled) {

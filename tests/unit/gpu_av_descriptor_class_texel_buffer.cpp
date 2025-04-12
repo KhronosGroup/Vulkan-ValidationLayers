@@ -58,9 +58,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetch) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -104,9 +102,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoad) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -150,9 +146,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageStore) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds", 3);
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -229,8 +223,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLTexelFetchIndependentSets) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -306,8 +299,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, GPLImageLoadStoreIndependentSets
 
     // one for Load and one for Store
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -356,8 +348,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, TexelFetch) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -413,8 +404,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, TexelFetchArray) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -463,8 +453,7 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageLoad) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -509,7 +498,6 @@ TEST_F(NegativeGpuAVDescriptorClassTexelBuffer, ImageStore) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Descriptor Texel Buffer texel out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

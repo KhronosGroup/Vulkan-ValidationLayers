@@ -582,9 +582,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, DISABLED_ImageBarrierInProperLayout) {
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeDynamicRenderingLocalRead, PipelineBarrierWrongAttachmentLayout) {

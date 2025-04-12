@@ -171,8 +171,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlock) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     ASSERT_TRUE(*data = test_data);
@@ -278,8 +277,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
 
         pl_layout.destroy();
 
@@ -304,8 +302,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockAndRecovery) {
                                   &descriptor_set.set_, 0, nullptr);
         vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
         uint32_t *data = (uint32_t *)buffer.Memory().Map();
         if (*data != test_data) m_errorMonitor->SetError("Using shader after pipeline recovery not functioning as expected");
         *data = 0;
@@ -375,8 +372,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitialized) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
@@ -447,8 +443,7 @@ TEST_F(PositiveGpuAV, InlineUniformBlockUninitializedUpdateAfterBind) {
     descriptor_writes.descriptorType = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK;
     vk::UpdateDescriptorSets(device(), 1, &descriptor_writes, 0, nullptr);
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
@@ -508,8 +503,7 @@ TEST_F(PositiveGpuAV, SetSSBOBindDescriptor) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
@@ -590,8 +584,7 @@ TEST_F(PositiveGpuAV, SetSSBOPushDescriptor) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Regression test for semaphore timeout with GPU-AV enabled:
@@ -731,8 +724,7 @@ TEST_F(PositiveGpuAV, MutableBuffer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, MaxDescriptorsClamp) {
@@ -816,8 +808,7 @@ TEST_F(PositiveGpuAV, SelectInstrumentedShaders) {
     m_command_buffer.End();
     // Should not get a warning since buggy vertex shader wasn't instrumented
     m_errorMonitor->ExpectSuccess(kWarningBit | kErrorBit);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, DrawingWithUnboundUnusedSet) {
@@ -913,8 +904,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -938,8 +928,7 @@ TEST_F(PositiveGpuAV, FirstInstance) {
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, CopyBufferToImageD32) {
@@ -1060,13 +1049,11 @@ TEST_F(PositiveGpuAV, CopyBufferToImageTwoSubmit) {
     cb_0.Begin();
     vk::CmdCopyBufferToImage(cb_0.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     cb_0.End();
-    m_default_queue->Submit(cb_0);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_0);
 
     cb_1.Begin();
     cb_1.End();
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
 }
 
 TEST_F(PositiveGpuAV, SwapchainImage) {
@@ -1141,8 +1128,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), draw_buffer.handle(), 0, 4, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Now with an offset and indexed draw
     vkt::Buffer indexed_draw_buffer(*m_device, 4 * sizeof(VkDrawIndexedIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
@@ -1166,8 +1152,7 @@ TEST_P(PositiveGpuAVParameterized, SettingsCombinations) {
                                sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 static std::string GetGpuAvSettingsCombinationTestName(const testing::TestParamInfo<PositiveGpuAVParameterized::ParamType> &info) {
@@ -1342,8 +1327,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
@@ -1528,8 +1512,7 @@ TEST_F(PositiveGpuAV, RestoreUserPushConstants2) {
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
@@ -1601,8 +1584,7 @@ TEST_F(PositiveGpuAV, PipelineLayoutMixing) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
@@ -1678,8 +1660,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubset) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
@@ -1761,8 +1742,7 @@ TEST_F(PositiveGpuAV, SharedPipelineLayoutSubsetWithUnboundDescriptorSet) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, DestroyedPipelineLayout) {
@@ -1970,8 +1950,7 @@ TEST_F(PositiveGpuAV, DISABLED_DeviceGeneratedCommandsIES) {
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, BasicMeshShader) {
@@ -2026,8 +2005,7 @@ TEST_F(PositiveGpuAV, BasicMeshShader) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAV, DualShaderLibrary) {

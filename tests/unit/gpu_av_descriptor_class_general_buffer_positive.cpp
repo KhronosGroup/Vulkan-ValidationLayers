@@ -42,8 +42,7 @@ void GpuAVDescriptorClassGeneralBuffer::ComputeStorageBufferTest(const char *sha
     m_command_buffer.End();
 
     if (expected_error) m_errorMonitor->SetDesiredError(expected_error, error_count);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     if (expected_error) m_errorMonitor->VerifyFound();
 }
 
@@ -108,16 +107,13 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Basic) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 1;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     *data = 2;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     *data = 3;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPL) {
@@ -185,16 +181,13 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPL) {
 
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 1;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     *data = 2;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     *data = 3;
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
@@ -284,8 +277,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLNonInlined) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
@@ -411,8 +403,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, GPLFragmentIndependentSets) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint) {
@@ -552,8 +543,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VertexFragmentMultiEntrypoint)
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
@@ -594,8 +584,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBO) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBOUpdateAfterBind) {
@@ -638,8 +627,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorSSBOUpda
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorBuffer) {
@@ -681,8 +669,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorBuffer) 
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
@@ -734,8 +721,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, PartialBoundDescriptorCopy) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
@@ -783,8 +769,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, RobustBuffer) {
     uint32_t *data = (uint32_t *)offset_buffer.Memory().Map();
     *data = 8;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, VectorArray) {
@@ -926,8 +911,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
@@ -1042,8 +1026,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // https://github.com/KhronosGroup/glslang/issues/3892
@@ -1322,8 +1305,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
@@ -1411,8 +1393,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
@@ -1462,8 +1443,7 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, OpArrayLength) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, Loops) {

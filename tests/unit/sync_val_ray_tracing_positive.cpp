@@ -95,8 +95,7 @@ TEST_F(PositiveSyncValRayTracing, UseSourceAccelerationStructureThenBarrier) {
     m_command_buffer.Begin();
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Create another acceleration structure to be built in update mode
     auto blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
@@ -135,8 +134,7 @@ TEST_F(PositiveSyncValRayTracing, UpdateAccelerationStructureInPlace) {
     m_command_buffer.Begin();
     blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Update acceleration structure in-place
     blas.SetMode(VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR);
@@ -269,8 +267,7 @@ TEST_F(PositiveSyncValRayTracing, ReadInstanceDataDuringBuild) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
     const auto& instance = tlas.GetGeometries()[0].GetInstance();
@@ -298,8 +295,7 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     m_command_buffer.Begin();
     blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Create TLAS (but not build it yet)
     vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);

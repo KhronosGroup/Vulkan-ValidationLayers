@@ -135,8 +135,7 @@ TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
     m_errorMonitor->SetDesiredFailureMsg(
         kErrorBit, "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL--instead, current layout is VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL.");
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -208,8 +207,7 @@ TEST_F(NegativeGpuAVImageLayout, DISABLED_Mutable) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -277,8 +275,7 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -303,8 +300,7 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
     vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
                            nullptr, 0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Bind view to both layers
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 2);
@@ -352,8 +348,7 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -427,15 +422,13 @@ TEST_F(NegativeGpuAVImageLayout, MultipleCommandBuffersSameDescriptorSet) {
     descriptor_set.WriteDescriptorImageInfo(1, good_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.UpdateDescriptorSets();
-    m_default_queue->Submit(cb_0);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_0);
 
     descriptor_set.WriteDescriptorImageInfo(1, bad_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 0);
     descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(cb_1);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(cb_1);
     m_errorMonitor->VerifyFound();
 
     // Make sure if we fix it afterwards, the VU goes away

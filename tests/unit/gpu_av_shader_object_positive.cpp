@@ -154,8 +154,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto storage_buffer_ptr = static_cast<int32_t *>(storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {
@@ -347,8 +346,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     // Compute shaders will write 8 values to compute storage buffer
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto compute_storage_buffer_ptr = static_cast<int32_t *>(compute_storage_buffer.Memory().Map());
     for (int32_t i = 0; i < int_count; ++i) {

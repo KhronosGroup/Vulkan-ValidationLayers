@@ -69,8 +69,7 @@ void NegativeGpuAVCooperativeVector::RunTest(const char *expected_error, const c
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError(expected_error);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

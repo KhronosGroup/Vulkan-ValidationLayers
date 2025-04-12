@@ -61,8 +61,7 @@ TEST_F(PositiveMultiview, RenderPassQueries) {
     vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool, 0, 2, buffer, 0, 4, 0);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveMultiview, BasicRenderPass) {

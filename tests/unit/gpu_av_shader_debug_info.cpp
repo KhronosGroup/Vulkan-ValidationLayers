@@ -50,8 +50,7 @@ void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError(error);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1179,8 +1178,7 @@ void main() {
 
     // VUID-vkCmdDispatch-storageBuffers-06936
     m_errorMonitor->SetDesiredError("5:     data.Store(0, uint(int(data.Load(68))));");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1490,8 +1488,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("Pipeline (bad_pipeline)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1553,8 +1550,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("Shader Object (bad_shader_object)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1619,8 +1615,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("Compute Dispatch Index 1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1673,8 +1668,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("Global invocation ID (x, y, z) = (1, 0, 0)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1735,8 +1729,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("Dispatch debug label region");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1799,8 +1792,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredFailureMsgRegex(kErrorBit, "UNASSIGNED-Device address out of bounds",
                                               "Global invocation ID \\(x, y, z\\) = \\(1, 0, 0\\)", "Dispatch debug label region");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1877,8 +1869,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("region_0::region_1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1962,8 +1953,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("region_0::region_1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2058,8 +2048,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
 
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("primary::region_0::region_1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 

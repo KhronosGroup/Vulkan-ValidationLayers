@@ -96,8 +96,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     if (!IsPlatformMockICD()) {
         ASSERT_TRUE(data[0] == 8);

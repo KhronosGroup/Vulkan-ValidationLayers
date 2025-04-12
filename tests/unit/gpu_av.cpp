@@ -41,8 +41,7 @@ TEST_F(NegativeGpuAV, ValidationAbort) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeGpuAV, ValidationFeatures) {
@@ -108,8 +107,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShaders) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -177,8 +175,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegex) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -248,8 +245,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersRegexDestroyedShaders) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-storageBuffers-06936", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -316,8 +312,7 @@ TEST_F(NegativeGpuAV, SelectInstrumentedShadersShaderObject) {
 
     // Should get a warning since shader was instrumented
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08613", 3);
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -399,8 +394,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineNotReserved) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -474,8 +468,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineReserved) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-Device address out of bounds");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -569,8 +562,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32) {
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
     m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -624,8 +616,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32Vk13) {
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
     m_errorMonitor->SetDesiredError("has a float value at offset 16376 that is not in the range [0, 1]");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -671,8 +662,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8) {
 
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("has a float value at offset 20475 that is not in the range [0, 1]");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -725,8 +715,7 @@ TEST_F(NegativeGpuAV, CopyBufferToImageD32U8Vk13) {
 
     m_command_buffer.End();
     m_errorMonitor->SetDesiredError("has a float value at offset 20475 that is not in the range [0, 1]");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -779,8 +768,7 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
     m_command_buffer.End();
 
     // normally would produce a VUID-vkCmdDispatch-storageBuffers-06936 warning, but we didn't instrument the shader in the end
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(NegativeGpuAV, RemoveGpuAvInPresenceOfSyncVal) {

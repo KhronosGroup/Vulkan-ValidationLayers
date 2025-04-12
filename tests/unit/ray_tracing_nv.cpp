@@ -1804,8 +1804,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     vk::CmdBuildAccelerationStructureNV(m_command_buffer.handle(), &bot_level_as_create_info.info, VK_NULL_HANDLE, 0, VK_FALSE,
                                         src_as.handle(), VK_NULL_HANDLE, bot_level_as_scratch.handle(), 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Command buffer must be in recording state
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyAccelerationStructureNV-commandBuffer-recording");

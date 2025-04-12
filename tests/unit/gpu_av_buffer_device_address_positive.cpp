@@ -82,8 +82,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140) {
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
@@ -154,8 +153,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd140NumerousAddressRanges) {
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
@@ -218,8 +216,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430) {
     uniform_buffer_ptr[0] = storage_buffer.Address();
     uniform_buffer_ptr[1] = 4;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote 42
     auto *storage_buffer_ptr = static_cast<uint32_t *>(storage_buffer.Memory().Map());
@@ -274,8 +271,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreExplicitOffset) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     uint8_t *bda_buffer_ptr = (uint8_t *)bda_buffer.Memory().Map();
     uint32_t output = *((uint32_t *)(bda_buffer_ptr + 32));
@@ -341,8 +337,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoad) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
     ASSERT_TRUE(output == expected_output);
@@ -411,8 +406,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StructLoadPadded) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     float output = *((float *)(in_buffer_ptr + sizeof(VkDeviceAddress)));
     ASSERT_TRUE(output == expected_output);
@@ -471,8 +465,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, UVec3Array) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, ArrayOfStruct) {
@@ -534,8 +527,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ArrayOfStruct) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
@@ -593,8 +585,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, BitCastUvec2) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     buffer_ptr = static_cast<uint32_t *>(buffer_node_a.Memory().Map());
     ASSERT_TRUE(*buffer_ptr == 1234);
@@ -702,8 +693,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
@@ -765,8 +755,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
 
     auto *uniform_buffer_ptr = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     uniform_buffer_ptr[0] = storage_buffer.Address();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote to float and vec3
     auto *storage_buffer_ptr = static_cast<float *>(storage_buffer.Memory().Map());
@@ -837,8 +826,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
         uniform_buffer_ptr[i] = addr;
     }
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote values to all nodes
     for (auto [buffer_i, buffer] : vvl::enumerate(storage_buffers)) {
@@ -911,8 +899,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleBufferReferenceBlocks) {
     uniform_buffer_ptr[0] = foo_storage_buffer.Address();
     uniform_buffer_ptr[1] = bar_storage_buffer.Address();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote to float and vec3
     auto *foo_ptr = static_cast<int *>(foo_storage_buffer.Memory().Map());
@@ -995,8 +982,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, LoadStoreStruct) {
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     data[0] = storage_buffer.Address();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure shader wrote to float and vec3
     ASSERT_EQ(vertex_buffer_ptr[0].x, 1.0f);
@@ -1143,8 +1129,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoad) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoadLinkedList) {
@@ -1246,8 +1231,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto block_buffer_ptr = static_cast<uint32_t *>(block_buffer.Memory().Map());
     ASSERT_TRUE(block_buffer_ptr[2] == 999);
@@ -1353,8 +1337,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MultipleAccessChains) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
@@ -1462,8 +1445,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand) {
@@ -1516,8 +1498,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand2) {
@@ -1580,8 +1561,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics) {
@@ -1634,8 +1614,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
@@ -1697,8 +1676,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, Atomics2) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, AtomicsWorkgroups) {
@@ -1814,8 +1792,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto out_buffer_ptr = static_cast<uint32_t *>(out_buffer.Memory().Map());
     ASSERT_TRUE(out_buffer_ptr[0] == 66);
@@ -1925,8 +1902,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PieceOfDataPointerInStruct) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto out_buffer_ptr = static_cast<uint32_t *>(out_buffer.Memory().Map());
     ASSERT_TRUE(out_buffer_ptr[0] == 33);
@@ -2026,8 +2002,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushConstantsShaderObject) {
@@ -2142,8 +2117,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
@@ -2203,8 +2177,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, PointerChain) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     auto out_buffer_ptr = (uint32_t *)ssbo_a_buffer.Memory().Map();
     ASSERT_TRUE(out_buffer_ptr[0] == 42);
@@ -2266,8 +2239,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ManyAccessToSameStruct) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Used to test large accesses to a single struct from a single pointer

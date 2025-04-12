@@ -169,8 +169,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
                      &copyRegion);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
@@ -305,8 +304,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
                              &copy_region);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Test to verify that views of multiplanar images have layouts tracked correctly
     // by changing the image's layout then using a view of that image
@@ -360,8 +358,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {

@@ -94,8 +94,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
@@ -214,8 +213,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
@@ -333,8 +331,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformSamplers) {
@@ -400,8 +397,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, NonUniformSamplers) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
@@ -484,8 +480,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, UnInitImage) {
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
@@ -571,8 +566,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ImageMultiBinding) {
     uint32_t *buffer_ptr = (uint32_t *)buffer0.Memory().Map();
     buffer_ptr[0] = 1;
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
@@ -643,8 +637,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingUnusedPipeline) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
@@ -719,8 +712,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingArray) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7932
@@ -819,8 +811,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SampledImageShareBindingBDA) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Disabled as this is a perf testing test, not much value in normal CI
@@ -935,8 +926,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Disabled as this is a perf testing test, not much value in normal CI
@@ -1001,8 +991,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // If test starts to take too long, we are messing up the optimization
@@ -1103,8 +1092,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
     vk::CmdDispatch(m_command_buffer.handle(), 32, 32, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 // Disabled as this is a perf testing test, not much value in normal CI
@@ -1164,8 +1152,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
@@ -1270,8 +1257,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
 
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
@@ -1400,8 +1386,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
@@ -1524,8 +1509,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShaderObject) {
@@ -1663,8 +1647,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShaderObjectPushConstants) {
@@ -1769,8 +1752,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
@@ -1843,8 +1825,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
@@ -1922,8 +1903,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind) {
@@ -2015,8 +1995,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
     descriptor_set_2.WriteDescriptorBufferInfo(2, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
     descriptor_set_2.UpdateDescriptorSets();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfterBind) {
@@ -2108,8 +2087,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfte
                                             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1);
     descriptor_set.UpdateDescriptorSets();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
@@ -2177,8 +2155,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterBind) {
@@ -2253,8 +2230,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
     ds_bad.WriteDescriptorBufferInfo(0, input_buffer, 0, VK_WHOLE_SIZE);
     ds_bad.UpdateDescriptorSets();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
@@ -2311,8 +2287,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 
     // don't submit but, get in a bad state
     m_command_buffer.Begin();
@@ -2330,8 +2305,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipeline) {
@@ -2444,8 +2418,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptor) {
@@ -2489,8 +2462,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptor) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptorBindless) {
@@ -2538,8 +2510,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptorBindless) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, TexelFetch) {
@@ -2601,8 +2572,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, TexelFetch) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, AtomicImage) {
@@ -2652,8 +2622,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, AtomicImage) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, AtomicBuffer) {
@@ -2691,8 +2660,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, AtomicBuffer) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, StorageImage) {
@@ -2736,8 +2704,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, StorageImage) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, DestroyedPipelineLayout) {
@@ -2854,8 +2821,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BindingPartiallyBound) {
     vk::CmdDrawIndexed(m_command_buffer.handle(), 1, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVDescriptorIndexing, MixedCombinedImageSampler) {
@@ -2917,6 +2883,5 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MixedCombinedImageSampler) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

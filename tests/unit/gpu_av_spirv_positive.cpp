@@ -165,8 +165,7 @@ TEST_F(PositiveGpuAVSpirv, LoopPhi) {
     vk::CmdEndRenderPass(m_command_buffer.handle());
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVSpirv, LoopHeaderPhi) {
@@ -253,9 +252,7 @@ TEST_F(PositiveGpuAVSpirv, LoopHeaderPhi) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
-
+    m_default_queue->SubmitAndWait(m_command_buffer);
     ASSERT_EQ(4u, data[0]);
 }
 
@@ -340,8 +337,7 @@ TEST_F(PositiveGpuAVSpirv, VulkanMemoryModelDeviceScope) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
@@ -381,6 +377,5 @@ TEST_F(PositiveGpuAVSpirv, FindMultipleStores) {
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

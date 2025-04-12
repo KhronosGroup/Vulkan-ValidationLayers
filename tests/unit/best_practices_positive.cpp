@@ -444,16 +444,14 @@ TEST_F(VkPositiveBestPracticesLayerTest, ResetCommandPool) {
         m_command_buffer.Begin();
         event1.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         m_command_buffer.End();
-        m_default_queue->Submit(m_command_buffer);
-        m_default_queue->Wait();
+        m_default_queue->SubmitAndWait(m_command_buffer);
     }
 
     vkt::Event event2(*m_device);
     m_command_buffer.Begin();
     event2.CmdSet(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {

@@ -54,8 +54,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, PipelineHandle) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Pipeline (bad_pipeline)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -92,8 +91,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, ShaderObjectHandle) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Shader Object (bad_shader_object)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -151,8 +149,7 @@ void main() {
 
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Debug shader printf message generated at a.comp:5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -239,8 +236,7 @@ void main() {
 
     m_errorMonitor->SetDesiredFailureMsg(
         kInformationBit, "Debug shader printf message generated at a.comp:5\n\n5:     debugPrintfEXT(\"float == %f\", myfloat);");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -276,8 +272,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, CommandBufferCommandIndex) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Compute Dispatch Index 3");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -373,8 +368,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, StageInfo) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Global invocation ID (x, y, z) = (3, 1, 0)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -412,8 +406,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, Fragment) {
 
     m_errorMonitor->SetDesiredInfo("Stage = Fragment.  Fragment coord (x,y) = (10.5, 10.5)");
     m_errorMonitor->SetDesiredInfo("Stage = Fragment.  Fragment coord (x,y) = (10.5, 11.5)");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -519,8 +512,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, VertexFragmentMultiEntrypoint) {
 
     m_errorMonitor->SetDesiredFailureMsg(kInformationBit,
                                          "Stage has multiple OpEntryPoint (Fragment, Vertex) and could not detect stage");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -554,8 +546,7 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion1) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("region_0");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -592,7 +583,6 @@ TEST_F(NegativeDebugPrintfShaderDebugInfo, DISABLED_DebugLabelRegion2) {
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("region_0::region_1");
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }

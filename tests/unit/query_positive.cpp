@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,8 +138,7 @@ TEST_F(PositiveQuery, BasicQuery) {
                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
     m_command_buffer.End();
 
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     uint64_t samples_passed[4];
     vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
@@ -149,15 +148,13 @@ TEST_F(PositiveQuery, BasicQuery) {
     m_command_buffer.Begin();
     vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
     vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
     m_command_buffer.Begin();
     vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
     vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
     m_command_buffer.End();
-    m_default_queue->Submit(m_command_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
@@ -263,8 +260,7 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
         primary_buffer.End();
     }
 
-    m_default_queue->Submit(primary_buffer);
-    m_default_queue->Wait();
+    m_default_queue->SubmitAndWait(primary_buffer);
     vk::QueueWaitIdle(queue);
 }
 
