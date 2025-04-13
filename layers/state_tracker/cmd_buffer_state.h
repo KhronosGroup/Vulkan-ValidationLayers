@@ -20,9 +20,12 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include "state_tracker/image_layout_map.h"
-#include "state_tracker/pipeline_state.h"
+#include "state_tracker/pipeline_sub_state.h"
+#include "state_tracker/video_session_state.h"
+#include "state_tracker/last_bound_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
+#include "state_tracker/event_map.h"
 #include "containers/qfo_transfer.h"
 #include "generated/dynamic_state_helper.h"
 
@@ -41,12 +44,6 @@ class VideoSessionParameters;
 // Only CoreChecks uses this, but the state tracker stores it.
 constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
 using ImageLayoutRegistry = image_layout_map::ImageLayoutRegistry;
-
-struct EventInfo {
-    VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
-    bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
-};
-using EventMap = vvl::unordered_map<VkEvent, EventInfo>;
 
 enum class CbState {
     New,                // Newly created CB w/o any cmds
@@ -162,10 +159,17 @@ struct LabelCommand {
     std::string label_name;  // used when begin == true
 };
 
+struct PushConstantData {
+    VkPipelineLayout layout = VK_NULL_HANDLE;
+    VkShaderStageFlags stage_flags = 0;
+    uint32_t offset = 0;
+    std::vector<std::byte> values{};
+};
+
 class CommandBuffer : public RefcountedStateObject, public SubStateManager<CommandBufferSubState> {
     using Func = vvl::Func;
+
   public:
-    using ImageLayoutMap = vvl::unordered_map<VkImage, std::shared_ptr<ImageLayoutRegistry>>;
     using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageLayoutRegistry>>;
 
     VkCommandBufferAllocateInfo allocate_info;
@@ -495,7 +499,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     vvl::unordered_set<QueryObject> startedQueries;
     vvl::unordered_set<QueryObject> updatedQueries;
     vvl::unordered_set<QueryObject> renderPassQueries;
-    ImageLayoutMap image_layout_map;
+    CommandBufferImageLayoutMap image_layout_map;
     AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
     vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
@@ -527,12 +531,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // Cache of current insert label...
     LoggingLabel debug_label;
 
-    struct PushConstantData {
-        VkPipelineLayout layout = VK_NULL_HANDLE;
-        VkShaderStageFlags stage_flags = 0;
-        uint32_t offset = 0;
-        std::vector<std::byte> values{};
-    };
     std::vector<PushConstantData> push_constant_data_chunks;
     std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout{};
     PushConstantRangesId push_constant_ranges_layout;
@@ -594,7 +592,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     std::shared_ptr<const ImageLayoutRegistry> GetImageLayoutRegistry(VkImage image) const;
     std::shared_ptr<ImageLayoutRegistry> GetOrCreateImageLayoutRegistry(const vvl::Image &image_state);
-    const ImageLayoutMap &GetImageLayoutMap() const;
+    const CommandBufferImageLayoutMap &GetImageLayoutMap() const;
 
     const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
         return qfo_transfer_image_barriers;
@@ -761,8 +759,8 @@ class CommandBufferSubState {
                                   VkPipelineStageFlags2KHR src_stage_mask) {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
-    VulkanTypedHandle Handle() const { return base.Handle(); }
-    VkCommandBuffer VkHandle() const { return base.VkHandle(); }
+    VulkanTypedHandle Handle() const;
+    VkCommandBuffer VkHandle() const;
 
     CommandBuffer &base;
 };

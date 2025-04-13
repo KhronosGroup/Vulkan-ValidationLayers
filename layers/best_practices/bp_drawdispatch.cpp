@@ -21,6 +21,7 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/pipeline_state.h"
 #include <bitset>
 
 // Generic function to handle validation for all CmdDraw* type functions
@@ -67,7 +68,7 @@ bool BestPractices::ValidatePushConstants(VkCommandBuffer cmd_buffer, const Loca
     for (const VkPushConstantRange& push_constant_range : *cb_state->push_constant_ranges_layout) {
         Range layout_range(push_constant_range.offset, push_constant_range.offset + push_constant_range.size);
         uint32_t size_not_set = push_constant_range.size;
-        for (const vvl::CommandBuffer::PushConstantData& filled_pcr : cb_state->push_constant_data_chunks) {
+        for (const vvl::PushConstantData& filled_pcr : cb_state->push_constant_data_chunks) {
             Range filled_range(filled_pcr.offset, filled_pcr.offset + static_cast<uint32_t>(filled_pcr.values.size()));
             Range intersection = layout_range & filled_range;
             if (intersection.valid()) {

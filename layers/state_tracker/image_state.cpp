@@ -21,7 +21,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/semaphore_state.h"
-#include "state_tracker/shader_module.h"
+#include "state_tracker/fence_state.h"
 #include "generated/dispatch_functions.h"
 
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {

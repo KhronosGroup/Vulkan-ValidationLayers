@@ -21,6 +21,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "containers/limits.h"

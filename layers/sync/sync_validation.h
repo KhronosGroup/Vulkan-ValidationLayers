@@ -20,6 +20,7 @@
 #include <memory>
 #include <vulkan/vulkan.h>
 
+#include "state_tracker/state_tracker.h"
 #include "sync/sync_common.h"
 #include "sync/sync_access_context.h"
 #include "sync/sync_commandbuffer.h"

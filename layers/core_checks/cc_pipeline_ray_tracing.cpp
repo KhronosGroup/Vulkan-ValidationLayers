@@ -21,6 +21,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "chassis/chassis_modification_state.h"
+#include "state_tracker/pipeline_state.h"
 
 bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
                                             const vku::safe_VkRayTracingPipelineCreateInfoCommon &create_info,

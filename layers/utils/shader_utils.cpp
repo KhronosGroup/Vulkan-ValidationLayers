@@ -28,6 +28,10 @@
 
 #include <fstream>
 
+// Profiled that having filesystem included in shader_utils.h adds significant compile time to all files
+#include <filesystem>
+namespace fs = std::filesystem;
+
 void ValidationCache::GetUUID(uint8_t *uuid) {
     const char *sha1_str = SPIRV_TOOLS_COMMIT_ID;
     // Convert sha1_str from a hex string to binary. We only need VK_UUID_SIZE bytes of
@@ -187,7 +191,8 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
 }
 
 // This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
-void DumpSpirvToFile(const fs::path &file_path, const uint32_t *spirv, size_t spirv_dwords_count) {
+void DumpSpirvToFile(const std::string &file_name, const uint32_t *spirv, size_t spirv_dwords_count) {
+    const auto file_path = fs::absolute(file_name);
     std::ofstream debug_file(file_path, std::ios::out | std::ios::binary);
     debug_file.write(reinterpret_cast<const char *>(spirv), spirv_dwords_count * sizeof(uint32_t));
 }

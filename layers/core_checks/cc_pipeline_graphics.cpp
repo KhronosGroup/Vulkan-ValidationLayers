@@ -29,11 +29,13 @@
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "chassis/chassis_modification_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
-#include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "error_message/error_strings.h"
 
 bool CoreChecks::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,

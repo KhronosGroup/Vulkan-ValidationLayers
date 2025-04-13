@@ -175,4 +175,21 @@ bool ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
     return sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
 }
 
+bool ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
+    bool updated_current = false;
+    // current_layout can be updated repeatedly.
+    if (CurrentWillChange(src.current_layout)) {
+        current_layout = src.current_layout;
+        updated_current = true;
+    }
+    // initial_layout and state cannot be updated once they have a valid value.
+    if (initial_layout == kInvalidLayout) {
+        initial_layout = src.initial_layout;
+    }
+    if (state == nullptr) {
+        state = src.state;
+    }
+    return updated_current;
+}
+
 }  // namespace image_layout_map

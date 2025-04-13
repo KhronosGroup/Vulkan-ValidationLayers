@@ -27,6 +27,8 @@
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/event_map.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "sync/sync_vuid_maps.h"
 
 // Holds common information between all command buffers being submitted

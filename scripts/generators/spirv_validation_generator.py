@@ -176,7 +176,10 @@ class SpirvValidationHelperOutputGenerator(BaseGenerator):
             #include <spirv/unified1/spirv.hpp>
             #include "vk_extension_helper.h"
             #include "state_tracker/shader_instruction.h"
+            #include "state_tracker/shader_module.h"
             #include "stateless/sl_spirv.h"
+            #include "generated/device_features.h"
+            #include "error_message/error_location.h"
             ''')
 
         #

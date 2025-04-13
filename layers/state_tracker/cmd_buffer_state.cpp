@@ -422,7 +422,7 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
     StateObject::NotifyInvalidate(invalid_nodes, unlink);
 }
 
-const CommandBuffer::ImageLayoutMap &CommandBuffer::GetImageLayoutMap() const { return image_layout_map; }
+const CommandBufferImageLayoutMap &CommandBuffer::GetImageLayoutMap() const { return image_layout_map; }
 
 // The const variant only need the image as it is the key for the map
 std::shared_ptr<const ImageLayoutRegistry> CommandBuffer::GetImageLayoutRegistry(VkImage image) const {
@@ -1912,5 +1912,8 @@ std::string CommandBuffer::DescribeInvalidatedState(CBDynamicState dynamic_state
     }
     return ss.str();
 }
+
+VulkanTypedHandle CommandBufferSubState::Handle() const { return base.Handle(); }
+VkCommandBuffer CommandBufferSubState::VkHandle() const { return base.VkHandle(); }
 
 }  // namespace vvl

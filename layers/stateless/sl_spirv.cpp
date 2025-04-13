@@ -20,7 +20,8 @@
 
 #include "sl_spirv.h"
 #include "generated/spirv_grammar_helper.h"
-
+#include "chassis/dispatch_object.h"
+#include "state_tracker/shader_module.h"
 #include <inttypes.h>
 #include <set>
 
@@ -55,6 +56,19 @@ static void GetVariableInfo(const spirv::Module &module_state, const spirv::Inst
         }
     }
 }
+
+SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDeviceData &stateless_device_data)
+    : Logger(debug_report),
+      api_version(stateless_device_data.api_version),
+      extensions(stateless_device_data.extensions),
+      phys_dev_props(stateless_device_data.phys_dev_props),
+      phys_dev_props_core11(stateless_device_data.phys_dev_props_core11),
+      phys_dev_props_core12(stateless_device_data.phys_dev_props_core12),
+      phys_dev_props_core13(stateless_device_data.phys_dev_props_core13),
+      phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
+      phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
+      enabled_features(stateless_device_data.enabled_features),
+      has_format_feature2(stateless_device_data.has_format_feature2) {}
 
 // stateless spirv == doesn't require pipeline state and/or shader object info
 // Originally the goal was to move more validation to vkCreateShaderModule time in case the driver decided to parse an invalid

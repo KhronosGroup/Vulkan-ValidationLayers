@@ -30,6 +30,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 #include "utils/math_utils.h"
 

@@ -25,6 +25,7 @@
 #include "error_message/logging.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 
 // Flags validation error if the associated call is made inside a video coding block.

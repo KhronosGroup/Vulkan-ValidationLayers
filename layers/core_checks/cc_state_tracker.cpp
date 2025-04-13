@@ -20,6 +20,7 @@
 
 #include "cc_state_tracker.h"
 #include "core_validation.h"
+#include "state_tracker/event_map.h"
 
 void CoreChecks::Created(vvl::CommandBuffer& cb) {
     cb.SetSubState(container_type, std::make_unique<core::CommandBufferSubState>(cb));

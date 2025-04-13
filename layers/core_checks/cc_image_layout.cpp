@@ -29,6 +29,7 @@
 #include "utils/image_layout_utils.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 
 bool IsValidAspectMaskForFormat(VkImageAspectFlags aspect_mask, VkFormat format);
@@ -832,10 +833,10 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
 
 bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                            const Location &image_loc, const ImageBarrier &image_barrier,
-                                           vvl::CommandBuffer::ImageLayoutMap &local_layout_map) const {
+                                           CommandBufferImageLayoutMap &local_layout_map) const {
     bool skip = false;
 
-    const vvl::CommandBuffer::ImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
+    const CommandBufferImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
 
     std::shared_ptr<ImageLayoutRegistry> image_layout_registry;
     auto iter = local_layout_map.find(image_state.VkHandle());
@@ -930,7 +931,7 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
     bool skip = false;
     std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
 
-    const vvl::CommandBuffer::ImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
+    const CommandBufferImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
     auto it = cb_layout_map.find(image_state.VkHandle());
     if (it == cb_layout_map.end()) {
         return skip;

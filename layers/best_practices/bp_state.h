@@ -19,6 +19,8 @@
 
 #pragma once
 
+// We pull in most the core state tracking files
+// bp_state.h should NOT be included by any other header file
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"

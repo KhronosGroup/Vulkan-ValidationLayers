@@ -26,6 +26,8 @@
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "error_message/error_strings.h"
 
 #include <algorithm>

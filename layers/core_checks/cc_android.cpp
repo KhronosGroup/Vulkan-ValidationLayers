@@ -22,6 +22,7 @@
 #include "core_validation.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/sampler_state.h"
+#include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
 

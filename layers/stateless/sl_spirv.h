@@ -20,31 +20,28 @@
 
 #pragma once
 
-#include "state_tracker/shader_module.h"
-#include "error_message/error_location.h"
-#include "generated/device_features.h"
-#include "chassis/dispatch_object.h"
+#include "error_message/logging.h"
 
 namespace spirv {
 struct StatelessData;
+struct Module;
+class Instruction;
+struct EntryPoint;
 }
+namespace vvl {
+class StatelessDeviceData;
+struct DeviceExtensionProperties;
+}  // namespace vvl
+
+class APIVersion;
+struct DeviceExtensions;
+struct DeviceFeatures;
 
 namespace stateless {
 
 class SpirvValidator : public Logger {
   public:
-    SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data)
-        : Logger(debug_report),
-          api_version(stateless_device_data.api_version),
-          extensions(stateless_device_data.extensions),
-          phys_dev_props(stateless_device_data.phys_dev_props),
-          phys_dev_props_core11(stateless_device_data.phys_dev_props_core11),
-          phys_dev_props_core12(stateless_device_data.phys_dev_props_core12),
-          phys_dev_props_core13(stateless_device_data.phys_dev_props_core13),
-          phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
-          phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
-          enabled_features(stateless_device_data.enabled_features),
-          has_format_feature2(stateless_device_data.has_format_feature2) {}
+    SpirvValidator(DebugReport* debug_report, const vvl::StatelessDeviceData& stateless_device_data);
 
     bool Validate(const spirv::Module& module_state, const spirv::StatelessData& stateless_data, const Location& loc) const;
 
