@@ -1639,13 +1639,8 @@ static const std::string GetShaderTileImageCapabilitiesString(const spirv::Modul
 }
 
 bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
-                                         const vvl::Pipeline *pipeline, const VkShaderStageFlagBits stage,
-                                         const Location &loc) const {
+                                         const vvl::Pipeline &pipeline, const Location &loc) const {
     bool skip = false;
-
-    if ((stage != VK_SHADER_STAGE_FRAGMENT_BIT) || !IsExtEnabled(extensions.vk_ext_shader_tile_image)) {
-        return skip;
-    }
 
     const bool using_tile_image_capability = module_state.HasCapability(spv::CapabilityTileImageColorReadAccessEXT) ||
                                              module_state.HasCapability(spv::CapabilityTileImageDepthReadAccessEXT) ||
@@ -1656,47 +1651,46 @@ bool CoreChecks::ValidateShaderTileImage(const spirv::Module &module_state, cons
         return skip;
     }
 
-    if (pipeline) {
-        auto rp = pipeline->GraphicsCreateInfo().renderPass;
-        if (rp != VK_NULL_HANDLE) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-08710", module_state.handle(), loc,
-                             "SPIR-V (Fragment stage) is using capabilities (%s), but renderpass (%s) is not VK_NULL_HANDLE.",
-                             GetShaderTileImageCapabilitiesString(module_state).c_str(), FormatHandle(rp).c_str());
-        }
+    auto rp = pipeline.GraphicsCreateInfo().renderPass;
+    if (rp != VK_NULL_HANDLE) {
+        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-08710", module_state.handle(), loc,
+                         "SPIR-V (Fragment stage) is using capabilities (%s), but renderpass (%s) is not VK_NULL_HANDLE.",
+                         GetShaderTileImageCapabilitiesString(module_state).c_str(), FormatHandle(rp).c_str());
+    }
 
-        const bool mode_early_fragment_test = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
-        if (module_state.static_data_.has_shader_tile_image_depth_read) {
-            const auto *ds_state = pipeline->DepthStencilState();
-            const bool write_enabled =
-                !pipeline->IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
-            if (mode_early_fragment_test && write_enabled) {
-                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08711", module_state.handle(), loc,
-                                 "SPIR-V (Fragment stage) contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.");
-            }
-        }
-
-        if (module_state.static_data_.has_shader_tile_image_stencil_read) {
-            const auto *ds_state = pipeline->DepthStencilState();
-            const bool is_write_mask_set = !pipeline->IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
-                                           (ds_state && (ds_state->front.writeMask != 0 || ds_state->back.writeMask != 0));
-            if (mode_early_fragment_test && is_write_mask_set) {
-                skip |= LogError(
-                    "VUID-VkGraphicsPipelineCreateInfo-pStages-08712", module_state.handle(), loc,
-                    "SPIR-V (Fragment stage) contains OpStencilAttachmentReadEXT, and stencil write mask is not equal to 0 for "
-                    "both front(%" PRIu32 ") and back (%" PRIu32 ").",
-                    ds_state->front.writeMask, ds_state->back.writeMask);
-            }
-        }
-
-        bool using_tile_image_op = module_state.static_data_.has_shader_tile_image_depth_read ||
-                                   module_state.static_data_.has_shader_tile_image_stencil_read ||
-                                   module_state.static_data_.has_shader_tile_image_color_read;
-        const auto *ms_state = pipeline->MultisampleState();
-        if (using_tile_image_op && ms_state && ms_state->sampleShadingEnable && (ms_state->minSampleShading != 1.0)) {
-            skip |= LogError("VUID-RuntimeSpirv-minSampleShading-08732", module_state.handle(), loc,
-                             "minSampleShading (%f) is not equal to 1.0.", ms_state->minSampleShading);
+    const bool mode_early_fragment_test = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::early_fragment_test_bit);
+    if (module_state.static_data_.has_shader_tile_image_depth_read) {
+        const auto *ds_state = pipeline.DepthStencilState();
+        const bool write_enabled =
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_DEPTH_WRITE_ENABLE) && (ds_state && ds_state->depthWriteEnable);
+        if (mode_early_fragment_test && write_enabled) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-08711", module_state.handle(), loc,
+                             "SPIR-V (Fragment stage) contains OpDepthAttachmentReadEXT, and depthWriteEnable is not false.");
         }
     }
+
+    if (module_state.static_data_.has_shader_tile_image_stencil_read) {
+        const auto *ds_state = pipeline.DepthStencilState();
+        const bool is_write_mask_set = !pipeline.IsDynamic(CB_DYNAMIC_STATE_STENCIL_WRITE_MASK) &&
+                                       (ds_state && (ds_state->front.writeMask != 0 || ds_state->back.writeMask != 0));
+        if (mode_early_fragment_test && is_write_mask_set) {
+            skip |= LogError(
+                "VUID-VkGraphicsPipelineCreateInfo-pStages-08712", module_state.handle(), loc,
+                "SPIR-V (Fragment stage) contains OpStencilAttachmentReadEXT, and stencil write mask is not equal to 0 for "
+                "both front(%" PRIu32 ") and back (%" PRIu32 ").",
+                ds_state->front.writeMask, ds_state->back.writeMask);
+        }
+    }
+
+    bool using_tile_image_op = module_state.static_data_.has_shader_tile_image_depth_read ||
+                               module_state.static_data_.has_shader_tile_image_stencil_read ||
+                               module_state.static_data_.has_shader_tile_image_color_read;
+    const auto *ms_state = pipeline.MultisampleState();
+    if (using_tile_image_op && ms_state && ms_state->sampleShadingEnable && (ms_state->minSampleShading != 1.0)) {
+        skip |= LogError("VUID-RuntimeSpirv-minSampleShading-08732", module_state.handle(), loc,
+                         "minSampleShading (%f) is not equal to 1.0.", ms_state->minSampleShading);
+    }
+
     return skip;
 }
 
@@ -1923,7 +1917,6 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         }
     }
 
-    skip |= ValidateShaderTileImage(module_state, entrypoint, pipeline, stage, loc);
     skip |= ValidateImageWrite(module_state, loc);
     skip |= ValidateShaderExecutionModes(module_state, entrypoint, stage, pipeline, loc);
     skip |= ValidateBuiltinLimits(module_state, entrypoint, pipeline, loc);
@@ -1948,11 +1941,18 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
         skip |= ValidatePointSizeShaderState(module_state, entrypoint, *pipeline, stage, loc);
         skip |= ValidatePrimitiveTopology(module_state, entrypoint, *pipeline, loc);
 
-        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT && pipeline->GraphicsCreateInfo().renderPass == VK_NULL_HANDLE &&
-            module_state.HasCapability(spv::CapabilityInputAttachment) && !enabled_features.dynamicRenderingLocalRead) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061", device, loc,
-                             "is being created with fragment shader state and renderPass = VK_NULL_HANDLE, but fragment "
-                             "shader includes InputAttachment capability.");
+        if (stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
+            if (IsExtEnabled(extensions.vk_ext_shader_tile_image)) {
+                skip |= ValidateShaderTileImage(module_state, entrypoint, *pipeline, loc);
+            }
+
+            if (pipeline->GraphicsCreateInfo().renderPass == VK_NULL_HANDLE &&
+                module_state.HasCapability(spv::CapabilityInputAttachment) && !enabled_features.dynamicRenderingLocalRead) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061", device, loc,
+                                 "is being created with fragment shader with InputAttachment capability, but renderPass is "
+                                 "VK_NULL_HANDLE. (It is only possbile to use input attachments with dynamic rendering if the "
+                                 "dynamicRenderingLocalRead feature is enabled)");
+            }
         }
     }
 
