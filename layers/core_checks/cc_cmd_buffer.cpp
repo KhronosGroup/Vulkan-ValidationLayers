@@ -26,6 +26,8 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
 

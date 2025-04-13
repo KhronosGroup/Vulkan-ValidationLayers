@@ -23,7 +23,6 @@
 #include <cstring>
 #include <vector>
 #include <optional>
-#include <unordered_set>
 
 #include "containers/custom_containers.h"
 #include "state_tracker/shader_instruction.h"

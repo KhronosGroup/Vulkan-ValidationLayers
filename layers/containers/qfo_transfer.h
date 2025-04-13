@@ -22,6 +22,10 @@
 #include "sync/sync_utils.h"
 #include "utils/hash_util.h"
 
+namespace vvl {
+class CommandBuffer;
+}  // namespace vvl
+
 // Types to store queue family ownership (QFO) Transfers
 
 static inline bool IsOwnershipTransfer(const sync_utils::OwnershipTransferBarrier &barrier) {
@@ -70,16 +74,8 @@ struct QFOImageTransferBarrier : public QFOTransferBarrierBase<VkImage> {
           oldLayout(barrier.oldLayout),
           newLayout(barrier.newLayout),
           subresourceRange(barrier.subresourceRange) {}
-    size_t hash() const {
-        // Ignoring the layout information for the purpose of the hash, as we're interested in QFO release/acquisition w.r.t.
-        // the subresource affected, an layout transitions are current validated on another path
-        auto hc = base_hash_combiner() << subresourceRange;
-        return hc.Value();
-    }
-    bool operator==(const QFOImageTransferBarrier &rhs) const {
-        // Ignoring layout w.r.t. equality. See comment in hash above.
-        return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (subresourceRange == rhs.subresourceRange);
-    }
+    size_t hash() const;
+    bool operator==(const QFOImageTransferBarrier &rhs) const;
     static vvl::Struct BarrierName() { return vvl::Struct::VkImageMemoryBarrier; }
 };
 
@@ -94,13 +90,8 @@ struct QFOBufferTransferBarrier : public QFOTransferBarrierBase<VkBuffer> {
         : BaseType(barrier.buffer, barrier.srcQueueFamilyIndex, barrier.dstQueueFamilyIndex),
           offset(barrier.offset),
           size(barrier.size) {}
-    size_t hash() const {
-        auto hc = base_hash_combiner() << offset << size;
-        return hc.Value();
-    }
-    bool operator==(const QFOBufferTransferBarrier &rhs) const {
-        return (static_cast<BaseType>(*this) == static_cast<BaseType>(rhs)) && (offset == rhs.offset) && (size == rhs.size);
-    }
+    size_t hash() const;
+    bool operator==(const QFOBufferTransferBarrier &rhs) const;
     static vvl::Struct BarrierName() { return vvl::Struct::VkBufferMemoryBarrier; }
 };
 

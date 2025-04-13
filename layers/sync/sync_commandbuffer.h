@@ -21,6 +21,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 
 struct ReportProperties;
+struct RecordObject;
 class SyncValidator;
 
 namespace syncval {

@@ -26,6 +26,7 @@
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"

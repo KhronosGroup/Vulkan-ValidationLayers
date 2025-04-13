@@ -47,6 +47,7 @@
 #include "gpuav/spirv/post_process_descriptor_indexing_pass.h"
 #include "gpuav/spirv/vertex_attribute_fetch_oob.h"
 
+#include <filesystem>
 #include <cassert>
 #include <string>
 
@@ -1219,7 +1220,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     }
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+        const auto non_instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
         DumpSpirvToFile(non_instrumented_spirv_file, input_spirv.data(), input_spirv.size());
     }
 
@@ -1323,23 +1324,24 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                                                         extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error);
         if (!is_instrumented_spirv_valid) {
             if (!gpuav_settings.debug_dump_instrumented_shaders) {
-                const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+                const auto non_instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
                 DumpSpirvToFile(non_instrumented_spirv_file, input_spirv.data(), input_spirv.size());
             }
 
-            const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv");
+            const auto instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv";
             DumpSpirvToFile(instrumented_spirv_file, out_instrumented_spirv.data(), out_instrumented_spirv.size());
 
             std::ostringstream strm;
+            const auto invalid_file_path = std::filesystem::absolute(instrumented_spirv_file);
             strm << "Instrumented shader (id " << unique_shader_id << ") is invalid, spirv-val error:\n"
-                 << spirv_val_error << "\nInvalid spirv dumped to " << instrumented_spirv_file
+                 << spirv_val_error << "\nInvalid spirv dumped to " << invalid_file_path
                  << "\nProceeding with non instrumented shader.";
             InternalError(device, loc, strm.str().c_str());
             return false;
         }
     }
     if (is_instrumented_spirv_valid && gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after.spv");
+        const auto instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
         DumpSpirvToFile(instrumented_spirv_file, out_instrumented_spirv.data(), out_instrumented_spirv.size());
     }
 

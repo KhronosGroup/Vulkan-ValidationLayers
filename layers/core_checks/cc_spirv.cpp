@@ -33,6 +33,8 @@
 #include "state_tracker/shader_instruction.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_stage_state.h"
+#include "state_tracker/pipeline_state.h"
+#include "utils/shader_utils.h"
 #include "utils/hash_util.h"
 #include "chassis/chassis_modification_state.h"
 #include "state_tracker/descriptor_sets.h"

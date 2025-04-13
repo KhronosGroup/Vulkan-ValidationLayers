@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 #include "sync_image.h"
+#include "state_tracker/state_tracker.h"
 
 syncval_state::ImageSubState::ImageSubState(vvl::Image &image) : vvl::ImageSubState(image), fragment_encoder(image) {}
 

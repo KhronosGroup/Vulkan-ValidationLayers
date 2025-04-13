@@ -36,6 +36,8 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
 
 using sync_utils::BufferBarrier;
@@ -1759,7 +1761,7 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc
 // Verify image barrier is compatible with the image it references.
 bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
                                                   const Location &barrier_loc, const vvl::Image &image_state,
-                                                  vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
+                                                  CommandBufferImageLayoutMap &layout_updates_state) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
@@ -2336,7 +2338,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
 }
 
 bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
-                                      const Location &barrier_loc, vvl::CommandBuffer::ImageLayoutMap &layout_updates_state) const {
+                                      const Location &barrier_loc, CommandBufferImageLayoutMap &layout_updates_state) const {
     bool skip = false;
 
     const VkImageLayout old_layout = barrier.oldLayout;
@@ -2394,7 +2396,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateBarriersToImages calls.
-    vvl::CommandBuffer::ImageLayoutMap layout_updates_state;
+    CommandBufferImageLayoutMap layout_updates_state;
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
@@ -2424,7 +2426,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateBarriersToImages calls.
-    vvl::CommandBuffer::ImageLayoutMap layout_updates_state;
+    CommandBufferImageLayoutMap layout_updates_state;
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);

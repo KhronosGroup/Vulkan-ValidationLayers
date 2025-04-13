@@ -161,6 +161,7 @@ target_sources(vvl PRIVATE
     chassis/chassis_manual.cpp
     chassis/dispatch_object_manual.cpp
     containers/qfo_transfer.h
+    containers/qfo_transfer.cpp
     containers/range.h
     containers/range_map.h
     containers/subresource_adapter.cpp
@@ -316,12 +317,15 @@ target_sources(vvl PRIVATE
     state_tracker/device_memory_state.h
     state_tracker/device_state.cpp
     state_tracker/device_state.h
+    state_tracker/event_map.h
     state_tracker/fence_state.cpp
     state_tracker/fence_state.h
     state_tracker/image_layout_map.cpp
     state_tracker/image_layout_map.h
     state_tracker/image_state.cpp
     state_tracker/image_state.h
+    state_tracker/last_bound_state.cpp
+    state_tracker/last_bound_state.h
     state_tracker/pipeline_layout_state.cpp
     state_tracker/pipeline_layout_state.h
     state_tracker/pipeline_state.cpp

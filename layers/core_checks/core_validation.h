@@ -20,22 +20,34 @@
 
 #pragma once
 
-#include "state_tracker/image_layout_map.h"
-#include "state_tracker/cmd_buffer_state.h"
-#include "stateless/sl_spirv.h"
+#include "utils/vk_layer_utils.h"
+
+#include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"
+
+#include "state_tracker/state_object.h"
+#include "state_tracker/state_tracker.h"
+#include "state_tracker/image_layout_map.h"
+#include "state_tracker/shader_stage_state.h"
+#include "state_tracker/query_state.h"
+#include "state_tracker/vertex_index_buffer_state.h"
+#include "state_tracker/event_map.h"
+
+#include "containers/subresource_adapter.h"
 #include "containers/qfo_transfer.h"
 #include "containers/custom_containers.h"
-#include <spirv-tools/libspirv.hpp>
+#include "containers/qfo_transfer.h"
 
-// TODO - Get to work with non-STL custom hashmap
-typedef std::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>> GlobalImageLayoutMap;
+#include "generated/dynamic_state_helper.h"
+#include "stateless/sl_spirv.h"
+#include <spirv-tools/libspirv.hpp>
 
 namespace vvl {
 struct DrawDispatchVuid;
 class DescriptorBinding;
 struct DslErrorSource;
+class Bindable;
 }  // namespace vvl
 
 namespace spirv {
@@ -45,6 +57,9 @@ struct StatelessData;
 struct SubpassLayout;
 struct DAGNode;
 struct SemaphoreSubmitState;
+struct LastBound;
+struct ShaderStageState;
+class ValidationCache;
 
 namespace core {
 class Instance : public vvl::InstanceProxy {
@@ -316,7 +331,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                const BufferBarrier& barrier) const;
 
     bool ValidateImageBarrier(const LogObjectList& objlist, const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
-                              const Location& barrier_loc, vvl::CommandBuffer::ImageLayoutMap& layout_updates_state) const;
+                              const Location& barrier_loc, CommandBufferImageLayoutMap& layout_updates_state) const;
 
     bool ValidateBarriers(const Location& loc, const vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
                           VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount, const VkMemoryBarrier* pMemBarriers,
@@ -1062,7 +1077,7 @@ class CoreChecks : public vvl::DeviceProxy {
     void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
 
     bool VerifyImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                   const ImageBarrier& image_barrier, vvl::CommandBuffer::ImageLayoutMap& local_layout_map) const;
+                                   const ImageBarrier& image_barrier, CommandBufferImageLayoutMap& local_layout_map) const;
 
     bool VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
@@ -1072,7 +1087,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,
-                                          vvl::CommandBuffer::ImageLayoutMap& layout_updates_state) const;
+                                          CommandBufferImageLayoutMap& layout_updates_state) const;
 
     void RecordQueuedQFOTransfers(vvl::CommandBuffer& cb_state);
 

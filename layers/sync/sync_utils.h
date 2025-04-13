@@ -17,7 +17,6 @@
 
 #pragma once
 #include "generated/sync_validation_types.h"
-#include "generated/vk_object_types.h"
 #include <vulkan/vulkan.h>
 #include <string>
 

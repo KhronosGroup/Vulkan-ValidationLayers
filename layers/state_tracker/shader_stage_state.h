@@ -79,7 +79,7 @@ inline bool operator<(const DescriptorRequirement &a, const DescriptorRequiremen
 }
 
 // < binding index (of descriptor set) : meta data >
-typedef std::unordered_multimap<uint32_t, DescriptorRequirement> BindingVariableMap;
+using BindingVariableMap = std::unordered_multimap<uint32_t, DescriptorRequirement>;
 
 // Capture which slots (set#->bindings) are actually used by the shaders of this pipeline/shaderObject.
 // This is same as "statically used" in vkspec.html#shaders-staticuse

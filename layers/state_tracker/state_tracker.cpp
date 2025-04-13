@@ -35,6 +35,7 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
@@ -2743,7 +2744,7 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
         assert(false);
     }
 
-    CommandBuffer::PushConstantData push_constant_data;
+    PushConstantData push_constant_data;
     push_constant_data.layout = layout;
     push_constant_data.stage_flags = stageFlags;
     push_constant_data.offset = offset;

@@ -31,6 +31,8 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/render_pass_state.h"
+#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/pipeline_state.h"
 #include <spirv-tools/libspirv.h>
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"

@@ -21,7 +21,7 @@
 #pragma once
 #include "chassis/validation_object.h"
 #include "utils/hash_vk_types.h"
-#include "state_tracker/video_session_state.h"
+#include "state_tracker/video_session_state.h"  // TODO - Remove from this header
 #include "chassis/dispatch_object.h"
 #include "error_message/logging.h"
 #include "containers/span.h"
