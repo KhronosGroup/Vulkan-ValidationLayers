@@ -39,10 +39,6 @@
 #include "containers/limits.h"
 #include "render.h"
 
-#include <cmath>
-#include <functional>
-#include <limits>
-#include <string>
 #include <vector>
 #include <array> // Required for Windows in many tests
 

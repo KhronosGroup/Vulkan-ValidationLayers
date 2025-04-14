@@ -15,7 +15,6 @@
 #include "descriptor_helper.h"
 #include "shader_helper.h"
 
-#include <memory>
 #include <optional>
 
 namespace vkt {

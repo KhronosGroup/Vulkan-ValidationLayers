@@ -18,10 +18,7 @@
 
 #pragma once
 
-#include <algorithm>
 #include <cassert>
-#include <iterator>
-#include <memory>
 #include <vector>
 #include <optional>
 

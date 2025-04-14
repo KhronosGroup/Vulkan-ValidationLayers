@@ -11,7 +11,6 @@
  */
 // stype-check off
 
-#include <array>
 #include "../framework/layer_validation_tests.h"
 
 class PositiveLayerSettings : public VkLayerTest {};

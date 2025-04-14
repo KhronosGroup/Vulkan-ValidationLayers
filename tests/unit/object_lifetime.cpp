@@ -18,7 +18,6 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/external_memory_sync.h"
-#include "../framework/sync_helper.h"
 
 class NegativeObjectLifetime : public VkLayerTest {};
 
