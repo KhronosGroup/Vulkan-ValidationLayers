@@ -994,18 +994,37 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
 
             DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE,
                                     setup_validation_dispatch_pipeline.pipeline);
+
+            // Sync indirect buffer writes - the same command buffer could be executed concurrently
+            // for all we know
+            {
+                VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
+                barrier_write_after_read.srcAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+                barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                barrier_write_after_read.buffer = validation_dispatch_params_buffer.VkHandle();
+                barrier_write_after_read.offset = 0;
+                barrier_write_after_read.size = VK_WHOLE_SIZE;
+
+                DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+                                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
+                                           nullptr);
+            }
+
             DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
 
-            VkBufferMemoryBarrier dispatch_indirect_buffer_mem_barrier = vku::InitStructHelper();
-            dispatch_indirect_buffer_mem_barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-            dispatch_indirect_buffer_mem_barrier.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-            dispatch_indirect_buffer_mem_barrier.buffer = validation_dispatch_params_buffer.VkHandle();
-            dispatch_indirect_buffer_mem_barrier.offset = 0;
-            dispatch_indirect_buffer_mem_barrier.size = VK_WHOLE_SIZE;
+            // Sync indirect buffer reads
+            {
+                VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
+                barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+                barrier_read_after_write.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+                barrier_read_after_write.buffer = validation_dispatch_params_buffer.VkHandle();
+                barrier_read_after_write.offset = 0;
+                barrier_read_after_write.size = VK_WHOLE_SIZE;
 
-            DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                       VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, 1, &dispatch_indirect_buffer_mem_barrier,
-                                       0, nullptr);
+                DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                                           VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, 1, &barrier_read_after_write, 0,
+                                           nullptr);
+            }
         }
 
         // Setup validation pipeline
