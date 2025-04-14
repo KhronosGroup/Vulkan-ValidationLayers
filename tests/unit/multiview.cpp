@@ -658,9 +658,9 @@ TEST_F(NegativeMultiview, Features) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
-    std::vector<const char *> device_extensions;
+    std::vector<const char *> extension_list;
     if (DeviceValidationVersion() < VK_API_VERSION_1_1) {
-        device_extensions.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
+        extension_list.push_back(VK_KHR_MULTIVIEW_EXTENSION_NAME);
     }
 
     VkPhysicalDeviceMultiviewFeatures multiview_features = vku::InitStructHelper();
@@ -682,9 +682,9 @@ TEST_F(NegativeMultiview, Features) {
     VkDeviceCreateInfo device_create_info = vku::InitStructHelper(&features2);
     device_create_info.queueCreateInfoCount = queue_info.Size();
     device_create_info.pQueueCreateInfos = queue_info.Data();
-    device_create_info.ppEnabledExtensionNames = device_extensions.data();
-    device_create_info.enabledExtensionCount = device_extensions.size();
-    VkDevice testDevice;
+    device_create_info.ppEnabledExtensionNames = extension_list.data();
+    device_create_info.enabledExtensionCount = extension_list.size();
+    VkDevice test_device;
 
     if ((multiview_features.multiviewGeometryShader == VK_FALSE) && (multiview_features.multiviewTessellationShader == VK_FALSE)) {
         GTEST_SKIP() << "multiviewGeometryShader and multiviewTessellationShader feature not supported";
@@ -696,7 +696,7 @@ TEST_F(NegativeMultiview, Features) {
     if (multiview_features.multiviewTessellationShader == VK_TRUE) {
         m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceMultiviewFeatures-multiviewTessellationShader-00581");
     }
-    vk::CreateDevice(Gpu(), &device_create_info, NULL, &testDevice);
+    vk::CreateDevice(Gpu(), &device_create_info, nullptr, &test_device);
     m_errorMonitor->VerifyFound();
 }
 

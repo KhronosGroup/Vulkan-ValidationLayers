@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "generated/vk_extension_helper.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
@@ -80,7 +81,7 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
     if (extension == vvl::Extension::Empty) {
         return skip;
     }
-    auto info = ExtensionState::GetInfo(extension);
+    auto info = extensions.GetInfo(extension);
 
     if (!info.state) {
         return skip;  // Unknown extensions cannot be checked so report OK
@@ -103,9 +104,8 @@ bool Instance::ValidateExtensionReqs(const ExtensionState &extensions, const cha
     return skip;
 }
 
-template <typename ExtensionState>
-ExtEnabled ExtensionStateByName(const ExtensionState &extensions, vvl::Extension extension) {
-    auto info = ExtensionState::GetInfo(extension);
+ExtEnabled ExtensionStateByName(const DeviceExtensions &extensions, vvl::Extension extension) {
+    auto info = extensions.GetInfo(extension);
     // unknown extensions can't be enabled in extension struct
     ExtEnabled state = info.state ? extensions.*(info.state) : kNotEnabled;
     return state;

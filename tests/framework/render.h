@@ -22,6 +22,7 @@
 #include "test_framework.h"
 #include "feature_requirements.h"
 #include "binding.h"
+#include "generated/vk_extension_helper.h"
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 #include <android/log.h>
@@ -268,6 +269,9 @@ class VkRenderFramework : public VkTestFramework {
     vkt::Framebuffer *m_framebuffer;
     std::vector<vkt::ImageView> m_render_target_views;   // color attachments but not depth
     std::vector<VkImageView> m_framebuffer_attachments;  // all attachments, can be consumed directly by the API
+
+    InstanceExtensions instance_extensions;
+    DeviceExtensions device_extensions;
 
     // Add ext_name, the names of all instance extensions required by ext_name, and return true if ext_name is supported. If the
     // extension is not supported, no extension names are added for instance creation. `ext_name` can refer to a device or instance

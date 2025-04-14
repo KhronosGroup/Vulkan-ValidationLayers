@@ -169,17 +169,17 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions11) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> device_extensions;
+    std::vector<const char *> extension_list;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+        extension_list.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
     }
 
     VkPhysicalDeviceVulkan11Features features11 = vku::InitStructHelper();
     features11.shaderDrawParameters = VK_FALSE;
 
     m_second_device_ci.pNext = &features11;
-    m_second_device_ci.ppEnabledExtensionNames = device_extensions.data();
-    m_second_device_ci.enabledExtensionCount = device_extensions.size();
+    m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
+    m_second_device_ci.enabledExtensionCount = extension_list.size();
 
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-04476");
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
@@ -191,26 +191,26 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    std::vector<const char *> device_extensions;
+    std::vector<const char *> extension_list;
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
+        extension_list.push_back(VK_KHR_DRAW_INDIRECT_COUNT_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02831");
     }
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
+        extension_list.push_back(VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02832");
     }
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        device_extensions.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+        extension_list.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        extension_list.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02833");
     }
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
+        extension_list.push_back(VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02834");
     }
     if (DeviceExtensionSupported(Gpu(), nullptr, VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME)) {
-        device_extensions.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
+        extension_list.push_back(VK_EXT_SHADER_VIEWPORT_INDEX_LAYER_EXTENSION_NAME);
         m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-ppEnabledExtensionNames-02835");
     }
 
@@ -223,8 +223,8 @@ TEST_F(NegativeDeviceFeatureProperty, PromotedFeaturesExtensions12) {
     features12.shaderOutputLayer = VK_TRUE;  // Set true since both shader_viewport features need to true
 
     m_second_device_ci.pNext = &features12;
-    m_second_device_ci.ppEnabledExtensionNames = device_extensions.data();
-    m_second_device_ci.enabledExtensionCount = device_extensions.size();
+    m_second_device_ci.ppEnabledExtensionNames = extension_list.data();
+    m_second_device_ci.enabledExtensionCount = extension_list.size();
 
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
