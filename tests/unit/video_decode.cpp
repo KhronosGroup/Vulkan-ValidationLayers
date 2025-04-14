@@ -11,6 +11,7 @@
  */
 
 #include "../framework/video_objects.h"
+#include <algorithm>
 
 class NegativeVideoDecode : public VkVideoLayerTest {};
 

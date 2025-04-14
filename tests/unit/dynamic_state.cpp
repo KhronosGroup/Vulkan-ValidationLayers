@@ -3355,13 +3355,13 @@ TEST_F(NegativeDynamicState, SetViewportParam) {
     const auto one_past_max_w = NearestGreater(static_cast<float>(m_device->Physical().limits_.maxViewportDimensions[0]));
     const auto one_past_max_h = NearestGreater(static_cast<float>(m_device->Physical().limits_.maxViewportDimensions[1]));
 
-    const auto min_bound = m_device->Physical().limits_.viewportBoundsRange[0];
-    const auto max_bound = m_device->Physical().limits_.viewportBoundsRange[1];
-    const auto one_before_min_bounds = NearestSmaller(min_bound);
-    const auto one_past_max_bounds = NearestGreater(max_bound);
+    const float min_bound = m_device->Physical().limits_.viewportBoundsRange[0];
+    const float max_bound = m_device->Physical().limits_.viewportBoundsRange[1];
+    const float one_before_min_bounds = NearestSmaller(min_bound);
+    const float one_past_max_bounds = NearestGreater(max_bound);
 
-    const auto below_zero = NearestSmaller(0.0f);
-    const auto past_one = NearestGreater(1.0f);
+    const float below_zero = NearestSmaller(0.0f);
+    const float past_one = NearestGreater(1.0f);
 
     std::vector<TestCase> test_cases = {
         {{0.0, 0.0, 0.0, 64.0, 0.0, 1.0}, "VUID-VkViewport-width-01770"},

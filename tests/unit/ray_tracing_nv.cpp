@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_helper_nv.h"
 #include "../framework/descriptor_helper.h"
+#include <algorithm>
 
 void RayTracingTest::NvInitFrameworkForRayTracingTest(VkPhysicalDeviceFeatures2KHR *features2 /*= nullptr*/,
                                                       VkValidationFeaturesEXT *enabled_features /*= nullptr*/) {

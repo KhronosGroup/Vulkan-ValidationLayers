@@ -16,6 +16,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
+#include <algorithm>
 
 class NegativePipelineLayout : public VkLayerTest {};
 
@@ -971,7 +972,10 @@ TEST_F(NegativePipelineLayout, MultiplePushDescriptorSets) {
         ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding),
                                 VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
     }
-    const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
+    std::vector<VkDescriptorSetLayout> ds_vk_layouts;
+    for (const auto &ds_layout : ds_layouts) {
+        ds_vk_layouts.push_back(ds_layout.handle());
+    }
 
     VkPipelineLayout pipeline_layout;
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();

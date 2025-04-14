@@ -20,6 +20,8 @@
 
 #include <string.h>  // memset(), memcmp()
 #include <cassert>
+#include <algorithm>
+#include <iterator>
 #include <spirv-tools/libspirv.hpp>
 
 #include <vulkan/utility/vk_format_utils.h>
@@ -442,7 +444,11 @@ VkFormatFeatureFlags2 Device::FormatFeaturesBuffer(VkFormat format) const {
 void Device::Wait() const { ASSERT_EQ(VK_SUCCESS, vk::DeviceWaitIdle(handle())); }
 
 VkResult Device::Wait(const std::vector<const Fence *> &fences, bool wait_all, uint64_t timeout) {
-    const std::vector<VkFence> fence_handles = MakeVkHandles<VkFence>(fences);
+    std::vector<VkFence> fence_handles;
+    fence_handles.reserve(fences.size());
+    std::transform(fences.begin(), fences.end(), std::back_inserter(fence_handles),
+                   [](const Fence *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
+
     VkResult err =
         vk::WaitForFences(handle(), static_cast<uint32_t>(fence_handles.size()), fence_handles.data(), wait_all, timeout);
     EXPECT_TRUE(err == VK_SUCCESS || err == VK_TIMEOUT);
@@ -459,7 +465,11 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
 }
 
 VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence) {
-    const std::vector<VkCommandBuffer> cmd_handles = MakeVkHandles<VkCommandBuffer>(cmds);
+    std::vector<VkCommandBuffer> cmd_handles;
+    cmd_handles.reserve(cmds.size());
+    std::transform(cmds.begin(), cmds.end(), std::back_inserter(cmd_handles),
+                   [](const CommandBuffer *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
+
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
     submit_info.pCommandBuffers = cmd_handles.data();
@@ -1737,7 +1747,11 @@ NON_DISPATCHABLE_HANDLE_DTOR(PipelineLayout, vk::DestroyPipelineLayout)
 
 void PipelineLayout::init(const Device &dev, VkPipelineLayoutCreateInfo &info,
                           const std::vector<const DescriptorSetLayout *> &layouts) {
-    const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
+    std::vector<VkDescriptorSetLayout> layout_handles;
+    layout_handles.reserve(layouts.size());
+    std::transform(layouts.begin(), layouts.end(), std::back_inserter(layout_handles),
+                   [](const DescriptorSetLayout *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
+
     info.setLayoutCount = static_cast<uint32_t>(layout_handles.size());
     info.pSetLayouts = layout_handles.data();
 
@@ -1771,7 +1785,10 @@ void DescriptorPool::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(dev
 
 std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
                                                           const std::vector<const DescriptorSetLayout *> &layouts) {
-    const std::vector<VkDescriptorSetLayout> layout_handles = MakeVkHandles<VkDescriptorSetLayout>(layouts);
+    std::vector<VkDescriptorSetLayout> layout_handles;
+    layout_handles.reserve(layouts.size());
+    std::transform(layouts.begin(), layouts.end(), std::back_inserter(layout_handles),
+                   [](const DescriptorSetLayout *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
 
     std::vector<VkDescriptorSet> set_handles;
     set_handles.resize(layout_handles.size());

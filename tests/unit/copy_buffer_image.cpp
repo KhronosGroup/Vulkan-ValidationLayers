@@ -13,6 +13,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "../framework/layer_validation_tests.h"
 
 class NegativeCopyBufferImage : public VkLayerTest {};

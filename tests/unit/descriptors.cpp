@@ -21,6 +21,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/ray_tracing_objects.h"
+#include <algorithm>
 
 class NegativeDescriptors : public VkLayerTest {};
 
@@ -1932,7 +1933,10 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibility) {
     dsl_binding[0].descriptorCount = 2;
     ds_layouts.emplace_back(*m_device, std::vector<VkDescriptorSetLayoutBinding>(1, dsl_binding[0]));
 
-    const auto &ds_vk_layouts = MakeVkHandles<VkDescriptorSetLayout>(ds_layouts);
+    std::vector<VkDescriptorSetLayout> ds_vk_layouts;
+    for (const auto &ds_layout : ds_layouts) {
+        ds_vk_layouts.push_back(ds_layout.handle());
+    }
 
     static const uint32_t NUM_SETS = 4;
     VkDescriptorSet descriptorSet[NUM_SETS] = {};

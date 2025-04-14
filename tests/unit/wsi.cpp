@@ -15,6 +15,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "generated/vk_function_pointers.h"
+#include <algorithm>
 
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
 #include "wayland-client.h"
@@ -610,8 +611,13 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages) {
     m_swapchain.AcquireNextImage(error_fence, vvl::kU64Max);
     m_errorMonitor->VerifyFound();
 
+    std::vector<VkFence> fence_handles;
+    for (const auto &fence : fences) {
+        fence_handles.push_back(fence.handle());
+    }
+
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), fence_handles.size(), fence_handles.data(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, GetSwapchainImageAndTryDestroy) {
@@ -741,8 +747,13 @@ TEST_F(NegativeWsi, SwapchainAcquireTooManyImages2KHR) {
     vk::AcquireNextImage2KHR(device(), &acquire_info, &image_i);
     m_errorMonitor->VerifyFound();
 
+    std::vector<VkFence> fence_handles;
+    for (const auto &fence : fences) {
+        fence_handles.push_back(fence.handle());
+    }
+
     // Cleanup
-    vk::WaitForFences(device(), fences.size(), MakeVkHandles<VkFence>(fences).data(), VK_TRUE, kWaitTimeout);
+    vk::WaitForFences(device(), fence_handles.size(), fence_handles.data(), VK_TRUE, kWaitTimeout);
 }
 
 TEST_F(NegativeWsi, SwapchainImageFormatList) {

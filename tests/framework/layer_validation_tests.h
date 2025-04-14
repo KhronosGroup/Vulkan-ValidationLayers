@@ -123,21 +123,8 @@ template <typename T>
 struct AlwaysFalse : std::false_type {};
 
 // Helpers to get nearest greater or smaller value (of float) -- useful for testing the boundary cases of Vulkan limits
-template <typename T>
-T NearestGreater(const T from) {
-    using Lim = std::numeric_limits<T>;
-    const auto positive_direction = Lim::has_infinity ? Lim::infinity() : Lim::max();
-
-    return std::nextafter(from, positive_direction);
-}
-
-template <typename T>
-T NearestSmaller(const T from) {
-    using Lim = std::numeric_limits<T>;
-    const auto negative_direction = Lim::has_infinity ? -Lim::infinity() : Lim::lowest();
-
-    return std::nextafter(from, negative_direction);
-}
+float NearestGreater(const float from);
+float NearestSmaller(const float from);
 
 // Defining VVL_TESTS_USE_CUSTOM_TEST_FRAMEWORK allows downstream users
 // to inject custom test framework changes. This includes the ability
@@ -455,7 +442,7 @@ void PositiveTestRenderPassCreate(ErrorMonitor *error_monitor, const vkt::Device
                                   bool rp2_supported);
 void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info);
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
-                              const std::initializer_list<const char *> &vuids);
+                              const std::vector<const char *> &vuids);
 void TestRenderPassBegin(ErrorMonitor *error_monitor, const VkDevice device, const VkCommandBuffer command_buffer,
                          const VkRenderPassBeginInfo *begin_info, bool rp2Supported, const char *rp1_vuid, const char *rp2_vuid);
 

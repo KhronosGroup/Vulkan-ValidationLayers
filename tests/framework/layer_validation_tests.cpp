@@ -10,6 +10,8 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
+#include <cmath>
+#include <vector>
 #include "layer_validation_tests.h"
 #include "utils/convert_utils.h"
 
@@ -162,7 +164,7 @@ void PositiveTestRenderPass2KHRCreate(const vkt::Device &device, const VkRenderP
 }
 
 void TestRenderPass2KHRCreate(ErrorMonitor &error_monitor, const vkt::Device &device, const VkRenderPassCreateInfo2KHR &create_info,
-                              const std::initializer_list<const char *> &vuids) {
+                              const std::vector<const char *> &vuids) {
     for (auto vuid : vuids) {
         error_monitor.SetDesiredError(vuid);
     }
@@ -295,6 +297,18 @@ VkSamplerCreateInfo SafeSaneSamplerCreateInfo(void *p_next) {
     sampler_create_info.unnormalizedCoordinates = VK_FALSE;
 
     return sampler_create_info;
+}
+
+float NearestGreater(const float from) {
+    using Lim = std::numeric_limits<float>;
+    const auto positive_direction = Lim::has_infinity ? Lim::infinity() : Lim::max();
+    return std::nextafter(from, positive_direction);
+}
+
+float NearestSmaller(const float from) {
+    using Lim = std::numeric_limits<float>;
+    const auto negative_direction = Lim::has_infinity ? -Lim::infinity() : Lim::lowest();
+    return std::nextafter(from, negative_direction);
 }
 
 void VkLayerTest::Init(VkPhysicalDeviceFeatures *features, VkPhysicalDeviceFeatures2 *features2, void *instance_pnext) {

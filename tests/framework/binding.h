@@ -30,31 +30,6 @@
 
 namespace vkt {
 
-template <class Dst, class Src>
-std::vector<Dst> MakeVkHandles(const std::vector<Src> &v) {
-    std::vector<Dst> handles;
-    handles.reserve(v.size());
-    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src &o) { return o.handle(); });
-    return handles;
-}
-
-template <class Dst, class Src>
-std::vector<Dst> MakeVkHandles(const std::vector<Src *> &v) {
-    std::vector<Dst> handles;
-    handles.reserve(v.size());
-    std::transform(v.begin(), v.end(), std::back_inserter(handles),
-                   [](const Src *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
-    return handles;
-}
-
-template <class Dst, class Src>
-std::vector<Dst> MakeVkHandles(const vvl::span<Src *> &v) {
-    std::vector<Dst> handles;
-    handles.reserve(v.size());
-    std::transform(v.begin(), v.end(), std::back_inserter(handles), [](const Src *o) { return o->handle(); });
-    return handles;
-}
-
 class PhysicalDevice;
 class Device;
 class Queue;

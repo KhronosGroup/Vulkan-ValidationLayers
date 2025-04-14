@@ -17,6 +17,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
 #include "utils/math_utils.h"
+#include <algorithm>
 
 void RayTracingTest::InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features /*= nullptr*/) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);

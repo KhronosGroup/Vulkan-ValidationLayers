@@ -12,6 +12,7 @@
 
 #include "../framework/video_objects.h"
 #include "generated/enum_flag_bits.h"
+#include <algorithm>
 
 class NegativeVideoEncode : public VkVideoLayerTest {};
 
