@@ -141,12 +141,14 @@ bool CoreChecks::ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo
     if (!enabled_features.imageAlignmentControl) {
         skip |= LogError(
             "VUID-VkImageAlignmentControlCreateInfoMESA-imageAlignmentControl-09657", device, create_info_loc.dot(Field::pNext),
-            "contains a VkImageAlignmentControlCreateInfoMESA struct but the imageAlignmentControl feature was not enabled.");
+            "contains a VkImageAlignmentControlCreateInfoMESA struct but the imageAlignmentControl feature was not enabled.\n%s",
+            PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
 
     if (vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(create_info.pNext)) {
         skip |= LogError("VUID-VkImageCreateInfo-pNext-09654", device, create_info_loc.dot(Field::pNext),
-                         "contains both a VkImageAlignmentControlCreateInfoMESA and VkExternalMemoryImageCreateInfo struct.");
+                         "contains both a VkImageAlignmentControlCreateInfoMESA and VkExternalMemoryImageCreateInfo struct.\n%s",
+                         PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
 
     if (create_info.tiling != VK_IMAGE_TILING_OPTIMAL) {
@@ -2376,8 +2378,8 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
     } else if ((image_usage & VK_IMAGE_USAGE_SAMPLED_BIT) && FormatRequiresYcbcrConversionExplicitly(view_format)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-format-06415", pCreateInfo->image, create_info_loc.dot(Field::image),
                          "was created with VK_IMAGE_USAGE_SAMPLED_BIT, but pCreateInfo->format %s requires a "
-                         "VkSamplerYcbcrConversion but one was not passed in the pNext chain.",
-                         string_VkFormat(view_format));
+                         "VkSamplerYcbcrConversion but one was not passed in the pNext chain.\n%s",
+                         string_VkFormat(view_format), PrintPNextChain(Struct::VkImageViewCreateInfo, pCreateInfo->pNext).c_str());
     }
 
     if (pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D && pCreateInfo->viewType != VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
@@ -2416,8 +2418,9 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
         opaque_capture_descriptor_buffer && !(pCreateInfo->flags & VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkImageViewCreateInfo-pNext-08107", pCreateInfo->image, create_info_loc.dot(Field::flags),
                          "(%s) is missing VK_IMAGE_VIEW_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                         string_VkImageViewCreateFlags(pCreateInfo->flags).c_str());
+                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                         string_VkImageViewCreateFlags(pCreateInfo->flags).c_str(),
+                         PrintPNextChain(Struct::VkImageViewCreateInfo, pCreateInfo->pNext).c_str());
     }
 
     skip |= ValidateImageViewSampleWeightQCOM(*pCreateInfo, image_state, create_info_loc);

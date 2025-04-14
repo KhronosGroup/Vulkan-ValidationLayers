@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
@@ -142,7 +143,8 @@ bool Device::ValidateSwapchainCreateInfo(const Context &context, const VkSwapcha
         if (format_list_info == nullptr) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
                              "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but the pNext chain does not contain an instance "
-                             "of VkImageFormatListCreateInfo.");
+                             "of VkImageFormatListCreateInfo.\n%s",
+                             PrintPNextChain(Struct::VkSwapchainCreateInfoKHR, create_info.pNext).c_str());
         } else if (format_list_info->viewFormatCount == 0) {
             skip |= LogError("VUID-VkSwapchainCreateInfoKHR-flags-03168", device, loc.dot(Field::flags),
                              "includes VK_SWAPCHAIN_CREATE_MUTABLE_FORMAT_BIT_KHR but %s is zero.",
@@ -341,10 +343,11 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
         const auto *full_screen_exclusive_win32_info =
             vku::FindStructInPNextChain<VkSurfaceFullScreenExclusiveWin32InfoEXT>(pSurfaceInfo->pNext);
         if (!full_screen_exclusive_win32_info) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671", physicalDevice, error_obj.location,
-                             "pSurfaceCapabilities->pNext contains "
-                             "VkSurfaceCapabilitiesFullScreenExclusiveEXT, but pSurfaceInfo->pNext does not contain "
-                             "VkSurfaceFullScreenExclusiveWin32InfoEXT");
+            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-02671", physicalDevice,
+                             error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                             "contains VkSurfaceCapabilitiesFullScreenExclusiveEXT, but pSurfaceInfo->pNext does not contain "
+                             "VkSurfaceFullScreenExclusiveWin32InfoEXT.\n%s",
+                             PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }
 #endif
@@ -356,29 +359,37 @@ bool Instance::manual_PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(Vk
 
     if (!(vku::FindStructInPNextChain<VkSurfacePresentModeEXT>(pSurfaceInfo->pNext))) {
         if (surface_present_mode_compatibility) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776", physicalDevice, error_obj.location,
-                             "pSurfaceCapabilities->pNext contains VkSurfacePresentModeCompatibilityEXT, but "
-                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.");
+            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07776", physicalDevice,
+                             error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                             "contains VkSurfacePresentModeCompatibilityEXT, but "
+                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.\n%s",
+                             PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
 
         if (surface_present_scaling_compatibilities) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777", physicalDevice, error_obj.location,
-                             "pSurfaceCapabilities->pNext contains VkSurfacePresentScalingCapabilitiesEXT, but "
-                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.");
+            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07777", physicalDevice,
+                             error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                             "contains VkSurfacePresentScalingCapabilitiesEXT, but "
+                             "pSurfaceInfo->pNext does not contain a VkSurfacePresentModeEXT structure.\n%s",
+                             PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }
 
     if (pSurfaceInfo->surface == VK_NULL_HANDLE) {
         if (surface_present_mode_compatibility) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778", physicalDevice, error_obj.location,
-                             "pSurfaceCapabilities->pNext contains a "
-                             "VkSurfacePresentModeCompatibilityEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.");
+            skip |= LogError(
+                "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07778", physicalDevice,
+                error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                "contains a VkSurfacePresentModeCompatibilityEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
+                PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
 
         if (surface_present_scaling_compatibilities) {
-            skip |= LogError("VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779", physicalDevice, error_obj.location,
-                             "pSurfaceCapabilities->pNext contains a "
-                             "VkSurfacePresentScalingCapabilitiesEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.");
+            skip |= LogError(
+                "VUID-vkGetPhysicalDeviceSurfaceCapabilities2KHR-pNext-07779", physicalDevice,
+                error_obj.location.dot(Field::pSurfaceCapabilities).dot(Field::pNext),
+                "contains a VkSurfacePresentScalingCapabilitiesEXT structure, but pSurfaceInfo->surface is VK_NULL_HANDLE.\n%s",
+                PrintPNextChain(Struct::VkSurfaceCapabilities2KHR, pSurfaceCapabilities->pNext).c_str());
         }
     }
     return skip;

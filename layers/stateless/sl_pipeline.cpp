@@ -1466,7 +1466,8 @@ bool Device::manual_PreCallValidateGetPipelinePropertiesEXT(VkDevice device, con
         }
         if (pPipelineProperties->pNext != nullptr) {
             skip |= LogError("VUID-VkPipelinePropertiesIdentifierEXT-pNext-pNext", device,
-                             pipeline_properties_loc.dot(Field::pNext), "is not NULL.");
+                             pipeline_properties_loc.dot(Field::pNext), "is not NULL.\n%s",
+                             PrintPNextChain(Struct::VkPipelinePropertiesIdentifierEXT, pPipelineProperties->pNext).c_str());
         }
     } else {
         skip |= LogError("VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739", device, pipeline_properties_loc, "is NULL.");

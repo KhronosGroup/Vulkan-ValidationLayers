@@ -261,6 +261,15 @@ TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan12Features) {
     m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
+
+    // Once more and check for pNext string
+    m_errorMonitor->SetDesiredError(
+        "pNext chain: VkDeviceCreateInfo::pNext -> [VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO] -> "
+        "[VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO] -> [VkPhysicalDeviceVulkan12Features] -> "
+        "[VkPhysicalDevice8BitStorageFeatures]");
+    m_errorMonitor->SetUnexpectedError("Failed to create device chain");  // for android loader
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDeviceFeatureProperty, PhysicalDeviceVulkan13Features) {

@@ -308,8 +308,9 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     if (opaque_capture_descriptor_buffer && !(image_flags & VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkImageCreateInfo-pNext-08105", device, create_info_loc.dot(Field::flags),
                          "(%s) does not have VK_IMAGE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                         string_VkImageCreateFlags(image_flags).c_str());
+                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                         string_VkImageCreateFlags(image_flags).c_str(),
+                         PrintPNextChain(Struct::VkImageCreateInfo, pCreateInfo->pNext).c_str());
     }
 
     // Check compatibility with VK_KHR_portability_subset
@@ -864,7 +865,8 @@ bool Device::ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &crea
     const auto compression_control = vku::FindStructInPNextChain<VkImageCompressionControlEXT>(create_info.pNext);
     if (drm_format_mod_explict && compression_control) {
         skip |= LogError("VUID-VkImageCreateInfo-pNext-06746", device, create_info_loc.dot(Field::pNext),
-                         "has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.");
+                         "has both VkImageCompressionControlEXT and VkImageDrmFormatModifierExplicitCreateInfoEXT.\n%s",
+                         PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
 
     return skip;
@@ -913,7 +915,7 @@ bool Device::manual_PreCallValidateCreateImageView(VkDevice device, const VkImag
             (vkuFormatIsCompressed_ASTC_HDR(pCreateInfo->format) == false)) {
             skip |=
                 LogError("VUID-VkImageViewASTCDecodeModeEXT-format-04084", pCreateInfo->image, create_info_loc.dot(Field::format),
-                         "%s is  not an ASTC format (because VkImageViewASTCDecodeModeEXT was passed in the pNext chain).",
+                         "%s is not an ASTC format (because VkImageViewASTCDecodeModeEXT was passed in the pNext chain).",
                          string_VkFormat(pCreateInfo->format));
         }
     }

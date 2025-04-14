@@ -1926,8 +1926,8 @@ bool CoreChecks::ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSe
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", device, write_loc.dot(Field::dstBinding),
                          "(%" PRIu32
                          ") is of type VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK, but there is no "
-                         "VkWriteDescriptorSetInlineUniformBlock in the pNext chain.",
-                         update.dstBinding);
+                         "VkWriteDescriptorSetInlineUniformBlock in the pNext chain.\n%s",
+                         update.dstBinding, PrintPNextChain(Struct::VkWriteDescriptorSet, update.pNext).c_str());
     } else if (write_inline_info->dataSize != update.descriptorCount) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02221", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetInlineUniformBlock, Field::dataSize),
@@ -1949,7 +1949,8 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
     if (!pnext_struct) {
         skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02382", device, write_loc.dot(Field::descriptorType),
                          "is VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, but the pNext chain doesn't include "
-                         "VkWriteDescriptorSetAccelerationStructureKHR.");
+                         "VkWriteDescriptorSetAccelerationStructureKHR.\n%s",
+                         PrintPNextChain(Struct::VkWriteDescriptorSet, update.pNext).c_str());
         return skip;
     }
 
@@ -2564,7 +2565,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
                              binding_loc.dot(Field::pNext),
                              "does not contain a VkDescriptorBufferBindingPushDescriptorBufferHandleEXT structure, but "
                              "bufferlessPushDescriptors is VK_FALSE and usage "
-                             "contains VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT");
+                             "contains VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT\n%s",
+                             PrintPNextChain(Struct::VkDescriptorBufferBindingInfoEXT, pBindingInfos[i].pNext).c_str());
         }
 
         if (SafeModulo(pBindingInfos[i].address, phys_dev_ext_props.descriptor_buffer_props.descriptorBufferOffsetAlignment) != 0) {
@@ -2579,7 +2581,8 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer comm
             skip |= LogError("VUID-VkDescriptorBufferBindingPushDescriptorBufferHandleEXT-bufferlessPushDescriptors-08059",
                              commandBuffer, binding_loc.dot(Field::pNext),
                              "contains a VkDescriptorBufferBindingPushDescriptorBufferHandleEXT structure, "
-                             "but bufferlessPushDescriptors is VK_TRUE");
+                             "but bufferlessPushDescriptors is VK_TRUE\n%s",
+                             PrintPNextChain(Struct::VkDescriptorBufferBindingInfoEXT, pBindingInfos[i].pNext).c_str());
         }
     }
 

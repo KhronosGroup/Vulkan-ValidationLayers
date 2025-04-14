@@ -166,6 +166,9 @@ class ErrorLocationHelperOutputGenerator(BaseGenerator):
 
             // Used for VUID maps were we only want the new function name
             Func FindAlias(Func func);
+
+            // Used to help know which struct in a pNext chain is
+            Struct StypeToStruct(VkStructureType stype);
             }  // namespace vvl
             ''')
         self.write("".join(out))
@@ -257,6 +260,19 @@ bool IsFieldPointer(Field field) {
     default:
         return false;
     }
+}
+
+Struct StypeToStruct(VkStructureType stype) {
+    switch (stype) {
+''')
+        for struct in [x for x in self.vk.structs.values() if x.sType]:
+            out.append(f'    case {struct.sType}:\n')
+            out.append(f'       return Struct::{struct.name};\n')
+        out.append('''
+    default:
+        break;
+    }
+    return Struct::Empty;
 }
 
 Func FindAlias(Func func) {

@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "error_message/error_strings.h"
@@ -195,8 +196,9 @@ bool Device::ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create
         if (!custom_create_info) {
             skip |= LogError("VUID-VkSamplerCreateInfo-borderColor-04011", device, create_info_loc.dot(Field::borderColor),
                              "is %s but there is no VkSamplerCustomBorderColorCreateInfoEXT "
-                             "struct in pNext chain.",
-                             string_VkBorderColor(create_info.borderColor));
+                             "struct in pNext chain.\n%s",
+                             string_VkBorderColor(create_info.borderColor),
+                             PrintPNextChain(Struct::VkSamplerCreateInfo, create_info.pNext).c_str());
         } else {
             if ((custom_create_info->format != VK_FORMAT_UNDEFINED) && !vkuFormatIsDepthAndStencil(custom_create_info->format) &&
                 ((create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT &&
@@ -494,8 +496,9 @@ bool Device::manual_PreCallValidateCreateSampler(VkDevice device, const VkSample
     if (vku::FindStructInPNextChain<VkOpaqueCaptureDescriptorDataCreateInfoEXT>(pCreateInfo->pNext)) {
         if (!(pCreateInfo->flags & VK_SAMPLER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkSamplerCreateInfo-pNext-08111", device, create_info_loc.dot(Field::flags),
-                             "is %s but VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                             string_VkSamplerCreateFlags(pCreateInfo->flags).c_str());
+                             "is %s but VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                             string_VkSamplerCreateFlags(pCreateInfo->flags).c_str(),
+                             PrintPNextChain(Struct::VkSamplerCreateInfo, pCreateInfo->pNext).c_str());
         }
     }
 
@@ -622,7 +625,8 @@ bool Device::ValidateDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCr
                     skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-pBindings-07303", device,
                                      binding_loc.dot(Field::descriptorType),
                                      "is VK_DESCRIPTOR_TYPE_MUTABLE_EXT but VkMutableDescriptorTypeCreateInfoEXT is not "
-                                     "included in the pNext chain.");
+                                     "included in the pNext chain.\n%s",
+                                     PrintPNextChain(Struct::VkDescriptorSetLayoutCreateInfo, create_info.pNext).c_str());
                 }
                 if (binding.pImmutableSamplers) {
                     skip |= LogError("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594", device,

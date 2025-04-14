@@ -350,6 +350,11 @@ TEST_F(NegativeImageDrm, CompressionControl) {
     image_info.tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
     image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
     CreateImageTest(image_info, "VUID-VkImageCreateInfo-pNext-06746");
+
+    // Once more and check for pNext string
+    CreateImageTest(image_info,
+                    "pNext chain: VkImageCreateInfo::pNext -> [VkImageDrmFormatModifierExplicitCreateInfoEXT] -> "
+                    "[VkImageCompressionControlEXT]");
 }
 
 TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {

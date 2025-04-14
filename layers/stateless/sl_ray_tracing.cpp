@@ -17,6 +17,7 @@
  */
 
 #include "containers/span.h"
+#include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 
@@ -263,7 +264,8 @@ bool Device::manual_PreCallValidateCreateAccelerationStructureKHR(VkDevice devic
         !(pCreateInfo->createFlags & VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-pNext-08109", device, create_info_loc.dot(Field::createFlags),
                          "includes VK_ACCELERATION_STRUCTURE_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT, but "
-                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.");
+                         "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                         PrintPNextChain(Struct::VkAccelerationStructureCreateInfoKHR, pCreateInfo->pNext).c_str());
     }
     return skip;
 }

@@ -159,8 +159,9 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
         if (!(create_info.flags & VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT)) {
             skip |= LogError("VUID-VkBufferCreateInfo-pNext-08100", device, create_info_loc.dot(Field::flags),
                              "(%s) is missing VK_BUFFER_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_EXT but "
-                             "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.",
-                             string_VkBufferCreateFlags(create_info.flags).c_str());
+                             "VkOpaqueCaptureDescriptorDataCreateInfoEXT is in pNext chain.\n%s",
+                             string_VkBufferCreateFlags(create_info.flags).c_str(),
+                             PrintPNextChain(Struct::VkBufferCreateInfo, create_info.pNext).c_str());
         }
     }
 
