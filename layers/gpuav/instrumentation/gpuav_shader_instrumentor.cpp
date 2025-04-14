@@ -49,6 +49,8 @@
 
 #include <filesystem>
 #include <cassert>
+#include <filesystem>
+namespace fs = std::filesystem;
 #include <string>
 
 namespace gpuav {
@@ -822,14 +824,8 @@ bool GpuShaderInstrumentor::IsPipelineSelectedForInstrumentation(VkPipeline pipe
             std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
             pipeline_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(pipeline));
         }
-        if (!pipeline_debug_name.empty()) {
-            for (const std::regex &shader_selection_regex : gpuav_settings.shader_selection_regexes) {
-                if (std::regex_match(pipeline_debug_name, shader_selection_regex)) {
-                    should_instrument_pipeline = true;
-                    break;
-                }
-            }
-        }
+
+        should_instrument_pipeline = gpuav_settings.MatchesAnyShaderSelectionRegex(pipeline_debug_name);
     }
     if (should_instrument_pipeline) {
         LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
@@ -856,14 +852,7 @@ bool GpuShaderInstrumentor::IsShaderSelectedForInstrumentation(vku::safe_VkShade
                 std::unique_lock<std::mutex> lock(debug_report->debug_output_mutex);
                 shader_debug_name = debug_report->GetUtilsObjectNameNoLock(HandleToUint64(modified_shader));
             }
-            if (!shader_debug_name.empty()) {
-                for (const std::regex &shader_selection_regex : gpuav_settings.shader_selection_regexes) {
-                    if (std::regex_match(shader_debug_name, shader_selection_regex)) {
-                        should_instrument_shader = true;
-                        break;
-                    }
-                }
-            }
+            should_instrument_shader = gpuav_settings.MatchesAnyShaderSelectionRegex(shader_debug_name);
         }
         if (should_instrument_shader) {
             LogInfo("GPU-AV::Selective shader instrumentation", LogObjectList(), loc, "(%s) will be instrumented for validation.",
@@ -1220,8 +1209,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     }
 
     if (gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto non_instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
-        DumpSpirvToFile(non_instrumented_spirv_file, input_spirv.data(), input_spirv.size());
+        const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+        DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
     spirv::Settings module_settings{};
@@ -1324,12 +1313,12 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
                                                         extensions.vk_ext_scalar_block_layout, target_env, spirv_val_error);
         if (!is_instrumented_spirv_valid) {
             if (!gpuav_settings.debug_dump_instrumented_shaders) {
-                const auto non_instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_before.spv";
-                DumpSpirvToFile(non_instrumented_spirv_file, input_spirv.data(), input_spirv.size());
+                const auto non_instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_before.spv");
+                DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
             }
 
-            const auto instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv";
-            DumpSpirvToFile(instrumented_spirv_file, out_instrumented_spirv.data(), out_instrumented_spirv.size());
+            const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after_invalid.spv");
+            DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
 
             std::ostringstream strm;
             const auto invalid_file_path = std::filesystem::absolute(instrumented_spirv_file);
@@ -1341,8 +1330,8 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         }
     }
     if (is_instrumented_spirv_valid && gpuav_settings.debug_dump_instrumented_shaders) {
-        const auto instrumented_spirv_file = "dump_" + std::to_string(unique_shader_id) + "_after.spv";
-        DumpSpirvToFile(instrumented_spirv_file, out_instrumented_spirv.data(), out_instrumented_spirv.size());
+        const auto instrumented_spirv_file = fs::absolute("dump_" + std::to_string(unique_shader_id) + "_after.spv");
+        DumpSpirvToFile(instrumented_spirv_file.string(), out_instrumented_spirv.data(), out_instrumented_spirv.size());
     }
 
     return true;
