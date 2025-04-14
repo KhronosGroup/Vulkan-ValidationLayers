@@ -21,6 +21,16 @@
 #include "generated/vk_function_pointers.h"
 #include "generated/vk_object_types.h"
 
+// Fix GCC 13 issues with regex
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex>
+#if defined(__GNUC__) && (__GNUC__ > 12)
+#pragma GCC diagnostic pop
+#endif
+
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
 #include <android/log.h>  // For __android_log_print()
 #endif
@@ -175,8 +185,7 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     auto guard = Lock();
     VuidAndMessage vuid_and_regex;
     vuid_and_regex.vuid = vuid;
-    std::regex regex(regex_str);
-    vuid_and_regex.SetMsgRegex(std::move(regex_str), std::move(regex));
+    vuid_and_regex.SetMsgRegex(std::move(regex_str));
     desired_messages_.emplace_back(std::move(vuid_and_regex));
     message_flags_ |= msg_flags;
 }
@@ -190,22 +199,8 @@ void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char
     auto guard = Lock();
     VuidAndMessage vuid_and_regex;
     vuid_and_regex.vuid = vuid;
-    std::regex regex(regex_str);
-    std::regex undesired_regex(undesired_regex_str);
-    vuid_and_regex.SetMsgRegex(std::move(regex_str), std::move(regex));
-    desired_messages_.emplace_back(std::move(vuid_and_regex));
-    message_flags_ |= msg_flags;
-}
-
-void ErrorMonitor::SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string regex_str, std::regex regex) {
-    if (NeedCheckSuccess()) {
-        VerifyNotFound();
-    }
-
-    auto guard = Lock();
-    VuidAndMessage vuid_and_regex;
-    vuid_and_regex.vuid = vuid;
-    vuid_and_regex.SetMsgRegex(std::move(regex_str), std::move(regex));
+    vuid_and_regex.SetMsgRegex(std::move(regex_str));
+    vuid_and_regex.SetUndesiredMsgRegex(undesired_regex_str);
     desired_messages_.emplace_back(std::move(vuid_and_regex));
     message_flags_ |= msg_flags;
 }
@@ -217,16 +212,14 @@ void ErrorMonitor::SetDesiredError(const char *msg, uint32_t count) {
 }
 
 void ErrorMonitor::SetDesiredErrorRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
-    const std::regex regex(regex_str);
     for (uint32_t i = 0; i < count; i++) {
-        SetDesiredFailureMsgRegex(kErrorBit, vuid, regex_str, regex);
+        SetDesiredFailureMsgRegex(kErrorBit, vuid, regex_str);
     }
 }
 
 void ErrorMonitor::SetDesiredWarningRegex(const char *vuid, std::string regex_str, uint32_t count /*= 1*/) {
-    const std::regex regex(regex_str);
     for (uint32_t i = 0; i < count; i++) {
-        SetDesiredFailureMsgRegex(kWarningBit, vuid, regex_str, regex);
+        SetDesiredFailureMsgRegex(kWarningBit, vuid, regex_str);
     }
 }
 
@@ -393,14 +386,17 @@ bool ErrorMonitor::VuidAndMessage::Search(const char *vuid_, std::string_view ms
     switch (msg_type) {
         case ErrorMonitor::VuidAndMessage::String:
             return vuid_compare && msg.find(msg_string) != std::string::npos;
-        case ErrorMonitor::VuidAndMessage::Regex:
+        case ErrorMonitor::VuidAndMessage::Regex: {
+            const std::regex msg_regex(msg_string);
             return vuid_compare && std::regex_search(msg.data(), msg_regex);
+        }
         default:
             return false;
     }
 }
 
 bool ErrorMonitor::VuidAndMessage::SearchUndesiredRegex(std::string_view msg) const {
+    const std::regex undesired_msg_regex(undesired_msg_regex_string);
     return !undesired_msg_regex_string.empty() && std::regex_search(msg.data(), undesired_msg_regex);
 }
 

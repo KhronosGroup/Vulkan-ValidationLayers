@@ -20,16 +20,8 @@
 #include <atomic>
 #include <mutex>
 #include <cassert>
-
-// Fix GCC 13 issues with regex
-#if defined(__GNUC__) && (__GNUC__ > 12)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-#include <regex>
-#if defined(__GNUC__) && (__GNUC__ > 12)
-#pragma GCC diagnostic pop
-#endif
+#include <string>
+#include <vector>
 
 #include "error_message/log_message_type.h"
 #include <vulkan/vulkan_core.h>
@@ -100,7 +92,6 @@ class ErrorMonitor {
     void ExpectSuccess(VkDebugReportFlagsEXT const message_flag_mask = kErrorBit);
 
   private:
-    void SetDesiredFailureMsgRegex(const VkFlags msg_flags, const char *vuid, std::string msg_regex, std::regex regex);
     bool ExpectingSuccess() const;
     bool NeedCheckSuccess() const;
     void VerifyNotFound();
@@ -120,22 +111,16 @@ class ErrorMonitor {
         std::string_view vuid;
         enum MsgType { Undefined, String, Regex } msg_type = Undefined;
         std::string msg_string;  // also used to store regex string
-        std::regex msg_regex;
-        std::regex undesired_msg_regex;
         std::string undesired_msg_regex_string;
         void SetMsgString(std::string msg) {
             msg_type = MsgType::String;
             msg_string = std::move(msg);
         }
-        void SetMsgRegex(std::string regex_str, std::regex regex) {
+        void SetMsgRegex(std::string regex_str) {
             msg_type = MsgType::Regex;
             msg_string = std::move(regex_str);
-            msg_regex = std::move(regex);
         }
-        void SetUndesiredMsgRegex(std::string undesired_regex_str, std::regex undesired_regex) {
-            undesired_msg_regex_string = std::move(undesired_regex_str);
-            undesired_msg_regex = std::move(undesired_regex);
-        }
+        void SetUndesiredMsgRegex(std::string undesired_regex_str) { undesired_msg_regex_string = std::move(undesired_regex_str); }
         bool Search(const char *vuid, std::string_view msg) const;
         bool SearchUndesiredRegex(std::string_view msg) const;
         std::string Print() const;
