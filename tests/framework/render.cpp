@@ -24,7 +24,6 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 
-#include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
 #include "vk_layer_config.h"
 #include "shader_helper.h"
@@ -371,10 +370,10 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         return true;
     }
 
-    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
     bool is_instance_ext = false;
     vvl::Extension extension = GetExtension(ext_name);
-    if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
+    const auto &instance_info = instance_extensions.GetInfo(extension);
+    if (instance_info.state) {
         if (!InstanceExtensionSupported(ext_name)) {
             return false;
         } else {
@@ -385,8 +384,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
     // Different tables need to be used for extension dependency lookup depending on whether `ext_name` refers to a device or
     // instance extension
     if (is_instance_ext) {
-        const auto &info = InstanceExtensions::GetInfo(extension);
-        for (const auto &req : info.requirements) {
+        for (const auto &req : instance_info.requirements) {
             if (0 == strncmp(req.name, "VK_VERSION", 10)) {
                 continue;
             }
@@ -396,7 +394,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
-        const auto &info = DeviceExtensions::GetInfo(extension);
+        const auto &info = device_extensions.GetInfo(extension);
         for (const auto &req : info.requirements) {
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
@@ -442,9 +440,9 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
 
     // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
     // extensions.
-    const auto &instance_exts_map = InstanceExtensions::GetInfoMap();
     vvl::Extension extension = GetExtension(dev_ext_name);
-    if (instance_exts_map.find(extension) != instance_exts_map.cend()) {
+    const auto &instance_info = instance_extensions.GetInfo(extension);
+    if (instance_info.state) {
         return true;
     }
 
@@ -453,7 +451,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     }
     m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = DeviceExtensions::GetInfo(extension);
+    const auto &info = device_extensions.GetInfo(extension);
     for (const auto &req : info.requirements) {
         if (!AddRequestedDeviceExtensions(req.name)) {
             return false;

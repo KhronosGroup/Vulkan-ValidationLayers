@@ -443,7 +443,6 @@ TEST_F(VkPositiveLayerTest, AllowedDuplicateStype) {
 
 TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     TEST_DESCRIPTION("Test to see if instance extensions are called during CreateInstance.");
-
     // See https://github.com/KhronosGroup/Vulkan-Loader/issues/537 for more details.
     // This is specifically meant to ensure a crash encountered in profiles does not occur, but also to
     // attempt to ensure that no extension calls have been added to CreateInstance hooks.
@@ -451,24 +450,15 @@ TEST_F(VkPositiveLayerTest, ExtensionsInCreateInstance) {
     //       and the loader will _not_ crash (e.g., nvidia, android seem to not crash in this case, but AMD does).
     //       So, this test will only catch an erroneous extension _if_ run on HW/a driver that crashes in this use
     //       case.
-
-    for (const auto &ext : InstanceExtensions::GetInfoMap()) {
-        // Add all "real" instance extensions
-        if (InstanceExtensionSupported(String(ext.first))) {
-            bool version_required = false;
-            for (const auto &req : ext.second.requirements) {
-                std::string name(req.name);
-                if (name.find("VK_VERSION") != std::string::npos) {
-                    version_required = true;
-                    break;
-                }
-            }
-            if (!version_required) {
-                m_instance_extension_names.emplace_back(String(ext.first));
-            }
-        }
-    }
-
+    AddOptionalExtensions(VK_KHR_SURFACE_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_DISPLAY_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+    AddOptionalExtensions(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());
 }
 
