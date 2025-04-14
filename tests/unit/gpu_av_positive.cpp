@@ -2121,3 +2121,22 @@ TEST_F(PositiveGpuAV, DualShaderLibraryInline) {
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 }
+
+TEST_F(PositiveGpuAV, FailedSampler) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9916");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkSamplerCreateInfo sampler_info = SafeSaneSamplerCreateInfo();
+    VkSampler sampler_handle;
+
+    struct Alloc {
+        static VKAPI_ATTR void *VKAPI_CALL alloc(void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void *VKAPI_CALL reallocFunc(void *, void *, size_t, size_t, VkSystemAllocationScope) { return nullptr; };
+        static VKAPI_ATTR void VKAPI_CALL freeFunc(void *, void *){};
+    };
+    const VkAllocationCallbacks bad_allocator = {nullptr, Alloc::alloc, Alloc::reallocFunc, Alloc::freeFunc, nullptr, nullptr};
+
+    // Will not return VK_SUCCESS on real device (tested by CTS) and need to ignore
+    vk::CreateSampler(device(), &sampler_info, &bad_allocator, &sampler_handle);
+}

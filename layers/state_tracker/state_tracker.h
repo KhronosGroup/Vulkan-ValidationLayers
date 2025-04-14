@@ -1069,7 +1069,6 @@ class DeviceState : public vvl::base::Device {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        const RecordObject& record_obj) override;
 
-    virtual std::shared_ptr<vvl::Sampler> CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo* create_info);
     void PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                      const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                      const RecordObject& record_obj) override;

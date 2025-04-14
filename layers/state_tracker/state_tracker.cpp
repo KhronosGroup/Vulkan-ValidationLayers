@@ -1942,14 +1942,14 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
     }
 }
 
-std::shared_ptr<Sampler> DeviceState::CreateSamplerState(VkSampler handle, const VkSamplerCreateInfo *create_info) {
-    return std::make_shared<Sampler>(handle, create_info);
-}
-
 void DeviceState::PostCallRecordCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                               const RecordObject &record_obj) {
-    Add(CreateSamplerState(*pSampler, pCreateInfo));
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+
+    Add(std::make_shared<Sampler>(*pSampler, pCreateInfo));
     if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
         pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
         custom_border_color_sampler_count++;
