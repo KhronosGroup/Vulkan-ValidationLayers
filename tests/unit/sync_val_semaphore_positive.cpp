@@ -17,6 +17,9 @@
 
 #include <thread>
 #include "../framework/layer_validation_tests.h"
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+#include "../framework/external_memory_sync.h"
+#endif  // VK_USE_PLATFORM_WIN32_KHR
 
 struct PositiveSyncValTimelineSemaphore : public VkSyncValTest {};
 

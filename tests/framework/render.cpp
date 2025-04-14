@@ -1114,7 +1114,12 @@ void VkRenderFramework::DestroyRenderTarget() {
 void VkRenderFramework::SetDefaultDynamicStatesExclude(const std::vector<VkDynamicState> &exclude, bool tessellation,
                                                        VkCommandBuffer commandBuffer) {
     const auto excluded = [&exclude](VkDynamicState state) {
-        return std::find(exclude.begin(), exclude.end(), state) != exclude.end();
+        for (const auto &check_state : exclude) {
+            if (check_state == state) {
+                return true;
+            }
+        }
+        return false;
     };
     if (!m_vertex_buffer) {
         m_vertex_buffer = new vkt::Buffer(*m_device, 32u, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);

@@ -30,8 +30,6 @@
 
 #include <vector>
 
-using vkt::MakeVkHandles;
-
 struct InstanceExtensions;
 struct DeviceExtensions;
 
