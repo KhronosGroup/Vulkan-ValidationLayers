@@ -405,7 +405,9 @@ void Device::RecordRenderPass(VkRenderPass renderPass, const VkRenderPassCreateI
 void Device::PostCallRecordCreateRenderPass(VkDevice device, const VkRenderPassCreateInfo *pCreateInfo,
                                             const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                             const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     vku::safe_VkRenderPassCreateInfo2 create_info_2 = ConvertVkRenderPassCreateInfoToV2KHR(*pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }
@@ -414,7 +416,9 @@ void Device::PostCallRecordCreateRenderPass2KHR(VkDevice device, const VkRenderP
                                                 const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass,
                                                 const RecordObject &record_obj) {
     // Track the state necessary for checking vkCreateGraphicsPipeline (subpass usage of depth and color attachments)
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     vku::safe_VkRenderPassCreateInfo2 create_info_2(pCreateInfo);
     RecordRenderPass(*pRenderPass, create_info_2.ptr());
 }

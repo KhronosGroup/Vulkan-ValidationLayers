@@ -15,6 +15,7 @@
  */
 
 #include "shader_object_state.h"
+#include <vulkan/vulkan_core.h>
 #include "shader_module.h"
 #include "state_tracker/state_tracker.h"
 
@@ -42,8 +43,9 @@ ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &c
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
-            if (pShaders[i] != handle) {
-                linked_shaders.push_back(pShaders[i]);
+            const VkShaderEXT shader_handle = pShaders[i];
+            if (shader_handle != handle && shader_handle != VK_NULL_HANDLE) {
+                linked_shaders.push_back(shader_handle);
             }
         }
     }

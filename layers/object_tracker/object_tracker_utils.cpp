@@ -1323,8 +1323,11 @@ void Device::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, VkDefer
             dispatch_device_->deferred_operation_post_check.insert(deferredOperation, cleanup_fn);
         } else {
             for (uint32_t index = 0; index < createInfoCount; index++) {
-                if (!pPipelines[index]) continue;
-                tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator, record_obj.location, device);
+                const VkPipeline pipeline_handle = pPipelines[index];
+                if (pipeline_handle == VK_NULL_HANDLE) {
+                    continue;  // vkspec.html#pipelines-multiple
+                }
+                tracker.CreateObject(pipeline_handle, kVulkanObjectTypePipeline, pAllocator, record_obj.location, device);
             }
         }
     }
@@ -1453,13 +1456,17 @@ void Device::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCa
     if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pPipelines) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pPipelines[index]) continue;
-            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+            const VkPipeline pipeline_handle = pPipelines[index];
+            if (pipeline_handle == VK_NULL_HANDLE) {
+                continue;  // vkspec.html#pipelines-multiple
+            }
+
+            tracker.CreateObject(pipeline_handle, kVulkanObjectTypePipeline, pAllocator,
                                  record_obj.location.dot(Field::pPipelines, index), device);
 
             if (auto pNext = vku::FindStructInPNextChain<VkPipelineLibraryCreateInfoKHR>(pCreateInfos[index].pNext)) {
                 if ((pNext->libraryCount > 0) && (pNext->pLibraries)) {
-                    const uint64_t linked_handle = HandleToUint64(pPipelines[index]);
+                    const uint64_t linked_handle = HandleToUint64(pipeline_handle);
                     small_vector<std::shared_ptr<ObjTrackState>, 4> libraries;
                     for (uint32_t index2 = 0; index2 < pNext->libraryCount; ++index2) {
                         const uint64_t library_handle = HandleToUint64(pNext->pLibraries[index2]);

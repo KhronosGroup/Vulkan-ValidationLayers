@@ -94,9 +94,6 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     void PreCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
                                            const RecordObject &record_obj, chassis::CreatePipelineLayout &chassis_state) override;
-    void PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator, VkPipelineLayout *pPipelineLayout,
-                                            const RecordObject &record_obj) override;
 
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,

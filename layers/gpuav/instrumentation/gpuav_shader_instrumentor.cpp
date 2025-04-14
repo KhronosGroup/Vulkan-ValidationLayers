@@ -260,21 +260,14 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
     BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
 
-void GpuShaderInstrumentor::PostCallRecordCreatePipelineLayout(VkDevice device, const VkPipelineLayoutCreateInfo *pCreateInfo,
-                                                               const VkAllocationCallbacks *pAllocator,
-                                                               VkPipelineLayout *pPipelineLayout, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
-        InternalError(device, record_obj.location, "Unable to create pipeline layout.");
-        return;
-    }
-    BaseClass::PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
-}
-
 void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                                              const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                                              const RecordObject &record_obj,
                                                              chassis::CreateShaderModule &chassis_state) {
     BaseClass::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
 
     // By default, we instrument everything, but if the setting is enabled, we only will instrument the shaders the app picks
     if (gpuav_settings.select_instrumented_shaders && IsSelectiveInstrumentationEnabled(pCreateInfo->pNext)) {
@@ -424,9 +417,13 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
                                                            const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
     BaseClass::PostCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                               chassis_state);
-    if (!gpuav_settings.IsSpirvModified()) return;
+    if (!gpuav_settings.IsSpirvModified()) {
+        return;
+    }
     // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
-    if (!chassis_state.is_modified) return;
+    if (!chassis_state.is_modified) {
+        return;
+    }
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         // If there are multiple shaders being created, and one is bad, will return a non VK_SUCCESS but we need to check if the
         // VkShaderEXT was null or not to actually know if it was created
@@ -616,9 +613,13 @@ void GpuShaderInstrumentor::PostCallRecordCreateGraphicsPipelines(VkDevice devic
     if (!chassis_state.is_modified) return;
 
     for (uint32_t i = 0; i < count; ++i) {
-        UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
+        const VkPipeline pipeline_handle = pPipelines[i];
+        if (pipeline_handle == VK_NULL_HANDLE) {
+            continue;  // vkspec.html#pipelines-multiple
+        }
 
-        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
+        UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
+        auto pipeline_state = Get<vvl::Pipeline>(pipeline_handle);
         ASSERT_AND_CONTINUE(pipeline_state);
 
         // Move all instrumentation until the final linking time
@@ -648,9 +649,14 @@ void GpuShaderInstrumentor::PostCallRecordCreateComputePipelines(VkDevice device
     if (!chassis_state.is_modified) return;
 
     for (uint32_t i = 0; i < count; ++i) {
+        const VkPipeline pipeline_handle = pPipelines[i];
+        if (pipeline_handle == VK_NULL_HANDLE) {
+            continue;  // vkspec.html#pipelines-multiple
+        }
+
         UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state.modified_create_infos[i]);
 
-        auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
+        auto pipeline_state = Get<vvl::Pipeline>(pipeline_handle);
         ASSERT_AND_CONTINUE(pipeline_state);
         auto &shader_instrumentation_metadata = chassis_state.shader_instrumentations_metadata[i];
         PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);
@@ -712,9 +718,14 @@ void GpuShaderInstrumentor::PostCallRecordCreateRayTracingPipelinesKHR(
         dispatch_device_->deferred_operation_post_check.insert(deferredOperation, std::move(deferred_op_post_checks));
     } else {
         for (uint32_t i = 0; i < count; ++i) {
+            const VkPipeline pipeline_handle = pPipelines[i];
+            if (pipeline_handle == VK_NULL_HANDLE) {
+                continue;  // vkspec.html#pipelines-multiple
+            }
+
             UtilCopyCreatePipelineFeedbackData(pCreateInfos[i], chassis_state->modified_create_infos[i]);
 
-            auto pipeline_state = Get<vvl::Pipeline>(pPipelines[i]);
+            auto pipeline_state = Get<vvl::Pipeline>(pipeline_handle);
 
             auto &shader_instrumentation_metadata = chassis_state->shader_instrumentations_metadata[i];
             PostCallRecordPipelineCreationShaderInstrumentation(*pipeline_state, shader_instrumentation_metadata);

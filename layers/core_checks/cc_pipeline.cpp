@@ -809,12 +809,12 @@ bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, 
 void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-
     BaseClass::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
 
-    auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline);
-    if (pipeline_state) {
+    if (auto pipeline_state = Get<vvl::Pipeline>(pInfo->pipeline)) {
         pipeline_state->binary_data_released = true;
     }
 }

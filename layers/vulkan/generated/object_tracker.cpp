@@ -7448,10 +7448,10 @@ bool Device::PreCallValidateCreateShadersEXT(VkDevice device, uint32_t createInf
 void Device::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT* pCreateInfos,
                                             const VkAllocationCallbacks* pAllocator, VkShaderEXT* pShaders,
                                             const RecordObject& record_obj) {
-    if (record_obj.result < VK_SUCCESS) return;
+    if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;
     if (pShaders) {
         for (uint32_t index = 0; index < createInfoCount; index++) {
-            if (!pShaders[index]) break;
+            if (!pShaders[index]) continue;
             tracker.CreateObject(pShaders[index], kVulkanObjectTypeShaderEXT, pAllocator,
                                  record_obj.location.dot(Field::pShaders, index), device);
         }

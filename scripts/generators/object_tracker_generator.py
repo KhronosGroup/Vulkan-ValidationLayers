@@ -477,8 +477,9 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
                 postPrototype = f'void {class_name}::PostCallRecord{prototype} {{\n'
                 postPrototype = postPrototype.replace(')', ', const RecordObject& record_obj)')
                 if command.returnType == 'VkResult':
-                    # The two createpipelines APIs may create on failure -- skip the success result check
-                    if 'CreateGraphicsPipelines' not in command.name and 'CreateComputePipelines' not in command.name and 'CreateRayTracingPipelines' not in command.name:
+                    # Some commands can have partial valid handles be created
+                    partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT']
+                    if command.name not in partial_success_commands:
                         postPrototype = postPrototype.replace('{', '{\n    if (record_obj.result < VK_SUCCESS) return;')
                 out.append(postPrototype)
 
@@ -1055,25 +1056,24 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Handle object create operations if last parameter is created by this call
         if isCreate:
             handle_type = command.params[-1].type
-            isCreatePipelines = 'CreateGraphicsPipelines' in command.name or 'CreateComputePipelines' in command.name or 'CreateRayTracingPipelines' in command.name
-            isCreateShaders = 'CreateShaders' in command.name
-
+            partial_success_commands = ['vkCreateGraphicsPipelines', 'vkCreateComputePipelines', 'vkCreateRayTracingPipelinesNV', 'vkCreateRayTracingPipelinesKHR', 'vkCreateShadersEXT']
             if handle_type in self.vk.handles:
                 # Check for special case where multiple handles are returned
                 objectArray = command.params[-1].length is not None
 
                 if objectArray:
-                    if isCreatePipelines:
+                    if command.name in partial_success_commands:
                         post_call_record += 'if (VK_ERROR_VALIDATION_FAILED_EXT == record_obj.result) return;\n'
 
                     post_call_record += f'if ({command.params[-1].name}) {{\n'
                     countIsPointer = '*' if command.params[-2].type == 'uint32_t' and command.params[-2].pointer else ''
                     post_call_record += f'for (uint32_t index = 0; index < {countIsPointer}{command.params[-1].length}; index++) {{\n'
 
-                if isCreatePipelines:
-                    post_call_record += 'if (!pPipelines[index]) continue;\n'
-                elif isCreateShaders:
-                    post_call_record += 'if (!pShaders[index]) break;\n'
+                if command.name in partial_success_commands:
+                    if command.name == 'vkCreateShadersEXT':
+                        post_call_record += 'if (!pShaders[index]) continue;\n'
+                    else:
+                        post_call_record += 'if (!pPipelines[index]) continue;\n'
 
                 allocator = command.params[-2].name if command.params[-2].type == 'VkAllocationCallbacks' else 'nullptr'
                 objectDest = f'{command.params[-1].name}[index]' if objectArray else f'*{command.params[-1].name}'

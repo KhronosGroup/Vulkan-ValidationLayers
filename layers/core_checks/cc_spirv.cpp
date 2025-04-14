@@ -2080,6 +2080,7 @@ void CoreChecks::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createI
     BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
                                                           chassis_state);
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        // Will be empty if not VK_SHADER_CODE_TYPE_SPIRV_EXT
         if (chassis_state.module_states[i]) {
             chassis_state.skip |= stateless_spirv_validator.Validate(
                 *chassis_state.module_states[i], chassis_state.stateless_data[i], record_obj.location.dot(Field::pCreateInfos, i));
