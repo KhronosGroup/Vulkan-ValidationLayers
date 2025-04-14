@@ -24,6 +24,7 @@
 
 #include <vulkan/utility/vk_format_utils.h>
 
+#include "generated/vk_extension_helper.h"
 #include "layer_validation_tests.h"
 #include "vk_layer_config.h"
 #include "shader_helper.h"
@@ -56,11 +57,26 @@ VkRenderFramework::VkRenderFramework()
     m_clear_color.float32[1] = 0.25f;
     m_clear_color.float32[2] = 0.25f;
     m_clear_color.float32[3] = 0.0f;
+
+    // While it seems very undeal to have to allocate these on the heap, the alternative is to include vk_extension_helper.h (which
+    // contains custom_container.h) in the header which will add a measured 150ms second per test file to compile. This is the only
+    // code that requires custom hash maps
+    m_instance_extensions = new InstanceExtensions();
+    m_device_extensions = new DeviceExtensions();
 }
 
 VkRenderFramework::~VkRenderFramework() {
     ShutdownFramework();
     m_errorMonitor->Finish();
+
+    if (m_device_extensions) {
+        delete m_device_extensions;
+        m_device_extensions = nullptr;
+    }
+    if (m_instance_extensions) {
+        delete m_instance_extensions;
+        m_instance_extensions = nullptr;
+    }
 }
 
 VkPhysicalDevice VkRenderFramework::Gpu() const {
@@ -372,7 +388,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
 
     bool is_instance_ext = false;
     vvl::Extension extension = GetExtension(ext_name);
-    const auto &instance_info = instance_extensions.GetInfo(extension);
+    const auto &instance_info = m_instance_extensions->GetInfo(extension);
     if (instance_info.state) {
         if (!InstanceExtensionSupported(ext_name)) {
             return false;
@@ -394,7 +410,7 @@ bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
         }
         m_instance_extension_names.push_back(ext_name);
     } else {
-        const auto &info = device_extensions.GetInfo(extension);
+        const auto &info = m_device_extensions->GetInfo(extension);
         for (const auto &req : info.requirements) {
             if (!AddRequestedInstanceExtensions(req.name)) {
                 return false;
@@ -441,7 +457,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     // If this is an instance extension, just return true under the assumption instance extensions do not depend on any device
     // extensions.
     vvl::Extension extension = GetExtension(dev_ext_name);
-    const auto &instance_info = instance_extensions.GetInfo(extension);
+    const auto &instance_info = m_instance_extensions->GetInfo(extension);
     if (instance_info.state) {
         return true;
     }
@@ -451,7 +467,7 @@ bool VkRenderFramework::AddRequestedDeviceExtensions(const char *dev_ext_name) {
     }
     m_device_extension_names.push_back(dev_ext_name);
 
-    const auto &info = device_extensions.GetInfo(extension);
+    const auto &info = m_device_extensions->GetInfo(extension);
     for (const auto &req : info.requirements) {
         if (!AddRequestedDeviceExtensions(req.name)) {
             return false;
