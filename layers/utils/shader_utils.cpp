@@ -191,8 +191,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
 }
 
 // This is used to help dump SPIR-V while debugging intermediate phases of any altercations to the SPIR-V
-void DumpSpirvToFile(const std::string &file_name, const uint32_t *spirv, size_t spirv_dwords_count) {
-    const auto file_path = fs::absolute(file_name);
+void DumpSpirvToFile(const std::string &file_path, const uint32_t *spirv, size_t spirv_dwords_count) {
     std::ofstream debug_file(file_path, std::ios::out | std::ios::binary);
     debug_file.write(reinterpret_cast<const char *>(spirv), spirv_dwords_count * sizeof(uint32_t));
 }

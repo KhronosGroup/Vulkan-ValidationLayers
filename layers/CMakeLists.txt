@@ -280,6 +280,7 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.h
     ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.cpp
     gpuav/core/gpuav_settings.h
+    gpuav/core/gpuav_settings.cpp
     gpuav/core/gpuav_constants.h
     gpuav/validation_cmd/gpuav_validation_cmd_common.h
     gpuav/validation_cmd/gpuav_validation_cmd_common.cpp

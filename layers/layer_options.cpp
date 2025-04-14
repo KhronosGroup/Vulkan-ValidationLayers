@@ -1094,7 +1094,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT)) {
                 vkuGetLayerSettingValues(layer_setting_set, VK_LAYER_GPUAV_SHADERS_TO_INSTRUMENT, shaders_to_instrument);
             }
-            gpuav_settings.GetShaderSelectionRegexes(shaders_to_instrument);
+            gpuav_settings.SetShaderSelectionRegexes(std::move(shaders_to_instrument));
         }
 
         // No need to enable shader instrumentation options is no instrumentation is done
