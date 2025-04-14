@@ -461,7 +461,7 @@ bool BestPractices::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindI
 
 void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo* pBindInfo,
                                                         VkFence fence, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
+    if (VK_SUCCESS != record_obj.result) {
         return;
     }
 
@@ -484,6 +484,7 @@ void BestPractices::ManualPostCallRecordQueueBindSparse(VkQueue queue, uint32_t 
 
 void BestPractices::ManualPostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits,
                                                     VkFence fence, const RecordObject& record_obj) {
+    // We ignore the VkResult because we want to call the total attempted queue submit calls
     // AMD best practice
     num_queue_submissions_ += submitCount;
 }

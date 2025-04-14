@@ -402,9 +402,11 @@ bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer &cb_state, con
 void Validator::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage,
                                           const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
-
     BaseClass::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
         // non-sparse images set up their layout maps when memory is bound
         if (auto image_state = Get<vvl::Image>(*pImage)) {
@@ -634,8 +636,8 @@ void Validator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const 
 
 void Validator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                               const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
     BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
+    if (VK_SUCCESS != record_obj.result) return;
 
     if (auto image_state = Get<vvl::Image>(image)) {
         image_state->SetInitialLayoutMap();

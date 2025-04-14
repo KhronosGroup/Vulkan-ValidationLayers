@@ -307,7 +307,7 @@ bool BestPractices::ValidateBindMemory(VkDevice device, VkDeviceMemory memory, c
 void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindBufferMemoryInfo* pBindInfos,
                                                           const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
+    if (VK_SUCCESS != record_obj.result && bindInfoCount > 1) {
         bool found_status = false;
         for (uint32_t i = 0; i < bindInfoCount; i++) {
             if (auto* bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {
@@ -332,7 +332,7 @@ void BestPractices::ManualPostCallRecordBindBufferMemory2(VkDevice device, uint3
 
 void BestPractices::ManualPostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount,
                                                          const VkBindImageMemoryInfo* pBindInfos, const RecordObject& record_obj) {
-    if (record_obj.result != VK_SUCCESS && bindInfoCount > 1) {
+    if (VK_SUCCESS != record_obj.result && bindInfoCount > 1) {
         bool found_status = false;
         for (uint32_t i = 0; i < bindInfoCount; i++) {
             if (auto* bind_memory_status = vku::FindStructInPNextChain<VkBindMemoryStatus>(pBindInfos[i].pNext)) {

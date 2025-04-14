@@ -420,8 +420,9 @@ void DeviceState::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreat
 void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                              const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     std::shared_ptr<Buffer> buffer_state = CreateBufferState(*pBuffer, pCreateInfo);
 
     const auto *opaque_capture_address = vku::FindStructInPNextChain<VkBufferOpaqueCaptureAddressCreateInfo>(pCreateInfo->pNext);
@@ -461,8 +462,9 @@ std::shared_ptr<BufferView> DeviceState::CreateBufferViewState(const std::shared
 void DeviceState::PostCallRecordCreateBufferView(VkDevice device, const VkBufferViewCreateInfo *pCreateInfo,
                                                  const VkAllocationCallbacks *pAllocator, VkBufferView *pView,
                                                  const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto buffer_state = Get<Buffer>(pCreateInfo->buffer);
 
     VkFormatFeatureFlags2KHR buffer_features;
@@ -490,7 +492,9 @@ std::shared_ptr<ImageView> DeviceState::CreateImageViewState(const std::shared_p
 void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                 const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                 const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto image_state = Get<Image>(pCreateInfo->image);
     ASSERT_AND_RETURN(image_state);
 
@@ -1025,7 +1029,9 @@ void DeviceState::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
 
 void DeviceState::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                             const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
 }
@@ -1087,7 +1093,9 @@ void DeviceState::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCo
 
 void DeviceState::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                              const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
 }
@@ -1245,7 +1253,9 @@ void DeviceState::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
 
 void DeviceState::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
                                                 VkFence fence, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
 }
@@ -1385,6 +1395,10 @@ void DeviceState::PostCallRecordGetDeviceQueue2(VkDevice device, const VkDeviceQ
 }
 
 void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {
+    // We assume this is only ever non-success if it is VK_ERROR_DEVICE_LOST, in that case we don't want to update state
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     if (auto queue_state = Get<Queue>(queue)) {
         queue_state->NotifyAndWait(record_obj.location);
 
@@ -1402,6 +1416,11 @@ void DeviceState::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject 
 }
 
 void DeviceState::PostCallRecordDeviceWaitIdle(VkDevice device, const RecordObject &record_obj) {
+    // We assume this is only ever non-success if it is VK_ERROR_DEVICE_LOST, in that case we don't want to update state
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+
     // Sort the queues by id to notify in deterministic order (queue creation order).
     // This is not needed for correctness, but gives deterministic behavior to certain
     // types of bugs in the queue thread.
@@ -1702,6 +1721,12 @@ void DeviceState::PostCallRecordResetCommandPool(VkDevice device, VkCommandPool 
 
 void DeviceState::PostCallRecordResetFences(VkDevice device, uint32_t fenceCount, const VkFence *pFences,
                                             const RecordObject &record_obj) {
+    // Discussion what a failed reset with multiple fences would mean
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4253
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+
     for (uint32_t i = 0; i < fenceCount; ++i) {
         if (auto fence_state = Get<Fence>(pFences[i])) {
             fence_state->Reset();
@@ -1790,12 +1815,14 @@ void DeviceState::PostCallRecordCreateGraphicsPipelines(VkDevice device, VkPipel
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                         const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                         chassis::CreateGraphicsPipelines &chassis_state) {
-    // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pipeline_states[i]->SetHandle(pPipelines[i]);
-            Add(std::move(pipeline_states[i]));
+        const VkPipeline pipeline_handle = pPipelines[i];
+        if (pipeline_handle == VK_NULL_HANDLE) {
+            continue;  // vkspec.html#pipelines-multiple
         }
+
+        pipeline_states[i]->SetHandle(pipeline_handle);
+        Add(std::move(pipeline_states[i]));
     }
     pipeline_states.clear();
 }
@@ -1827,12 +1854,14 @@ void DeviceState::PostCallRecordCreateComputePipelines(VkDevice device, VkPipeli
                                                        const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                        const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                        chassis::CreateComputePipelines &chassis_state) {
-    // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pipeline_states[i]->SetHandle(pPipelines[i]);
-            Add(std::move(pipeline_states[i]));
+        const VkPipeline pipeline_handle = pPipelines[i];
+        if (pipeline_handle == VK_NULL_HANDLE) {
+            continue;  // vkspec.html#pipelines-multiple
         }
+
+        pipeline_states[i]->SetHandle(pipeline_handle);
+        Add(std::move(pipeline_states[i]));
     }
     pipeline_states.clear();
 }
@@ -1863,12 +1892,14 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             const RecordObject &record_obj, PipelineStates &pipeline_states) {
-    // This API may create pipelines regardless of the return value
     for (uint32_t i = 0; i < count; i++) {
-        if (pPipelines[i] != VK_NULL_HANDLE) {
-            pipeline_states[i]->SetHandle(pPipelines[i]);
-            Add(std::move(pipeline_states[i]));
+        const VkPipeline pipeline_handle = pPipelines[i];
+        if (pipeline_handle == VK_NULL_HANDLE) {
+            continue;  // vkspec.html#pipelines-multiple
         }
+
+        pipeline_states[i]->SetHandle(pipeline_handle);
+        Add(std::move(pipeline_states[i]));
     }
     pipeline_states.clear();
 }
@@ -1904,14 +1935,15 @@ void DeviceState::PostCallRecordCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                              std::shared_ptr<chassis::CreateRayTracingPipelinesKHR> chassis_state) {
     const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE && record_obj.result == VK_OPERATION_DEFERRED_KHR);
-    // This API may create pipelines regardless of the return value
-
     if (!is_operation_deferred) {
         for (uint32_t i = 0; i < count; i++) {
-            if (pPipelines[i] != VK_NULL_HANDLE) {
-                pipeline_states[i]->SetHandle(pPipelines[i]);
-                Add(std::move(pipeline_states[i]));
+            const VkPipeline pipeline_handle = pPipelines[i];
+            if (pipeline_handle == VK_NULL_HANDLE) {
+                continue;  // vkspec.html#pipelines-multiple
             }
+
+            pipeline_states[i]->SetHandle(pipeline_handle);
+            Add(std::move(pipeline_states[i]));
         }
     } else {
         // Deferred creation: pipelines will be considered created once the defferedOperation object
@@ -2085,12 +2117,11 @@ void DeviceState::PostCallRecordEndCommandBuffer(VkCommandBuffer commandBuffer, 
 
 void DeviceState::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
                                                    const RecordObject &record_obj) {
-    if (VK_SUCCESS == record_obj.result) {
-        auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-        if (cb_state) {
-            cb_state->Reset(record_obj.location);
-        }
+    if (VK_SUCCESS != record_obj.result) {
+        return;
     }
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->Reset(record_obj.location);
 }
 
 // Validation cache:
@@ -2318,6 +2349,12 @@ void DeviceState::PostCallRecordBuildAccelerationStructuresKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount,
     const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
     const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos, const RecordObject &record_obj) {
+    // Discussion what a failed build with multiple AccelerationStructures would mean
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4254
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
+
     for (uint32_t i = 0; i < infoCount; ++i) {
         if (auto dst_as_state = Get<AccelerationStructureKHR>(pInfos[i].dstAccelerationStructure)) {
             dst_as_state->Build(&pInfos[i], true, *ppBuildRangeInfos);
@@ -3622,6 +3659,7 @@ void DeviceState::RecordCreateSwapchainState(VkResult result, const VkSwapchainC
 void DeviceState::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *pCreateInfo,
                                                    const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchain,
                                                    const RecordObject &record_obj) {
+    // Handle result in RecordCreateSwapchainState
     auto surface_state = instance_state->Get<Surface>(pCreateInfo->surface);
     auto old_swapchain_state = Get<Swapchain>(pCreateInfo->oldSwapchain);
     RecordCreateSwapchainState(record_obj.result, pCreateInfo, pSwapchain, std::move(surface_state), old_swapchain_state.get());
@@ -3762,11 +3800,13 @@ void DeviceState::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint3
                                                           const VkSwapchainCreateInfoKHR *pCreateInfos,
                                                           const VkAllocationCallbacks *pAllocator, VkSwapchainKHR *pSwapchains,
                                                           const RecordObject &record_obj) {
+    // Handle result in RecordCreateSwapchainState
     if (pCreateInfos) {
         for (uint32_t i = 0; i < swapchainCount; i++) {
-            auto surface_state = instance_state->Get<Surface>(pCreateInfos[i].surface);
-            auto old_swapchain_state = Get<Swapchain>(pCreateInfos[i].oldSwapchain);
-            RecordCreateSwapchainState(record_obj.result, &pCreateInfos[i], &pSwapchains[i], std::move(surface_state),
+            const VkSwapchainCreateInfoKHR &create_info = pCreateInfos[i];
+            auto surface_state = instance_state->Get<Surface>(create_info.surface);
+            auto old_swapchain_state = Get<Swapchain>(create_info.oldSwapchain);
+            RecordCreateSwapchainState(record_obj.result, &create_info, &pSwapchains[i], std::move(surface_state),
                                        old_swapchain_state.get());
         }
     }
@@ -3815,10 +3855,9 @@ std::shared_ptr<PhysicalDevice> InstanceState::CreatePhysicalDeviceState(VkPhysi
 
 void InstanceState::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationCallbacks *pAllocator,
                                                  VkInstance *pInstance, const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) {
+    if (VK_SUCCESS != record_obj.result) {
         return;
     }
-
     uint32_t count = 0;
     // this can fail if the allocator fails
     VkResult result = DispatchEnumeratePhysicalDevices(*pInstance, &count, nullptr);
@@ -4795,14 +4834,13 @@ void DeviceState::PreCallRecordCreateShadersEXT(VkDevice device, uint32_t create
                                                 VkShaderEXT *pShaders, const RecordObject &record_obj,
                                                 chassis::ShaderObject &chassis_state) {
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pCreateInfos[i].codeSize == 0 || !pCreateInfos[i].pCode) {
+        const VkShaderCreateInfoEXT &create_info = pCreateInfos[i];
+        if (create_info.codeSize == 0 || !create_info.pCode || create_info.codeType != VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             continue;
         }
         // don't need to worry about GroupDecoration with VK_EXT_shader_object
-        if (pCreateInfos[i].codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
-            chassis_state.module_states[i] = std::make_shared<spirv::Module>(
-                pCreateInfos[i].codeSize, static_cast<const uint32_t *>(pCreateInfos[i].pCode), &chassis_state.stateless_data[i]);
-        }
+        chassis_state.module_states[i] = std::make_shared<spirv::Module>(
+            create_info.codeSize, static_cast<const uint32_t *>(create_info.pCode), &chassis_state.stateless_data[i]);
     }
 }
 
@@ -4817,18 +4855,25 @@ void DeviceState::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t creat
                                                  const VkShaderCreateInfoEXT *pCreateInfos, const VkAllocationCallbacks *pAllocator,
                                                  VkShaderEXT *pShaders, const RecordObject &record_obj,
                                                  chassis::ShaderObject &chassis_state) {
-    if (VK_SUCCESS != record_obj.result) return;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
-        if (pShaders[i] != VK_NULL_HANDLE) {
-            Add(std::make_shared<ShaderObject>(*this, pCreateInfos[i], pShaders[i], chassis_state.module_states[i], createInfoCount,
-                                               pShaders));
+        // If there are multiple shaders being created, and one is bad, will return a non VK_SUCCESS but we need to check if the
+        // VkShaderEXT was null or not to actually know if it was created
+        const VkShaderEXT shader_handle = pShaders[i];
+        if (shader_handle == VK_NULL_HANDLE) {
+            continue;
         }
+        Add(std::make_shared<ShaderObject>(*this, pCreateInfos[i], shader_handle, chassis_state.module_states[i], createInfoCount,
+                                           pShaders));
     }
 }
 
 void DeviceState::PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                              const VkCopyAccelerationStructureInfoKHR *pInfo,
                                                              const RecordObject &record_obj) {
+    // Might be deferred
+    if (record_obj.result < VK_SUCCESS) {
+        return;
+    }
     auto src_as_state = Get<AccelerationStructureKHR>(pInfo->src);
     auto dst_as_state = Get<AccelerationStructureKHR>(pInfo->dst);
     if (dst_as_state && src_as_state) {
@@ -5280,8 +5325,9 @@ void DeviceState::PostCallRecordCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandB
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                   const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto swapchain_state = Get<Swapchain>(swapchain);
     ASSERT_AND_RETURN(swapchain_state);
     swapchain_state->exclusive_full_screen_access = true;
@@ -5289,8 +5335,9 @@ void DeviceState::PostCallRecordAcquireFullScreenExclusiveModeEXT(VkDevice devic
 
 void DeviceState::PostCallRecordReleaseFullScreenExclusiveModeEXT(VkDevice device, VkSwapchainKHR swapchain,
                                                                   const RecordObject &record_obj) {
-    if (record_obj.result != VK_SUCCESS) return;
-
+    if (VK_SUCCESS != record_obj.result) {
+        return;
+    }
     auto swapchain_state = Get<Swapchain>(swapchain);
     ASSERT_AND_RETURN(swapchain_state);
     swapchain_state->exclusive_full_screen_access = false;
