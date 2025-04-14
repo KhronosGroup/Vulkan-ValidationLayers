@@ -696,8 +696,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
                     LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06850", device, loc.dot(Field::pNext),
                              "has a "
                              "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                             "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s)",
-                             string_VkShaderStageFlagBits(stage_ci.stage));
+                             "struct in the pNext chain but the shaderModuleIdentifier feature was not enabled. (stage %s).\n%s",
+                             string_VkShaderStageFlagBits(stage_ci.stage),
+                             PrintPNextChain(Struct::VkPipelineShaderStageCreateInfo, stage_ci.pNext).c_str());
             }
             if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
                 skip |= LogError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851", pipeline.Handle(),
@@ -716,16 +717,18 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
             if (stage_ci.module != VK_NULL_HANDLE) {
                 skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06848", device, loc.dot(Field::pNext),
                                  "has a VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                                 "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).",
-                                 string_VkShaderStageFlagBits(stage_ci.stage));
+                                 "struct in the pNext chain, but module is not VK_NULL_HANDLE. (stage %s).\n%s",
+                                 string_VkShaderStageFlagBits(stage_ci.stage),
+                                 PrintPNextChain(Struct::VkPipelineShaderStageCreateInfo, stage_ci.pNext).c_str());
             }
         }
         if (module_create_info) {
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06844", device, loc.dot(Field::pNext),
                              "has both a "
                              "VkPipelineShaderStageModuleIdentifierCreateInfoEXT "
-                             "struct and a VkShaderModuleCreateInfo struct in the pNext chain. (stage %s).",
-                             string_VkShaderStageFlagBits(stage_ci.stage));
+                             "struct and a VkShaderModuleCreateInfo struct in the pNext chain. (stage %s).\n%s",
+                             string_VkShaderStageFlagBits(stage_ci.stage),
+                             PrintPNextChain(Struct::VkPipelineShaderStageCreateInfo, stage_ci.pNext).c_str());
         }
     } else if (stage_ci.module == VK_NULL_HANDLE) {
         if (!enabled_features.maintenance5 && !enabled_features.graphicsPipelineLibrary) {
@@ -737,8 +740,9 @@ bool CoreChecks::ValidatePipelineShaderStage(const vvl::Pipeline &pipeline,
             skip |= LogError("VUID-VkPipelineShaderStageCreateInfo-stage-06845", device, loc.dot(Field::module),
                              "is VK_NULL_HANDLE, but no "
                              "VkPipelineShaderStageModuleIdentifierCreateInfoEXT or VkShaderModuleCreateInfo found in the "
-                             "pNext chain. (stage %s).",
-                             string_VkShaderStageFlagBits(stage_ci.stage));
+                             "pNext chain. (stage %s).\n%s",
+                             string_VkShaderStageFlagBits(stage_ci.stage),
+                             PrintPNextChain(Struct::VkPipelineShaderStageCreateInfo, stage_ci.pNext).c_str());
         } else {
             skip |= ValidateShaderModuleCreateInfo(*module_create_info, loc.pNext(Struct::VkShaderModuleCreateInfo));
         }
@@ -762,8 +766,8 @@ bool CoreChecks::PreCallValidateGetPipelineKeyKHR(VkDevice device, const VkPipel
             pipeline_create_info->sType != VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO) {
             skip |= LogError("VUID-VkPipelineCreateInfoKHR-pNext-09604", device,
                              error_obj.location.dot(Field::pPipelineCreateInfo).dot(Field::pNext),
-                             "contains an invalid struct (%s).",
-                             string_VkStructureType(pipeline_create_info->sType));
+                             "contains an invalid struct (%s).\n%s", string_VkStructureType(pipeline_create_info->sType),
+                             PrintPNextChain(Struct::VkPipelineCreateInfoKHR, pPipelineCreateInfo->pNext).c_str());
         }
     }
 

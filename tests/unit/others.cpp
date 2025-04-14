@@ -1469,3 +1469,15 @@ TEST_F(VkLayerTest, MissingExtensionPipelineCreateFlags2) {
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(VkLayerTest, UnkonwnStructType) {
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    VkBaseOutStructure bogus_struct{};
+    bogus_struct.sType = static_cast<VkStructureType>(0x33333333);
+    VkPhysicalDeviceProperties2KHR properties2 = vku::InitStructHelper(&bogus_struct);
+    // VUID-VkPhysicalDeviceProperties2-pNext-pNext
+    m_errorMonitor->SetDesiredError("pNext -> [Unknown VkStructureType 858993459]");
+    vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
+    m_errorMonitor->VerifyFound();
+}

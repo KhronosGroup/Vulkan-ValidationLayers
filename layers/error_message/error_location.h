@@ -91,6 +91,8 @@ struct Location {
     const char* StringField() const { return vvl::String(field); }
 };
 
+std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext);
+
 // Contains the base information needed for errors to be logged out
 // Created for each function as a starting point to build off of
 struct ErrorObject {

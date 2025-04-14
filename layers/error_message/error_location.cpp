@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 #include "error_location.h"
+#include "generated/error_location_helper.h"
 
 void Location::AppendFields(std::ostream& out) const {
     if (prev) {
@@ -61,6 +62,44 @@ std::string Location::Message() const {
         message.pop_back();
     }
     return message;
+}
+
+std::string PrintPNextChain(vvl::Struct in_struct, const void* in_pNext) {
+    std::stringstream out;
+
+    if (in_pNext) {
+        // We might not have a good way to pass in the original struct
+        if (in_struct == vvl::Struct::Empty) {
+            out << "pNext";
+        } else {
+            out << "pNext chain: " << vvl::String(in_struct) << "::pNext";
+        }
+
+        for (const VkBaseInStructure* current = static_cast<const VkBaseInStructure*>(in_pNext); current != nullptr;
+             current = current->pNext) {
+            // Special case for the 2 special loader structs
+            if (current->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO) {
+                out << " -> [VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO]";
+            } else if (current->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO) {
+                out << " -> [VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO]";
+            } else {
+                vvl::Struct next_struct = vvl::StypeToStruct(current->sType);
+                if (next_struct == vvl::Struct::Empty) {
+                    out << " -> [Unknown VkStructureType " << (int)current->sType << "]";
+                } else {
+                    out << " -> [" << vvl::String(next_struct) << "]";
+                }
+            }
+        }
+    } else {
+        if (in_struct == vvl::Struct::Empty) {
+            out << "pNext is NULL";
+        } else {
+            out << vvl::String(in_struct) << "::pNext is NULL";
+        }
+    }
+
+    return out.str();
 }
 
 namespace vvl {

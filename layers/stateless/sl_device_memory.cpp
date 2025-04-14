@@ -63,12 +63,15 @@ bool Device::ValidateDeviceImageMemoryRequirements(VkDevice device, const VkDevi
 
     const auto &create_info = *(memory_requirements.pCreateInfo);
     if (vku::FindStructInPNextChain<VkImageSwapchainCreateInfoKHR>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device, loc,
-                         "pNext chain contains VkImageSwapchainCreateInfoKHR.");
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06416", device,
+                         loc.dot(Field::pCreateInfo).dot(Field::pNext), "chain contains VkImageSwapchainCreateInfoKHR.\n%s",
+                         PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
     if (vku::FindStructInPNextChain<VkImageDrmFormatModifierExplicitCreateInfoEXT>(create_info.pNext)) {
-        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776", device, loc,
-                         "pNext chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.");
+        skip |= LogError("VUID-VkDeviceImageMemoryRequirements-pCreateInfo-06776", device,
+                         loc.dot(Field::pCreateInfo).dot(Field::pNext),
+                         "chain contains VkImageDrmFormatModifierExplicitCreateInfoEXT.\n%s",
+                         PrintPNextChain(Struct::VkImageCreateInfo, create_info.pNext).c_str());
     }
 
     if (vkuFormatIsMultiplane(create_info.format) && (create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) != 0) {

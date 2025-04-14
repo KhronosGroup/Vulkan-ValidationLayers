@@ -120,7 +120,8 @@ bool CoreChecks::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer
                     if (!p_inherited_rendering_info) {
                         skip |=
                             LogError("VUID-VkCommandBufferBeginInfo-flags-06002", commandBuffer, inheritance_loc.dot(Field::pNext),
-                                     "chain must include a VkCommandBufferInheritanceRenderingInfo structure.");
+                                     "chain must include a VkCommandBufferInheritanceRenderingInfo structure.\n%s",
+                                     PrintPNextChain(Struct::VkCommandBufferInheritanceInfo, info->pNext).c_str());
                     }
                 }
             }

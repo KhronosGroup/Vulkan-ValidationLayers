@@ -1940,7 +1940,8 @@ bool CoreChecks::ValidateGraphicsPipelineRasterizationState(const vvl::Pipeline 
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pDynamicState-09639", device, raster_loc.dot(Field::pNext),
                              "is missing VkPipelineRasterizationConservativeStateCreateInfoEXT which it needs because this "
                              "pipeline has VK_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT but not "
-                             "VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT.");
+                             "VK_DYNAMIC_STATE_EXTRA_PRIMITIVE_OVERESTIMATION_SIZE_EXT.\n%s",
+                             PrintPNextChain(Struct::VkPipelineRasterizationStateCreateInfo, raster_state->pNext).c_str());
         }
     }
 

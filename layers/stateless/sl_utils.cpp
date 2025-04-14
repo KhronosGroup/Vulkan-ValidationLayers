@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 
 namespace stateless {
@@ -238,10 +239,10 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
 
         const Location pNext_loc = loc.dot(Field::pNext);
         if ((allowed_type_count == 0) && (GetCustomStypeInfo().empty())) {
-            std::string message = "must be NULL. ";
+            std::string message = "must be NULL.\n%s\n";
             message += disclaimer;
-            skip |=
-                log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), header_version, pNext_loc.Fields().c_str());
+            skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(),
+                                 PrintPNextChain(Struct::Empty, next).c_str(), header_version, pNext_loc.Fields().c_str());
         } else {
             const VkStructureType *start = allowed_types;
             const VkStructureType *end = allowed_types + allowed_type_count;
@@ -272,15 +273,18 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
                         if (std::find(start, end, current->sType) == end) {
                             // String returned by string_VkStructureType for an unrecognized type.
                             if (type_name.compare("Unhandled VkStructureType") == 0) {
-                                std::string message = "chain includes a structure with unknown VkStructureType (%" PRIu32 "). ";
+                                std::string message =
+                                    "chain includes a structure with unknown VkStructureType (%" PRIu32 ").\n%s\n";
                                 message += disclaimer;
                                 skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), current->sType,
-                                        header_version, pNext_loc.Fields().c_str());
+                                                     PrintPNextChain(Struct::Empty, next).c_str(), header_version,
+                                                     pNext_loc.Fields().c_str());
                             } else {
-                                std::string message = "chain includes a structure with unexpected VkStructureType %s. ";
+                                std::string message = "chain includes a structure with unexpected VkStructureType %s.\n%s\n";
                                 message += disclaimer;
                                 skip |= log.LogError(pnext_vuid, error_obj.handle, pNext_loc, message.c_str(), type_name.c_str(),
-                                        header_version, pNext_loc.Fields().c_str());
+                                                     PrintPNextChain(Struct::Empty, next).c_str(), header_version,
+                                                     pNext_loc.Fields().c_str());
                             }
                         }
                         // Send Location without pNext field so the pNext() connector can be used

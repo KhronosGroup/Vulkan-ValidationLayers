@@ -1017,7 +1017,8 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                     skip |= LogError(
                         vuid, objlist, loc.dot(Field::memory),
                         "was created without a VkMemoryDedicatedAllocateInfo in the pNext chain, but the buffer, if queried with "
-                        "vkGetBufferMemoryRequirements2() reports requiresDedicatedAllocation is VK_TRUE.");
+                        "vkGetBufferMemoryRequirements2() reports requiresDedicatedAllocation is VK_TRUE.\n%s",
+                        PrintPNextChain(Struct::VkBindBufferMemoryInfo, pNext).c_str());
                 } else if (dedicated_buffer != buffer) {
                     const LogObjectList objlist(buffer, memory, dedicated_buffer);
                     skip |=
@@ -1389,9 +1390,11 @@ bool CoreChecks::PreCallValidateMapMemory2(VkDevice device, const VkMemoryMapInf
         const auto placed_info = vku::FindStructInPNextChain<VkMemoryMapPlacedInfoEXT>(pMemoryMapInfo->pNext);
         const auto addr_loc = info_loc.pNext(Struct::VkMemoryMapPlacedInfoEXT, Field::pPlacedAddress);
         if (placed_info == NULL) {
-            skip |= LogError("VUID-VkMemoryMapInfo-flags-09570", pMemoryMapInfo->memory, info_loc.dot(Field::pNext),
-                             "does not contain VkMemoryMapPlacedInfoEXT, but VK_MEMORY_MAP_PLACED_BIT_EXT was set in flags (%s)",
-                             string_VkMemoryMapFlags(pMemoryMapInfo->flags).c_str());
+            skip |=
+                LogError("VUID-VkMemoryMapInfo-flags-09570", pMemoryMapInfo->memory, info_loc.dot(Field::pNext),
+                         "does not contain VkMemoryMapPlacedInfoEXT, but VK_MEMORY_MAP_PLACED_BIT_EXT was set in flags (%s).\n%s",
+                         string_VkMemoryMapFlags(pMemoryMapInfo->flags).c_str(),
+                         PrintPNextChain(Struct::VkMemoryMapInfo, pMemoryMapInfo->pNext).c_str());
         } else if (placed_info->pPlacedAddress == NULL) {
             skip |= LogError("VUID-VkMemoryMapInfo-flags-09570", pMemoryMapInfo->memory, addr_loc,
                              "is NULL, but VK_MEMORY_MAP_PLACED_BIT_EXT was set in flags (%s)",

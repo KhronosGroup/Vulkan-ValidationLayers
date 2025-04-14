@@ -5637,6 +5637,9 @@ bool IsFieldPointer(Field field);
 
 // Used for VUID maps were we only want the new function name
 Func FindAlias(Func func);
+
+// Used to help know which struct in a pNext chain is
+Struct StypeToStruct(VkStructureType stype);
 }  // namespace vvl
 
 // NOLINTEND
