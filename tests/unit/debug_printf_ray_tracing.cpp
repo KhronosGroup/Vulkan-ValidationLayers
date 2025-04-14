@@ -14,10 +14,7 @@
 #include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include "../framework/layer_validation_tests.h"
-#include "../framework/pipeline_helper.h"
-#include "../framework/shader_object_helper.h"
 #include "../framework/descriptor_helper.h"
-#include "../framework/buffer_helper.h"
 #include "../framework/gpu_av_helper.h"
 #include "../framework/ray_tracing_objects.h"
 

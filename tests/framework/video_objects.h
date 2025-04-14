@@ -25,11 +25,8 @@
 #include <vk_video/vulkan_video_codec_av1std_decode.h>
 #include <vk_video/vulkan_video_codec_av1std_encode.h>
 
-#include <memory>
 #include <vector>
-#include <functional>
 #include <unordered_set>
-#include <math.h>
 
 class VideoConfig {
   public:

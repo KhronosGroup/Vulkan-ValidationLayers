@@ -13,12 +13,10 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/ray_tracing_objects.h"
-#include "../framework/shader_helper.h"
 #include "../framework/feature_requirements.h"
-#include "../layers/utils/vk_layer_utils.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/pipeline_helper.h"
-#include <iterator>
+#include "utils/math_utils.h"
 
 void RayTracingTest::InitFrameworkForRayTracingTest(VkValidationFeaturesEXT* enabled_features /*= nullptr*/) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
