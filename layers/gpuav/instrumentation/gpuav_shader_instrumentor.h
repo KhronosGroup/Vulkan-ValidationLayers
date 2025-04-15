@@ -58,7 +58,8 @@ struct InstrumentedShader {
     VkPipeline pipeline;
     VkShaderModule shader_module;
     VkShaderEXT shader_object;
-    std::vector<uint32_t> instrumented_spirv;
+    // We keep the original SPIR-V so we can match up where the error occured to map to shader source files
+    std::vector<uint32_t> original_spirv;
 };
 
 // Historically this was an common interface to both GPU-AV and DebugPrintf before the were merged together.

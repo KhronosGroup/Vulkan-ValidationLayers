@@ -375,19 +375,34 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
     // This can occur if the driver failed to compile the instrumented shader or if a PreCall step failed
     if (!chassis_state.is_modified) return;
     for (uint32_t i = 0; i < createInfoCount; ++i) {
+        // If there are multiple shaders being created, and one is bad, will return a non VK_SUCCESS but we need to check if the
+        // VkShaderEXT was null or not to actually know if it was created
+        const VkShaderEXT shader_handle = pShaders[i];
+        if (shader_handle == VK_NULL_HANDLE) {
+            continue;
+        }
+
         auto &instrumentation_data = chassis_state.instrumentations_data[i];
 
         // if the shader for some reason was not instrumented, there is nothing to save
+        // (like not using VK_SHADER_CODE_TYPE_SPIRV_EXT)
         if (!instrumentation_data.IsInstrumented()) {
             continue;
         }
-        if (const auto &shader_object_state = Get<vvl::ShaderObject>(pShaders[i])) {
-            shader_object_state->instrumentation_data.was_instrumented = true;
-            shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
+        const auto &shader_object_state = Get<vvl::ShaderObject>(shader_handle);
+        ASSERT_AND_CONTINUE(shader_object_state);
+
+        shader_object_state->instrumentation_data.was_instrumented = true;
+        shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
+
+        // We currently need to store a copy of the original, non-instrumented shader so if there is debug information.
+        std::vector<uint32_t> code;
+        if (shader_object_state->spirv) {
+            code = shader_object_state->spirv->words_;
         }
 
         instrumented_shaders_map_.insert_or_assign(instrumentation_data.unique_shader_id, VK_NULL_HANDLE, VK_NULL_HANDLE,
-                                                   pShaders[i], instrumentation_data.instrumented_spirv);
+                                                   shader_handle, std::move(code));
     }
 }
 
@@ -1375,11 +1390,11 @@ static std::string LookupDebugUtilsNameNoLock(const DebugReport *debug_report, c
 
 // Generate the stage-specific part of the message.
 static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrumentor::ShaderMessageInfo &shader_info,
-                                 const std::vector<uint32_t> &instrumented_spirv) {
+                                 const std::vector<uint32_t> &instructions) {
     switch (shader_info.stage_id) {
         case glsl::kExecutionModelMultiEntryPoint: {
             ss << "Stage has multiple OpEntryPoint (";
-            ::spirv::GetExecutionModelNames(instrumented_spirv, ss);
+            ::spirv::GetExecutionModelNames(instructions, ss);
             ss << ") and could not detect stage. ";
         } break;
         case glsl::kExecutionModelVertex: {
@@ -1461,15 +1476,15 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
 // There are 2 ways to inject source into a shader:
 // 1. The "old" way using OpLine/OpSource
 // 2. The "new" way using NonSemantic Shader DebugInfo
-static std::string FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instrumented_spirv,
+static std::string FindShaderSource(std::ostringstream &ss, const std::vector<uint32_t> &instructions,
                                     uint32_t instruction_position, bool debug_printf_only) {
     ss << "SPIR-V Instruction Index = " << instruction_position << '\n';
 
-    const uint32_t last_line_inst_offset = ::spirv::GetDebugLineOffset(instrumented_spirv, instruction_position);
+    const uint32_t last_line_inst_offset = ::spirv::GetDebugLineOffset(instructions, instruction_position);
     if (last_line_inst_offset != 0) {
-        Instruction last_line_inst(instrumented_spirv.data() + last_line_inst_offset);
+        Instruction last_line_inst(instructions.data() + last_line_inst_offset);
         ss << (debug_printf_only ? "Debug shader printf message generated at " : "Shader validation error occurred at ");
-        GetShaderSourceInfo(ss, instrumented_spirv, last_line_inst);
+        GetShaderSourceInfo(ss, instructions, last_line_inst);
     } else {
         ss << "Unable to source. Build shader with debug info to get source information.\n";
     }
@@ -1483,12 +1498,12 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
                                                             VkPipelineBindPoint pipeline_bind_point,
                                                             uint32_t operation_index) const {
     std::ostringstream ss;
-    if (!instrumented_shader || instrumented_shader->instrumented_spirv.empty()) {
+    if (!instrumented_shader || instrumented_shader->original_spirv.empty()) {
         ss << "[Internal Error] - Can't get instructions from shader_map\n";
         return ss.str();
     }
 
-    GenerateStageMessage(ss, shader_info, instrumented_shader->instrumented_spirv);
+    GenerateStageMessage(ss, shader_info, instrumented_shader->original_spirv);
 
     ss << std::hex << std::showbase;
     if (instrumented_shader->shader_module == VK_NULL_HANDLE && instrumented_shader->shader_object == VK_NULL_HANDLE) {
@@ -1534,8 +1549,7 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
     }
     ss << std::dec << std::noshowbase;
 
-    FindShaderSource(ss, instrumented_shader->instrumented_spirv, shader_info.instruction_position,
-                     gpuav_settings.debug_printf_only);
+    FindShaderSource(ss, instrumented_shader->original_spirv, shader_info.instruction_position, gpuav_settings.debug_printf_only);
 
     return ss.str();
 }

@@ -546,14 +546,9 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfo) {
         "SPIR-V Instruction Index = 95\nShader validation error occurred at a.comp:11\nNo Text operand found in DebugSource");
 }
 
-TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSource) {
-    TEST_DESCRIPTION("Make sure basic glslang with ShaderDebugInfo works");
-    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
-    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
-
-    // Manually ran:
-    //   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.2
-    char const *shader_source = R"(
+// Manually ran:
+//   glslangValidator -V -gVS in.comp -o out.spv --target-env vulkan1.2
+static char const *kBasicGlslShaderSource = R"(
               OpCapability Shader
                OpCapability PhysicalStorageBufferAddresses
                OpExtension "SPV_KHR_non_semantic_info"
@@ -667,11 +662,57 @@ void main() {
          %74 = OpExtInst %void %1 DebugLine %18 %uint_12 %uint_12 %uint_0 %uint_0
                OpReturn
                OpFunctionEnd
-    )";
+)";
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSource) {
+    TEST_DESCRIPTION("Make sure basic glslang with ShaderDebugInfo works");
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
 
     BasicSingleStorageBufferComputeOOB(
-        shader_source,
+        kBasicGlslShaderSource,
         "SPIR-V Instruction Index = 96\nShader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
+}
+
+TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShaderObject) {
+    TEST_DESCRIPTION("Make sure basic glslang with ShaderDebugInfo works");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Buffer block_buffer(*m_device, 16, 0, vkt::device_address);
+    vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
+    data[0] = block_buffer.Address();
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    std::vector<uint32_t> cs_spv;
+    ASMtoSPV(SPV_ENV_VULKAN_1_2, 0, kBasicGlslShaderSource, cs_spv);
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, cs_spv, &descriptor_set.layout_.handle());
+
+    m_command_buffer.Begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_command_buffer.End();
+
+    // UNASSIGNED-Device address out of bounds
+    m_errorMonitor->SetDesiredError(
+        "SPIR-V Instruction Index = 96\nShader validation error occurred at a.comp:11\n\n11:     x = data.indices[16];");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeGpuAVShaderDebugInfo, ShaderDebugInfoColumns) {
