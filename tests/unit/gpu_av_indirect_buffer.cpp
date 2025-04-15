@@ -630,7 +630,6 @@ TEST_F(NegativeGpuAVIndirectBuffer, FirstInstanceIndexed) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiDrawIndirect);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
     RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 

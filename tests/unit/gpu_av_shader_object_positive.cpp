@@ -9,6 +9,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/shader_object_helper.h"
 #include "../framework/pipeline_helper.h"
@@ -407,4 +408,117 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_dispatch_parameters_buffer.handle(), 0u);
 
     m_command_buffer.End();
+}
+
+TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryDataSimple) {
+    InitBasicShaderObject();
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    // no descriptor and nothing to instrument
+    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+
+    size_t binary_data_size;
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, nullptr);
+    std::vector<uint8_t> frag_data(binary_data_size);
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
+
+    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data);
+}
+
+TEST_F(PositiveGpuAVShaderObject, GetShaderBinaryData) {
+    InitBasicShaderObject();
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    static const char frag_src[] = R"glsl(
+        #version 450
+        layout(location = 0) in highp vec4 vtxColor;
+        layout(location = 0) out highp vec4 fragColor;
+        layout(set = 0, binding = 0) uniform Block { vec4 color; };
+        void main (void) {
+            fragColor = vtxColor + color;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
+
+    size_t binary_data_size;
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, nullptr);
+    std::vector<uint8_t> frag_data(binary_data_size);
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
+
+    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
+}
+
+TEST_F(PositiveGpuAVShaderObject, BinaryShaderObjects) {
+    InitBasicShaderObject();
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    static const char vert_src[] = R"glsl(
+        #version 450
+        layout(location = 0) out highp vec4 vtxColor;
+        layout(set = 0, binding = 0) uniform Block { vec4 color; };
+        void main() {
+            gl_Position = vec4(1.0f);
+            vtxColor = color;
+        }
+    )glsl";
+
+    static const char frag_src[] = R"glsl(
+        #version 450
+        layout(location = 0) in highp vec4 vtxColor;
+        layout(location = 0) out highp vec4 fragColor;
+        layout(set = 0, binding = 0) uniform Block { vec4 color; };
+
+        void main (void) {
+            fragColor = vtxColor + color;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src, &descriptor_set.layout_.handle());
+    vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_src, &descriptor_set.layout_.handle());
+
+    size_t binary_data_size;
+    vk::GetShaderBinaryDataEXT(*m_device, vert_shader, &binary_data_size, nullptr);
+    std::vector<uint8_t> vert_data(binary_data_size);
+    vk::GetShaderBinaryDataEXT(*m_device, vert_shader, &binary_data_size, vert_data.data());
+
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, nullptr);
+    std::vector<uint8_t> frag_data(binary_data_size);
+    vk::GetShaderBinaryDataEXT(*m_device, frag_shader, &binary_data_size, frag_data.data());
+
+    vkt::Shader binary_vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_data, &descriptor_set.layout_.handle());
+    vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, frag_data, &descriptor_set.layout_.handle());
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    SetDefaultDynamicStatesExclude();
+
+    VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
+    VkShaderEXT shaders[] = {binary_vert_shader, binary_frag_shader};
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 2u, stages, shaders);
+
+    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
+                              &descriptor_set.set_, 0u, nullptr);
+    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

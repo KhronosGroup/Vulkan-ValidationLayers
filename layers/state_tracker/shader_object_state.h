@@ -53,6 +53,9 @@ struct ShaderObject : public StateObject {
     struct InstrumentationData {
         bool was_instrumented = false;
         uint32_t unique_shader_id = 0;
+        // We need to keep incase the user calls vkGetShaderBinaryDataEXT
+        vku::safe_VkShaderCreateInfoEXT original_create_info;
+        VkShaderEXT original_handle = VK_NULL_HANDLE;
     } instrumentation_data;
 
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
