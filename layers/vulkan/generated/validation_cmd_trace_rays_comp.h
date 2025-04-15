@@ -26,7 +26,7 @@
 #include <cstdint>
 
 // We have found having the data in the header can lead to MSVC not recognizing changes
-extern const uint32_t validation_cmd_trace_rays_rgen_size;
-extern const uint32_t validation_cmd_trace_rays_rgen[];
+extern const uint32_t validation_cmd_trace_rays_comp_size;
+extern const uint32_t validation_cmd_trace_rays_comp[];
 
 // These offset match the function in the order they are declared in the GLSL source

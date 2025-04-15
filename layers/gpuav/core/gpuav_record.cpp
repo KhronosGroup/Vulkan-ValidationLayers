@@ -939,7 +939,7 @@ void Validator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, 
         return;
     }
     auto &sub_state = SubState(*cb_state);
-    InsertIndirectDispatchValidation(*this, record_obj.location, sub_state, buffer, offset);
+    valcmd::DispatchIndirect(*this, record_obj.location, sub_state, buffer, offset);
     PreCallActionCommand(*this, sub_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location);
 }
 
@@ -1096,7 +1096,7 @@ void Validator::PreCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuff
         return;
     }
     auto &sub_state = SubState(*cb_state);
-    InsertIndirectTraceRaysValidation(*this, record_obj.location, sub_state, indirectDeviceAddress);
+    valcmd::TraceRaysIndirect(*this, record_obj.location, sub_state, indirectDeviceAddress);
     PreCallActionCommand(*this, sub_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, record_obj.location);
 }
 

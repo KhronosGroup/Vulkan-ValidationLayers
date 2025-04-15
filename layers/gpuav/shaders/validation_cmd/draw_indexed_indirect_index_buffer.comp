@@ -19,7 +19,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "common.h"
-#include "draw_push_data.h"
+#include "push_data.h"
 
 layout(push_constant) uniform UniformInfo {
     DrawIndexedIndirectIndexBufferPushData pc;

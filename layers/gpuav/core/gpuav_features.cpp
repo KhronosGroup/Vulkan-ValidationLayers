@@ -224,22 +224,22 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         }
     }
 
-    if (supported_8bit_feature.uniformAndStorageBuffer8BitAccess) {
+    if (supported_8bit_feature.storageBuffer8BitAccess) {
         auto add_8bit_access = [this, &loc, modified_create_info]() {
-            // Add uniformAndStorageBuffer8BitAccess feature
+            // Add storageBuffer8BitAccess feature
             if (auto *eight_bit_access_feature = const_cast<VkPhysicalDevice8BitStorageFeatures *>(
                     vku::FindStructInPNextChain<VkPhysicalDevice8BitStorageFeatures>(modified_create_info))) {
-                if (!eight_bit_access_feature->uniformAndStorageBuffer8BitAccess) {
+                if (!eight_bit_access_feature->storageBuffer8BitAccess) {
                     InternalWarning(instance, loc,
-                                    "Forcing VkPhysicalDevice8BitStorageFeatures::uniformAndStorageBuffer8BitAccess to VK_TRUE");
-                    eight_bit_access_feature->uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                                    "Forcing VkPhysicalDevice8BitStorageFeatures::storageBuffer8BitAccess to VK_TRUE");
+                    eight_bit_access_feature->storageBuffer8BitAccess = VK_TRUE;
                 }
             } else {
                 InternalWarning(instance, loc,
-                                "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with uniformAndStorageBuffer8BitAccess "
+                                "Adding a VkPhysicalDevice8BitStorageFeatures to pNext with storageBuffer8BitAccess "
                                 "set to VK_TRUE");
                 VkPhysicalDevice8BitStorageFeatures new_8bit_features = vku::InitStructHelper();
-                new_8bit_features.uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                new_8bit_features.storageBuffer8BitAccess = VK_TRUE;
                 vku::AddToPnext(*modified_create_info, new_8bit_features);
             }
         };
@@ -247,10 +247,10 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
         if (api_version >= VK_API_VERSION_1_2) {
             if (auto *features12 = const_cast<VkPhysicalDeviceVulkan12Features *>(
                     vku::FindStructInPNextChain<VkPhysicalDeviceVulkan12Features>(modified_create_info->pNext))) {
-                if (!features12->uniformAndStorageBuffer8BitAccess) {
+                if (!features12->storageBuffer8BitAccess) {
                     InternalWarning(instance, loc,
-                                    "Forcing VkPhysicalDeviceVulkan12Features::uniformAndStorageBuffer8BitAccess to VK_TRUE");
-                    features12->uniformAndStorageBuffer8BitAccess = VK_TRUE;
+                                    "Forcing VkPhysicalDeviceVulkan12Features::storageBuffer8BitAccess to VK_TRUE");
+                    features12->storageBuffer8BitAccess = VK_TRUE;
                 }
             } else {
                 add_8bit_access();

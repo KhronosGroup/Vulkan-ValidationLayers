@@ -277,8 +277,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.cpp
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.h
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.h
-    ${API_TYPE}/generated/validation_cmd_trace_rays_rgen.cpp
+    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.h
+    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.cpp
     gpuav/core/gpuav_settings.h
     gpuav/core/gpuav_settings.cpp
     gpuav/core/gpuav_constants.h
@@ -318,6 +318,7 @@ target_sources(vvl PRIVATE
     gpuav/shaders/gpuav_error_codes.h
     gpuav/shaders/gpuav_error_header.h
     gpuav/shaders/gpuav_shaders_constants.h
+    gpuav/shaders/validation_cmd/push_data.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp
     state_tracker/buffer_state.cpp

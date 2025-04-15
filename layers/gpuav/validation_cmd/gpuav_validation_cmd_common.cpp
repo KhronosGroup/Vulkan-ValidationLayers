@@ -17,7 +17,6 @@
 
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 
-#include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
@@ -29,8 +28,8 @@
 
 namespace gpuav {
 
-void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
-                             VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index) {
+static void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
+                                    VkPipelineLayout pipeline_layout, uint32_t cmd_index, uint32_t error_logger_index) {
     assert(cmd_index < cst::indices_count);
     assert(error_logger_index < cst::indices_count);
     std::array<uint32_t, 2> dynamic_offsets = {
@@ -39,6 +38,32 @@ void BindErrorLoggingDescSet(Validator &gpuav, CommandBufferSubState &cb_state, 
     DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, pipeline_layout, glsl::kDiagCommonDescriptorSet, 1,
                                   &cb_state.GetErrorLoggingDescSet(), static_cast<uint32_t>(dynamic_offsets.size()),
                                   dynamic_offsets.data());
+}
+
+VkDescriptorSet GetDescriptorSetHelper(CommandBufferSubState &cb_state, VkDescriptorSetLayout desc_set_layout) {
+    return cb_state.gpu_resources_manager.GetManagedDescriptorSet(desc_set_layout);
+}
+
+void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state, uint32_t cmd_index, uint32_t error_logger_index,
+                               VkPipelineLayout pipeline_layout, VkDescriptorSet desc_set, uint32_t desc_set_id,
+                               const std::vector<VkWriteDescriptorSet> &descriptor_writes, const uint32_t push_constants_byte_size,
+                               const void *push_constants) {
+    // Error logging resources
+    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, cmd_index, error_logger_index);
+
+    // Any push constants byte size below 4 is illegal. Can come from empty push constant struct
+    if (push_constants_byte_size >= 4) {
+        DispatchCmdPushConstants(cb_state.VkHandle(), pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, push_constants_byte_size,
+                                 push_constants);
+    }
+
+    if (!descriptor_writes.empty()) {
+        // Specific resources
+        DispatchUpdateDescriptorSets(gpuav.device, uint32_t(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);
+
+        DispatchCmdBindDescriptorSets(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, desc_set_id, 1,
+                                      &desc_set, 0, nullptr);
+    }
 }
 
 void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point) {

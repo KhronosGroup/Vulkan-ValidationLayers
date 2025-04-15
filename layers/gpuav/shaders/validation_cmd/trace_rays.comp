@@ -1,0 +1,53 @@
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#version 460
+
+#extension GL_GOOGLE_include_directive : enable
+
+#include "common.h"
+#include "push_data.h"
+
+layout(push_constant) uniform PushConstants {
+    TraceRaysPushData pc;
+};
+
+void main() {
+    if (pc.indirect_data.trace_rays_dimensions.width > pc.trace_rays_width_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitWidth, pc.indirect_data.trace_rays_dimensions.width, 0);
+    }
+    if (pc.indirect_data.trace_rays_dimensions.height > pc.trace_rays_height_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitHeight, pc.indirect_data.trace_rays_dimensions.height, 0);
+    }
+    if (pc.indirect_data.trace_rays_dimensions.depth > pc.trace_rays_depth_limit) {
+        GpuavLogError2(kErrorGroupGpuPreTraceRays, kErrorSubCodePreTraceRaysLimitDepth, pc.indirect_data.trace_rays_dimensions.depth, 0);
+    }
+
+    const uint64_t trace_rays_volume = 
+        pc.indirect_data.trace_rays_dimensions.width * 
+        pc.indirect_data.trace_rays_dimensions.height * 
+        pc.indirect_data.trace_rays_dimensions.depth;
+
+    if (trace_rays_volume > pc.max_ray_dispatch_invocation_count) {
+        GpuavLogError4(
+            kErrorGroupGpuPreTraceRays, 
+            kErrorSubCodePreTraceRaysLimitVolume, 
+            pc.indirect_data.trace_rays_dimensions.width, 
+            pc.indirect_data.trace_rays_dimensions.height,
+            pc.indirect_data.trace_rays_dimensions.depth,
+            0);
+    }
+}

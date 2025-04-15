@@ -15,6 +15,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/buffer_helper.h"
 #include "../framework/ray_tracing_objects.h"
+#include "../framework/shader_object_helper.h"
 
 class PositiveGpuAVIndirectBuffer : public GpuAVTest {};
 
@@ -266,5 +267,40 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9917
+TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndirect) {
+    TEST_DESCRIPTION("Mix usage of pipeline and shader object");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                       kHostVisibleMemProps);
+    auto &indirect_dispatch_parameters = *static_cast<VkDispatchIndirectCommand *>(dispatch_params_buffer.Memory().Map());
+    indirect_dispatch_parameters.x = 1u;
+    indirect_dispatch_parameters.y = 1u;
+    indirect_dispatch_parameters.z = 1u;
+
+    const VkShaderStageFlagBits stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    const auto comp_spv = GLSLToSPV(stage, kMinimalShaderGlsl);
+    VkShaderCreateInfoEXT comp_create_info = ShaderCreateInfo(comp_spv, stage);
+    const vkt::Shader comp_shader(*m_device, comp_create_info);
+
+    m_command_buffer.Begin();
+
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer.handle(), dispatch_params_buffer.handle(), 0u);
+
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &comp_shader.handle());
+    vk::CmdDispatchIndirect(m_command_buffer.handle(), dispatch_params_buffer.handle(), 0u);
+
+    m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
