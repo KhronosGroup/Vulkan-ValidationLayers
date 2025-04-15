@@ -341,6 +341,36 @@
                                         }
                                     ]
                                 }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "validate_core_msg0",
+                                    "title": "Validation layer performance issue",
+                                    "version": 1,
+                                    "description": "Both 'Core validation' and 'GPU-assisted validation' are enabled. This is going to require a lot of CPU resource causing the Vulkan application to run very slowly.",
+                                    "informative": "Are you sure you want to enable 'Core Validation'?",
+                                    "severity": "WARNING",
+                                    "conditions": [
+                                        { "setting": { "key": "validate_core", "value": true }},
+                                        { "setting": { "key": "gpuav_enable", "value": true }}
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "validate_core", "value": true }},
+                                                { "setting": { "key": "gpuav_enable", "value": true }}
+                                            ]
+                                        },
+                                        "BUTTON1": {
+                                            "type": "CANCEL",
+                                            "changes": [
+                                                { "setting": { "key": "validate_core", "value": false }}
+                                            ]
+                                        }
+                                    }
+                                }
                             ]
                         },
                         {
@@ -506,7 +536,31 @@
                                         "settings": [
                                             { "key": "printf_enable", "value": true }
                                         ]
-                                    }
+                                    },
+                                    "messages": [
+                                        {
+                                            "key": "printf_enable_msg3",
+                                            "title": "Debug Printf without 'info' level message severity flag",
+                                            "version": 1,
+                                            "description": "Enabling Debug Printf output redirection to the debug callback, but 'info' level message severity is disabled, so printf message won't be shown.",
+                                            "informative": "Adding 'info' level to 'Message Severity'",
+                                            "severity": "INFORMATION",
+                                            "conditions": [
+                                                { "setting": { "key": "printf_enable", "value": true }},
+                                                { "setting": { "key": "printf_to_stdout", "value": false }},
+                                                { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                            ],
+                                            "actions": {
+                                                "default": "BUTTON0",
+                                                "BUTTON0": {
+                                                    "type": "OK",
+                                                    "changes": [
+                                                        { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "APPEND" }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    ]
                                 },
                                 {
                                     "key": "printf_verbose",
@@ -539,6 +593,30 @@
                                         "settings": [
                                             { "key": "printf_enable", "value": true }
                                         ]
+                                    }
+                                }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "printf_enable_msg1",
+                                    "title": "Warning: Debug Printf without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Enabling Debug Printf, with output directed to the debug callback, but info level message severity is disabled, so printf message won't be shown.",
+                                    "informative": "Adding 'info' level to 'Message Severity'",
+                                    "severity": "INFORMATION",
+                                    "conditions": [
+                                        { "setting": { "key": "printf_enable", "value": true }},
+                                        { "setting": { "key": "printf_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["info"] }, "operator": "APPEND" }
+                                            ]
+                                        }
                                     }
                                 }
                             ]
@@ -969,6 +1047,36 @@
                                         }
                                     ]
                                 }
+                            ],
+                            "messages": [
+                                {
+                                    "key": "gpuav_enable_msg0",
+                                    "title": "Validation layer performance warning",
+                                    "version": 1,
+                                    "description": "Both 'Core validation' and 'GPU-assisted validation' are enabled. This is going to require a lot of CPU resource causing the Vulkan application to run very slowly.",
+                                    "informative": "Are you sure you want to enable 'GPU Assisted Validation'?",
+                                    "severity": "WARNING",
+                                    "conditions": [
+                                        { "setting": { "key": "validate_core", "value": true }},
+                                        { "setting": { "key": "gpuav_enable", "value": true }}
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": { "key": "validate_core", "value": true }},
+                                                { "setting": { "key": "gpuav_enable", "value": true }}
+                                            ]
+                                        },
+                                        "BUTTON1": {
+                                            "type": "CANCEL",
+                                            "changes": [
+                                                { "setting": { "key": "gpuav_enable", "value": false }}
+                                            ]
+                                        }
+                                    }
+                                }
                             ]
                         },
                         {
@@ -1099,7 +1207,31 @@
                         {
                             "key": "info",
                             "label": "Info",
-                            "description": "Report informational messages."
+                            "description": "Report informational messages.",
+                            "messages": [
+                                {
+                                    "key": "printf_enable_msg2",
+                                    "title": "Warning: Debug Printf without info level message severity flag",
+                                    "version": 1,
+                                    "description": "Disabling info level message severity is disabled, but Debug Printf output is directed to the debug callback, so printf message won't be shown.",
+                                    "informative": "Adding 'info' level to 'Message Severity'",
+                                    "severity": "NOTIFICATION",
+                                    "conditions": [
+                                        { "setting": { "key": "printf_enable", "value": true }},
+                                        { "setting": { "key": "printf_to_stdout", "value": false }},
+                                        { "setting": { "key": "report_flags", "value": ["info"]}, "operator": "NOT" }
+                                    ],
+                                    "actions": {
+                                        "default": "BUTTON0",
+                                        "BUTTON0": {
+                                            "type": "OK",
+                                            "changes": [
+                                                { "setting": {"key": "report_flags", "value": ["info"]}, "operator": "APPEND" }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
                         },
                         {
                             "key": "warn",
