@@ -1293,6 +1293,16 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
             skip |= ValidateDrawShaderObject(last_bound_state, vuid);
         }
 
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        if (!pipeline && !last_bound_state.IsValidShaderBound(ShaderObjectStage::COMPUTE)) {
+            const bool is_null_bound = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE);
+            // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7296
+            return LogError(
+                "UNASSIGNED-Dispatch-Not-Bound", cb_state.GetObjectList(bind_point), loc,
+                "No compute shader is bound, before this dispatch command, you either need to call vkCmdBindPipeline with a valid "
+                "compute pipeline or vkCmdBindShadersEXT with a valid compute shader object.%s",
+                is_null_bound ? " (vkCmdBindShadersEXT was called, but it set the compute stage to VK_NULL_HANDLE)" : "");
+        }
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         if (pipeline) {
             skip |= ValidateTraceRaysDynamicStateSetStatus(last_bound_state, *pipeline, vuid);
