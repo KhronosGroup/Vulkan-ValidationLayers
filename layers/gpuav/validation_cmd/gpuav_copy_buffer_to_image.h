@@ -25,7 +25,9 @@ namespace gpuav {
 class CommandBufferSubState;
 class Validator;
 
-void InsertCopyBufferToImageValidation(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
-                                       const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info);
+namespace valcmd {
+void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
+                       const VkCopyBufferToImageInfo2 *copy_buffer_to_img_info);
+}
 
 }  // namespace gpuav

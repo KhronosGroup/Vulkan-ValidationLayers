@@ -20,186 +20,29 @@
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
-#include "generated/validation_cmd_trace_rays_rgen.h"
+#include "gpuav/shaders/validation_cmd/push_data.h"
+#include "generated/validation_cmd_trace_rays_comp.h"
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
 
-// See gpuav/shaders/validation_cmd/trace_rays.rgen
-constexpr uint32_t kPushConstantDWords = 6u;
-
 namespace gpuav {
+namespace valcmd {
 
-struct SharedTraceRaysValidationResources final {
-    VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
-    VkPipeline pipeline = VK_NULL_HANDLE;
-    VmaPool sbt_pool = VK_NULL_HANDLE;
-    VkBuffer sbt_buffer = VK_NULL_HANDLE;
-    VmaAllocation sbt_allocation = {};
-    VkDeviceAddress sbt_address = 0;
-    uint32_t shader_group_handle_size_aligned = 0;
-    VmaAllocator vma_allocator;
-    VkDevice device = VK_NULL_HANDLE;
-    bool valid = false;
+struct TraceRaysValidationShader {
+    static size_t GetSpirvSize() { return validation_cmd_trace_rays_comp_size * sizeof(uint32_t); }
+    static const uint32_t* GetSpirv() { return validation_cmd_trace_rays_comp; }
 
-    SharedTraceRaysValidationResources(Validator& gpuav, VkDescriptorSetLayout error_output_desc_layout, const Location& loc)
-        : vma_allocator(gpuav.vma_allocator_), device(gpuav.device), valid(false) {
-        VkResult result = VK_SUCCESS;
+    static const uint32_t desc_set_id = 0;
 
-        VkPushConstantRange push_constant_range = {};
-        push_constant_range.stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        push_constant_range.offset = 0;
-        push_constant_range.size = kPushConstantDWords * sizeof(uint32_t);
+    glsl::TraceRaysPushData push_constants{};
 
-        VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-        pipeline_layout_ci.pushConstantRangeCount = 1;
-        pipeline_layout_ci.pPushConstantRanges = &push_constant_range;
-        pipeline_layout_ci.setLayoutCount = 1;
-        pipeline_layout_ci.pSetLayouts = &error_output_desc_layout;
-        result = DispatchCreatePipelineLayout(gpuav.device, &pipeline_layout_ci, nullptr, &pipeline_layout);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to create pipeline layout.");
-            return;
-        }
+    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() { return {}; }
 
-        VkShaderModuleCreateInfo shader_module_ci = vku::InitStructHelper();
-        shader_module_ci.codeSize = validation_cmd_trace_rays_rgen_size * sizeof(uint32_t);
-        shader_module_ci.pCode = validation_cmd_trace_rays_rgen;
-        VkShaderModule validation_shader = VK_NULL_HANDLE;
-        result = DispatchCreateShaderModule(gpuav.device, &shader_module_ci, nullptr, &validation_shader);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Unable to create ray tracing shader module.");
-            return;
-        }
-
-        // Create pipeline
-        VkPipelineShaderStageCreateInfo pipeline_stage_ci = vku::InitStructHelper();
-        pipeline_stage_ci.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-        pipeline_stage_ci.module = validation_shader;
-        pipeline_stage_ci.pName = "main";
-        VkRayTracingShaderGroupCreateInfoKHR raygen_group_ci = vku::InitStructHelper();
-        raygen_group_ci.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-        raygen_group_ci.generalShader = 0;
-        raygen_group_ci.closestHitShader = VK_SHADER_UNUSED_KHR;
-        raygen_group_ci.anyHitShader = VK_SHADER_UNUSED_KHR;
-        raygen_group_ci.intersectionShader = VK_SHADER_UNUSED_KHR;
-
-        VkRayTracingPipelineCreateInfoKHR rt_pipeline_create_info{};
-        rt_pipeline_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-        rt_pipeline_create_info.stageCount = 1;
-        rt_pipeline_create_info.pStages = &pipeline_stage_ci;
-        rt_pipeline_create_info.groupCount = 1;
-        rt_pipeline_create_info.pGroups = &raygen_group_ci;
-        rt_pipeline_create_info.maxPipelineRayRecursionDepth = 1;
-        rt_pipeline_create_info.layout = pipeline_layout;
-        result = DispatchCreateRayTracingPipelinesKHR(gpuav.device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rt_pipeline_create_info,
-                                                      nullptr, &pipeline);
-
-        DispatchDestroyShaderModule(gpuav.device, validation_shader, nullptr);
-
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Failed to create ray tracing pipeline for pre trace rays validation.");
-            return;
-        }
-
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
-        DispatchGetPhysicalDeviceProperties2(gpuav.physical_device, &props2);
-
-        // Get shader group handles to fill shader binding table (SBT)
-        const uint32_t shader_group_size_aligned =
-            Align(rt_pipeline_props.shaderGroupHandleSize, rt_pipeline_props.shaderGroupHandleAlignment);
-        const uint32_t sbt_size = 1 * shader_group_size_aligned;
-        std::vector<uint8_t> sbt_host_storage(sbt_size);
-        result = DispatchGetRayTracingShaderGroupHandlesKHR(gpuav.device, pipeline, 0, rt_pipeline_create_info.groupCount, sbt_size,
-                                                            sbt_host_storage.data());
-        if (result != VK_SUCCESS) {
-            gpuav.InternalError(gpuav.device, loc, "Failed to call vkGetRayTracingShaderGroupHandlesKHR.");
-            return;
-        }
-
-        // Allocate buffer to store SBT, and fill it with sbt_host_storage
-        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-        buffer_info.size = 4096;
-        buffer_info.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
-                            VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        VmaAllocationCreateInfo alloc_info = {};
-        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-        uint32_t mem_type_index = 0;
-        vmaFindMemoryTypeIndexForBufferInfo(vma_allocator, &buffer_info, &alloc_info, &mem_type_index);
-        VmaPoolCreateInfo pool_create_info = {};
-        pool_create_info.memoryTypeIndex = mem_type_index;
-        pool_create_info.blockSize = 0;
-        pool_create_info.maxBlockCount = 0;
-        pool_create_info.flags = VMA_POOL_CREATE_LINEAR_ALGORITHM_BIT;
-        result = vmaCreatePool(vma_allocator, &pool_create_info, &sbt_pool);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalVmaError(gpuav.device, loc, "Unable to create VMA memory pool for SBT.");
-            return;
-        }
-
-        alloc_info.pool = sbt_pool;
-        result = vmaCreateBuffer(vma_allocator, &buffer_info, &alloc_info, &sbt_buffer, &sbt_allocation, nullptr);
-        if (result != VK_SUCCESS) {
-            gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for shader binding table.");
-            return;
-        }
-
-        uint8_t* mapped_sbt = nullptr;
-        result = vmaMapMemory(vma_allocator, sbt_allocation, reinterpret_cast<void**>(&mapped_sbt));
-
-        if (result != VK_SUCCESS) {
-            gpuav.InternalVmaError(gpuav.device, loc,
-                                   "Failed to map shader binding table when creating trace rays validation resources.");
-            return;
-        }
-
-        std::memcpy(mapped_sbt, sbt_host_storage.data(), rt_pipeline_props.shaderGroupHandleSize);
-
-        vmaUnmapMemory(vma_allocator, sbt_allocation);
-
-        shader_group_handle_size_aligned = shader_group_size_aligned;
-
-        // Retrieve SBT address
-        const VkDeviceAddress sbt_address =
-            gpuav.device_state->GetBufferDeviceAddressHelper(sbt_buffer, &gpuav.modified_extensions);
-        assert(sbt_address != 0);
-        if (sbt_address == 0) {
-            gpuav.InternalError(gpuav.device, loc, "Retrieved SBT buffer device address is null.");
-            return;
-        }
-        assert(sbt_address == Align(sbt_address, static_cast<VkDeviceAddress>(rt_pipeline_props.shaderGroupBaseAlignment)));
-        this->sbt_address = sbt_address;
-
-        valid = true;
-    }
-
-    ~SharedTraceRaysValidationResources() {
-        if (pipeline_layout != VK_NULL_HANDLE) {
-            DispatchDestroyPipelineLayout(device, pipeline_layout, nullptr);
-            pipeline_layout = VK_NULL_HANDLE;
-        }
-        if (pipeline != VK_NULL_HANDLE) {
-            DispatchDestroyPipeline(device, pipeline, nullptr);
-            pipeline = VK_NULL_HANDLE;
-        }
-        if (sbt_buffer != VK_NULL_HANDLE) {
-            vmaDestroyBuffer(vma_allocator, sbt_buffer, sbt_allocation);
-            sbt_buffer = VK_NULL_HANDLE;
-            sbt_allocation = VK_NULL_HANDLE;
-            sbt_address = 0;
-        }
-        if (sbt_pool) {
-            vmaDestroyPool(vma_allocator, sbt_pool);
-            sbt_pool = VK_NULL_HANDLE;
-        }
-    }
-
-    bool IsValid() const { return valid; }
+    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const { return {}; }
 };
 
-void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
-                                       VkDeviceAddress indirect_data_address) {
+void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubState& cb_state,
+                       VkDeviceAddress indirect_data_address) {
     if (!gpuav.gpuav_settings.validate_indirect_trace_rays_buffers) {
         return;
     }
@@ -212,51 +55,54 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
         return;
     }
 
-    auto& shared_trace_rays_resources =
-        gpuav.shared_resources_manager.Get<SharedTraceRaysValidationResources>(gpuav, cb_state.GetErrorLoggingDescSetLayout(), loc);
+    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    assert(shared_trace_rays_resources.IsValid());
-    if (!shared_trace_rays_resources.IsValid()) {
+    ComputeValidationPipeline<TraceRaysValidationShader>& validation_pipeline =
+        gpuav.shared_resources_manager.Get<ComputeValidationPipeline<TraceRaysValidationShader>>(
+            gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
+    if (!validation_pipeline.valid) {
         return;
     }
 
-    // Save current ray tracing pipeline state
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+    // Setup shader resources
+    // ---
+    {
+        const uint64_t ray_query_dimension_max_width =
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[0]);
+        const uint64_t ray_query_dimension_max_height =
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[1]);
+        const uint64_t ray_query_dimension_max_depth =
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
+            static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]);
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
+        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
+        DispatchGetPhysicalDeviceProperties2(gpuav.physical_device, &props2);
 
-    // Push info needed for validation:
-    // - the device address indirect data is read from
-    // - the limits to check against
-    uint32_t push_constants[kPushConstantDWords] = {};
-    const uint64_t ray_query_dimension_max_width = static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0]) *
-                                                   static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[0]);
-    const uint64_t ray_query_dimension_max_height = static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1]) *
-                                                    static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[1]);
-    const uint64_t ray_query_dimension_max_depth = static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2]) *
-                                                   static_cast<uint64_t>(gpuav.phys_dev_props.limits.maxComputeWorkGroupSize[2]);
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR rt_pipeline_props = vku::InitStructHelper();
-    VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&rt_pipeline_props);
-    DispatchGetPhysicalDeviceProperties2(gpuav.physical_device, &props2);
-    // Need to put the buffer reference first otherwise it is incorrect, probably an alignment issue
-    push_constants[0] = static_cast<uint32_t>(indirect_data_address) & vvl::kU32Max;
-    push_constants[1] = static_cast<uint32_t>(indirect_data_address >> 32) & vvl::kU32Max;
-    push_constants[2] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_width, vvl::kU32Max));
-    push_constants[3] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_height, vvl::kU32Max));
-    push_constants[4] = static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
-    push_constants[5] = rt_pipeline_props.maxRayDispatchInvocationCount;
+        TraceRaysValidationShader shader_resources;
+        shader_resources.push_constants.indirect_data = indirect_data_address;
+        shader_resources.push_constants.trace_rays_width_limit =
+            static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_width, vvl::kU32Max));
+        shader_resources.push_constants.trace_rays_height_limit =
+            static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_height, vvl::kU32Max));
+        shader_resources.push_constants.trace_rays_depth_limit =
+            static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
+        shader_resources.push_constants.max_ray_dispatch_invocation_count = rt_pipeline_props.maxRayDispatchInvocationCount;
 
-    DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline);
-    BindErrorLoggingDescSet(gpuav, cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, shared_trace_rays_resources.pipeline_layout,
-                            cb_state.trace_rays_index, static_cast<uint32_t>(cb_state.per_command_error_loggers.size()));
-    DispatchCmdPushConstants(cb_state.VkHandle(), shared_trace_rays_resources.pipeline_layout, VK_SHADER_STAGE_RAYGEN_BIT_KHR, 0,
-                             sizeof(push_constants), push_constants);
-    VkStridedDeviceAddressRegionKHR ray_gen_sbt{};
-    assert(shared_trace_rays_resources.sbt_address != 0);
-    ray_gen_sbt.deviceAddress = shared_trace_rays_resources.sbt_address;
-    ray_gen_sbt.stride = shared_trace_rays_resources.shader_group_handle_size_aligned;
-    ray_gen_sbt.size = shared_trace_rays_resources.shader_group_handle_size_aligned;
+        if (!validation_pipeline.BindShaderResources(gpuav, cb_state, cb_state.compute_index,
+                                                     uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+            return;
+        }
+    }
 
-    VkStridedDeviceAddressRegionKHR empty_sbt{};
-    DispatchCmdTraceRaysKHR(cb_state.VkHandle(), &ray_gen_sbt, &empty_sbt, &empty_sbt, &empty_sbt, 1, 1, 1);
+    // Setup validation pipeline
+    // ---
+    {
+        DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
+
+        DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
+    }
 
     CommandBufferSubState::ErrorLoggerFunc error_logger = [loc](Validator& gpuav, const CommandBufferSubState&,
                                                                 const uint32_t* error_record, const LogObjectList& objlist,
@@ -329,5 +175,5 @@ void InsertIndirectTraceRaysValidation(Validator& gpuav, const Location& loc, Co
 
     cb_state.per_command_error_loggers.emplace_back(std::move(error_logger));
 }
-
+}  // namespace valcmd
 }  // namespace gpuav

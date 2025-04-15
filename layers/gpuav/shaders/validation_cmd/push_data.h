@@ -16,22 +16,26 @@
 // Values used between the GLSL shaders and the GPU-AV logic
 
 // NOTE: This header is included by the instrumentation shaders and glslang doesn't support #pragma once
-#ifndef GPU_SHADERS_DRAW_PUSH_DATA_H
-#define GPU_SHADERS_DRAW_PUSH_DATA_H
+#ifndef GPU_SHADERS_PUSH_DATA_H
+#define GPU_SHADERS_PUSH_DATA_H
 
 #ifdef __cplusplus
+
+#include <cstdint>
+
 namespace gpuav {
 namespace glsl {
-using uint = unsigned int;
+using uint = uint32_t;
 #else
 #if defined(GL_ARB_gpu_shader_int64)
 #extension GL_ARB_gpu_shader_int64 : require
 #else
 #error No extension available for 64-bit integers.
 #endif
+#extension GL_EXT_buffer_reference : require
 #endif
 
-// Bindings for all pre draw types
+// Bindings for all pre draw validation shader types
 const uint kPreDrawBinding_IndirectBuffer = 0;
 const uint kPreDrawBinding_CountBuffer = 1;
 const uint kPreDrawBinding_IndexBuffer = 2;
@@ -79,6 +83,38 @@ struct CountBufferPushData {
     uint api_struct_size_byte;
     uint device_limit_max_draw_indirect_count;
     uint api_count_buffer_offset_dwords;
+};
+
+const uint kPreDispatchBinding_DispatchIndirectBuffer = 0;
+struct DispatchPushData {
+    uint limit_x;
+    uint limit_y;
+    uint limit_z;
+    uint indirect_x_offset;
+};
+
+const uint kPreCopyBufferToImageBinding_SrcBuffer = 0;
+const uint kPreCopyBufferToImageBinding_CopySrcRegions = 1;
+
+#ifdef __cplusplus
+using IndirectCommandReference = uint64_t;
+#else
+struct VkTraceRaysIndirectCommandKHR {
+    uint width;
+    uint height;
+    uint depth;
+};
+
+layout(buffer_reference, std430) buffer IndirectCommandReference { VkTraceRaysIndirectCommandKHR trace_rays_dimensions; };
+#endif
+
+struct TraceRaysPushData {
+    // Need to put the buffer reference first otherwise it is incorrect, probably an alignment issue
+    IndirectCommandReference indirect_data;
+    uint trace_rays_width_limit;
+    uint trace_rays_height_limit;
+    uint trace_rays_depth_limit;
+    uint max_ray_dispatch_invocation_count;
 };
 
 #ifdef __cplusplus

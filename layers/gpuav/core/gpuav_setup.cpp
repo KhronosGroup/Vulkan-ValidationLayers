@@ -317,10 +317,10 @@ struct RayQuery : public Setting {
 struct BufferCopies : public Setting {
     bool IsEnabled(const GpuAVSettings &settings) { return settings.validate_buffer_copies; }
     // copy_buffer_to_image.comp relies on uint8_t buffers to perform validation
-    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.uniformAndStorageBuffer8BitAccess; }
+    bool HasRequiredFeatures(const DeviceFeatures &features) { return features.storageBuffer8BitAccess; }
     void Disable(GpuAVSettings &settings) { settings.validate_buffer_copies = false; }
     std::string DisableMessage() {
-        return "Buffer copies option was enabled, but the uniformAndStorageBuffer8BitAccess feature was not supported [Disabling "
+        return "Buffer copies option was enabled, but the storageBuffer8BitAccess feature was not supported [Disabling "
                "gpuav_buffer_copies]";
     }
 };

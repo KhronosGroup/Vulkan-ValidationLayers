@@ -1,6 +1,6 @@
-// Copyright (c) 2022-2024 The Khronos Group Inc.
-// Copyright (c) 2022-2024 Valve Corporation
-// Copyright (c) 2022-2024 LunarG, Inc.
+// Copyright (c) 2022-2025 The Khronos Group Inc.
+// Copyright (c) 2022-2025 Valve Corporation
+// Copyright (c) 2022-2025 LunarG, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int8 : require
 
 #include "common.h"
+#include "push_data.h"
 
 // GPU equivalent of VkBufferImageCopy
 struct BufferImageCopy {
@@ -34,11 +35,11 @@ struct BufferImageCopy {
     uvec4 region_extent;
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = 0) buffer SrcBuffer {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreCopyBufferToImageBinding_SrcBuffer) buffer SrcBuffer {
     uint8_t src_buffer[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = 1, std430) buffer CopySrcRegions {
+layout(set = kDiagPerCmdDescriptorSet, binding = kPreCopyBufferToImageBinding_CopySrcRegions, std430) buffer CopySrcRegions {
     uvec4 image_extent;
     uint block_size;
     uint copy_regions_count;

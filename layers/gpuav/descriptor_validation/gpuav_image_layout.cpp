@@ -588,7 +588,7 @@ void Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer,
     copy_buffer_to_image_info.regionCount = regionCount;
     copy_buffer_to_image_info.pRegions = regions_2.data();
 
-    InsertCopyBufferToImageValidation(*this, record_obj.location, SubState(*cb_state), &copy_buffer_to_image_info);
+    valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), &copy_buffer_to_image_info);
 }
 
 void Validator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
@@ -612,7 +612,7 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
         }
     }
 
-    InsertCopyBufferToImageValidation(*this, record_obj.location, SubState(*cb_state), pCopyBufferToImageInfo);
+    valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), pCopyBufferToImageInfo);
 }
 
 void Validator::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
