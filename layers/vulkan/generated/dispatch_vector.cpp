@@ -1794,7 +1794,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordDestroyShaderEXT);
     BUILD_DESTROY_DISPATCH_VECTOR(PostCallRecordDestroyShaderEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateGetShaderBinaryDataEXT);
-    BUILD_DISPATCH_VECTOR(PreCallRecordGetShaderBinaryDataEXT);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetShaderBinaryDataEXT);
     BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindShadersEXT);
     BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindShadersEXT);

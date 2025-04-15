@@ -81,7 +81,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkEnumerateDeviceLayerProperties',
         'vkEnumerateDeviceExtensionProperties',
         # Functions that are handled explicitly due to chassis architecture violations
-        # Note: If added, may need to add to skip_intercept_id_functions list as well
+        # Note: If added, may need to add to skip_intercept_id_functions list as well (in dispatch_vector_generator.py)
         'vkCreateGraphicsPipelines',
         'vkCreateComputePipelines',
         'vkCreateRayTracingPipelinesNV',
@@ -89,6 +89,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkCreatePipelineLayout',
         'vkCreateShaderModule',
         'vkCreateShadersEXT',
+        'vkGetShaderBinaryDataEXT',
         'vkAllocateDescriptorSets',
         'vkCreateBuffer',
         'vkQueuePresentKHR',

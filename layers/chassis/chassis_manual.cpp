@@ -423,7 +423,7 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
             continue;
         }
         if (vo->container_type == LayerObjectTypeStateTracker) {
-            state_tracker = vo.get(); 
+            state_tracker = vo.get();
             continue;
         }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
@@ -773,6 +773,56 @@ VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineLayout(VkDevice device, const VkPip
             }
             auto lock = vo->WriteLock();
             vo->PostCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t* pDataSize, void* pData) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetShaderBinaryDataEXT, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetShaderBinaryDataEXT");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetShaderBinaryDataEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetShaderBinaryDataEXT(device, shader, pDataSize, pData, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+
+    chassis::ShaderBinaryData chassis_state{shader};
+
+    RecordObject record_obj(vvl::Func::vkGetShaderBinaryDataEXT);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetShaderBinaryDataEXT");
+        for (auto& vo : device_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj, chassis_state);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetShaderBinaryDataEXT");
+        result = device_dispatch->GetShaderBinaryDataEXT(device, chassis_state.modified_shader_handle, pDataSize, pData);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetShaderBinaryDataEXT");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetShaderBinaryDataEXT]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetShaderBinaryDataEXT(device, shader, pDataSize, pData, record_obj);
         }
     }
     return result;

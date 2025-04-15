@@ -65,7 +65,7 @@ struct ShaderObject {
 
     // When using GPU-AV the pCreateInfo is modified on the user
     bool is_modified = false;
-    std::vector<VkShaderCreateInfoEXT> modified_create_infos;
+    std::vector<vku::safe_VkShaderCreateInfoEXT> modified_create_infos;
     const VkShaderCreateInfoEXT* pCreateInfos = nullptr;
 
     // Pass the instrumented SPIR-V info from PreCallRecord to Dispatch (so GPU-AV logic can run with it)
@@ -128,6 +128,10 @@ struct CreatePipelineLayout {
     // If a 2nd layer starts to use it, can have conflicting values
     std::vector<VkDescriptorSetLayout> new_layouts;
     VkPipelineLayoutCreateInfo modified_create_info;
+};
+
+struct ShaderBinaryData {
+    VkShaderEXT modified_shader_handle;
 };
 
 struct CreateBuffer {

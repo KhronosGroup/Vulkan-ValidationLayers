@@ -1689,7 +1689,6 @@ typedef enum InterceptId {
     InterceptIdPreCallRecordDestroyShaderEXT,
     InterceptIdPostCallRecordDestroyShaderEXT,
     InterceptIdPreCallValidateGetShaderBinaryDataEXT,
-    InterceptIdPreCallRecordGetShaderBinaryDataEXT,
     InterceptIdPostCallRecordGetShaderBinaryDataEXT,
     InterceptIdPreCallValidateCmdBindShadersEXT,
     InterceptIdPreCallRecordCmdBindShadersEXT,

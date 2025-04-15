@@ -101,7 +101,10 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     void PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkShaderModule *pShaderModule,
                                           const RecordObject &record_obj, chassis::CreateShaderModule &chassis_state) override;
-    void PreCallRecordShaderObjectInstrumentation(VkShaderCreateInfoEXT &create_info, const Location &create_info_loc,
+    void PreCallRecordGetShaderBinaryDataEXT(VkDevice device, VkShaderEXT shader, size_t *pDataSize, void *pData,
+                                             const RecordObject &record_obj, chassis::ShaderBinaryData &chassis_state) override;
+    bool PreCallRecordShaderObjectInstrumentation(vku::safe_VkShaderCreateInfoEXT &modified_create_info,
+                                                  const Location &create_info_loc,
                                                   chassis::ShaderObjectInstrumentationData &shader_instrumentation_data);
     void PreCallRecordCreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
                                        const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
@@ -180,7 +183,7 @@ class GpuShaderInstrumentor : public vvl::DeviceProxy {
     };
     void BuildDescriptorSetLayoutInfo(const vvl::Pipeline &pipeline_state,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
-    void BuildDescriptorSetLayoutInfo(const VkShaderCreateInfoEXT &create_info,
+    void BuildDescriptorSetLayoutInfo(const vku::safe_VkShaderCreateInfoEXT &modified_create_info,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
     void BuildDescriptorSetLayoutInfo(const vvl::DescriptorSetLayout &set_layout_state, const uint32_t set_layout_index,
                                       InstrumentationDescriptorSetLayouts &out_instrumentation_dsl);
