@@ -92,7 +92,7 @@ void Device::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescr
     FinishReadObjectParentInstance(device, record_obj.location);
     FinishWriteObject(pAllocateInfo->descriptorPool, record_obj.location);
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
-    if (VK_SUCCESS == record_obj.result) {
+    if (record_obj.result == VK_SUCCESS) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_descriptor_sets = pool_descriptor_sets_map[pAllocateInfo->descriptorPool];
         for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
@@ -134,7 +134,7 @@ void Device::PostCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorPool 
     // Host access to descriptorPool must be externally synchronized
     // Host access to each member of pDescriptorSets must be externally synchronized
     // Host access to pAllocateInfo::descriptorPool must be externally synchronized
-    if (VK_SUCCESS == record_obj.result) {
+    if (record_obj.result == VK_SUCCESS) {
         auto lock = WriteLockGuard(thread_safety_lock);
         auto& pool_descriptor_sets = pool_descriptor_sets_map[descriptorPool];
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
@@ -202,7 +202,7 @@ void Device::PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool
     FinishWriteObject(descriptorPool, record_obj.location);
     // Host access to descriptorPool must be externally synchronized
     // any sname:VkDescriptorSet objects allocated from pname:descriptorPool must be externally synchronized between host accesses
-    if (VK_SUCCESS == record_obj.result) {
+    if (record_obj.result == VK_SUCCESS) {
         // remove references to implicitly freed descriptor sets
         auto lock = WriteLockGuard(thread_safety_lock);
         for (auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {

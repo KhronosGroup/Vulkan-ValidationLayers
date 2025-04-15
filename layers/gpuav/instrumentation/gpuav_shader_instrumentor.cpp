@@ -265,7 +265,7 @@ void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, co
                                                              const RecordObject &record_obj,
                                                              chassis::CreateShaderModule &chassis_state) {
     BaseClass::PostCallRecordCreateShaderModule(device, pCreateInfo, pAllocator, pShaderModule, record_obj, chassis_state);
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
 

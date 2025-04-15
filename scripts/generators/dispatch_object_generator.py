@@ -483,7 +483,7 @@ class DispatchObjectGenerator(BaseGenerator):
                     # Check for special case where multiple handles are returned
                     wrap_call = 'WrapNew' if handle_type != 'VkDisplayKHR' else 'MaybeWrapDisplay'
                     ndo_array = lastParam.length is not None
-                    create_ndo_code += 'if (VK_SUCCESS == result) {\n'
+                    create_ndo_code += 'if (result == VK_SUCCESS) {\n'
                     ndo_dest = f'*{lastParam.name}'
                     if ndo_array:
                         create_ndo_code += f'for (uint32_t index0 = 0; index0 < {lastParam.length}; index0++) {{\n'

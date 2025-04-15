@@ -83,7 +83,7 @@ void BestPractices::ManualPostCallRecordCreateComputePipelines(VkDevice device, 
                                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                chassis::CreateComputePipelines& chassis_state) {
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
 
@@ -250,7 +250,7 @@ void BestPractices::ManualPostCallRecordCreateGraphicsPipelines(VkDevice device,
                                                                 const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                                 const RecordObject& record_obj, PipelineStates& pipeline_states,
                                                                 chassis::CreateGraphicsPipelines& chassis_state) {
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
     // AMD best practice

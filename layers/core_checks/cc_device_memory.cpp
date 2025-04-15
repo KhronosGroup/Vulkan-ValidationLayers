@@ -2183,7 +2183,9 @@ bool CoreChecks::PreCallValidateBindImageMemory(VkDevice device, VkImage image, 
 
 void CoreChecks::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
 
     BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
     if (auto image_state = Get<vvl::Image>(image)) {

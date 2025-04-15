@@ -1091,7 +1091,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 }
 
 void CommandBuffer::End(VkResult result) {
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         state = CbState::Recorded;
     }
 }

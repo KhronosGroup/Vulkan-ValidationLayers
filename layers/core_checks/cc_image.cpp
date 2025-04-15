@@ -848,7 +848,9 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
 void CoreChecks::PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo *pCreateInfo,
                                            const VkAllocationCallbacks *pAllocator, VkImage *pImage,
                                            const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
 
     BaseClass::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
     if ((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) != 0) {
@@ -2797,7 +2799,9 @@ void CoreChecks::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t t
                                                      const RecordObject &record_obj) {
     BaseClass::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
         auto &transition = pTransitions[i];

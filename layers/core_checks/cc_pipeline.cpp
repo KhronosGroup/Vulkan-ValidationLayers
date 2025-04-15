@@ -810,7 +810,7 @@ void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, c
                                                               const VkAllocationCallbacks *pAllocator,
                                                               const RecordObject &record_obj) {
     BaseClass::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
 
