@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (C) 2015-2024 Google Inc.
+/* Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (C) 2015-2025 Google Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -56,12 +56,12 @@ static VkSubpassDependency2 ImplicitDependencyToExternal(uint32_t subpass) {
 }
 // NOTE: The functions below are only called from the vvl::RenderPass constructor, and use const_cast<> to set up
 // members that never change after construction is finished.
-static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl::RenderPass *render_pass) {
-    auto &subpass_to_node = const_cast<vvl::RenderPass::DAGNodeVec &>(render_pass->subpass_to_node);
+static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl::RenderPass &render_pass) {
+    auto &subpass_to_node = const_cast<vvl::RenderPass::DAGNodeVec &>(render_pass.subpass_to_node);
     subpass_to_node.resize(pCreateInfo->subpassCount);
-    auto &self_dependencies = const_cast<vvl::RenderPass::SelfDepVec &>(render_pass->self_dependencies);
+    auto &self_dependencies = const_cast<vvl::RenderPass::SelfDepVec &>(render_pass.self_dependencies);
     self_dependencies.resize(pCreateInfo->subpassCount);
-    auto &subpass_dependencies = const_cast<vvl::RenderPass::SubpassGraphVec &>(render_pass->subpass_dependencies);
+    auto &subpass_dependencies = const_cast<vvl::RenderPass::SubpassGraphVec &>(render_pass.subpass_dependencies);
     subpass_dependencies.resize(pCreateInfo->subpassCount);
 
     for (uint32_t i = 0; i < pCreateInfo->subpassCount; ++i) {
@@ -136,7 +136,7 @@ static void RecordRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInfo, vvl:
 }
 
 struct AttachmentTracker {  // This is really only of local interest, but a bit big for a lambda
-    vvl::RenderPass *const rp;
+    vvl::RenderPass &rp;
     vvl::RenderPass::SubpassVec &first;
     vvl::RenderPass::FirstIsTransitionVec &first_is_transition;
     vvl::RenderPass::SubpassVec &last;
@@ -145,28 +145,28 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     const uint32_t attachment_count;
     std::vector<VkImageLayout> attachment_layout;
     std::vector<std::vector<VkImageLayout>> subpass_attachment_layout;
-    explicit AttachmentTracker(vvl::RenderPass *render_pass)
+    explicit AttachmentTracker(vvl::RenderPass &render_pass)
         : rp(render_pass),
-          first(const_cast<vvl::RenderPass::SubpassVec &>(rp->attachment_first_subpass)),
-          first_is_transition(const_cast<vvl::RenderPass::FirstIsTransitionVec &>(rp->attachment_first_is_transition)),
-          last(const_cast<vvl::RenderPass::SubpassVec &>(rp->attachment_last_subpass)),
-          subpass_transitions(const_cast<vvl::RenderPass::TransitionVec &>(rp->subpass_transitions)),
-          first_read(const_cast<vvl::RenderPass::FirstReadMap &>(rp->attachment_first_read)),
-          attachment_count(rp->create_info.attachmentCount),
+          first(const_cast<vvl::RenderPass::SubpassVec &>(rp.attachment_first_subpass)),
+          first_is_transition(const_cast<vvl::RenderPass::FirstIsTransitionVec &>(rp.attachment_first_is_transition)),
+          last(const_cast<vvl::RenderPass::SubpassVec &>(rp.attachment_last_subpass)),
+          subpass_transitions(const_cast<vvl::RenderPass::TransitionVec &>(rp.subpass_transitions)),
+          first_read(const_cast<vvl::RenderPass::FirstReadMap &>(rp.attachment_first_read)),
+          attachment_count(rp.create_info.attachmentCount),
           attachment_layout(),
           subpass_attachment_layout() {
         first.resize(attachment_count, VK_SUBPASS_EXTERNAL);
         first_is_transition.resize(attachment_count, false);
         last.resize(attachment_count, VK_SUBPASS_EXTERNAL);
-        subpass_transitions.resize(rp->create_info.subpassCount + 1);  // Add an extra for EndRenderPass
+        subpass_transitions.resize(rp.create_info.subpassCount + 1);  // Add an extra for EndRenderPass
         attachment_layout.reserve(attachment_count);
-        subpass_attachment_layout.resize(rp->create_info.subpassCount);
+        subpass_attachment_layout.resize(rp.create_info.subpassCount);
         for (auto &subpass_layouts : subpass_attachment_layout) {
             subpass_layouts.resize(attachment_count, kInvalidLayout);
         }
 
         for (uint32_t j = 0; j < attachment_count; j++) {
-            attachment_layout.push_back(rp->create_info.pAttachments[j].initialLayout);
+            attachment_layout.push_back(rp.create_info.pAttachments[j].initialLayout);
         }
     }
 
@@ -176,14 +176,14 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
 
         // max_prev is invariant across attachments
         uint32_t max_prev = VK_SUBPASS_EXTERNAL;
-        for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
+        for (const auto &prev : rp.subpass_dependencies[subpass].prev) {
             const auto prev_pass = prev.first->pass;
             max_prev = (max_prev == VK_SUBPASS_EXTERNAL) ? prev_pass : std::max(prev_pass, max_prev);
         }
 
         for (const auto attachment : vvl::make_span(preserved, count)) {
             if (max_prev == VK_SUBPASS_EXTERNAL) {
-                subpass_attachment_layout[subpass][attachment] = rp->create_info.pAttachments[attachment].initialLayout;
+                subpass_attachment_layout[subpass][attachment] = rp.create_info.pAttachments[attachment].initialLayout;
             } else {
                 subpass_attachment_layout[subpass][attachment] = subpass_attachment_layout[max_prev][attachment];
             }
@@ -198,7 +198,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                 const auto layout = attach_ref[j].layout;
                 // Take advantage of the fact that insert won't overwrite, so we'll only write the first time.
                 first_read.emplace(attachment, is_read);
-                const auto initial_layout = rp->create_info.pAttachments[attachment].initialLayout;
+                const auto initial_layout = rp.create_info.pAttachments[attachment].initialLayout;
                 bool no_external_transition = true;
                 if (first[attachment] == VK_SUBPASS_EXTERNAL) {
                     first[attachment] = subpass;
@@ -210,7 +210,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                 }
                 last[attachment] = subpass;
 
-                for (const auto &prev : rp->subpass_dependencies[subpass].prev) {
+                for (const auto &prev : rp.subpass_dependencies[subpass].prev) {
                     const auto prev_pass = prev.first->pass;
                     const auto prev_layout = subpass_attachment_layout[prev_pass][attachment];
                     if ((prev_layout != kInvalidLayout) && (prev_layout != layout)) {
@@ -218,7 +218,7 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
                     }
                 }
 
-                if (no_external_transition && (rp->subpass_dependencies[subpass].prev.empty())) {
+                if (no_external_transition && (rp.subpass_dependencies[subpass].prev.empty())) {
                     // This will insert a layout transition when dependencies are missing between first and subsequent use
                     // but is consistent with the idea of an implicit external dependency
                     if (initial_layout != layout) {
@@ -232,10 +232,10 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
         }
     }
     void FinalTransitions() {
-        auto &final_transitions = subpass_transitions[rp->create_info.subpassCount];
+        auto &final_transitions = subpass_transitions[rp.create_info.subpassCount];
 
         for (uint32_t attachment = 0; attachment < attachment_count; ++attachment) {
-            const auto final_layout = rp->create_info.pAttachments[attachment].finalLayout;
+            const auto final_layout = rp.create_info.pAttachments[attachment].finalLayout;
             // Add final transitions for attachments that were used and change layout.
             if ((last[attachment] != VK_SUBPASS_EXTERNAL) && final_layout != attachment_layout[attachment]) {
                 final_transitions.emplace_back(last[attachment], attachment, attachment_layout[attachment], final_layout);
@@ -244,8 +244,24 @@ struct AttachmentTracker {  // This is really only of local interest, but a bit 
     }
 };
 
-static void InitRenderPassState(vvl::RenderPass *render_pass) {
-    auto create_info = render_pass->create_info.ptr();
+static bool IsRenderPassMultiViewEnabled(const VkRenderPassCreateInfo2 &renderpass_ci) {
+    // From the spec:
+    // If the VkSubpassDescription2::viewMask member of any element of pSubpasses is not zero,
+    // multiview functionality is considered to be enabled for this render pass.
+    bool is_multiview_enabled = false;
+    for (uint32_t subpass_index = 0; subpass_index < renderpass_ci.subpassCount; subpass_index++) {
+        const VkSubpassDescription2 &subpass = renderpass_ci.pSubpasses[subpass_index];
+        is_multiview_enabled |= (subpass.viewMask != 0);
+    }
+    return is_multiview_enabled;
+}
+
+static bool IsDynamicRenderingMultiviewEnabled(const VkRenderingInfo *rendering_info) {
+    return rendering_info && rendering_info->viewMask != 0u;
+}
+
+static void InitRenderPassState(vvl::RenderPass &render_pass) {
+    auto create_info = render_pass.create_info.ptr();
 
     RecordRenderPassDAG(create_info, render_pass);
 
@@ -258,28 +274,19 @@ static void InitRenderPassState(vvl::RenderPass *render_pass) {
         attachment_tracker.Update(subpass_index, subpass.pDepthStencilAttachment, 1, false);
         attachment_tracker.Update(subpass_index, subpass.pInputAttachments, subpass.inputAttachmentCount, true);
         attachment_tracker.Update(subpass_index, subpass.pPreserveAttachments, subpass.preserveAttachmentCount);
-
-        // From the spec
-        // If the VkSubpassDescription2::viewMask member of any element of pSubpasses is not zero, multiview functionality is
-        // considered to be enabled for this render pass.
-        (*const_cast<bool *>(&render_pass->has_multiview_enabled)) |= (subpass.viewMask != 0);
     }
     attachment_tracker.FinalTransitions();
-}
-
-static bool IsDynamicRenderingMultiviewEnabled(const VkRenderingInfo *rendering_info) {
-    return rendering_info && rendering_info->viewMask != 0u;
 }
 
 namespace vvl {
 
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo2 const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
+      create_info(pCreateInfo),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
-      has_multiview_enabled(false),
-      create_info(pCreateInfo) {
-    InitRenderPassState(this);
+      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())) {
+    InitRenderPassState(*this);
 }
 
 static vku::safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCreateInfo &create_info) {
@@ -289,11 +296,11 @@ static vku::safe_VkRenderPassCreateInfo2 ConvertCreateInfo(const VkRenderPassCre
 
 RenderPass::RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo)
     : StateObject(handle, kVulkanObjectTypeRenderPass),
+      create_info(ConvertCreateInfo(*pCreateInfo)),
       use_dynamic_rendering(false),
       use_dynamic_rendering_inherited(false),
-      has_multiview_enabled(false),
-      create_info(ConvertCreateInfo(*pCreateInfo)) {
-    InitRenderPassState(this);
+      has_multiview_enabled(IsRenderPassMultiViewEnabled(*create_info.ptr())) {
+    InitRenderPassState(*this);
 }
 
 const VkPipelineRenderingCreateInfo VkPipelineRenderingCreateInfo_default = {

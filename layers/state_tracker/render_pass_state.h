@@ -75,6 +75,7 @@ class RenderPass : public StateObject {
         AttachmentTransition(uint32_t prev_pass_, uint32_t attachment_, VkImageLayout old_layout_, VkImageLayout new_layout_)
             : prev_pass(prev_pass_), attachment(attachment_), old_layout(old_layout_), new_layout(new_layout_) {}
     };
+    const vku::safe_VkRenderPassCreateInfo2 create_info;
     const bool use_dynamic_rendering;
     const bool use_dynamic_rendering_inherited;
     const bool has_multiview_enabled;
@@ -82,7 +83,6 @@ class RenderPass : public StateObject {
     const vku::safe_VkRenderingInfo dynamic_rendering_begin_rendering_info;
     const vku::safe_VkPipelineRenderingCreateInfo dynamic_pipeline_rendering_create_info;
     const vku::safe_VkCommandBufferInheritanceRenderingInfo inheritance_rendering_info;
-    const vku::safe_VkRenderPassCreateInfo2 create_info;
     using SubpassVec = std::vector<uint32_t>;
     using SelfDepVec = std::vector<SubpassVec>;
     const std::vector<SubpassVec> self_dependencies;
