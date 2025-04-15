@@ -403,7 +403,7 @@ void Validator::PostCallRecordCreateImage(VkDevice device, const VkImageCreateIn
                                           const VkAllocationCallbacks *pAllocator, VkImage *pImage,
                                           const RecordObject &record_obj) {
     BaseClass::PostCallRecordCreateImage(device, pCreateInfo, pAllocator, pImage, record_obj);
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
 
@@ -462,7 +462,9 @@ void Validator::PostCallRecordTransitionImageLayout(VkDevice device, uint32_t tr
                                                     const RecordObject &record_obj) {
     BaseClass::PostCallRecordTransitionImageLayout(device, transitionCount, pTransitions, record_obj);
 
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
 
     for (uint32_t i = 0; i < transitionCount; ++i) {
         auto &transition = pTransitions[i];
@@ -637,7 +639,9 @@ void Validator::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const 
 void Validator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                               const RecordObject &record_obj) {
     BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
 
     if (auto image_state = Get<vvl::Image>(image)) {
         image_state->SetInitialLayoutMap();

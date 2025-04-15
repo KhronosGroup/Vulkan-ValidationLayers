@@ -771,7 +771,7 @@ void SyncValidator::PostCallRecordCreateSemaphore(VkDevice device, const VkSemap
                                                   const VkAllocationCallbacks *pAllocator, VkSemaphore *pSemaphore,
                                                   const RecordObject &record_obj) {
     BaseClass::PostCallRecordCreateSemaphore(device, pCreateInfo, pAllocator, pSemaphore, record_obj);
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
     assert(!vvl::Contains(timeline_signals_, *pSemaphore));
@@ -3066,7 +3066,9 @@ void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffe
 void SyncValidator::PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
                                                   const RecordObject &record_obj) {
     BaseClass::PostCallRecordBindImageMemory(device, image, memory, memoryOffset, record_obj);
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
     VkBindImageMemoryInfo bind_info = vku::InitStructHelper();
     bind_info.image = image;
     bind_info.memory = memory;
@@ -3089,7 +3091,7 @@ void SyncValidator::PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t 
 
 void SyncValidator::PostCallRecordQueueWaitIdle(VkQueue queue, const RecordObject &record_obj) {
     BaseClass::PostCallRecordQueueWaitIdle(queue, record_obj);
-    if (VK_SUCCESS != record_obj.result || !syncval_settings.submit_time_validation || queue == VK_NULL_HANDLE) {
+    if (record_obj.result != VK_SUCCESS || !syncval_settings.submit_time_validation || queue == VK_NULL_HANDLE) {
         return;
     }
     const auto queue_state = GetQueueSyncStateShared(queue);
@@ -3615,7 +3617,7 @@ void SyncValidator::PostCallRecordSignalSemaphore(VkDevice device, const VkSemap
     // static payload
     vvl::TlsGuard<QueueSubmitCmdState> cmd_state;
 
-    if (VK_SUCCESS != record_obj.result) {
+    if (record_obj.result != VK_SUCCESS) {
         return;
     }
     ApplySignalsUpdate(cmd_state->signals_update, nullptr);

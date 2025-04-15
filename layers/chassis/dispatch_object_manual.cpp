@@ -1095,7 +1095,7 @@ VkResult Device::CreateRenderPass(VkDevice device, const VkRenderPassCreateInfo 
                                   const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     VkResult result = device_dispatch_table.CreateRenderPass(device, pCreateInfo, pAllocator, pRenderPass);
     if (!wrap_handles) return result;
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         WriteLockGuard lock(dispatch_lock);
         UpdateCreateRenderPassState(this, pCreateInfo, *pRenderPass);
         *pRenderPass = WrapNew(*pRenderPass);
@@ -1107,7 +1107,7 @@ VkResult Device::CreateRenderPass2KHR(VkDevice device, const VkRenderPassCreateI
                                       const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     VkResult result = device_dispatch_table.CreateRenderPass2KHR(device, pCreateInfo, pAllocator, pRenderPass);
     if (!wrap_handles) return result;
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         WriteLockGuard lock(dispatch_lock);
         UpdateCreateRenderPassState(this, pCreateInfo, *pRenderPass);
         *pRenderPass = WrapNew(*pRenderPass);
@@ -1119,7 +1119,7 @@ VkResult Device::CreateRenderPass2(VkDevice device, const VkRenderPassCreateInfo
                                    const VkAllocationCallbacks *pAllocator, VkRenderPass *pRenderPass) {
     VkResult result = device_dispatch_table.CreateRenderPass2(device, pCreateInfo, pAllocator, pRenderPass);
     if (!wrap_handles) return result;
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         WriteLockGuard lock(dispatch_lock);
         UpdateCreateRenderPassState(this, pCreateInfo, *pRenderPass);
         *pRenderPass = WrapNew(*pRenderPass);
@@ -1146,7 +1146,7 @@ VkResult Device::GetSwapchainImagesKHR(VkDevice device, VkSwapchainKHR swapchain
         swapchain = Unwrap(swapchain);
     }
     VkResult result = device_dispatch_table.GetSwapchainImagesKHR(device, swapchain, pSwapchainImageCount, pSwapchainImages);
-    if ((VK_SUCCESS == result) || (VK_INCOMPLETE == result)) {
+    if ((result == VK_SUCCESS) || (VK_INCOMPLETE == result)) {
         if ((*pSwapchainImageCount > 0) && pSwapchainImages) {
             WriteLockGuard lock(dispatch_lock);
             auto &wrapped_swapchain_image_handles = swapchain_wrapped_image_handle_map[wrapped_swapchain_handle];
@@ -1229,7 +1229,7 @@ VkResult Device::ResetDescriptorPool(VkDevice device, VkDescriptorPool descripto
     VkDescriptorPool local_descriptor_pool = VK_NULL_HANDLE;
     { local_descriptor_pool = Unwrap(descriptorPool); }
     VkResult result = device_dispatch_table.ResetDescriptorPool(device, local_descriptor_pool, flags);
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         WriteLockGuard lock(dispatch_lock);
         // remove references to implicitly freed descriptor sets
         for (auto descriptor_set : pool_descriptor_sets_map[descriptorPool]) {
@@ -1263,7 +1263,7 @@ VkResult Device::AllocateDescriptorSets(VkDevice device, const VkDescriptorSetAl
     if (local_pAllocateInfo) {
         delete local_pAllocateInfo;
     }
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         WriteLockGuard lock(dispatch_lock);
         auto &pool_descriptor_sets = pool_descriptor_sets_map[pAllocateInfo->descriptorPool];
         for (uint32_t index0 = 0; index0 < pAllocateInfo->descriptorSetCount; index0++) {
@@ -1291,7 +1291,7 @@ VkResult Device::FreeDescriptorSets(VkDevice device, VkDescriptorPool descriptor
     VkResult result = device_dispatch_table.FreeDescriptorSets(device, local_descriptor_pool, descriptorSetCount,
                                                                (const VkDescriptorSet *)local_pDescriptorSets);
     if (local_pDescriptorSets) delete[] local_pDescriptorSets;
-    if ((VK_SUCCESS == result) && (pDescriptorSets)) {
+    if ((result == VK_SUCCESS) && (pDescriptorSets)) {
         WriteLockGuard lock(dispatch_lock);
         auto &pool_descriptor_sets = pool_descriptor_sets_map[descriptorPool];
         for (uint32_t index0 = 0; index0 < descriptorSetCount; index0++) {
@@ -1323,7 +1323,7 @@ VkResult Device::CreateDescriptorUpdateTemplate(VkDevice device, const VkDescrip
     }
     VkResult result = device_dispatch_table.CreateDescriptorUpdateTemplate(device, local_pCreateInfo->ptr(), pAllocator,
                                                                            pDescriptorUpdateTemplate);
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         *pDescriptorUpdateTemplate = WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
@@ -1357,7 +1357,7 @@ VkResult Device::CreateDescriptorUpdateTemplateKHR(VkDevice device, const VkDesc
     VkResult result = device_dispatch_table.CreateDescriptorUpdateTemplateKHR(device, local_pCreateInfo->ptr(), pAllocator,
                                                                               pDescriptorUpdateTemplate);
 
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         *pDescriptorUpdateTemplate = WrapNew(*pDescriptorUpdateTemplate);
 
         // Shadow template createInfo for later updates
@@ -2375,7 +2375,7 @@ VkResult Device::CreateIndirectExecutionSetEXT(VkDevice device, const VkIndirect
 
     VkResult result = device_dispatch_table.CreateIndirectExecutionSetEXT(
         device, (const VkIndirectExecutionSetCreateInfoEXT *)&local_pCreateInfo, pAllocator, pIndirectExecutionSet);
-    if (VK_SUCCESS == result) {
+    if (result == VK_SUCCESS) {
         *pIndirectExecutionSet = WrapNew(*pIndirectExecutionSet);
     }
     return result;

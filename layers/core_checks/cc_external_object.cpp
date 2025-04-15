@@ -315,7 +315,9 @@ bool CoreChecks::PreCallValidateImportSemaphoreZirconHandleFUCHSIA(
 void CoreChecks::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
     VkDevice device, const VkImportSemaphoreZirconHandleInfoFUCHSIA *pImportSemaphoreZirconHandleInfo,
     const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
     RecordImportSemaphoreState(pImportSemaphoreZirconHandleInfo->semaphore, pImportSemaphoreZirconHandleInfo->handleType,
                                pImportSemaphoreZirconHandleInfo->flags);
 }
@@ -323,7 +325,9 @@ void CoreChecks::PostCallRecordImportSemaphoreZirconHandleFUCHSIA(
 void CoreChecks::PostCallRecordGetSemaphoreZirconHandleFUCHSIA(VkDevice device,
                                                                const VkSemaphoreGetZirconHandleInfoFUCHSIA *pGetZirconHandleInfo,
                                                                zx_handle_t *pZirconHandle, const RecordObject &record_obj) {
-    if (VK_SUCCESS != record_obj.result) return;
+    if (record_obj.result != VK_SUCCESS) {
+        return;
+    }
     auto semaphore_state = Get<vvl::Semaphore>(pGetZirconHandleInfo->semaphore);
     RecordGetExternalSemaphoreState(*semaphore_state, pGetZirconHandleInfo->handleType);
 }
