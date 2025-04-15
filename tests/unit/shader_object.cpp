@@ -7094,3 +7094,41 @@ TEST_F(NegativeShaderObject, DrawWrongNextStage) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeShaderObject, NoBoundCompute) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, BoundNullCompute) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    m_command_buffer.Begin();
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    const VkShaderEXT shaders[] = {VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, stages, shaders);
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, UnbindCompute) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    m_command_buffer.Begin();
+
+    const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, kMinimalShaderGlsl);
+    m_command_buffer.BindCompShader(comp_shader);
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+
+    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
+    const VkShaderEXT shaders[] = {VK_NULL_HANDLE};
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, stages, shaders);
+
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+}
