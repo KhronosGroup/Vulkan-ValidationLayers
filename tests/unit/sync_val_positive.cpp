@@ -2291,3 +2291,139 @@ TEST_F(PositiveSyncVal, CmdDispatchBase) {
     m_command_buffer.Copy(buffer_a, buffer_b);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
+    // Implements scenario from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9903 with the
+    // issue fixed by providing additional external dependency.
+    TEST_DESCRIPTION(
+        "The first attachment has last use in subpass 0, another one in subpass 1. Use external subpass dependencies to "
+        "synchronize layout transitions.");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    const uint32_t w = 128;
+    const uint32_t h = 128;
+
+    vkt::Image image0(*m_device, w, h, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view0 = image0.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    vkt::Image image1(*m_device, w, h, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view1 = image1.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    const VkImageView image_views[2] = {image_view0.handle(), image_view1.handle()};
+
+    VkAttachmentDescription attachment0 = {};
+    attachment0.format = VK_FORMAT_B8G8R8A8_UNORM;
+    attachment0.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment0.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment0.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment0.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment0.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment0.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment0.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkAttachmentDescription attachment1 = attachment0;
+    const VkAttachmentDescription attachments[2] = {attachment0, attachment1};
+
+    const VkAttachmentReference attachment_reference0 = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference attachment_reference1 = {1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    const VkAttachmentReference subpass0_refs[2] = {attachment_reference0, attachment_reference1};
+    const uint32_t preserve_attachment = 1;
+
+    VkSubpassDescription subpass0{};
+    subpass0.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass0.colorAttachmentCount = 2;
+    subpass0.pColorAttachments = subpass0_refs;
+
+    VkSubpassDescription subpass1{};
+    subpass1.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass1.colorAttachmentCount = 1;
+    subpass1.pColorAttachments = &attachment_reference0;
+    subpass1.preserveAttachmentCount = 1;
+    subpass1.pPreserveAttachments = &preserve_attachment;
+
+    const VkSubpassDescription subpasses[2] = {subpass0, subpass1};
+
+    // Make subpass1 start after subpass0
+    VkSubpassDependency subpass_dependency0{};
+    subpass_dependency0.srcSubpass = 0;
+    subpass_dependency0.dstSubpass = 1;
+    subpass_dependency0.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency0.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency0.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    subpass_dependency0.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+    // This dependency is needed for attachment1. The last subpass that used attachment1 is subpass 0.
+    // Just using external dependency with subpass 1, won't synchronize attachment1 final layout transition.
+    VkSubpassDependency subpass_dependency1{};
+    subpass_dependency1.srcSubpass = 0;
+    subpass_dependency1.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency1.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency1.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency1.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    subpass_dependency1.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+    // This is for attachment 0 which is used by both subpass 0 and 1.
+    VkSubpassDependency subpass_dependency2{};
+    subpass_dependency2.srcSubpass = 1;
+    subpass_dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dependency2.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency2.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    subpass_dependency2.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    subpass_dependency2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+    const VkSubpassDependency subpass_dependencies[3] = {subpass_dependency0, subpass_dependency1, subpass_dependency2};
+
+    VkRenderPassCreateInfo renderpass_ci = vku::InitStructHelper();
+    renderpass_ci.attachmentCount = 2;
+    renderpass_ci.pAttachments = attachments;
+    renderpass_ci.subpassCount = 2;
+    renderpass_ci.pSubpasses = subpasses;
+    renderpass_ci.dependencyCount = 3;
+    renderpass_ci.pDependencies = subpass_dependencies;
+
+    const vkt::RenderPass rp(*m_device, renderpass_ci);
+    const vkt::Framebuffer fb(*m_device, rp, 2, image_views, w, h);
+
+    const VkPipelineColorBlendAttachmentState blend_attachment_states[2] = {};
+    VkPipelineColorBlendStateCreateInfo blend_state_ci = vku::InitStructHelper();
+    blend_state_ci.attachmentCount = 2;
+    blend_state_ci.pAttachments = blend_attachment_states;
+
+    CreatePipelineHelper gfx_pipe(*this);
+    gfx_pipe.gp_ci_.pColorBlendState = &blend_state_ci;
+    gfx_pipe.gp_ci_.renderPass = rp;
+    gfx_pipe.CreateGraphicsPipeline();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT},
+                                                  {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view0, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view1, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    descriptor_set.UpdateDescriptorSets();
+
+    const char *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler2D color_image0;
+        layout(set=0, binding=1) uniform sampler2D color_image1;
+        void main(){
+            vec4 color_data0 = texture(color_image0, vec2(0));
+            vec4 color_data1 = texture(color_image1, vec2(0));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, gfx_pipe.Handle());
+    m_command_buffer.BeginRenderPass(rp, fb, w, h);
+    m_command_buffer.NextSubpass();
+    m_command_buffer.EndRenderPass();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1,
+                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+}
