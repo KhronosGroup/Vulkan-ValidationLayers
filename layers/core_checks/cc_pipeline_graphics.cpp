@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "core_validation.h"
@@ -608,8 +609,15 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
         // If the complete state is defined by libraries, we need to check for compatibility with each library's layout
         const bool from_libraries_only = pipeline.graphics_lib_type == AllVkGraphicsPipelineLibraryFlagBitsEXT;
         if (from_libraries_only) {
-            const bool pre_raster_independent_set =
-                pipeline.fragment_shader_state && pipeline.fragment_shader_state->IsIndependentSets();
+            const VkPipelineLayout linking_layout_handle =
+                pipeline_layout_state ? pipeline_layout_state->VkHandle() : VK_NULL_HANDLE;
+            const VkPipelineLayout pre_raster_layout_handle =
+                pipeline.PreRasterPipelineLayoutState() ? pipeline.PreRasterPipelineLayoutState()->VkHandle() : VK_NULL_HANDLE;
+            const VkPipelineLayout fs_layout_handle = pipeline.FragmentShaderPipelineLayoutState()
+                                                          ? pipeline.FragmentShaderPipelineLayoutState()->VkHandle()
+                                                          : VK_NULL_HANDLE;
+
+            const bool pre_raster_independent_set = pipeline.pre_raster_state && pipeline.pre_raster_state->IsIndependentSets();
             // NOTE: it is possible for an executable pipeline to not contain FS state
             const bool fs_independent_set = pipeline.fragment_shader_state && pipeline.fragment_shader_state->IsIndependentSets();
             if (!pre_raster_independent_set && !fs_independent_set) {
@@ -618,18 +626,20 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 if (pipeline_layout_state) {
                     if (std::string err_msg;
                         !VerifySetLayoutCompatibility(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
-                        LogObjectList objlist(pipeline_layout_state->Handle(), pipeline.PreRasterPipelineLayoutState()->Handle());
-                        skip |= LogError(
-                            "VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
-                            "is incompatible with the layout specified in the pre-rasterization library: %s", err_msg.c_str());
+                        LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle);
+                        skip |=
+                            LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
+                                     "(%s) is incompatible with the %s specified in the pre-rasterization library: %s",
+                                     FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
+                                     err_msg.c_str());
                     }
                     if (std::string err_msg; !VerifySetLayoutCompatibility(
                             *pipeline_layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
-                        LogObjectList objlist(pipeline_layout_state->Handle(),
-                                              pipeline.FragmentShaderPipelineLayoutState()->Handle());
+                        LogObjectList objlist(linking_layout_handle, fs_layout_handle);
                         skip |= LogError(
                             "VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
-                            "is incompatible with the layout specified in the fragment shader library: %s", err_msg.c_str());
+                            "(%s) is incompatible with the %s specified in the fragment shader library: %s",
+                            FormatHandle(linking_layout_handle).c_str(), FormatHandle(fs_layout_handle).c_str(), err_msg.c_str());
                     }
                 } else {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", device, create_info_loc.dot(Field::layout),
@@ -637,15 +647,13 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 }
             } else if (pre_raster_independent_set && fs_independent_set && pipeline_layout_state &&
                        !pipeline_layout_state->IsIndependentSets()) {
-                LogObjectList objlist(pipeline_layout_state->Handle(), pipeline.PreRasterPipelineLayoutState()->Handle(),
-                                      pipeline.FragmentShaderPipelineLayoutState()->Handle());
+                LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
                 skip |= LogError(
                     "VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
                     "(%s) was not created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, but the pre-rasterization (%s) "
                     "and fragment shader (%s) were created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
-                    FormatHandle(pipeline_layout_state->Handle()).c_str(),
-                    FormatHandle(pipeline.PreRasterPipelineLayoutState()->Handle()).c_str(),
-                    FormatHandle(pipeline.FragmentShaderPipelineLayoutState()->Handle()).c_str());
+                    FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
+                    FormatHandle(fs_layout_handle).c_str());
             }
 
             const bool has_link_time_opt = (pipeline.create_flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
@@ -654,13 +662,12 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     if (std::string err_msg;
                         !VerifySetLayoutCompatibilityUnion(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(),
                                                            *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
-                        LogObjectList objlist(pipeline_layout_state->Handle(), pipeline.PreRasterPipelineLayoutState()->Handle(),
-                                              pipeline.FragmentShaderPipelineLayoutState()->Handle());
+                        LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
                         skip |=
                             LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06730", objlist, create_info_loc.dot(Field::layout),
-                                     "is incompatible with the layout specified in the union of (pre-rasterization, fragment "
+                                     "(%s) is incompatible with the layout specified in the union of (pre-rasterization, fragment "
                                      "shader) libraries: %s",
-                                     err_msg.c_str());
+                                     FormatHandle(linking_layout_handle).c_str(), err_msg.c_str());
                     }
                 } else {
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06730", device, create_info_loc.dot(Field::layout),
