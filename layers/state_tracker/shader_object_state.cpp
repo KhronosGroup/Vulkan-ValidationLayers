@@ -40,7 +40,7 @@ ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &c
       max_active_slot(GetMaxActiveSlot(active_slots)),
       set_layouts(GetSetLayouts(dev_data, create_info)),
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges)) {
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)) {
     if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
         for (uint32_t i = 0; i < createInfoCount; ++i) {
             const VkShaderEXT shader_handle = pShaders[i];

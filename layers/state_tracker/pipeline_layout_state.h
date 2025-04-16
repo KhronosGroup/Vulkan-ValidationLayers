@@ -56,8 +56,10 @@ struct PipelineLayoutCompatDef {
     uint32_t set;
     PushConstantRangesId push_constant_ranges;
     PipelineLayoutSetLayoutsId set_layouts_id;
-    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id)
-        : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id) {}
+    bool is_independent_sets;  // VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
+    PipelineLayoutCompatDef(const uint32_t set_index, const PushConstantRangesId pcr_id, const PipelineLayoutSetLayoutsId sl_id,
+                            bool is_independent_sets)
+        : set(set_index), push_constant_ranges(pcr_id), set_layouts_id(sl_id), is_independent_sets(is_independent_sets) {}
     size_t hash() const;
 
     bool operator==(const PipelineLayoutCompatDef &other) const;
@@ -79,9 +81,9 @@ class PipelineLayout : public StateObject {
     const SetLayoutVector set_layouts;
     // canonical form IDs for the "compatible for set" contents
     const PushConstantRangesId push_constant_ranges_layout;
+    VkPipelineLayoutCreateFlags create_flags;
     // table of "compatible for set N" cannonical forms for trivial accept validation
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
-    VkPipelineLayoutCreateFlags create_flags;
     // Way to quick prevent searching if we know there are no immutable samplers
     bool has_immutable_samplers;
 
@@ -94,12 +96,13 @@ class PipelineLayout : public StateObject {
     VkPipelineLayout VkHandle() const { return handle_.Cast<VkPipelineLayout>(); }
 
     VkPipelineLayoutCreateFlags CreateFlags() const { return create_flags; }
+    bool IsIndependentSets() const { return (create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0; }
 
     const VkDescriptorSetLayoutBinding *FindBinding(const spirv::ResourceInterfaceVariable &variable) const;
 };
 
 }  // namespace vvl
 
-std::vector<PipelineLayoutCompatId> GetCompatForSet(
-    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
-    const PushConstantRangesId &push_constant_ranges);
+std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
+                                                    const PushConstantRangesId &push_constant_ranges,
+                                                    VkPipelineLayoutCreateFlags pipeline_layout_create_flags);

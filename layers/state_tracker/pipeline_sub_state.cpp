@@ -19,9 +19,13 @@
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
 
-VkPipelineLayoutCreateFlags PipelineSubState::PipelineLayoutCreateFlags() const {
-    const auto layout_state = parent.PipelineLayoutState();
-    return (layout_state) ? layout_state->CreateFlags() : static_cast<VkPipelineLayoutCreateFlags>(0);
+bool PipelineSubState::IsIndependentSets() const {
+    if (const auto layout_state = parent.PipelineLayoutState()) {
+        if (layout_state->CreateFlags() & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) {
+            return true;
+        }
+    }
+    return false;
 }
 
 VertexInputState::VertexInputState(const vvl::Pipeline &p, const vku::safe_VkGraphicsPipelineCreateInfo &create_info)
