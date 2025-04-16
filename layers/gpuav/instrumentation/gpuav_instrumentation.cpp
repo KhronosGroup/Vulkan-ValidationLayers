@@ -512,7 +512,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
 
         // One exception when using GPL is we need to look out for INDEPENDENT_SETS_BIT which will have null sets inside them.
         // We have a fake merged_graphics_layout to mimic the complete layout, but the app must bind it to descriptor set
-        if (inst_binding_pipe_layout_state->create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) {
+        if (inst_binding_pipe_layout_state->IsIndependentSets()) {
             inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
             inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
         }

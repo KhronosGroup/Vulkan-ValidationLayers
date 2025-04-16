@@ -50,7 +50,7 @@ struct PipelineSubState {
     PipelineSubState(const vvl::Pipeline &p) : parent(p) {}
     const vvl::Pipeline &parent;
 
-    VkPipelineLayoutCreateFlags PipelineLayoutCreateFlags() const;
+    bool IsIndependentSets() const;  // VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT
 };
 
 struct VertexAttrState {

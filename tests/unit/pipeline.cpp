@@ -1782,6 +1782,43 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9870");
+    AddRequiredExtensions(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    descriptor_set.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.UpdateDescriptorSets();
+
+    const vkt::PipelineLayout pipeline_layout_1(*m_device, {&descriptor_set.layout_}, {},
+                                                VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set.layout_});
+
+    char const *csSource = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform UniformStruct { uint dummy; } ubo;
+        void main() {
+            uint x = ubo.dummy; // make descriptor set statically used
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout_1;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativePipeline, MaxPerStageResources) {
     TEST_DESCRIPTION("Check case where pipeline is created that exceeds maxPerStageResources");
 

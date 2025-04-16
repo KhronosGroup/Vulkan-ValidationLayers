@@ -35,7 +35,7 @@ static PushConstantRangesDict push_constant_ranges_dict;
 size_t PipelineLayoutCompatDef::hash() const {
     hash_util::HashCombiner hc;
     // The set number is integral to the CompatDef's distinctiveness
-    hc << set << push_constant_ranges.get();
+    hc << set << push_constant_ranges.get() << is_independent_sets;
     const auto &descriptor_set_layouts = *set_layouts_id.get();
     for (uint32_t i = 0; i <= set; i++) {
         hc << descriptor_set_layouts[i].get();
@@ -44,7 +44,8 @@ size_t PipelineLayoutCompatDef::hash() const {
 }
 
 bool PipelineLayoutCompatDef::operator==(const PipelineLayoutCompatDef &other) const {
-    if ((set != other.set) || (push_constant_ranges != other.push_constant_ranges)) {
+    if ((set != other.set) || (push_constant_ranges != other.push_constant_ranges) ||
+        (is_independent_sets != other.is_independent_sets)) {
         return false;
     }
 
@@ -87,6 +88,8 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
                 ss << "VkPushConstantRange[ " << pcr_i << " ]: " << string_VkPushConstantRange(pcr) << '\n';
             }
         }
+    } else if (is_independent_sets != other.is_independent_sets) {
+        ss << "One set is created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT while the other is not\n";
     } else {
         const auto &descriptor_set_layouts = *set_layouts_id.get();
         const auto &other_ds_layouts = *other.set_layouts_id.get();
@@ -104,8 +107,8 @@ std::string PipelineLayoutCompatDef::DescribeDifference(const PipelineLayoutComp
 }
 
 static PipelineLayoutCompatId GetCanonicalId(const uint32_t set_index, const PushConstantRangesId &pcr_id,
-                                             const PipelineLayoutSetLayoutsId &set_layouts_id) {
-    return pipeline_layout_compat_dict.LookUp(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id));
+                                             const PipelineLayoutSetLayoutsId &set_layouts_id, bool is_independent_sets) {
+    return pipeline_layout_compat_dict.LookUp(PipelineLayoutCompatDef(set_index, pcr_id, set_layouts_id, is_independent_sets));
 }
 
 // For repeatable sorting, not very useful for "memory in range" search
@@ -158,7 +161,8 @@ static PushConstantRangesId GetPushConstantRangesFromLayouts(const vvl::span<con
 }
 
 std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
-                                                    const PushConstantRangesId &push_constant_ranges) {
+                                                    const PushConstantRangesId &push_constant_ranges,
+                                                    VkPipelineLayoutCreateFlags pipeline_layout_create_flags) {
     PipelineLayoutSetLayoutsDef set_layout_ids(set_layouts.size());
     for (size_t i = 0; i < set_layouts.size(); i++) {
         if (set_layouts[i]) {
@@ -170,8 +174,11 @@ std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::share
     std::vector<PipelineLayoutCompatId> set_compat_ids;
     set_compat_ids.reserve(set_layouts.size());
 
+    // Only current flag to effect pipeline layout compatibility
+    bool is_independent_sets = (pipeline_layout_create_flags & VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT) != 0;
+
     for (uint32_t i = 0; i < set_layouts.size(); i++) {
-        set_compat_ids.emplace_back(GetCanonicalId(i, push_constant_ranges, set_layouts_id));
+        set_compat_ids.emplace_back(GetCanonicalId(i, push_constant_ranges, set_layouts_id, is_independent_sets));
     }
     return set_compat_ids;
 }
@@ -246,16 +253,16 @@ PipelineLayout::PipelineLayout(DeviceState &dev_data, VkPipelineLayout handle, c
     : StateObject(handle, kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(dev_data, pCreateInfo)),
       push_constant_ranges_layout(GetCanonicalId(pCreateInfo->pushConstantRangeCount, pCreateInfo->pPushConstantRanges)),
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
       create_flags(pCreateInfo->flags),
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
       has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 
 PipelineLayout::PipelineLayout(const vvl::span<const PipelineLayout *const> &layouts)
     : StateObject(static_cast<VkPipelineLayout>(VK_NULL_HANDLE), kVulkanObjectTypePipelineLayout),
       set_layouts(GetSetLayouts(layouts)),
       push_constant_ranges_layout(GetPushConstantRangesFromLayouts(layouts)),  // TODO is this correct?
-      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout)),
       create_flags(GetCreateFlags(layouts)),
+      set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges_layout, create_flags)),
       has_immutable_samplers(HasImmutableSamplers(set_layouts)) {}
 
 const VkDescriptorSetLayoutBinding *PipelineLayout::FindBinding(const spirv::ResourceInterfaceVariable &variable) const {
