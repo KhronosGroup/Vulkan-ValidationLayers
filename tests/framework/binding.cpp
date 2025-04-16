@@ -1941,7 +1941,7 @@ void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo &info, VkSubpass
 }
 
 void CommandBuffer::BeginRenderPass(VkRenderPass rp, VkFramebuffer fb, uint32_t render_area_width, uint32_t render_area_height,
-                                    uint32_t clear_count, VkClearValue *clear_values) {
+                                    uint32_t clear_count, const VkClearValue *clear_values) {
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
     render_pass_begin_info.renderPass = rp;
     render_pass_begin_info.framebuffer = fb;
