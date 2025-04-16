@@ -17,6 +17,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/render_pass_helper.h"
 #include "utils/convert_utils.h"
 
 class PositiveSubpass : public VkLayerTest {};
@@ -248,4 +249,21 @@ TEST_F(PositiveSubpass, AccessFlags3) {
         vku::InitStruct<VkRenderPassCreateInfo2>(nullptr, 0u, 1u, &attach_desc, 1u, &subpass, 1u, &subpass_dependency, 0u, nullptr);
 
     PositiveTestRenderPass2KHRCreate(*m_device, rpci2);
+}
+
+TEST_F(PositiveSubpass, AllCommandsInSubpassDependency) {
+    TEST_DESCRIPTION("Test ALL_COMMANDS_BIT is allowed in subpass dependency");
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDependency subpass_dep{};
+    subpass_dep.srcSubpass = 0;
+    subpass_dep.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;  // Here!
+    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    subpass_dep.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpass_dep.dstAccessMask = VK_ACCESS_NONE;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddSubpassDependency(subpass_dep);
+    rp.CreateRenderPass();
 }
