@@ -154,7 +154,7 @@ TEST_F(NegativeShaderSpirv, Magic) {
     module_create_info.pCode = reinterpret_cast<const uint32_t *>(&spv);
     module_create_info.codeSize = sizeof(spv);
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-07912");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08738");
     vk::CreateShaderModule(device(), &module_create_info, nullptr, &module);
     m_errorMonitor->VerifyFound();
 }
@@ -183,7 +183,7 @@ TEST_F(NegativeShaderSpirv, MagicMaintenance5) {
     pipe.gp_ci_.stageCount = 1;
     pipe.gp_ci_.pStages = &stage_ci;
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-07912");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08738");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -211,7 +211,7 @@ TEST_F(NegativeShaderSpirv, MagicMaintenance5Compute) {
     pipe.cp_ci_.stage = stage_ci;
     pipe.cp_ci_.layout = layout.handle();
 
-    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-07912");
+    m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08738");
     pipe.CreateComputePipeline(false);
     m_errorMonitor->VerifyFound();
 }

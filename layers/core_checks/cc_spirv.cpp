@@ -2162,18 +2162,27 @@ bool CoreChecks::ValidateShaderModuleCreateInfo(const VkShaderModuleCreateInfo &
 
     if (disabled[shader_validation]) {
         return skip; // VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT
+    } else if (!create_info.pCode) {
+        return skip;  // will be caught elsewhere
     }
 
-    if (!create_info.pCode) {
-        return skip;  // will be caught elsewhere
-    } else if (create_info.pCode[0] != spv::MagicNumber) {
-        if (!IsExtEnabled(extensions.vk_nv_glsl_shader)) {
-            skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-07912", device, create_info_loc.dot(Field::pCode),
-                             "doesn't point to a SPIR-V module (The first dword is not the SPIR-V MagicNumber 0x07230203).");
+    // This extension is ment for tooling, but still valid to be used, if used, we need to detect if GLSL
+    if (IsExtEnabled(extensions.vk_nv_glsl_shader)) {
+        if (strncmp((char *)create_info.pCode, "#version", 8) == 0) {
+            return skip;  // incoming GLSL
         }
-    } else if (SafeModulo(create_info.codeSize, 4) != 0) {
-        skip |= LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                         "(%zu) must be a multiple of 4.", create_info.codeSize);
+    }
+
+    const uint32_t first_dword = create_info.pCode[0];
+    if (SafeModulo(create_info.codeSize, 4) != 0) {
+        skip |=
+            LogError("VUID-VkShaderModuleCreateInfo-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
+                     "(%zu) must be a multiple of 4. You might have forget to multiply by sizeof(uint32_t).", create_info.codeSize);
+    } else if (first_dword != spv::MagicNumber) {
+        skip |= LogError("VUID-VkShaderModuleCreateInfo-pCode-08738", device, create_info_loc.dot(Field::pCode),
+                         "doesn't point to a SPIR-V module. The first dword (0x%" PRIx32
+                         ") is not the SPIR-V MagicNumber (0x07230203).",
+                         first_dword);
     } else {
         // if pCode is garbage, don't pass along to spirv-val
 

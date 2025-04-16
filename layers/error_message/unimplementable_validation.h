@@ -40,7 +40,9 @@ const char* unimplementable_validation[] = {
 
     // these are already taken care in spirv-val for 08737
     "VUID-VkShaderModuleCreateInfo-pCode-08736", "VUID-VkShaderCreateInfoEXT-pCode-08736",
-    "VUID-VkShaderModuleCreateInfo-pCode-08738", "VUID-VkShaderCreateInfoEXT-pCode-08738",
+
+    // is same as VUID-VkShaderModuleCreateInfo-pCode-08738
+    "VUID-VkShaderModuleCreateInfo-pCode-07912",
 
     // We can't detect what user does in their callback
     "VUID-PFN_vkDebugUtilsMessengerCallbackEXT-None-04769",
