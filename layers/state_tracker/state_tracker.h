@@ -22,6 +22,7 @@
 #include "chassis/validation_object.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"  // TODO - Remove from this header
+#include "state_tracker/special_supported.h"
 #include "chassis/dispatch_object.h"
 #include "error_message/logging.h"
 #include "containers/span.h"
@@ -528,10 +529,7 @@ class DeviceState : public vvl::base::Device {
     DeviceState(vvl::dispatch::Device* dev, InstanceState* instance)
         : BaseClass(dev, instance, LayerObjectTypeStateTracker),
           instance_state(instance),
-          has_format_feature2(dev->stateless_device_data.has_format_feature2),
-          has_robust_image_access(dev->stateless_device_data.has_robust_image_access),
-          has_robust_image_access2(dev->stateless_device_data.has_robust_image_access2),
-          has_robust_buffer_access2(dev->stateless_device_data.has_robust_buffer_access2) {
+          special_supported(dev->stateless_device_data.special_supported) {
         physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
     }
     ~DeviceState();
@@ -1920,17 +1918,7 @@ class DeviceState : public vvl::base::Device {
     uint32_t custom_border_color_sampler_count = 0;
     bool disable_internal_pipeline_cache;
 
-    // Some extensions/features changes the behavior of the app/layers/spec if present.
-    // So it needs its own special boolean unlike the enabled_fatures.
-    const bool has_format_feature2;  // VK_KHR_format_feature_flags2
-    // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions
-    // Enabling the other robustness features can reduce performance on GPU, so just the
-    // support is needed to check
-    const bool has_robust_image_access;  // VK_EXT_image_robustness
-    // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
-    // // need to only be supported, not enabled
-    const bool has_robust_image_access2;   // VK_EXT_robustness2
-    const bool has_robust_buffer_access2;  // VK_EXT_robustness2
+    SpecialSupported special_supported;
 
     std::vector<VkCooperativeMatrixPropertiesNV> cooperative_matrix_properties_nv;
     std::vector<VkCooperativeMatrixPropertiesKHR> cooperative_matrix_properties_khr;

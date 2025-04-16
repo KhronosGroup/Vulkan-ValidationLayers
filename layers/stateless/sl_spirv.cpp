@@ -68,7 +68,7 @@ SpirvValidator::SpirvValidator(DebugReport *debug_report, const vvl::StatelessDe
       phys_dev_props_core14(stateless_device_data.phys_dev_props_core14),
       phys_dev_ext_props(stateless_device_data.phys_dev_ext_props),
       enabled_features(stateless_device_data.enabled_features),
-      has_format_feature2(stateless_device_data.has_format_feature2) {}
+      special_supported(stateless_device_data.special_supported) {}
 
 // stateless spirv == doesn't require pipeline state and/or shader object info
 // Originally the goal was to move more validation to vkCreateShaderModule time in case the driver decided to parse an invalid
@@ -387,7 +387,7 @@ bool SpirvValidator::ValidateVariables(const spirv::Module &module_state, const 
         // The other checks need to take into account the format features and so
         // we apply that in the descriptor set matching validation code (see
         // descriptor_sets.cpp).
-        if (!has_format_feature2) {
+        if (!special_supported.vk_khr_format_feature_flags2) {
             skip |= ValidateShaderStorageImageFormatsVariables(module_state, *insn, loc);
         }
     }
