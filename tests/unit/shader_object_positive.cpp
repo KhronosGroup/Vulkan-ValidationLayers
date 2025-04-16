@@ -635,7 +635,8 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     ASSERT_EQ(res, VK_INCOMPATIBLE_SHADER_BINARY_EXT);
 
     for (uint32_t i = 0; i < shaders_count; ++i) {
-        if (i < fail_index) {
+        // We don't know which or if any shaders were actually created
+        if (shaders[i] != VK_NULL_HANDLE) {
             vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
         }
     }
