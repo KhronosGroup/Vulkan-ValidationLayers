@@ -333,8 +333,8 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
 class ImageViewSubState {
   public:
     explicit ImageViewSubState(ImageView &view) : base(view) {}
-    ImageViewSubState(const ImageSubState &) = delete;
-    ImageViewSubState &operator=(const ImageSubState &) = delete;
+    ImageViewSubState(const ImageViewSubState &) = delete;
+    ImageViewSubState &operator=(const ImageViewSubState &) = delete;
     virtual ~ImageViewSubState() {}
     virtual void Destroy() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
