@@ -2527,5 +2527,36 @@ VkResult Device::BindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, co
     return result;
 }
 
+VkResult Device::CreateShadersEXT(VkDevice device, uint32_t createInfoCount, const VkShaderCreateInfoEXT *pCreateInfos,
+                                  const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders) {
+    if (!wrap_handles) return device_dispatch_table.CreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders);
+    small_vector<vku::safe_VkShaderCreateInfoEXT, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pCreateInfos;
+    vku::safe_VkShaderCreateInfoEXT *local_pCreateInfos = nullptr;
+    if (pCreateInfos) {
+        var_local_pCreateInfos.resize(createInfoCount);
+        local_pCreateInfos = var_local_pCreateInfos.data();
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+            if (local_pCreateInfos[index0].pSetLayouts) {
+                for (uint32_t index1 = 0; index1 < local_pCreateInfos[index0].setLayoutCount; ++index1) {
+                    local_pCreateInfos[index0].pSetLayouts[index1] = Unwrap(local_pCreateInfos[index0].pSetLayouts[index1]);
+                }
+            }
+        }
+    }
+
+    VkResult result = device_dispatch_table.CreateShadersEXT(
+        device, createInfoCount, (const VkShaderCreateInfoEXT *)local_pCreateInfos, pAllocator, pShaders);
+
+    // Wrap anything created which is known if handles are non-null
+    for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+        if (pShaders[index0] != VK_NULL_HANDLE) {
+            pShaders[index0] = WrapNew(pShaders[index0]);
+        }
+    }
+
+    return result;
+}
+
 }  // namespace dispatch
 }  // namespace vvl

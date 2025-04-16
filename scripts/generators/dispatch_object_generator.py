@@ -122,6 +122,8 @@ class DispatchObjectGenerator(BaseGenerator):
             'vkCreateComputePipelines',
             'vkCreateRayTracingPipelinesNV',
             'vkCreateRayTracingPipelinesKHR',
+            # Need to only wrap on certain cases
+            'vkCreateShadersEXT',
             # Need handle which pool descriptors were allocated from
             'vkResetDescriptorPool',
             'vkDestroyDescriptorPool',
