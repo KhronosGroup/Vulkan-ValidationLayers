@@ -417,6 +417,7 @@ class Validator : public GpuShaderInstrumentor {
     void Created(vvl::Sampler&) final;
     void Created(vvl::AccelerationStructureNV&) final;
     void Created(vvl::AccelerationStructureKHR&) final;
+    void Created(vvl::ShaderObject&) final;
 
     void DebugCapture() final;
 

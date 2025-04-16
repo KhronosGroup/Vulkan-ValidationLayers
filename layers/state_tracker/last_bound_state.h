@@ -138,9 +138,6 @@ struct LastBound {
 
     const spirv::EntryPoint *GetVertexEntryPoint() const;
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
-
-    // For GPU-AV
-    bool WasInstrumented() const;
 };
 
 enum LvlBindPoint {

@@ -58,6 +58,7 @@ void Validator::Created(vvl::AccelerationStructureNV &obj) {
 void Validator::Created(vvl::AccelerationStructureKHR &obj) {
     obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, *desc_heap_));
 }
+void Validator::Created(vvl::ShaderObject &obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
 
 // Trampolines to make VMA call Dispatch for Vulkan calls
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL gpuVkGetInstanceProcAddr(VkInstance inst, const char *name) {

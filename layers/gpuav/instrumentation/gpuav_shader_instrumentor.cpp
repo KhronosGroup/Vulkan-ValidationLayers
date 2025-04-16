@@ -17,25 +17,27 @@
 
 #include "gpuav/instrumentation/gpuav_shader_instrumentor.h"
 #include <vulkan/vulkan_core.h>
-#include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include <cstdint>
-#include <spirv/unified1/spirv.hpp>
 
 #include "error_message/error_location.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
-#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
-#include "gpuav/shaders/gpuav_error_codes.h"
-#include "gpuav/spirv/log_error_pass.h"
 #include "utils/vk_layer_utils.h"
 #include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
-#include "state_tracker/pipeline_state.h"
+
+#include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "gpuav/shaders/gpuav_error_codes.h"
+#include "gpuav/spirv/log_error_pass.h"
 #include "error_message/spirv_logging.h"
-#include "state_tracker/cmd_buffer_state.h"
+#include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
+#include <spirv/unified1/spirv.hpp>
+
+#include "state_tracker/pipeline_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
+#include "gpuav/resources/gpuav_state_trackers.h"
 
 #include "gpuav/spirv/module.h"
 #include "gpuav/spirv/descriptor_indexing_oob_pass.h"
@@ -285,16 +287,18 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
                                                                 chassis::ShaderBinaryData &chassis_state) {
     const auto &shader_object_state = Get<vvl::ShaderObject>(shader);
     ASSERT_AND_RETURN(shader_object_state);
+    auto &sub_state = SubState(*shader_object_state);
+
     VkShaderEXT original_handle = VK_NULL_HANDLE;
 
-    auto it = instrumented_shaders_map_.find(shader_object_state->instrumentation_data.unique_shader_id);
+    auto it = instrumented_shaders_map_.find(sub_state.unique_shader_id);
     if (it == instrumented_shaders_map_.end() || it->second.original_spirv.empty()) {
         // This will occur if the shader was so simple we didn't even instrument anything
         return;
     }
 
     // The original pCode might be gone, so need to make a shallow copy and put original SPIR-V inside
-    VkShaderCreateInfoEXT create_info_copy = *shader_object_state->instrumentation_data.original_create_info.ptr();
+    VkShaderCreateInfoEXT create_info_copy = *sub_state.original_create_info.ptr();
     // The pCode doesn't live in the safe struct, we need to grab it from our other map
     const gpuav::InstrumentedShader *instrumented_shader = &it->second;
     create_info_copy.pCode = instrumented_shader->original_spirv.data();
@@ -309,12 +313,12 @@ void GpuShaderInstrumentor::PreCallRecordGetShaderBinaryDataEXT(VkDevice device,
     }
 
     // vkGetShaderBinaryDataEXT will be called twice, only need to re-created once
-    if (shader_object_state->instrumentation_data.original_handle == VK_NULL_HANDLE) {
+    if (sub_state.original_handle == VK_NULL_HANDLE) {
         DispatchCreateShadersEXT(device, 1, &create_info_copy, nullptr, &original_handle);
-        shader_object_state->instrumentation_data.original_handle = original_handle;  // will be destroyed later
+        sub_state.original_handle = original_handle;  // will be destroyed later
     }
 
-    chassis_state.modified_shader_handle = shader_object_state->instrumentation_data.original_handle;
+    chassis_state.modified_shader_handle = sub_state.original_handle;
 }
 
 bool GpuShaderInstrumentor::PreCallRecordShaderObjectInstrumentation(
@@ -441,11 +445,12 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
         }
         const auto &shader_object_state = Get<vvl::ShaderObject>(shader_handle);
         ASSERT_AND_CONTINUE(shader_object_state);
+        auto &sub_state = SubState(*shader_object_state);
 
-        shader_object_state->instrumentation_data.was_instrumented = true;
-        shader_object_state->instrumentation_data.unique_shader_id = instrumentation_data.unique_shader_id;
+        sub_state.was_instrumented = true;
+        sub_state.unique_shader_id = instrumentation_data.unique_shader_id;
         // Note - this doesn't make a deep copy of the pCode, but does of the DescriptorSetLayout which we
-        shader_object_state->instrumentation_data.original_create_info.initialize(&pCreateInfos[i]);
+        sub_state.original_create_info.initialize(&pCreateInfos[i]);
 
         // We currently need to store a copy of the original, non-instrumented shader so if there is debug information.
         std::vector<uint32_t> code;
@@ -461,10 +466,11 @@ void GpuShaderInstrumentor::PostCallRecordCreateShadersEXT(VkDevice device, uint
 void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkShaderEXT shader,
                                                           const VkAllocationCallbacks *pAllocator, const RecordObject &record_obj) {
     if (auto shader_object_state = Get<vvl::ShaderObject>(shader)) {
-        instrumented_shaders_map_.pop(shader_object_state->instrumentation_data.unique_shader_id);
+        auto &sub_state = SubState(*shader_object_state);
+        instrumented_shaders_map_.pop(sub_state.unique_shader_id);
 
-        if (shader_object_state->instrumentation_data.original_handle != VK_NULL_HANDLE) {
-            DispatchDestroyShaderEXT(device, shader_object_state->instrumentation_data.original_handle, nullptr);
+        if (sub_state.original_handle != VK_NULL_HANDLE) {
+            DispatchDestroyShaderEXT(device, sub_state.original_handle, nullptr);
         }
     }
     BaseClass::PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);

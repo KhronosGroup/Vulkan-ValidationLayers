@@ -628,18 +628,3 @@ const spirv::EntryPoint *LastBound::GetFragmentEntryPoint() const {
     }
     return nullptr;
 }
-
-bool LastBound::WasInstrumented() const {
-    if (pipeline_state) {
-        return pipeline_state->instrumentation_data.was_instrumented;
-    }
-    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
-        const auto stage = static_cast<ShaderObjectStage>(i);
-        if (!IsValidShaderBound(stage)) continue;
-        const vvl::ShaderObject *shader = GetShaderState(stage);
-        if (shader && shader->instrumentation_data.was_instrumented) {
-            return true;
-        }
-    }
-    return false;
-}

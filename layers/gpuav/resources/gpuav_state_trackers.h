@@ -31,6 +31,7 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
 
@@ -310,4 +311,23 @@ static inline AccelerationStructureKHRSubState &SubState(vvl::AccelerationStruct
 static inline const AccelerationStructureKHRSubState &SubState(const vvl::AccelerationStructureKHR &obj) {
     return *static_cast<const AccelerationStructureKHRSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
 }
+
+class ShaderObjectSubState : public vvl::ShaderObjectSubState {
+  public:
+    explicit ShaderObjectSubState(vvl::ShaderObject &obj);
+
+    bool was_instrumented = false;
+    uint32_t unique_shader_id = 0;
+    // We need to keep incase the user calls vkGetShaderBinaryDataEXT
+    vku::safe_VkShaderCreateInfoEXT original_create_info;
+    VkShaderEXT original_handle = VK_NULL_HANDLE;
+};
+
+static inline ShaderObjectSubState &SubState(vvl::ShaderObject &obj) {
+    return *static_cast<ShaderObjectSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+static inline const ShaderObjectSubState &SubState(const vvl::ShaderObject &obj) {
+    return *static_cast<const ShaderObjectSubState *>(obj.SubState(LayerObjectTypeGpuAssisted));
+}
+
 }  // namespace gpuav
