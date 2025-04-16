@@ -36,6 +36,7 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/vk_layer_dispatch_table.h"
 #include "layer_object_id.h"
+#include "state_tracker/special_supported.h"
 
 // To avoid re-hashing unique ids on each use, we precompute the hash and store the
 // hash's LSBs in the high 24 bits.
@@ -130,17 +131,7 @@ class StatelessDeviceData {
     std::vector<VkImageLayout> host_imape_copy_props_copy_dst_layouts{};
     DeviceExtensionProperties phys_dev_ext_props = {};
 
-    // Some extensions/features changes the behavior of the app/layers/spec if present.
-    // So it needs its own special boolean unlike the enabled_fatures.
-    bool has_format_feature2;  // VK_KHR_format_feature_flags2
-    // VK_EXT_pipeline_robustness was designed to be a subset of robustness extensions
-    // Enabling the other robustness features can reduce performance on GPU, so just the
-    // support is needed to check
-    bool has_robust_image_access;  // VK_EXT_image_robustness
-    // Validation requires special handling for VkPhysicalDeviceRobustness2FeaturesEXT, because for some cases robustness features
-    // // need to only be supported, not enabled
-    bool has_robust_image_access2;   // VK_EXT_robustness2
-    bool has_robust_buffer_access2;  // VK_EXT_robustness2
+    SpecialSupported special_supported;
 };
 
 namespace dispatch {

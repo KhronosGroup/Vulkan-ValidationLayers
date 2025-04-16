@@ -122,15 +122,15 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
     }
 
     // These validation depend if the features are exposed (not just enabled)
-    if (!device_state->has_robust_image_access &&
+    if (!device_state->special_supported.robust_image_access &&
         pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS) {
         skip |= LogError("VUID-VkPipelineRobustnessCreateInfo-robustImageAccess-06930", device,
                          loc.pNext(Struct::VkPipelineRobustnessCreateInfo, Field::images),
                          "is VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS "
-                         "but robustImageAccess2 is not supported.");
+                         "but robustImageAccess is not supported.");
     }
 
-    if (!device_state->has_robust_buffer_access2) {
+    if (!device_state->special_supported.robust_buffer_access2) {
         if (pipeline_robustness_info.storageBuffers == VK_PIPELINE_ROBUSTNESS_BUFFER_BEHAVIOR_ROBUST_BUFFER_ACCESS_2) {
             skip |= LogError(
                 "VUID-VkPipelineRobustnessCreateInfo-robustBufferAccess2-06931", device,
@@ -151,7 +151,7 @@ bool CoreChecks::ValidatePipelineRobustnessCreateInfo(const vvl::Pipeline &pipel
         }
     }
 
-    if (!device_state->has_robust_image_access2) {
+    if (!device_state->special_supported.robust_image_access2) {
         if (pipeline_robustness_info.images == VK_PIPELINE_ROBUSTNESS_IMAGE_BEHAVIOR_ROBUST_IMAGE_ACCESS_2) {
             skip |= LogError(
                 "VUID-VkPipelineRobustnessCreateInfo-robustImageAccess2-06934", device,

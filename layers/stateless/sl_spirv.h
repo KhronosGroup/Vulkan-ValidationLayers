@@ -21,6 +21,7 @@
 #pragma once
 
 #include "error_message/logging.h"
+#include "state_tracker/special_supported.h"
 
 namespace spirv {
 struct StatelessData;
@@ -54,7 +55,7 @@ class SpirvValidator : public Logger {
     const VkPhysicalDeviceVulkan14Properties& phys_dev_props_core14;
     const vvl::DeviceExtensionProperties& phys_dev_ext_props;
     const DeviceFeatures& enabled_features;
-    const bool has_format_feature2;
+    const SpecialSupported& special_supported;
 
   private:
     bool ValidateShaderClock(const spirv::Module& module_state, const spirv::StatelessData& stateless_data,
