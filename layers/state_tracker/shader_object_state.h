@@ -26,8 +26,11 @@
 #include "state_tracker/pipeline_layout_state.h"
 
 namespace vvl {
+
+class ShaderObjectSubState;
+
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
-struct ShaderObject : public StateObject {
+struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSubState> {
     ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
                  std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders);
 
@@ -49,17 +52,21 @@ struct ShaderObject : public StateObject {
     const PushConstantRangesId push_constant_ranges;
     const std::vector<PipelineLayoutCompatId> set_compat_ids;
 
-    // TOOD Create a shader object inherited class
-    struct InstrumentationData {
-        bool was_instrumented = false;
-        uint32_t unique_shader_id = 0;
-        // We need to keep incase the user calls vkGetShaderBinaryDataEXT
-        vku::safe_VkShaderCreateInfoEXT original_create_info;
-        VkShaderEXT original_handle = VK_NULL_HANDLE;
-    } instrumentation_data;
-
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
     VkPrimitiveTopology GetTopology() const;
 };
+
+class ShaderObjectSubState {
+  public:
+    explicit ShaderObjectSubState(ShaderObject &obj) : base(obj) {}
+    ShaderObjectSubState(const ShaderObjectSubState &) = delete;
+    ShaderObjectSubState &operator=(const ShaderObjectSubState &) = delete;
+    virtual ~ShaderObjectSubState() {}
+    virtual void Destroy() {}
+    virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    ShaderObject &base;
+};
+
 }  // namespace vvl

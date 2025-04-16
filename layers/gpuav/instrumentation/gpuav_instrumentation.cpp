@@ -438,6 +438,25 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     DispatchUpdateDescriptorSets(gpuav.device, static_cast<uint32_t>(desc_writes.size()), desc_writes.data(), 0, nullptr);
 }
 
+static bool WasInstrumented(const LastBound &last_bound) {
+    if (last_bound.pipeline_state) {
+        return last_bound.pipeline_state->instrumentation_data.was_instrumented;
+    }
+    for (uint32_t i = 0; i < kShaderObjectStageCount; ++i) {
+        const auto stage = static_cast<ShaderObjectStage>(i);
+        if (!last_bound.IsValidShaderBound(stage)) {
+            continue;
+        }
+        if (const vvl::ShaderObject *shader_object_state = last_bound.GetShaderState(stage)) {
+            auto &sub_state = SubState(*shader_object_state);
+            if (sub_state.was_instrumented) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
                                                 const Location &loc) {
     if (!gpuav.gpuav_settings.IsSpirvModified()) {
@@ -455,7 +474,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
 
     // If nothing was updated, we don't want to bind anything
-    if (!last_bound.WasInstrumented()) {
+    if (!WasInstrumented(last_bound)) {
         return;
     }
 
@@ -635,7 +654,9 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
     const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
 
     // If nothing was updated, we don't want to bind anything
-    if (!last_bound.WasInstrumented()) return;
+    if (!WasInstrumented(last_bound)) {
+        return;
+    }
 
     // Only need to rebind application desc sets if they have been disturbed by GPU-AV binding its instrumentation desc set.
     // - Can happen if the pipeline layout used to bind instrumentation descriptor set is not compatible with the one used by the

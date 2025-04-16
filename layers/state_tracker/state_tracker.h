@@ -19,6 +19,7 @@
  */
 
 #pragma once
+#include <vulkan/vulkan_core.h>
 #include "chassis/validation_object.h"
 #include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"  // TODO - Remove from this header
@@ -2120,6 +2121,7 @@ class DeviceProxy : public vvl::base::Device {
     virtual void Created(vvl::Sampler& state) {}
     virtual void Created(vvl::Swapchain& state) {}
     virtual void Created(vvl::DescriptorSet& state) {}
+    virtual void Created(vvl::ShaderObject& state) {}
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
     virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,

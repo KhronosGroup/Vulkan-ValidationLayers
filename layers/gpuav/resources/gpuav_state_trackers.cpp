@@ -338,7 +338,6 @@ void CommandBufferSubState::IncrementCommandCount(Validator &gpuav, VkPipelineBi
     } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         trace_rays_index++;
     }
-    
 }
 
 std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
@@ -659,5 +658,7 @@ void AccelerationStructureKHRSubState::Destroy() { id_tracker.reset(); }
 void AccelerationStructureKHRSubState::NotifyInvalidate(const vvl::StateObject::NodeList &invalid_nodes, bool unlink) {
     id_tracker.reset();
 }
+
+ShaderObjectSubState::ShaderObjectSubState(vvl::ShaderObject &obj) : vvl::ShaderObjectSubState(obj) {}
 
 }  // namespace gpuav
