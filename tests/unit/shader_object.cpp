@@ -341,7 +341,6 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
 
 TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
     TEST_DESCRIPTION("Create shader with invalid binary code alignment.");
-
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     const auto spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
@@ -357,6 +356,23 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08493");
+    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, SpirvMagic) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    uint32_t bad_magic = 4175232508U;
+    VkShaderCreateInfoEXT create_info = vku::InitStructHelper();
+    create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    create_info.codeType = VK_SHADER_CODE_TYPE_SPIRV_EXT;
+    create_info.codeSize = sizeof(uint32_t);
+    create_info.pCode = reinterpret_cast<void*>(&bad_magic);
+    create_info.pName = "main";
+
+    VkShaderEXT shader;
+    m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08738");
     vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }

@@ -15,6 +15,7 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include <spirv/unified1/spirv.hpp>
 
 namespace stateless {
 
@@ -28,21 +29,31 @@ bool Device::manual_PreCallValidateCreateShadersEXT(VkDevice device, uint32_t cr
     for (uint32_t i = 0; i < createInfoCount; ++i) {
         const Location create_info_loc = error_obj.location.dot(Field::pCreateInfos, i);
         const VkShaderCreateInfoEXT &createInfo = pCreateInfos[i];
-        if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT && SafeModulo(createInfo.codeSize, 4) != 0) {
-            skip |= LogError("VUID-VkShaderCreateInfoEXT-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
-                             "(%" PRIu64 ") is not a multiple of 4.", static_cast<uint64_t>(createInfo.codeSize));
-        }
-
         auto pCode = reinterpret_cast<std::uintptr_t>(createInfo.pCode);
-        if (createInfo.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
-            if (SafeModulo(pCode, 16 * sizeof(unsigned char)) != 0) {
-                skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08492", device, create_info_loc.dot(Field::codeType),
-                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode (%p) is not aligned to 16 bytes.", createInfo.pCode);
-            }
-        } else if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
+
+        if (createInfo.codeType == VK_SHADER_CODE_TYPE_SPIRV_EXT) {
             if (SafeModulo(pCode, 4 * sizeof(unsigned char)) != 0) {
                 skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08493", device, create_info_loc.dot(Field::codeType),
                                  "is VK_SHADER_CODE_TYPE_SPIRV_EXT, but pCode (%p) is not aligned to 4 bytes.", createInfo.pCode);
+            } else if (SafeModulo(createInfo.codeSize, 4) != 0) {
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-codeSize-08735", device, create_info_loc.dot(Field::codeSize),
+                                 "(%" PRIu64 ") is not a multiple of 4. You might have forget to multiply by sizeof(uint32_t).",
+                                 static_cast<uint64_t>(createInfo.codeSize));
+            } else {
+                // Can't cast this until we know it is aligned to 4 bytes or USAN will catch it
+                const uint32_t first_dword = ((uint32_t *)createInfo.pCode)[0];
+                if (first_dword != spv::MagicNumber) {
+                    skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08738", device, create_info_loc.dot(Field::pCode),
+                                     "doesn't point to a SPIR-V module. The first dword (0x%" PRIx32
+                                     ") is not the SPIR-V MagicNumber (0x07230203).",
+                                     first_dword);
+                }
+            }
+
+        } else if (createInfo.codeType == VK_SHADER_CODE_TYPE_BINARY_EXT) {
+            if (SafeModulo(pCode, 16 * sizeof(unsigned char)) != 0) {
+                skip |= LogError("VUID-VkShaderCreateInfoEXT-pCode-08492", device, create_info_loc.dot(Field::codeType),
+                                 "is VK_SHADER_CODE_TYPE_BINARY_EXT, but pCode (%p) is not aligned to 16 bytes.", createInfo.pCode);
             }
         }
 
