@@ -304,3 +304,115 @@ TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndire
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
+    TEST_DESCRIPTION("Try and use crazy combo of pipeline and shader object to make sure the RestorePipeline logic works");
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                       kHostVisibleMemProps);
+    auto &indirect_dispatch_parameters = *static_cast<VkDispatchIndirectCommand *>(dispatch_params_buffer.Memory().Map());
+    indirect_dispatch_parameters.x = 1u;
+    indirect_dispatch_parameters.y = 1u;
+    indirect_dispatch_parameters.z = 1u;
+
+    // used for all stage types
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer Input {
+            uint x;
+        };
+        void main() {
+           x = 0;
+        }
+    )glsl";
+
+    OneOffDescriptorSet c_descriptor_set(m_device,
+                                         {
+                                             {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                         });
+    OneOffDescriptorSet g_descriptor_set(
+        m_device, {
+                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                  });
+    const vkt::PipelineLayout g_pipeline_layout(*m_device, {&g_descriptor_set.layout_});
+    const vkt::PipelineLayout c_pipeline_layout(*m_device, {&c_descriptor_set.layout_});
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    c_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    c_descriptor_set.UpdateDescriptorSets();
+    g_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    g_descriptor_set.UpdateDescriptorSets();
+
+    CreateComputePipelineHelper c_pipe(*this);
+    c_pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    c_pipe.cp_ci_.layout = c_pipeline_layout;
+    c_pipe.CreateComputePipeline();
+
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    VkFormat color_formats = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_formats;
+
+    CreatePipelineHelper g_pipe(*this, &pipeline_rendering_info);
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.gp_ci_.layout = g_pipeline_layout;
+    g_pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    g_pipe.CreateGraphicsPipeline();
+
+    const vkt::Shader cs_shader_object(*m_device, VK_SHADER_STAGE_COMPUTE_BIT,
+                                       GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source), &c_descriptor_set.layout_.handle());
+    const vkt::Shader vs_shader_object(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source),
+                                       &g_descriptor_set.layout_.handle());
+    const vkt::Shader fs_shader_object(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT,
+                                       GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, shader_source), &g_descriptor_set.layout_.handle());
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipeline_layout, 0, 1, &g_descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline_layout, 0, 1, &c_descriptor_set.set_, 0,
+                              nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    m_command_buffer.BindCompShader(cs_shader_object);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.BindCompShader(cs_shader_object);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+    m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
