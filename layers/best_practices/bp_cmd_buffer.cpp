@@ -19,6 +19,7 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/device_state.h"
 
 void BestPractices::Created(vvl::CommandBuffer& cb_state) {
     cb_state.SetSubState(container_type, std::make_unique<bp_state::CommandBufferSubState>(cb_state));

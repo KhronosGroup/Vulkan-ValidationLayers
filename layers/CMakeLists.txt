@@ -156,6 +156,7 @@ target_sources(vvl PRIVATE
     best_practices/bp_buffer.cpp
     best_practices/bp_cmd_buffer.cpp
     best_practices/bp_cmd_buffer_nv.cpp
+    best_practices/bp_constants.h
     best_practices/bp_copy_blit_resolve.cpp
     best_practices/bp_descriptor.cpp
     best_practices/bp_device_memory.cpp
@@ -166,7 +167,9 @@ target_sources(vvl PRIVATE
     best_practices/bp_pipeline.cpp
     best_practices/bp_ray_tracing.cpp
     best_practices/bp_render_pass.cpp
+    best_practices/bp_state_tracker.cpp
     best_practices/bp_state.h
+    best_practices/bp_state.cpp
     best_practices/bp_synchronization.cpp
     best_practices/bp_video.cpp
     best_practices/bp_wsi.cpp

@@ -74,8 +74,9 @@ static vvl::Image::MemoryReqs GetMemoryRequirements(const vvl::DeviceState &dev_
     return result;
 }
 
-static vvl::Image::SparseReqs GetSparseRequirements(const vvl::DeviceState &dev_data, VkImage img, bool sparse_residency) {
-    vvl::Image::SparseReqs result;
+static std::vector<VkSparseImageMemoryRequirements> GetSparseRequirements(const vvl::DeviceState &dev_data, VkImage img,
+                                                                          bool sparse_residency) {
+    std::vector<VkSparseImageMemoryRequirements> result;
     if (sparse_residency) {
         uint32_t count = 0;
         DispatchGetImageSparseMemoryRequirements(dev_data.device, img, &count, nullptr);
@@ -85,16 +86,6 @@ static vvl::Image::SparseReqs GetSparseRequirements(const vvl::DeviceState &dev_
     return result;
 }
 
-static bool SparseMetaDataRequired(const vvl::Image::SparseReqs &sparse_reqs) {
-    bool result = false;
-    for (const auto &req : sparse_reqs) {
-        if (req.formatProperties.aspectMask & VK_IMAGE_ASPECT_METADATA_BIT) {
-            result = true;
-            break;
-        }
-    }
-    return result;
-}
 #ifdef VK_USE_PLATFORM_METAL_EXT
 static bool GetMetalExport(const VkImageCreateInfo *info, VkExportMetalObjectTypeFlagBitsEXT object_type_required) {
     bool retval = false;
@@ -129,9 +120,6 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       requirements(GetMemoryRequirements(dev_data, img, pCreateInfo, disjoint, IsExternalBuffer())),
       sparse_residency((pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) != 0),
       sparse_requirements(GetSparseRequirements(dev_data, img, sparse_residency)),
-      sparse_metadata_required(SparseMetaDataRequired(sparse_requirements)),
-      get_sparse_reqs_called(false),
-      sparse_metadata_bound(false),
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
@@ -171,9 +159,6 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       requirements{},
       sparse_residency(false),
       sparse_requirements{},
-      sparse_metadata_required(false),
-      get_sparse_reqs_called(false),
-      sparse_metadata_bound(false),
 #ifdef VK_USE_PLATFORM_METAL_EXT
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
