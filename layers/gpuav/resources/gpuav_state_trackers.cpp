@@ -563,7 +563,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
 }
 
 void QueueSubState::PostSubmit(vvl::QueueSubmission &submission) {
-    if (submission.end_batch) {
+    if (submission.is_last_submission) {
         auto loc = submission.loc.Get();
         SubmitBarrier(loc, submission.seq);
     }
@@ -577,7 +577,7 @@ void QueueSubState::Retire(vvl::QueueSubmission &submission) {
         return;
     }
     retiring_.emplace_back(submission.cb_submissions);
-    if (submission.end_batch) {
+    if (submission.is_last_submission) {
         VkSemaphoreWaitInfo wait_info = vku::InitStructHelper();
         wait_info.semaphoreCount = 1;
         wait_info.pSemaphores = &barrier_sem_;
