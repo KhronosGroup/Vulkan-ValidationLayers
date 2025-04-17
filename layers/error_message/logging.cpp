@@ -95,36 +95,43 @@ void DebugReport::RemoveDebugUtilsCallback(uint64_t callback) {
     SetDebugUtilsSeverityFlags(callbacks);
 }
 
-// Returns TRUE if the number of times this message has been logged is over the set limit
-bool DebugReport::UpdateLogMsgCounts(int32_t vuid_hash) const {
-    auto vuid_count_it = duplicate_message_count_map.find(vuid_hash);
-    if (vuid_count_it == duplicate_message_count_map.end()) {
-        duplicate_message_count_map.emplace(vuid_hash, 1);
-        return false;
-    } else {
-        if (vuid_count_it->second >= duplicate_message_limit) {
-            return true;
-        } else {
-            vuid_count_it->second++;
-            return false;
-        }
-    }
-}
-
+// We try to return as early as we can if we know we don't need to spend time logging the message
 bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
                              const std::string &main_message) {
     // Convert the info to the VK_EXT_debug_utils format
     VkDebugUtilsMessageSeverityFlagsEXT msg_severity;
     VkDebugUtilsMessageTypeFlagsEXT msg_type;
     DebugReportFlagsToAnnotFlags(msg_flags, &msg_severity, &msg_type);
-
-    std::unique_lock<std::mutex> lock(debug_output_mutex);
-
-    // Avoid logging cost if msg is to be ignored
-    const uint32_t vuid_hash = hash_util::VuidHash(vuid_text);
-    if (!LogMsgEnabled(vuid_hash, msg_severity, msg_type)) {
+    if (!(active_msg_severities & msg_severity) || !(active_msg_types & msg_type)) {
         return false;
     }
+
+    // If message is in filter list, bail out very early
+    const uint32_t vuid_hash = hash_util::VuidHash(vuid_text);
+    if (filter_message_ids.find(vuid_hash) != filter_message_ids.end()) {
+        return false;
+    }
+
+    // Count for this particular message is over the limit, ignore it
+    bool at_message_limit = false;
+    if (duplicate_message_limit > 0) {
+        auto vuid_count_it = duplicate_message_count_map.find(vuid_hash);
+        if (vuid_count_it == duplicate_message_count_map.end()) {
+            duplicate_message_count_map.emplace(vuid_hash, 1);
+        } else if (vuid_count_it->second >= duplicate_message_limit) {
+            return false;
+        } else {
+            // In theory we have not locked the mutex yet
+            // 1. Its hard to have 2 exact VUID be called at same time
+            // 2. This limit is rarely, if ever, used to get an exact amount and really just there to stop spamming the user
+            vuid_count_it->second++;
+            if (vuid_count_it->second >= duplicate_message_limit) {
+                at_message_limit = true;
+            }
+        }
+    }
+
+    std::unique_lock<std::mutex> lock(debug_output_mutex);
 
     std::vector<VkDebugUtilsLabelEXT> queue_labels;
     std::vector<VkDebugUtilsLabelEXT> cmd_buf_labels;
@@ -191,9 +198,9 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     callback_data.pObjects = object_name_infos.data();
 
     // The text format is more minimal and will have other information in the callback, the JSON is designed to contain everything
-    std::string full_message = message_format_settings.json
-                                   ? CreateMessageJson(msg_flags, loc, object_name_infos, vuid_hash, vuid_text, main_message)
-                                   : CreateMessageText(loc, vuid_text, main_message);
+    std::string full_message = message_format_settings.json ? CreateMessageJson(msg_flags, loc, object_name_infos, vuid_hash,
+                                                                                vuid_text, main_message, at_message_limit)
+                                                            : CreateMessageText(loc, vuid_text, main_message, at_message_limit);
 
     const auto callback_list = &debug_callback_list;
     // We only output to default callbacks if there are no non-default callbacks
@@ -242,7 +249,8 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     return bail;
 }
 
-std::string DebugReport::CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message) {
+std::string DebugReport::CreateMessageText(const Location &loc, std::string_view vuid_text, const std::string &main_message,
+                                           bool at_message_limit) {
     std::ostringstream oss;
 
 #if defined(BUILD_SELF_VVL)
@@ -251,6 +259,11 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
 
     if (message_format_settings.display_application_name && !message_format_settings.application_name.empty()) {
         oss << "[AppName: " << message_format_settings.application_name << "] ";
+    }
+
+    if (at_message_limit) {
+        oss << "(Warning - This VUID has now been reported " << duplicate_message_limit
+            << " times, which is the duplicated_message_limit value, this will be the last time reporting it).\n";
     }
 
     oss << loc.Message() << " " << main_message;
@@ -299,7 +312,8 @@ std::string DebugReport::CreateMessageText(const Location &loc, std::string_view
 
 std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &loc,
                                            const std::vector<VkDebugUtilsObjectNameInfoEXT> &object_name_infos,
-                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string &main_message) {
+                                           const uint32_t vuid_hash, std::string_view vuid_text, const std::string &main_message,
+                                           bool at_message_limit) {
     std::ostringstream oss;
     // For now we just list each JSON field as a new line as it is "pretty-print enough".
     // For Android, things get logged in logcat and having the JSON as a single line is easier to grab from the terminal.
@@ -365,6 +379,12 @@ std::string DebugReport::CreateMessageJson(VkFlags msg_flags, const Location &lo
     { oss << line_start << "\"Location\" : \"" << loc.Fields() << "\"," << new_line; }
     {
         oss << line_start << "\"MainMessage\" : \"";
+
+        if (at_message_limit) {
+            oss << "(Warning - This VUID has now been reported " << duplicate_message_limit
+                << " times, which is the duplicated_message_limit value, this will be the last time reporting it). ";
+        }
+
         // For cases were where have multi-lines in the message, we need to escape them.
         // The idea is the JSON is machine readable and when someone prints the value out, the new lines will resolve then.
         for (char c : main_message) {
@@ -683,24 +703,6 @@ VKAPI_ATTR void DeactivateInstanceDebugCallbacks(DebugReport *debug_report) {
     for (const auto &item : instance_report_callback_handles) {
         LayerDestroyCallback(debug_report, item);
     }
-}
-
-// helper for VUID based filtering. This needs to be separate so it can be called before incurring
-// the cost of sprintf()-ing the err_msg needed by LogMsgLocked().
-bool DebugReport::LogMsgEnabled(uint32_t vuid_hash, VkDebugUtilsMessageSeverityFlagsEXT msg_severity,
-                                VkDebugUtilsMessageTypeFlagsEXT msg_type) {
-    if (!(active_msg_severities & msg_severity) || !(active_msg_types & msg_type)) {
-        return false;
-    }
-    // If message is in filter list, bail out very early
-    if (filter_message_ids.find(vuid_hash) != filter_message_ids.end()) {
-        return false;
-    }
-    if ((duplicate_message_limit > 0) && UpdateLogMsgCounts(static_cast<int32_t>(vuid_hash))) {
-        // Count for this particular message is over the limit, ignore it
-        return false;
-    }
-    return true;
 }
 
 bool DebugReport::LogMessageVaList(VkFlags msg_flags, std::string_view vuid_text, const LogObjectList &objects, const Location &loc,
