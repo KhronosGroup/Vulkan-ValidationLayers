@@ -111,6 +111,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/gpu_av_buffer_device_address_positive.cpp
     unit/gpu_av_cooperative_vector.cpp
     unit/gpu_av_cooperative_vector_positive.cpp
+    unit/gpu_av_copies.cpp
+    unit/gpu_av_copies_positive.cpp
     unit/gpu_av_debug_printf.cpp
     unit/gpu_av_descriptor_buffer_positive.cpp
     unit/gpu_av_descriptor_class_general_buffer.cpp
@@ -339,7 +341,7 @@ file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h" INPUT "${C
 target_compile_definitions(vk_layer_validation_tests PRIVATE CONFIG_HEADER_FILE="config_$<CONFIG>.h")
 
 target_sources(vk_layer_validation_tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/config_$<CONFIG>.h)
-target_include_directories(vk_layer_validation_tests PRIVATE 
+target_include_directories(vk_layer_validation_tests PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}
     ${VVL_SOURCE_DIR}/layers/external
 )
