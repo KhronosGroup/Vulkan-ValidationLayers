@@ -19,12 +19,13 @@
 
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
+#include "state_tracker/device_state.h"
 
 bool bp_state::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkPhysicalDevice physicalDevice,
                                                                                  const Location& loc) const {
     bool skip = false;
     if (const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice)) {
-        if (bp_pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) == vvl::UNCALLED) {
+        if (bp_pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) == vvl::CallState::Uncalled) {
             skip |= LogWarning("BestPractices-vkGetDisplayPlaneSupportedDisplaysKHR-properties-not-retrieved", physicalDevice, loc,
                                "was called without first retrieving properties from "
                                "vkGetPhysicalDeviceDisplayPlanePropertiesKHR or vkGetPhysicalDeviceDisplayPlaneProperties2KHR.");
@@ -71,20 +72,21 @@ bool BestPractices::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkS
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
 
-    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR) == vvl::UNCALLED) {
+    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceCapabilitiesKHR) == vvl::CallState::Uncalled) {
         skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-capabilities-no-surface", device, error_obj.location,
                            "called before getting surface capabilities from "
                            "vkGetPhysicalDeviceSurfaceCapabilitiesKHR().");
     }
 
     if ((pCreateInfo->presentMode != VK_PRESENT_MODE_FIFO_KHR) &&
-        (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR) != vvl::QUERY_DETAILS)) {
+        (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfacePresentModesKHR) !=
+         vvl::CallState::QueryDetails)) {
         skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-present-mode-no-surface", device, error_obj.location,
                            "called before getting surface present mode(s) from "
                            "vkGetPhysicalDeviceSurfacePresentModesKHR().");
     }
 
-    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR) != vvl::QUERY_DETAILS) {
+    if (physical_device_state->GetCallState(vvl::Func::vkGetPhysicalDeviceSurfaceFormatsKHR) != vvl::CallState::QueryDetails) {
         skip |= LogWarning("BestPractices-vkCreateSwapchainKHR-formats-no-surface", device, error_obj.location,
                            "called before getting surface format(s) from vkGetPhysicalDeviceSurfaceFormatsKHR().");
     }

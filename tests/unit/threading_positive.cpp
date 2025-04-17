@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -344,4 +344,36 @@ TEST_F(PositiveThreading, Queue) {
     for (auto &t : threads) t.join();
 
     vk::QueueWaitIdle(queue_h);
+}
+
+TEST_F(PositiveThreading, GetPhysicalDeviceFeatures) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9931");
+    VkInstanceCreateInfo instance_ci = GetInstanceCreateInfo();
+
+    // mimics --gtest_repeat=100 which is needed to reproduce constantly
+    for (uint32_t repeat = 0; repeat < 100; repeat++) {
+        VkInstance instance;
+        vk::CreateInstance(&instance_ci, nullptr, &instance);
+
+        const uint32_t thread_count = 4u;
+
+        uint32_t physical_device_count;
+        vk::EnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
+        std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+        vk::EnumeratePhysicalDevices(instance, &physical_device_count, physical_devices.data());
+
+        const auto &thread = [&](uint32_t id) {
+            VkPhysicalDeviceFeatures features;
+            vk::GetPhysicalDeviceFeatures(physical_devices[id % physical_device_count], &features);
+        };
+        std::array<std::thread, thread_count> threads;
+        for (uint32_t i = 0u; i < thread_count; ++i) {
+            threads[i] = std::thread(thread, i);
+        }
+        for (auto &t : threads) {
+            t.join();
+        }
+
+        vk::DestroyInstance(instance, nullptr);
+    }
 }

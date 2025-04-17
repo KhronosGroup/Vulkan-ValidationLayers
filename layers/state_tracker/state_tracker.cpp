@@ -4200,7 +4200,7 @@ void InstanceState::PostCallRecordGetPhysicalDeviceSurfaceCapabilitiesKHR(VkPhys
     }
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
     ASSERT_AND_RETURN(pd_state);
-    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
+    pd_state->SetCallState(record_obj.location.function, CallState::QueryDetails);
 
     auto surface_state = Get<Surface>(surface);
     ASSERT_AND_RETURN(surface_state);
@@ -4218,7 +4218,7 @@ void InstanceState::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhy
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
     ASSERT_AND_RETURN(pd_state);
 
-    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
+    pd_state->SetCallState(record_obj.location.function, CallState::QueryDetails);
 
     if (pSurfaceInfo->surface) {
         auto surface_state = Get<Surface>(pSurfaceInfo->surface);
@@ -4249,7 +4249,7 @@ void InstanceState::PostCallRecordGetPhysicalDeviceSurfaceCapabilities2EXT(VkPhy
                                                                            const RecordObject &record_obj) {
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
     ASSERT_AND_RETURN(pd_state);
-    pd_state->call_state[record_obj.location.function] = QUERY_DETAILS;
+    pd_state->SetCallState(record_obj.location.function, CallState::Uncalled);
 
     const VkSurfaceCapabilitiesKHR caps{
         pSurfaceCapabilities->minImageCount,           pSurfaceCapabilities->maxImageCount,

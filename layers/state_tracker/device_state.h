@@ -36,10 +36,11 @@ class SurfacelessQueryState {
 
 namespace vvl {
 
-enum CALL_STATE {
-    UNCALLED,       // Function has not been called
-    QUERY_COUNT,    // Function called once to query a count
-    QUERY_DETAILS,  // Function called w/ a count to query details
+// The order here means something, the CallState value can only go to a higher value
+enum class CallState {
+    Uncalled = 0,      // Function has not been called
+    QueryCount = 1,    // Function called once to query a count
+    QueryDetails = 2,  // Function called w/ a count to query details
 };
 
 class PhysicalDevice : public StateObject {
@@ -51,9 +52,7 @@ class PhysicalDevice : public StateObject {
     uint32_t surface_formats_count = 0;
 
     // Map of queue family index to QueueFamilyPerfCounters
-    unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
-
-    unordered_map<Func, CALL_STATE> call_state;
+    vvl::unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;
 
     // Surfaceless Query extension needs 'global' surface_state data
     SurfacelessQueryState surfaceless_query_state{};
@@ -62,22 +61,17 @@ class PhysicalDevice : public StateObject {
 
     VkPhysicalDevice VkHandle() const { return handle_.Cast<VkPhysicalDevice>(); }
 
-    void SetCallState(vvl::Func func, bool has_ptr) {
-        CALL_STATE new_state = has_ptr ? QUERY_DETAILS : QUERY_COUNT;
-        auto result = call_state.emplace(func, new_state);
-        if (!result.second) {
-            if (result.first->second < new_state) {
-                result.first->second = new_state;
-            }
-        }
-    }
-
-    CALL_STATE GetCallState(vvl::Func func) const {
-        auto iter = call_state.find(func);
-        return iter != call_state.end() ? iter->second : UNCALLED;
-    }
+    void SetCallState(vvl::Func func, CallState new_state);
+    void SetCallState(vvl::Func func, bool has_ptr);
+    CallState GetCallState(vvl::Func func) const;
 
   private:
+    // Multiple threads can be querying GetPhysicalDevice type functions
+    // We, as VVL, use this time to update things on the first query, so we need to make sure things are thread safe
+    // We could use concurrent_unordered_map, but not with the currently limited interface
+    mutable std::shared_mutex call_state_lock_;
+    vvl::unordered_map<Func, CallState> call_state_;
+
     const std::vector<VkQueueFamilyProperties> GetQueueFamilyProps(VkPhysicalDevice phys_dev);
     VkQueueFlags GetSupportedQueues();
 };
