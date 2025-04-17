@@ -1026,10 +1026,7 @@ void DeviceState::PreCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
         submissions.emplace_back(std::move(submission));
     }
 
-    PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
-    if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
-    }
+    queue_state->PreSubmit(std::move(submissions));
 }
 
 void DeviceState::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
@@ -1085,10 +1082,7 @@ void DeviceState::PreCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount,
         }
         submissions.emplace_back(std::move(submission));
     }
-    PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
-    if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
-    }
+    queue_state->PreSubmit(std::move(submissions));
 }
 
 void DeviceState::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits,
@@ -1250,10 +1244,7 @@ void DeviceState::PreCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoC
         submissions.emplace_back(std::move(submission));
     }
 
-    PreSubmitResult result = queue_state->PreSubmit(std::move(submissions));
-    if (result.has_external_fence) {
-        queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
-    }
+    queue_state->PreSubmit(std::move(submissions));
 }
 
 void DeviceState::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfoCount, const VkBindSparseInfo *pBindInfo,
@@ -3853,9 +3844,13 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     // Provide present fences with information about present wait semaphores.
     // If we wait on the present fence, then it can update present semaphores
     // that they are no longer in use by the swapchain.
+    bool has_external_fence = false;
     for (QueueSubmission &present_submission : present_submissions) {
         if (present_submission.fence) {
             present_submission.fence->SetPresentWaitSemaphores(present_wait_semaphores);
+            if (present_submission.fence->Scope() != Fence::kInternal) {
+                has_external_fence = true;
+            }
         }
     }
 
@@ -3878,7 +3873,8 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         }
     }
 
-    if (result.has_external_fence) {
+    // wait on fence as we don't know when it will be signaled if external
+    if (has_external_fence) {
         queue_state->NotifyAndWait(record_obj.location, result.submission_seq);
     }
 }

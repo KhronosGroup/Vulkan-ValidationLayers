@@ -20,6 +20,7 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
+#include "../framework/external_memory_sync.h"
 #include "../../layers/gpuav/shaders/gpuav_shaders_constants.h"
 
 class PositiveGpuAV : public GpuAVTest {};
@@ -2014,4 +2015,50 @@ TEST_F(PositiveGpuAV, FailedSampler) {
 
     // Will not return VK_SUCCESS on real device (tested by CTS) and need to ignore
     vk::CreateSampler(device(), &sampler_info, &bad_allocator, &sampler_handle);
+}
+
+TEST_F(PositiveGpuAV, ImportFenceWait) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9706");
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const auto handle_types = FindSupportedExternalFenceHandleTypes(Gpu(), VK_EXTERNAL_FENCE_FEATURE_EXPORTABLE_BIT);
+    if ((handle_types & VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT) == 0) {
+        GTEST_SKIP() << "VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT is not exportable";
+    }
+
+    int handle = 0;
+
+    VkExportFenceCreateInfo export_info = vku::InitStructHelper();
+    export_info.handleTypes = VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT;
+    const VkFenceCreateInfo create_info = vku::InitStructHelper(&export_info);
+    vkt::Fence fence(*m_device, create_info);
+    fence.ExportHandle(handle, VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT);
+    fence.ImportHandle(handle, VK_EXTERNAL_FENCE_HANDLE_TYPE_OPAQUE_FD_BIT);
+
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 0;
+    submit.waitSemaphoreCount = 0;
+    submit.signalSemaphoreCount = 0;
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, fence);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, 1000000000);
+}
+
+TEST_F(PositiveGpuAV, EmptySubmit) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9706");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Fence fence(*m_device);
+    VkSubmitInfo submit = vku::InitStructHelper();
+    submit.commandBufferCount = 0;
+    submit.waitSemaphoreCount = 0;
+    submit.signalSemaphoreCount = 0;
+    vk::QueueSubmit(m_default_queue->handle(), 1, &submit, fence);
+    vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, 1000000000);
+    m_device->Wait();
 }

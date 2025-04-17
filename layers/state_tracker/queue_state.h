@@ -60,12 +60,13 @@ struct CommandBufferSubmission {
 struct QueueSubmission {
     QueueSubmission(const Location &loc_) : loc(loc_), completed(), waiter(completed.get_future()) {}
 
-    bool end_batch{false};
+    bool is_last_submission{false};
     std::vector<vvl::CommandBufferSubmission> cb_submissions{};
 
     std::vector<SemaphoreInfo> wait_semaphores;
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
+    bool has_external_fence = false;
     LocationCapture loc;
     uint64_t seq{0};
     uint32_t perf_submit_pass{0};
@@ -99,8 +100,6 @@ static inline std::chrono::time_point<std::chrono::steady_clock> GetCondWaitTime
 
 struct PreSubmitResult {
     uint64_t last_submission_seq = 0;
-
-    bool has_external_fence = false;
     uint64_t submission_seq = 0;
 };
 

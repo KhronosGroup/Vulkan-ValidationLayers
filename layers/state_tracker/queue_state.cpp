@@ -55,7 +55,7 @@ void vvl::QueueSubmission::EndUse() {
 
 vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&submissions) {
     if (!submissions.empty()) {
-        submissions.back().end_batch = true;
+        submissions.back().is_last_submission = true;
     }
     for (auto &item : sub_states_) {
         item.second->PreSubmit(submissions);
@@ -88,7 +88,7 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
 
         if (submission.fence) {
             if (submission.fence->EnqueueSignal(this, submission.seq)) {
-                result.has_external_fence = true;
+                submission.has_external_fence = true;
             }
         }
         {
@@ -213,6 +213,13 @@ void vvl::Queue::PostSubmit() {
 void vvl::Queue::PostSubmit(QueueSubmission &submission) {
     for (auto &item : sub_states_) {
         item.second->PostSubmit(submission);
+    }
+
+    // If dealing with external fences, the app might call vkWaitForFences, but might not and we might not know when the queue
+    // submission is done. If we find adding a "big lock" here is slow for real cases, we could have something run in a background
+    // thread calling vkGetFenceStatus to check for us. (This would require a good thing to test against)
+    if (submission.has_external_fence) {
+        submission.fence->NotifyAndWait(submission.loc.Get());
     }
 }
 
