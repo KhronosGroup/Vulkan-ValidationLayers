@@ -19,12 +19,12 @@
 
 #pragma once
 
+#include "best_practices/bp_constants.h"
 // We pull in most the core state tracking files
 // bp_state.h should NOT be included by any other header file
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
-#include "state_tracker/device_state.h"
 #include "state_tracker/descriptor_sets.h"
 
 class BestPractices;
@@ -33,37 +33,26 @@ namespace bp_state {
 
 class ImageSubState : public vvl::ImageSubState {
   public:
-    explicit ImageSubState(vvl::Image& img) : vvl::ImageSubState(img) { SetupUsages(); }
+    explicit ImageSubState(vvl::Image& img);
 
     struct Usage {
         IMAGE_SUBRESOURCE_USAGE_BP type;
         uint32_t queue_family_index;
     };
 
-    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family) {
-        auto last_usage = usages_[array_layer][mip_level];
-        usages_[array_layer][mip_level].type = usage;
-        usages_[array_layer][mip_level].queue_family_index = queue_family;
-        return last_usage;
-    }
+    Usage UpdateUsage(uint32_t array_layer, uint32_t mip_level, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t queue_family);
+    Usage GetUsage(uint32_t array_layer, uint32_t mip_level) const;
+    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(uint32_t array_layer, uint32_t mip_level) const;
+    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) const;
 
-    Usage GetUsage(uint32_t array_layer, uint32_t mip_level) const { return usages_[array_layer][mip_level]; }
+    std::array<bool, vvl::Image::kMaxPlanes> memory_requirements_checked = {};
 
-    IMAGE_SUBRESOURCE_USAGE_BP GetUsageType(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).type;
-    }
-
-    uint32_t GetLastQueueFamily(uint32_t array_layer, uint32_t mip_level) const {
-        return GetUsage(array_layer, mip_level).queue_family_index;
-    }
+    const bool sparse_metadata_required;  // Track if sparse metadata aspect is required for this image
+    bool get_sparse_reqs_called{false};   // Track if GetImageSparseMemoryRequirements() has been called for this image
+    bool sparse_metadata_bound{false};    // Track if sparse metadata aspect is bound to this image
 
   private:
-    void SetupUsages() {
-        usages_.resize(base.create_info.arrayLayers);
-        for (auto& mip_vec : usages_) {
-            mip_vec.resize(base.create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
-        }
-    }
+    void SetupUsages();
     // A 2d vector for all the array layers and mip levels.
     // This does not split usages per aspect.
     // Aspects are generally read and written together,
@@ -178,7 +167,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         // When recording is finished, this is the event state "at the end of the command buffer".
         bool signaled = false;
 
-        SignalingInfo(bool signal) : first_state_change_is_signal(signal), signaled(signal) {}
+        explicit SignalingInfo(bool signal) : first_state_change_is_signal(signal), signaled(signal) {}
     };
     vvl::unordered_map<VkEvent, SignalingInfo> event_signaling_state;
 };
