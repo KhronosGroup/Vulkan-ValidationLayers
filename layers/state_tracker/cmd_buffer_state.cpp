@@ -1099,9 +1099,9 @@ void CommandBuffer::End(VkResult result) {
 void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
     RecordCmd(Func::vkCmdExecuteCommands);
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
-        auto sub_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
-        ASSERT_AND_RETURN(sub_cb_state);
-        if (!(sub_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+        auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
+        ASSERT_AND_RETURN(secondary_cb_state);
+        if (!(secondary_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
             if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
                 // from the validation step to the recording step
@@ -1113,7 +1113,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         // NOTE: The update/population of the image_layout_map is done in CoreChecks, but for other classes derived from
         // Device these maps will be empty, so leaving the propagation in the the state tracker should be a no-op
         // for those other classes.
-        for (const auto &[image, image_layout_registry] : sub_cb_state->image_layout_map) {
+        for (const auto &[image, image_layout_registry] : secondary_cb_state->image_layout_map) {
             const auto image_state = dev_data.Get<vvl::Image>(image);
             if (!image_state || image_state->Destroyed() || !image_layout_registry ||
                 image_state->GetId() != image_layout_registry->GetImageId()) {
@@ -1125,9 +1125,9 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             }
         }
 
-        sub_cb_state->primaryCommandBuffer = VkHandle();
-        linkedCommandBuffers.insert(sub_cb_state.get());
-        AddChild(sub_cb_state);
+        secondary_cb_state->primaryCommandBuffer = VkHandle();
+        linkedCommandBuffers.insert(secondary_cb_state.get());
+        AddChild(secondary_cb_state);
         // Add a query update that runs all the query updates that happen in the sub command buffer.
         // This avoids locking ambiguity because primary command buffers are locked when these
         // callbacks run, but secondary command buffers are not.
@@ -1135,19 +1135,19 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
                                                         VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
                                                         QueryMap *localQueryToStateMap) {
             bool skip = false;
-            auto sub_cb_state_arg = cb_state_arg.dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
-            for (auto &function : sub_cb_state_arg->query_updates) {
-                skip |= function(*sub_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
+            auto secondary_cb_state_arg = cb_state_arg.dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
+            for (auto &function : secondary_cb_state_arg->query_updates) {
+                skip |= function(*secondary_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
             }
             return skip;
         });
-        for (auto &function : sub_cb_state->event_updates) {
+        for (auto &function : secondary_cb_state->event_updates) {
             event_updates.push_back(function);
         }
-        for (auto &event : sub_cb_state->events) {
+        for (auto &event : secondary_cb_state->events) {
             events.push_back(event);
         }
-        for (auto &function : sub_cb_state->queue_submit_functions) {
+        for (auto &function : secondary_cb_state->queue_submit_functions) {
             queue_submit_functions.push_back(function);
         }
 
@@ -1159,26 +1159,27 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         trashedScissorCount = true;
 
         // Pass along if any commands are used in the secondary command buffer
-        has_draw_cmd |= sub_cb_state->has_draw_cmd;
-        has_dispatch_cmd |= sub_cb_state->has_dispatch_cmd;
-        has_trace_rays_cmd |= sub_cb_state->has_trace_rays_cmd;
-        has_build_as_cmd |= sub_cb_state->has_build_as_cmd;
+        has_draw_cmd |= secondary_cb_state->has_draw_cmd;
+        has_dispatch_cmd |= secondary_cb_state->has_dispatch_cmd;
+        has_trace_rays_cmd |= secondary_cb_state->has_trace_rays_cmd;
+        has_build_as_cmd |= secondary_cb_state->has_build_as_cmd;
 
         // Handle secondary command buffer updates for dynamic rendering
         if (!hasRenderPassInstance) {
-            resumesRenderPassInstance = sub_cb_state->resumesRenderPassInstance;
+            resumesRenderPassInstance = secondary_cb_state->resumesRenderPassInstance;
         }
-        if (!sub_cb_state->active_render_pass) {
-            suspendsRenderPassInstance = sub_cb_state->suspendsRenderPassInstance;
-            hasRenderPassInstance |= sub_cb_state->hasRenderPassInstance;
-        }
-
-        if (sub_cb_state->IsSecondary()) {
-            nesting_level = std::max(nesting_level, sub_cb_state->nesting_level + 1);
+        if (!secondary_cb_state->active_render_pass) {
+            suspendsRenderPassInstance = secondary_cb_state->suspendsRenderPassInstance;
+            hasRenderPassInstance |= secondary_cb_state->hasRenderPassInstance;
         }
 
-        label_stack_depth_ += sub_cb_state->label_stack_depth_;
-        label_commands_.insert(label_commands_.end(), sub_cb_state->label_commands_.begin(), sub_cb_state->label_commands_.end());
+        if (secondary_cb_state->IsSecondary()) {
+            nesting_level = std::max(nesting_level, secondary_cb_state->nesting_level + 1);
+        }
+
+        label_stack_depth_ += secondary_cb_state->label_stack_depth_;
+        label_commands_.insert(label_commands_.end(), secondary_cb_state->label_commands_.begin(),
+                               secondary_cb_state->label_commands_.end());
     }
 }
 
