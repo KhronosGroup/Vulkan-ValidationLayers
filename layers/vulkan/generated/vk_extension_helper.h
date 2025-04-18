@@ -489,6 +489,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_qnx_external_memory_screen_buffer{kNotEnabled};
     ExtEnabled vk_msft_layered_driver{kNotEnabled};
     ExtEnabled vk_nv_descriptor_pool_overallocation{kNotEnabled};
+    ExtEnabled vk_qcom_tile_memory_heap{kNotEnabled};
     ExtEnabled vk_nv_raw_access_chains{kNotEnabled};
     ExtEnabled vk_nv_external_compute_queue{kNotEnabled};
     ExtEnabled vk_nv_command_buffer_inheritance{kNotEnabled};
@@ -928,6 +929,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_QNX_external_memory_screen_buffer:
         case vvl::Extension::_VK_MSFT_layered_driver:
         case vvl::Extension::_VK_NV_descriptor_pool_overallocation:
+        case vvl::Extension::_VK_QCOM_tile_memory_heap:
         case vvl::Extension::_VK_NV_raw_access_chains:
         case vvl::Extension::_VK_NV_external_compute_queue:
         case vvl::Extension::_VK_NV_command_buffer_inheritance:

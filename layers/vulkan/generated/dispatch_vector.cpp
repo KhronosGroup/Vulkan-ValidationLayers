@@ -1836,6 +1836,9 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordGetScreenBufferPropertiesQNX);
     BUILD_DISPATCH_VECTOR(PostCallRecordGetScreenBufferPropertiesQNX);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    BUILD_DISPATCH_VECTOR(PreCallValidateCmdBindTileMemoryQCOM);
+    BUILD_DISPATCH_VECTOR(PreCallRecordCmdBindTileMemoryQCOM);
+    BUILD_DISPATCH_VECTOR(PostCallRecordCmdBindTileMemoryQCOM);
     BUILD_DISPATCH_VECTOR(PreCallValidateCreateExternalComputeQueueNV);
     BUILD_DISPATCH_VECTOR(PreCallRecordCreateExternalComputeQueueNV);
     BUILD_DISPATCH_VECTOR(PostCallRecordCreateExternalComputeQueueNV);

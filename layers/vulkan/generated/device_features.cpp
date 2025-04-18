@@ -1622,6 +1622,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->descriptorPoolOverallocation |= enabled->descriptorPoolOverallocation == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_FEATURES_QCOM: {
+                const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTileMemoryHeapFeaturesQCOM *>(pNext);
+                features->tileMemoryHeap |= enabled->tileMemoryHeap == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAW_ACCESS_CHAINS_FEATURES_NV: {
                 const VkPhysicalDeviceRawAccessChainsFeaturesNV *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRawAccessChainsFeaturesNV *>(pNext);

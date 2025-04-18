@@ -1837,6 +1837,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-videocoding",
 }},
+{Func::vkCmdBindTileMemoryQCOM, {
+    "VUID-vkCmdBindTileMemoryQCOM-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT, "VUID-vkCmdBindTileMemoryQCOM-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBindTileMemoryQCOM-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdBindTileMemoryQCOM-videocoding",
+}},
 {Func::vkCmdBuildClusterAccelerationStructureIndirectNV, {
     "VUID-vkCmdBuildClusterAccelerationStructureIndirectNV-commandBuffer-recording",
     nullptr,

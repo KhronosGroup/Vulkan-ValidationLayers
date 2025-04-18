@@ -882,6 +882,8 @@ struct DeviceFeatures {
     bool texelBufferAlignment;
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     bool textureCompressionASTC_HDR;
+    // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM
+    bool tileMemoryHeap;
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM
     bool tileProperties;
     // VkPhysicalDeviceTileShadingFeaturesQCOM

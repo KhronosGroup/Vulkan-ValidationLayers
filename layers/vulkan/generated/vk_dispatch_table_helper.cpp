@@ -1304,6 +1304,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubGetScreenBufferPropertiesQNX(VkDevice,
     return VK_SUCCESS;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+static VKAPI_ATTR void VKAPI_CALL StubCmdBindTileMemoryQCOM(VkCommandBuffer, const VkTileMemoryBindInfoQCOM*) {}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreateExternalComputeQueueNV(VkDevice, const VkExternalComputeQueueCreateInfoNV*,
                                                                        const VkAllocationCallbacks*, VkExternalComputeQueueNV*) {
     return VK_SUCCESS;
@@ -1929,6 +1930,7 @@ const auto& GetApiExtensionMap() {
         {"vkQueueNotifyOutOfBandNV", {vvl::Extension::_VK_NV_low_latency2}},
         {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state}},
         {"vkGetScreenBufferPropertiesQNX", {vvl::Extension::_VK_QNX_external_memory_screen_buffer}},
+        {"vkCmdBindTileMemoryQCOM", {vvl::Extension::_VK_QCOM_tile_memory_heap}},
         {"vkCreateExternalComputeQueueNV", {vvl::Extension::_VK_NV_external_compute_queue}},
         {"vkDestroyExternalComputeQueueNV", {vvl::Extension::_VK_NV_external_compute_queue}},
         {"vkGetExternalComputeQueueDataNV", {vvl::Extension::_VK_NV_external_compute_queue}},
@@ -4183,6 +4185,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
         table->GetScreenBufferPropertiesQNX = (PFN_vkGetScreenBufferPropertiesQNX)StubGetScreenBufferPropertiesQNX;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    table->CmdBindTileMemoryQCOM = (PFN_vkCmdBindTileMemoryQCOM)gpa(device, "vkCmdBindTileMemoryQCOM");
+    if (table->CmdBindTileMemoryQCOM == nullptr) {
+        table->CmdBindTileMemoryQCOM = (PFN_vkCmdBindTileMemoryQCOM)StubCmdBindTileMemoryQCOM;
+    }
     table->CreateExternalComputeQueueNV = (PFN_vkCreateExternalComputeQueueNV)gpa(device, "vkCreateExternalComputeQueueNV");
     if (table->CreateExternalComputeQueueNV == nullptr) {
         table->CreateExternalComputeQueueNV = (PFN_vkCreateExternalComputeQueueNV)StubCreateExternalComputeQueueNV;

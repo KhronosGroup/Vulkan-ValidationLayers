@@ -82,6 +82,7 @@ const char* String(Func func) {
     {"vkCmdBindPipelineShaderGroupNV", 31},
     {"vkCmdBindShadersEXT", 20},
     {"vkCmdBindShadingRateImageNV", 28},
+    {"vkCmdBindTileMemoryQCOM", 24},
     {"vkCmdBindTransformFeedbackBuffersEXT", 37},
     {"vkCmdBindVertexBuffers", 23},
     {"vkCmdBindVertexBuffers2", 24},
@@ -1573,6 +1574,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT", 48},
     {"VkPhysicalDeviceTexelBufferAlignmentProperties", 47},
     {"VkPhysicalDeviceTextureCompressionASTCHDRFeatures", 50},
+    {"VkPhysicalDeviceTileMemoryHeapFeaturesQCOM", 43},
+    {"VkPhysicalDeviceTileMemoryHeapPropertiesQCOM", 45},
     {"VkPhysicalDeviceTilePropertiesFeaturesQCOM", 43},
     {"VkPhysicalDeviceTileShadingFeaturesQCOM", 40},
     {"VkPhysicalDeviceTileShadingPropertiesQCOM", 42},
@@ -1828,6 +1831,9 @@ const char* String(Struct structure) {
     {"VkSwapchainPresentScalingCreateInfoEXT", 39},
     {"VkSysmemColorSpaceFUCHSIA", 26},
     {"VkTextureLODGatherFormatPropertiesAMD", 38},
+    {"VkTileMemoryBindInfoQCOM", 25},
+    {"VkTileMemoryRequirementsQCOM", 29},
+    {"VkTileMemorySizeInfoQCOM", 25},
     {"VkTilePropertiesQCOM", 21},
     {"VkTimelineSemaphoreSubmitInfo", 30},
     {"VkTraceRaysIndirectCommand2KHR", 31},
@@ -3904,6 +3910,7 @@ const char* String(Field field) {
     {"pTagInfo", 9},
     {"pTessellationState", 19},
     {"pTexelBufferView", 17},
+    {"pTileMemoryBindInfo", 20},
     {"pTileOffsets", 13},
     {"pTileSizes", 11},
     {"pTimeDomainCount", 17},
@@ -4188,6 +4195,7 @@ const char* String(Field field) {
     {"queueFlags", 11},
     {"queueIndex", 11},
     {"queueLabelCount", 16},
+    {"queueSubmitBoundary", 20},
     {"queueType", 10},
     {"qw", 3},
     {"qx", 3},
@@ -4723,8 +4731,10 @@ const char* String(Field field) {
     {"textureCompressionETC2", 23},
     {"textureSampleWeighted", 22},
     {"tileApronSize", 14},
+    {"tileBufferTransfers", 20},
     {"tileCount", 10},
     {"tileGranularity", 16},
+    {"tileMemoryHeap", 15},
     {"tileProperties", 15},
     {"tileShading", 12},
     {"tileShadingAnisotropicApron", 28},
@@ -5619,6 +5629,7 @@ const char* String(Extension extension) {
     {"VK_QCOM_render_pass_store_ops", 30},
     {"VK_QCOM_render_pass_transform", 30},
     {"VK_QCOM_rotated_copy_commands", 30},
+    {"VK_QCOM_tile_memory_heap", 25},
     {"VK_QCOM_tile_properties", 24},
     {"VK_QCOM_tile_shading", 21},
     {"VK_QCOM_ycbcr_degamma", 22},
@@ -6123,6 +6134,7 @@ bool IsFieldPointer(Field field) {
     case Field::pTagInfo:
     case Field::pTessellationState:
     case Field::pTexelBufferView:
+    case Field::pTileMemoryBindInfo:
     case Field::pTileOffsets:
     case Field::pTileSizes:
     case Field::pTimeDomainCount:
@@ -8070,6 +8082,16 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceLayeredDriverPropertiesMSFT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV:
        return Struct::VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_FEATURES_QCOM:
+       return Struct::VkPhysicalDeviceTileMemoryHeapFeaturesQCOM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_PROPERTIES_QCOM:
+       return Struct::VkPhysicalDeviceTileMemoryHeapPropertiesQCOM;
+    case VK_STRUCTURE_TYPE_TILE_MEMORY_REQUIREMENTS_QCOM:
+       return Struct::VkTileMemoryRequirementsQCOM;
+    case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM:
+       return Struct::VkTileMemoryBindInfoQCOM;
+    case VK_STRUCTURE_TYPE_TILE_MEMORY_SIZE_INFO_QCOM:
+       return Struct::VkTileMemorySizeInfoQCOM;
     case VK_STRUCTURE_TYPE_DISPLAY_SURFACE_STEREO_CREATE_INFO_NV:
        return Struct::VkDisplaySurfaceStereoCreateInfoNV;
     case VK_STRUCTURE_TYPE_DISPLAY_MODE_STEREO_PROPERTIES_NV:
