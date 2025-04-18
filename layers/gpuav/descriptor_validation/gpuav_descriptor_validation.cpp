@@ -125,9 +125,6 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
     // this is actually a perf bottleneck (assume number of sets are low as people we will then to have a single large set)
     for (uint32_t i = 0; i < number_of_sets; i++) {
         const auto &ds_slot = last_bound.ds_slots[i];
-        if (!ds_slot.ds_state) {
-            continue;  // can have gaps in descriptor sets
-        }
         descriptor_command_binding.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
     }
 
@@ -145,7 +142,12 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
     for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
         auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_buffer.GetMappedPtr();
         for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
-            auto &substate = SubState(*descriptor_command_binding.bound_descriptor_sets[i]);
+            auto &bound_desc_set = descriptor_command_binding.bound_descriptor_sets[i];
+            // Some descriptor set slots may be unbound
+            if (!bound_desc_set) {
+                continue;
+            }
+            auto &substate = SubState(*bound_desc_set);
             ssbo_buffer_ptr->descriptor_set_types[i] = substate.GetTypeAddress(gpuav, loc);
         }
     }
@@ -167,11 +169,15 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
     // process buffer for which descriptor was accessed
     for (const auto &descriptor_command_binding : descriptor_command_bindings) {
         for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
-            auto &bound_descriptor_set = descriptor_command_binding.bound_descriptor_sets[set_index];
-            auto &ds_sub_state = SubState(*bound_descriptor_set);
+            auto &bound_desc_set = descriptor_command_binding.bound_descriptor_sets[set_index];
+            // Some descriptor set slots may be unbound
+            if (!bound_desc_set) {
+                continue;
+            }
+            auto &ds_sub_state = SubState(*bound_desc_set);
 
             // The Post Process buffer is tied to the VkDescriptorSet, so we clear it after and only check it once
-            if (validated_desc_sets.count(bound_descriptor_set->VkHandle()) > 0) {
+            if (validated_desc_sets.count(bound_desc_set->VkHandle()) > 0) {
                 // TODO - If you share two VkDescriptorSet across two different sets in the SPIR-V, we are not going to be
                 // validating the 2nd instance of it
                 continue;
@@ -180,7 +186,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
             if (!ds_sub_state.HasPostProcessBuffer()) {
                 if (!ds_sub_state.CanPostProcess()) {
                     continue;  // hit a dummy object used as a placeholder
-                } else if (bound_descriptor_set->GetBindingCount() == 0) {
+                } else if (bound_desc_set->GetBindingCount() == 0) {
                     continue;  // empty set
                 }
 
@@ -192,10 +198,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                 state_.InternalError(state_.device, loc, error.str().c_str());
                 return false;
             }
-            validated_desc_sets.emplace(bound_descriptor_set->VkHandle());
+            validated_desc_sets.emplace(bound_desc_set->VkHandle());
 
             // We build once here, but will update the set_index and shader_handle when found
-            vvl::DescriptorValidator context(state_, base, *bound_descriptor_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
+            vvl::DescriptorValidator context(state_, base, *bound_desc_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
 
             DescriptorAccessMap descriptor_access_map = ds_sub_state.GetDescriptorAccesses(loc);
             // Once we have accessed everything and created the DescriptorAccess, we can clear this buffer
@@ -226,7 +232,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                 }
 
                 for (const auto &descriptor_access : descriptor_accesses) {
-                    auto descriptor_binding = bound_descriptor_set->GetBinding(descriptor_access.binding);
+                    auto descriptor_binding = bound_desc_set->GetBinding(descriptor_access.binding);
                     ASSERT_AND_CONTINUE(descriptor_binding);
 
                     const ::spirv::ResourceInterfaceVariable *resource_variable = nullptr;
@@ -251,7 +257,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                     ASSERT_AND_CONTINUE(resource_variable);
 
                     // If we already validated/updated the descriptor on the CPU, don't redo it now in GPU-AV Post Processing
-                    if (!bound_descriptor_set->ValidateBindingOnGPU(*descriptor_binding, *resource_variable)) {
+                    if (!bound_desc_set->ValidateBindingOnGPU(*descriptor_binding, *resource_variable)) {
                         continue;
                     }
 
