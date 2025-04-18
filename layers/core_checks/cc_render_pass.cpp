@@ -4993,21 +4993,21 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
     return skip;
 }
 
-bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::CommandBuffer &sub_cb_state,
-                                                    const Location &loc) const {
+bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer &cb_state,
+                                                    const vvl::CommandBuffer &secondary_cb_state, const Location &loc) const {
     bool skip = false;
-    if (!sub_cb_state.beginInfo.pInheritanceInfo) {
+    if (!secondary_cb_state.beginInfo.pInheritanceInfo) {
         return skip;
     }
     VkFramebuffer primary_fb = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
-    VkFramebuffer secondary_fb = sub_cb_state.beginInfo.pInheritanceInfo->framebuffer;
+    VkFramebuffer secondary_fb = secondary_cb_state.beginInfo.pInheritanceInfo->framebuffer;
     if (secondary_fb != VK_NULL_HANDLE) {
         if (primary_fb != secondary_fb) {
-            const LogObjectList objlist(cb_state.Handle(), sub_cb_state.Handle(), secondary_fb, primary_fb);
+            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), secondary_fb, primary_fb);
             skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00099", objlist, loc,
                              "called w/ invalid secondary %s which has a %s"
                              " that is not the same as the primary command buffer's current active %s.",
-                             FormatHandle(sub_cb_state.Handle()).c_str(), FormatHandle(secondary_fb).c_str(),
+                             FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(secondary_fb).c_str(),
                              FormatHandle(primary_fb).c_str());
         }
     }
