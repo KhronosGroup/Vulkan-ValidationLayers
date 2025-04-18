@@ -173,8 +173,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageLayoutRegistry>>;
 
     VkCommandBufferAllocateInfo allocate_info;
-    VkCommandBufferBeginInfo beginInfo;
-    VkCommandBufferInheritanceInfo inheritanceInfo;
+
+    VkCommandBufferUsageFlags begin_info_flags;
+    bool has_inheritance;
+    vku::safe_VkCommandBufferInheritanceInfo inheritance_info;
+
     // since command buffers can only be destroyed by their command pool, this does not need to be a shared_ptr
     const vvl::CommandPool *command_pool;
     DeviceState &dev_data;

@@ -534,7 +534,7 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
 
     // Validate ONE_TIME_SUBMIT_BIT CB is not being submitted more than once
     if (const uint64_t submissions = cb_state.submitCount + current_submit_count;
-        (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
+        (cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && (submissions > 1)) {
         // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
         skip |= LogError("UNASSIGNED-DrawState-CommandBufferSingleSubmitViolation", cb_state.Handle(), loc,
                          "%s recorded with VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT has been submitted %" PRIu64 " times.",
@@ -571,7 +571,7 @@ bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const
 
     bool skip = false;
     if ((cb_state.InUse() || current_submit_count > 1) &&
-        !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+        !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
         const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, SubmitError::kCmdNotSimultaneous);
 
         skip |= LogError(vuid, device, loc, "%s is already in use and is not marked for simultaneous use.",
@@ -599,7 +599,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
             skip |= ValidateQueuedQFOTransfers(*sub_cb, qfo_image_scoreboards, qfo_buffer_scoreboards, loc);
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primaryCommandBuffer != cb_state.VkHandle()) &&
-                !(sub_cb->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+                !(sub_cb->begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
                 const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdNotSimultaneous);
                 const LogObjectList objlist(device, cb_state.Handle(), sub_cb->Handle(), sub_cb->primaryCommandBuffer);
                 skip |= LogError(vuid, objlist, loc,

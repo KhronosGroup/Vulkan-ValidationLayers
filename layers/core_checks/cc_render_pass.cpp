@@ -3997,7 +3997,7 @@ bool CoreChecks::OutsideRenderPass(const vvl::CommandBuffer &cb_state, const Loc
     bool outside = false;
     if ((cb_state.IsPrimary() && (!cb_state.active_render_pass)) ||
         (cb_state.IsSecondary() && (!cb_state.active_render_pass) &&
-         !(cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
+         !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT))) {
         outside = LogError(vuid, cb_state.Handle(), loc, "This call must be issued inside an active render pass.");
     }
     return outside;
@@ -4994,22 +4994,19 @@ bool CoreChecks::PreCallValidateDestroyFramebuffer(VkDevice device, VkFramebuffe
 }
 
 bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer &cb_state,
-                                                    const vvl::CommandBuffer &secondary_cb_state, const Location &loc) const {
+                                                    const vvl::CommandBuffer &secondary_cb_state,
+                                                    const VkCommandBufferInheritanceInfo &secondary_inheritance_info,
+                                                    const Location &loc) const {
     bool skip = false;
-    if (!secondary_cb_state.beginInfo.pInheritanceInfo) {
-        return skip;
-    }
     VkFramebuffer primary_fb = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
-    VkFramebuffer secondary_fb = secondary_cb_state.beginInfo.pInheritanceInfo->framebuffer;
-    if (secondary_fb != VK_NULL_HANDLE) {
-        if (primary_fb != secondary_fb) {
-            const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), secondary_fb, primary_fb);
-            skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00099", objlist, loc,
-                             "called w/ invalid secondary %s which has a %s"
-                             " that is not the same as the primary command buffer's current active %s.",
-                             FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(secondary_fb).c_str(),
-                             FormatHandle(primary_fb).c_str());
-        }
+    VkFramebuffer secondary_fb = secondary_inheritance_info.framebuffer;
+    if (secondary_fb != VK_NULL_HANDLE && primary_fb != secondary_fb) {
+        const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), secondary_fb, primary_fb);
+        skip |= LogError("VUID-vkCmdExecuteCommands-pCommandBuffers-00099", objlist, loc,
+                         "called w/ invalid secondary %s which has a %s"
+                         " that is not the same as the primary command buffer's current active %s.",
+                         FormatHandle(secondary_cb_state.Handle()).c_str(), FormatHandle(secondary_fb).c_str(),
+                         FormatHandle(primary_fb).c_str());
     }
     return skip;
 }
