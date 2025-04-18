@@ -474,9 +474,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     vvl::unordered_set<std::shared_ptr<StateObject>> object_bindings;
     vvl::unordered_map<VulkanTypedHandle, LogObjectList> broken_bindings;
 
-    QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
-    QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
-
     // VK_KHR_dynamic_rendering_local_read works like dynamic state, but lives for the rendering lifetime only
     struct RenderingAttachment {
         // VkRenderingAttachmentLocationInfo
@@ -546,15 +543,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     std::optional<uint32_t> video_encode_quality_level{};
     VideoSessionUpdateMap video_session_updates;
 
-    // VK_EXT_nested_command_buffer
-    uint32_t nesting_level;
-
     bool transform_feedback_active{false};
     uint32_t transform_feedback_buffers_bound;
 
     bool conditional_rendering_active{false};
     bool conditional_rendering_inside_render_pass{false};
     uint32_t conditional_rendering_subpass{0};
+
     std::vector<VkDescriptorBufferBindingInfoEXT> descriptor_buffer_binding_info;
 
     mutable std::shared_mutex lock;
@@ -596,14 +591,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     std::shared_ptr<const ImageLayoutRegistry> GetImageLayoutRegistry(VkImage image) const;
     std::shared_ptr<ImageLayoutRegistry> GetOrCreateImageLayoutRegistry(const vvl::Image &image_state);
     const CommandBufferImageLayoutMap &GetImageLayoutMap() const;
-
-    const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
-        return qfo_transfer_image_barriers;
-    }
-
-    const QFOTransferBarrierSets<QFOBufferTransferBarrier> &GetQFOBarrierSets(const QFOBufferTransferBarrier &type_tag) const {
-        return qfo_transfer_buffer_barriers;
-    }
 
     // Used to get error message objects, but overloads depending on what information is known
     LogObjectList GetObjectList(VkShaderStageFlagBits stage) const;
@@ -754,9 +741,13 @@ class CommandBufferSubState {
     CommandBufferSubState(const CommandBufferSubState &) = delete;
     CommandBufferSubState &operator=(const CommandBufferSubState &) = delete;
     virtual ~CommandBufferSubState() {}
+
+    virtual void Begin(const VkCommandBufferBeginInfo &begin_info) {}
+    virtual void Reset(const Location &loc) {}
     virtual void Destroy() {}
 
-    virtual void Reset(const Location &loc) {}
+    virtual void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) {}
+
     virtual void RecordCmd(Func command) {}
     virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
                                   VkPipelineStageFlags2KHR src_stage_mask) {}

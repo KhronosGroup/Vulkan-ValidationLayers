@@ -296,9 +296,6 @@ void CommandBuffer::ResetCBState() {
     activeFramebuffer = VK_NULL_HANDLE;
     index_buffer_binding.reset();
 
-    qfo_transfer_image_barriers.Reset();
-    qfo_transfer_buffer_barriers.Reset();
-
     // Clean up video specific states
     bound_video_session = nullptr;
     bound_video_session_parameters = nullptr;
@@ -314,8 +311,6 @@ void CommandBuffer::ResetCBState() {
     push_constant_data_chunks.clear();
     push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
     push_constant_ranges_layout.reset();
-
-    nesting_level = 0;
 
     transform_feedback_active = false;
     transform_feedback_buffers_bound = 0;
@@ -1092,6 +1087,10 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     }
     performance_lock_acquired = dev_data.performance_lock_acquired;
     updatedQueries.clear();
+
+    for (auto &item : sub_states_) {
+        item.second->Begin(beginInfo);
+    }
 }
 
 void CommandBuffer::End(VkResult result) {
@@ -1177,13 +1176,13 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             hasRenderPassInstance |= secondary_cb_state->hasRenderPassInstance;
         }
 
-        if (secondary_cb_state->IsSecondary()) {
-            nesting_level = std::max(nesting_level, secondary_cb_state->nesting_level + 1);
-        }
-
         label_stack_depth_ += secondary_cb_state->label_stack_depth_;
         label_commands_.insert(label_commands_.end(), secondary_cb_state->label_commands_.begin(),
                                secondary_cb_state->label_commands_.end());
+
+        for (auto &item : sub_states_) {
+            item.second->ExecuteCommands(*secondary_cb_state);
+        }
     }
 }
 

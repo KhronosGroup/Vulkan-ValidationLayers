@@ -54,6 +54,10 @@ namespace spirv {
 struct StatelessData;
 }  // namespace spirv
 
+namespace core {
+class CommandBufferSubState;
+}  // namespace core
+
 struct SubpassLayout;
 struct DAGNode;
 struct SemaphoreSubmitState;
@@ -662,7 +666,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool IsBeforeCtsVersion(uint32_t major, uint32_t minor, uint32_t subminor) const;
 
     template <typename TransferBarrier>
-    bool ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer& cb_state,
+    bool ValidateQueuedQFOTransferBarriers(const core::CommandBufferSubState& cb_sub_state,
                                            QFOTransferCBScoreboards<TransferBarrier>* scoreboards,
                                            const GlobalQFOTransferBarrierMap<TransferBarrier>& global_release_barriers,
                                            const Location& loc) const;
