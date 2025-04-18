@@ -2805,21 +2805,15 @@ void Device::PreCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainC
                                              const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                              const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObjectParentInstance(pCreateInfo->surface, record_obj.location);
-    StartWriteObject(pCreateInfo->oldSwapchain, record_obj.location);
-    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void Device::PostCallRecordCreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchain,
                                               const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObjectParentInstance(pCreateInfo->surface, record_obj.location);
-    FinishWriteObject(pCreateInfo->oldSwapchain, record_obj.location);
     if (record_obj.result == VK_SUCCESS) {
         CreateObject(*pSwapchain);
     }
-    // Host access to pCreateInfo->surface,pCreateInfo->oldSwapchain must be externally synchronized
 }
 
 void Device::PreCallRecordAcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore,
@@ -2948,19 +2942,12 @@ void Device::PreCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t sw
                                                     const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                     const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
-    if (pCreateInfos) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
-            StartWriteObjectParentInstance(pCreateInfos[index].surface, record_obj.location);
-            StartWriteObject(pCreateInfos[index].oldSwapchain, record_obj.location);
-        }
-    }
 
     if (pSwapchains) {
         for (uint32_t index = 0; index < swapchainCount; index++) {
             StartReadObject(pSwapchains[index], record_obj.location);
         }
     }
-    // Host access to pCreateInfos[].surface,pCreateInfos[].oldSwapchain must be externally synchronized
 }
 
 void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t swapchainCount,
@@ -2968,12 +2955,6 @@ void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t s
                                                      const VkAllocationCallbacks* pAllocator, VkSwapchainKHR* pSwapchains,
                                                      const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
-    if (pCreateInfos) {
-        for (uint32_t index = 0; index < swapchainCount; index++) {
-            FinishWriteObjectParentInstance(pCreateInfos[index].surface, record_obj.location);
-            FinishWriteObject(pCreateInfos[index].oldSwapchain, record_obj.location);
-        }
-    }
     if (record_obj.result == VK_SUCCESS) {
         if (pSwapchains) {
             for (uint32_t index = 0; index < swapchainCount; index++) {
@@ -2981,7 +2962,6 @@ void Device::PostCallRecordCreateSharedSwapchainsKHR(VkDevice device, uint32_t s
             }
         }
     }
-    // Host access to pCreateInfos[].surface,pCreateInfos[].oldSwapchain must be externally synchronized
 }
 
 #ifdef VK_USE_PLATFORM_XLIB_KHR
@@ -4201,15 +4181,11 @@ void Device::PostCallRecordGetPipelineBinaryDataKHR(VkDevice device, const VkPip
 void Device::PreCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                          const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
-    StartWriteObject(pInfo->pipeline, record_obj.location);
-    // Host access to pInfo->pipeline must be externally synchronized
 }
 
 void Device::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR* pInfo,
                                                           const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     FinishReadObjectParentInstance(device, record_obj.location);
-    FinishWriteObject(pInfo->pipeline, record_obj.location);
-    // Host access to pInfo->pipeline must be externally synchronized
 }
 
 void Device::PreCallRecordCmdSetLineStippleKHR(VkCommandBuffer commandBuffer, uint32_t lineStippleFactor,
@@ -7949,6 +7925,18 @@ void Device::PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const s
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void Device::PreCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                 const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
 void Device::PreCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkExternalComputeQueueNV* pExternalQueue, const RecordObject& record_obj) {

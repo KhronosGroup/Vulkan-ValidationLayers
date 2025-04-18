@@ -6817,6 +6817,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                 return {&vk_struct->textureCompressionASTC_HDR,
                         "VkPhysicalDeviceTextureCompressionASTCHDRFeatures::textureCompressionASTC_HDR"};
             }
+        case Feature::tileMemoryHeap: {
+            auto vk_struct = const_cast<VkPhysicalDeviceTileMemoryHeapFeaturesQCOM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceTileMemoryHeapFeaturesQCOM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceTileMemoryHeapFeaturesQCOM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->tileMemoryHeap, "VkPhysicalDeviceTileMemoryHeapFeaturesQCOM::tileMemoryHeap"};
+        }
+
         case Feature::tileProperties: {
             auto vk_struct = const_cast<VkPhysicalDeviceTilePropertiesFeaturesQCOM *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceTilePropertiesFeaturesQCOM>(*inout_pnext_chain));

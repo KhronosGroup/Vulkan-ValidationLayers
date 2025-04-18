@@ -1442,6 +1442,8 @@ bool PreCallValidateGetScreenBufferPropertiesQNX(VkDevice device, const struct _
                                                  VkScreenBufferPropertiesQNX* pProperties,
                                                  const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+bool PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                          const ErrorObject& error_obj) const override;
 bool PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                  const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue,
                                                  const ErrorObject& error_obj) const override;

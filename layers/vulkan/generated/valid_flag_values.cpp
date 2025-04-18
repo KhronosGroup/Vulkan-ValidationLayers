@@ -259,6 +259,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QCOM_image_processing};
                 }
             }
+            if (value & (VK_IMAGE_USAGE_TILE_MEMORY_QCOM)) {
+                if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
+                    return {vvl::Extension::_VK_QCOM_tile_memory_heap};
+                }
+            }
             if (value &
                 (VK_IMAGE_USAGE_VIDEO_ENCODE_QUANTIZATION_DELTA_MAP_BIT_KHR | VK_IMAGE_USAGE_VIDEO_ENCODE_EMPHASIS_MAP_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_video_encode_quantization_map)) {
@@ -419,6 +424,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             if (value & (VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT | VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
+                }
+            }
+            if (value & (VK_BUFFER_USAGE_TILE_MEMORY_QCOM)) {
+                if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
+                    return {vvl::Extension::_VK_QCOM_tile_memory_heap};
                 }
             }
             return {};
@@ -1084,6 +1094,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
             if (value & (VK_BUFFER_USAGE_2_EXECUTION_GRAPH_SCRATCH_BIT_AMDX)) {
                 if (!IsExtEnabled(extensions.vk_amdx_shader_enqueue)) {
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
+                }
+            }
+            if (value & (VK_BUFFER_USAGE_2_TILE_MEMORY_QCOM)) {
+                if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
+                    return {vvl::Extension::_VK_QCOM_tile_memory_heap};
                 }
             }
             if (value & (VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT)) {

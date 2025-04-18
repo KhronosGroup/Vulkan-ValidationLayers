@@ -5458,6 +5458,15 @@ virtual void PreCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const st
 virtual void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                         VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+virtual bool PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                  const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                  const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                 const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkExternalComputeQueueNV* pExternalQueue,

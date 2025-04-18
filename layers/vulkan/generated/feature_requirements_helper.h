@@ -872,6 +872,8 @@ enum class Feature {
     texelBufferAlignment,
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
     textureCompressionASTC_HDR,
+    // VkPhysicalDeviceTileMemoryHeapFeaturesQCOM
+    tileMemoryHeap,
     // VkPhysicalDeviceTilePropertiesFeaturesQCOM
     tileProperties,
     // VkPhysicalDeviceTileShadingFeaturesQCOM

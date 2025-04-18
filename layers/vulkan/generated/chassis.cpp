@@ -31164,6 +31164,51 @@ VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, con
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+VKAPI_ATTR void VKAPI_CALL CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                 const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdBindTileMemoryQCOM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdBindTileMemoryQCOM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdBindTileMemoryQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdBindTileMemoryQCOM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdBindTileMemoryQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdBindTileMemoryQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdBindTileMemoryQCOM");
+        device_dispatch->CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdBindTileMemoryQCOM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdBindTileMemoryQCOM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo, record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkExternalComputeQueueNV* pExternalQueue) {
@@ -34090,6 +34135,7 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+        {"vkCmdBindTileMemoryQCOM", {kFuncTypeDev, (void*)CmdBindTileMemoryQCOM}},
         {"vkCreateExternalComputeQueueNV", {kFuncTypeDev, (void*)CreateExternalComputeQueueNV}},
         {"vkDestroyExternalComputeQueueNV", {kFuncTypeDev, (void*)DestroyExternalComputeQueueNV}},
         {"vkGetExternalComputeQueueDataNV", {kFuncTypeDev, (void*)GetExternalComputeQueueDataNV}},

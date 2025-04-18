@@ -155,6 +155,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
          {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_mutable_descriptor_type}}},
         {vvl::Extension::_VK_EXT_extended_dynamic_state2, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_global_priority_query, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_global_priority}}},
+        {vvl::Extension::_VK_NV_displacement_micromap,
+         {DeprecationReason::Deprecated, {vvl::Extension::_VK_NV_cluster_acceleration_structure}}},
         {vvl::Extension::_VK_EXT_load_store_op_none, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_load_store_op_none}}},
         {vvl::Extension::_VK_EXT_depth_clamp_zero_one,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_depth_clamp_zero_one}}},

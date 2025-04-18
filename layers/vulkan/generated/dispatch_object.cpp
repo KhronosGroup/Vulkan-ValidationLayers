@@ -376,6 +376,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     }
                 }
             } break;
+            case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkTileMemoryBindInfoQCOM*>(cur_pnext);
+
+                if (safe_struct->memory) {
+                    safe_struct->memory = Unwrap(safe_struct->memory);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkRenderPassAttachmentBeginInfo*>(cur_pnext);
                 if (safe_struct->pAttachments) {
@@ -8102,6 +8109,23 @@ VkResult Device::GetScreenBufferPropertiesQNX(VkDevice device, const struct _scr
     return result;
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+
+void Device::CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
+    vku::safe_VkTileMemoryBindInfoQCOM var_local_pTileMemoryBindInfo;
+    vku::safe_VkTileMemoryBindInfoQCOM* local_pTileMemoryBindInfo = nullptr;
+    {
+        if (pTileMemoryBindInfo) {
+            local_pTileMemoryBindInfo = &var_local_pTileMemoryBindInfo;
+            local_pTileMemoryBindInfo->initialize(pTileMemoryBindInfo);
+
+            if (pTileMemoryBindInfo->memory) {
+                local_pTileMemoryBindInfo->memory = Unwrap(pTileMemoryBindInfo->memory);
+            }
+        }
+    }
+    device_dispatch_table.CmdBindTileMemoryQCOM(commandBuffer, (const VkTileMemoryBindInfoQCOM*)local_pTileMemoryBindInfo);
+}
 
 VkResult Device::CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue) {

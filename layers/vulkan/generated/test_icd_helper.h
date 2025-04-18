@@ -479,6 +479,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
     {VK_MSFT_LAYERED_DRIVER_EXTENSION_NAME, VK_MSFT_LAYERED_DRIVER_SPEC_VERSION},
     {VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_EXTENSION_NAME, VK_NV_DESCRIPTOR_POOL_OVERALLOCATION_SPEC_VERSION},
+    {VK_QCOM_TILE_MEMORY_HEAP_EXTENSION_NAME, VK_QCOM_TILE_MEMORY_HEAP_SPEC_VERSION},
     {VK_NV_RAW_ACCESS_CHAINS_EXTENSION_NAME, VK_NV_RAW_ACCESS_CHAINS_SPEC_VERSION},
     {VK_NV_EXTERNAL_COMPUTE_QUEUE_EXTENSION_NAME, VK_NV_EXTERNAL_COMPUTE_QUEUE_SPEC_VERSION},
     {VK_NV_COMMAND_BUFFER_INHERITANCE_EXTENSION_NAME, VK_NV_COMMAND_BUFFER_INHERITANCE_SPEC_VERSION},
@@ -1995,6 +1996,8 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkComman
 static VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                                                    VkScreenBufferPropertiesQNX* pProperties);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+static VKAPI_ATTR void VKAPI_CALL CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                        const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo);
 static VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device,
                                                                    const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                                    const VkAllocationCallbacks* pAllocator,
@@ -2869,6 +2872,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     {"vkGetScreenBufferPropertiesQNX", (void*)GetScreenBufferPropertiesQNX},
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    {"vkCmdBindTileMemoryQCOM", (void*)CmdBindTileMemoryQCOM},
     {"vkCreateExternalComputeQueueNV", (void*)CreateExternalComputeQueueNV},
     {"vkDestroyExternalComputeQueueNV", (void*)DestroyExternalComputeQueueNV},
     {"vkGetExternalComputeQueueDataNV", (void*)GetExternalComputeQueueDataNV},
@@ -5557,6 +5561,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetScreenBufferPropertiesQNX(VkDevice devi
 }
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+static VKAPI_ATTR void VKAPI_CALL CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                        const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {}
+
 static VKAPI_ATTR VkResult VKAPI_CALL CreateExternalComputeQueueNV(VkDevice device,
                                                                    const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                                    const VkAllocationCallbacks* pAllocator,

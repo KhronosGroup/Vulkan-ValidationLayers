@@ -7649,6 +7649,21 @@ bool Device::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR 
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+bool Device::PreCallValidateCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                  const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdBindTileMemoryQCOM-commandBuffer-parameter"
+    if (pTileMemoryBindInfo) {
+        [[maybe_unused]] const Location pTileMemoryBindInfo_loc = error_obj.location.dot(Field::pTileMemoryBindInfo);
+        skip |= ValidateObject(pTileMemoryBindInfo->memory, kVulkanObjectTypeDeviceMemory, false,
+                               "VUID-VkTileMemoryBindInfoQCOM-memory-parameter",
+                               "UNASSIGNED-VkTileMemoryBindInfoQCOM-memory-parent", pTileMemoryBindInfo_loc.dot(Field::memory));
+    }
+
+    return skip;
+}
+
 bool Device::PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkExternalComputeQueueNV* pExternalQueue,

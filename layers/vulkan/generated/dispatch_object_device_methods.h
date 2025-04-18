@@ -913,6 +913,7 @@ void CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImag
 VkResult GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,
                                       VkScreenBufferPropertiesQNX* pProperties);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void CmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo);
 VkResult CreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue);
 void DestroyExternalComputeQueueNV(VkDevice device, VkExternalComputeQueueNV externalQueue,

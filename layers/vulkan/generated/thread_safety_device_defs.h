@@ -4030,6 +4030,12 @@ void PostCallRecordGetScreenBufferPropertiesQNX(VkDevice device, const struct _s
                                                 VkScreenBufferPropertiesQNX* pProperties, const RecordObject& record_obj) override;
 
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void PreCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                        const RecordObject& record_obj) override;
+
+void PostCallRecordCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer, const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo,
+                                         const RecordObject& record_obj) override;
+
 void PreCallRecordCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkExternalComputeQueueNV* pExternalQueue,
                                                const RecordObject& record_obj) override;

@@ -816,6 +816,7 @@ PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEX
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+PFN_vkCmdBindTileMemoryQCOM CmdBindTileMemoryQCOM;
 PFN_vkCreateExternalComputeQueueNV CreateExternalComputeQueueNV;
 PFN_vkDestroyExternalComputeQueueNV DestroyExternalComputeQueueNV;
 PFN_vkGetExternalComputeQueueDataNV GetExternalComputeQueueDataNV;
@@ -2542,6 +2543,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
         },
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
         {
+            "VK_QCOM_tile_memory_heap", [](VkInstance , VkDevice device) {
+                CmdBindTileMemoryQCOM = reinterpret_cast<PFN_vkCmdBindTileMemoryQCOM>(GetDeviceProcAddr(device, "vkCmdBindTileMemoryQCOM"));
+            }
+        },
+        {
             "VK_NV_external_compute_queue", [](VkInstance , VkDevice device) {
                 CreateExternalComputeQueueNV = reinterpret_cast<PFN_vkCreateExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkCreateExternalComputeQueueNV"));
                 DestroyExternalComputeQueueNV = reinterpret_cast<PFN_vkDestroyExternalComputeQueueNV>(GetDeviceProcAddr(device, "vkDestroyExternalComputeQueueNV"));
@@ -3147,6 +3153,7 @@ void ResetAllExtensions() {
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    CmdBindTileMemoryQCOM = nullptr;
     CreateExternalComputeQueueNV = nullptr;
     DestroyExternalComputeQueueNV = nullptr;
     GetExternalComputeQueueDataNV = nullptr;

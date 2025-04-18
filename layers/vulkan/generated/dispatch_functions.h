@@ -4174,6 +4174,12 @@ static inline VkResult DispatchGetScreenBufferPropertiesQNX(VkDevice device, con
 }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
 
+static inline void DispatchCmdBindTileMemoryQCOM(VkCommandBuffer commandBuffer,
+                                                 const VkTileMemoryBindInfoQCOM* pTileMemoryBindInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdBindTileMemoryQCOM(commandBuffer, pTileMemoryBindInfo);
+}
+
 static inline VkResult DispatchCreateExternalComputeQueueNV(VkDevice device, const VkExternalComputeQueueCreateInfoNV* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkExternalComputeQueueNV* pExternalQueue) {
