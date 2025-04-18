@@ -559,7 +559,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
         }
     }
 
-    if (cb_state.beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+    if (cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
         LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-commandBuffer-11143", commandBuffer,
                  error_obj.location.dot(Field::commandBuffer), "was created with VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT.");
     }

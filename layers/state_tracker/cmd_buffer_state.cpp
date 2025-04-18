@@ -223,9 +223,9 @@ void CommandBuffer::ResetCBState() {
     object_bindings.clear();
     broken_bindings.clear();
 
-    // Reset CB state (note that createInfo is not cleared)
-    memset(&beginInfo, 0, sizeof(VkCommandBufferBeginInfo));
-    memset(&inheritanceInfo, 0, sizeof(VkCommandBufferInheritanceInfo));
+    begin_info_flags = 0;
+    has_inheritance = false;
+
     has_draw_cmd = false;
     has_dispatch_cmd = false;
     has_trace_rays_cmd = false;
@@ -1034,18 +1034,22 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     // Set updated state here in case implicit reset occurs above
     state = CbState::Recording;
     ASSERT_AND_RETURN(pBeginInfo);
-    beginInfo = *pBeginInfo;
-    if (beginInfo.pInheritanceInfo && IsSecondary()) {
-        inheritanceInfo = *(beginInfo.pInheritanceInfo);
-        beginInfo.pInheritanceInfo = &inheritanceInfo;
-        // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
-        if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
-            if (beginInfo.pInheritanceInfo->renderPass) {
-                active_render_pass = dev_data.Get<vvl::RenderPass>(beginInfo.pInheritanceInfo->renderPass);
-                SetActiveSubpass(beginInfo.pInheritanceInfo->subpass);
 
-                if (beginInfo.pInheritanceInfo->framebuffer) {
-                    activeFramebuffer = dev_data.Get<vvl::Framebuffer>(beginInfo.pInheritanceInfo->framebuffer);
+    begin_info_flags = pBeginInfo->flags;
+
+    if (pBeginInfo->pInheritanceInfo && IsSecondary()) {
+        // pInheritanceInfo could be valid, but ignored, if in a primary command buffer
+        has_inheritance = true;
+        inheritance_info.initialize(pBeginInfo->pInheritanceInfo);
+
+        // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
+        if (begin_info_flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+            if (inheritance_info.renderPass) {
+                active_render_pass = dev_data.Get<vvl::RenderPass>(inheritance_info.renderPass);
+                SetActiveSubpass(inheritance_info.subpass);
+
+                if (inheritance_info.framebuffer) {
+                    activeFramebuffer = dev_data.Get<vvl::Framebuffer>(inheritance_info.framebuffer);
                     attachment_source = AttachmentSource::Inheritance;
                     active_subpasses.clear();
                     active_attachments.clear();
@@ -1063,7 +1067,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 }
             } else {
                 auto inheritance_rendering_info =
-                    vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(beginInfo.pInheritanceInfo->pNext);
+                    vku::FindStructInPNextChain<VkCommandBufferInheritanceRenderingInfo>(pBeginInfo->pInheritanceInfo->pNext);
                 if (inheritance_rendering_info) {
                     active_render_pass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
@@ -1071,7 +1075,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
 
             // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
             auto p_inherited_viewport_scissor_info =
-                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(beginInfo.pInheritanceInfo->pNext);
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(pBeginInfo->pInheritanceInfo->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
                 auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
                 inheritedViewportDepths.assign(pViewportDepths,
@@ -1101,11 +1105,11 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
         ASSERT_AND_RETURN(secondary_cb_state);
-        if (!(secondary_cb_state->beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-            if (beginInfo.flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
+        if (!(secondary_cb_state->begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
+            if (begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
                 // TODO: Because this is a state change, clearing the VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT needs to be moved
                 // from the validation step to the recording step
-                beginInfo.flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+                begin_info_flags &= ~VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
             }
         }
 

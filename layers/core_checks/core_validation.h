@@ -406,6 +406,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
                                               const Location& cb_loc) const;
     bool ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer& cb_state, const vvl::CommandBuffer& secondary_cb_state,
+                                            const VkCommandBufferInheritanceInfo& secondary_inheritance_info,
                                             const Location& loc) const;
     bool ValidateImportFence(VkFence fence, const char* vuid, const Location& loc) const;
     bool ValidateAcquireNextImage(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence,
@@ -2019,6 +2020,10 @@ class CoreChecks : public vvl::DeviceProxy {
                                               const Location& loc) const;
     bool ValidateCmdExecuteCommandsRenderPassSecondary(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
                                                        const vvl::CommandBuffer& secondary_cb_state, const Location& cb_loc) const;
+    bool ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
+                                                         const vvl::CommandBuffer& secondary_cb_state,
+                                                         const VkCommandBufferInheritanceInfo& inheritance_info,
+                                                         const Location& cb_loc) const;
     bool ValidateCmdExecuteCommandsDynamicRenderingSecondary(const vvl::CommandBuffer& cb_state,
                                                              const vvl::CommandBuffer& secondary_cb_state,
                                                              const vvl::RenderPass& secondary_rp_state,
