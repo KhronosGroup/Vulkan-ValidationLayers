@@ -24,6 +24,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_checks/cc_synchronization.h"
+#include "core_checks/cc_state_tracker.h"
 #include "core_checks/core_validation.h"
 #include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"
@@ -2102,40 +2103,42 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
                                 VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,
                                 const VkBufferMemoryBarrier *pBufferMemBarriers, uint32_t imageMemBarrierCount,
                                 const VkImageMemoryBarrier *pImageMemBarriers) {
+    auto &cb_sub_state = core::SubState(cb_state);
     for (uint32_t i = 0; i < bufferBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(pBufferMemBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
         EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 
 void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, const VkDependencyInfo &dep_info) {
+    auto &cb_sub_state = core::SubState(cb_state);
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);
         const BufferBarrier barrier(dep_info.pBufferMemoryBarriers[i]);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_state.qfo_transfer_buffer_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, barrier, cb_sub_state.qfo_transfer_buffer_barriers);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; i++) {
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
-        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_state.qfo_transfer_image_barriers);
+        RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
         EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 
 template <typename TransferBarrier>
-bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_state,
+bool CoreChecks::ValidateQueuedQFOTransferBarriers(const core::CommandBufferSubState &cb_sub_state,
                                                    QFOTransferCBScoreboards<TransferBarrier> *scoreboards,
                                                    const GlobalQFOTransferBarrierMap<TransferBarrier> &global_release_barriers,
                                                    const Location &loc) const {
     bool skip = false;
-    const auto &cb_barriers = cb_state.GetQFOBarrierSets(TransferBarrier());
+    const auto &cb_barriers = cb_sub_state.GetQFOBarrierSets(TransferBarrier());
 
     // Each acquire must have a matching release (ERROR)
     for (const auto &acquire : cb_barriers.acquire) {
@@ -2148,7 +2151,7 @@ bool CoreChecks::ValidateQueuedQFOTransferBarriers(const vvl::CommandBuffer &cb_
         if (!matching_release_found) {
             const char *vuid = (loc.function == vvl::Func::vkQueueSubmit) ? "VUID-vkQueueSubmit-pSubmits-02207"
                                                                           : "VUID-vkQueueSubmit2-commandBuffer-03879";
-            skip |= LogError(vuid, cb_state.Handle(), loc,
+            skip |= LogError(vuid, cb_sub_state.Handle(), loc,
                              "contains a %s that acquires ownership of %s for destination queue family %" PRIu32
                              ", but no matching release operation was queued for execution from source queue family %" PRIu32,
                              String(TransferBarrier::BarrierName()), FormatHandle(acquire.handle).c_str(),
@@ -2163,9 +2166,10 @@ bool CoreChecks::ValidateQueuedQFOTransfers(const vvl::CommandBuffer &cb_state,
                                             QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards,
                                             const Location &loc) const {
     bool skip = false;
-    skip |= ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_state, qfo_image_scoreboards,
+    auto &cb_sub_state = core::SubState(cb_state);
+    skip |= ValidateQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_sub_state, qfo_image_scoreboards,
                                                                        qfo_release_image_barrier_map, loc);
-    skip |= ValidateQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_state, qfo_buffer_scoreboards,
+    skip |= ValidateQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_sub_state, qfo_buffer_scoreboards,
                                                                         qfo_release_buffer_barrier_map, loc);
     return skip;
 }
@@ -2202,8 +2206,10 @@ void RecordQueuedQFOTransferBarriers(QFOTransferBarrierSets<TransferBarrier> &cb
 }
 
 void CoreChecks::RecordQueuedQFOTransfers(vvl::CommandBuffer &cb_state) {
-    RecordQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_state.qfo_transfer_image_barriers, qfo_release_image_barrier_map);
-    RecordQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_state.qfo_transfer_buffer_barriers,
+    auto &cb_sub_state = core::SubState(cb_state);
+    RecordQueuedQFOTransferBarriers<QFOImageTransferBarrier>(cb_sub_state.qfo_transfer_image_barriers,
+                                                             qfo_release_image_barrier_map);
+    RecordQueuedQFOTransferBarriers<QFOBufferTransferBarrier>(cb_sub_state.qfo_transfer_buffer_barriers,
                                                               qfo_release_buffer_barrier_map);
 }
 

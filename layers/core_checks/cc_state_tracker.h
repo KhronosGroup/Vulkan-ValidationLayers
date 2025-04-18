@@ -30,11 +30,37 @@ namespace core {
 // CommandBuffer object only for core and keep only the most basic items in the parent class
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    explicit CommandBufferSubState(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) {}
+    explicit CommandBufferSubState(vvl::CommandBuffer &cb);
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
+
+    void Reset(const Location &loc) final;
+    void Destroy() final;
+
+    void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) final;
+
+    uint32_t nesting_level;  // VK_EXT_nested_command_buffer
+
+    QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
+    QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
+    const QFOTransferBarrierSets<QFOImageTransferBarrier> &GetQFOBarrierSets(const QFOImageTransferBarrier &type_tag) const {
+        return qfo_transfer_image_barriers;
+    }
+    const QFOTransferBarrierSets<QFOBufferTransferBarrier> &GetQFOBarrierSets(const QFOBufferTransferBarrier &type_tag) const {
+        return qfo_transfer_buffer_barriers;
+    }
+
+  private:
+    void ResetCBState();
 };
+
+static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
+    return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeCoreValidation));
+}
+static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb) {
+    return *static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeCoreValidation));
+}
 
 // Override Retire to validate submissions in the order defined by synchronization
 class QueueSubState : public vvl::QueueSubState {

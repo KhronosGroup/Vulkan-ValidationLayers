@@ -22,6 +22,7 @@
 #include <sstream>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "core_checks/cc_state_tracker.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
@@ -542,15 +543,17 @@ bool CoreChecks::ValidateSecondaryCommandBufferState(const vvl::CommandBuffer &c
     }
 
     if (cb_state.IsSecondary()) {
+        const auto &secondary_cb_sub_state = core::SubState(secondary_cb_state);
         // spec: "A maxCommandBufferNestingLevel of UINT32_MAX means there is no limit to the nesting level"
         if (enabled_features.nestedCommandBuffer &&
             phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel != UINT32_MAX) {
-            if (secondary_cb_state.nesting_level >= phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
+            if (secondary_cb_sub_state.nesting_level >=
+                phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel) {
                 const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
                 skip |= LogError("VUID-vkCmdExecuteCommands-nestedCommandBuffer-09376", objlist, cb_loc,
                                  "(%s) has a nesting level of %" PRIu32
                                  " which is not less then maxCommandBufferNestingLevel (%" PRIu32 ").",
-                                 FormatHandle(secondary_cb_state.Handle()).c_str(), secondary_cb_state.nesting_level,
+                                 FormatHandle(secondary_cb_state.Handle()).c_str(), secondary_cb_sub_state.nesting_level,
                                  phys_dev_ext_props.nested_command_buffer_props.maxCommandBufferNestingLevel);
             }
         }

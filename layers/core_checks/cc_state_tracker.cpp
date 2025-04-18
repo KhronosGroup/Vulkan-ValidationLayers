@@ -29,8 +29,16 @@ void CoreChecks::Created(vvl::CommandBuffer& cb) {
     cb.SetSubState(container_type, std::make_unique<core::CommandBufferSubState>(cb));
 }
 
-void core::CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
-                                                   VkPipelineStageFlags2KHR srcStageMask) {
+void CoreChecks::Created(vvl::Queue& queue) {
+    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(*this, queue));
+}
+
+namespace core {
+
+CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb) : vvl::CommandBufferSubState(cb) { ResetCBState(); }
+
+void CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
+                                             VkPipelineStageFlags2KHR srcStageMask) {
     // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
     auto first_event_index = base.events.size();
     auto event_added_count = eventCount;
@@ -43,10 +51,28 @@ void core::CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t e
         });
 }
 
-void CoreChecks::Created(vvl::Queue& queue) {
-    queue.SetSubState(container_type, std::make_unique<core::QueueSubState>(*this, queue));
+void CommandBufferSubState::Reset(const Location& loc) { ResetCBState(); }
+
+void CommandBufferSubState::Destroy() { ResetCBState(); }
+
+void CommandBufferSubState::ResetCBState() {
+    // QFO Tranfser
+    qfo_transfer_image_barriers.Reset();
+    qfo_transfer_buffer_barriers.Reset();
+
+    // VK_EXT_nested_command_buffer
+    nesting_level = 0;
 }
 
-core::QueueSubState::QueueSubState(Logger& logger, vvl::Queue& q) : vvl::QueueSubState(q), queue_submission_validator_(logger) {}
+void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) {
+    if (secondary_command_buffer.IsSecondary()) {
+        auto& secondary_sub_state = SubState(secondary_command_buffer);
+        nesting_level = std::max(nesting_level, secondary_sub_state.nesting_level + 1);
+    }
+}
 
-void core::QueueSubState::Retire(vvl::QueueSubmission& submission) { queue_submission_validator_.Validate(submission); }
+QueueSubState::QueueSubState(Logger& logger, vvl::Queue& q) : vvl::QueueSubState(q), queue_submission_validator_(logger) {}
+
+void QueueSubState::Retire(vvl::QueueSubmission& submission) { queue_submission_validator_.Validate(submission); }
+
+}  // namespace core
