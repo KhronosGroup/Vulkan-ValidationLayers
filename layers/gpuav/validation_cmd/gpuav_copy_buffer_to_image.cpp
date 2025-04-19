@@ -225,8 +225,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         DispatchCmdDispatch(cb_state.VkHandle(), group_count_x, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
-                                                              Validator &gpuav, const CommandBufferSubState &,
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, loc, src_buffer = copy_buffer_to_img_info->srcBuffer](
                                                               const uint32_t *error_record, const LogObjectList &objlist,
                                                               const std::vector<std::string> &) {
         bool skip = false;

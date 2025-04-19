@@ -1089,7 +1089,7 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
     updatedQueries.clear();
 
     for (auto &item : sub_states_) {
-        item.second->Begin(beginInfo);
+        item.second->Begin(*pBeginInfo);
     }
 }
 

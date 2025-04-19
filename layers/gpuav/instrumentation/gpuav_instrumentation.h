@@ -40,6 +40,7 @@ namespace gpuav {
 class Validator;
 class CommandBufferSubState;
 class Queue;
+struct DescriptorCommandBinding;
 struct InstrumentationErrorBlob;
 
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkDescriptorSet instrumentation_desc_set,
@@ -58,28 +59,40 @@ struct VertexAttributeFetchLimit {
     uint32_t instance_rate_divisor = std::numeric_limits<uint32_t>::max();
 };
 
+// This is data we capture in our lambda at command buffer recording time.
+// We use this later upon an error to help hold information needed print the message
 struct InstrumentationErrorBlob {
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_vertex_input_rate{};
     std::optional<VertexAttributeFetchLimit> vertex_attribute_fetch_limit_instance_input_rate{};
     std::optional<vvl::IndexBufferBinding> index_buffer_binding;
+
+    // indexing into the VkDebugUtilsLabelEXT
+    uint32_t label_command_i;
+    // used to know which action command this occured at
+    uint32_t operation_index;
+
+    // Used to know if from draw, dispatch, or traceRays
+    VkPipelineBindPoint pipeline_bind_point;
+    // Used pick which VUID to report
+    bool uses_shader_object;
+
+    // index into the last vkCmdBindDescriptors prior to a draw/dispatch
+    uint32_t descriptor_binding_index;
 };
+
 // Return true iff an error has been found
 bool LogInstrumentationError(Validator& gpuav, const CommandBufferSubState& cb_state, const LogObjectList& objlist,
                              const InstrumentationErrorBlob& instrumentation_error_blob,
-                             const std::vector<std::string>& initial_label_stack, uint32_t label_command_i,
-                             uint32_t operation_index, const uint32_t* error_record,
-                             const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets,
-                             VkPipelineBindPoint pipeline_bind_point, bool uses_shader_object, const Location& loc);
+                             const std::vector<std::string>& initial_label_stack, const uint32_t* error_record,
+                             const Location& loc);
 
 // Return true iff an error has been found in error_record, among the list of errors this function manages
-bool LogMessageInstDescriptorIndexingOOB(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
-                                         std::string& out_vuid_msg,
-                                         const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets,
-                                         const Location& loc, bool uses_shader_object);
-bool LogMessageInstDescriptorClass(Validator& gpuav, const uint32_t* error_record, std::string& out_error_msg,
-                                   std::string& out_vuid_msg,
-                                   const std::vector<std::shared_ptr<vvl::DescriptorSet>>& descriptor_sets, const Location& loc,
-                                   bool uses_shader_object);
+bool LogMessageInstDescriptorIndexingOOB(Validator& gpuav, const CommandBufferSubState& cb_state, const uint32_t* error_record,
+                                         std::string& out_error_msg, std::string& out_vuid_msg, const Location& loc,
+                                         const InstrumentationErrorBlob& instrumentation_error_blob);
+bool LogMessageInstDescriptorClass(Validator& gpuav, const CommandBufferSubState& cb_state, const uint32_t* error_record,
+                                   std::string& out_error_msg, std::string& out_vuid_msg, const Location& loc,
+                                   const InstrumentationErrorBlob& instrumentation_error_blob);
 bool LogMessageInstBufferDeviceAddress(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
 bool LogMessageInstRayQuery(const uint32_t* error_record, std::string& out_error_msg, std::string& out_vuid_msg);
 
