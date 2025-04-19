@@ -30,7 +30,7 @@ void BestPractices::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuf
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto* rp_state = cb_state->active_render_pass.get();
-    auto* fb_state = cb_state->activeFramebuffer.get();
+    auto* fb_state = cb_state->active_framebuffer.get();
 
     if (rectCount == 0 || !rp_state) {
         return;

@@ -64,11 +64,11 @@ vvl::PreSubmitResult vvl::Queue::PreSubmit(std::vector<vvl::QueueSubmission> &&s
     for (QueueSubmission &submission : submissions) {
         for (CommandBufferSubmission &cb_submission : submission.cb_submissions) {
             auto cb_guard = cb_submission.cb->WriteLock();
-            for (CommandBuffer *secondary_cmd_buffer : cb_submission.cb->linkedCommandBuffers) {
+            for (CommandBuffer *secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
                 auto secondary_guard = secondary_cmd_buffer->WriteLock();
-                secondary_cmd_buffer->IncrementResources();
+                secondary_cmd_buffer->submit_count++;
             }
-            cb_submission.cb->IncrementResources();
+            cb_submission.cb->submit_count++;
             cb_submission.cb->Submit(*this, submission.perf_submit_pass, submission.loc.Get());
         }
         // seq_ is atomic so we don't need a lock until updating the deque below.
@@ -271,7 +271,7 @@ void vvl::Queue::Retire(QueueSubmission &submission) {
     }
     for (CommandBufferSubmission &cb_submission : submission.cb_submissions) {
         auto cb_guard = cb_submission.cb->WriteLock();
-        for (CommandBuffer *secondary_cmd_buffer : cb_submission.cb->linkedCommandBuffers) {
+        for (CommandBuffer *secondary_cmd_buffer : cb_submission.cb->linked_command_buffers) {
             auto secondary_guard = secondary_cmd_buffer->WriteLock();
             secondary_cmd_buffer->Retire(submission.perf_submit_pass, is_query_updated_after);
         }

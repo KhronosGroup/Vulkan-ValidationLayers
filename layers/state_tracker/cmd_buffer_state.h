@@ -182,9 +182,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     const vvl::CommandPool *command_pool;
     DeviceState &dev_data;
     bool unprotected;  // can't be used for protected memory
-    bool hasRenderPassInstance;
-    bool suspendsRenderPassInstance;
-    bool resumesRenderPassInstance;
+    bool has_render_pass_instance;
+    bool suspends_render_pass_instance;
+    bool resumes_render_pass_instance;
 
     // Track if certain commands have been called at least once in lifetime of the command buffer
     // primary command buffers values are set true if a secondary command buffer has a command
@@ -195,7 +195,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     CbState state;           // Track cmd buffer update state
     uint64_t command_count;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
-    uint64_t submitCount;    // Number of times CB has been submitted
+    uint64_t submit_count;   // Number of times CB has been submitted
     typedef uint64_t ImageLayoutUpdateCount;
     ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
 
@@ -402,37 +402,36 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<CommandBuffer> shared_from_this() { return SharedFromThisImpl(this); }
 
-    // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
-    // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
-    std::vector<VkViewport> inheritedViewportDepths;
+    struct Viewport {
+        uint32_t mask;
+        uint32_t count_mask;
 
-    // For each draw command D recorded to this command buffer, let
-    //  * g_D be the graphics pipeline used
-    //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
-    //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
-    // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
-    uint32_t usedViewportScissorCount;
-    uint32_t pipelineStaticViewportCount;  // v_G for currently-bound graphics pipeline.
-    uint32_t pipelineStaticScissorCount;   // s_G for currently-bound graphics pipeline.
+        // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
+        // Bits unset by calling a corresponding vkCmdSet[State] cmd.
+        uint32_t trashed_mask;
+        bool trashed_count;
 
-    uint32_t viewportMask;
-    uint32_t viewportWithCountMask;
-    uint32_t scissorMask;
-    uint32_t scissorWithCountMask;
+        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT
 
-    // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
-    // Bits unset by calling a corresponding vkCmdSet[State] cmd.
-    uint32_t trashedViewportMask;
-    uint32_t trashedScissorMask;
-    bool trashedViewportCount;
-    bool trashedScissorCount;
+        // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
+        // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
+        std::vector<VkViewport> inherited_depths;
+    } viewport;
 
-    // True if any draw command recorded to this command buffer consumes dynamic viewport/scissor with count state.
-    bool usedDynamicViewportCount;
-    bool usedDynamicScissorCount;
+    struct Scissor {
+        uint32_t mask;
+        uint32_t count_mask;
+
+        uint32_t trashed_mask;
+        bool trashed_count;
+
+        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
+    } scissor;
+
+    uint32_t used_viewport_scissor_count;
 
     // Track if any dynamic state is set that is static in the currently bound pipeline
-    bool dirtyStaticState;
+    bool dirty_static_state;
 
     // Device Mask at start of command buffer
     uint32_t initial_device_mask;
@@ -468,7 +467,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void SetActiveSubpassRasterizationSampleCount(VkSampleCountFlagBits rasterization_sample_count) {
         active_subpass_sample_count_ = rasterization_sample_count;
     }
-    std::shared_ptr<vvl::Framebuffer> activeFramebuffer;
+    std::shared_ptr<vvl::Framebuffer> active_framebuffer;
     // Unified data structs to track objects bound to this command buffer as well as object
     //  dependencies that have been broken : either destroyed objects, or updated descriptor sets
     vvl::unordered_set<std::shared_ptr<StateObject>> object_bindings;
@@ -492,22 +491,22 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
         }
     } rendering_attachments;
 
-    vvl::unordered_set<VkEvent> waitedEvents;
-    std::vector<VkEvent> writeEventsBeforeWait;
+    vvl::unordered_set<VkEvent> waited_events;
+    std::vector<VkEvent> write_events_before_wait;
     std::vector<VkEvent> events;
-    vvl::unordered_set<QueryObject> activeQueries;
-    vvl::unordered_set<QueryObject> startedQueries;
-    vvl::unordered_set<QueryObject> updatedQueries;
-    vvl::unordered_set<QueryObject> renderPassQueries;
+    vvl::unordered_set<QueryObject> active_queries;
+    vvl::unordered_set<QueryObject> started_queries;
+    vvl::unordered_set<QueryObject> updated_queries;
+    vvl::unordered_set<QueryObject> render_pass_queries;
     CommandBufferImageLayoutMap image_layout_map;
     AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
     vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
     vvl::IndexBufferBinding index_buffer_binding;
 
-    VkCommandBuffer primaryCommandBuffer;
+    VkCommandBuffer primary_command_buffer;
     // If primary, the secondary command buffers we will call.
-    vvl::unordered_set<CommandBuffer *> linkedCommandBuffers;
+    vvl::unordered_set<CommandBuffer *> linked_command_buffers;
     // Validation functions run at primary CB queue submit time
     using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const CommandBuffer &cb_state)>;
     std::vector<QueueCallback> queue_submit_functions;
@@ -583,8 +582,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     }
 
     void Reset(const Location &loc);
-
-    void IncrementResources();
 
     void ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state);
 

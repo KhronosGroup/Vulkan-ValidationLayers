@@ -308,7 +308,7 @@ void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::R
 
 void TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
     auto render_pass_state = cb_state.active_render_pass.get();
-    auto framebuffer_state = cb_state.activeFramebuffer.get();
+    auto framebuffer_state = cb_state.active_framebuffer.get();
     if (!render_pass_state || !framebuffer_state) {
         return;
     }

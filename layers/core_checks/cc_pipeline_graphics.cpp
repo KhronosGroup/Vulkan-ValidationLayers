@@ -3202,7 +3202,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
                                                    const Location &loc) const {
     bool skip = false;
 
-    if (!cb_state.inheritedViewportDepths.empty()) {
+    if (!cb_state.viewport.inherited_depths.empty()) {
         bool dyn_viewport =
             pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT);
         bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);
@@ -3352,7 +3352,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 
     if ((pipeline.create_info_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                                          VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) != 0) {
-        for (const auto &query : cb_state.activeQueries) {
+        for (const auto &query : cb_state.active_queries) {
             const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT) {
                 const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), query.pool);
@@ -4191,7 +4191,7 @@ bool CoreChecks::ValidateMultiViewShaders(const vvl::Pipeline &pipeline, const L
 bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
                                                  const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
-    if (!cb_state.activeFramebuffer) return skip;
+    if (!cb_state.active_framebuffer) return skip;
 
     // Verify attachments for unprotected/protected command buffer.
     if (enabled_features.protectedMemory == VK_TRUE) {
@@ -4216,7 +4216,7 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
     for (auto &stage_state : pipeline.stage_states) {
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_layer &&
-            cb_state.activeFramebuffer->create_info.layers == 1) {
+            cb_state.active_framebuffer->create_info.layers == 1) {
             if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled) {
                 // If using MultiView, you should already have hit an error that Framebuffer Layer must be 1, but due to things like
                 // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4194 we should check here and ignore if things are invalid

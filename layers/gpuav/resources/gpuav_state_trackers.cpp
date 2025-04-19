@@ -553,7 +553,7 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
             auto guard = cb_submission.cb->ReadLock();
             auto &gpu_cb = SubState(*cb_submission.cb);
             gpu_cb.PreProcess(loc);
-            for (auto *secondary_cb : gpu_cb.base.linkedCommandBuffers) {
+            for (auto *secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto &secondary_gpu_cb = SubState(*secondary_cb);
                 secondary_gpu_cb.PreProcess(loc);
@@ -595,7 +595,7 @@ void QueueSubState::Retire(vvl::QueueSubmission &submission) {
                 auto &gpu_cb = SubState(*cb_submission.cb);
                 auto loc = submission.loc.Get();
                 gpu_cb.PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);
-                for (vvl::CommandBuffer *secondary_cb : gpu_cb.base.linkedCommandBuffers) {
+                for (vvl::CommandBuffer *secondary_cb : gpu_cb.base.linked_command_buffers) {
                     auto secondary_guard = secondary_cb->WriteLock();
                     auto &secondary_gpu_cb = SubState(*secondary_cb);
                     secondary_gpu_cb.PostProcess(VkHandle(), cb_submission.initial_label_stack, loc);

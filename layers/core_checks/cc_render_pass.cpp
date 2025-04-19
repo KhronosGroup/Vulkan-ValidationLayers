@@ -703,7 +703,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const V
         skip |= LogError(vuid, objlist, error_obj.location, "transform feedback is active.");
     }
 
-    for (const auto &query : cb_state.renderPassQueries) {
+    for (const auto &query : cb_state.render_pass_queries) {
         vuid = use_rp2 ? "VUID-vkCmdEndRenderPass2-None-07005" : "VUID-vkCmdEndRenderPass-None-07004";
         const LogObjectList objlist(commandBuffer, rp_state.Handle(), query.pool);
         skip |= LogError(vuid, objlist, error_obj.location,
@@ -818,7 +818,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
     // dynamic rendering) (Same thing currently with multiView mask)
     if (!rp_state.UsesDynamicRendering()) {
         const VkRenderPassCreateInfo2 *rpci = rp_state.create_info.ptr();
-        const VkImageView *image_views = cb_state.activeFramebuffer.get()->create_info.pAttachments;
+        const VkImageView *image_views = cb_state.active_framebuffer.get()->create_info.pAttachments;
         for (uint32_t i = 0; i < rpci->attachmentCount; ++i) {
             const auto view_state = Get<vvl::ImageView>(image_views[i]);
             ASSERT_AND_CONTINUE(view_state && view_state->image_state);
@@ -4019,7 +4019,7 @@ bool CoreChecks::PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, c
         skip |= LogError("VUID-vkCmdEndRendering-commandBuffer-06162", commandBuffer, error_obj.location,
                          "in a render pass instance that was not begun in this command buffer.");
     }
-    for (const auto &query : cb_state->renderPassQueries) {
+    for (const auto &query : cb_state->render_pass_queries) {
         const LogObjectList objlist(commandBuffer, query.pool);
         skip |= LogError("VUID-vkCmdEndRendering-None-06999", objlist, error_obj.location,
                          "query %" PRIu32 " from %s was began in the render pass, but never ended.", query.slot,
@@ -4998,7 +4998,7 @@ bool CoreChecks::ValidateInheritanceInfoFramebuffer(const vvl::CommandBuffer &cb
                                                     const VkCommandBufferInheritanceInfo &secondary_inheritance_info,
                                                     const Location &loc) const {
     bool skip = false;
-    VkFramebuffer primary_fb = cb_state.activeFramebuffer ? cb_state.activeFramebuffer->VkHandle() : VK_NULL_HANDLE;
+    VkFramebuffer primary_fb = cb_state.active_framebuffer ? cb_state.active_framebuffer->VkHandle() : VK_NULL_HANDLE;
     VkFramebuffer secondary_fb = secondary_inheritance_info.framebuffer;
     if (secondary_fb != VK_NULL_HANDLE && primary_fb != secondary_fb) {
         const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle(), secondary_fb, primary_fb);
