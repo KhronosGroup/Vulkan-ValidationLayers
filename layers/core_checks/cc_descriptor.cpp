@@ -110,6 +110,10 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &la
                       << " from pipeline layout has a descriptorCount of " << layout_binding.descriptorCount << " but binding "
                       << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
                       << ", which is bound, has a descriptorCount of " << bound_binding->descriptorCount;
+            if (bound_binding->descriptorCount == 0 || layout_binding.descriptorCount == 0) {
+                error_str << " (descriptorCount value of zero likely means there is descriptor for binding "
+                          << layout_binding.binding << ")";
+            }
             error_msg = error_str.str();
             return false;
         } else if (layout_binding.descriptorType != bound_binding->descriptorType) {
