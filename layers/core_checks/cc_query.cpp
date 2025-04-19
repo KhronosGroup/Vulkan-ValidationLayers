@@ -597,7 +597,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
     }
 
     // Check for nested queries
-    for (const auto &active_query_obj : cb_state.activeQueries) {
+    for (const auto &active_query_obj : cb_state.active_queries) {
         auto active_query_pool_state = Get<vvl::QueryPool>(active_query_obj.pool);
         if (active_query_pool_state && (active_query_pool_state->create_info.queryType == query_pool_ci.queryType) &&
             (active_query_obj.index == index)) {
@@ -668,7 +668,7 @@ bool CoreChecks::ValidateBeginQuery(const vvl::CommandBuffer &cb_state, const Qu
                              FormatHandle(cb_state.bound_video_session->Handle()).c_str());
         }
 
-        if (!cb_state.activeQueries.empty()) {
+        if (!cb_state.active_queries.empty()) {
             const char *vuid = is_indexed ? "VUID-vkCmdBeginQueryIndexedEXT-None-07127" : "VUID-vkCmdBeginQuery-None-07127";
             const LogObjectList objlist(cb_state.Handle(), cb_state.bound_video_session->Handle());
             skip |= LogError(vuid, objlist, loc,
@@ -904,8 +904,8 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
                                      const Location &loc) const {
     bool skip = false;
     const bool is_indexed = loc.function == Func::vkCmdEndQueryIndexedEXT;
-    auto query_payload = cb_state.activeQueries.find({queryPool, slot});
-    if (query_payload == cb_state.activeQueries.end()) {
+    auto query_payload = cb_state.active_queries.find({queryPool, slot});
+    if (query_payload == cb_state.active_queries.end()) {
         const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-None-02342" : "VUID-vkCmdEndQuery-None-01923";
         const LogObjectList objlist(cb_state.Handle(), queryPool);
         skip |= LogError(vuid, objlist, loc, "Ending a query before it was started: %s, index %d.", FormatHandle(queryPool).c_str(),
@@ -931,7 +931,7 @@ bool CoreChecks::ValidateCmdEndQuery(const vvl::CommandBuffer &cb_state, VkQuery
             is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-commandBuffer-02344" : "VUID-vkCmdEndQuery-commandBuffer-01886";
         skip |= LogError(vuid, cb_state.Handle(), loc, "command can't be used in protected command buffers.");
     }
-    if (rp_state && (query_payload != cb_state.activeQueries.end())) {
+    if (rp_state && (query_payload != cb_state.active_queries.end())) {
         if (!query_payload->inside_render_pass) {
             const char *vuid = is_indexed ? "VUID-vkCmdEndQueryIndexedEXT-None-07007" : "VUID-vkCmdEndQuery-None-07007";
             const LogObjectList objlist(cb_state.Handle(), queryPool, rp_state->Handle());
@@ -1025,7 +1025,7 @@ bool CoreChecks::ValidateQueriesNotActive(const vvl::CommandBuffer &cb_state, Vk
     for (uint32_t i = 0; i < queryCount; i++) {
         const uint32_t slot = firstQuery + i;
         QueryObject query_obj = {queryPool, slot};
-        if (cb_state.activeQueries.count(query_obj)) {
+        if (cb_state.active_queries.count(query_obj)) {
             const LogObjectList objlist(cb_state.Handle(), queryPool);
             skip |= LogError(vuid, objlist, loc,
                              "Query index %" PRIu32 " is still active (firstQuery = %" PRIu32 ", queryCount = %" PRIu32 ").", slot,
@@ -1450,7 +1450,7 @@ bool CoreChecks::PreCallValidateCmdEndQueryIndexedEXT(VkCommandBuffer commandBuf
                              "VkPhysicalDeviceTransformFeedbackPropertiesEXT::maxTransformFeedbackStreams %" PRIu32 ".",
                              index, phys_dev_ext_props.transform_feedback_props.maxTransformFeedbackStreams);
         }
-        for (const auto &query_object : cb_state->startedQueries) {
+        for (const auto &query_object : cb_state->started_queries) {
             if (query_object.pool == queryPool && query_object.slot == slot) {
                 if (query_object.index != index) {
                     const LogObjectList objlist(commandBuffer, queryPool);

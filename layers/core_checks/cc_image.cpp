@@ -1149,7 +1149,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         if (rp_state->UsesDynamicRendering()) {
             layer_count = rp_state->dynamic_rendering_begin_rendering_info.layerCount;
         } else {
-            layer_count = cb_state.activeFramebuffer.get()->create_info.layers;
+            layer_count = cb_state.active_framebuffer.get()->create_info.layers;
         }
         skip |= ValidateClearAttachmentExtent(cb_state, cb_state.render_area, layer_count, rectCount, pRects, error_obj.location);
     }
@@ -1194,7 +1194,7 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
         } else {
             const auto *renderpass_create_info = rp_state->create_info.ptr();
             const auto *subpass_desc = &renderpass_create_info->pSubpasses[cb_state.GetActiveSubpass()];
-            const auto *framebuffer = cb_state.activeFramebuffer.get();
+            const auto *framebuffer = cb_state.active_framebuffer.get();
 
             if (subpass_desc) {
                 if (framebuffer && (clear_desc->colorAttachment != VK_ATTACHMENT_UNUSED) &&

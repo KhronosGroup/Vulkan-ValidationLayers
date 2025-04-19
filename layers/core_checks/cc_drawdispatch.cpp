@@ -147,7 +147,7 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
                          "bound pipeline are %s.",
                          string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
     }
-    for (const auto &query : cb_state.activeQueries) {
+    for (const auto &query : cb_state.active_queries) {
         const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
         if (!query_pool_state) continue;
         if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
@@ -1635,7 +1635,7 @@ bool CoreChecks::ValidateDrawPrimitivesGeneratedQuery(const LastBound &last_boun
     }
 
     bool primitives_generated_query = false;
-    for (const auto &query : cb_state.activeQueries) {
+    for (const auto &query : cb_state.active_queries) {
         auto query_pool_state = Get<vvl::QueryPool>(query.pool);
         if (query_pool_state && query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
             primitives_generated_query = true;

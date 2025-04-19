@@ -1025,8 +1025,8 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
-        if (cb_state.activeFramebuffer) {
-            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.activeFramebuffer, state.active_subpass,
+        if (cb_state.active_framebuffer) {
+            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.active_framebuffer, state.active_subpass,
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
@@ -1089,8 +1089,8 @@ bool CoreChecks::ValidateRenderPassBarriers(const Location &outer_loc, const vvl
                              img_barrier.srcQueueFamilyIndex, img_barrier.dstQueueFamilyIndex);
         }
         // Secondary CBs can have null framebuffer so record will queue up validation in that case 'til FB is known
-        if (cb_state.activeFramebuffer) {
-            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.activeFramebuffer, state.active_subpass,
+        if (cb_state.active_framebuffer) {
+            skip |= ValidateImageBarrierAttachment(barrier_loc, cb_state, *cb_state.active_framebuffer, state.active_subpass,
                                                    sub_desc, state.rp_handle, img_barrier);
         }
     }
@@ -2000,7 +2000,7 @@ void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location 
                                                                  const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-    if (rp_state && (VK_NULL_HANDLE == cb_state.activeFramebuffer) && cb_state.IsSecondary()) {
+    if (rp_state && (VK_NULL_HANDLE == cb_state.active_framebuffer) && cb_state.IsSecondary()) {
         const auto active_subpass = cb_state.GetActiveSubpass();
         if (active_subpass < rp_state->create_info.subpassCount) {
             const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];

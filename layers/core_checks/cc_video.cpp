@@ -4490,7 +4490,7 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (cb_state->activeQueries.size() > 0) {
+    if (cb_state->active_queries.size() > 0) {
         skip |= LogError("VUID-vkCmdBeginVideoCodingKHR-None-07232", commandBuffer, error_obj.location.dot(Field::commandBuffer),
                          "%s has active queries.", FormatHandle(commandBuffer).c_str());
     }
@@ -4844,7 +4844,7 @@ bool CoreChecks::PreCallValidateCmdEndVideoCodingKHR(VkCommandBuffer commandBuff
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
-    if (cb_state->activeQueries.size() > 0) {
+    if (cb_state->active_queries.size() > 0) {
         skip |= LogError("VUID-vkCmdEndVideoCodingKHR-None-07251", commandBuffer, error_obj.location.dot(Field::commandBuffer),
                          "%s has active queries.", FormatHandle(commandBuffer).c_str());
     }
@@ -5209,7 +5209,7 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
     }
 
     uint32_t op_count = vs_state->GetVideoDecodeOperationCount(pDecodeInfo);
-    for (const auto &query : cb_state->activeQueries) {
+    for (const auto &query : cb_state->active_queries) {
         if (query.active_query_index + op_count > query.last_activatable_query_index + 1) {
             auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-opCount-07134", commandBuffer, error_obj.location,
@@ -5703,7 +5703,7 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
 
     uint32_t op_count = vs_state->GetVideoEncodeOperationCount(pEncodeInfo);
 
-    for (const auto &query : cb_state->activeQueries) {
+    for (const auto &query : cb_state->active_queries) {
         if (query.active_query_index + op_count > query.last_activatable_query_index + 1) {
             auto query_pool_state = Get<vvl::QueryPool>(query.pool);
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-opCount-07174", commandBuffer, error_obj.location,

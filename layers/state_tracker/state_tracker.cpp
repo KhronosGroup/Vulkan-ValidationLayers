@@ -2099,8 +2099,6 @@ void DeviceState::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, Vk
     auto pipe_state = Get<Pipeline>(pipeline);
     ASSERT_AND_RETURN(pipe_state);
     if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
-        const auto *viewport_state = pipe_state->ViewportState();
-
         cb_state->dynamic_state_status.pipeline.reset();
 
         // Make a copy and then xor the new change
@@ -2131,29 +2129,22 @@ void DeviceState::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, Vk
             }
         }
 
-        // Used to calculate CommandBuffer::usedViewportScissorCount upon draw command with this graphics pipeline.
-        // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
-        // this time), then these are set to 0 to disable this checking.
-        const auto has_dynamic_viewport_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        const auto has_dynamic_scissor_count = pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-        cb_state->pipelineStaticViewportCount = (has_dynamic_viewport_count || !viewport_state) ? 0 : viewport_state->viewportCount;
-        cb_state->pipelineStaticScissorCount = (has_dynamic_scissor_count || !viewport_state) ? 0 : viewport_state->scissorCount;
-
         // Trash dynamic viewport/scissor state if pipeline defines static state and enabled rasterization.
         // akeley98 NOTE: There's a bit of an ambiguity in the spec, whether binding such a pipeline overwrites
         // the entire viewport (scissor) array, or only the subsection defined by the viewport (scissor) count.
         // I am taking the latter interpretation based on the implementation details of NVIDIA's Vulkan driver.
-        if (!has_dynamic_viewport_count) {
-            cb_state->trashedViewportCount = true;
+        const auto *viewport_state = pipe_state->ViewportState();
+        if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
+            cb_state->viewport.trashed_count = true;
             if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
-                cb_state->trashedViewportMask |= (1u << viewport_state->viewportCount) - 1u;
+                cb_state->viewport.trashed_mask |= (1u << viewport_state->viewportCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
-        if (!has_dynamic_scissor_count) {
-            cb_state->trashedScissorCount = true;
+        if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
+            cb_state->scissor.trashed_count = true;
             if (viewport_state && (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
-                cb_state->trashedScissorMask |= (1u << viewport_state->scissorCount) - 1u;
+                cb_state->scissor.trashed_mask |= (1u << viewport_state->scissorCount) - 1u;
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
@@ -2194,7 +2185,7 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
     }
 
-    cb_state->dirtyStaticState = false;
+    cb_state->dirty_static_state = false;
 }
 
 void DeviceState::PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, uint32_t firstViewport, uint32_t viewportCount,
@@ -2202,8 +2193,8 @@ void DeviceState::PostCallRecordCmdSetViewport(VkCommandBuffer commandBuffer, ui
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VIEWPORT);
     uint32_t bits = ((1u << viewportCount) - 1u) << firstViewport;
-    cb_state->viewportMask |= bits;
-    cb_state->trashedViewportMask &= ~bits;
+    cb_state->viewport.mask |= bits;
+    cb_state->viewport.trashed_mask &= ~bits;
     if (cb_state->dynamic_state_value.viewports.size() < firstViewport + viewportCount) {
         cb_state->dynamic_state_value.viewports.resize(firstViewport + viewportCount);
     }
@@ -2558,8 +2549,8 @@ void DeviceState::PostCallRecordCmdSetScissor(VkCommandBuffer commandBuffer, uin
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_SCISSOR);
     uint32_t bits = ((1u << scissorCount) - 1u) << firstScissor;
-    cb_state->scissorMask |= bits;
-    cb_state->trashedScissorMask &= ~bits;
+    cb_state->scissor.mask |= bits;
+    cb_state->scissor.trashed_mask &= ~bits;
 }
 
 void DeviceState::PostCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4],
@@ -5041,10 +5032,10 @@ void DeviceState::PostCallRecordCmdSetViewportWithCount(VkCommandBuffer commandB
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
     uint32_t bits = (1u << viewportCount) - 1u;
-    cb_state->viewportWithCountMask |= bits;
-    cb_state->trashedViewportMask &= ~bits;
+    cb_state->viewport.count_mask |= bits;
+    cb_state->viewport.trashed_mask &= ~bits;
     cb_state->dynamic_state_value.viewport_count = viewportCount;
-    cb_state->trashedViewportCount = false;
+    cb_state->viewport.trashed_count = false;
 
     cb_state->dynamic_state_value.viewports.resize(viewportCount);
     for (size_t i = 0; i < viewportCount; ++i) {
@@ -5062,10 +5053,10 @@ void DeviceState::PostCallRecordCmdSetScissorWithCount(VkCommandBuffer commandBu
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     uint32_t bits = (1u << scissorCount) - 1u;
-    cb_state->scissorWithCountMask |= bits;
-    cb_state->trashedScissorMask &= ~bits;
+    cb_state->scissor.count_mask |= bits;
+    cb_state->scissor.trashed_mask &= ~bits;
     cb_state->dynamic_state_value.scissor_count = scissorCount;
-    cb_state->trashedScissorCount = false;
+    cb_state->scissor.trashed_count = false;
 }
 
 void DeviceState::PostCallRecordCmdBindVertexBuffers2EXT(VkCommandBuffer commandBuffer, uint32_t firstBinding,

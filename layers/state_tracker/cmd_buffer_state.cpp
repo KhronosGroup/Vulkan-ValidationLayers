@@ -230,12 +230,12 @@ void CommandBuffer::ResetCBState() {
     has_dispatch_cmd = false;
     has_trace_rays_cmd = false;
     has_build_as_cmd = false;
-    hasRenderPassInstance = false;
-    suspendsRenderPassInstance = false;
-    resumesRenderPassInstance = false;
+    has_render_pass_instance = false;
+    suspends_render_pass_instance = false;
+    resumes_render_pass_instance = false;
     state = CbState::New;
     command_count = 0;
-    submitCount = 0;
+    submit_count = 0;
     image_layout_change_count = 1;  // Start at 1. 0 is insert value for validation cache versions, s.t. new == dirty
 
     dynamic_state_status.cb.reset();
@@ -246,21 +246,22 @@ void CommandBuffer::ResetCBState() {
     dynamic_state_value.reset(all.set());
     memset(&invalidated_state_pipe, 0, sizeof(VkPipeline) * CB_DYNAMIC_STATE_STATUS_NUM);
 
-    inheritedViewportDepths.clear();
-    usedViewportScissorCount = 0;
-    pipelineStaticViewportCount = 0;
-    pipelineStaticScissorCount = 0;
-    viewportMask = 0;
-    viewportWithCountMask = 0;
-    scissorMask = 0;
-    scissorWithCountMask = 0;
-    trashedViewportMask = 0;
-    trashedScissorMask = 0;
-    trashedViewportCount = false;
-    trashedScissorCount = false;
-    usedDynamicViewportCount = false;
-    usedDynamicScissorCount = false;
-    dirtyStaticState = false;
+    used_viewport_scissor_count = 0;
+
+    viewport.mask = 0;
+    viewport.count_mask = 0;
+    viewport.trashed_mask = 0;
+    viewport.trashed_count = false;
+    viewport.used_dynamic_count = false;
+    viewport.inherited_depths.clear();
+
+    scissor.mask = 0;
+    scissor.count_mask = 0;
+    scissor.trashed_mask = 0;
+    scissor.trashed_count = false;
+    scissor.used_dynamic_count = false;
+
+    dirty_static_state = false;
 
     active_render_pass = nullptr;
     sample_locations_begin_info = nullptr;
@@ -273,17 +274,17 @@ void CommandBuffer::ResetCBState() {
     active_subpass_contents = VK_SUBPASS_CONTENTS_INLINE;
     SetActiveSubpass(0);
     rendering_attachments.Reset();
-    waitedEvents.clear();
+    waited_events.clear();
     events.clear();
-    writeEventsBeforeWait.clear();
-    activeQueries.clear();
-    startedQueries.clear();
-    renderPassQueries.clear();
+    write_events_before_wait.clear();
+    active_queries.clear();
+    started_queries.clear();
+    render_pass_queries.clear();
     image_layout_map.clear();
     aliased_image_layout_map.clear();
     current_vertex_buffer_binding_info.clear();
-    primaryCommandBuffer = VK_NULL_HANDLE;
-    linkedCommandBuffers.clear();
+    primary_command_buffer = VK_NULL_HANDLE;
+    linked_command_buffers.clear();
     queue_submit_functions.clear();
     queue_submit_functions_after_render_pass.clear();
     cmd_execute_commands_functions.clear();
@@ -293,7 +294,7 @@ void CommandBuffer::ResetCBState() {
     for (auto &item : lastBound) {
         item.Reset();
     }
-    activeFramebuffer = VK_NULL_HANDLE;
+    active_framebuffer = VK_NULL_HANDLE;
     index_buffer_binding.reset();
 
     // Clean up video specific states
@@ -330,11 +331,6 @@ void CommandBuffer::Reset(const Location &loc) {
     for (auto &item : sub_states_) {
         item.second->Reset(loc);
     }
-}
-
-// Track which resources are in-flight by atomically incrementing their "in_use" count
-void CommandBuffer::IncrementResources() {
-    submitCount++;
 }
 
 // Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
@@ -390,7 +386,7 @@ void CommandBuffer::NotifyInvalidate(const StateObject::NodeList &invalid_nodes,
             switch (obj->Type()) {
                 case kVulkanObjectTypeCommandBuffer:
                     if (unlink) {
-                        linkedCommandBuffers.erase(static_cast<CommandBuffer *>(obj.get()));
+                        linked_command_buffers.erase(static_cast<CommandBuffer *>(obj.get()));
                     }
                     break;
                 case kVulkanObjectTypeImage:
@@ -475,28 +471,28 @@ static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap 
 }
 
 void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
-    activeQueries.insert(query_obj);
-    startedQueries.insert(query_obj);
+    active_queries.insert(query_obj);
+    started_queries.insert(query_obj);
     query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                            uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
         return false;
     });
-    updatedQueries.insert(query_obj);
+    updated_queries.insert(query_obj);
     if (query_obj.inside_render_pass) {
-        renderPassQueries.insert(query_obj);
+        render_pass_queries.insert(query_obj);
     }
 }
 
 void CommandBuffer::EndQuery(const QueryObject &query_obj) {
-    activeQueries.erase(query_obj);
+    active_queries.erase(query_obj);
     query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
                                            uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
         return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
     });
-    updatedQueries.insert(query_obj);
+    updated_queries.insert(query_obj);
     if (query_obj.inside_render_pass) {
-        renderPassQueries.erase(query_obj);
+        render_pass_queries.erase(query_obj);
     }
 }
 
@@ -504,12 +500,12 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     // Clear out the perf_pass from the caller because it isn't known when the command buffer is recorded.
     auto key = query_obj;
     key.perf_pass = 0;
-    for (auto *sub_cb : linkedCommandBuffers) {
-        if (sub_cb->updatedQueries.find(key) != sub_cb->updatedQueries.end()) {
+    for (auto *sub_cb : linked_command_buffers) {
+        if (sub_cb->updated_queries.find(key) != sub_cb->updated_queries.end()) {
             return true;
         }
     }
-    return updatedQueries.find(key) != updatedQueries.end();
+    return updated_queries.find(key) != updated_queries.end();
 }
 
 static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
@@ -524,8 +520,8 @@ static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint3
 void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
-        activeQueries.erase(query_obj);
-        updatedQueries.insert(query_obj);
+        active_queries.erase(query_obj);
+        updated_queries.insert(query_obj);
     }
     query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
                                                                    VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
@@ -537,7 +533,7 @@ void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint3
 void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
-        updatedQueries.insert(query_obj);
+        updated_queries.insert(query_obj);
     }
 
     query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
@@ -624,7 +620,7 @@ void CommandBuffer::UpdateSubpassAttachments() {
 
 // For non Dynamic Renderpass we update the attachments
 void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPassBegin) {
-    const bool imageless = (activeFramebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
+    const bool imageless = (active_framebuffer->create_info.flags & VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT) != 0;
     const VkRenderPassAttachmentBeginInfo *attachment_info_struct = nullptr;
     if (pRenderPassBegin) attachment_info_struct = vku::FindStructInPNextChain<VkRenderPassAttachmentBeginInfo>(pRenderPassBegin->pNext);
 
@@ -634,7 +630,7 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
                 active_attachments[i].image_view = dev_data.Get<vvl::ImageView>(attachment_info_struct->pAttachments[i]).get();
             }
         } else {
-            active_attachments[i].image_view = activeFramebuffer->attachments_view_state[i].get();
+            active_attachments[i].image_view = active_framebuffer->attachments_view_state[i].get();
         }
     }
 
@@ -644,12 +640,12 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
 
 void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
     RecordCmd(command);
-    activeFramebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
+    active_framebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
     active_render_pass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
     render_area = pRenderPassBegin->renderArea;
     SetActiveSubpass(0);
     active_subpass_contents = contents;
-    renderPassQueries.clear();
+    render_pass_queries.clear();
 
     // Connect this RP to cmdBuffer
     if (!dev_data.disabled[command_buffer_state]) {
@@ -676,13 +672,13 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     active_subpasses.clear();
     active_attachments.clear();
 
-    if (activeFramebuffer) {
-        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
-        active_attachments.resize(activeFramebuffer->create_info.attachmentCount);
+    if (active_framebuffer) {
+        active_subpasses.resize(active_framebuffer->create_info.attachmentCount);
+        active_attachments.resize(active_framebuffer->create_info.attachmentCount);
         UpdateAttachmentsView(pRenderPassBegin);
 
         // Connect this framebuffer and its children to this cmdBuffer
-        AddChild(activeFramebuffer);
+        AddChild(active_framebuffer);
     }
 }
 
@@ -692,9 +688,9 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     active_subpass_contents = contents;
     ASSERT_AND_RETURN(active_render_pass);
 
-    if (activeFramebuffer) {
+    if (active_framebuffer) {
         active_subpasses.clear();
-        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
+        active_subpasses.resize(active_framebuffer->create_info.attachmentCount);
 
         if (GetActiveSubpass() < active_render_pass->create_info.subpassCount) {
             UpdateSubpassAttachments();
@@ -715,7 +711,7 @@ void CommandBuffer::EndRenderPass(Func command) {
     active_subpasses.clear();
     active_color_attachments_index.clear();
     SetActiveSubpass(0);
-    activeFramebuffer = VK_NULL_HANDLE;
+    active_framebuffer = VK_NULL_HANDLE;
     sample_locations_begin_info = nullptr;
 }
 
@@ -723,7 +719,7 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     RecordCmd(command);
     active_render_pass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
     render_area = pRenderingInfo->renderArea;
-    renderPassQueries.clear();
+    render_pass_queries.clear();
 
     rendering_attachments.Reset();
     rendering_attachments.color_locations.resize(pRenderingInfo->colorAttachmentCount);
@@ -743,11 +739,11 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
                                    : VK_SUBPASS_CONTENTS_INLINE);
 
     // Handle flags for dynamic rendering
-    if (!hasRenderPassInstance && pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {
-        resumesRenderPassInstance = true;
+    if (!has_render_pass_instance && pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {
+        resumes_render_pass_instance = true;
     }
-    suspendsRenderPassInstance = (pRenderingInfo->flags & VK_RENDERING_SUSPENDING_BIT) > 0;
-    hasRenderPassInstance = true;
+    suspends_render_pass_instance = (pRenderingInfo->flags & VK_RENDERING_SUSPENDING_BIT) > 0;
+    has_render_pass_instance = true;
 
     attachment_source = AttachmentSource::DynamicRendering;
     active_attachments.clear();
@@ -936,7 +932,7 @@ void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQuer
         return false;
     });
     for (uint32_t i = 0; i < query_info.queryCount; i++) {
-        updatedQueries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
+        updated_queries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
     }
 }
 
@@ -965,7 +961,7 @@ void CommandBuffer::DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo) {
         }
 
         // Update active query indices
-        for (auto &query : activeQueries) {
+        for (auto &query : active_queries) {
             uint32_t op_count = bound_video_session->GetVideoDecodeOperationCount(pDecodeInfo);
             query.active_query_index += op_count;
         }
@@ -1005,7 +1001,7 @@ void vvl::CommandBuffer::EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo) {
         }
 
         // Update active query indices
-        for (auto &query : activeQueries) {
+        for (auto &query : active_queries) {
             uint32_t op_count = bound_video_session->GetVideoEncodeOperationCount(pEncodeInfo);
             query.active_query_index += op_count;
         }
@@ -1044,19 +1040,19 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 SetActiveSubpass(inheritance_info.subpass);
 
                 if (inheritance_info.framebuffer) {
-                    activeFramebuffer = dev_data.Get<vvl::Framebuffer>(inheritance_info.framebuffer);
+                    active_framebuffer = dev_data.Get<vvl::Framebuffer>(inheritance_info.framebuffer);
                     attachment_source = AttachmentSource::Inheritance;
                     active_subpasses.clear();
                     active_attachments.clear();
 
-                    if (activeFramebuffer) {
-                        active_subpasses.resize(activeFramebuffer->create_info.attachmentCount);
-                        active_attachments.resize(activeFramebuffer->create_info.attachmentCount);
+                    if (active_framebuffer) {
+                        active_subpasses.resize(active_framebuffer->create_info.attachmentCount);
+                        active_attachments.resize(active_framebuffer->create_info.attachmentCount);
                         UpdateAttachmentsView(nullptr);
 
                         // Connect this framebuffer and its children to this cmdBuffer
                         if (!dev_data.disabled[command_buffer_state]) {
-                            AddChild(activeFramebuffer);
+                            AddChild(active_framebuffer);
                         }
                     }
                 }
@@ -1073,8 +1069,8 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                 vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(pBeginInfo->pInheritanceInfo->pNext);
             if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
                 auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
-                inheritedViewportDepths.assign(pViewportDepths,
-                                               pViewportDepths + p_inherited_viewport_scissor_info->viewportDepthCount);
+                viewport.inherited_depths.assign(pViewportDepths,
+                                                 pViewportDepths + p_inherited_viewport_scissor_info->viewportDepthCount);
             }
         }
     }
@@ -1086,10 +1082,10 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
         initial_device_mask = (1 << dev_data.physical_device_count) - 1;
     }
     performance_lock_acquired = dev_data.performance_lock_acquired;
-    updatedQueries.clear();
+    updated_queries.clear();
 
     for (auto &item : sub_states_) {
-        item.second->Begin(beginInfo);
+        item.second->Begin(*pBeginInfo);
     }
 }
 
@@ -1128,8 +1124,8 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             }
         }
 
-        secondary_cb_state->primaryCommandBuffer = VkHandle();
-        linkedCommandBuffers.insert(secondary_cb_state.get());
+        secondary_cb_state->primary_command_buffer = VkHandle();
+        linked_command_buffers.insert(secondary_cb_state.get());
         AddChild(secondary_cb_state);
         // Add a query update that runs all the query updates that happen in the sub command buffer.
         // This avoids locking ambiguity because primary command buffers are locked when these
@@ -1156,10 +1152,10 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
 
         // State is trashed after executing secondary command buffers.
         // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-        trashedViewportMask = vvl::MaxTypeValue(trashedViewportMask);
-        trashedScissorMask = vvl::MaxTypeValue(trashedScissorMask);
-        trashedViewportCount = true;
-        trashedScissorCount = true;
+        viewport.trashed_mask = vvl::MaxTypeValue(viewport.trashed_mask);
+        viewport.trashed_count = true;
+        scissor.trashed_mask = vvl::MaxTypeValue(scissor.trashed_mask);
+        scissor.trashed_count = true;
 
         // Pass along if any commands are used in the secondary command buffer
         has_draw_cmd |= secondary_cb_state->has_draw_cmd;
@@ -1168,12 +1164,12 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         has_build_as_cmd |= secondary_cb_state->has_build_as_cmd;
 
         // Handle secondary command buffer updates for dynamic rendering
-        if (!hasRenderPassInstance) {
-            resumesRenderPassInstance = secondary_cb_state->resumesRenderPassInstance;
+        if (!has_render_pass_instance) {
+            resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
         }
         if (!secondary_cb_state->active_render_pass) {
-            suspendsRenderPassInstance = secondary_cb_state->suspendsRenderPassInstance;
-            hasRenderPassInstance |= secondary_cb_state->hasRenderPassInstance;
+            suspends_render_pass_instance = secondary_cb_state->suspends_render_pass_instance;
+            has_render_pass_instance |= secondary_cb_state->has_render_pass_instance;
         }
 
         label_stack_depth_ += secondary_cb_state->label_stack_depth_;
@@ -1244,9 +1240,23 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
 
     // Update the consumed viewport/scissor count.
     {
-        usedViewportScissorCount = std::max({usedViewportScissorCount, pipelineStaticViewportCount, pipelineStaticScissorCount});
-        usedDynamicViewportCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        usedDynamicScissorCount |= pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        const auto *viewport_state = pipe->ViewportState();
+        // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
+        // this time), then these are set to 0 to disable this checking.
+        const auto has_dynamic_viewport_count = pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        const auto has_dynamic_scissor_count = pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        const uint32_t pipeline_viewport_count =
+            (has_dynamic_viewport_count || !viewport_state) ? 0 : viewport_state->viewportCount;
+        const uint32_t pipeline_scissor_count = (has_dynamic_scissor_count || !viewport_state) ? 0 : viewport_state->scissorCount;
+
+        // For each draw command D recorded to this command buffer, let
+        //  * g_D be the graphics pipeline used
+        //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
+        //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
+        // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
+        used_viewport_scissor_count = std::max({used_viewport_scissor_count, pipeline_viewport_count, pipeline_scissor_count});
+        viewport.used_dynamic_count |= pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        scissor.used_dynamic_count |= pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
     }
 
     if (pipe->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
@@ -1531,7 +1541,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
 
     vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline && !pipeline->IsDynamic(state)) {
-        dirtyStaticState = true;
+        dirty_static_state = true;
     }
 }
 
@@ -1560,8 +1570,8 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
         }
     }
     events.push_back(event);
-    if (!waitedEvents.count(event)) {
-        writeEventsBeforeWait.push_back(event);
+    if (!waited_events.count(event)) {
+        write_events_before_wait.push_back(event);
     }
     event_updates.emplace_back(
         [event, stageMask](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
@@ -1579,8 +1589,8 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
         }
     }
     events.push_back(event);
-    if (!waitedEvents.count(event)) {
-        writeEventsBeforeWait.push_back(event);
+    if (!waited_events.count(event)) {
+        write_events_before_wait.push_back(event);
     }
 
     event_updates.emplace_back(
@@ -1603,7 +1613,7 @@ void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const Vk
                 AddChild(event_state);
             }
         }
-        waitedEvents.insert(pEvents[i]);
+        waited_events.insert(pEvents[i]);
         events.push_back(pEvents[i]);
     }
 }
