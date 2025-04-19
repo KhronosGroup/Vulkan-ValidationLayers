@@ -104,9 +104,8 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         DispatchCmdDispatch(cb_state.VkHandle(), 1, 1, 1);
     }
 
-    CommandBufferSubState::ErrorLoggerFunc error_logger = [loc](Validator &gpuav, const CommandBufferSubState &,
-                                                                const uint32_t *error_record, const LogObjectList &objlist,
-                                                                const std::vector<std::string> &) {
+    CommandBufferSubState::ErrorLoggerFunc error_logger = [&gpuav, loc](const uint32_t *error_record, const LogObjectList &objlist,
+                                                                        const std::vector<std::string> &) {
         bool skip = false;
         using namespace glsl;
 
