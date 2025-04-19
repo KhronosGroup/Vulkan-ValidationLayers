@@ -420,7 +420,7 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                skip |= error_logger(state_, *this, error_record_ptr, objlist, initial_label_stack);
+                skip |= error_logger(error_record_ptr, objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;

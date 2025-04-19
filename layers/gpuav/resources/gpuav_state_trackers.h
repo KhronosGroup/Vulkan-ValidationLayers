@@ -123,8 +123,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
-        stdext::inplace_function<bool(Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
-                                      const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack),
+        stdext::inplace_function<bool(const uint32_t *error_record, const LogObjectList &objlist,
+                                      const std::vector<std::string> &initial_label_stack),
                                  280 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
     vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;

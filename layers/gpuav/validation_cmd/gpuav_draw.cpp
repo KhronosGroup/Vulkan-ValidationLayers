@@ -239,9 +239,9 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [loc, vuid, api_struct_name, label_command_i](
-                                       Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
-                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, vuid, api_struct_name, label_command_i](
+                                       const uint32_t *error_record, const LogObjectList &objlist,
+                                       const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
@@ -397,10 +397,10 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [loc, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size, api_offset,
-                                    api_struct_size_byte, api_stride, api_struct_name, vuid, label_command_i](
-                                       Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
-                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, api_buffer, draw_buffer_size = draw_buffer_state->create_info.size,
+                                    api_offset, api_struct_size_byte, api_stride, api_struct_name, vuid,
+                                    label_command_i](const uint32_t *error_record, const LogObjectList &objlist,
+                                                     const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
@@ -609,9 +609,9 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
     // ---
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [loc, is_task_shader, label_command_i](
-                                       Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
-                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, is_task_shader, label_command_i](
+                                       const uint32_t *error_record, const LogObjectList &objlist,
+                                       const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
@@ -976,10 +976,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
 
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
-    ErrorLoggerFunc error_logger = [loc, vuid, api_buffer, api_offset, api_stride,
-                                    index_buffer_binding = cb_state.base.index_buffer_binding, label_command_i](
-                                       Validator &gpuav, const CommandBufferSubState &cb_state, const uint32_t *error_record,
-                                       const LogObjectList &objlist, const std::vector<std::string> &initial_label_stack) {
+    ErrorLoggerFunc error_logger = [&gpuav, &cb_state, loc, vuid, api_buffer, api_offset, api_stride,
+                                    index_buffer_binding = cb_state.base.index_buffer_binding,
+                                    label_command_i](const uint32_t *error_record, const LogObjectList &objlist,
+                                                     const std::vector<std::string> &initial_label_stack) {
         bool skip = false;
         using namespace glsl;
 
