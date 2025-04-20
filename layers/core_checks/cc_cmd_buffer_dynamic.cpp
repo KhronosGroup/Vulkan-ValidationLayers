@@ -1200,8 +1200,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
         if (((bound_stages & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) == 0) &&
             topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
             if (!vert_entrypoint->written_builtin_point_size && !enabled_features.maintenance5) {
-                // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
-                skip |= LogError("UNASSIGNED-Draw-topology-pointsize", cb_state.Handle(), vuid.loc(),
+                skip |= LogError(vuid.primitive_topology_point_size_10748, cb_state.Handle(), vuid.loc(),
                                  "The bound vertex shader (%s) has a PointSize that is not written to, but the bound topology "
                                  "is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.",
                                  FormatHandle(vert_spirv_state->handle()).c_str());
@@ -1216,8 +1215,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                 "Tessellation shaders were bound, but the last call to vkCmdSetPrimitiveTopology set primitiveTopology to %s.",
                 string_VkPrimitiveTopology(topology));
         } else if (!tess_shader_bound && patch_topology) {
-            // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7281
-            skip |= LogError("UNASSIGNED-Draw-topology-patch", cb_state.Handle(), vuid.loc(),
+            skip |= LogError(vuid.primitive_topology_patch_list_10747, cb_state.Handle(), vuid.loc(),
                              "Tessellation shaders were not bound, but the last call to vkCmdSetPrimitiveTopology set "
                              "primitiveTopology to VK_PRIMITIVE_TOPOLOGY_PATCH_LIST.");
         }

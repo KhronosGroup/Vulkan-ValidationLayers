@@ -343,7 +343,7 @@ TEST_F(NegativePipelineTopology, PointSizeDynamicAndUnrestricted) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-topology-pointsize");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveTopology-10748");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
@@ -413,7 +413,7 @@ TEST_F(NegativePipelineTopology, PatchListTopologyNoShader) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-topology-patch");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveTopology-10747");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();

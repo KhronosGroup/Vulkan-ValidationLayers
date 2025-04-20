@@ -25,6 +25,8 @@
 #include "generated/spirv_grammar_helper.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "containers/limits.h"
+#include "utils/shader_utils.h"
+#include "utils/vk_layer_utils.h"
 
 // In order of how stages are linked together
 static const std::array graphics_stages = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
@@ -565,16 +567,18 @@ bool CoreChecks::ValidateDrawShaderObjectNextStage(const LastBound& last_bound_s
                              : vvl::span<const VkShaderStageFlagBits>(mesh_stages);
     VkShaderStageFlagBits previous_stage = VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
     for (const auto stage : stages) {
-        const auto shader_object_stage = VkShaderStageToShaderObjectStage(stage);
-        if (!last_bound_state.IsValidShaderBound(shader_object_stage)) continue;
+        const ShaderObjectStage shader_object_stage = VkShaderStageToShaderObjectStage(stage);
+        if (!last_bound_state.IsValidShaderBound(shader_object_stage)) {
+            continue;
+        }
         if (previous_stage != VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM) {
             const auto previous_state = last_bound_state.GetShaderStateIfValid(VkShaderStageToShaderObjectStage(previous_stage));
             ASSERT_AND_CONTINUE(previous_state);
             if ((previous_state->create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) == 0 &&
                 (previous_state->create_info.nextStage & stage) == 0) {
                 const auto state = last_bound_state.GetShaderStateIfValid(shader_object_stage);
-                // VU being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7280
-                skip |= LogError("UNASSIGNED-draw-missing-next-shader", last_bound_state.cb_state.Handle(), vuid.loc(),
+                const LogObjectList objlist(last_bound_state.cb_state.Handle(), previous_state->Handle(), state->Handle());
+                skip |= LogError(vuid.next_stage_10745, objlist, vuid.loc(),
                                  "The combination of graphic shader objects bound is invalid, because "
                                  "shader stages %s (%s) and %s (%s) are bound with no other stages between them.\nThe %s shader "
                                  "was created with nextStage of %s but needs to be %s.",
@@ -583,12 +587,11 @@ bool CoreChecks::ValidateDrawShaderObjectNextStage(const LastBound& last_bound_s
                                  string_VkShaderStageFlagBits(previous_stage),
                                  string_VkShaderStageFlags(previous_state->create_info.nextStage).c_str(),
                                  string_VkShaderStageFlagBits(stage));
-                break;
+                return skip;  // only report on a single error
             }
         }
         previous_stage = stage;
     }
-
     return skip;
 }
 

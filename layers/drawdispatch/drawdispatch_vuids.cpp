@@ -42,6 +42,8 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDraw-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDraw-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDraw-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDraw-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDraw-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDraw-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDraw-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDraw-None-07888";
@@ -216,6 +218,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDraw-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDraw-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDraw-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDraw-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDraw-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDraw-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDraw-None-08686";
@@ -308,6 +311,8 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawMultiEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawMultiEXT-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawMultiEXT-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawMultiEXT-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawMultiEXT-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawMultiEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawMultiEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiEXT-None-07888";
@@ -482,6 +487,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMultiEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMultiEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMultiEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMultiEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMultiEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMultiEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMultiEXT-None-08686";
@@ -575,6 +581,8 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexed-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexed-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexed-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndexed-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndexed-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexed-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexed-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexed-None-07888";
@@ -749,6 +757,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexed-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexed-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexed-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndexed-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexed-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexed-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexed-None-08686";
@@ -842,6 +851,8 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawMultiIndexedEXT-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawMultiIndexedEXT-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawMultiIndexedEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawMultiIndexedEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawMultiIndexedEXT-None-07888";
@@ -1016,6 +1027,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMultiIndexedEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMultiIndexedEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMultiIndexedEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMultiIndexedEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMultiIndexedEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMultiIndexedEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMultiIndexedEXT-None-08686";
@@ -1111,6 +1123,8 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirect-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirect-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirect-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndirect-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndirect-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirect-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirect-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirect-None-07888";
@@ -1283,6 +1297,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirect-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirect-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirect-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndirect-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirect-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirect-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirect-None-08686";
@@ -1377,6 +1392,8 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexedIndirect-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexedIndirect-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndexedIndirect-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexedIndirect-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexedIndirect-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirect-None-07888";
@@ -1549,6 +1566,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexedIndirect-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexedIndirect-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexedIndirect-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndexedIndirect-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexedIndirect-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexedIndirect-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexedIndirect-None-08686";
@@ -1638,6 +1656,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatch-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatch-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDispatch-commandBuffer-02712";
+        compute_not_bound_10743                  = "VUID-vkCmdDispatch-None-10743";
         ray_query_04617                          = "VUID-vkCmdDispatch-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatch-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatch-filterCubic-02694";
@@ -1686,6 +1705,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         sampler_bias_offset_08611                = "VUID-vkCmdDispatchIndirect-None-08611";
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatchIndirect-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchIndirect-commandBuffer-02707";
+        compute_not_bound_10743                  = "VUID-vkCmdDispatchIndirect-None-10743";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatchIndirect-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatchIndirect-filterCubic-02694";
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatchIndirect-filterCubicMinmax-02695";
@@ -1738,6 +1758,8 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirectCount-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirectCount-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirectCount-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndirectCount-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndirectCount-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirectCount-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirectCount-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectCount-None-07888";
@@ -1910,6 +1932,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirectCount-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirectCount-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirectCount-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndirectCount-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirectCount-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirectCount-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirectCount-None-08686";
@@ -2007,6 +2030,8 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndexedIndirectCount-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndexedIndirectCount-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndexedIndirectCount-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndexedIndirectCount-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndexedIndirectCount-None-07888";
@@ -2179,6 +2204,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndexedIndirectCount-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndexedIndirectCount-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndexedIndirectCount-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndexedIndirectCount-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndexedIndirectCount-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndexedIndirectCount-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndexedIndirectCount-None-08686";
@@ -2617,6 +2643,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksNV-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksNV-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksNV-None-08686";
@@ -2870,6 +2897,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksIndirectNV-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectNV-None-08686";
@@ -3126,6 +3154,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-None-08686";
@@ -3376,6 +3405,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksEXT-None-08686";
@@ -3629,6 +3659,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksIndirectEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectEXT-None-08686";
@@ -3885,6 +3916,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-None-08686";
@@ -3978,6 +4010,8 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         viewport_scissor_count_03419             = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-03419";
         primitive_topology_class_07500           = "VUID-vkCmdDrawIndirectByteCountEXT-dynamicPrimitiveTopologyUnrestricted-07500";
         primitive_topology_patch_list_10286      = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-10286";
+        primitive_topology_patch_list_10747      = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-10747";
+        primitive_topology_point_size_10748      = "VUID-vkCmdDrawIndirectByteCountEXT-primitiveTopology-10748";
         corner_sampled_address_mode_02696        = "VUID-vkCmdDrawIndirectByteCountEXT-flags-02696";
         imageview_atomic_02691                   = "VUID-vkCmdDrawIndirectByteCountEXT-None-02691";
         bufferview_atomic_07888                  = "VUID-vkCmdDrawIndirectByteCountEXT-None-07888";
@@ -4150,6 +4184,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_line_stipple_enable_08669            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08669";
         set_line_stipple_enable_08670            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08670";
         set_line_stipple_enable_08671            = "VUID-vkCmdDrawIndirectByteCountEXT-None-08671";
+        next_stage_10745                         = "VUID-vkCmdDrawIndirectByteCountEXT-nextStage-10745";
         vertex_shader_08684                      = "VUID-vkCmdDrawIndirectByteCountEXT-None-08684";
         tessellation_control_shader_08685        = "VUID-vkCmdDrawIndirectByteCountEXT-None-08685";
         tessellation_evaluation_shader_08686     = "VUID-vkCmdDrawIndirectByteCountEXT-None-08686";
@@ -4238,6 +4273,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         sampler_bias_offset_08611                = "VUID-vkCmdDispatchBase-None-08611";
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatchBase-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
+        compute_not_bound_10743                  = "VUID-vkCmdDispatchBase-None-10743";
         protected_command_buffer_02712           = "VUID-vkCmdDispatchBase-commandBuffer-02712";
         ray_query_04617                          = "VUID-vkCmdDispatchBase-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatchBase-None-02693";

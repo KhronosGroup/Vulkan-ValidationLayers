@@ -4883,6 +4883,30 @@ TEST_F(NegativeSyncObject, AccessFlags3) {
     m_command_buffer.End();
 }
 
+TEST_F(NegativeSyncObject, AccelerationBuildStageWithoutEnabledFeature) {
+    TEST_DESCRIPTION("Use VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR without enabling accelerationStructure feature");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+    VkPipelineStageFlags stage = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = stage;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10751");
+    m_command_buffer.Barrier(barrier);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Event event(*m_device);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-10754");
+    vk::CmdSetEvent(m_command_buffer, event, stage);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeSyncObject, AccelerationCopyStageWithoutEnabledFeature) {
     TEST_DESCRIPTION("Use VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR without enabling rayTracingMaintenance1 feature");
     SetTargetApiVersion(VK_API_VERSION_1_3);
@@ -4894,7 +4918,7 @@ TEST_F(NegativeSyncObject, AccelerationCopyStageWithoutEnabledFeature) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreChecks-missing-rayTracingMaintenance1-feature");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10752");
     m_command_buffer.Barrier(barrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -4911,8 +4935,68 @@ TEST_F(NegativeSyncObject, MicromapBuildStageWithoutEnabledFeature) {
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT;
 
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-CoreChecks-missing-micromap-feature");
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10753");
     m_command_buffer.Barrier(barrier);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, RayTracingStageFlagWithoutFeature) {
+    TEST_DESCRIPTION("Test using the ray tracing stage flag without enabling any of ray tracing features");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Semaphore semaphore(*m_device);
+    VkPipelineStageFlags stage = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+
+    VkSubmitInfo submit_info = vku::InitStructHelper();
+    submit_info.signalSemaphoreCount = 1u;
+    submit_info.pSignalSemaphores = &semaphore.handle();
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+
+    submit_info.signalSemaphoreCount = 0u;
+    submit_info.waitSemaphoreCount = 1u;
+    submit_info.pWaitSemaphores = &semaphore.handle();
+    submit_info.pWaitDstStageMask = &stage;
+
+    m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pWaitDstStageMask-07949");
+    vk::QueueSubmit(m_default_queue->handle(), 1u, &submit_info, VK_NULL_HANDLE);
+    m_errorMonitor->VerifyFound();
+
+    vkt::Event event(*m_device);
+    m_command_buffer.Begin();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-07949");
+    vk::CmdSetEvent(m_command_buffer.handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-stageMask-07949");
+    vk::CmdResetEvent(m_command_buffer.handle(), event.handle(), stage);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-07949");
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1u, &event.handle(), stage, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0u, nullptr, 0u,
+                      nullptr, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-07949");
+    vk::CmdWaitEvents(m_command_buffer.handle(), 1u, &event.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, stage, 0u, nullptr, 0u,
+                      nullptr, 0u, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-07949");
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), stage, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-07949");
+    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, stage, 0u, 0u, nullptr, 0u, nullptr, 0u,
+                           nullptr);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.End();
+
+    m_default_queue->Wait();
 }

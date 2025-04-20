@@ -2341,7 +2341,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthWrongAspect) {
     transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     transition_info.subresourceRange = range;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00001");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-10749");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2385,7 +2385,7 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutStencilWrongAspect) {
     transition_info.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     transition_info.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     transition_info.subresourceRange = range;
-    m_errorMonitor->SetDesiredError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00002");
+    m_errorMonitor->SetDesiredError("VUID-VkHostImageLayoutTransitionInfo-image-10750");
     vk::TransitionImageLayoutEXT(*m_device, 1, &transition_info);
     m_errorMonitor->VerifyFound();
 }

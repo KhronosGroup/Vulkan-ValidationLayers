@@ -15,6 +15,7 @@
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/shader_helper.h"
+#include "generated/vk_function_pointers.h"
 
 class NegativeShaderObject : public ShaderObjectTest {};
 
@@ -2635,7 +2636,10 @@ TEST_F(NegativeShaderObject, MissingFragmentShaderBind) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
 
-    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl));
+    const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
+    auto vs_shader_ci = ShaderCreateInfoNoNextStage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+    const vkt::Shader vert_shader(*m_device, vs_shader_ci);
+
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
@@ -2797,7 +2801,7 @@ TEST_F(NegativeShaderObject, MissingLinkedShaderBind) {
     m_command_buffer.BindShaders(vert_shader, {});
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08698");
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -6579,7 +6583,7 @@ TEST_F(NegativeShaderObject, SetPrimitiveTopologyPatch) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-topology-patch");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveTopology-10747");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -6597,7 +6601,7 @@ TEST_F(NegativeShaderObject, SetPointTopologyNoWrite) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-topology-pointsize");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-primitiveTopology-10748");
     vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -7074,9 +7078,9 @@ TEST_F(NegativeShaderObject, DrawMissingNextStage) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-draw-missing-next-shader");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-nextStage-10745");
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -7100,11 +7104,11 @@ TEST_F(NegativeShaderObject, DrawWrongNextStage) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-draw-missing-next-shader");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-nextStage-10745");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08685");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08686");
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
@@ -7114,7 +7118,7 @@ TEST_F(NegativeShaderObject, DrawWrongNextStage) {
 TEST_F(NegativeShaderObject, NoBoundCompute) {
     RETURN_IF_SKIP(InitBasicShaderObject());
     m_command_buffer.Begin();
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10743");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 }
@@ -7127,7 +7131,7 @@ TEST_F(NegativeShaderObject, BoundNullCompute) {
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, stages, shaders);
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10743");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 }
@@ -7144,7 +7148,7 @@ TEST_F(NegativeShaderObject, UnbindCompute) {
     const VkShaderEXT shaders[] = {VK_NULL_HANDLE};
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, stages, shaders);
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-Dispatch-Not-Bound");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10743");
     vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
     m_errorMonitor->VerifyFound();
 }

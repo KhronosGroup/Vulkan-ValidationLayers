@@ -57,7 +57,8 @@ VkPipelineStageFlags2 DisabledPipelineStages(const DeviceFeatures &features, con
     if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.rayTracingPipeline) {
         result |= VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
     }
-    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !IsExtEnabled(device_extensions.vk_khr_acceleration_structure)) {
+    // The NV extension includes the accelerationStructure implicitly
+    if (!IsExtEnabled(device_extensions.vk_nv_ray_tracing) && !features.accelerationStructure) {
         result |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
     }
     if (!features.rayTracingMaintenance1) {
