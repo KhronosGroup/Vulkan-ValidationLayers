@@ -2723,18 +2723,16 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
             }
         } else if (vkuFormatIsDepthOnly(image_format)) {
             if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != VK_IMAGE_ASPECT_DEPTH_BIT) {
-                // Being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7274
                 const LogObjectList objlist(device, image_state->Handle());
-                skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00001", objlist,
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-image-10749", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
                                  "is %s and image was created with format %s.", string_VkImageAspectFlags(aspect_mask).c_str(),
                                  string_VkFormat(image_format));
             }
         } else if (vkuFormatIsStencilOnly(image_format)) {
             if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != VK_IMAGE_ASPECT_STENCIL_BIT) {
-                // Being discussed in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7274
                 const LogObjectList objlist(device, image_state->Handle());
-                skip |= LogError("UNASSIGNED-VkHostImageLayoutTransitionInfo-image-00002", objlist,
+                skip |= LogError("VUID-VkHostImageLayoutTransitionInfo-image-10750", objlist,
                                  transition_loc.dot(Field::subresourceRange).dot(Field::aspectMask),
                                  "is %s and image was created with format %s.", string_VkImageAspectFlags(aspect_mask).c_str(),
                                  string_VkFormat(image_format));

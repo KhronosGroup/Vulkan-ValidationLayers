@@ -1840,16 +1840,13 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsGraphics) {
         }
     )glsl";
     const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
+    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                            VK_SHADER_STAGE_FRAGMENT_BIT};
-    const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.BindShaders(vs, fs);
+    SetDefaultDynamicStatesAll(m_command_buffer);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -1971,11 +1968,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
         }
     )glsl";
     const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, shader_source));
-
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
-                                            VK_SHADER_STAGE_FRAGMENT_BIT};
-    const VkShaderEXT shaders[] = {vs.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE};
+    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
@@ -1983,9 +1976,9 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer.handle());
-    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    m_command_buffer.BindShaders(vs, fs);
+    SetDefaultDynamicStatesAll(m_command_buffer);
+    vk::CmdDrawMultiEXT(m_command_buffer, 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -2002,10 +1995,10 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsMultiDraw) {
     ptr[2] = 2;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
-    SetDefaultDynamicStatesAll(m_command_buffer.handle());
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    m_command_buffer.BindShaders(vs, fs);
+    SetDefaultDynamicStatesAll(m_command_buffer);
+    vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -2061,23 +2054,14 @@ TEST_F(NegativeDebugPrintf, MeshTaskShaderObjects) {
                          GLSLToSPV(VK_SHADER_STAGE_TASK_BIT_EXT, taskShaderText, SPV_ENV_VULKAN_1_3));
     const vkt::Shader ms(*m_device, VK_SHADER_STAGE_MESH_BIT_EXT,
                          GLSLToSPV(VK_SHADER_STAGE_MESH_BIT_EXT, meshShaderText, SPV_ENV_VULKAN_1_3));
+    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
-
-    const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT,
-                                            VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
-                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
-                                            VK_SHADER_STAGE_GEOMETRY_BIT,
-                                            VK_SHADER_STAGE_FRAGMENT_BIT,
-                                            VK_SHADER_STAGE_TASK_BIT_EXT,
-                                            VK_SHADER_STAGE_MESH_BIT_EXT};
-    const VkShaderEXT shaders[] = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE,
-                                   VK_NULL_HANDLE, ts.handle(),    ms.handle()};
-    SetDefaultDynamicStatesAll(m_command_buffer.handle());
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 7u, stages, shaders);
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    SetDefaultDynamicStatesAll(m_command_buffer);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
+    m_command_buffer.BindMeshShaders(ts, ms, fs);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 

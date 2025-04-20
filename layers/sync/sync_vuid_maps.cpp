@@ -44,7 +44,7 @@ const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap(
         {VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI, "invocationMask"},
         {VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR, "rayTracing"},
         {VK_PIPELINE_STAGE_2_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR, "shadingRate"},
-        {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "rayTracing"},
+        {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR, "accelerationStructure"},
         {VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR, "rayTracingMaintenance1"},
         {VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT, "micromap"}};
     return feature_name_map;
@@ -369,6 +369,65 @@ const auto &GetStageMaskErrorsInvocationMask() {
     return kStageMaskErrorsInvocationMask;
 }
 
+const auto &GetStageMaskErrorsAccelerationStructureBuild() {
+    static const std::array<Entry, 21> kStageMaskErrorsAccelerationStructureBuild{{
+        {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10751"},
+        {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10751"},
+        {Key(Func::vkCmdResetEvent2, Field::stageMask), "VUID-vkCmdResetEvent2-stageMask-10751"},
+        {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-10751"},
+        {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-10751"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-10751"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-10751"},
+        {Key(Struct::VkMemoryBarrier2, Field::dstStageMask), "VUID-VkMemoryBarrier2-dstStageMask-10751"},
+        {Key(Struct::VkMemoryBarrier2, Field::srcStageMask), "VUID-VkMemoryBarrier2-srcStageMask-10751"},
+        {Key(Struct::VkSemaphoreSubmitInfo, Field::stageMask), "VUID-VkSemaphoreSubmitInfo-stageMask-10751"},
+        {Key(Struct::VkSubmitInfo, Field::pWaitDstStageMask), "VUID-VkSubmitInfo-pWaitDstStageMask-10754"},
+        {Key(Func::vkCmdSetEvent, Field::stageMask), "VUID-vkCmdSetEvent-stageMask-10754"},
+        {Key(Func::vkCmdResetEvent, Field::stageMask), "VUID-vkCmdResetEvent-stageMask-10754"},
+        {Key(Func::vkCmdWaitEvents, Field::srcStageMask), "VUID-vkCmdWaitEvents-srcStageMask-10754"},
+        {Key(Func::vkCmdWaitEvents, Field::dstStageMask), "VUID-vkCmdWaitEvents-dstStageMask-10754"},
+        {Key(Func::vkCmdPipelineBarrier, Field::srcStageMask), "VUID-vkCmdPipelineBarrier-srcStageMask-10754"},
+        {Key(Func::vkCmdPipelineBarrier, Field::dstStageMask), "VUID-vkCmdPipelineBarrier-dstStageMask-10754"},
+        {Key(Struct::VkSubpassDependency, Field::srcStageMask), "VUID-VkSubpassDependency-srcStageMask-10754"},
+        {Key(Struct::VkSubpassDependency, Field::dstStageMask), "VUID-VkSubpassDependency-dstStageMask-10754"},
+        {Key(Struct::VkSubpassDependency, Field::srcStageMask), "VUID-VkSubpassDependency2-srcStageMask-10754"},
+        {Key(Struct::VkSubpassDependency, Field::dstStageMask), "VUID-VkSubpassDependency2-dstStageMask-10754"},
+    }};
+    return kStageMaskErrorsAccelerationStructureBuild;
+}
+
+const auto &GetStageMaskErrorsAccelerationStructurCopy() {
+    static const std::array<Entry, 10> kStageMaskErrorsAccelerationStructureCopy{{
+        {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10752"},
+        {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10752"},
+        {Key(Func::vkCmdResetEvent2, Field::stageMask), "VUID-vkCmdResetEvent2-stageMask-10752"},
+        {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-10752"},
+        {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-10752"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-10752"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-10752"},
+        {Key(Struct::VkMemoryBarrier2, Field::dstStageMask), "VUID-VkMemoryBarrier2-dstStageMask-10752"},
+        {Key(Struct::VkMemoryBarrier2, Field::srcStageMask), "VUID-VkMemoryBarrier2-srcStageMask-10752"},
+        {Key(Struct::VkSemaphoreSubmitInfo, Field::stageMask), "VUID-VkSemaphoreSubmitInfo-stageMask-10752"},
+    }};
+    return kStageMaskErrorsAccelerationStructureCopy;
+}
+
+const auto &GetStageMaskErrorsMicromapBuild() {
+    static const std::array<Entry, 10> kStageMaskErrorsMicromapBuild{{
+        {Key(Struct::VkBufferMemoryBarrier2, Field::dstStageMask), "VUID-VkBufferMemoryBarrier2-dstStageMask-10753"},
+        {Key(Struct::VkBufferMemoryBarrier2, Field::srcStageMask), "VUID-VkBufferMemoryBarrier2-srcStageMask-10753"},
+        {Key(Func::vkCmdResetEvent2, Field::stageMask), "VUID-vkCmdResetEvent2-stageMask-10753"},
+        {Key(Func::vkCmdWriteTimestamp2, Field::stage), "VUID-vkCmdWriteTimestamp2-stage-10753"},
+        {Key(Func::vkCmdWriteBufferMarker2AMD, Field::stage), "VUID-vkCmdWriteBufferMarker2AMD-stage-10753"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::dstStageMask), "VUID-VkImageMemoryBarrier2-dstStageMask-10753"},
+        {Key(Struct::VkImageMemoryBarrier2, Field::srcStageMask), "VUID-VkImageMemoryBarrier2-srcStageMask-10753"},
+        {Key(Struct::VkMemoryBarrier2, Field::dstStageMask), "VUID-VkMemoryBarrier2-dstStageMask-10753"},
+        {Key(Struct::VkMemoryBarrier2, Field::srcStageMask), "VUID-VkMemoryBarrier2-srcStageMask-10753"},
+        {Key(Struct::VkSemaphoreSubmitInfo, Field::stageMask), "VUID-VkSemaphoreSubmitInfo-stageMask-10753"},
+    }};
+    return kStageMaskErrorsMicromapBuild;
+}
+
 const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 bit, const DeviceExtensions &device_extensions) {
     // special case for stages that require an extension or feature bit,
     // this is checked in DisabledPipelineStages
@@ -380,12 +439,12 @@ const std::string &GetBadFeatureVUID(const Location &loc, VkPipelineStageFlags2 
         return FindVUID(loc, GetStageMaskErrorsSubpassShader());
     } else if (bit == VK_PIPELINE_STAGE_2_INVOCATION_MASK_BIT_HUAWEI) {
         return FindVUID(loc, GetStageMaskErrorsInvocationMask());
+    } else if (bit == VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR) {
+        return FindVUID(loc, GetStageMaskErrorsAccelerationStructureBuild());
     } else if (bit == VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR) {
-        static const std::string missing_rt_maintenance1_feature = "UNASSIGNED-CoreChecks-missing-rayTracingMaintenance1-feature";
-        return missing_rt_maintenance1_feature;
+        return FindVUID(loc, GetStageMaskErrorsAccelerationStructurCopy());
     } else if (bit == VK_PIPELINE_STAGE_2_MICROMAP_BUILD_BIT_EXT) {
-        static const std::string missing_micromap_feature = "UNASSIGNED-CoreChecks-missing-micromap-feature";
-        return missing_micromap_feature;
+        return FindVUID(loc, GetStageMaskErrorsMicromapBuild());
     }
 
     const auto &result = FindVUID(bit, loc, GetStageMaskErrorsMap());

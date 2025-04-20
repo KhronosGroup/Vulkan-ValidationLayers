@@ -56,6 +56,8 @@ struct DrawDispatchVuid {
     const char* viewport_scissor_count_03419 = kVUIDUndefined;
     const char* primitive_topology_class_07500 = kVUIDUndefined;
     const char* primitive_topology_patch_list_10286 = kVUIDUndefined;
+    const char* primitive_topology_patch_list_10747 = kVUIDUndefined;
+    const char* primitive_topology_point_size_10748 = kVUIDUndefined;
     const char* corner_sampled_address_mode_02696 = kVUIDUndefined;
     const char* imageview_atomic_02691 = kVUIDUndefined;
     const char* bufferview_atomic_07888 = kVUIDUndefined;
@@ -71,6 +73,7 @@ struct DrawDispatchVuid {
     const char* msrtss_rasterization_samples_07284 = kVUIDUndefined;
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
+    const char* compute_not_bound_10743 = kVUIDUndefined;
     const char* ray_query_protected_cb_03635 = kVUIDUndefined;
     const char* ray_query_04617 = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
@@ -235,6 +238,7 @@ struct DrawDispatchVuid {
     const char* set_line_stipple_enable_08669 = kVUIDUndefined;
     const char* set_line_stipple_enable_08670 = kVUIDUndefined;
     const char* set_line_stipple_enable_08671 = kVUIDUndefined;
+    const char* next_stage_10745 = kVUIDUndefined;
     const char* vertex_shader_08684 = kVUIDUndefined;
     const char* tessellation_control_shader_08685 = kVUIDUndefined;
     const char* tessellation_evaluation_shader_08686 = kVUIDUndefined;

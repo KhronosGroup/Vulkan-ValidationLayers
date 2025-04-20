@@ -1223,6 +1223,10 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     const vkt::Shader tese_shader(*m_device, tese_stage, kTessellationEvalMinimalGlsl);
     const vkt::Shader geom_shader(*m_device, geom_stage, kGeometryMinimalGlsl);
     const vkt::Shader frag_shader(*m_device, frag_stage, kFragmentMinimalGlsl);
+    // when last stage, need to remake without nextStage
+    const auto tese_spv = GLSLToSPV(tese_stage, kTessellationEvalMinimalGlsl);
+    auto tese_shader_ci = ShaderCreateInfoNoNextStage(tese_spv, tese_stage);
+    const vkt::Shader tese_no_next_shader(*m_device, tese_shader_ci);
 
     const VkShaderEXT null_shader = VK_NULL_HANDLE;
 
@@ -1248,6 +1252,7 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 
+    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &tese_no_next_shader.handle());
     vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &frag_stage, &null_shader);
     vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
 

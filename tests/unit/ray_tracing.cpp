@@ -71,10 +71,12 @@ TEST_F(NegativeRayTracing, BarrierAccessAccelerationStructure) {
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10751");
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03927");
     m_command_buffer.BarrierKHR(mem_barrier);
 
     mem_barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-srcStageMask-10751");
     m_errorMonitor->SetDesiredError("VUID-VkMemoryBarrier2-dstAccessMask-03928");
     m_command_buffer.BarrierKHR(mem_barrier);
 

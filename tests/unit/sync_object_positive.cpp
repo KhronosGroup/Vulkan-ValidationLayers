@@ -1753,11 +1753,29 @@ TEST_F(PositiveSyncObject, BarrierASBuildWithShaderReadAccess) {
     AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
     RETURN_IF_SKIP(Init());
 
     VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
     mem_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BarrierKHR(mem_barrier);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncObject, BarrierASCopy) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 mem_barrier = vku::InitStructHelper();
+    mem_barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+    mem_barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
 
     m_command_buffer.Begin();
     m_command_buffer.BarrierKHR(mem_barrier);
