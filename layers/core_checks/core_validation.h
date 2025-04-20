@@ -420,8 +420,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePrimaryCommandBuffer(const vvl::CommandBuffer& cb_state, const Location& loc, const char* vuid) const;
 
     void RecordCmdNextSubpassLayouts(VkCommandBuffer commandBuffer, VkSubpassContents contents);
-    bool ValidateCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                  const ErrorObject& error_obj) const;
+    bool ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     void RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer);
     bool MatchUsage(uint32_t count, const VkAttachmentReference2* attachments, const VkFramebufferCreateInfo& fbci,
                     VkImageUsageFlagBits usage_flag, const char* vuid, const Location& create_info_loc) const;
@@ -1638,7 +1637,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                          const VkRenderingAttachmentInfo& attachment_info, const Location& loc) const;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+    bool ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, const ErrorObject& error_obj) const;
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+    bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                            const ErrorObject& error_obj) const override;
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
                                            const ErrorObject& error_obj) const override;
