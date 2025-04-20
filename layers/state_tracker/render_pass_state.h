@@ -98,6 +98,7 @@ class RenderPass : public StateObject {
     const SubpassGraphVec subpass_dependencies;
     using TransitionVec = std::vector<std::vector<AttachmentTransition>>;
     const TransitionVec subpass_transitions;
+    std::vector<VkOffset2D> fragment_density_offsets;
 
     // vkCreateRenderPass
     RenderPass(VkRenderPass handle, VkRenderPassCreateInfo const *pCreateInfo);

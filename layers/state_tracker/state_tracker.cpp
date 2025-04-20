@@ -3265,6 +3265,27 @@ void DeviceState::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, co
     cb_state->EndRendering(record_obj.location.function);
 }
 
+void DeviceState::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
+                                                   const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    // Only track the first call to vkCmdEndRendering2EXT for pFragmentDensityOffsets, because they must match due to VU 10730
+    if (cb_state->active_render_pass && cb_state->active_render_pass->fragment_density_offsets.empty()) {
+        std::vector<VkOffset2D> fragment_density_offsets = {{0, 0}};
+        if (pRenderingEndInfo) {
+            const auto *fdm_offset_end_info =
+                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext);
+            if (fdm_offset_end_info) {
+                fragment_density_offsets.resize(fdm_offset_end_info->fragmentDensityOffsetCount);
+                for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
+                    fragment_density_offsets[i] = fdm_offset_end_info->pFragmentDensityOffsets[i];
+                }
+            }
+        }
+        cb_state->active_render_pass->fragment_density_offsets = fragment_density_offsets;
+    }
+    cb_state->EndRendering(record_obj.location.function);
+}
+
 void DeviceState::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
                                                    const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
