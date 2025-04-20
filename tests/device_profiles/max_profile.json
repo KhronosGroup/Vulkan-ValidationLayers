@@ -358,6 +358,9 @@
                 "VkPhysicalDeviceFragmentDensityMapOffsetFeaturesQCOM": {
                     "fragmentDensityMapOffset": true
                 },
+                "VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT": {
+                    "fragmentDensityMapOffset": true
+                },
                 "VkPhysicalDeviceScalarBlockLayoutFeatures": {
                     "scalarBlockLayout": true
                 },
@@ -1605,6 +1608,12 @@
                         "height": 8
                     }
                 },
+                "VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT": {
+                    "fragmentDensityOffsetGranularity": {
+                        "width": 8,
+                        "height": 8
+                    }
+                },
                 "VkPhysicalDeviceCooperativeMatrixPropertiesNV": {
                     "cooperativeMatrixSupportedStages": [
                         "VK_SHADER_STAGE_VERTEX_BIT",
@@ -2050,6 +2059,7 @@
                 "VK_EXT_filter_cubic": 1,
                 "VK_EXT_fragment_density_map": 1,
                 "VK_EXT_fragment_density_map2": 1,
+                "VK_EXT_fragment_density_map_offset": 1,
                 "VK_EXT_fragment_shader_interlock": 1,
                 "VK_EXT_frame_boundary": 1,
                 "VK_EXT_full_screen_exclusive": 1,
