@@ -2357,7 +2357,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresKHR(
             dst_as_state->UpdateBuildRangeInfos(ppBuildRangeInfos[i], info.geometryCount);
         }
     }
-    cb_state->has_build_as_cmd = true;
 }
 
 void DeviceState::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkCommandBuffer commandBuffer, uint32_t infoCount,
@@ -2377,7 +2376,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructuresIndirectKHR(VkComm
         // showed that it is incorrect to try to add buffers obtained through a call to GetBuffersByAddress as children to a command
         // buffer
     }
-    cb_state->has_build_as_cmd = true;
 }
 
 void DeviceState::PostCallRecordGetAccelerationStructureMemoryRequirementsNV(
@@ -2465,7 +2463,6 @@ void DeviceState::PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer 
             }
         }
     }
-    cb_state->has_build_as_cmd = true;
 }
 
 void DeviceState::PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
