@@ -140,6 +140,14 @@ if (DEBUG_CAPTURE_KEYBOARD)
         find_package(X11 REQUIRED)
         target_link_libraries(VkLayer_utils PRIVATE ${X11_LIBRARIES})
         target_include_directories(VkLayer_utils PRIVATE ${X11_INCLUDE_DIR})
+
+        # needed for xcb_key_symbols_alloc
+        find_library(XCB_LIB xcb REQUIRED)
+        find_path(XCB_INCLUDE_DIR xcb/xcb.h REQUIRED)
+        find_library(XCB_KEYSYMS_LIB xcb-keysyms REQUIRED)
+        find_path(XCB_KEYSYMS_INCLUDE_DIR xcb/xcb_keysyms.h REQUIRED)
+        target_link_libraries(VkLayer_utils PRIVATE ${XCB_LIB} ${XCB_KEYSYMS_LIB})
+        target_include_directories(VkLayer_utils PRIVATE ${XCB_INCLUDE_DIR} ${XCB_KEYSYMS_INCLUDE_DIR})
     endif()
 endif()
 

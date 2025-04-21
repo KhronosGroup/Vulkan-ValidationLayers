@@ -18,5 +18,5 @@
 #pragma once
 
 #if defined(DEBUG_CAPTURE_KEYBOARD)
-bool IsDebugKeyPressed(void* wsi_display);
+bool IsDebugKeyPressed(void* xlib_display, void* xcb_connection);
 #endif

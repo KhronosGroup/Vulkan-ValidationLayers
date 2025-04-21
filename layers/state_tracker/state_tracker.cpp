@@ -965,7 +965,7 @@ void DeviceState::CheckDebugCapture() const {
     // Incase we want to support Android for this, a future option might not be a keyboard
     bool captured = false;
     // This will detect if the "F1" key is pressed
-    captured |= IsDebugKeyPressed(instance_state->wsi_display);
+    captured |= IsDebugKeyPressed(instance_state->xlib_display, instance_state->xcb_connection);
 
     if (captured) {
         for (auto &item : proxies) {
@@ -4075,6 +4075,9 @@ void InstanceState::PostCallRecordCreateXcbSurfaceKHR(VkInstance instance, const
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
+#if defined(DEBUG_CAPTURE_KEYBOARD)
+    xcb_connection = (void *)pCreateInfo->connection;
+#endif
     RecordVulkanSurface(pSurface);
 }
 #endif  // VK_USE_PLATFORM_XCB_KHR
@@ -4087,7 +4090,7 @@ void InstanceState::PostCallRecordCreateXlibSurfaceKHR(VkInstance instance, cons
         return;
     }
 #if defined(DEBUG_CAPTURE_KEYBOARD)
-    wsi_display = (void *)pCreateInfo->dpy;
+    xlib_display = (void *)pCreateInfo->dpy;
 #endif
     RecordVulkanSurface(pSurface);
 }
