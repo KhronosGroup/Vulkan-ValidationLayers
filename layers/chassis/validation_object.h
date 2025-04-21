@@ -118,7 +118,9 @@ class Instance : public Logger {
     VkInstance VkHandle() const { return instance; }
 
 #if defined(DEBUG_CAPTURE_KEYBOARD)
-    void* wsi_display = nullptr;
+    // keep thing as void pointer to simplify including headers
+    void* xlib_display = nullptr;
+    void* xcb_connection = nullptr;
 #endif
 
 #include "generated/validation_object_instance_methods.h"
