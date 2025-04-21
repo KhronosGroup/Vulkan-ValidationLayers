@@ -11,6 +11,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/buffer_helper.h"
@@ -345,6 +346,59 @@ TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeGpuAVIndexBuffer, DrawBadVertexIndex32ShaderObject) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitDynamicRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        layout(location=0) in vec3 pos;
+        void main() {
+            gl_Position = vec4(pos, gl_VertexIndex);
+        }
+    )glsl";
+
+    const vkt::Shader vs(*m_device, VK_SHADER_STAGE_VERTEX_BIT, GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source));
+    const vkt::Shader fs(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl));
+
+    VkVertexInputBindingDescription2EXT input_binding = vku::InitStructHelper();
+    input_binding.binding = 0;
+    input_binding.stride = 3 * sizeof(float);
+    input_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    input_binding.divisor = 1;
+    VkVertexInputAttributeDescription2EXT input_attrib = vku::InitStructHelper();
+    input_attrib.location = 0;
+    input_attrib.binding = 0;
+    input_attrib.format = VK_FORMAT_R32G32B32_SFLOAT;
+    input_attrib.offset = 0;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_command_buffer.BindShaders(vs, fs);
+    SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE});
+
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
+    vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
+    VkDeviceSize vertex_buffer_offset = 0;
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1, &input_binding, 1, &input_attrib);
+
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 666");
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkCmdDrawIndexed-None-02721", "Vertex index 42");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
