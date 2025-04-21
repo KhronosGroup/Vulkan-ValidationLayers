@@ -124,6 +124,7 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     shared_resources_manager.Clear();
 
     indices_buffer_.Destroy();
+    vertex_attribute_fetch_off_.Destroy();
 
     BaseClass::PreCallRecordDestroyDevice(device, pAllocator, record_obj);
 
