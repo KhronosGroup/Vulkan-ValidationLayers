@@ -371,7 +371,7 @@ bool CommandBufferSubState::PreProcess(const Location &loc) {
         return false;
     }
 
-    return !per_command_error_loggers.empty() || base.has_build_as_cmd;
+    return true;
 }
 
 bool CommandBufferSubState::NeedsPostProcess() { return !error_output_buffer_.IsDestroyed(); }
@@ -547,16 +547,23 @@ void QueueSubState::SubmitBarrier(const Location &loc, uint64_t seq) {
 }
 
 void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
+    bool success = true;
     for (const auto &submission : submissions) {
         auto loc = submission.loc.Get();
         for (auto &cb_submission : submission.cb_submissions) {
             auto guard = cb_submission.cb->ReadLock();
             auto &gpu_cb = SubState(*cb_submission.cb);
-            gpu_cb.PreProcess(loc);
+            success = gpu_cb.PreProcess(loc);
+            if (!success) {
+                return;
+            }
             for (auto *secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto &secondary_gpu_cb = SubState(*secondary_cb);
-                secondary_gpu_cb.PreProcess(loc);
+                success = secondary_gpu_cb.PreProcess(loc);
+                if (!success) {
+                    return;
+                }
             }
         }
     }

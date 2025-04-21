@@ -227,9 +227,6 @@ void CommandBuffer::ResetCBState() {
     has_inheritance = false;
 
     has_draw_cmd = false;
-    has_dispatch_cmd = false;
-    has_trace_rays_cmd = false;
-    has_build_as_cmd = false;
     has_render_pass_instance = false;
     suspends_render_pass_instance = false;
     resumes_render_pass_instance = false;
@@ -1159,9 +1156,6 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
 
         // Pass along if any commands are used in the secondary command buffer
         has_draw_cmd |= secondary_cb_state->has_draw_cmd;
-        has_dispatch_cmd |= secondary_cb_state->has_dispatch_cmd;
-        has_trace_rays_cmd |= secondary_cb_state->has_trace_rays_cmd;
-        has_build_as_cmd |= secondary_cb_state->has_build_as_cmd;
 
         // Handle secondary command buffer updates for dynamic rendering
         if (!has_render_pass_instance) {
@@ -1216,16 +1210,10 @@ void CommandBuffer::UpdateDrawCmd(Func command) {
 }
 
 // Generic function to handle state update for all CmdDispatch* type functions
-void CommandBuffer::UpdateDispatchCmd(Func command) {
-    has_dispatch_cmd = true;
-    UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_COMPUTE);
-}
+void CommandBuffer::UpdateDispatchCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_COMPUTE); }
 
 // Generic function to handle state update for all CmdTraceRay* type functions
-void CommandBuffer::UpdateTraceRayCmd(Func command) {
-    has_trace_rays_cmd = true;
-    UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-}
+void CommandBuffer::UpdateTraceRayCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR); }
 
 // Generic function to handle state update for all Provoking functions calls (draw/dispatch/traceray/etc)
 void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point) {

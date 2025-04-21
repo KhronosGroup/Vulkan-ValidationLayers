@@ -73,7 +73,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    bool PreProcess(const Location &loc);
+    [[nodiscard]] bool PreProcess(const Location &loc);
     void PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
     struct LabelLogging {
         const std::vector<std::string> &initial_label_stack;
