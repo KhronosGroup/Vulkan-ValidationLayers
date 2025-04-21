@@ -145,11 +145,11 @@ class ImageLayoutRegistry {
 };
 }  // namespace image_layout_map
 
-class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
+class ImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
   public:
     using RangeGenerator = image_layout_map::RangeGenerator;
 
-    GlobalImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
+    ImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
     ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
     WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
 
@@ -160,7 +160,7 @@ class GlobalImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkIma
 };
 
 // TODO - Get to work with non-STL custom hashmap
-using GlobalImageLayoutMap = std::unordered_map<const vvl::Image*, std::optional<GlobalImageLayoutRangeMap>>;
+using SubmissionImageLayoutMap = std::unordered_map<const vvl::Image*, std::optional<ImageLayoutRangeMap>>;
 
 // Not declared in the CommandBuffer class to allow other files to forward reference this
 // (was slow to have ever file need to compile in the Image Layout map)

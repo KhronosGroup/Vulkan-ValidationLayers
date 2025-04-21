@@ -173,14 +173,13 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
 
     const auto &layout_map = image_layout_registry->GetLayoutMap();
     const auto *global_range_map = image_state.layout_range_map.get();
-    GlobalImageLayoutRangeMap empty_map(1);
+    ImageLayoutRangeMap empty_map(1);
     assert(global_range_map);
     auto global_range_map_guard = global_range_map->ReadLock();
 
     auto pos = layout_map.begin();
     const auto end = layout_map.end();
-    sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(empty_map, *global_range_map,
-                                                                                        pos->first.begin);
+    sparse_container::parallel_iterator<const ImageLayoutRangeMap> current_layout(empty_map, *global_range_map, pos->first.begin);
     while (pos != end) {
         const VkImageLayout initial_layout = pos->second.initial_layout;
         ASSERT_AND_CONTINUE(initial_layout != image_layout_map::kInvalidLayout);

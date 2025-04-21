@@ -170,7 +170,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     using Func = vvl::Func;
 
   public:
-    using AliasedLayoutMap = vvl::unordered_map<const GlobalImageLayoutRangeMap *, std::shared_ptr<ImageLayoutRegistry>>;
+    using AliasedLayoutMap = vvl::unordered_map<const ImageLayoutRangeMap *, std::shared_ptr<ImageLayoutRegistry>>;
 
     VkCommandBufferAllocateInfo allocate_info;
 
