@@ -350,7 +350,7 @@ vvl_sources = [
   "layers/thread_tracker/thread_safety_validation.cpp",
   "layers/thread_tracker/thread_safety_validation.h",
   "layers/utils/android_ndk_types.h",
-  "layers/utils/android_ndk_types.h",
+  "layers/utils/action_command_utils.h",
   "layers/utils/cast_utils.h",
   "layers/utils/convert_utils.cpp",
   "layers/utils/convert_utils.h",
