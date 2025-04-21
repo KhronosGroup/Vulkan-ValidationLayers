@@ -2520,26 +2520,27 @@ bool CoreChecks::ValidateSparseImageMemoryBind(vvl::Image const *image_state, Vk
 bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
                                                        const ErrorObject &error_obj) const {
     bool skip = false;
+    const LogObjectList objlist(device, pInfo->buffer);
     if (!enabled_features.bufferDeviceAddress && !enabled_features.bufferDeviceAddressEXT) {
-        skip |= LogError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324", pInfo->buffer, error_obj.location,
+        skip |= LogError("VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324", objlist, error_obj.location,
                          "The bufferDeviceAddress feature must be enabled.");
     }
 
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice &&
         !enabled_features.bufferDeviceAddressMultiDeviceEXT) {
-        skip |= LogError("VUID-vkGetBufferDeviceAddress-device-03325", pInfo->buffer, error_obj.location,
+        skip |= LogError("VUID-vkGetBufferDeviceAddress-device-03325", objlist, error_obj.location,
                          "If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature must be enabled.");
     }
 
     if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
         const Location info_loc = error_obj.location.dot(Field::pInfo);
-        if (!(buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT)) {
-            skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, info_loc.dot(Field::buffer),
-                                                  "VUID-VkBufferDeviceAddressInfo-buffer-02600");
+        if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+            skip |= ValidateMemoryIsBoundToBuffer(objlist, *buffer_state, info_loc.dot(Field::buffer),
+                                                  "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
         }
 
-        skip |= ValidateBufferUsageFlags(LogObjectList(device), *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
                                          "VUID-VkBufferDeviceAddressInfo-buffer-02601", info_loc.dot(Field::buffer));
     }
 
@@ -2561,9 +2562,9 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
     bool skip = false;
     const LogObjectList objlist(device, pInfo->buffer);
 
-    if (!enabled_features.bufferDeviceAddress) {
+    if (!enabled_features.bufferDeviceAddress || !enabled_features.bufferDeviceAddressCaptureReplay) {
         skip |= LogError("VUID-vkGetBufferOpaqueCaptureAddress-None-03326", objlist, error_obj.location,
-                         "The bufferDeviceAddress feature must be enabled.");
+                         "The bufferDeviceAddress and bufferDeviceAddressCaptureReplay feature must be enabled.");
     }
 
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
@@ -2571,6 +2572,18 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
                          "If device was created with multiple physical devices, then the "
                          "bufferDeviceAddressMultiDevice feature must be enabled.");
     }
+
+    if (auto buffer_state = Get<vvl::Buffer>(pInfo->buffer)) {
+        const Location info_loc = error_obj.location.dot(Field::pInfo);
+        if ((buffer_state->create_info.flags & VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+            skip |= LogError("VUID-vkGetBufferOpaqueCaptureAddress-pInfo-10725", objlist, info_loc.dot(Field::buffer),
+                             "was not created with VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
+        }
+
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+                                         "VUID-VkBufferDeviceAddressInfo-buffer-02601", info_loc.dot(Field::buffer));
+    }
+
     return skip;
 }
 
@@ -2585,9 +2598,9 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
     bool skip = false;
     const LogObjectList objlst(device, pInfo->memory);
 
-    if (!enabled_features.bufferDeviceAddress) {
+    if (!enabled_features.bufferDeviceAddress || !enabled_features.bufferDeviceAddressCaptureReplay) {
         skip |= LogError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-None-03334", objlst, error_obj.location,
-                         "The bufferDeviceAddress feature was not enabled.");
+                         "The bufferDeviceAddress and bufferDeviceAddressCaptureReplay feature must be enabled.");
     }
 
     if (device_state->physical_device_count > 1 && !enabled_features.bufferDeviceAddressMultiDevice) {
@@ -2598,9 +2611,21 @@ bool CoreChecks::PreCallValidateGetDeviceMemoryOpaqueCaptureAddress(VkDevice dev
 
     if (auto mem_info = Get<vvl::DeviceMemory>(pInfo->memory)) {
         auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
-        if (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT)) {
+        if (!chained_flags_struct) {
             skip |= LogError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336", objlst, error_obj.location,
-                             "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT.");
+                             "memory was created without a VkMemoryAllocateFlagsInfo structure, which is needed as the memory must "
+                             "have been allocated with both VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT and "
+                             "VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
+        } else if ((chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT) == 0) {
+            skip |= LogError("VUID-VkDeviceMemoryOpaqueCaptureAddressInfo-memory-03336", objlst, error_obj.location,
+                             "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT "
+                             "(VkMemoryAllocateFlagsInfo::flags were %s).",
+                             string_VkMemoryAllocateFlags(chained_flags_struct->flags).c_str());
+        } else if ((chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT) == 0) {
+            skip |= LogError("VUID-vkGetDeviceMemoryOpaqueCaptureAddress-pInfo-10727", objlst, error_obj.location,
+                             "memory must have been allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT "
+                             "(VkMemoryAllocateFlagsInfo::flags were %s).",
+                             string_VkMemoryAllocateFlags(chained_flags_struct->flags).c_str());
         }
     }
 
