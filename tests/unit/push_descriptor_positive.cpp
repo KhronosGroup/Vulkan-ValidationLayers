@@ -505,3 +505,44 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
                                             &update_template_data);
     m_command_buffer.End();
 }
+
+TEST_F(PositivePushDescriptor, SamplerPushDescriptorWithImmutableSampler) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9792");
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+
+    VkDescriptorSetLayoutBinding bindings[2] = {
+        {0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+        {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+    };
+    const vkt::DescriptorSetLayout ds_layout(*m_device, {bindings[0], bindings[1]},
+                                             VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&ds_layout});
+
+    VkDescriptorImageInfo image_infos[2] = {
+        {VK_NULL_HANDLE, image_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+        {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED},
+    };
+
+    VkWriteDescriptorSet write_sets[2];
+    write_sets[0] = vku::InitStructHelper();
+    write_sets[0].dstBinding = 0u;
+    write_sets[0].dstArrayElement = 0u;
+    write_sets[0].descriptorCount = 1u;
+    write_sets[0].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    write_sets[0].pImageInfo = &image_infos[0];
+    write_sets[1] = vku::InitStructHelper();
+    write_sets[1].dstBinding = 1u;
+    write_sets[1].dstArrayElement = 0u;
+    write_sets[1].descriptorCount = 1u;
+    write_sets[1].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    write_sets[1].pImageInfo = &image_infos[1];
+
+    m_command_buffer.Begin();
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 2u, write_sets);
+    m_command_buffer.End();
+}
