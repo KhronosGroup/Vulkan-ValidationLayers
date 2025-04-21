@@ -614,3 +614,53 @@ TEST_F(NegativeDebugExtensions, MultiObjectBindImage) {
     vk::BindImageMemory(device(), image, mem2, 0);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDebugExtensions, SetDeviceHandle) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9780");
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    // Create second device
+    float priorities[] = {1.0f};
+    VkDeviceQueueCreateInfo queue_info = vku::InitStructHelper();
+    queue_info.flags = 0;
+    queue_info.queueFamilyIndex = 0;
+    queue_info.queueCount = 1;
+    queue_info.pQueuePriorities = &priorities[0];
+
+    VkDeviceCreateInfo device_create_info = vku::InitStructHelper();
+    auto features = m_device->Physical().Features();
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pQueueCreateInfos = &queue_info;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.ppEnabledLayerNames = nullptr;
+    device_create_info.pEnabledFeatures = &features;
+
+    VkDevice second_device;
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &second_device));
+
+    const char *device_1_name = "device_1";
+    const char *device_2_name = "device_2";
+    VkDebugUtilsObjectNameInfoEXT name_info = vku::InitStructHelper();
+    name_info.objectType = VK_OBJECT_TYPE_DEVICE;
+    name_info.pObjectName = device_1_name;
+    name_info.objectHandle = (uint64_t)device();
+    vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
+
+    name_info.pObjectName = device_2_name;
+    name_info.objectHandle = (uint64_t)second_device;
+    vk::SetDebugUtilsObjectNameEXT(second_device, &name_info);
+
+    VkBufferCreateInfo create_info = vkt::Buffer::CreateInfo(32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    VkBuffer buffer = VK_NULL_HANDLE;
+    vk::CreateBuffer(device(), &create_info, nullptr, &buffer);
+
+    m_errorMonitor->SetDesiredErrorRegex("VUID-vkDestroyBuffer-buffer-parent",
+                                         "was created, allocated or retrieved from VkDevice .*\\[device_1\\], but command is using "
+                                         "\\(or its dispatchable parameter is associated with\\) VkDevice .*\\[device_2\\]");
+    vk::DestroyBuffer(second_device, buffer, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    vk::DestroyBuffer(device(), buffer, nullptr);
+    vk::DestroyDevice(second_device, nullptr);
+}
