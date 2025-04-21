@@ -21,8 +21,9 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
-#include "core_validation.h"
-#include "cc_vuid_maps.h"
+#include "core_checks/cc_state_tracker.h"
+#include "core_checks/cc_vuid_maps.h"
+#include "core_checks/core_validation.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
 #include "sync/sync_vuid_maps.h"
@@ -886,33 +887,15 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
     return skip;
 }
 
-static std::vector<uint32_t> GetUsedAttachments(const vvl::CommandBuffer &cb_state) {
-    vvl::unordered_set<uint32_t> unique;
-
-    for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); ++i) {
-        const uint32_t unmapped_color_attachment = cb_state.rendering_attachments.color_locations[i];
-        if (unmapped_color_attachment != VK_ATTACHMENT_UNUSED) {
-            unique.insert(unmapped_color_attachment);
-        }
-    }
-
-    for (size_t i = 0; i < cb_state.rendering_attachments.color_indexes.size(); ++i) {
-        const uint32_t unmapped_color_index = cb_state.rendering_attachments.color_indexes[i];
-        if (unmapped_color_index != VK_ATTACHMENT_UNUSED) {
-            unique.insert(unmapped_color_index);
-        }
-    }
-
-    if (cb_state.rendering_attachments.depth_index) {
-        unique.insert(*cb_state.rendering_attachments.depth_index);
-    }
-    if (cb_state.rendering_attachments.stencil_index) {
-        unique.insert(*cb_state.rendering_attachments.stencil_index);
-    }
-
+static std::vector<uint32_t> GetUsedColorAttachments(const vvl::CommandBuffer &cb_state) {
     std::vector<uint32_t> attachments;
-    for (auto x : unique) {
-        attachments.push_back(x);
+    attachments.reserve(cb_state.rendering_attachments.color_locations.size());
+    for (size_t i = 0; i < cb_state.rendering_attachments.color_locations.size(); ++i) {
+        // VkRenderingAttachmentLocationInfo can make color attachment unused
+        // by setting output location value as VK_ATTACHMENT_UNUSED
+        if (cb_state.rendering_attachments.color_locations[i] != VK_ATTACHMENT_UNUSED) {
+            attachments.emplace_back(uint32_t(i));
+        }
     }
     return attachments;
 }
@@ -921,7 +904,6 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
                                                            const VkRenderingInfo &rendering_info,
                                                            const Location &barrier_loc) const {
     bool skip = false;
-    std::vector<uint32_t> used_attachments(GetUsedAttachments(cb_state));
 
     const CommandBufferImageLayoutMap &cb_layout_map = cb_state.GetImageLayoutMap();
     auto it = cb_layout_map.find(image_state.VkHandle());
@@ -930,16 +912,15 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
     }
     ImageLayoutRegistry &cb_image_layouts = *it->second;
 
-    for (auto color_attachment_idx : used_attachments) {
+    for (auto color_attachment_idx : GetUsedColorAttachments(cb_state)) {
         if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
             continue;
         }
         const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
-        if (color_attachment.imageView == VK_NULL_HANDLE) {
+        const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
+        if (!image_view_state) {
             continue;
         }
-        const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView);
-        ASSERT_AND_CONTINUE(image_view_state);
 
         if (image_state.VkHandle() == image_view_state->image_state->VkHandle()) {
             skip |= cb_image_layouts.AnyInRange(
@@ -979,6 +960,68 @@ bool CoreChecks::FindLayouts(const vvl::Image &image_state, std::vector<VkImageL
         layouts.emplace_back(entry.second);
     }
     return true;
+}
+
+void CoreChecks::EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer &cb_state,
+                                                                    const ImageBarrier &image_barrier) {
+    if (!cb_state.active_render_pass || !cb_state.active_render_pass->UsesDynamicRendering()) {
+        return;
+    }
+    const VkRenderingInfo &rendering_info = *cb_state.active_render_pass->dynamic_rendering_begin_rendering_info.ptr();
+
+    const CommandBufferImageLayoutMap &cb_image_layout_map = cb_state.GetImageLayoutMap();
+    auto it = cb_image_layout_map.find(image_barrier.image);
+    std::shared_ptr<image_layout_map::ImageLayoutRegistry> image_layout_map =
+        (it != cb_image_layout_map.end()) ? it->second : nullptr;
+
+    auto &cb_sub_state = core::SubState(cb_state);
+
+    auto process_image_view = [&image_barrier, &image_layout_map, &cb_sub_state,
+                               &barrier_loc](const vvl::ImageView &image_view_state) {
+        // Skip attachments that use different image than a barrier
+        if (image_barrier.image != image_view_state.image_state->VkHandle()) {
+            return;
+        }
+        // Skip images that already have image layout specified so layout validation was done at record time
+        auto any_range_pred = [](const LayoutRange &, const LayoutEntry &) { return true; };
+        if (image_layout_map && image_layout_map->AnyInRange(image_view_state.normalized_subresource_range, any_range_pred)) {
+            return;
+        }
+        // Enqueue distinct subresource ranges for this image.
+        // Then during submit time the layouts of these subresources are validated against allowed values
+        auto &enqueued_subresources = cb_sub_state.submit_validate_dynamic_rendering_barrier_subresources[image_barrier.image];
+        auto it = std::find_if(enqueued_subresources.begin(), enqueued_subresources.end(), [&image_view_state](const auto &entry) {
+            return entry.first == image_view_state.normalized_subresource_range;
+        });
+        if (it == enqueued_subresources.end()) {
+            enqueued_subresources.emplace_back(
+                std::make_pair(image_view_state.normalized_subresource_range, vvl::LocationCapture(barrier_loc)));
+        }
+    };
+
+    for (auto color_attachment_idx : GetUsedColorAttachments(cb_state)) {
+        if (color_attachment_idx >= rendering_info.colorAttachmentCount) {
+            continue;
+        }
+        const auto &color_attachment = rendering_info.pColorAttachments[color_attachment_idx];
+        if (const auto image_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
+            process_image_view(*image_view_state);
+        }
+    }
+    if (rendering_info.pDepthAttachment) {
+        const AttachmentInfo &attachment =
+            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
+        if (attachment.image_view) {
+            process_image_view(*attachment.image_view);
+        }
+    }
+    if (rendering_info.pStencilAttachment) {
+        const AttachmentInfo &attachment =
+            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
+        if (attachment.image_view) {
+            process_image_view(*attachment.image_view);
+        }
+    }
 }
 
 void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const ImageBarrier &mem_barrier) {

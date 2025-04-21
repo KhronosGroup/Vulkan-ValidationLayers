@@ -23,6 +23,8 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
 
+class CoreChecks;
+
 namespace core {
 
 // CommandBuffer is over 3 times larger than the next largest state object struct, but the majority of the state is only used in
@@ -30,7 +32,7 @@ namespace core {
 // CommandBuffer object only for core and keep only the most basic items in the parent class
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    explicit CommandBufferSubState(vvl::CommandBuffer &cb);
+    CommandBufferSubState(vvl::CommandBuffer &cb, CoreChecks &validator);
 
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
                           VkPipelineStageFlags2KHR src_stage_mask) override;
@@ -39,6 +41,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Destroy() final;
 
     void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) final;
+
+    void SubmitTimeValidate();
+
+    CoreChecks &validator;
 
     uint32_t nesting_level;  // VK_EXT_nested_command_buffer
 
@@ -55,6 +61,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // currently need to hold in Command buffer because it can be a suspended renderpassss
     std::vector<VkOffset2D> fragment_density_offsets;
 
+    // The subresources from dynamic rendering barriers that can't be validated during record time.
+    vvl::unordered_map<VkImage, std::vector<std::pair<VkImageSubresourceRange, vvl::LocationCapture>>>
+        submit_validate_dynamic_rendering_barrier_subresources;
+
   private:
     void ResetCBState();
 };
@@ -66,11 +76,13 @@ static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb
     return *static_cast<const CommandBufferSubState *>(cb.SubState(LayerObjectTypeCoreValidation));
 }
 
-// Override Retire to validate submissions in the order defined by synchronization
 class QueueSubState : public vvl::QueueSubState {
   public:
     QueueSubState(Logger& logger, vvl::Queue& q);
 
+    void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
+
+    // Override Retire to validate submissions in the order defined by synchronization
     void Retire(vvl::QueueSubmission&) override;
 
   private:
