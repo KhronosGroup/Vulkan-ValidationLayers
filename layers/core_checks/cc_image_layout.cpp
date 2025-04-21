@@ -190,7 +190,6 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
     // Iterate over the layout maps for each referenced image
-    ImageLayoutRangeMap empty_map(1);
     for (const auto &[image, image_layout_registry] : cb_state.image_layout_map) {
         if (!image_layout_registry) continue;
         const auto image_state = Get<vvl::Image>(image);
@@ -208,7 +207,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 
         const auto subresource_count = image_state->subresource_encoder.SubresourceCount();
         auto it = submission_image_layout_map.try_emplace(image_state.get(), subresource_count).first;
-        ImageLayoutRangeMap& submission_layout_map = *it->second;
+        ImageLayoutRangeMap &submission_layout_map = *it->second;
 
         const auto *global_layout_map = image_state->layout_range_map.get();
         ASSERT_AND_CONTINUE(global_layout_map);

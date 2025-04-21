@@ -21,6 +21,7 @@
 #pragma once
 
 #include <cstddef>
+#include <variant>
 #include <vector>
 #include "containers/range.h"
 #include "containers/range_map.h"
@@ -528,7 +529,6 @@ class BothRangeMap {
         }
         bool operator==(const IteratorImpl& other) const {
             // It's enough just to compare both iterators.
-            // No need to check is_small_map_it_ flag. It doesn't provide additional information.
             return small_it_ == other.small_it_ && big_it_ == other.big_it_;
         }
         bool operator!=(const IteratorImpl& other) const { return !(*this == other); }
@@ -551,168 +551,156 @@ class BothRangeMap {
     using const_iterator = IteratorImpl<const value_type, SmallMapConstIterator, BigMapConstIterator>;
 
     iterator begin() {
-        if (small_map_) {
-            return iterator(small_map_->begin());
+        if (UsesSmallMap()) {
+            return iterator(GetSmallMap().begin());
         } else {
-            return iterator(big_map_->begin());
+            return iterator(GetBigMap().begin());
         }
     }
     const_iterator cbegin() const {
-        if (small_map_) {
-            return const_iterator(small_map_->begin());
+        if (UsesSmallMap()) {
+            return const_iterator(GetSmallMap().begin());
         } else {
-            return const_iterator(big_map_->begin());
+            return const_iterator(GetBigMap().begin());
         }
     }
     const_iterator begin() const { return cbegin(); }
 
     iterator end() {
-        if (small_map_) {
-            return iterator(small_map_->end());
+        if (UsesSmallMap()) {
+            return iterator(GetSmallMap().end());
         } else {
-            return iterator(big_map_->end());
+            return iterator(GetBigMap().end());
         }
     }
     const_iterator cend() const {
-        if (small_map_) {
-            return const_iterator(small_map_->end());
+        if (UsesSmallMap()) {
+            return const_iterator(GetSmallMap().end());
         } else {
-            return const_iterator(big_map_->end());
+            return const_iterator(GetBigMap().end());
         }
     }
     const_iterator end() const { return cend(); }
 
     iterator find(const key_type& key) {
-        if (small_map_) {
-            return iterator(small_map_->find(key));
+        if (UsesSmallMap()) {
+            return iterator(GetSmallMap().find(key));
         } else {
-            return iterator(big_map_->find(key));
+            return iterator(GetBigMap().find(key));
         }
     }
 
     const_iterator find(const key_type& key) const {
-        if (small_map_) {
-            return const_iterator(small_map_->find(key));
+        if (UsesSmallMap()) {
+            return const_iterator(GetSmallMap().find(key));
         } else {
-            return const_iterator(big_map_->find(key));
+            return const_iterator(GetBigMap().find(key));
         }
     }
 
     iterator find(const index_type& index) {
-        if (small_map_) {
-            return iterator(small_map_->find(index));
+        if (UsesSmallMap()) {
+            return iterator(GetSmallMap().find(index));
         } else {
-            return iterator(big_map_->find(index));
+            return iterator(GetBigMap().find(index));
         }
     }
 
     const_iterator find(const index_type& index) const {
-        if (small_map_) {
-            return const_iterator(static_cast<const SmallMap*>(small_map_)->find(index));
+        if (UsesSmallMap()) {
+            return const_iterator(GetSmallMap().find(index));
         } else {
-            return const_iterator(static_cast<const BigMap*>(big_map_)->find(index));
+            return const_iterator(GetBigMap().find(index));
         }
     }
 
     // TODO -- this is supposed to be a const_iterator, which is constructable from an iterator
     void insert(const iterator& hint, const value_type& value) {
-        if (small_map_) {
+        if (UsesSmallMap()) {
             assert(hint.is_small_it_);
-            small_map_->insert(hint.small_it_, value);
+            GetSmallMap().insert(hint.small_it_, value);
         } else {
             assert(!hint.is_small_it_);
-            big_map_->insert(hint.big_it_, value);
+            GetBigMap().insert(hint.big_it_, value);
         }
     }
 
     iterator lower_bound(const key_type& key) {
-        if (small_map_) {
-            return iterator(small_map_->lower_bound(key));
+        if (UsesSmallMap()) {
+            return iterator(GetSmallMap().lower_bound(key));
         } else {
-            return iterator(big_map_->lower_bound(key));
+            return iterator(GetBigMap().lower_bound(key));
         }
     }
 
     const_iterator lower_bound(const key_type& key) const {
-        if (small_map_) {
-            return const_iterator(small_map_->lower_bound(key));
+        if (UsesSmallMap()) {
+            return const_iterator(GetSmallMap().lower_bound(key));
         } else {
-            return const_iterator(big_map_->lower_bound(key));
+            return const_iterator(GetBigMap().lower_bound(key));
         }
     }
 
     template <typename Value>
     iterator overwrite_range(const iterator& lower, Value&& value) {
-        if (small_map_) {
+        if (UsesSmallMap()) {
             assert(lower.is_small_it_);
-            return small_map_->overwrite_range(lower.small_it_, std::forward<Value>(value));
+            return GetSmallMap().overwrite_range(lower.small_it_, std::forward<Value>(value));
         } else {
             assert(!lower.is_small_it_);
-            return big_map_->overwrite_range(lower.big_it_, std::forward<Value>(value));
+            return GetBigMap().overwrite_range(lower.big_it_, std::forward<Value>(value));
         }
     }
 
-    // With power comes responsibility.  You can get to the underlying maps, s.t. in inner loops, the "SmallMode" checks can be
+    // With power comes responsibility (🕷).  You can get to the underlying maps, s.t. in inner loops, the "SmallMode" checks can be
     // avoided per call, just be sure and Get the correct one.
     const SmallMap& GetSmallMap() const {
-        assert(small_map_);
-        return *small_map_;
+        assert(UsesSmallMap());
+        return std::get<SmallMap>(map_);
     }
     SmallMap& GetSmallMap() {
-        assert(small_map_);
-        return *small_map_;
+        assert(UsesSmallMap());
+        return std::get<SmallMap>(map_);
     }
     const BigMap& GetBigMap() const {
-        assert(big_map_);
-        return *big_map_;
+        assert(!UsesSmallMap());
+        return std::get<BigMap>(map_);
     }
     BigMap& GetBigMap() {
-        assert(big_map_);
-        return *big_map_;
+        assert(!UsesSmallMap());
+        return std::get<BigMap>(map_);
     }
 
     BothRangeMap() = delete;
 
     BothRangeMap(index_type limit) {
         if (limit <= N) {
-            small_map_ = new (backing_store) SmallMap(limit);
+            map_ = SmallMap(limit);
         } else {
-            big_map_ = new (backing_store) BigMap();
-        }
-    }
-
-    ~BothRangeMap() {
-        if (big_map_) {
-            big_map_->~BigMap();
-        }
-        if (small_map_) {
-            small_map_->~SmallMap();
+            map_ = BigMap();
         }
     }
 
     bool empty() const {
-        if (small_map_) {
-            return small_map_->empty();
+        if (UsesSmallMap()) {
+            return GetSmallMap().empty();
         } else {
-            return big_map_->empty();
+            return GetBigMap().empty();
         }
     }
 
     size_t size() const {
-        if (small_map_) {
-            return small_map_->size();
+        if (UsesSmallMap()) {
+            return GetSmallMap().size();
         } else {
-            return big_map_->size();
+            return GetBigMap().size();
         }
     }
 
-    bool UsesSmallMap() const { return small_map_ != nullptr; }
+    bool UsesSmallMap() const { return std::holds_alternative<SmallMap>(map_); }
 
   private:
-    BigMap* big_map_ = nullptr;
-    SmallMap* small_map_ = nullptr;
-
-    alignas(std::max(alignof(SmallMap), alignof(BigMap))) std::byte backing_store[std::max(sizeof(SmallMap), sizeof(BigMap))];
+    std::variant<SmallMap, BigMap> map_;
 };
 
 }  // namespace subresource_adapter

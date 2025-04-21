@@ -1195,12 +1195,12 @@ class small_range_map {
     }
     value_type *get_value(SmallIndex index) {
         RANGE_ASSERT(index < limit_);  // Must be inbounds
-        return reinterpret_cast<value_type *>(&(backing_store_[index]));
+        return reinterpret_cast<value_type *>(&(key_values_[index]));
     }
     const value_type *get_value(SmallIndex index) const {
         RANGE_ASSERT(index < limit_);                 // Must be inbounds
         RANGE_ASSERT(index == ranges_[index].begin);  // Must be the record at begin
-        return reinterpret_cast<const value_type *>(&(backing_store_[index]));
+        return reinterpret_cast<const value_type *>(&(key_values_[index]));
     }
 
     template <typename Value>
@@ -1303,15 +1303,10 @@ class small_range_map {
     // Stores range boundaries only
     //     open ranges, stored as inverted, invalid range (begining of next, end of prev]
     //     inuse(begin, end) for all entries  on (begin, end]
-    // Used for placement new of T for each range begin.
-    struct alignas(alignof(value_type)) BackingStore {
-        uint8_t data[sizeof(value_type)];
-    };
-
     SmallIndex size_;
     SmallIndex limit_;
     std::array<SmallRange, N> ranges_;
-    std::array<BackingStore, N> backing_store_;
+    std::array<std::pair<key_type, mapped_type>, N> key_values_;
     std::array<bool, N> in_use_;
 };
 
