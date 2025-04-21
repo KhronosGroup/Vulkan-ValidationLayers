@@ -31,28 +31,19 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_module.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "utils/action_command_utils.h"
 #include "utils/vk_layer_utils.h"
 
 namespace vvl {
 
 // This seems like it could be useful elsewhere, but until find another spot, just keep here.
 static const char *GetActionType(Func command) {
-    switch (command) {
-        case Func::vkCmdDispatch:
-        case Func::vkCmdDispatchIndirect:
-        case Func::vkCmdDispatchBase:
-        case Func::vkCmdDispatchBaseKHR:
-        case Func::vkCmdDispatchGraphAMDX:
-        case Func::vkCmdDispatchGraphIndirectAMDX:
-        case Func::vkCmdDispatchGraphIndirectCountAMDX:
-            return "dispatch";
-        case Func::vkCmdTraceRaysNV:
-        case Func::vkCmdTraceRaysKHR:
-        case Func::vkCmdTraceRaysIndirectKHR:
-        case Func::vkCmdTraceRaysIndirect2KHR:
-            return "trace rays";
-        default:
-            return "draw";
+    if (IsCommandDispatch(command)) {
+        return "dispatch";
+    } else if (IsCommandTraceRays(command)) {
+        return "trace rays";
+    } else {
+        return "draw";
     }
 }
 

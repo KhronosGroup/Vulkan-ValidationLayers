@@ -32,6 +32,7 @@
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
+#include "utils/action_command_utils.h"
 
 namespace gpuav {
 
@@ -382,8 +383,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     }
 
     // Vertex attribute fetching
+    // Only need to update if a draw (that is not mesh) is coming as we instrument all vertex entry points
     VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};
-    if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob) {
+    if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob && IsCommandDrawVertex(loc.function)) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = 4 * sizeof(uint32_t);
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -396,31 +398,32 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
             return;
         }
 
-        const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
-            GetVertexAttributeFetchLimits(cb_state.base);
         auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer.GetMappedPtr();
-        if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
-            vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
-            vertex_attribute_fetch_limits_buffer_ptr[1] =
-                (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
-        } else {
-            vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
-            vertex_attribute_fetch_limits_buffer_ptr[1] = std::numeric_limits<uint32_t>::max();
-        }
-        if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
-            vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
-            vertex_attribute_fetch_limits_buffer_ptr[3] =
-                (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
-        } else {
-            vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
-            vertex_attribute_fetch_limits_buffer_ptr[3] = std::numeric_limits<uint32_t>::max();
-        }
+        // default is to make the vertex shader skip checking any limits
+        vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
+        vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
 
-        out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
-            vertex_attribute_fetch_limit_vertex_input_rate;
-        out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =
-            vertex_attribute_fetch_limit_instance_input_rate;
-        out_instrumentation_error_blob.index_buffer_binding = cb_state.base.index_buffer_binding;
+        // This check is only for indexed draws, we still bound the vko::Buffer regardless, but if can skip setting the values
+        if (IsCommandDrawVertexIndexed(loc.function)) {
+            const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
+                GetVertexAttributeFetchLimits(cb_state.base);
+            if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
+                vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
+                vertex_attribute_fetch_limits_buffer_ptr[1] =
+                    (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
+            }
+
+            if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
+                vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
+                vertex_attribute_fetch_limits_buffer_ptr[3] =
+                    (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
+            }
+            out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
+                vertex_attribute_fetch_limit_vertex_input_rate;
+            out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =
+                vertex_attribute_fetch_limit_instance_input_rate;
+            out_instrumentation_error_blob.index_buffer_binding = cb_state.base.index_buffer_binding;
+        }
 
         vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer.VkHandle();
         vertex_attribute_fetch_limits_buffer_bi.offset = 0;
@@ -981,6 +984,7 @@ bool LogMessageInstIndexedDraw(Validator &gpuav, const uint32_t *error_record, s
             out_vuid_msg = "VUID-vkCmdDrawIndexed-None-02721";
             break;
         case vvl::Func::vkCmdDrawIndexedIndirectCount:
+        case vvl::Func::vkCmdDrawIndexedIndirectCountKHR:
             out_vuid_msg = "VUID-vkCmdDrawIndexedIndirectCount-None-02721";
             break;
         case vvl::Func::vkCmdDrawIndexedIndirect:
