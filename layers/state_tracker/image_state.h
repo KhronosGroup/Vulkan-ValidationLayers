@@ -116,10 +116,14 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
 
     // This map is used to validate/update image layouts during submit time processing.
-    // Record time validation can't use this. At the beginning of the command buffer
-    // the global image layout can't be determined because it depends on the previously
-    // submitted command buffers.
+    // Record time validation can't use this, because global image layout is undefined
+    // at record time (depends on the previous submissions, which are unknown at record time).
     std::shared_ptr<ImageLayoutRangeMap> layout_range_map;
+
+    // If there is no aliasing this mutex protects this->layout_range_map.
+    // With aliasing one of the images shares a mutex with other aliases,
+    // so for some aliased images this mutex can be unused.
+    mutable std::shared_mutex layout_range_map_lock;
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 

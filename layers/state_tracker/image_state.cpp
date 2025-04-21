@@ -308,6 +308,7 @@ void Image::SetInitialLayoutMap() {
         // otherwise set up a new map.
         // set up the new map completely before making it available
         layout_map = std::make_shared<ImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
+        layout_map->lock = &layout_range_map_lock;
         auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
         for (; range_gen->non_empty(); ++range_gen) {
             layout_map->insert(layout_map->end(), std::make_pair(*range_gen, create_info.initialLayout));

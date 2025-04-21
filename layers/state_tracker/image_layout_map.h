@@ -62,9 +62,9 @@ class ImageLayoutRegistry {
         VkImageLayout current_layout;
         InitialLayoutState* state;
 
-        LayoutEntry(VkImageLayout initial_ = kInvalidLayout, VkImageLayout current_ = kInvalidLayout,
-                    InitialLayoutState* s = nullptr)
-            : initial_layout(initial_), current_layout(current_), state(s) {}
+        LayoutEntry() = default;
+        LayoutEntry(VkImageLayout initial, VkImageLayout current = kInvalidLayout, InitialLayoutState* s = nullptr)
+            : initial_layout(initial), current_layout(current), state(s) {}
 
         bool operator!=(const LayoutEntry& rhs) const {
             return initial_layout != rhs.initial_layout || current_layout != rhs.current_layout || state != rhs.state;
@@ -150,17 +150,17 @@ class ImageLayoutRangeMap : public subresource_adapter::BothRangeMap<VkImageLayo
     using RangeGenerator = image_layout_map::RangeGenerator;
 
     ImageLayoutRangeMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
-    ReadLockGuard ReadLock() const { return ReadLockGuard(lock_); }
-    WriteLockGuard WriteLock() { return WriteLockGuard(lock_); }
+    ReadLockGuard ReadLock() const { return ReadLockGuard(*lock); }
+    WriteLockGuard WriteLock() { return WriteLockGuard(*lock); }
 
     bool AnyInRange(RangeGenerator& gen, std::function<bool(const key_type& range, const mapped_type& state)>&& func) const;
 
-  private:
-    mutable std::shared_mutex lock_;
+    // Not null if this layout map is owned by the vvl::Image and points to vvl::Image::layout_range_map_lock.
+    // The layout maps that are not owned by the images do not use locking functionality.
+    std::shared_mutex* lock = nullptr;
 };
 
-// TODO - Get to work with non-STL custom hashmap
-using SubmissionImageLayoutMap = std::unordered_map<const vvl::Image*, std::optional<ImageLayoutRangeMap>>;
+using SubmissionImageLayoutMap = vvl::unordered_map<const vvl::Image*, std::optional<ImageLayoutRangeMap>>;
 
 // Not declared in the CommandBuffer class to allow other files to forward reference this
 // (was slow to have ever file need to compile in the Image Layout map)
