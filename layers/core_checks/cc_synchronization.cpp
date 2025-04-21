@@ -1966,8 +1966,8 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
     return skip;
 }
 
-void CoreChecks::EnqueueSubmitTimeValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
-                                                                 const ImageBarrier &barrier) {
+void CoreChecks::EnqueueValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
+                                                       const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
     if (rp_state && (VK_NULL_HANDLE == cb_state.active_framebuffer) && cb_state.IsSecondary()) {
@@ -2083,8 +2083,11 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
+        EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
+
+        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
         RecordTransitionImageLayout(cb_state, img_barrier);
-        EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 
@@ -2099,8 +2102,11 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
+        EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
+
+        // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
         RecordTransitionImageLayout(cb_state, img_barrier);
-        EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
 

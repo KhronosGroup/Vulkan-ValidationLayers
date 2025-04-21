@@ -321,8 +321,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
     bool ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
     bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc) const;
-    void EnqueueSubmitTimeValidateImageBarrierAttachment(const Location& loc, vvl::CommandBuffer& cb_state,
-                                                         const ImageBarrier& barrier);
+    void EnqueueValidateImageBarrierAttachment(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier);
+    void EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer& cb_state,
+                                                            const ImageBarrier& image_barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, vvl::CommandBuffer const& cb_state,
                                         const vvl::Framebuffer& fb_state, uint32_t active_subpass,
                                         const vku::safe_VkSubpassDescription2& sub_desc, const VkRenderPass rp_handle,
