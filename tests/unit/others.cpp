@@ -493,18 +493,18 @@ TEST_F(VkLayerTest, UseObjectWithWrongDevice) {
     device_create_info.queueCreateInfoCount = 1;
     device_create_info.pQueueCreateInfos = &queue_info;
     device_create_info.enabledLayerCount = 0;
-    device_create_info.ppEnabledLayerNames = NULL;
+    device_create_info.ppEnabledLayerNames = nullptr;
     device_create_info.pEnabledFeatures = &features;
 
     VkDevice second_device;
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, NULL, &second_device));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(Gpu(), &device_create_info, nullptr, &second_device));
 
     // Try to destroy the renderpass from the first device using the second device
     m_errorMonitor->SetDesiredError("VUID-vkDestroyRenderPass-renderPass-parent");
-    vk::DestroyRenderPass(second_device, m_renderPass, NULL);
+    vk::DestroyRenderPass(second_device, m_renderPass, nullptr);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyDevice(second_device, NULL);
+    vk::DestroyDevice(second_device, nullptr);
 }
 
 TEST_F(VkLayerTest, InvalidAllocationCallbacks) {

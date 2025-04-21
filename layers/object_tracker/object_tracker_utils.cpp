@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <vulkan/vulkan_core.h>
+#include "generated/vk_object_types.h"
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"
 #include "containers/small_vector.h"
@@ -80,7 +82,7 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
     }
     // Object was not found anywhere
     if (!other_lifetimes) {
-        return LogError(invalid_handle_vuid, handle, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
+        return LogError(invalid_handle_vuid, handle_, loc, "Invalid %s Object 0x%" PRIxLEAST64 ".",
                         string_VulkanObjectType(object_type), object_handle);
     }
     // Anonymous object validation does not check parent, only that the object exists
@@ -89,14 +91,22 @@ bool Tracker::CheckObjectValidity(uint64_t object_handle, VulkanObjectType objec
     }
 
     // Object found on another device
-    LogObjectList objlist(handle, other_lifetimes->handle);
-    std::string handle_str(FormatHandle(handle));
-    std::string other_handle_str(FormatHandle(other_lifetimes->handle));
+    LogObjectList objlist(handle_, other_lifetimes->handle_);
     return LogError(wrong_parent_vuid, objlist, loc,
                     "(%s 0x%" PRIxLEAST64
                     ") was created, allocated or retrieved from %s, but command is using (or its dispatchable parameter is "
                     "associated with) %s",
-                    string_VulkanObjectType(object_type), object_handle, other_handle_str.c_str(), handle_str.c_str());
+                    string_VulkanObjectType(object_type), object_handle, FormatHandle(other_lifetimes->handle_).c_str(),
+                    FormatHandle(handle_).c_str());
+}
+
+void Tracker::SetDeviceHandle(VkDevice device) { handle_ = VulkanTypedHandle(device, kVulkanObjectTypeDevice); }
+
+void Tracker::SetInstanceHandle(VkInstance instance) { handle_ = VulkanTypedHandle(instance, kVulkanObjectTypeInstance); }
+
+void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) {
+    BaseClass::FinishDeviceSetup(pCreateInfo, loc);
+    tracker.SetDeviceHandle(device);
 }
 
 bool Device::CheckPipelineObjectValidity(uint64_t object_handle, const char *invalid_handle_vuid, const Location &loc) const {
@@ -129,7 +139,7 @@ void Tracker::DestroyObjectSilently(uint64_t object, VulkanObjectType object_typ
     if (item == object_map[object_type].end()) {
         // We've already checked that the object exists. If we couldn't find and atomically remove it
         // from the map, there must have been a race condition in the app. Report an error and move on.
-        (void)LogError("UNASSIGNED-ObjectTracker-Destroy", handle, loc,
+        (void)LogError("UNASSIGNED-ObjectTracker-Destroy", handle_, loc,
                        "Couldn't destroy %s Object 0x%" PRIxLEAST64
                        ", not found. This should not happen and may indicate a race condition in the application.",
                        string_VulkanObjectType(object_type), object);
@@ -699,6 +709,7 @@ void Instance::PostCallRecordCreateInstance(const VkInstanceCreateInfo *pCreateI
                                             VkInstance *pInstance, const RecordObject &record_obj) {
     if (record_obj.result < VK_SUCCESS) return;
     tracker.CreateObject(*pInstance, kVulkanObjectTypeInstance, pAllocator, record_obj.location, *pInstance);
+    tracker.SetInstanceHandle(*pInstance);
 }
 
 bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
