@@ -119,7 +119,7 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     // Record time validation can't use this. At the beginning of the command buffer
     // the global image layout can't be determined because it depends on the previously
     // submitted command buffers.
-    std::shared_ptr<GlobalImageLayoutRangeMap> layout_range_map;
+    std::shared_ptr<ImageLayoutRangeMap> layout_range_map;
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 

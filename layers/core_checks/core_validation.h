@@ -1184,7 +1184,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                      const RecordObject& record_obj) override;
 
     bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                    GlobalImageLayoutMap& global_image_layout_map) const;
+                                    SubmissionImageLayoutMap& submission_image_layout_map) const;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
 

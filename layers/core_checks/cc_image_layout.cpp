@@ -165,15 +165,6 @@ void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
     }
 }
 
-static GlobalImageLayoutRangeMap *GetLayoutRangeMap(GlobalImageLayoutMap &global_image_layout_map, const vvl::Image &image_state) {
-    // This approach allows for a single hash lookup or/create new
-    auto &layout_map = global_image_layout_map[&image_state];
-    if (!layout_map) {
-        layout_map.emplace(image_state.subresource_encoder.SubresourceCount());
-    }
-    return &(*layout_map);
-}
-
 // Helper to update the Global or Overlay layout map
 struct GlobalLayoutUpdater {
     bool update(VkImageLayout &dst, const image_layout_map::ImageLayoutRegistry::LayoutEntry &src) const {
@@ -195,11 +186,11 @@ struct GlobalLayoutUpdater {
 
 // This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::CommandBuffer &cb_state,
-                                            GlobalImageLayoutMap &global_image_layout_map) const {
+                                            SubmissionImageLayoutMap &submission_image_layout_map) const {
     if (disabled[image_layout_validation]) return false;
     bool skip = false;
     // Iterate over the layout maps for each referenced image
-    GlobalImageLayoutRangeMap empty_map(1);
+    ImageLayoutRangeMap empty_map(1);
     for (const auto &[image, image_layout_registry] : cb_state.image_layout_map) {
         if (!image_layout_registry) continue;
         const auto image_state = Get<vvl::Image>(image);
@@ -211,22 +202,25 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
             continue;
         }
 
-        const auto &layout_map = image_layout_registry->GetLayoutMap();
+        const auto &cb_layout_map = image_layout_registry->GetLayoutMap();
         // Validate the initial_uses for each subresource referenced
-        if (layout_map.empty()) continue;
+        if (cb_layout_map.empty()) continue;
 
-        auto *overlay_map = GetLayoutRangeMap(global_image_layout_map, *image_state);
-        const auto *global_range_map = image_state->layout_range_map.get();
-        ASSERT_AND_CONTINUE(global_range_map);
-        auto global_range_map_guard = global_range_map->ReadLock();
+        const auto subresource_count = image_state->subresource_encoder.SubresourceCount();
+        auto it = submission_image_layout_map.try_emplace(image_state.get(), subresource_count).first;
+        ImageLayoutRangeMap& submission_layout_map = *it->second;
+
+        const auto *global_layout_map = image_state->layout_range_map.get();
+        ASSERT_AND_CONTINUE(global_layout_map);
+        auto global_layout_map_guard = global_layout_map->ReadLock();
 
         // Note: don't know if it would matter
         // if (global_range_map->empty() && overlay_map->empty()) // skip this next loop...;
 
-        auto pos = layout_map.begin();
-        const auto end = layout_map.end();
-        sparse_container::parallel_iterator<const GlobalImageLayoutRangeMap> current_layout(*overlay_map, *global_range_map,
-                                                                                            pos->first.begin);
+        auto pos = cb_layout_map.begin();
+        const auto end = cb_layout_map.end();
+        sparse_container::parallel_iterator<const ImageLayoutRangeMap> current_layout(submission_layout_map, *global_layout_map,
+                                                                                      pos->first.begin);
         while (pos != end) {
             VkImageLayout initial_layout = pos->second.initial_layout;
             if (initial_layout == image_layout_map::kInvalidLayout) {
@@ -273,7 +267,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
             }
         }
         // Update all layout set operations (which will be a subset of the initial_layouts)
-        sparse_container::splice(*overlay_map, layout_map, GlobalLayoutUpdater());
+        sparse_container::splice(submission_layout_map, cb_layout_map, GlobalLayoutUpdater());
     }
 
     return skip;
@@ -1076,12 +1070,12 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
     // RangeGenerator doesn't tolerate degenerate or invalid ranges. The error will be found and logged elsewhere
     if (!IsCompliantSubresourceRange(subres_range, image_state)) return false;
 
-    GlobalImageLayoutRangeMap::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
+    ImageLayoutRangeMap::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
 
     struct CheckState {
         const VkImageLayout expected_layout;
         VkImageAspectFlags aspect_mask;
-        GlobalImageLayoutRangeMap::key_type found_range;
+        ImageLayoutRangeMap::key_type found_range;
         VkImageLayout found_layout;
         CheckState(VkImageLayout expected_layout_, VkImageAspectFlags aspect_mask_)
             : expected_layout(expected_layout_),
@@ -1094,7 +1088,7 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
 
     auto guard = image_state.layout_range_map->ReadLock();
     image_state.layout_range_map->AnyInRange(
-        range_gen, [&check_state](const GlobalImageLayoutRangeMap::key_type &range, const VkImageLayout &layout) {
+        range_gen, [&check_state](const ImageLayoutRangeMap::key_type &range, const VkImageLayout &layout) {
             bool mismatch = false;
             if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
                 check_state.found_range = range;

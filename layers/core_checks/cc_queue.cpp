@@ -38,14 +38,13 @@ struct CommandBufferSubmitState {
     QFOTransferCBScoreboards<QFOImageTransferBarrier> qfo_image_scoreboards;
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> qfo_buffer_scoreboards;
     std::vector<VkCommandBuffer> current_cmds;
-    GlobalImageLayoutMap global_image_layout_map;
     std::vector<std::string> cmdbuf_label_stack;
     std::string last_closed_cmdbuf_label;
     bool found_unbalanced_cmdbuf_label;
 
-    // The "local" prefix is about tracking state within a *single* queue submission
-    // (accross all command buffers of that submission), as opposed to globally
-    // tracking state accross *all* submissions to the same queue.
+    // The "local" prefix is about tracking state accross all command buffers of a *single* QueueSubmit command.
+    // This does not track global state based on all previous submissions.
+    SubmissionImageLayoutMap local_image_layout_map;
     QueryMap local_query_to_state_map;
     EventMap local_event_signal_info;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
@@ -60,7 +59,7 @@ struct CommandBufferSubmitState {
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, global_image_layout_map);
+        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, local_image_layout_map);
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core.ValidatePrimaryCommandBufferState(
