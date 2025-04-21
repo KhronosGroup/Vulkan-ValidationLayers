@@ -903,8 +903,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
     // Validate memory requirements alignment
     if (SafeModulo(memoryOffset, buffer_state->requirements.alignment) != 0) {
-        const char *vuid =
-            bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-memoryOffset-01036" : "VUID-vkBindBufferMemory-memoryOffset-01036";
+        const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10739" : "VUID-vkBindBufferMemory-None-10739";
         const LogObjectList objlist(buffer, memory);
         skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
                          "is %" PRIu64 " but must be an integer multiple of the VkMemoryRequirements::alignment value %" PRIu64
@@ -981,7 +980,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
 
         // Validate memory requirements size
         if (buffer_state->requirements.size > (mem_info->allocate_info.allocationSize - memoryOffset)) {
-            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-size-01037" : "VUID-vkBindBufferMemory-size-01037";
+            const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-None-10741" : "VUID-vkBindBufferMemory-None-10741";
             const LogObjectList objlist(buffer, memory);
             skip |= LogError(vuid, objlist, loc,
                              "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
@@ -1628,8 +1627,8 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
 
                     // Validate memory requirements alignment
                     if (SafeModulo(bind_info.memoryOffset, mem_req.alignment) != 0) {
-                        const char *vuid = bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616"
-                                                            : "VUID-vkBindImageMemory-memoryOffset-01048";
+                        const char *vuid =
+                            bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01616" : "VUID-vkBindImageMemory-None-10735";
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(vuid, objlist, loc.dot(Field::memoryOffset),
                                          "is %" PRIu64
@@ -1644,7 +1643,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         if (!IgnoreAllocationSize(allocate_info) &&
                             mem_req.size > allocate_info.allocationSize - bind_info.memoryOffset) {
                             const char *vuid =
-                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-size-01049";
+                                bind_image_mem_2 ? "VUID-VkBindImageMemoryInfo-pNext-01617" : "VUID-vkBindImageMemory-None-10737";
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |= LogError(vuid, objlist, loc,
                                              "allocationSize (%" PRIu64 ") minus memoryOffset (%" PRIu64 ") is %" PRIu64
