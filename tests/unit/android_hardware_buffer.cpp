@@ -1094,15 +1094,15 @@ TEST_F(NegativeAndroidHardwareBuffer, InvalidBindBufferMemory) {
 
     if (mem_reqs.alignment > 1) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
-        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memoryOffset-01036");
-        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-size-01037");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10739");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10741");
         vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 1);
         m_errorMonitor->VerifyFound();
     }
 
     VkDeviceSize buffer_offset = (mem_reqs.size - 1) & ~(mem_reqs.alignment - 1);
     if (buffer_offset > 0) {
-        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-size-01037");
+        m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10741");
         if (memory_dedicated_requirements.requiresDedicatedAllocation) {
             m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01444");
         }
@@ -1209,7 +1209,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
 
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
-    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-size-01049");
+    m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-None-10737");
     vk::BindImageMemory(device(), image.handle(), memory, 0);
     m_errorMonitor->VerifyFound();
 
