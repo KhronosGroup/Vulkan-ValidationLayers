@@ -284,6 +284,24 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
             indices_ptr[i] = i / (indices_buffer_alignment_ / sizeof(uint32_t));
         }
     }
+
+    // Create Vertex Attribute Fetch buffer to turn off check when needed
+    {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = 4 * sizeof(uint32_t);
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const bool success = vertex_attribute_fetch_off_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
+
+        auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_off_.GetMappedPtr();
+        vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;  // has_max_vbb_vertex_input_rate
+        vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;  // has_max_vbb_instance_input_rate
+    }
 }
 
 namespace setting {

@@ -19,58 +19,62 @@
 
 // clang-format off
 
-static inline bool IsCommandDrawMesh(vvl::Func command) {
+namespace vvl {
+
+static inline bool IsCommandDrawMesh(Func command) {
     return
-        command == vvl::Func::vkCmdDrawMeshTasksNV ||
-        command == vvl::Func::vkCmdDrawMeshTasksIndirectNV ||
-        command == vvl::Func::vkCmdDrawMeshTasksIndirectCountNV ||
-        command == vvl::Func::vkCmdDrawMeshTasksEXT ||
-        command == vvl::Func::vkCmdDrawMeshTasksIndirectEXT ||
-        command == vvl::Func::vkCmdDrawMeshTasksIndirectCountEXT;
+        command == Func::vkCmdDrawMeshTasksNV ||
+        command == Func::vkCmdDrawMeshTasksIndirectNV ||
+        command == Func::vkCmdDrawMeshTasksIndirectCountNV ||
+        command == Func::vkCmdDrawMeshTasksEXT ||
+        command == Func::vkCmdDrawMeshTasksIndirectEXT ||
+        command == Func::vkCmdDrawMeshTasksIndirectCountEXT;
 }
 
-static inline bool IsCommandDrawVertexIndexed(vvl::Func command) {
+static inline bool IsCommandDrawVertexIndexed(Func command) {
     return
-        command == vvl::Func::vkCmdDrawIndexed ||
-        command == vvl::Func::vkCmdDrawMultiIndexedEXT ||
-        command == vvl::Func::vkCmdDrawIndexedIndirect ||
-        command == vvl::Func::vkCmdDrawIndexedIndirectCount ||
-        command == vvl::Func::vkCmdDrawIndexedIndirectCountKHR;
+        command == Func::vkCmdDrawIndexed ||
+        command == Func::vkCmdDrawMultiIndexedEXT ||
+        command == Func::vkCmdDrawIndexedIndirect ||
+        command == Func::vkCmdDrawIndexedIndirectCount ||
+        command == Func::vkCmdDrawIndexedIndirectCountKHR;
 }
 
-static inline bool IsCommandDrawVertex(vvl::Func command) {
+static inline bool IsCommandDrawVertex(Func command) {
     return
-        command == vvl::Func::vkCmdDraw ||
-        command == vvl::Func::vkCmdDrawMultiEXT ||
-        command == vvl::Func::vkCmdDrawIndexed ||
-        command == vvl::Func::vkCmdDrawMultiIndexedEXT ||
-        command == vvl::Func::vkCmdDrawIndirect ||
-        command == vvl::Func::vkCmdDrawIndexedIndirect ||
-        command == vvl::Func::vkCmdDrawIndirectCount ||
-        command == vvl::Func::vkCmdDrawIndirectCountKHR ||
-        command == vvl::Func::vkCmdDrawIndexedIndirectCount ||
-        command == vvl::Func::vkCmdDrawIndexedIndirectCountKHR ||
-        command == vvl::Func::vkCmdDrawIndirectByteCountEXT;
+        command == Func::vkCmdDraw ||
+        command == Func::vkCmdDrawMultiEXT ||
+        command == Func::vkCmdDrawIndexed ||
+        command == Func::vkCmdDrawMultiIndexedEXT ||
+        command == Func::vkCmdDrawIndirect ||
+        command == Func::vkCmdDrawIndexedIndirect ||
+        command == Func::vkCmdDrawIndirectCount ||
+        command == Func::vkCmdDrawIndirectCountKHR ||
+        command == Func::vkCmdDrawIndexedIndirectCount ||
+        command == Func::vkCmdDrawIndexedIndirectCountKHR ||
+        command == Func::vkCmdDrawIndirectByteCountEXT;
 }
 
-static inline bool IsCommandDispatch(vvl::Func command) {
+static inline bool IsCommandDispatch(Func command) {
     return
-        command == vvl::Func::vkCmdDispatch ||
-        command == vvl::Func::vkCmdDispatchIndirect ||
-        command == vvl::Func::vkCmdDispatchBase ||
-        command == vvl::Func::vkCmdDispatchBaseKHR ||
-        command == vvl::Func::vkCmdDispatchGraphAMDX ||
-        command == vvl::Func::vkCmdDispatchGraphIndirectAMDX ||
-        command == vvl::Func::vkCmdDispatchGraphIndirectCountAMDX ||
-        command == vvl::Func::vkCmdDispatchTileQCOM;
+        command == Func::vkCmdDispatch ||
+        command == Func::vkCmdDispatchIndirect ||
+        command == Func::vkCmdDispatchBase ||
+        command == Func::vkCmdDispatchBaseKHR ||
+        command == Func::vkCmdDispatchGraphAMDX ||
+        command == Func::vkCmdDispatchGraphIndirectAMDX ||
+        command == Func::vkCmdDispatchGraphIndirectCountAMDX ||
+        command == Func::vkCmdDispatchTileQCOM;
 }
 
-static inline bool IsCommandTraceRays(vvl::Func command) {
+static inline bool IsCommandTraceRays(Func command) {
     return
-        command == vvl::Func::vkCmdTraceRaysNV ||
-        command == vvl::Func::vkCmdTraceRaysKHR ||
-        command == vvl::Func::vkCmdTraceRaysIndirectKHR ||
-        command == vvl::Func::vkCmdTraceRaysIndirect2KHR;
+        command == Func::vkCmdTraceRaysNV ||
+        command == Func::vkCmdTraceRaysKHR ||
+        command == Func::vkCmdTraceRaysIndirectKHR ||
+        command == Func::vkCmdTraceRaysIndirect2KHR;
 }
+
+} // namespace vvl
 
 // clang-format on
