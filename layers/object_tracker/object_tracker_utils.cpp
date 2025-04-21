@@ -210,11 +210,11 @@ bool Device::ValidateDescriptorSet(VkDescriptorPool descriptor_pool, VkDescripto
     return skip;
 }
 
-bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPush, const Location &loc) const {
+bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool is_push_descriptor, const Location &loc) const {
     bool skip = false;
 
     // VkWriteDescriptorSet::dstSet is ignored for push vkCmdPushDescriptorSetKHR, so can be bad handle
-    if (!isPush && desc->dstSet) {
+    if (!is_push_descriptor && desc->dstSet) {
         skip |= ValidateObject(desc->dstSet, kVulkanObjectTypeDescriptorSet, false, "VUID-VkWriteDescriptorSet-dstSet-00320",
                                "VUID-VkWriteDescriptorSet-commonparent", loc);
     }
@@ -308,7 +308,7 @@ bool Device::ValidateDescriptorWrite(VkWriteDescriptorSet const *desc, bool isPu
             // from it containing an immutable sampler. So we are safe to validate the lifetime here. In theory this should be
             // checked for COMBINED_IMAGE_SAMPLER as well, but being discussed in
             // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4177
-            if (desc->pImageInfo) {
+            if (desc->pImageInfo && !is_push_descriptor) {
                 for (uint32_t i = 0; i < desc->descriptorCount; ++i) {
                     skip |= ValidateObject(desc->pImageInfo[i].sampler, kVulkanObjectTypeSampler, false,
                                            "VUID-VkWriteDescriptorSet-descriptorType-00325",
