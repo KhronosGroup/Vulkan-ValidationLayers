@@ -1299,9 +1299,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     // In this case, we want to emulate supporting only for DebugPrintf with GPU-AV disabled
     if (settings_data->enables[debug_printf_validation]) {
         gpuav_settings.debug_printf_enabled = true;
-        if (!settings_data->enables[gpu_validation]) {
-            gpuav_settings.SetOnlyDebugPrintf();
-        }
     } else if (gpuav_settings.debug_printf_enabled) {
         // enabled the new way, but chassis uses this to create Validation Object
         settings_data->enables[debug_printf_validation] = true;
@@ -1342,6 +1339,11 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             // enabled the new way, but chassis uses this to create Validation Object
             settings_data->enables[gpu_validation] = true;
         }
+    }
+
+    // After checking the various ways to enable both DebugPrintf and GPU-AV, disable non-DebugPrintf portion if not used
+    if (settings_data->enables[debug_printf_validation] && !settings_data->enables[gpu_validation]) {
+        gpuav_settings.SetOnlyDebugPrintf();
     }
 
     // if app is setting VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, we can use this to disable it for debugging
