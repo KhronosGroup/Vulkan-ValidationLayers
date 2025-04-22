@@ -851,14 +851,10 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         const uint32_t index_bits_size = GetIndexBitsSize(index_buffer_binding.index_type);
         const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
 
-        VkBufferCreateInfo validation_dispatch_params_buffer_ci = vku::InitStructHelper();
-        validation_dispatch_params_buffer_ci.size = 3 * sizeof(uint32_t);
-        validation_dispatch_params_buffer_ci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        VmaAllocationCreateInfo alloc_info = {};
-        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        vko::Buffer validation_dispatch_params_buffer =
-            cb_state.gpu_resources_manager.GetManagedBuffer(gpuav, loc, validation_dispatch_params_buffer_ci, alloc_info);
-        if (validation_dispatch_params_buffer.IsDestroyed()) {
+        vko::BufferRange validation_dispatch_params_buffer_range =
+            cb_state.gpu_resources_manager.GetDeviceLocalIndirectBufferRange(loc, 3 * sizeof(uint32_t));
+
+        if (validation_dispatch_params_buffer_range.buffer == VK_NULL_HANDLE) {
             return;
         }
 
@@ -884,8 +880,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                     shared_draw_validation_resources.dummy_buffer.VkHandle(), 0, VK_WHOLE_SIZE};
             }
 
-            setup_validation_shader_resources.dispatch_indirect_buffer_binding.info = {validation_dispatch_params_buffer.VkHandle(),
-                                                                                       0, VK_WHOLE_SIZE};
+            setup_validation_shader_resources.dispatch_indirect_buffer_binding.info = {
+                validation_dispatch_params_buffer_range.buffer, validation_dispatch_params_buffer_range.offset,
+                validation_dispatch_params_buffer_range.size};
 
             if (!setup_validation_dispatch_pipeline.BindShaderResources(gpuav, cb_state, draw_i, error_logger_i,
                                                                         setup_validation_shader_resources)) {
@@ -901,9 +898,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                 VkBufferMemoryBarrier barrier_write_after_read = vku::InitStructHelper();
                 barrier_write_after_read.srcAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
                 barrier_write_after_read.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-                barrier_write_after_read.buffer = validation_dispatch_params_buffer.VkHandle();
-                barrier_write_after_read.offset = 0;
-                barrier_write_after_read.size = VK_WHOLE_SIZE;
+                barrier_write_after_read.buffer = validation_dispatch_params_buffer_range.buffer;
+                barrier_write_after_read.offset = validation_dispatch_params_buffer_range.offset;
+                barrier_write_after_read.size = validation_dispatch_params_buffer_range.size;
 
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
                                            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
@@ -917,9 +914,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                 VkBufferMemoryBarrier barrier_read_after_write = vku::InitStructHelper();
                 barrier_read_after_write.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
                 barrier_read_after_write.dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
-                barrier_read_after_write.buffer = validation_dispatch_params_buffer.VkHandle();
-                barrier_read_after_write.offset = 0;
-                barrier_read_after_write.size = VK_WHOLE_SIZE;
+                barrier_read_after_write.buffer = validation_dispatch_params_buffer_range.buffer;
+                barrier_read_after_write.offset = validation_dispatch_params_buffer_range.offset;
+                barrier_read_after_write.size = validation_dispatch_params_buffer_range.size;
 
                 DispatchCmdPipelineBarrier(cb_state.VkHandle(), VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                                            VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT, 0, 0, nullptr, 1, &barrier_read_after_write, 0,
@@ -946,7 +943,8 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
             DispatchCmdBindPipeline(cb_state.VkHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, validation_pipeline.pipeline);
 
             // One draw will check all VkDrawIndexedIndirectCommand
-            DispatchCmdDispatchIndirect(cb_state.VkHandle(), validation_dispatch_params_buffer.VkHandle(), 0);
+            DispatchCmdDispatchIndirect(cb_state.VkHandle(), validation_dispatch_params_buffer_range.buffer,
+                                        validation_dispatch_params_buffer_range.offset);
             // synchronize draw buffer validation (read) against subsequent writes
             std::array<VkBufferMemoryBarrier, 2> buffer_memory_barriers = {};
             uint32_t buffer_memory_barriers_count = 1;

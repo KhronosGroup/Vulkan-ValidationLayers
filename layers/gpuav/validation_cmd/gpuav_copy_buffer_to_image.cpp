@@ -132,24 +132,22 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
             uint32_t image_extent[4];
         };
 
-        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         const VkDeviceSize uniform_buffer_constants_byte_size = (4 +  // image extent
                                                                  1 +  // block size
                                                                  1 +  // gpu copy regions count
                                                                  2    // pad
                                                                  ) *
                                                                 sizeof(uint32_t);
-        buffer_info.size = uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        VmaAllocationCreateInfo alloc_info = {};
-        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-        vko::Buffer copy_src_regions_mem_buffer =
-            cb_state.gpu_resources_manager.GetManagedBuffer(gpuav, loc, buffer_info, alloc_info);
-        if (copy_src_regions_mem_buffer.IsDestroyed()) {
+
+        const VkDeviceSize buffer_size =
+            uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
+        vko::BufferRange copy_src_regions_mem_buffer_range =
+            cb_state.gpu_resources_manager.GetHostVisibleBufferRange(loc, buffer_size);
+        if (copy_src_regions_mem_buffer_range.buffer == VK_NULL_HANDLE) {
             return;
         }
 
-        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer.GetMappedPtr();
+        auto gpu_regions_u32_ptr = (uint32_t *)copy_src_regions_mem_buffer_range.offset_mapped_ptr;
 
         const uint32_t block_size = image_state->create_info.format == VK_FORMAT_D32_SFLOAT ? 4 : 5;
         uint32_t gpu_regions_count = 0;
@@ -207,7 +205,9 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         gpu_regions_u32_ptr[7] = 0;
 
         shader_resources.src_buffer_binding.info = {copy_buffer_to_img_info->srcBuffer, 0, VK_WHOLE_SIZE};
-        shader_resources.copy_src_regions_buffer_binding.info = {copy_src_regions_mem_buffer.VkHandle(), 0, VK_WHOLE_SIZE};
+        shader_resources.copy_src_regions_buffer_binding.info = {copy_src_regions_mem_buffer_range.buffer,
+                                                                 copy_src_regions_mem_buffer_range.offset,
+                                                                 copy_src_regions_mem_buffer_range.size};
 
         if (!validation_pipeline.BindShaderResources(gpuav, cb_state, cb_state.compute_index,
                                                      uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {

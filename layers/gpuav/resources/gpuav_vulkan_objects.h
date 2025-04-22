@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <vector>
 #include "containers/custom_containers.h"
+#include "containers/range.h"
 
 struct Location;
 namespace gpuav {
@@ -71,7 +72,8 @@ class Buffer {
     bool IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
     const VkBuffer &VkHandle() const { return buffer; }
     const VmaAllocation &Allocation() const { return allocation; }
-    VkDeviceAddress Address() const { return device_address; };
+    VkDeviceAddress Address() const { return device_address; }
+    VkDeviceSize Size() const { return size; }
     void Clear() const;
 
   private:
@@ -84,26 +86,32 @@ class Buffer {
     void *mapped_ptr = nullptr;
 };
 
+struct BufferRange {
+    VkBuffer buffer;
+    VkDeviceSize offset;
+    VkDeviceSize size;
+    void *offset_mapped_ptr;
+};
+
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
 class GpuResourcesManager {
   public:
-    explicit GpuResourcesManager(DescriptorSetManager &descriptor_set_manager) : descriptor_set_manager_(descriptor_set_manager) {}
+    explicit GpuResourcesManager(Validator &gpuav);
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
-    vko::Buffer GetManagedBuffer(Validator &gpuav, const Location &loc, const VkBufferCreateInfo &ci,
-                                 const VmaAllocationCreateInfo &vma_ci);
+
+    vko::BufferRange GetHostCachedBuffer(const Location &loc, VkDeviceSize size);
+    vko::BufferRange GetHostVisibleBufferRange(const Location &loc, VkDeviceSize size);
+    vko::BufferRange GetDeviceLocalIndirectBufferRange(const Location &loc, VkDeviceSize size);
 
     void ReturnResources();
     void DestroyResources();
 
   private:
-    DescriptorSetManager &descriptor_set_manager_;
-    enum class CachedStatus { Undefined, InUse, Available };
+    Validator &gpuav_;
     struct CachedDescriptor {
-        // VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
         VkDescriptorPool desc_pool = VK_NULL_HANDLE;
         VkDescriptorSet desc_set = VK_NULL_HANDLE;
-        // CachedStatus status = CachedStatus::Undefined;
     };
     struct LayoutToSets {
         VkDescriptorSetLayout desc_set_layout = VK_NULL_HANDLE;
@@ -111,16 +119,37 @@ class GpuResourcesManager {
         size_t first_available_desc_set = 0;
     };
     std::vector<LayoutToSets> cache_layouts_to_sets_;
-    // std::vector<CachedDescriptor> cached_descriptors_;
 
-    struct CachedBuffer {
-        VkBufferCreateInfo buffer_ci{};
-        VmaAllocationCreateInfo allocation_ci{};
-        vko::Buffer buffer;
+    class BufferCache {
+      public:
+        BufferCache() = default;
+        void Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci);
+        vko::BufferRange GetBufferRange(Validator &gpuav, const Location &loc, VkDeviceSize byte_size, VkDeviceSize alignment,
+                                        VkDeviceSize min_buffer_block_byte_size = 0);
+        ~BufferCache();
+        void ReturnBufferRange(const vko::BufferRange &buffer_range);
+        void ReturnBuffers();
+        void DestroyBuffers();
 
-        CachedStatus status = CachedStatus::Undefined;
+      private:
+        VkBufferUsageFlags buffer_usage_flags_{};
+        VmaAllocationCreateInfo allocation_ci_{};
+
+        struct CachedBufferBlock {
+            vko::Buffer buffer;
+            vvl::range<VkDeviceSize> total_range;
+            vvl::range<VkDeviceSize> used_range;
+        };
+
+        std::vector<CachedBufferBlock> cached_buffers_blocks_{};
+        VkDeviceSize total_available_byte_size_ = 0;
+        size_t next_avail_buffer_pos_hint_ = 0;
     };
-    std::vector<CachedBuffer> cached_buffers_;
+
+    // One cache per buffer type: having them mixed in just one would worse cache lookups
+    BufferCache host_visible_buffer_cache_;
+    BufferCache host_cached_buffer_cache_;
+    BufferCache device_local_indirect_buffer_cache_;
 };
 
 // Cache a single object of type T. Key is *only* based on typeid(T)

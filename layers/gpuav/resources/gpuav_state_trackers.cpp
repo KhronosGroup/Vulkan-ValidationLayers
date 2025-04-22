@@ -32,7 +32,7 @@ namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
     : vvl::CommandBufferSubState(cb),
-      gpu_resources_manager(*gpuav.desc_set_manager_),
+      gpu_resources_manager(gpuav),
       state_(gpuav),
       error_output_buffer_(gpuav),
       cmd_errors_counts_buffer_(gpuav),
