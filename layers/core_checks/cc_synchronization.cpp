@@ -2483,7 +2483,7 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
     bool skip = false;
     const VkRenderingInfo &rendering_info = *cb_state.active_render_pass->dynamic_rendering_begin_rendering_info.ptr();
     for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; i++) {
-        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicColorAttachmentImageIndex(i)];
+        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicRenderingColorAttachmentIndex(i)];
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pColorAttachments[i].imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
@@ -2498,7 +2498,8 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
         }
     }
     if (rendering_info.pDepthAttachment) {
-        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicDepthAttachmentImageIndex()];
+        const AttachmentInfo &attachment =
+            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pDepthAttachment->imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
@@ -2513,7 +2514,8 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
         }
     }
     if (rendering_info.pStencilAttachment) {
-        const AttachmentInfo &attachment = cb_state.active_attachments[cb_state.GetDynamicStencilAttachmentImageIndex()];
+        const AttachmentInfo &attachment =
+            cb_state.active_attachments[cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pStencilAttachment->imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());

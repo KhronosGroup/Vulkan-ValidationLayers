@@ -76,7 +76,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceAccelerationStructurePropertiesKHR acc_structure_props;
     VkPhysicalDeviceFragmentDensityMapPropertiesEXT fragment_density_map_props;
     VkPhysicalDeviceFragmentDensityMap2PropertiesEXT fragment_density_map2_props;
-    VkPhysicalDeviceFragmentDensityMapOffsetPropertiesQCOM fragment_density_map_offset_props;
+    VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT fragment_density_map_offset_props;
     VkPhysicalDevicePerformanceQueryPropertiesKHR performance_query_props;
     VkPhysicalDeviceSampleLocationsPropertiesEXT sample_locations_props;
     VkPhysicalDeviceCustomBorderColorPropertiesEXT custom_border_color_props;
