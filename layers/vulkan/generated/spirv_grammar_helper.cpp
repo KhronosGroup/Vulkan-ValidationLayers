@@ -1113,6 +1113,8 @@ const char* string_SpvStorageClass(uint32_t storage_class) {
             return "StorageBuffer";
         case spv::StorageClassTileImageEXT:
             return "TileImageEXT";
+        case spv::StorageClassTileAttachmentQCOM:
+            return "TileAttachmentQCOM";
         case spv::StorageClassCallableDataKHR:
             return "CallableDataKHR";
         case spv::StorageClassIncomingCallableDataKHR:
@@ -1289,6 +1291,10 @@ const char* string_SpvExecutionMode(uint32_t execution_mode) {
             return "RoundingModeRTE";
         case spv::ExecutionModeRoundingModeRTZ:
             return "RoundingModeRTZ";
+        case spv::ExecutionModeNonCoherentTileAttachmentReadQCOM:
+            return "NonCoherentTileAttachmentReadQCOM";
+        case spv::ExecutionModeTileShadingRateQCOM:
+            return "TileShadingRateQCOM";
         case spv::ExecutionModeEarlyAndLateFragmentTestsAMD:
             return "EarlyAndLateFragmentTestsAMD";
         case spv::ExecutionModeStencilRefReplacingEXT:
@@ -1801,6 +1807,12 @@ const char* string_SpvBuiltIn(uint32_t built_in) {
             return "ViewIndex";
         case spv::BuiltInShadingRateKHR:
             return "ShadingRateKHR";
+        case spv::BuiltInTileOffsetQCOM:
+            return "TileOffsetQCOM";
+        case spv::BuiltInTileDimensionQCOM:
+            return "TileDimensionQCOM";
+        case spv::BuiltInTileApronSizeQCOM:
+            return "TileApronSizeQCOM";
         case spv::BuiltInBaryCoordNoPerspAMD:
             return "BaryCoordNoPerspAMD";
         case spv::BuiltInBaryCoordNoPerspCentroidAMD:
