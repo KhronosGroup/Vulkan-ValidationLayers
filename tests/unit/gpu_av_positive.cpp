@@ -17,6 +17,7 @@
 
 #include <vector>
 #include "../framework/layer_validation_tests.h"
+#include "../framework/buffer_helper.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/gpu_av_helper.h"
@@ -2061,4 +2062,51 @@ TEST_F(PositiveGpuAV, EmptySubmit) {
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit, fence);
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, 1000000000);
     m_device->Wait();
+}
+
+TEST_F(PositiveGpuAV, ValidationBufferSuballocations) {
+    TEST_DESCRIPTION("Make sure sub-allocating inside buffers used for validation purposes does not blow up");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    constexpr uint32_t num_vertices = 12;
+    std::vector<uint32_t> indicies(num_vertices);
+    for (uint32_t i = 0; i < num_vertices; i++) {
+        indicies[i] = num_vertices - 1 - i;
+    }
+    vkt::Buffer index_buffer = vkt::IndexBuffer(*m_device, std::move(indicies));
+
+    VkDrawIndexedIndirectCommand draw_params{};
+    draw_params.indexCount = 3;
+    draw_params.instanceCount = 1;
+    draw_params.firstIndex = 0;
+    draw_params.vertexOffset = 0;
+    draw_params.firstInstance = 0;
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+    VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    for (uint32_t i = 0; i < 1025; i++) {
+        vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    }
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    vk::ResetCommandBuffer(m_command_buffer, 0);
+
+    m_command_buffer.Begin(&begin_info);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    for (uint32_t i = 0; i < 1025; i++) {
+        vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    }
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }

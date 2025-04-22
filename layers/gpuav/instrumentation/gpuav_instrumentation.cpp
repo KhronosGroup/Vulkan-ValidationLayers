@@ -388,19 +388,14 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob && vvl::IsCommandDrawVertex(loc.function)) {
         // This check is only for indexed draws
         if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-            VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-            buffer_info.size = 4 * sizeof(uint32_t);
-            buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            VmaAllocationCreateInfo alloc_info = {};
-            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            vko::Buffer vertex_attribute_fetch_limits_buffer =
-                cb_state.gpu_resources_manager.GetManagedBuffer(gpuav, loc, buffer_info, alloc_info);
-            if (vertex_attribute_fetch_limits_buffer.IsDestroyed()) {
+            vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
+                cb_state.gpu_resources_manager.GetHostVisibleBufferRange(loc, 4 * sizeof(uint32_t));
+            if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
                 return;
             }
 
-            auto vertex_attribute_fetch_limits_buffer_ptr = (uint32_t *)vertex_attribute_fetch_limits_buffer.GetMappedPtr();
+            auto vertex_attribute_fetch_limits_buffer_ptr =
+                (uint32_t *)vertex_attribute_fetch_limits_buffer_range.offset_mapped_ptr;
 
             const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
                 GetVertexAttributeFetchLimits(cb_state.base);
@@ -426,9 +421,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
                 vertex_attribute_fetch_limit_instance_input_rate;
             out_instrumentation_error_blob.index_buffer_binding = cb_state.base.index_buffer_binding;
 
-            vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer.VkHandle();
-            vertex_attribute_fetch_limits_buffer_bi.offset = 0;
-            vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
+            vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer_range.buffer;
+            vertex_attribute_fetch_limits_buffer_bi.offset = vertex_attribute_fetch_limits_buffer_range.offset;
+            vertex_attribute_fetch_limits_buffer_bi.range = vertex_attribute_fetch_limits_buffer_range.size;
         } else {
             // Point all non-indexed draws to our global buffer that will bypass the check in shader
             vertex_attribute_fetch_limits_buffer_bi.buffer = gpuav.vertex_attribute_fetch_off_.VkHandle();
