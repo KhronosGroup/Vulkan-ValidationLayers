@@ -194,8 +194,8 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSet &descript
     }
 }
 
-bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_a, const vvl::PipelineLayout &layout_b,
-                                              std::string &error_msg) const {
+bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout &layout_a, const vvl::PipelineLayout &layout_b,
+                                                   std::string &error_msg) const {
     const uint32_t num_sets = static_cast<uint32_t>(std::min(layout_a.set_layouts.size(), layout_b.set_layouts.size()));
     for (uint32_t i = 0; i < num_sets; ++i) {
         const auto ds_a = layout_a.set_layouts[i];
@@ -209,8 +209,9 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::PipelineLayout &layout_
     return true;
 }
 
-bool CoreChecks::VerifySetLayoutCompatibilityUnion(const vvl::PipelineLayout &layout, const vvl::PipelineLayout &pre_raster_layout,
-                                                   const vvl::PipelineLayout &fs_layout, std::string &error_msg) const {
+bool CoreChecks::VerifyPipeleinLayoutCompatibilityUnion(const vvl::PipelineLayout &layout,
+                                                        const vvl::PipelineLayout &pre_raster_layout,
+                                                        const vvl::PipelineLayout &fs_layout, std::string &error_msg) const {
     // When dealing with Graphics Pipeline Library, we need to get the union of pipeline states.
     // Currently this just means the VkDescriptorSetLayout may be VK_NULL_HANDLE.
     uint32_t num_sets = static_cast<uint32_t>(std::min(pre_raster_layout.set_layouts.size(), fs_layout.set_layouts.size()));
