@@ -306,7 +306,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06609", objlist, library_loc,
                          "(%s) was created with %s, which is missing "
-                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
+                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT.\n%s is %s.",
                          string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                          string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
                          create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
@@ -317,7 +317,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
             skip |=
                 LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06610", objlist, library_loc,
                          "(%s) was created with %s, which is missing "
-                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT, %s is %s.",
+                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT\n%s is %s.",
                          string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                          string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
                          create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
@@ -624,16 +624,16 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                 // The layout defined at link time must be compatible with each (pre-raster and fragment shader) sub state's layout
                 // (vertex input and fragment output state do not contain a layout)
                 if (pipeline_layout_state) {
-                    if (std::string err_msg;
-                        !VerifySetLayoutCompatibility(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
+                    if (std::string err_msg; !VerifyPipelineLayoutCompatibility(
+                            *pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(), err_msg)) {
                         LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle);
                         skip |=
                             LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
-                                     "(%s) is incompatible with the %s specified in the pre-rasterization library: %s",
+                                     "(%s) is incompatible with the %s specified in the pre-rasterization library\n%s",
                                      FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
                                      err_msg.c_str());
                     }
-                    if (std::string err_msg; !VerifySetLayoutCompatibility(
+                    if (std::string err_msg; !VerifyPipelineLayoutCompatibility(
                             *pipeline_layout_state, *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
                         LogObjectList objlist(linking_layout_handle, fs_layout_handle);
                         skip |= LogError(
@@ -645,32 +645,40 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
                     skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-layout-07827", device, create_info_loc.dot(Field::layout),
                                      "is null/invalid and therefore not compatible with the libraries layout");
                 }
-            } else if (pre_raster_independent_set && fs_independent_set && pipeline_layout_state &&
-                       !pipeline_layout_state->IsIndependentSets()) {
-                LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
-                skip |= LogError(
-                    "VUID-VkGraphicsPipelineCreateInfo-layout-07827", objlist, create_info_loc.dot(Field::layout),
-                    "(%s) was not created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, but the pre-rasterization (%s) "
-                    "and fragment shader (%s) were created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
-                    FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
-                    FormatHandle(fs_layout_handle).c_str());
             }
 
-            const bool has_link_time_opt = (pipeline.create_flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
-            if (!has_link_time_opt && (pre_raster_independent_set && fs_independent_set)) {
+            if (pre_raster_independent_set && fs_independent_set) {
+                const bool has_link_time_opt = (pipeline.create_flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
+                const char *vuid = has_link_time_opt ? "VUID-VkGraphicsPipelineCreateInfo-flags-06729"
+                                                     : "VUID-VkGraphicsPipelineCreateInfo-flags-06730";
+
                 if (pipeline_layout_state) {
-                    if (std::string err_msg;
-                        !VerifySetLayoutCompatibilityUnion(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(),
-                                                           *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
+                    std::string err_msg;
+                    if (!VerifyPipeleinLayoutCompatibilityUnion(*pipeline_layout_state, *pipeline.PreRasterPipelineLayoutState(),
+                                                                *pipeline.FragmentShaderPipelineLayoutState(), err_msg)) {
                         LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
                         skip |=
-                            LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06730", objlist, create_info_loc.dot(Field::layout),
+                            LogError(vuid, objlist, create_info_loc.dot(Field::layout),
                                      "(%s) is incompatible with the layout specified in the union of (pre-rasterization, fragment "
-                                     "shader) libraries: %s",
+                                     "shader) libraries.\n%s",
                                      FormatHandle(linking_layout_handle).c_str(), err_msg.c_str());
                     }
+
+                    // Special case where we also need to check for linking independent set
+                    if (!has_link_time_opt && !pipeline_layout_state->IsIndependentSets()) {
+                        LogObjectList objlist(linking_layout_handle, pre_raster_layout_handle, fs_layout_handle);
+                        skip |= LogError(
+                            vuid, objlist, create_info_loc.dot(Field::layout),
+                            "(%s) was not created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT, but the "
+                            "pre-rasterization (%s) "
+                            "and fragment shader (%s) were created with VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.\nThis "
+                            "is only allowed if you use VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT as well.",
+                            FormatHandle(linking_layout_handle).c_str(), FormatHandle(pre_raster_layout_handle).c_str(),
+                            FormatHandle(fs_layout_handle).c_str());
+                    }
+
                 } else {
-                    skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06730", device, create_info_loc.dot(Field::layout),
+                    skip |= LogError(vuid, device, create_info_loc.dot(Field::layout),
                                      "is null/invalid and therefore not compatible with the union of libraries layout");
                 }
             }
