@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "vma/vma.h"
+#include "external/vma/vma.h"
 
 #include <typeinfo>
 #include <unordered_map>

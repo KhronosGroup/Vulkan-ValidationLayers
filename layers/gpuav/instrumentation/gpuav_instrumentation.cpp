@@ -27,6 +27,8 @@
 #include "gpuav/debug_printf/debug_printf.h"
 #include "containers/limits.h"
 
+#include "gpuav/spirv/vertex_attribute_fetch_oob.h"
+
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/shader_object_state.h"
@@ -431,7 +433,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
             vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
         } else {
             // Point all non-indexed draws to our global buffer that will bypass the check in shader
-            vertex_attribute_fetch_limits_buffer_bi.buffer = gpuav.vertex_attribute_fetch_off_.VkHandle();
+            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.Get<VertexAttributeFetchOff>(gpuav, loc);
+            if (!resource.valid) return;
+            vertex_attribute_fetch_limits_buffer_bi.buffer = resource.buffer.VkHandle();
             vertex_attribute_fetch_limits_buffer_bi.offset = 0;
             vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
         }

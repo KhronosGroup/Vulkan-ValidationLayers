@@ -65,7 +65,7 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     Validator(vvl::dispatch::Device* dev, Instance* instance_vo)
-        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this), vertex_attribute_fetch_off_(*this) {}
+        : BaseClass(dev, instance_vo, LayerObjectTypeGpuAssisted), indices_buffer_(*this) {}
 
     // gpuav_setup.cpp
     // -------------
@@ -423,6 +423,10 @@ class Validator : public GpuShaderInstrumentor {
 
   public:
     std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
+
+    // We find ourselves constantly needing to create some resource for the "lifetime of GPU-AV"
+    // We don't want a messy global space to managae it and use this to allow each check to manage the resource where it is used.
+    // The goal is the first time we need the resource, we create it then, and afterwards, its cached and we can regain
     vko::SharedResourcesCache shared_resources_manager;
 
     PFN_vkSetDeviceLoaderData vk_set_device_loader_data_;
@@ -430,13 +434,9 @@ class Validator : public GpuShaderInstrumentor {
     VmaAllocator vma_allocator_ = {};
     std::unique_ptr<vko::DescriptorSetManager> desc_set_manager_;
 
+    // This is so universally used, that we decided currently to not be in vko::SharedResourcesCache
     vko::Buffer indices_buffer_;
-    unsigned int indices_buffer_alignment_ = 0;
-
-    // Vertex Attribute Fetch OOB checks are for Indexed draws, so when using another draw, we set the values of the small buffer to
-    // zero to indicate the instrumented vertex shader to skip validating the limits. We have a single global buffer that we can
-    // have all non-index draws point at.
-    vko::Buffer vertex_attribute_fetch_off_;
+    uint32_t indices_buffer_alignment_ = 0;
 
   private:
     std::string instrumented_shader_cache_path_{};
