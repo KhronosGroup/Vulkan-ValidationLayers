@@ -1641,6 +1641,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
                                             const ErrorObject& error_obj) const override;
+    void PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT* pRenderingEndInfo,
+                                          const RecordObject& record_obj) override;
+
     bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags,
                                            const ErrorObject& error_obj) const override;
@@ -2016,7 +2019,7 @@ class CoreChecks : public vvl::DeviceProxy {
     void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                         const RecordObject& record_obj) override;
     bool ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer& cb_state, const vvl::RenderPass& rp_state,
-                                             const VkSubpassFragmentDensityMapOffsetEndInfoQCOM& fdm_offset_end_info,
+                                             const VkRenderPassFragmentDensityMapOffsetEndInfoEXT& fdm_offset_end_info,
                                              const Location& end_info_loc) const;
 
     class ViewportScissorInheritanceTracker;

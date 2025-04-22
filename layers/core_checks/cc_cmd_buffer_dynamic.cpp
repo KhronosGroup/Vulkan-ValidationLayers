@@ -1675,12 +1675,13 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                     }
                 }
                 if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-                    cb_state.dynamic_state_value.color_write_enable_attachment_count < cb_state.GetDynamicColorAttachmentCount()) {
+                    cb_state.dynamic_state_value.color_write_enable_attachment_count <
+                        cb_state.GetDynamicRenderingColorAttachmentCount()) {
                     skip |= LogError(vuid.set_color_write_enable_08647, cb_state.Handle(), loc,
                                      "vkCmdSetColorWriteEnableEXT() was called with attachmentCount %" PRIu32
                                      ", but current render pass attachmnet count is %" PRIu32 ".",
                                      cb_state.dynamic_state_value.color_write_enable_attachment_count,
-                                     cb_state.GetDynamicColorAttachmentCount());
+                                     cb_state.GetDynamicRenderingColorAttachmentCount());
                 }
             }
         }

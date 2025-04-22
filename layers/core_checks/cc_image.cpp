@@ -1183,11 +1183,14 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
                                  colorAttachment);
             }
 
-            color_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicColorAttachmentImageIndex(colorAttachment));
-            color_attachment_count = cb_state.GetDynamicColorAttachmentCount();
+            color_view_state =
+                cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicRenderingColorAttachmentIndex(colorAttachment));
+            color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
 
-            depth_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicDepthAttachmentImageIndex());
-            stencil_view_state = cb_state.GetActiveAttachmentImageViewState(cb_state.GetDynamicStencilAttachmentImageIndex());
+            depth_view_state = cb_state.GetActiveAttachmentImageViewState(
+                cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth));
+            stencil_view_state = cb_state.GetActiveAttachmentImageViewState(
+                cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil));
 
             view_mask = rp_state->dynamic_rendering_begin_rendering_info.viewMask;
             external_format_resolve = cb_state.HasExternalFormatResolveAttachment();
@@ -1360,11 +1363,11 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
             auto colorAttachmentCount = rp_state->inheritance_rendering_info.colorAttachmentCount;
             int image_index = -1;
             if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && (clear_desc->colorAttachment < colorAttachmentCount)) {
-                image_index = cb_state.GetDynamicColorAttachmentImageIndex(clear_desc->colorAttachment);
+                image_index = cb_state.GetDynamicRenderingColorAttachmentIndex(clear_desc->colorAttachment);
             } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT)) {
-                image_index = cb_state.GetDynamicDepthAttachmentImageIndex();
+                image_index = cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth);
             } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                image_index = cb_state.GetDynamicStencilAttachmentImageIndex();
+                image_index = cb_state.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil);
             }
 
             if (image_index != -1) {

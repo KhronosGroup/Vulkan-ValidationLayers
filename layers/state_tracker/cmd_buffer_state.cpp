@@ -80,7 +80,7 @@ std::string AttachmentInfo::Describe(AttachmentSource source, uint32_t index) co
         if (type == Type::Color) {
             ss << "pColorAttachments[" << index << "].imageView";
         } else if (type == Type::ColorResolve) {
-            // This assumes the caller calculated the correct index with GetDynamicColorResolveAttachmentImageIndex
+            // This assumes the caller calculated the correct index with GetDynamicRenderingColorResolveAttachmentIndex
             ss << "pColorAttachments[" << index << "].resolveImageView";
         } else if (type == Type::Depth) {
             ss << "pDepthAttachment.imageView";
@@ -746,9 +746,10 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     active_attachments.clear();
     // add 2 for the Depth and Stencil
     // multiple by 2 because every attachment might have a resolve
-    // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
-    uint32_t attachment_count = (pRenderingInfo->colorAttachmentCount + 2) * 2;
+    // add 1 for FragmentDensityMap (doesn't need a resolve)
+    uint32_t attachment_count = ((pRenderingInfo->colorAttachmentCount + 2) * 2) + 1;
 
+    // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     active_attachments.resize(attachment_count);
 
     for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
@@ -759,12 +760,12 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
         rendering_attachments.color_indexes[i] = i;
 
         if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
-            auto &color_attachment = active_attachments[GetDynamicColorAttachmentImageIndex(i)];
+            auto &color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
             color_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
-                auto &resolve_attachment = active_attachments[GetDynamicColorResolveAttachmentImageIndex(i)];
+                auto &resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];
                 resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
             }
@@ -772,27 +773,34 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     }
 
     if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
-        auto &depth_attachment = active_attachments[GetDynamicDepthAttachmentImageIndex()];
+        auto &depth_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
         depth_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
         depth_attachment.type = AttachmentInfo::Type::Depth;
         if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
-            auto &resolve_attachment = active_attachments[GetDynamicDepthResolveAttachmentImageIndex()];
+            auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::DepthResolve)];
             resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::DepthResolve;
         }
     }
 
     if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
-        auto &stencil_attachment = active_attachments[GetDynamicStencilAttachmentImageIndex()];
+        auto &stencil_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
         stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
         if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
             pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
-            auto &resolve_attachment = active_attachments[GetDynamicStencilResolveAttachmentImageIndex()];
+            auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::StencilResolve)];
             resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::StencilResolve;
         }
+    }
+
+    if (auto fragment_density_map_info =
+            vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
+        auto &fdm_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentDensityMap)];
+        fdm_attachment.image_view = dev_data.Get<vvl::ImageView>(fragment_density_map_info->imageView).get();
+        fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
     }
 }
 
@@ -1716,7 +1724,7 @@ void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(c
     }
 }
 
-uint32_t CommandBuffer::GetDynamicColorAttachmentCount() const {
+uint32_t CommandBuffer::GetDynamicRenderingColorAttachmentCount() const {
     if (active_render_pass) {
         if (active_render_pass->use_dynamic_rendering_inherited) {
             return active_render_pass->inheritance_rendering_info.colorAttachmentCount;
@@ -1724,6 +1732,26 @@ uint32_t CommandBuffer::GetDynamicColorAttachmentCount() const {
         if (active_render_pass->use_dynamic_rendering) {
             return active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount;
         }
+    }
+    return 0;
+}
+
+uint32_t CommandBuffer::GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const {
+    // The first indexes are the color attachments, multiply by 2 as each has a resolve attachment index
+    const uint32_t color_offset = 2 * GetDynamicRenderingColorAttachmentCount();
+    switch (type) {
+        case AttachmentInfo::Type::Depth:
+            return color_offset;
+        case AttachmentInfo::Type::DepthResolve:
+            return color_offset + 1;
+        case AttachmentInfo::Type::Stencil:
+            return color_offset + 2;
+        case AttachmentInfo::Type::StencilResolve:
+            return color_offset + 3;
+        case AttachmentInfo::Type::FragmentDensityMap:
+            return color_offset + 4;
+        default:
+            assert(false);
     }
     return 0;
 }

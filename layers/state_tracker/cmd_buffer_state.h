@@ -675,13 +675,16 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
-    uint32_t GetDynamicColorAttachmentCount() const;
-    uint32_t GetDynamicColorAttachmentImageIndex(uint32_t index) const { return index; }
-    uint32_t GetDynamicColorResolveAttachmentImageIndex(uint32_t index) const { return index + GetDynamicColorAttachmentCount(); }
-    uint32_t GetDynamicDepthAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount(); }
-    uint32_t GetDynamicDepthResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 1; }
-    uint32_t GetDynamicStencilAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 2; }
-    uint32_t GetDynamicStencilResolveAttachmentImageIndex() const { return 2 * GetDynamicColorAttachmentCount() + 3; }
+    // Helpers to offset into |active_attachments|
+    // [all color, all color resolve, depth, depth resolve, stencil, stencil resolve, FragmentDensityMap]
+    uint32_t GetDynamicRenderingColorAttachmentCount() const;
+    uint32_t GetDynamicRenderingColorAttachmentIndex(uint32_t index) const { return index; }
+    uint32_t GetDynamicRenderingColorResolveAttachmentIndex(uint32_t index) const {
+        return index + GetDynamicRenderingColorAttachmentCount();
+    }
+    // used for non-color types
+    uint32_t GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const;
+
     bool HasValidDynamicDepthAttachment() const;
     bool HasValidDynamicStencilAttachment() const;
     bool HasExternalFormatResolveAttachment() const;

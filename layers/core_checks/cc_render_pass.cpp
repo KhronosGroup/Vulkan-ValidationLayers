@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
 #include "sync/sync_utils.h"
@@ -703,7 +704,7 @@ bool CoreChecks::ValidateCmdEndRenderPass(const vvl::CommandBuffer& cb_state, co
 }
 
 bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &cb_state, const vvl::RenderPass &rp_state,
-                                                     const VkSubpassFragmentDensityMapOffsetEndInfoQCOM &fdm_offset_end_info,
+                                                     const VkRenderPassFragmentDensityMapOffsetEndInfoEXT &fdm_offset_end_info,
                                                      const Location &end_info_loc) const {
     bool skip = false;
 
@@ -748,7 +749,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
         ASSERT_AND_CONTINUE(attachment->image_state);
 
         const bool has_offset_flag =
-            (attachment->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) != 0;
+            (attachment->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) != 0;
         if (has_offset_flag) continue;
 
         if (attachment_info.IsDepthOrStencil()) {
@@ -756,7 +757,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError(
                 "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pDepthStencilAttachment-06505", objlist,
                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
+                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                 fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                 FormatHandle(*attachment->image_state).c_str());
         }
@@ -766,7 +767,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError(
                 "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pInputAttachments-06506", objlist,
                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
+                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                 fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                 FormatHandle(*attachment->image_state).c_str());
         }
@@ -776,7 +777,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError(
                 "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pColorAttachments-06507", objlist,
                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
+                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                 fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                 FormatHandle(*attachment->image_state).c_str());
         }
@@ -786,7 +787,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError(
                 "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pResolveAttachments-06508", objlist,
                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
+                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                 fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                 FormatHandle(*attachment->image_state).c_str());
         }
@@ -796,7 +797,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             skip |= LogError(
                 "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-fragmentDensityMapAttachment-06504", objlist,
                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
+                "is %" PRIu32 " but %s underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
                 fdm_offset_end_info.fragmentDensityOffsetCount, attachment_info.Describe(cb_state.attachment_source, i).c_str(),
                 FormatHandle(*attachment->image_state).c_str());
         }
@@ -811,7 +812,7 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
             const auto view_state = Get<vvl::ImageView>(image_views[i]);
             ASSERT_AND_CONTINUE(view_state && view_state->image_state);
             const bool has_offset_flag =
-                (view_state->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM) != 0;
+                (view_state->image_state->create_info.flags & VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT) != 0;
 
             // fdm attachment
             const auto *fdm_attachment = vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapCreateInfoEXT>(rpci->pNext);
@@ -844,13 +845,12 @@ bool CoreChecks::ValidateFragmentDensityMapOffsetEnd(const vvl::CommandBuffer &c
                 const auto attachment = subpass.pPreserveAttachments[k];
                 if ((attachment != VK_ATTACHMENT_UNUSED) && (attachment == i) && !has_offset_flag) {
                     const LogObjectList objlist(cb_state.Handle(), rp_state.Handle(), view_state->Handle());
-                    skip |=
-                        LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509", objlist,
-                                 end_info_loc.dot(Field::fragmentDensityOffsetCount),
-                                 "is %" PRIu32 " but preserveAttachmentCount[%" PRIu32 "] (pAttachments[%" PRIu32
-                                 "] %s) underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_QCOM",
-                                 fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*view_state).c_str(),
-                                 FormatHandle(*view_state->image_state).c_str());
+                    skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pPreserveAttachments-06509", objlist,
+                                     end_info_loc.dot(Field::fragmentDensityOffsetCount),
+                                     "is %" PRIu32 " but preserveAttachmentCount[%" PRIu32 "] (pAttachments[%" PRIu32
+                                     "] %s) underlying %s was not created with VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT",
+                                     fdm_offset_end_info.fragmentDensityOffsetCount, k, i, FormatHandle(*view_state).c_str(),
+                                     FormatHandle(*view_state->image_state).c_str());
                 }
             }
         }
@@ -4057,37 +4057,37 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
 
     const auto *rp_state_ptr = cb_state.active_render_pass.get();
     if (rp_state_ptr && pRenderingEndInfo) {
-        const auto *fdm_offset_end_info =
-            vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext);
-        if (fdm_offset_end_info) {
+        if (const auto *fdm_offset_end_info =
+                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext)) {
             if (fdm_offset_end_info->fragmentDensityOffsetCount != 0) {
                 skip |= ValidateFragmentDensityMapOffsetEnd(
                     cb_state, *rp_state_ptr, *fdm_offset_end_info,
                     error_obj.location.dot(Field::pRenderingEndInfo).pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT));
             }
-            uint32_t previous_count = static_cast<uint32_t>(rp_state_ptr->fragment_density_offsets.size());
+
+            const auto &cb_sub_state = core::SubState(cb_state);
+            const uint32_t previous_count = static_cast<uint32_t>(cb_sub_state.fragment_density_offsets.size());
             if (previous_count > 0) {
                 if (fdm_offset_end_info->fragmentDensityOffsetCount != previous_count) {
                     skip |= LogError(
                         "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
                         error_obj.location.dot(Field::pRenderingEndInfo)
                             .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::fragmentDensityOffsetCount),
-                        "%" PRIu32 " does not match previous fragmentDensityOffsetCount used in the render pass (%" PRIu32 ")",
+                        "%" PRIu32 " does not match previous fragmentDensityOffsetCount (%" PRIu32 ") used in the render pass",
                         fdm_offset_end_info->fragmentDensityOffsetCount, previous_count);
                 } else {
                     for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
-                        if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != rp_state_ptr->fragment_density_offsets[i].x ||
-                            fdm_offset_end_info->pFragmentDensityOffsets[i].y != rp_state_ptr->fragment_density_offsets[i].y) {
-                            skip |= LogError(
-                                "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
-                                error_obj.location.dot(Field::pRenderingEndInfo)
-                                    .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::pFragmentDensityOffsets,
-                                           i),
-                                " is (%" PRIi32 ", %" PRIi32 ") which does not match previous fragmentDensityOffsetCount[%" PRIu32
-                                "] used in the render pass (%" PRIi32 ", %" PRIi32 ")",
-                                fdm_offset_end_info->pFragmentDensityOffsets[i].x,
-                                fdm_offset_end_info->pFragmentDensityOffsets[i].y, i, rp_state_ptr->fragment_density_offsets[i].x,
-                                rp_state_ptr->fragment_density_offsets[i].y);
+                        if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != cb_sub_state.fragment_density_offsets[i].x ||
+                            fdm_offset_end_info->pFragmentDensityOffsets[i].y != cb_sub_state.fragment_density_offsets[i].y) {
+                            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730",
+                                             commandBuffer,
+                                             error_obj.location.dot(Field::pRenderingEndInfo)
+                                                 .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT,
+                                                        Field::pFragmentDensityOffsets, i),
+                                             "is (%s) which does not match previous fragmentDensityOffsetCount[%" PRIu32
+                                             "] used in the render pass (%s)",
+                                             string_VkOffset2D(fdm_offset_end_info->pFragmentDensityOffsets[i]).c_str(), i,
+                                             string_VkOffset2D(cb_sub_state.fragment_density_offsets[i]).c_str());
                             break;
                         }
                     }
@@ -4101,6 +4101,29 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
 
 bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
     return PreCallValidateCmdEndRendering(commandBuffer, error_obj);
+}
+
+void CoreChecks::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
+                                                  const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdEndRendering2EXT(commandBuffer, pRenderingEndInfo, record_obj);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto &cb_sub_state = core::SubState(*cb_state);
+
+    // Only track the first call to vkCmdEndRendering2EXT for pFragmentDensityOffsets, because they must match due to VU 10730
+    if (cb_sub_state.fragment_density_offsets.empty()) {
+        std::vector<VkOffset2D> fragment_density_offsets = {{0, 0}};
+        if (pRenderingEndInfo) {
+            const auto *fdm_offset_end_info =
+                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext);
+            if (fdm_offset_end_info) {
+                fragment_density_offsets.resize(fdm_offset_end_info->fragmentDensityOffsetCount);
+                for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
+                    fragment_density_offsets[i] = fdm_offset_end_info->pFragmentDensityOffsets[i];
+                }
+            }
+        }
+        cb_sub_state.fragment_density_offsets = fragment_density_offsets;
+    }
 }
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer, const vvl::ImageView &image_view_state,

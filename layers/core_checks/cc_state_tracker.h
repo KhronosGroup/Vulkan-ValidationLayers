@@ -51,6 +51,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         return qfo_transfer_buffer_barriers;
     }
 
+    // used for VK_EXT_fragment_density_map_offset
+    // currently need to hold in Command buffer because it can be a suspended renderpassss
+    std::vector<VkOffset2D> fragment_density_offsets;
+
   private:
     void ResetCBState();
 };
