@@ -33,6 +33,7 @@ namespace gpuav {
 CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
     : vvl::CommandBufferSubState(cb),
       gpu_resources_manager(*gpuav.desc_set_manager_),
+      vertex_attribute_fetch_slab(gpuav),
       state_(gpuav),
       error_output_buffer_(gpuav),
       cmd_errors_counts_buffer_(gpuav),
@@ -113,6 +114,23 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
         // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
         bool success = bda_ranges_snapshot_.Create(loc, &buffer_info, &alloc_info);
+        if (!success) {
+            return;
+        }
+    }
+
+    // Vertex Attribute Fetch OOB Slab
+    if (state_.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob && vertex_attribute_fetch_slab.IsDestroyed()) {
+        VkBufferCreateInfo buffer_info = vku::InitStructHelper();
+        buffer_info.size = 4 * sizeof(uint32_t);
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo alloc_info = {};
+        alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        // 256 indexed draws in a single command buffer is high enough to catch most cases.
+        // Tested with traces with over 1k indexed draws, and still ran as good as setting this to a higher value
+        bool success = vertex_attribute_fetch_slab.Create(loc, &buffer_info, &alloc_info, 256);
         if (!success) {
             return;
         }
@@ -280,8 +298,10 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
 
     if (should_destroy) {
         gpu_resources_manager.DestroyResources();
+        vertex_attribute_fetch_slab.Destroy();
     } else {
         gpu_resources_manager.ReturnResources();
+        vertex_attribute_fetch_slab.Reset();
     }
     per_command_error_loggers.clear();
 

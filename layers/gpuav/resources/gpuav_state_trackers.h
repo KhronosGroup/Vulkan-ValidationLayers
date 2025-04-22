@@ -121,6 +121,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Reset(const Location &loc) final;
 
     vko::GpuResourcesManager gpu_resources_manager;
+
     // Using stdext::inplace_function over std::function to allocate memory in place
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(const uint32_t *error_record, const LogObjectList &objlist,
@@ -134,6 +135,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<ValidationCommandFunc> per_render_pass_validation_commands;
 
     std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
+
+    vko::BufferSlab vertex_attribute_fetch_slab;
 
   private:
     void AllocateResources(const Location &loc);

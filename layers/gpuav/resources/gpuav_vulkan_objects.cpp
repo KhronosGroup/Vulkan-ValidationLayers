@@ -20,6 +20,7 @@
 #include "gpuav/core/gpuav.h"
 #include "generated/dispatch_functions.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
+#include <cstdint>
 
 namespace gpuav {
 namespace vko {
@@ -206,6 +207,86 @@ void Buffer::Clear() const {
     // Caller is in charge of calling Flush/Invalidate as needed
     assert(mapped_ptr);
     memset((uint8_t *)mapped_ptr, 0, static_cast<size_t>(size));
+}
+
+bool BufferSlab::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                        const VmaAllocationCreateInfo *allocation_create_info, uint32_t count) {
+    desired_count = count;
+    slice_size = buffer_create_info->size;
+
+    // Most system these alignments are 16 at most, Windows ARM it is 64, the max its allowed to be is 256
+    if (buffer_create_info->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) {
+        const VkDeviceSize alignemnt = gpuav.phys_dev_props.limits.minStorageBufferOffsetAlignment;
+        slice_size = (slice_size + alignemnt - 1) & ~(alignemnt - 1);
+    } else if (buffer_create_info->usage & VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+        const VkDeviceSize alignemnt = gpuav.phys_dev_props.limits.minUniformBufferOffsetAlignment;
+        slice_size = (slice_size + alignemnt - 1) & ~(alignemnt - 1);
+    }
+
+    // We shouldn't need to make deep copies of anything we create internally
+    assert(buffer_create_info->pNext == nullptr);
+    // Need copies incase we have to expand and create more buffers
+    memcpy(&allocation_create_info_copy, allocation_create_info, sizeof(VmaAllocationCreateInfo));
+    memcpy(&buffer_create_info_copy, buffer_create_info, sizeof(VkBufferCreateInfo));
+    buffer_create_info_copy.size = slice_size * desired_count;
+
+    // The goal/hope is we only need a single buffer
+    active_buffers = 1;
+    buffers.reserve(1);
+    buffers.emplace_back(gpuav);
+    current_buffer = &buffers[0];
+
+    return current_buffer->Create(loc, &buffer_create_info_copy, &allocation_create_info_copy);
+}
+
+SlabSlice BufferSlab::GetNextSlice(const Location &loc) {
+    // Check if need to create a new internal buffer
+    if (current_count >= desired_count) {
+        current_count = 0;
+        if (buffers.size() > active_buffers) {
+            // Reuse buffer from a Reset()
+            current_buffer = &buffers[active_buffers];
+        } else {
+            current_buffer = &buffers.emplace_back(gpuav);
+            bool success = current_buffer->Create(loc, &buffer_create_info_copy, &allocation_create_info_copy);
+            if (!success) {
+                return {VK_NULL_HANDLE, nullptr, 0, 0};
+            }
+        }
+        active_buffers++;
+    }
+
+    const VkDeviceSize current_offset = slice_size * current_count;
+
+    current_count++;
+
+    uint8_t *ptr = (uint8_t *)current_buffer->GetMappedPtr();
+    ptr += current_offset;
+    return {current_buffer->VkHandle(), (void *)ptr, current_offset, slice_size};
+}
+
+void BufferSlab::Reset() {
+    if (buffers.empty()) {
+        return;
+    }
+    current_count = 0;
+
+    active_buffers = 1;
+    current_buffer = &buffers[0];
+}
+
+void BufferSlab::Destroy() {
+    for (auto &buffer : buffers) {
+        buffer.Destroy();
+    }
+}
+
+bool BufferSlab::IsDestroyed() {
+    if (buffers.empty()) {
+        return true;  // never called Create()
+    }
+    // if we call Reset() first, this won't be destroyed
+    return buffers[0].IsDestroyed();
 }
 
 VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout) {

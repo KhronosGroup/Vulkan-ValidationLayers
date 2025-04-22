@@ -55,7 +55,7 @@ class DescriptorSetManager {
 
 class Buffer {
   public:
-    explicit Buffer(Validator &gpuav) : gpuav(gpuav) {}
+    explicit Buffer(const Validator &gpuav) : gpuav(gpuav) {}
 
     // Warps VMA calls to simplify error reporting.
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
@@ -82,6 +82,47 @@ class Buffer {
     VkDeviceAddress device_address = 0;
     VkDeviceSize size = 0;
     void *mapped_ptr = nullptr;
+};
+
+struct SlabSlice {
+    VkBuffer buffer;
+    void *mapped_ptr;  // already with offset applied
+    VkDeviceSize offset;
+    VkDeviceSize range;
+};
+
+//
+// While we off-load a lot of stuff to VMA, we have found we get incredibly bad, and slow, fragmentation when we have many small
+// allocations. This is a **simple** wrapper where a we create a "slab" and sub-allocate a "slice" that maps well to
+// VkDescriptorBufferInfo
+class BufferSlab {
+  public:
+    explicit BufferSlab(const Validator &gpuav) : gpuav(gpuav) {}
+
+    // Same interface as vko::Buffer, but with added "count" to know how much to multiply VkBufferCreateInfo::size by
+    [[nodiscard]] bool Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
+                              const VmaAllocationCreateInfo *allocation_create_info, uint32_t count);
+
+    SlabSlice GetNextSlice(const Location &loc);
+
+    void Reset();
+    void Destroy();
+    bool IsDestroyed();
+
+  private:
+    const Validator &gpuav;
+    // the goal is to only have 1 buffer in here, but need a fallback incase we go over the desired count
+    std::vector<vko::Buffer> buffers;
+    // Incase of reset, we don't ever shrink our buffer list and will recycle them
+    uint32_t active_buffers = 0;
+    vko::Buffer *current_buffer;
+
+    VkDeviceSize slice_size = 0;
+    uint32_t desired_count = 0;
+    uint32_t current_count = 0;
+
+    VkBufferCreateInfo buffer_create_info_copy;
+    VmaAllocationCreateInfo allocation_create_info_copy;
 };
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
