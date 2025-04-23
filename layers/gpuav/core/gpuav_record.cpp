@@ -1175,4 +1175,45 @@ void Validator::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer com
     PostCallActionCommand(*this, sub_state, bind_point, record_obj.location);
 }
 
+void Validator::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                  VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                  const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions,
+                                                 record_obj);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
+    std::vector<VkBufferImageCopy2> regions_2(regionCount);
+    for (const auto [i, region] : vvl::enumerate(pRegions, regionCount)) {
+        regions_2[i].bufferOffset = region.bufferOffset;
+        regions_2[i].bufferRowLength = region.bufferRowLength;
+        regions_2[i].bufferImageHeight = region.bufferImageHeight;
+        regions_2[i].imageSubresource = region.imageSubresource;
+        regions_2[i].imageOffset = region.imageOffset;
+        regions_2[i].imageExtent = region.imageExtent;
+    }
+
+    VkCopyBufferToImageInfo2 copy_buffer_to_image_info = vku::InitStructHelper();
+    copy_buffer_to_image_info.srcBuffer = srcBuffer;
+    copy_buffer_to_image_info.dstImage = dstImage;
+    copy_buffer_to_image_info.dstImageLayout = dstImageLayout;
+    copy_buffer_to_image_info.regionCount = regionCount;
+    copy_buffer_to_image_info.pRegions = regions_2.data();
+
+    valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), &copy_buffer_to_image_info);
+}
+
+void Validator::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                      const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo2KHR,
+                                                      const RecordObject &record_obj) {
+    PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo2KHR, record_obj);
+}
+
+void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                   const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
+                                                   const RecordObject &record_obj) {
+    BaseClass::PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), pCopyBufferToImageInfo);
+}
+
 }  // namespace gpuav
