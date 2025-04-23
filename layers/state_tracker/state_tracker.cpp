@@ -2600,7 +2600,7 @@ void DeviceState::PreCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuff
 
     std::shared_ptr<DescriptorSet> no_push_desc;
 
-    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, *pipeline_layout, record_obj.location.function, firstSet, setCount,
+    cb_state->UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, record_obj.location.function, firstSet, setCount,
                                             pDescriptorSets, no_push_desc, dynamicOffsetCount, pDynamicOffsets);
 }
 
@@ -2617,19 +2617,19 @@ void DeviceState::PreCallRecordCmdBindDescriptorSets2(VkCommandBuffer commandBuf
 
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
             pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, record_obj.location.function, pBindDescriptorSetsInfo->firstSet,
             pBindDescriptorSetsInfo->descriptorSetCount, pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc,
             pBindDescriptorSetsInfo->dynamicOffsetCount, pBindDescriptorSetsInfo->pDynamicOffsets);
     }
     if (IsStageInPipelineBindPoint(pBindDescriptorSetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         cb_state->UpdateLastBoundDescriptorSets(
-            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, record_obj.location.function,
+            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline_layout, record_obj.location.function,
             pBindDescriptorSetsInfo->firstSet, pBindDescriptorSetsInfo->descriptorSetCount,
             pBindDescriptorSetsInfo->pDescriptorSets, no_push_desc, pBindDescriptorSetsInfo->dynamicOffsetCount,
             pBindDescriptorSetsInfo->pDynamicOffsets);
@@ -2648,7 +2648,7 @@ void DeviceState::PreCallRecordCmdPushDescriptorSet(VkCommandBuffer commandBuffe
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto pipeline_layout = Get<PipelineLayout>(layout);
     ASSERT_AND_RETURN(pipeline_layout);
-    cb_state->PushDescriptorSetState(pipelineBindPoint, *pipeline_layout, record_obj.location.function, set, descriptorWriteCount,
+    cb_state->PushDescriptorSetState(pipelineBindPoint, pipeline_layout, record_obj.location.function, set, descriptorWriteCount,
                                      pDescriptorWrites);
 }
 
@@ -2667,17 +2667,17 @@ void DeviceState::PreCallRecordCmdPushDescriptorSet2(VkCommandBuffer commandBuff
     auto pipeline_layout = Get<PipelineLayout>(pPushDescriptorSetInfo->layout);
     ASSERT_AND_RETURN(pipeline_layout);
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, record_obj.location.function,
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, record_obj.location.function,
                                          pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
                                          pPushDescriptorSetInfo->pDescriptorWrites);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, record_obj.location.function,
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, record_obj.location.function,
                                          pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
                                          pPushDescriptorSetInfo->pDescriptorWrites);
     }
     if (IsStageInPipelineBindPoint(pPushDescriptorSetInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, record_obj.location.function,
+        cb_state->PushDescriptorSetState(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline_layout, record_obj.location.function,
                                          pPushDescriptorSetInfo->set, pPushDescriptorSetInfo->descriptorWriteCount,
                                          pPushDescriptorSetInfo->pDescriptorWrites);
     }
@@ -2708,7 +2708,7 @@ void DeviceState::PreCallRecordCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer 
     auto pipeline_layout = Get<PipelineLayout>(layout);
     ASSERT_AND_RETURN(pipeline_layout);
 
-    cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, *pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
+    cb_state->UpdateLastBoundDescriptorBuffers(pipelineBindPoint, pipeline_layout, firstSet, setCount, pBufferIndices, pOffsets);
 }
 
 void DeviceState::PreCallRecordCmdSetDescriptorBufferOffsets2EXT(
@@ -2720,19 +2720,19 @@ void DeviceState::PreCallRecordCmdSetDescriptorBufferOffsets2EXT(
 
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_GRAPHICS, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
             pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
             pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_COMPUTE, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
             pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
             pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
     if (IsStageInPipelineBindPoint(pSetDescriptorBufferOffsetsInfo->stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
         cb_state->UpdateLastBoundDescriptorBuffers(
-            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
+            VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline_layout, pSetDescriptorBufferOffsetsInfo->firstSet,
             pSetDescriptorBufferOffsetsInfo->setCount, pSetDescriptorBufferOffsetsInfo->pBufferIndices,
             pSetDescriptorBufferOffsetsInfo->pOffsets);
     }
@@ -4395,7 +4395,7 @@ void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer 
     const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
     DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
-    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, *pipeline_layout, record_obj.location.function, set,
+    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, pipeline_layout, record_obj.location.function, set,
                                      static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                      decoded_template.desc_writes.data());
 }
@@ -4424,7 +4424,7 @@ void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate2(
     DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pPushDescriptorSetWithTemplateInfo->pData,
                                            dsl->VkHandle());
     cb_state->PushDescriptorSetState(
-        template_ci.pipelineBindPoint, *pipeline_layout, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
+        template_ci.pipelineBindPoint, pipeline_layout, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
         static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data());
 }
 

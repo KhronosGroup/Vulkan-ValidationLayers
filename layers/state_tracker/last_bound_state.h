@@ -48,7 +48,7 @@ struct LastBound {
     bool shader_object_bound[kShaderObjectStageCount]{false};
     vvl::ShaderObject *shader_object_states[kShaderObjectStageCount]{nullptr};
     // The compatible layout used binding descriptor sets (track location to provide better error message)
-    VkPipelineLayout desc_set_pipeline_layout = VK_NULL_HANDLE;
+    std::shared_ptr<const vvl::PipelineLayout> desc_set_pipeline_layout;
     vvl::Func desc_set_bound_command = vvl::Func::Empty;  // will be something like vkCmdBindDescriptorSets
     std::shared_ptr<vvl::DescriptorSet> push_descriptor_set;
 

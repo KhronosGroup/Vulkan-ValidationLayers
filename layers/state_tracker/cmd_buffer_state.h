@@ -628,17 +628,17 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
-    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point, const vvl::PipelineLayout &pipeline_layout,
-                                       vvl::Func bound_command, uint32_t first_set, uint32_t set_count,
-                                       const VkDescriptorSet *pDescriptorSets,
+    void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
+                                       std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, vvl::Func bound_command,
+                                       uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
                                        std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set, uint32_t dynamic_offset_count,
                                        const uint32_t *p_dynamic_offsets);
 
-    void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point, const vvl::PipelineLayout &pipeline_layout,
-                                          uint32_t first_set, uint32_t set_count, const uint32_t *buffer_indicies,
-                                          const VkDeviceSize *buffer_offsets);
+    void UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
+                                          std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
+                                          uint32_t set_count, const uint32_t *buffer_indicies, const VkDeviceSize *buffer_offsets);
 
-    void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
+    void PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
                                 vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
                                 const VkWriteDescriptorSet *pDescriptorWrites);
 
