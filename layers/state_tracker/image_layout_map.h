@@ -47,9 +47,8 @@ using RangeGenerator = subresource_adapter::RangeGenerator;
 struct InitialLayoutState {
     VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
     VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
-    LoggingLabel label;
     InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_);
-    InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0), label() {}
+    InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0) {}
 };
 
 // Contains all info around an image, its subresources and layout map

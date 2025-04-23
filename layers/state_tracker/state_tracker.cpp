@@ -4314,8 +4314,6 @@ void DeviceState::PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer comma
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
-    // Squirrel away an easily accessible copy.
-    cb_state->debug_label = LoggingLabel(pLabelInfo);
 }
 
 void DeviceState::PostCallRecordAcquireProfilingLockKHR(VkDevice device, const VkAcquireProfilingLockInfoKHR *pInfo,

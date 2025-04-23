@@ -302,7 +302,6 @@ void CommandBuffer::ResetCBState() {
     video_session_updates.clear();
 
     // Clean up the label data
-    debug_label.Reset();
     label_stack_depth_ = 0;
     label_commands_.clear();
 
