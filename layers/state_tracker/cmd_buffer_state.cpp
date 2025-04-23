@@ -1454,7 +1454,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageS
                                    VkImageLayout layout, VkImageLayout expected_layout) {
     auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
     if (image_layout_registry &&
-        image_layout_registry->SetSubresourceRangeLayout(*this, image_subresource_range, layout, expected_layout)) {
+        image_layout_registry->SetSubresourceRangeLayout(image_subresource_range, layout, expected_layout)) {
         image_layout_change_count++;  // Change the version of this data to force revalidation
     }
 }
@@ -1468,7 +1468,7 @@ void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, 
     auto image_layout_registry =
         (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutRegistry(*image_state) : nullptr;
     if (image_layout_registry) {
-        image_layout_registry->SetSubresourceRangeInitialLayout(*this, layout, view_state);
+        image_layout_registry->SetSubresourceRangeInitialLayout(layout, view_state);
     }
 }
 
@@ -1477,7 +1477,7 @@ void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const V
                                           VkImageLayout layout) {
     auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
     if (image_layout_registry) {
-        image_layout_registry->SetSubresourceRangeInitialLayout(*this, image_state.NormalizeSubresourceRange(range), layout);
+        image_layout_registry->SetSubresourceRangeInitialLayout(image_state.NormalizeSubresourceRange(range), layout);
     }
 }
 

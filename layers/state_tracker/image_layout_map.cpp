@@ -28,7 +28,7 @@ using LayoutEntry = ImageLayoutRegistry::LayoutEntry;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& initial_layout_states, const IndexRange& range,
-                                  LayoutEntry& new_entry, const vvl::CommandBuffer& cb_state, const vvl::ImageView* view_state) {
+                                  LayoutEntry& new_entry, const vvl::ImageView* view_state) {
     using CachedLowerBound = typename sparse_container::cached_lower_bound_impl<LayoutsMap>;
     CachedLowerBound pos(layouts, range.begin);
     if (!range.includes(pos->index)) {
@@ -44,7 +44,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
             if (new_entry.state == nullptr) {
                 // Allocate on demand...  initial_layout_states_ holds ownership, while
                 // each subresource has a non-owning copy of the plain pointer.
-                initial_layout_states.emplace_back(cb_state, view_state);
+                initial_layout_states.emplace_back(view_state);
                 new_entry.state = &initial_layout_states.back();
             }
             auto insert_result = layouts.insert(it, std::make_pair(IndexRange(start, limit), new_entry));
@@ -74,11 +74,10 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
     return updated_current;
 }
 
-InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_)
-    : image_view(VK_NULL_HANDLE), aspect_mask(0) {
-    if (view_state_) {
-        image_view = view_state_->VkHandle();
-        aspect_mask = view_state_->normalized_subresource_range.aspectMask;
+InitialLayoutState::InitialLayoutState(const vvl::ImageView* view_state) : image_view(VK_NULL_HANDLE), aspect_mask(0) {
+    if (view_state) {
+        image_view = view_state->VkHandle();
+        aspect_mask = view_state->normalized_subresource_range.aspectMask;
     }
 }
 
@@ -88,8 +87,8 @@ ImageLayoutRegistry::ImageLayoutRegistry(const vvl::Image& image_state)
       layout_map_(encoder_.SubresourceCount()),
       initial_layout_states_() {}
 
-bool ImageLayoutRegistry::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
-                                                    VkImageLayout layout, VkImageLayout expected_layout) {
+bool ImageLayoutRegistry::SetSubresourceRangeLayout(const VkImageSubresourceRange& range, VkImageLayout layout,
+                                                    VkImageLayout expected_layout) {
     if (!InRange(range)) {
         return false;  // Don't even try to track bogus subresources
     }
@@ -105,20 +104,19 @@ bool ImageLayoutRegistry::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb
     if (layout_map_.UsesSmallMap()) {
         auto& layout_map = layout_map_.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, nullptr);
         }
     } else {
         auto& layout_map = layout_map_.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, nullptr);
         }
     }
     return updated;
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
-                                                           VkImageLayout layout) {
+void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
     if (!InRange(range)) {
         return;  // Don't even try to track bogus subreources
     }
@@ -128,30 +126,29 @@ void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuf
     if (layout_map_.UsesSmallMap()) {
         auto& layout_map = layout_map_.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, nullptr);
         }
     } else {
         auto& layout_map = layout_map_.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, nullptr);
         }
     }
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
-                                                           const vvl::ImageView& view_state) {
+void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
     LayoutEntry entry(layout);
     if (layout_map_.UsesSmallMap()) {
         auto& layout_map = layout_map_.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, &view_state);
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, &view_state);
         }
     } else {
         auto& layout_map = layout_map_.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, &view_state);
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, &view_state);
         }
     }
 }
