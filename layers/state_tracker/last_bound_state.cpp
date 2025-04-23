@@ -42,7 +42,7 @@ bool LastBound::IsDynamic(const CBDynamicState state) const { return !pipeline_s
 
 void LastBound::Reset() {
     pipeline_state = nullptr;
-    desc_set_pipeline_layout = VK_NULL_HANDLE;
+    desc_set_pipeline_layout.reset();
     if (push_descriptor_set) {
         cb_state.RemoveChild(push_descriptor_set);
         push_descriptor_set->Destroy();

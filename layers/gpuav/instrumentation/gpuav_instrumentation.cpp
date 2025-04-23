@@ -136,11 +136,7 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, Vk
         PushConstantRangesId push_constants_layouts = main_bound_shader->push_constant_ranges;
 
         if (last_bound.desc_set_pipeline_layout) {
-            std::shared_ptr<const vvl::PipelineLayout> last_bound_desc_set_pipe_layout =
-                gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
-            if (last_bound_desc_set_pipe_layout) {
-                pipe_layout_ci.flags = last_bound_desc_set_pipe_layout->CreateFlags();
-            }
+            pipe_layout_ci.flags = last_bound.desc_set_pipeline_layout->CreateFlags();
         }
         std::vector<VkDescriptorSetLayout> set_layout_handles;
         if (set_layouts) {
@@ -543,11 +539,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         // One exception when using GPL is we need to look out for INDEPENDENT_SETS_BIT which will have null sets inside them.
         // We have a fake merged_graphics_layout to mimic the complete layout, but the app must bind it to descriptor set
         if (inst_binding_pipe_layout_state->IsIndependentSets()) {
-            inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+            inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
             inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
         }
     } else if (last_bound.desc_set_pipeline_layout) {
-        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
+        inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
         inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
     } else if (cb_state.base.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
         inst_binding_pipe_layout_state =
@@ -665,40 +661,34 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
 
     // Only need to rebind application desc sets if they have been disturbed by GPU-AV binding its instrumentation desc set.
     // - Can happen if the pipeline layout used to bind instrumentation descriptor set is not compatible with the one used by the
-    // app to bind the last/all the last desc set. This pipeline layout is referred to as "last_bound_desc_set_pipe_layout_state"
-    // hereinafter.
+    // app to bind the last/all the last desc set.
     // => We create this incompatibility when we add our empty descriptor set.
     // See PositiveGpuAVDescriptorIndexing.SharedPipelineLayoutSubsetGraphics for instance
     if (last_bound.desc_set_pipeline_layout) {
-        std::shared_ptr<const vvl::PipelineLayout> last_bound_desc_set_pipe_layout_state =
-            gpuav.Get<vvl::PipelineLayout>(last_bound.desc_set_pipeline_layout);
-        if (last_bound_desc_set_pipe_layout_state) {
-            const uint32_t desc_set_bindings_counts_from_last_pipeline =
-                LastBoundPipelineOrShaderDescSetBindingsCount(bind_point, last_bound);
+        const uint32_t desc_set_bindings_counts_from_last_pipeline =
+            LastBoundPipelineOrShaderDescSetBindingsCount(bind_point, last_bound);
 
-            const bool any_disturbed_desc_sets_bindings =
-                desc_set_bindings_counts_from_last_pipeline <
-                static_cast<uint32_t>(last_bound_desc_set_pipe_layout_state->set_layouts.size());
+        const bool any_disturbed_desc_sets_bindings =
+            desc_set_bindings_counts_from_last_pipeline <
+            static_cast<uint32_t>(last_bound.desc_set_pipeline_layout->set_layouts.size());
 
-            if (any_disturbed_desc_sets_bindings) {
-                const uint32_t disturbed_bindings_count = static_cast<uint32_t>(
-                    last_bound_desc_set_pipe_layout_state->set_layouts.size() - desc_set_bindings_counts_from_last_pipeline);
-                const uint32_t first_disturbed_set = desc_set_bindings_counts_from_last_pipeline;
+        if (any_disturbed_desc_sets_bindings) {
+            const uint32_t disturbed_bindings_count = static_cast<uint32_t>(
+                last_bound.desc_set_pipeline_layout->set_layouts.size() - desc_set_bindings_counts_from_last_pipeline);
+            const uint32_t first_disturbed_set = desc_set_bindings_counts_from_last_pipeline;
 
-                for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {
-                    const uint32_t last_bound_set_i = set_i + first_disturbed_set;
-                    const auto &last_bound_set_state = last_bound.ds_slots[last_bound_set_i].ds_state;
-                    // last_bound.ds_slot is a LUT, and descriptor sets before the last one could be unbound.
-                    if (!last_bound_set_state) {
-                        continue;
-                    }
-                    VkDescriptorSet last_bound_set = last_bound_set_state->VkHandle();
-                    const std::vector<uint32_t> &dynamic_offset = last_bound.ds_slots[last_bound_set_i].dynamic_offsets;
-                    const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
-                    DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point,
-                                                  last_bound_desc_set_pipe_layout_state->VkHandle(), last_bound_set_i, 1,
-                                                  &last_bound_set, dynamic_offset_count, dynamic_offset.data());
+            for (uint32_t set_i = 0; set_i < disturbed_bindings_count; ++set_i) {
+                const uint32_t last_bound_set_i = set_i + first_disturbed_set;
+                const auto &last_bound_set_state = last_bound.ds_slots[last_bound_set_i].ds_state;
+                // last_bound.ds_slot is a LUT, and descriptor sets before the last one could be unbound.
+                if (!last_bound_set_state) {
+                    continue;
                 }
+                VkDescriptorSet last_bound_set = last_bound_set_state->VkHandle();
+                const std::vector<uint32_t> &dynamic_offset = last_bound.ds_slots[last_bound_set_i].dynamic_offsets;
+                const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
+                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, last_bound.desc_set_pipeline_layout->VkHandle(),
+                                              last_bound_set_i, 1, &last_bound_set, dynamic_offset_count, dynamic_offset.data());
             }
         }
     }

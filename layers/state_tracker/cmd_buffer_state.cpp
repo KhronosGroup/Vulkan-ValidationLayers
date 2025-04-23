@@ -1179,28 +1179,28 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
     }
 }
 
-void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint, const vvl::PipelineLayout &pipeline_layout,
-                                           vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
+void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint,
+                                           std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, vvl::Func bound_command,
+                                           uint32_t set, uint32_t descriptorWriteCount,
                                            const VkWriteDescriptorSet *pDescriptorWrites) {
     // Short circuit invalid updates
-    if ((set >= pipeline_layout.set_layouts.size()) || !pipeline_layout.set_layouts[set] ||
-        !pipeline_layout.set_layouts[set]->IsPushDescriptor()) {
+    if ((set >= pipeline_layout->set_layouts.size()) || !pipeline_layout->set_layouts[set] ||
+        !pipeline_layout->set_layouts[set]->IsPushDescriptor()) {
         return;
     }
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
-    const auto &dsl = pipeline_layout.set_layouts[set];
+    const auto &dsl = pipeline_layout->set_layouts[set];
     const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
     auto &last_bound = lastBound[lv_bind_point];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
-    if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, pipeline_layout)) {
+    if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, *pipeline_layout)) {
         last_bound.UnbindAndResetPushDescriptorSet(dev_data.CreatePushDescriptorSet(dsl));
     }
 
     UpdateLastBoundDescriptorSets(pipelineBindPoint, pipeline_layout, bound_command, set, 1, nullptr, push_descriptor_set, 0,
                                   nullptr);
-    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
 
     // Now that we have either the new or extant push_descriptor set ... do the write updates against it
     push_descriptor_set->PerformPushDescriptorsUpdate(descriptorWriteCount, pDescriptorWrites);
@@ -1252,7 +1252,7 @@ void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint 
         SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
     }
 
-    if (last_bound.desc_set_pipeline_layout != VK_NULL_HANDLE) {
+    if (last_bound.desc_set_pipeline_layout) {
         for (const auto &[set_index, binding_req_map] : pipe->active_slots) {
             if (set_index >= last_bound.ds_slots.size()) {
                 continue;
@@ -1307,22 +1307,23 @@ static bool PushDescriptorCleanup(LastBound &last_bound, uint32_t set_idx) {
 // One of pDescriptorSets or push_descriptor_set should be nullptr, indicating whether this
 // is called for CmdBindDescriptorSets or CmdPushDescriptorSet.
 void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
-                                                  const vvl::PipelineLayout &pipeline_layout, vvl::Func bound_command,
-                                                  uint32_t first_set, uint32_t set_count, const VkDescriptorSet *pDescriptorSets,
+                                                  std::shared_ptr<const vvl::PipelineLayout> pipeline_layout,
+                                                  vvl::Func bound_command, uint32_t first_set, uint32_t set_count,
+                                                  const VkDescriptorSet *pDescriptorSets,
                                                   std::shared_ptr<vvl::DescriptorSet> &push_descriptor_set,
                                                   uint32_t dynamic_offset_count, const uint32_t *p_dynamic_offsets) {
     ASSERT_AND_RETURN((pDescriptorSets == nullptr) ^ (push_descriptor_set == nullptr));
 
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
-    assert(last_binding_index < pipeline_layout.set_compat_ids.size());
+    assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
+    last_bound.desc_set_pipeline_layout = pipeline_layout;
     last_bound.desc_set_bound_command = bound_command;
-    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
+    auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {
         last_bound.ds_slots.resize(required_size);
@@ -1392,18 +1393,18 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
 }
 
 void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipeline_bind_point,
-                                                     const vvl::PipelineLayout &pipeline_layout, uint32_t first_set,
+                                                     std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, uint32_t first_set,
                                                      uint32_t set_count, const uint32_t *buffer_indicies,
                                                      const VkDeviceSize *buffer_offsets) {
     uint32_t required_size = first_set + set_count;
     const uint32_t last_binding_index = required_size - 1;
-    assert(last_binding_index < pipeline_layout.set_compat_ids.size());
+    assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
     // Some useful shorthand
     const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
     auto &last_bound = lastBound[lv_bind_point];
-    last_bound.desc_set_pipeline_layout = pipeline_layout.VkHandle();
-    auto &pipe_compat_ids = pipeline_layout.set_compat_ids;
+    last_bound.desc_set_pipeline_layout = pipeline_layout;
+    auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
     if (last_binding_index >= last_bound.ds_slots.size()) {
         last_bound.ds_slots.resize(required_size);

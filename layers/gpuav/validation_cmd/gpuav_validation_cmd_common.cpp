@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
+#include <vulkan/vulkan_core.h>
 
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -86,7 +87,8 @@ void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipeline
         }
     }
 
-    desc_set_pipeline_layout_ = last_bound.desc_set_pipeline_layout;
+    desc_set_pipeline_layout_ =
+        last_bound.desc_set_pipeline_layout ? last_bound.desc_set_pipeline_layout->VkHandle() : VK_NULL_HANDLE;
 
     push_constants_data_ = cb_state.base.push_constant_data_chunks;
 
