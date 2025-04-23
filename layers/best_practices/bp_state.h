@@ -78,6 +78,7 @@ struct AttachmentInfo {
 };
 
 // used to track state regarding render pass heuristic checks
+// TODO - make vvl::RenderPassSubState instead
 struct RenderPassState {
     bool depthAttachment = false;
     bool colorAttachment = false;
@@ -98,6 +99,8 @@ struct RenderPassState {
     std::vector<AttachmentInfo> touchesAttachments;
     std::vector<AttachmentInfo> nextDrawTouchesAttachments;
     bool drawTouchAttachments = false;
+
+    bool has_draw_cmd = false;
 };
 
 struct CommandBufferStateNV {
@@ -156,6 +159,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // the logic to decide to call this function is not simple, so adding this
     // function back could tedious.
     void UnbindResources() {}
+
+    void ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) final;
+    void RecordCmd(vvl::Func command) final;
 
     struct SignalingInfo {
         // True, if the event's first state change within a command buffer is a signal (SetEvent)

@@ -146,7 +146,7 @@ bool BestPractices::ValidateClearAttachment(const bp_state::CommandBufferSubStat
     }
 
     // Warn if this is issued prior to Draw Cmd and clearing the entire attachment
-    if (!cb_state.base.has_draw_cmd) {
+    if (!rp_state.has_draw_cmd) {
         const LogObjectList objlist(cb_state.Handle(), rp->Handle());
         skip |= LogPerformanceWarning("BestPractices-DrawState-ClearCmdBeforeDraw", objlist, loc,
                                       "issued on %s prior to any Draw Cmds in current render pass. It is recommended you "
