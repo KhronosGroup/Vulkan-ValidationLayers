@@ -47,7 +47,7 @@ using RangeGenerator = subresource_adapter::RangeGenerator;
 struct InitialLayoutState {
     VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
     VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
-    InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_);
+    InitialLayoutState(const vvl::ImageView* view_state);
     InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0) {}
 };
 
@@ -85,12 +85,10 @@ class ImageLayoutRegistry {
     using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using RangeType = LayoutMap::key_type;
 
-    bool SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range, VkImageLayout layout,
+    bool SetSubresourceRangeLayout(const VkImageSubresourceRange& range, VkImageLayout layout,
                                    VkImageLayout expected_layout = kInvalidLayout);
-    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
-                                          VkImageLayout layout);
-    void SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
-                                          const vvl::ImageView& view_state);
+    void SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout);
+    void SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state);
     bool UpdateFrom(const ImageLayoutRegistry& from);
     uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layout_map_; }

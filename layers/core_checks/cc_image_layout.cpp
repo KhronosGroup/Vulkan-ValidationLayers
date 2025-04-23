@@ -882,7 +882,7 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
 
         // This updates only local layout map. This is a validation phase and it's not possible to modify command buffer
         // layout map. Use common technique that introduces local helper object that can be modified (local_layout_map).
-        image_layout_registry->SetSubresourceRangeLayout(cb_state, normalized_isr, image_barrier.newLayout);
+        image_layout_registry->SetSubresourceRangeLayout(normalized_isr, image_barrier.newLayout);
     }
     return skip;
 }

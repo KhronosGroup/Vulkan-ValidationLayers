@@ -659,8 +659,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);
-    void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &image_subresource_layers,
-                        VkImageLayout layout);
     void SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
 
     void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
