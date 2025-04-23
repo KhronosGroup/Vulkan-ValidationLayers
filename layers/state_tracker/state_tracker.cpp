@@ -288,9 +288,9 @@ void DeviceState::PreCallRecordDestroyImage(VkDevice device, VkImage image, cons
     Destroy<Image>(image);
 }
 
-void DeviceState::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
-                                                  const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                   const VkClearColorValue *pColor, uint32_t rangeCount,
+                                                   const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -299,9 +299,9 @@ void DeviceState::PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer,
     }
 }
 
-void DeviceState::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                         const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
-                                                         const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                          const VkClearDepthStencilValue *pDepthStencil, uint32_t rangeCount,
+                                                          const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -310,22 +310,22 @@ void DeviceState::PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer command
     }
 }
 
-void DeviceState::PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageCopy *pRegions, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                             const VkImageCopy *pRegions, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Image>(srcImage), Get<Image>(dstImage));
 }
 
-void DeviceState::PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
-                                                const RecordObject &record_obj) {
-    PreCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
+void DeviceState::PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR *pCopyImageInfo,
+                                                 const RecordObject &record_obj) {
+    PostCallRecordCmdCopyImage2(commandBuffer, pCopyImageInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
-                                             const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2 *pCopyImageInfo,
+                                              const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -333,22 +333,22 @@ void DeviceState::PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, cons
                                 Get<Image>(pCopyImageInfo->dstImage));
 }
 
-void DeviceState::PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                               VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                               const VkImageResolve *pRegions, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                const VkImageResolve *pRegions, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Image>(srcImage), Get<Image>(dstImage));
 }
 
-void DeviceState::PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo,
-                                                   const RecordObject &record_obj) {
-    PreCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
+void DeviceState::PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR *pResolveImageInfo,
+                                                    const RecordObject &record_obj) {
+    PostCallRecordCmdResolveImage2(commandBuffer, pResolveImageInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
-                                                const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2 *pResolveImageInfo,
+                                                 const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -356,22 +356,22 @@ void DeviceState::PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, c
                                 Get<Image>(pResolveImageInfo->dstImage));
 }
 
-void DeviceState::PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                            const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                             VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                             const VkImageBlit *pRegions, VkFilter filter, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Image>(srcImage), Get<Image>(dstImage));
 }
 
-void DeviceState::PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
-                                                const RecordObject &record_obj) {
-    PreCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
+void DeviceState::PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR *pBlitImageInfo,
+                                                 const RecordObject &record_obj) {
+    PostCallRecordCmdBlitImage2(commandBuffer, pBlitImageInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
-                                             const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2 *pBlitImageInfo,
+                                              const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -535,21 +535,21 @@ void DeviceState::PostCallRecordCreateImageView(VkDevice device, const VkImageVi
     Add(CreateImageViewState(image_state, *pView, pCreateInfo, format_features, filter_cubic_props));
 }
 
-void DeviceState::PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
-                                             uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
+                                              uint32_t regionCount, const VkBufferCopy *pRegions, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Buffer>(srcBuffer), Get<Buffer>(dstBuffer));
 }
 
-void DeviceState::PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
-                                                 const RecordObject &record_obj) {
-    PreCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
+void DeviceState::PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR *pCopyBufferInfo,
+                                                  const RecordObject &record_obj) {
+    PostCallRecordCmdCopyBuffer2(commandBuffer, pCopyBufferInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
-                                              const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2 *pCopyBufferInfo,
+                                               const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -616,17 +616,17 @@ void DeviceState::PreCallRecordDestroyBufferView(VkDevice device, VkBufferView b
     Destroy<BufferView>(bufferView);
 }
 
-void DeviceState::PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
-                                             VkDeviceSize size, uint32_t data, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
+                                              VkDeviceSize size, uint32_t data, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Buffer>(dstBuffer));
 }
 
-void DeviceState::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                                    VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
-                                                    const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                                     VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy *pRegions,
+                                                     const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -634,15 +634,15 @@ void DeviceState::PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffe
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Image>(srcImage), Get<Buffer>(dstBuffer));
 }
 
-void DeviceState::PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
-                                                        const RecordObject &record_obj) {
-    PreCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
+void DeviceState::PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                         const VkCopyImageToBufferInfo2KHR *pCopyImageToBufferInfo,
+                                                         const RecordObject &record_obj) {
+    PostCallRecordCmdCopyImageToBuffer2(commandBuffer, pCopyImageToBufferInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
-                                                     const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
-                                                     const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer,
+                                                      const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo,
+                                                      const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -650,24 +650,24 @@ void DeviceState::PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuff
                                 Get<Buffer>(pCopyImageToBufferInfo->dstBuffer));
 }
 
-void DeviceState::PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                                    VkImageLayout dstImageLayout, uint32_t regionCount,
-                                                    const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                                     VkImageLayout dstImageLayout, uint32_t regionCount,
+                                                     const VkBufferImageCopy *pRegions, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Buffer>(srcBuffer), Get<Image>(dstImage));
 }
 
-void DeviceState::PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                        const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo,
-                                                        const RecordObject &record_obj) {
-    PreCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
+void DeviceState::PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                         const VkCopyBufferToImageInfo2KHR *pCopyBufferToImageInfo,
+                                                         const RecordObject &record_obj) {
+    PostCallRecordCmdCopyBufferToImage2(commandBuffer, pCopyBufferToImageInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
-                                                     const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
-                                                     const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer,
+                                                      const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo,
+                                                      const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -2234,8 +2234,8 @@ void DeviceState::PostCallRecordCmdSetExclusiveScissorEnableNV(VkCommandBuffer c
     }
 }
 
-void DeviceState::PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
-                                                         VkImageLayout imageLayout, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
+                                                          VkImageLayout imageLayout, const RecordObject &record_obj) {
     if (disabled[command_buffer_state]) return;
 
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
@@ -2787,8 +2787,8 @@ void DeviceState::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuff
     PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                  VkIndexType indexType, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                   VkIndexType indexType, const RecordObject &record_obj) {
     if (buffer == VK_NULL_HANDLE) {
         return;  // allowed in maintenance6
     }
@@ -2806,8 +2806,8 @@ void DeviceState::PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer,
     }
 }
 
-void DeviceState::PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                   VkDeviceSize size, VkIndexType indexType, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                    VkDeviceSize size, VkIndexType indexType, const RecordObject &record_obj) {
     if (buffer == VK_NULL_HANDLE) {
         return;  // allowed in maintenance6
     }
@@ -2823,14 +2823,14 @@ void DeviceState::PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer
     }
 }
 
-void DeviceState::PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
-                                                      VkDeviceSize size, VkIndexType indexType, const RecordObject &record_obj) {
-    PreCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
+void DeviceState::PostCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                                       VkDeviceSize size, VkIndexType indexType, const RecordObject &record_obj) {
+    PostCallRecordCmdBindIndexBuffer2(commandBuffer, buffer, offset, size, indexType, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                                    const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
-                                                    const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                                     const VkBuffer *pBuffers, const VkDeviceSize *pOffsets,
+                                                     const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
 
@@ -2858,19 +2858,19 @@ void DeviceState::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
     cb_state->RecordTransferCmd(record_obj.location.function, Get<Buffer>(dstBuffer));
 }
 
-void DeviceState::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                           const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                            const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordSetEvent(record_obj.location.function, event, stageMask);
 }
 
-void DeviceState::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                               const VkDependencyInfoKHR *pDependencyInfo, const RecordObject &record_obj) {
-    PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                const VkDependencyInfoKHR *pDependencyInfo, const RecordObject &record_obj) {
+    PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
-                                            const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
+                                             const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
@@ -2878,42 +2878,42 @@ void DeviceState::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEve
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
-void DeviceState::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                             const RecordObject &record_obj) {
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
-}
-
-void DeviceState::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
-                                                 const RecordObject &record_obj) {
-    PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
-}
-
-void DeviceState::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+void DeviceState::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
 }
 
-void DeviceState::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                             VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                             uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                             uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                             uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
-                                             const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                                                  const RecordObject &record_obj) {
+    PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+}
+
+void DeviceState::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                               const RecordObject &record_obj) {
+    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    cb_state->RecordResetEvent(record_obj.location.function, event, stageMask);
+}
+
+void DeviceState::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                              VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
+                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
+                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask);
     cb_state->RecordBarriers(memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                              imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void DeviceState::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                 const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
-    PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
+void DeviceState::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                                  const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
+    PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                              const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
+                                               const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
@@ -2934,13 +2934,13 @@ void DeviceState::PostCallRecordCmdPipelineBarrier(
                              imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
-void DeviceState::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
-                                                      const RecordObject &record_obj) {
-    PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
+void DeviceState::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
+                                                       const RecordObject &record_obj) {
+    PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
-                                                   const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
+                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
     cb_state->RecordBarriers(*pDependencyInfo);

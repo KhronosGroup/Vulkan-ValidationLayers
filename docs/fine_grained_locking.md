@@ -418,7 +418,7 @@ Command buffer locking is handled by the `StateTracker::GetWrite<>` and `GetRead
  **This scheme is fragile and likely to evolve in the future**. In the meantime, developers should be especially worried about deadlock by calling GetRead<> or GetWrtite<> multiple times on the same command buffer in a single validation hook command. For example, the following hook functions were buggy in their initial implementations:
 
 ```
- void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
+ void CoreChecks::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer,
                                                    const VkDependencyInfo *pDependencyInfo) {
     // BUG: this method gets a write lock
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -426,7 +426,7 @@ Command buffer locking is handled by the `StateTracker::GetWrite<>` and `GetRead
     TransitionImageLayouts(cb_state.get(), pDependencyInfo->imageMemoryBarrierCount,
                            pDependencyInfo->pImageMemoryBarriers);
     // BUG: the state tracker method ALSO gets a write lock, which deadlocks!
-    StateTracker::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
+    StateTracker::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo);
  }
 ```
 

@@ -1494,16 +1494,14 @@ bool CoreChecks::PreCallValidateCmdPipelineBarrier2KHR(VkCommandBuffer commandBu
     return PreCallValidateCmdPipelineBarrier2(commandBuffer, pDependencyInfo, error_obj);
 }
 
-void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                                 VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                                 uint32_t bufferMemoryBarrierCount,
-                                                 const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
-                                                 const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
-                                                  pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                                  imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
+void CoreChecks::PostCallRecordCmdPipelineBarrier(
+    VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
+    VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
+    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
+    const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
+                                                pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                                imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
@@ -1512,14 +1510,14 @@ void CoreChecks::PreCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, 
     TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
 }
 
-void CoreChecks::PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
-                                                     const RecordObject &record_obj) {
-    PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
+void CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
+                                                      const RecordObject &record_obj) {
+    PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 }
 
-void CoreChecks::PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
-                                                  const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
+void CoreChecks::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
+                                                   const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     RecordBarriers(record_obj.location.function, *cb_state, *pDependencyInfo);

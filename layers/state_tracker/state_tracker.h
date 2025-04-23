@@ -1227,74 +1227,74 @@ class DeviceState : public vvl::base::Device {
                                             VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
                                             const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                             const uint32_t* pDynamicOffsets, const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType,
-                                         const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+    void PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                           VkIndexType indexType, const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
-                                             VkIndexType indexType, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                                           VkIndexType indexType, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
+                                              VkDeviceSize size, VkIndexType indexType, const RecordObject& record_obj) override;
     void PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                       const RecordObject& record_obj) override;
     void PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline,
                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout,
-                                                const RecordObject& record_obj) override;
-    void PreCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
-                                           const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
-                                           const RecordObject& record_obj) override;
-    void PreCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions, VkFilter filter,
-                                   const RecordObject& record_obj) override;
-    void PreCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
-                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView, VkImageLayout imageLayout,
+                                                 const RecordObject& record_obj) override;
+    void PostCallRecordCmdBindVertexBuffers(VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount,
+                                            const VkBuffer* pBuffers, const VkDeviceSize* pOffsets,
+                                            const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
+                                    VkFilter filter, const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
+                                        const RecordObject& record_obj) override;
+    void PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2* pBlitImageInfo,
+                                     const RecordObject& record_obj) override;
     void PostCallRecordCmdBuildAccelerationStructureNV(VkCommandBuffer commandBuffer, const VkAccelerationStructureInfoNV* pInfo,
                                                        VkBuffer instanceData, VkDeviceSize instanceOffset, VkBool32 update,
                                                        VkAccelerationStructureNV dst, VkAccelerationStructureNV src,
                                                        VkBuffer scratch, VkDeviceSize scratchOffset,
                                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                         const VkClearColorValue* pColor, uint32_t rangeCount,
-                                         const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
-    void PreCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
+    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                          const VkClearColorValue* pColor, uint32_t rangeCount,
+                                          const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
+    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
+                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
+                                                 const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
     void PostCallRecordCmdControlVideoCodingKHR(VkCommandBuffer commandBuffer,
                                                 const VkVideoCodingControlInfoKHR* pCodingControlInfo,
                                                 const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyAccelerationStructureNV(VkCommandBuffer commandBuffer, VkAccelerationStructureNV dst,
                                                       VkAccelerationStructureNV src, VkCopyAccelerationStructureModeNV mode,
                                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
-                                    const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
-                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
-                                     const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                           VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                           const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
-                                               const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
+    void PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                     const VkBufferCopy* pRegions, const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBuffer2KHR(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2KHR* pCopyBufferInfo,
+                                         const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBuffer2(VkCommandBuffer commandBuffer, const VkCopyBufferInfo2* pCopyBufferInfo,
+                                      const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
+                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                             const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                   VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
-                                   const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo,
-                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
+    void PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
+                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo,
+                                                const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
+                                             const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
+                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
                                     const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                           VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                           const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                               const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
-                                               const RecordObject& record_obj) override;
-    void PreCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
+    void PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo,
+                                        const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
+                                     const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
                                             const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
+                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
+                                                const RecordObject& record_obj) override;
+    void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
+                                             const RecordObject& record_obj) override;
     void PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize stride,
                                                VkQueryResultFlags flags, const RecordObject& record_obj) override;
@@ -1392,8 +1392,8 @@ class DeviceState : public vvl::base::Device {
                                             const RecordObject& record_obj) override;
     void PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                          const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) override;
-    void PreCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
-                                    uint32_t data, const RecordObject& record_obj) override;
+    void PostCallRecordCmdFillBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size,
+                                     uint32_t data, const RecordObject& record_obj) override;
     void PreCallRecordCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
@@ -1434,17 +1434,17 @@ class DeviceState : public vvl::base::Device {
                                          const RecordObject& record_obj) override;
     void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
                                             const RecordObject& record_obj) override;
-    void PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                     const RecordObject& record_obj) override;
     void PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                          uint32_t queryCount, const RecordObject& record_obj) override;
-    void PreCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                      VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                      const VkImageResolve* pRegions, const RecordObject& record_obj) override;
-    void PreCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo,
-                                          const RecordObject& record_obj) override;
-    void PreCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                       const RecordObject& record_obj) override;
+    void PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
+                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
+                                       const VkImageResolve* pRegions, const RecordObject& record_obj) override;
+    void PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo,
+                                           const RecordObject& record_obj) override;
+    void PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
+                                        const RecordObject& record_obj) override;
     void PostCallRecordCmdSetBlendConstants(VkCommandBuffer commandBuffer, const float blendConstants[4],
                                             const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDepthBias(VkCommandBuffer commandBuffer, float depthBiasConstantFactor, float depthBiasClamp,
@@ -1453,8 +1453,8 @@ class DeviceState : public vvl::base::Device {
                                            const RecordObject& record_obj) override;
     void PostCallRecordCmdSetDepthBounds(VkCommandBuffer commandBuffer, float minDepthBounds, float maxDepthBounds,
                                          const RecordObject& record_obj) override;
-    void PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                  const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                   const RecordObject& record_obj) override;
     void PostCallRecordCmdSetExclusiveScissorNV(VkCommandBuffer commandBuffer, uint32_t firstExclusiveScissor,
                                                 uint32_t exclusiveScissorCount, const VkRect2D* pExclusiveScissors,
                                                 const RecordObject& record_obj) override;
@@ -1484,12 +1484,12 @@ class DeviceState : public vvl::base::Device {
                                                           const RecordObject& record_obj) override;
     void PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                        VkDeviceSize dataSize, const void* pData, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                     VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
+                                     uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
+                                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
+                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
+                                     const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                          VkQueryPool queryPool, uint32_t slot, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(VkCommandBuffer commandBuffer,
@@ -1752,23 +1752,23 @@ class DeviceState : public vvl::base::Device {
                                           uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
                                           const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
-                                             const RecordObject& record_obj) override;
-    void PreCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                          const RecordObject& record_obj) override;
+    void PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
+                                              const RecordObject& record_obj) override;
+    void PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
+                                           const RecordObject& record_obj) override;
 
-    void PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfoKHR* pDependencyInfo,
+    void PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfoKHR* pDependencyInfo,
+                                       const RecordObject& record_obj) override;
+    void PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
+                                    const RecordObject& record_obj) override;
+    void PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                                         const RecordObject& record_obj) override;
+    void PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
                                       const RecordObject& record_obj) override;
-    void PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                   const RecordObject& record_obj) override;
-    void PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
-                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                     const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                        const VkDependencyInfoKHR* pDependencyInfos, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                     const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) override;
+    void PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                         const VkDependencyInfoKHR* pDependencyInfos, const RecordObject& record_obj) override;
+    void PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
+                                      const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,
                                              uint32_t query, const RecordObject& record_obj) override;
     void PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
