@@ -1337,7 +1337,7 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, V
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                     VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
-    return PostCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, slot, record_obj);
+    return PreCallRecordCmdWriteTimestamp2(commandBuffer, stage, queryPool, slot, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,

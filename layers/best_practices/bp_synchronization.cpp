@@ -107,9 +107,9 @@ bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, Vk
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                             const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
+void BestPractices::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                              const RecordObject& record_obj) {
+    BaseClass::PostCallRecordCmdSetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdSetEvent(sub_state, event);
@@ -130,14 +130,14 @@ bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, V
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
-                                                 const VkDependencyInfoKHR* pDependencyInfo, const RecordObject& record_obj) {
-    PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+void BestPractices::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                  const VkDependencyInfoKHR* pDependencyInfo, const RecordObject& record_obj) {
+    PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
 }
 
-void BestPractices::PreCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo* pDependencyInfo,
-                                              const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
+void BestPractices::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
+                                               const VkDependencyInfo* pDependencyInfo, const RecordObject& record_obj) {
+    BaseClass::PostCallRecordCmdSetEvent2(commandBuffer, event, pDependencyInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdSetEvent(sub_state, event);
@@ -150,9 +150,9 @@ bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, 
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                               const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
+void BestPractices::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
+                                                const RecordObject& record_obj) {
+    BaseClass::PostCallRecordCmdResetEvent(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdResetEvent(sub_state, event);
@@ -170,14 +170,14 @@ bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2KHR stageMask,
-                                                   const RecordObject& record_obj) {
-    PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+void BestPractices::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
+                                                    VkPipelineStageFlags2KHR stageMask, const RecordObject& record_obj) {
+    PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
 }
 
-void BestPractices::PreCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                                const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
+void BestPractices::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
+                                                 const RecordObject& record_obj) {
+    BaseClass::PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdResetEvent(sub_state, event);
