@@ -963,7 +963,7 @@ void CoreChecks::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer,
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(image, pRanges[i], imageLayout);
+            cb_state_ptr->SetImageInitialLayout(*image_state, pRanges[i], imageLayout);
         }
     }
 }
@@ -1085,7 +1085,7 @@ void CoreChecks::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer command
     ASSERT_AND_RETURN(image_state);
 
     for (uint32_t i = 0; i < rangeCount; ++i) {
-        cb_state->SetImageInitialLayout(image, pRanges[i], imageLayout);
+        cb_state->SetImageInitialLayout(*image_state, pRanges[i], imageLayout);
     }
 }
 
