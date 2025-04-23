@@ -88,58 +88,53 @@ ImageLayoutRegistry::ImageLayoutRegistry(const vvl::Image& image_state)
       layout_map_(encoder_.SubresourceCount()),
       initial_layout_states_() {}
 
-// Use the unwrapped maps from the BothMap in the actual implementation
-template <typename LayoutMap>
-static bool SetSubresourceRangeLayoutImpl(LayoutMap& layouts, InitialLayoutStates& initial_layout_states, RangeGenerator& range_gen,
-                                          const vvl::CommandBuffer& cb_state, VkImageLayout layout, VkImageLayout expected_layout) {
-    bool updated = false;
-    LayoutEntry entry(expected_layout, layout);
-    for (; range_gen->non_empty(); ++range_gen) {
-        updated |= UpdateLayoutStateImpl(layouts, initial_layout_states, *range_gen, entry, cb_state, nullptr);
-    }
-    return updated;
-}
-
 bool ImageLayoutRegistry::SetSubresourceRangeLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
                                                     VkImageLayout layout, VkImageLayout expected_layout) {
+    if (!InRange(range)) {
+        return false;  // Don't even try to track bogus subresources
+    }
     if (expected_layout == kInvalidLayout) {
         // Set the initial layout to the set layout as we had no other layout to reference
         expected_layout = layout;
     }
-    if (!InRange(range)) return false;  // Don't even try to track bogus subreources
 
     RangeGenerator range_gen(encoder_, range);
-    if (layout_map_.UsesSmallMap()) {
-        return SetSubresourceRangeLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
-                                             expected_layout);
-    } else {
-        return SetSubresourceRangeLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
-                                             expected_layout);
-    }
-}
+    LayoutEntry entry(expected_layout, layout);
 
-// Use the unwrapped maps from the BothMap in the actual implementation
-template <typename LayoutMap>
-static void SetSubresourceRangeInitialLayoutImpl(LayoutMap& layouts, InitialLayoutStates& initial_layout_states,
-                                                 RangeGenerator& range_gen, const vvl::CommandBuffer& cb_state,
-                                                 VkImageLayout layout, const vvl::ImageView* view_state) {
-    LayoutEntry entry(layout);
-    for (; range_gen->non_empty(); ++range_gen) {
-        UpdateLayoutStateImpl(layouts, initial_layout_states, *range_gen, entry, cb_state, view_state);
+    bool updated = false;
+    if (layout_map_.UsesSmallMap()) {
+        auto& layout_map = layout_map_.GetSmallMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+        }
+    } else {
+        auto& layout_map = layout_map_.GetBigMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            updated |= UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+        }
     }
+    return updated;
 }
 
 // Unwrap the BothMaps entry here as this is a performance hotspot.
 void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, const VkImageSubresourceRange& range,
                                                            VkImageLayout layout) {
-    if (!InRange(range)) return;  // Don't even try to track bogus subreources
+    if (!InRange(range)) {
+        return;  // Don't even try to track bogus subreources
+    }
 
     RangeGenerator range_gen(encoder_, range);
+    LayoutEntry entry(layout);
     if (layout_map_.UsesSmallMap()) {
-        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
-                                             nullptr);
+        auto& layout_map = layout_map_.GetSmallMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+        }
     } else {
-        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout, nullptr);
+        auto& layout_map = layout_map_.GetBigMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, nullptr);
+        }
     }
 }
 
@@ -147,12 +142,17 @@ void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuf
 void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const vvl::CommandBuffer& cb_state, VkImageLayout layout,
                                                            const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
+    LayoutEntry entry(layout);
     if (layout_map_.UsesSmallMap()) {
-        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetSmallMap(), initial_layout_states_, range_gen, cb_state, layout,
-                                             &view_state);
+        auto& layout_map = layout_map_.GetSmallMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, &view_state);
+        }
     } else {
-        SetSubresourceRangeInitialLayoutImpl(layout_map_.GetBigMap(), initial_layout_states_, range_gen, cb_state, layout,
-                                             &view_state);
+        auto& layout_map = layout_map_.GetBigMap();
+        for (; range_gen->non_empty(); ++range_gen) {
+            UpdateLayoutStateImpl(layout_map, initial_layout_states_, *range_gen, entry, cb_state, &view_state);
+        }
     }
 }
 
