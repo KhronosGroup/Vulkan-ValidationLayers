@@ -135,36 +135,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     desc_set_manager_.reset();
 }
 
-void Validator::RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                const VkSubpassContents contents) {
-    if (!pRenderPassBegin) {
-        return;
-    }
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto render_pass_state = Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    if (cb_state && render_pass_state) {
-        // transition attachments to the correct layouts for beginning of renderPass and first subpass
-        TransitionBeginRenderPassLayouts(*cb_state, *render_pass_state);
-    }
-}
-
-void Validator::PreCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                VkSubpassContents contents, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
-    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, contents);
-}
-
-void Validator::PreCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                    const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-}
-
-void Validator::PreCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
-                                                 const VkSubpassBeginInfo *pSubpassBeginInfo, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
-    RecordCmdBeginRenderPassLayouts(commandBuffer, pRenderPassBegin, pSubpassBeginInfo->contents);
-}
-
 void Validator::RecordCmdEndRenderPassLayouts(vvl::CommandBuffer &cb_state) { TransitionFinalSubpassLayouts(cb_state); }
 
 void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {

@@ -1006,14 +1006,14 @@ bool SyncValidator::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     return skip;
 }
 
-void SyncValidator::PreCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
-                                                      const RecordObject &record_obj) {
-    PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
+void SyncValidator::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR *pRenderingInfo,
+                                                       const RecordObject &record_obj) {
+    PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
 }
 
-void SyncValidator::PreCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
-                                                   const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
+void SyncValidator::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRenderingInfo,
+                                                    const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     vvl::TlsGuard<syncval_state::BeginRenderingCmdState> cmd_state;
 
     assert(cmd_state && cmd_state->cb_state && (cmd_state->cb_state->VkHandle() == commandBuffer));
