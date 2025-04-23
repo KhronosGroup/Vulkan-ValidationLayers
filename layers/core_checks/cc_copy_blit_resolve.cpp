@@ -1948,8 +1948,8 @@ void CoreChecks::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkIma
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        cb_state->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        cb_state->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+        cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
     }
 }
 
@@ -1968,9 +1968,9 @@ void CoreChecks::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, cons
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*src_image_state, pCopyImageInfo->pRegions[i].srcSubresource,
+        cb_state->SetImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].srcSubresource),
                                         pCopyImageInfo->srcImageLayout);
-        cb_state->SetImageInitialLayout(*dst_image_state, pCopyImageInfo->pRegions[i].dstSubresource,
+        cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].dstSubresource),
                                         pCopyImageInfo->dstImageLayout);
     }
 }
@@ -2378,7 +2378,7 @@ void CoreChecks::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffe
 
     // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*src_image_state, pRegions[i].imageSubresource, srcImageLayout);
+        cb_state->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].imageSubresource), srcImageLayout);
     }
 }
 
@@ -2399,7 +2399,7 @@ void CoreChecks::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuff
 
     // Make sure that all image slices record referenced layout
     for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*src_image_state, pCopyImageToBufferInfo->pRegions[i].imageSubresource,
+        cb_state->SetImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageToBufferInfo->pRegions[i].imageSubresource),
                                         pCopyImageToBufferInfo->srcImageLayout);
     }
 }
@@ -2537,7 +2537,7 @@ void CoreChecks::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffe
 
     // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*dst_image_state, pRegions[i].imageSubresource, dstImageLayout);
+        cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].imageSubresource), dstImageLayout);
     }
 }
 
@@ -2558,7 +2558,7 @@ void CoreChecks::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuff
 
     // Make sure that all image slices are record referenced layout
     for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*dst_image_state, pCopyBufferToImageInfo->pRegions[i].imageSubresource,
+        cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyBufferToImageInfo->pRegions[i].imageSubresource),
                                         pCopyBufferToImageInfo->dstImageLayout);
     }
 }
@@ -3474,8 +3474,8 @@ void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcIm
 
     // Make sure that all image slices are updated to correct layout
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->SetImageInitialLayout(*src_image_state, pRegions[i].srcSubresource, srcImageLayout);
-        cb_state->SetImageInitialLayout(*dst_image_state, pRegions[i].dstSubresource, dstImageLayout);
+        cb_state->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+        cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
     }
 }
 

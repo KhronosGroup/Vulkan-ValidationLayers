@@ -1481,17 +1481,6 @@ void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const V
     }
 }
 
-void CommandBuffer::SetImageInitialLayout(VkImage image, const VkImageSubresourceRange &range, VkImageLayout layout) {
-    auto image_state = dev_data.Get<vvl::Image>(image);
-    ASSERT_AND_RETURN(image_state);
-    SetImageInitialLayout(*image_state, range, layout);
-}
-
-void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceLayers &layers,
-                                          VkImageLayout layout) {
-    SetImageInitialLayout(image_state, RangeFromLayers(layers), layout);
-}
-
 // Set image layout for all slices of an image view
 void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil) {
     const vvl::Image *image_state = view_state.image_state.get();
