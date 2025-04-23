@@ -1392,12 +1392,12 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         } else {
             pipe_layouts_log << FormatHandle(*layouts.front());
         }
-        std::string pipeline_layout_handle;
+        std::string pipeline_layout_handle_str;
         if (last_bound_state.desc_set_pipeline_layout) {
-            pipeline_layout_handle = FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle());
+            pipeline_layout_handle_str = FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle());
             objlist.add(last_bound_state.desc_set_pipeline_layout->Handle());
         } else {
-            pipeline_layout_handle = "Pipeline Layout never bound";  // < can happen when dealing with multiview
+            pipeline_layout_handle_str = "Pipeline Layout never bound";  // < can happen when dealing with multiview
         }
 
         std::string range =
@@ -1406,7 +1406,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                          "The %s (created with %s) statically uses descriptor set %" PRIu32
                          ", but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
                          FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot, range.c_str(),
-                         String(last_bound_state.desc_set_bound_command), pipeline_layout_handle.c_str(),
+                         String(last_bound_state.desc_set_bound_command), pipeline_layout_handle_str.c_str(),
                          last_bound_state.DescribeNonCompatibleSet(pipeline.max_active_slot, *pipeline_layout).c_str());
     } else {
         // if the bound set is not compatible, the rest will just be extra redundant errors

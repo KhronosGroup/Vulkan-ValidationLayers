@@ -1975,12 +1975,20 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
     OneOffDescriptorSet ds2(m_device, {
                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                       });
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    ds.UpdateDescriptorSets();
+    ds2.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    ds2.UpdateDescriptorSets();
 
     vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds.layout_, nullptr}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
     vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
                                            VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    vkt::PipelineLayout pipeline_layout_null(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {});
+    vkt::PipelineLayout pipeline_layout_link(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {});
+    // seperate layout to test compatibility
+    vkt::PipelineLayout pipeline_layout_ds(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {});
+    const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds.set_, ds2.set_};
 
     CreatePipelineHelper vertex_input_lib(*this);
     vertex_input_lib.InitVertexInputLibInfo();
@@ -2000,7 +2008,7 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
         pre_raster_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
-        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
         pre_raster_lib.CreateGraphicsPipeline(false);
     }
 
@@ -2010,7 +2018,7 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
         frag_shader_lib.gp_ci_.flags |= VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
-        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
@@ -2030,7 +2038,101 @@ TEST_F(PositiveGraphicsLibrary, LinkWithNonIndependent) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_null.handle();
+    exe_pipe_ci.layout = pipeline_layout_link;
     exe_pipe_ci.flags |= VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_ds, 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveGraphicsLibrary, LinkWithIndependent) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9870");
+    RETURN_IF_SKIP(InitBasicGraphicsLibrary());
+    InitRenderTarget();
+
+    OneOffDescriptorSet ds(m_device, {
+                                         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
+                                     });
+    OneOffDescriptorSet ds2(m_device, {
+                                          {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                      });
+    vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    ds.UpdateDescriptorSets();
+    ds2.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    ds2.UpdateDescriptorSets();
+
+    vkt::PipelineLayout pipeline_layout_vs(*m_device, {&ds.layout_, &ds.layout_, nullptr}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_fs(*m_device, {&ds.layout_, nullptr, &ds2.layout_}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    vkt::PipelineLayout pipeline_layout_link(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {},
+                                             VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    // seperate layout to test compatibility
+    vkt::PipelineLayout pipeline_layout_ds(*m_device, {&ds.layout_, &ds.layout_, &ds2.layout_}, {},
+                                           VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
+    const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, ds.set_, ds2.set_};
+
+    CreatePipelineHelper vertex_input_lib(*this);
+    vertex_input_lib.InitVertexInputLibInfo();
+    vertex_input_lib.CreateGraphicsPipeline(false);
+
+    CreatePipelineHelper pre_raster_lib(*this);
+    {
+        const char vs_src[] = R"glsl(
+            #version 450
+            layout(set=0, binding=0) uniform foo { float x; } bar;
+            void main() {
+            gl_Position = vec4(bar.x);
+            }
+        )glsl";
+        const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
+        vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
+        pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
+        pre_raster_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_shader_lib(*this);
+    {
+        const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
+        vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
+        frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
+        frag_shader_lib.CreateGraphicsPipeline(false);
+    }
+
+    CreatePipelineHelper frag_out_lib(*this);
+    frag_out_lib.InitFragmentOutputLibInfo();
+    frag_out_lib.CreateGraphicsPipeline(false);
+
+    VkPipeline libraries[4] = {
+        vertex_input_lib.Handle(),
+        pre_raster_lib.Handle(),
+        frag_shader_lib.Handle(),
+        frag_out_lib.Handle(),
+    };
+    VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
+    link_info.libraryCount = size32(libraries);
+    link_info.pLibraries = libraries;
+
+    VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
+    exe_pipe_ci.layout = pipeline_layout_link;
+    vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_ds, 0,
+                              static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
 }
