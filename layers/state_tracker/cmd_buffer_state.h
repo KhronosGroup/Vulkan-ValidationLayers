@@ -186,10 +186,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     bool suspends_render_pass_instance;
     bool resumes_render_pass_instance;
 
-    // Track if certain commands have been called at least once in lifetime of the command buffer
-    // primary command buffers values are set true if a secondary command buffer has a command
-    bool has_draw_cmd;
-
     CbState state;           // Track cmd buffer update state
     uint64_t command_count;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submit_count;   // Number of times CB has been submitted

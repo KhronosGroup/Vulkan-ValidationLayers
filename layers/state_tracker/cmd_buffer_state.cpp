@@ -226,7 +226,6 @@ void CommandBuffer::ResetCBState() {
     begin_info_flags = 0;
     has_inheritance = false;
 
-    has_draw_cmd = false;
     has_render_pass_instance = false;
     suspends_render_pass_instance = false;
     resumes_render_pass_instance = false;
@@ -1162,9 +1161,6 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         scissor.trashed_mask = vvl::MaxTypeValue(scissor.trashed_mask);
         scissor.trashed_count = true;
 
-        // Pass along if any commands are used in the secondary command buffer
-        has_draw_cmd |= secondary_cb_state->has_draw_cmd;
-
         // Handle secondary command buffer updates for dynamic rendering
         if (!has_render_pass_instance) {
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
@@ -1212,10 +1208,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
-void CommandBuffer::UpdateDrawCmd(Func command) {
-    has_draw_cmd = true;
-    UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_GRAPHICS);
-}
+void CommandBuffer::UpdateDrawCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_GRAPHICS); }
 
 // Generic function to handle state update for all CmdDispatch* type functions
 void CommandBuffer::UpdateDispatchCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_COMPUTE); }

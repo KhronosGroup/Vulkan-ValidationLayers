@@ -656,8 +656,6 @@ void BestPractices::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBu
 void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb_state,
                                                  const VkRenderPassBeginInfo* pRenderPassBegin) {
     // Reset the renderpass state
-    // TODO - move this logic to the Render Pass state as cb->has_draw_cmd should stay true for lifetime of command buffer
-    cb_state.base.has_draw_cmd = false;
     auto& render_pass_state = cb_state.render_pass_state;
     render_pass_state.touchesAttachments.clear();
     render_pass_state.earlyClearAttachments.clear();
@@ -666,6 +664,7 @@ void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBufferSubState
     render_pass_state.colorAttachment = false;
     render_pass_state.depthAttachment = false;
     render_pass_state.drawTouchAttachments = true;
+    render_pass_state.has_draw_cmd = false;
     // Don't reset state related to pipeline state.
 
     // Reset NV state

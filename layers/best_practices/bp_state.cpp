@@ -16,6 +16,7 @@
  */
 
 #include "best_practices/bp_state.h"
+#include "utils/action_command_utils.h"
 
 namespace bp_state {
 
@@ -60,6 +61,19 @@ void ImageSubState::SetupUsages() {
     usages_.resize(base.create_info.arrayLayers);
     for (auto& mip_vec : usages_) {
         mip_vec.resize(base.create_info.mipLevels, {IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED, VK_QUEUE_FAMILY_IGNORED});
+    }
+}
+
+void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) {
+    if (secondary_command_buffer.IsSecondary()) {
+        auto& secondary_sub_state = SubState(secondary_command_buffer);
+        render_pass_state.has_draw_cmd |= secondary_sub_state.render_pass_state.has_draw_cmd;
+    }
+}
+
+void CommandBufferSubState::RecordCmd(vvl::Func command) {
+    if (vvl::IsCommandDrawMesh(command) || vvl::IsCommandDrawVertex(command)) {
+        render_pass_state.has_draw_cmd = true;
     }
 }
 
