@@ -99,9 +99,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     uint32_t GetValidationErrorBufferDescSetIndex() const { return 0; }
 
-    const VkBuffer &GetErrorOutputBuffer() const {
-        assert(error_output_buffer_.VkHandle() != VK_NULL_HANDLE);
-        return error_output_buffer_.VkHandle();
+    const vko::BufferRange &GetErrorOutputBufferRange() const {
+        assert(error_output_buffer_range_.buffer != VK_NULL_HANDLE);
+        return error_output_buffer_range_;
     }
 
     VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
@@ -143,7 +143,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     VkDeviceSize GetBdaRangesBufferByteSize() const;
     [[nodiscard]] bool UpdateBdaRangesBuffer(const Location &loc);
 
-    Validator &state_;
+    Validator &gpuav_;
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
@@ -151,7 +151,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
     // Buffer storing GPU-AV errors
-    vko::Buffer error_output_buffer_;
+    vko::BufferRange error_output_buffer_range_;
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
     vko::Buffer cmd_errors_counts_buffer_;
@@ -176,7 +176,7 @@ class QueueSubState : public vvl::QueueSubState {
   protected:
     void SubmitBarrier(const Location &loc, uint64_t seq);
 
-    Validator &state_;
+    Validator &gpuav_;
     VkCommandPool barrier_command_pool_{VK_NULL_HANDLE};
     VkCommandBuffer barrier_command_buffer_{VK_NULL_HANDLE};
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};

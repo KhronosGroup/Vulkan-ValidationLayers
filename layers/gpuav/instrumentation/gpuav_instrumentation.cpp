@@ -276,9 +276,9 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     // Error output buffer
     VkDescriptorBufferInfo error_output_desc_buffer_info = {};
     {
-        error_output_desc_buffer_info.range = VK_WHOLE_SIZE;
-        error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBuffer();
-        error_output_desc_buffer_info.offset = 0;
+        error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBufferRange().buffer;
+        error_output_desc_buffer_info.offset = cb_state.GetErrorOutputBufferRange().offset;
+        error_output_desc_buffer_info.range = cb_state.GetErrorOutputBufferRange().size;
 
         VkWriteDescriptorSet wds = vku::InitStructHelper();
         wds.dstBinding = glsl::kBindingInstErrorBuffer;

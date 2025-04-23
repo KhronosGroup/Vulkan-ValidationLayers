@@ -195,13 +195,13 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                       << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
 
-                state_.InternalError(state_.device, loc, error.str().c_str());
+                gpuav_.InternalError(gpuav_.device, loc, error.str().c_str());
                 return false;
             }
             validated_desc_sets.emplace(bound_desc_set->VkHandle());
 
             // We build once here, but will update the set_index and shader_handle when found
-            vvl::DescriptorValidator context(state_, base, *bound_desc_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
+            vvl::DescriptorValidator context(gpuav_, base, *bound_desc_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
 
             DescriptorAccessMap descriptor_access_map = ds_sub_state.GetDescriptorAccesses(loc);
             // Once we have accessed everything and created the DescriptorAccess, we can clear this buffer
@@ -209,8 +209,8 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 
             // For each shader ID we can do the state object lookup once, then validate all the accesses inside of it
             for (const auto &[shader_id, descriptor_accesses] : descriptor_access_map) {
-                auto it = state_.instrumented_shaders_map_.find(shader_id);
-                if (it == state_.instrumented_shaders_map_.end()) {
+                auto it = gpuav_.instrumented_shaders_map_.find(shader_id);
+                if (it == gpuav_.instrumented_shaders_map_.end()) {
                     assert(false);
                     continue;
                 }
@@ -220,10 +220,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 
                 if (it->second.pipeline != VK_NULL_HANDLE) {
                     // We use pipeline over vkShaderModule as likely they will have been destroyed by now
-                    pipeline_state = state_.Get<vvl::Pipeline>(it->second.pipeline).get();
+                    pipeline_state = gpuav_.Get<vvl::Pipeline>(it->second.pipeline).get();
                     context.SetShaderHandleForGpuAv(&pipeline_state->Handle());
                 } else if (it->second.shader_object != VK_NULL_HANDLE) {
-                    shader_object_state = state_.Get<vvl::ShaderObject>(it->second.shader_object).get();
+                    shader_object_state = gpuav_.Get<vvl::ShaderObject>(it->second.shader_object).get();
                     ASSERT_AND_CONTINUE(shader_object_state->entrypoint);
                     context.SetShaderHandleForGpuAv(&shader_object_state->Handle());
                 } else {
