@@ -75,7 +75,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, InitialLayoutStates& init
 }
 
 InitialLayoutState::InitialLayoutState(const vvl::CommandBuffer& cb_state_, const vvl::ImageView* view_state_)
-    : image_view(VK_NULL_HANDLE), aspect_mask(0), label(cb_state_.debug_label) {
+    : image_view(VK_NULL_HANDLE), aspect_mask(0) {
     if (view_state_) {
         image_view = view_state_->VkHandle();
         aspect_mask = view_state_->normalized_subresource_range.aspectMask;
