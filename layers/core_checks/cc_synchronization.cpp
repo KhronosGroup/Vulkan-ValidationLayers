@@ -1356,65 +1356,35 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer,
     return PreCallValidateCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, error_obj);
 }
 
-void CoreChecks::PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                            VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                            uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
-                                            uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
-                                            uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
-                                            const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
-                                             pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                             imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
-}
-
-void CoreChecks::RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                      const VkDependencyInfo *pDependencyInfos, Func command) {
-    // don't hold read lock during the base class method
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    for (uint32_t i = 0; i < eventCount; i++) {
-        const auto &dep_info = pDependencyInfos[i];
-        TransitionImageLayouts(*cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
-    }
-}
-
-void CoreChecks::PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                                const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
-    PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
-}
-
-void CoreChecks::PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
-                                             const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
-    RecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj.location.function);
-}
-
 void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                              VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                              uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                              const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
+                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
+                                           imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
+
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
     RecordBarriers(record_obj.location.function, *cb_state, sourceStageMask, dstStageMask, bufferMemoryBarrierCount,
                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
 
 void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                                  const VkDependencyInfoKHR *pDependencyInfos, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    for (uint32_t i = 0; i < eventCount; i++) {
-        const auto &dep_info = pDependencyInfos[i];
-        RecordBarriers(record_obj.location.function, *cb_state, dep_info);
-    }
+    PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
 }
 
 void CoreChecks::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                               const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
+    BaseClass::PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
+        TransitionImageLayouts(*cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
         RecordBarriers(record_obj.location.function, *cb_state, dep_info);
     }
 }

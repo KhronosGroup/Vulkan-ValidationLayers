@@ -1858,18 +1858,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                           const VkDependencyInfoKHR* pDependencyInfos, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                        const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const override;
-    void PreCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                    VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                    uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                    uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                    uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                    const RecordObject& record_obj) override;
-    void RecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                              const VkDependencyInfo* pDependencyInfos, Func command);
-    void PreCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                        const VkDependencyInfoKHR* pDependencyInfos, const RecordObject& record_obj) override;
-    void PreCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                     const VkDependencyInfo* pDependencyInfos, const RecordObject& record_obj) override;
     void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
                                      VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
                                      uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,

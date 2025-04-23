@@ -2088,17 +2088,14 @@ void DeviceState::PostCallRecordResetCommandBuffer(VkCommandBuffer commandBuffer
     cb_state->Reset(record_obj.location);
 }
 
-// Validation cache:
-// CV is the bottommost implementor of this extension. Don't pass calls down.
-
-void DeviceState::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                               VkPipeline pipeline, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+                                                VkPipeline pipeline, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
-
     auto pipe_state = Get<Pipeline>(pipeline);
     ASSERT_AND_RETURN(pipe_state);
-    if (VK_PIPELINE_BIND_POINT_GRAPHICS == pipelineBindPoint) {
+
+    if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         cb_state->dynamic_state_status.pipeline.reset();
 
         // Make a copy and then xor the new change
@@ -2148,6 +2145,25 @@ void DeviceState::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, Vk
                 // should become = ~uint32_t(0) if the other interpretation is correct.
             }
         }
+
+        if (!enabled_features.variableMultisampleRate) {
+            if (const auto *multisample_state = pipe_state->MultisampleState(); multisample_state) {
+                if (const auto &render_pass = cb_state->active_render_pass) {
+                    const uint32_t subpass = cb_state->GetActiveSubpass();
+                    // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
+                    // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
+                    // first bound pipeline.
+                    if (render_pass->UsesNoAttachment(subpass)) {
+                        if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                                cb_state->GetActiveSubpassRasterizationSampleCount();
+                            !subpass_rasterization_samples) {
+                            cb_state->SetActiveSubpassRasterizationSampleCount(multisample_state->rasterizationSamples);
+                        }
+                    }
+                }
+            }
+        }
+
     } else if (pipelineBindPoint == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
         cb_state->dynamic_state_status.rtx_stack_size_pipeline = false;
         if (!pipe_state->IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
@@ -2158,31 +2174,6 @@ void DeviceState::PreCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, Vk
     cb_state->BindPipeline(ConvertToLvlBindPoint(pipelineBindPoint), pipe_state.get());
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
-    }
-}
-
-void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                VkPipeline pipeline, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    auto pipe_state = Get<Pipeline>(pipeline);
-    ASSERT_AND_RETURN(pipe_state);
-
-    if (enabled_features.variableMultisampleRate == VK_FALSE) {
-        if (const auto *multisample_state = pipe_state->MultisampleState(); multisample_state) {
-            if (const auto &render_pass = cb_state->active_render_pass) {
-                const uint32_t subpass = cb_state->GetActiveSubpass();
-                // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
-                // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
-                // first bound pipeline.
-                if (render_pass->UsesNoAttachment(subpass)) {
-                    if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
-                            cb_state->GetActiveSubpassRasterizationSampleCount();
-                        !subpass_rasterization_samples) {
-                        cb_state->SetActiveSubpassRasterizationSampleCount(multisample_state->rasterizationSamples);
-                    }
-                }
-            }
-        }
     }
 
     cb_state->dirty_static_state = false;
