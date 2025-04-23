@@ -729,6 +729,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreate
                                                  ? fragment_shader_state->pipeline_layout.get()
                                                  : nullptr;
         std::array<decltype(exe_layout), 3> layouts;
+        // We assume in GetCreateFlags() that the executable layout is first in this array
         layouts[0] = exe_layout;
         layouts[1] = fragment_shader_layout;
         layouts[2] = pre_raster_layout;

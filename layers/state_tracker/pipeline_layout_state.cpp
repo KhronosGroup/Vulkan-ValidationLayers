@@ -183,14 +183,12 @@ std::vector<PipelineLayoutCompatId> GetCompatForSet(const std::vector<std::share
     return set_compat_ids;
 }
 
+// This is called when merging the flags from the pipeline layouts in libraries
 VkPipelineLayoutCreateFlags GetCreateFlags(const vvl::span<const vvl::PipelineLayout *const> &layouts) {
-    VkPipelineLayoutCreateFlags flags = 0;
-    for (const auto &layout : layouts) {
-        if (layout) {
-            flags |= layout->CreateFlags();
-        }
-    }
-    return flags;
+    // from https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9870 and
+    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4264
+    // We do not actually combine the flags, instead we only take the flags from the final linked pipeline layout
+    return layouts[0] ? layouts[0]->CreateFlags() : 0;
 }
 
 namespace vvl {
