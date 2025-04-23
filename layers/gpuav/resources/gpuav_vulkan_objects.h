@@ -87,10 +87,10 @@ class Buffer {
 };
 
 struct BufferRange {
-    VkBuffer buffer;
-    VkDeviceSize offset;
-    VkDeviceSize size;
-    void *offset_mapped_ptr;
+    VkBuffer buffer = VK_NULL_HANDLE;
+    VkDeviceSize offset = 0;
+    VkDeviceSize size = 0;
+    void *offset_mapped_ptr = nullptr;
 };
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
@@ -100,7 +100,6 @@ class GpuResourcesManager {
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
-    vko::BufferRange GetHostCachedBuffer(const Location &loc, VkDeviceSize size);
     vko::BufferRange GetHostVisibleBufferRange(const Location &loc, VkDeviceSize size);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(const Location &loc, VkDeviceSize size);
 
@@ -148,7 +147,6 @@ class GpuResourcesManager {
 
     // One cache per buffer type: having them mixed in just one would worse cache lookups
     BufferCache host_visible_buffer_cache_;
-    BufferCache host_cached_buffer_cache_;
     BufferCache device_local_indirect_buffer_cache_;
 };
 

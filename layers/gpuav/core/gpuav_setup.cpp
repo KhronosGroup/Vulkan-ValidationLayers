@@ -221,7 +221,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
 
     VkResult result = UtilInitializeVma(instance, physical_device, device, &vma_allocator_);
     if (result != VK_SUCCESS) {
-        InternalVmaError(device, loc, "Could not initialize VMA");
+        InternalVmaError(device, loc, result, "Could not initialize VMA");
         return;
     }
 
@@ -259,7 +259,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         uint32_t mem_type_index;
         result = vmaFindMemoryTypeIndexForBufferInfo(vma_allocator_, &error_buffer_ci, &error_buffer_alloc_ci, &mem_type_index);
         if (result != VK_SUCCESS) {
-            InternalVmaError(device, loc, "Unable to find memory type index.");
+            InternalVmaError(device, loc, result, "Unable to find memory type index.");
             return;
         }
     }
@@ -368,7 +368,8 @@ void Validator::InitSettings(const Location &loc) {
     }
 }
 
-void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, const char *const specific_message) const {
+void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, VkResult result,
+                                 const char *const specific_message) const {
     aborted_ = true;
     std::string error_message = specific_message;
 
@@ -381,7 +382,8 @@ void Validator::InternalVmaError(LogObjectList objlist, const Location &loc, con
     char const *layer_name = gpuav_settings.debug_printf_only ? "DebugPrintf" : "GPU-AV";
     char const *vuid = gpuav_settings.debug_printf_only ? "UNASSIGNED-DEBUG-PRINTF" : "UNASSIGNED-GPU-Assisted-Validation";
 
-    LogError(vuid, objlist, loc, "Internal VMA Error, %s is being disabled. Details:\n%s", layer_name, error_message.c_str());
+    LogError(vuid, objlist, loc, "Internal VMA Error (%s), %s is being disabled. Details:\n%s", string_VkResult(result), layer_name,
+             error_message.c_str());
 
     // Once we encounter an internal issue disconnect everything.
     // This prevents need to check "if (aborted)" (which is awful when we easily forget to check somewhere and the user gets spammed

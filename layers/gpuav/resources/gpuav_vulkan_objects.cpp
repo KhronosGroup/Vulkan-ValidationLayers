@@ -151,14 +151,14 @@ void *Buffer::GetMappedPtr() const { return mapped_ptr; }
 void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, "Unable to flush device memory.");
+        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to flush device memory.");
     }
 }
 
 void Buffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, "Unable to invalidate device memory.");
+        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to invalidate device memory.");
     }
 }
 
@@ -167,7 +167,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
     VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, "Unable to allocate device memory for internal buffer.");
+        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to allocate device memory for internal buffer.");
         return false;
     }
     size = buffer_create_info->size;
@@ -185,7 +185,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
         result = vmaMapMemory(gpuav.vma_allocator_, allocation, &mapped_ptr);
         if (result != VK_SUCCESS) {
             mapped_ptr = nullptr;
-            gpuav.InternalVmaError(gpuav.device, loc, "Unable to map device memory.");
+            gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to map device memory.");
             return false;
         }
     }
@@ -217,14 +217,6 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
         alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
         host_visible_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, alloc_ci);
-    }
-
-    {
-        VmaAllocationCreateInfo alloc_ci = {};
-        alloc_ci.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        alloc_ci.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-        alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        host_cached_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, alloc_ci);
     }
 
     {
@@ -287,7 +279,6 @@ void GpuResourcesManager::ReturnResources() {
     }
 
     host_visible_buffer_cache_.ReturnBuffers();
-    host_cached_buffer_cache_.ReturnBuffers();
     device_local_indirect_buffer_cache_.ReturnBuffers();
 }
 
@@ -301,7 +292,6 @@ void GpuResourcesManager::DestroyResources() {
     cache_layouts_to_sets_.clear();
 
     host_visible_buffer_cache_.DestroyBuffers();
-    host_cached_buffer_cache_.DestroyBuffers();
     device_local_indirect_buffer_cache_.DestroyBuffers();
 }
 
