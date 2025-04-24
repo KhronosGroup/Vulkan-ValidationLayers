@@ -898,7 +898,6 @@ void CoreChecks::RecordCmdEndRenderPassLayouts(VkCommandBuffer commandBuffer) {
 void CoreChecks::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     // Record the end at the CoreLevel to ensure StateTracker cleanup doesn't step on anything we need.
     RecordCmdEndRenderPassLayouts(commandBuffer);
-    BaseClass::PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
 }
 
 void CoreChecks::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -909,7 +908,6 @@ void CoreChecks::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer
 void CoreChecks::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                 const RecordObject &record_obj) {
     RecordCmdEndRenderPassLayouts(commandBuffer);
-    BaseClass::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
 }
 
 bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info, const Location &begin_info_loc) const {
@@ -4103,7 +4101,6 @@ bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer
 
 void CoreChecks::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
                                                   const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdEndRendering2EXT(commandBuffer, pRenderingEndInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto &cb_sub_state = core::SubState(*cb_state);
 

@@ -504,8 +504,6 @@ void BestPractices::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipe
                                                          const VkGraphicsPipelineCreateInfo* pCreateInfos,
                                                          const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                          const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                 pPipelines, record_obj);
     // AMD best practice
     num_pso_ += createInfoCount;
 }

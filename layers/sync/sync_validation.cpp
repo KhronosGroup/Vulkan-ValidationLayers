@@ -312,7 +312,6 @@ void SyncValidator::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer,
         };
         ForAllQueueBatchContexts(batch_op);
     }
-    BaseClass::PreCallRecordDestroyBuffer(device, buffer, pAllocator, record_obj);
 }
 
 void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
@@ -329,7 +328,6 @@ void SyncValidator::PreCallRecordDestroyImage(VkDevice device, VkImage image, co
         };
         ForAllQueueBatchContexts(batch_op);
     }
-    BaseClass::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
 bool SyncValidator::PreCallValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,
@@ -785,7 +783,6 @@ void SyncValidator::PreCallRecordDestroySemaphore(VkDevice device, VkSemaphore s
             timeline_signals_.erase(it);
         }
     }
-    BaseClass::PreCallRecordDestroySemaphore(device, semaphore, pAllocator, record_obj);
 }
 
 bool SyncValidator::ValidateBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -1033,7 +1030,6 @@ void SyncValidator::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffe
 }
 
 void SyncValidator::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdEndRendering(commandBuffer, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -1525,7 +1521,6 @@ bool SyncValidator::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, ui
 
 void SyncValidator::PreCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z,
                                              const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDispatch(commandBuffer, x, y, z, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = syncval_state::AccessContext(*cb_state);
@@ -1554,7 +1549,6 @@ bool SyncValidator::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBu
 
 void SyncValidator::PreCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                      const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDispatchIndirect(commandBuffer, buffer, offset, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = syncval_state::AccessContext(*cb_state);
@@ -1616,7 +1610,6 @@ bool SyncValidator::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32
 
 void SyncValidator::PreCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,
                                          uint32_t firstVertex, uint32_t firstInstance, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = syncval_state::AccessContext(*cb_state);
@@ -1645,8 +1638,6 @@ bool SyncValidator::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer,
 void SyncValidator::PreCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
                                                 uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance,
                                                 const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance,
-                                              record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     auto *cb_access_context = syncval_state::AccessContext(*cb_state);
@@ -1682,7 +1673,6 @@ bool SyncValidator::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer
 
 void SyncValidator::PreCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                  uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDrawIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     if (drawCount == 0) return;
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
@@ -1722,7 +1712,6 @@ bool SyncValidator::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer comman
 
 void SyncValidator::PreCallRecordCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                         uint32_t drawCount, uint32_t stride, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDrawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -1782,8 +1771,6 @@ void SyncValidator::RecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, Vk
 void SyncValidator::PreCallRecordCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       VkBuffer countBuffer, VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                       uint32_t stride, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount,
-                                                    stride, record_obj);
     RecordCmdDrawIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                record_obj.location.function);
 }
@@ -1864,8 +1851,6 @@ void SyncValidator::PreCallRecordCmdDrawIndexedIndirectCount(VkCommandBuffer com
                                                              VkBuffer countBuffer, VkDeviceSize countBufferOffset,
                                                              uint32_t maxDrawCount, uint32_t stride,
                                                              const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset,
-                                                           maxDrawCount, stride, record_obj);
     RecordCmdDrawIndexedIndirectCount(commandBuffer, buffer, offset, countBuffer, countBufferOffset, maxDrawCount, stride,
                                       record_obj.location.function);
 }
@@ -2073,8 +2058,6 @@ void SyncValidator::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer command
                                                          uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                          VkDeviceSize stride, VkQueryResultFlags flags,
                                                          const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdCopyQueryPoolResults(commandBuffer, queryPool, firstQuery, queryCount, dstBuffer, dstOffset,
-                                                       stride, flags, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;
@@ -3009,7 +2992,6 @@ bool SyncValidator::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
 
 void SyncValidator::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
                                                     const VkCommandBuffer *pCommandBuffers, const RecordObject &record_obj) {
-    BaseClass::PreCallRecordCmdExecuteCommands(commandBuffer, commandBufferCount, pCommandBuffers, record_obj);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     assert(cb_state);
     if (!cb_state) return;

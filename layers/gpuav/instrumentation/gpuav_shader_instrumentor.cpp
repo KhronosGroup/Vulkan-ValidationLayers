@@ -259,7 +259,6 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
             chassis_state.modified_create_info.setLayoutCount = instrumentation_desc_set_bind_index_ + 1;
         }
     }
-    BaseClass::PreCallRecordCreatePipelineLayout(device, pCreateInfo, pAllocator, pPipelineLayout, record_obj, chassis_state);
 }
 
 void GpuShaderInstrumentor::PostCallRecordCreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo *pCreateInfo,
@@ -348,8 +347,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                                                           const VkShaderCreateInfoEXT *pCreateInfos,
                                                           const VkAllocationCallbacks *pAllocator, VkShaderEXT *pShaders,
                                                           const RecordObject &record_obj, chassis::ShaderObject &chassis_state) {
-    BaseClass::PreCallRecordCreateShadersEXT(device, createInfoCount, pCreateInfos, pAllocator, pShaders, record_obj,
-                                             chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
 
     // Resize here so if using just CoreCheck we don't waste time allocating this
@@ -470,7 +467,6 @@ void GpuShaderInstrumentor::PreCallRecordDestroyShaderEXT(VkDevice device, VkSha
             DispatchDestroyShaderEXT(device, sub_state.original_handle, nullptr);
         }
     }
-    BaseClass::PreCallRecordDestroyShaderEXT(device, shader, pAllocator, record_obj);
 }
 
 void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
@@ -478,8 +474,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateGraphicsPipelines(VkDevice device
                                                                  const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                  const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                  chassis::CreateGraphicsPipelines &chassis_state) {
-    BaseClass::PreCallRecordCreateGraphicsPipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                    pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
@@ -521,8 +515,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateComputePipelines(VkDevice device,
                                                                 const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                                 const RecordObject &record_obj, PipelineStates &pipeline_states,
                                                                 chassis::CreateComputePipelines &chassis_state) {
-    BaseClass::PreCallRecordCreateComputePipelines(device, pipelineCache, count, pCreateInfos, pAllocator, pPipelines, record_obj,
-                                                   pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
@@ -557,8 +549,6 @@ void GpuShaderInstrumentor::PreCallRecordCreateRayTracingPipelinesKHR(
     VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t count,
     const VkRayTracingPipelineCreateInfoKHR *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
     const RecordObject &record_obj, PipelineStates &pipeline_states, chassis::CreateRayTracingPipelinesKHR &chassis_state) {
-    BaseClass::PreCallRecordCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos, pAllocator,
-                                                         pPipelines, record_obj, pipeline_states, chassis_state);
     if (!gpuav_settings.IsSpirvModified()) return;
 
     chassis_state.shader_instrumentations_metadata.resize(count);
@@ -745,8 +735,6 @@ void GpuShaderInstrumentor::PreCallRecordDestroyPipeline(VkDevice device, VkPipe
             DispatchDestroyPipeline(device, pipeline_state->instrumentation_data.frag_out_lib, pAllocator);
         }
     }
-
-    BaseClass::PreCallRecordDestroyPipeline(device, pipeline, pAllocator, record_obj);
 }
 
 template <typename CreateInfo>

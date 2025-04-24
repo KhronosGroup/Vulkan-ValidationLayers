@@ -133,8 +133,6 @@ void BestPractices::PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memo
             memory_free_events_.push_back(event);
         }
     }
-
-    BaseClass::PreCallRecordFreeMemory(device, memory, pAllocator, record_obj);
 }
 
 bool BestPractices::PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,

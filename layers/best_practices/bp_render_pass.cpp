@@ -313,8 +313,6 @@ bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdEndRenderPass(commandBuffer, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
@@ -331,7 +329,6 @@ void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer,
 
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassInfo,
                                                    const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
@@ -352,7 +349,6 @@ void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuf
 }
 
 void BestPractices::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
-    BaseClass::PreCallRecordCmdEndRendering(commandBuffer, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     // Using PreCallRecord because logic relies on render pass state not being destroyed yet
