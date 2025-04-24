@@ -41,7 +41,6 @@ void BestPractices::RecordGetImageMemoryRequirementsState(vvl::Image& image_stat
 void BestPractices::PostCallRecordGetImageMemoryRequirements(VkDevice device, VkImage image,
                                                              VkMemoryRequirements* pMemoryRequirements,
                                                              const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetImageMemoryRequirements(device, image, pMemoryRequirements, record_obj);
     if (auto image_state = Get<vvl::Image>(image)) {
         RecordGetImageMemoryRequirementsState(*image_state, nullptr);
     }
@@ -50,7 +49,6 @@ void BestPractices::PostCallRecordGetImageMemoryRequirements(VkDevice device, Vk
 void BestPractices::PostCallRecordGetImageMemoryRequirements2(VkDevice device, const VkImageMemoryRequirementsInfo2* pInfo,
                                                               VkMemoryRequirements2* pMemoryRequirements,
                                                               const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetImageMemoryRequirements2(device, pInfo, pMemoryRequirements, record_obj);
     if (auto image_state = Get<vvl::Image>(pInfo->image)) {
         RecordGetImageMemoryRequirementsState(*image_state, pInfo);
     }
@@ -66,8 +64,6 @@ void BestPractices::PostCallRecordGetImageSparseMemoryRequirements(VkDevice devi
                                                                    uint32_t* pSparseMemoryRequirementCount,
                                                                    VkSparseImageMemoryRequirements* pSparseMemoryRequirements,
                                                                    const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetImageSparseMemoryRequirements(device, image, pSparseMemoryRequirementCount,
-                                                              pSparseMemoryRequirements, record_obj);
     if (auto image_state = Get<vvl::Image>(image)) {
         auto& sub_state = bp_state::SubState(*image_state);
         sub_state.get_sparse_reqs_called = true;
@@ -79,8 +75,6 @@ void BestPractices::PostCallRecordGetImageSparseMemoryRequirements2(VkDevice dev
                                                                     uint32_t* pSparseMemoryRequirementCount,
                                                                     VkSparseImageMemoryRequirements2* pSparseMemoryRequirements,
                                                                     const RecordObject& record_obj) {
-    BaseClass::PostCallRecordGetImageSparseMemoryRequirements2(device, pInfo, pSparseMemoryRequirementCount,
-                                                               pSparseMemoryRequirements, record_obj);
     if (auto image_state = Get<vvl::Image>(pInfo->image)) {
         auto& sub_state = bp_state::SubState(*image_state);
         sub_state.get_sparse_reqs_called = true;

@@ -416,8 +416,6 @@ bool BestPractices::ValidateCreateComputePipelineAmd(const VkComputePipelineCrea
 
 void BestPractices::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                   VkPipeline pipeline, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline, record_obj);
-
     // AMD best practice
     PipelineUsedInFrame(pipeline);
 
