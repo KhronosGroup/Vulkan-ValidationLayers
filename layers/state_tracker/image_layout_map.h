@@ -44,33 +44,24 @@ using IndexRange = vvl::range<IndexType>;
 using Encoder = subresource_adapter::RangeEncoder;
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
-struct InitialLayoutState {
-    VkImageView image_view;          // For relaxed matching rule evaluation, else VK_NULL_HANDLE
-    VkImageAspectFlags aspect_mask;  // For relaxed matching rules... else 0
-    InitialLayoutState(const vvl::ImageView* view_state);
-    InitialLayoutState() : image_view(VK_NULL_HANDLE), aspect_mask(0) {}
-};
-
 // Contains all info around an image, its subresources and layout map
 class ImageLayoutRegistry {
   public:
-    typedef std::function<bool(const VkImageSubresource&, VkImageLayout, VkImageLayout)> Callback;
-
     struct LayoutEntry {
         VkImageLayout initial_layout;
         VkImageLayout current_layout;
-        InitialLayoutState* state;
+
+        // For relaxed matching rules.
+        // NOTE: optional to match pointer semantics of old implementation (there was check for null).
+        // TODO: investigate if we can drop optional and use initialization state of initial_layout.
+        std::optional<VkImageAspectFlags> aspect_mask;
 
         LayoutEntry() = default;
-        LayoutEntry(VkImageLayout initial, VkImageLayout current = kInvalidLayout, InitialLayoutState* s = nullptr)
-            : initial_layout(initial), current_layout(current), state(s) {}
+        LayoutEntry(VkImageLayout initial, VkImageLayout current);
+        LayoutEntry(VkImageLayout initial);
+        LayoutEntry(VkImageLayout initial, const vvl::ImageView& view_state);
 
-        bool operator!=(const LayoutEntry& rhs) const {
-            return initial_layout != rhs.initial_layout || current_layout != rhs.current_layout || state != rhs.state;
-        }
-        bool CurrentWillChange(VkImageLayout new_layout) const {
-            return new_layout != kInvalidLayout && current_layout != new_layout;
-        }
+        bool CurrentWillChange(VkImageLayout new_layout) const;
         bool Update(const LayoutEntry& src);
 
         // updater for splice()
@@ -81,7 +72,6 @@ class ImageLayoutRegistry {
             }
         };
     };
-    using InitialLayoutStates = small_vector<InitialLayoutState, 2, uint32_t>;
     using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using RangeType = LayoutMap::key_type;
 
@@ -138,7 +128,6 @@ class ImageLayoutRegistry {
     const vvl::Image& image_state_;
     const Encoder& encoder_;
     LayoutMap layout_map_;
-    InitialLayoutStates initial_layout_states_;
 };
 }  // namespace image_layout_map
 

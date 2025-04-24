@@ -35,7 +35,7 @@ class Image;
 namespace subresource_adapter {
 
 class RangeEncoder;
-using IndexType = uint64_t;
+using IndexType = uint64_t;  // TODO: just update to 32 bit, but before collect memory usage stats, perf stats
 using IndexRange = vvl::range<IndexType>;
 using WritePolicy = sparse_container::value_precedence;
 using split_op_keep_both = sparse_container::split_op_keep_both;

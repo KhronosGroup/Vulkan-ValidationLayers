@@ -64,7 +64,7 @@ struct range {
         bool result = false;
         if (invalid()) {
             // all invalid < valid, allows map/set validity check by looking at begin()->first
-            // all invalid are equal, thus only equal if this is invalid and rhs is valid
+            // all invalid are equal, thus only less if this is invalid and rhs is valid
             result = rhs.valid();
         } else if (begin < rhs.begin) {
             result = true;
