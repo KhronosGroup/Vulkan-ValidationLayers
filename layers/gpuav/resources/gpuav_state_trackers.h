@@ -36,7 +36,7 @@
 namespace gpuav {
 
 class Validator;
-struct DescriptorCommandBinding;
+struct DescriptorBindingCommand;
 
 struct DebugPrintfBufferInfo {
     vko::Buffer output_mem_buffer;
@@ -57,7 +57,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     //
     // Note: If the app calls vkCmdBindDescriptorSet 10 times to set descriptor set [0, 9] one at a time instead of setting [0, 9]
     // in a single vkCmdBindDescriptorSet call then this will allocate a lot of redundant memory
-    std::vector<DescriptorCommandBinding> descriptor_command_bindings;
+    std::vector<DescriptorBindingCommand> descriptor_binding_commands;
 
     // Buffer to be bound every draw/dispatch/action
     VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;

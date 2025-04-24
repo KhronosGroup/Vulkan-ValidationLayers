@@ -622,11 +622,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
                                       static_cast<uint32_t>(dynamic_offsets.size()), dynamic_offsets.data());
     }
 
-    // We want to grab the last (current) element in descriptor_command_bindings, but as a std::vector, the refernce might be
+    // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the refernce might be
     // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using push
     // constants.
     instrumentation_error_blob.descriptor_binding_index =
-        !cb_state.descriptor_command_bindings.empty() ? uint32_t(cb_state.descriptor_command_bindings.size()) - 1 : vvl::kU32Max;
+        !cb_state.descriptor_binding_commands.empty() ? uint32_t(cb_state.descriptor_binding_commands.size()) - 1 : vvl::kU32Max;
 
     instrumentation_error_blob.label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
@@ -707,7 +707,7 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const CommandBufferSu
         return false;
     }
     const auto &descriptor_sets =
-        cb_state.descriptor_command_bindings[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
+        cb_state.descriptor_binding_commands[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
 
     // Currently we only encode the descriptor index here and save the binding in a parameter slot
     // The issue becomes if the user has kErrorSubCodeDescriptorIndexingBounds then we can't back track to the exact binding because
@@ -780,7 +780,7 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const CommandBufferSubState
         return false;
     }
     const auto &descriptor_sets =
-        cb_state.descriptor_command_bindings[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
+        cb_state.descriptor_binding_commands[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
 
     const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
     const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;

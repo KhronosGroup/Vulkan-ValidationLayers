@@ -33,7 +33,7 @@ namespace gpuav {
 namespace descriptor {
 
 void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
-                                       DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
+                                       DescriptorBindingCommand &descriptor_binding_cmd, const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
     // Create a new buffer to hold our BDA pointers
@@ -43,15 +43,15 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    const bool success = descriptor_command_binding.post_process_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = descriptor_binding_cmd.post_process_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
     if (!success) {
         return;
     }
 
-    descriptor_command_binding.post_process_ssbo_buffer.Clear();
-    auto ssbo_buffer_ptr = (glsl::PostProcessSSBO *)descriptor_command_binding.post_process_ssbo_buffer.GetMappedPtr();
+    descriptor_binding_cmd.post_process_ssbo_buffer.Clear();
+    auto ssbo_buffer_ptr = (glsl::PostProcessSSBO *)descriptor_binding_cmd.post_process_ssbo_buffer.GetMappedPtr();
 
-    cb_state.post_process_buffer_lut = descriptor_command_binding.post_process_ssbo_buffer.VkHandle();
+    cb_state.post_process_buffer_lut = descriptor_binding_cmd.post_process_ssbo_buffer.VkHandle();
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     for (uint32_t i = 0; i < number_of_sets; i++) {
@@ -65,7 +65,7 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &
 }
 
 void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
-                                            DescriptorCommandBinding &descriptor_command_binding, const Location &loc) {
+                                            DescriptorBindingCommand &descriptor_binding_cmd, const Location &loc) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) return;
 
     // Create a new buffer to hold our BDA pointers
@@ -75,15 +75,15 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBufferSubSt
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    const bool success = descriptor_command_binding.descritpor_state_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = descriptor_binding_cmd.descritpor_state_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
     if (!success) {
         return;
     }
 
-    auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_buffer.GetMappedPtr();
+    auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_binding_cmd.descritpor_state_ssbo_buffer.GetMappedPtr();
     memset(ssbo_buffer_ptr, 0, sizeof(glsl::DescriptorStateSSBO));
 
-    cb_state.descriptor_indexing_buffer = descriptor_command_binding.descritpor_state_ssbo_buffer.VkHandle();
+    cb_state.descriptor_indexing_buffer = descriptor_binding_cmd.descritpor_state_ssbo_buffer.VkHandle();
 
     ssbo_buffer_ptr->initialized_status = gpuav.desc_heap_->GetDeviceAddress();
 
@@ -119,19 +119,19 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
         return;
     }
 
-    DescriptorCommandBinding descriptor_command_binding(gpuav);
-    descriptor_command_binding.bound_descriptor_sets.reserve(number_of_sets);
+    DescriptorBindingCommand descriptor_binding_cmd(gpuav);
+    descriptor_binding_cmd.bound_descriptor_sets.reserve(number_of_sets);
     // Currently we loop through the sets multiple times to reduce complexity and seperate the various parts, can revisit if we find
     // this is actually a perf bottleneck (assume number of sets are low as people we will then to have a single large set)
     for (uint32_t i = 0; i < number_of_sets; i++) {
         const auto &ds_slot = last_bound.ds_slots[i];
-        descriptor_command_binding.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
+        descriptor_binding_cmd.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
     }
 
-    UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_command_binding, loc);
-    UpdateBoundDescriptorsDescriptorChecks(gpuav, cb_state, last_bound, descriptor_command_binding, loc);
+    UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_binding_cmd, loc);
+    UpdateBoundDescriptorsDescriptorChecks(gpuav, cb_state, last_bound, descriptor_binding_cmd, loc);
 
-    cb_state.descriptor_command_bindings.emplace_back(std::move(descriptor_command_binding));
+    cb_state.descriptor_binding_commands.emplace_back(std::move(descriptor_binding_cmd));
 }
 
 // For the given command buffer, map its debug data buffers and update the status of any update after bind descriptors
@@ -139,10 +139,10 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
     const bool need_descriptor_checks = gpuav.gpuav_settings.shader_instrumentation.descriptor_checks;
     if (!need_descriptor_checks) return true;
 
-    for (auto &descriptor_command_binding : cb_state.descriptor_command_bindings) {
-        auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_command_binding.descritpor_state_ssbo_buffer.GetMappedPtr();
-        for (size_t i = 0; i < descriptor_command_binding.bound_descriptor_sets.size(); i++) {
-            auto &bound_desc_set = descriptor_command_binding.bound_descriptor_sets[i];
+    for (auto &descriptor_binding_cmd : cb_state.descriptor_binding_commands) {
+        auto ssbo_buffer_ptr = (glsl::DescriptorStateSSBO *)descriptor_binding_cmd.descritpor_state_ssbo_buffer.GetMappedPtr();
+        for (size_t i = 0; i < descriptor_binding_cmd.bound_descriptor_sets.size(); i++) {
+            auto &bound_desc_set = descriptor_binding_cmd.bound_descriptor_sets[i];
             // Some descriptor set slots may be unbound
             if (!bound_desc_set) {
                 continue;
@@ -167,9 +167,9 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 
     // We loop each vkCmdBindDescriptorSet, find each VkDescriptorSet that was used in the command buffer, and check its post
     // process buffer for which descriptor was accessed
-    for (const auto &descriptor_command_binding : descriptor_command_bindings) {
-        for (uint32_t set_index = 0; set_index < descriptor_command_binding.bound_descriptor_sets.size(); set_index++) {
-            auto &bound_desc_set = descriptor_command_binding.bound_descriptor_sets[set_index];
+    for (const auto &descriptor_binding_cmd : descriptor_binding_commands) {
+        for (uint32_t set_index = 0; set_index < descriptor_binding_cmd.bound_descriptor_sets.size(); set_index++) {
+            auto &bound_desc_set = descriptor_binding_cmd.bound_descriptor_sets[set_index];
             // Some descriptor set slots may be unbound
             if (!bound_desc_set) {
                 continue;
@@ -191,7 +191,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
                 }
 
                 std::stringstream error;
-                error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_command_binding.bound_descriptor_sets["
+                error << "In CommandBuffer::ValidateBindlessDescriptorSets, descriptor_binding_cmd.bound_descriptor_sets["
                       << set_index
                       << "].HasPostProcessBuffer() was false. This should not happen. GPU-AV is in a bad state, aborting.";
 

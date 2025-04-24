@@ -285,11 +285,11 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     }
     per_command_error_loggers.clear();
 
-    for (DescriptorCommandBinding &descriptor_command_binding : descriptor_command_bindings) {
-        descriptor_command_binding.descritpor_state_ssbo_buffer.Destroy();
-        descriptor_command_binding.post_process_ssbo_buffer.Destroy();
+    for (DescriptorBindingCommand &descriptor_binding_cmd : descriptor_binding_commands) {
+        descriptor_binding_cmd.descritpor_state_ssbo_buffer.Destroy();
+        descriptor_binding_cmd.post_process_ssbo_buffer.Destroy();
     }
-    descriptor_command_bindings.clear();
+    descriptor_binding_commands.clear();
     descriptor_indexing_buffer = VK_NULL_HANDLE;
     post_process_buffer_lut = VK_NULL_HANDLE;
 
