@@ -1402,7 +1402,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
                     bool combination_found = false;
                     for (const auto &combination : combinations) {
                         if (mode == combination.coverageReductionMode && rs == combination.rasterizationSamples &&
-                            ds & combination.depthStencilSamples && cs & combination.colorSamples) {
+                            (ds & combination.depthStencilSamples || ds == 0) && (cs & combination.colorSamples || cs == 0)) {
                             combination_found = true;
                             break;
                         }
