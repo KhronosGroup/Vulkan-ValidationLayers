@@ -25,13 +25,13 @@ struct LastBound;
 namespace gpuav {
 class CommandBufferSubState;
 class Validator;
-struct DescriptorCommandBinding;
+struct DescriptorBindingCommand;
 
 namespace descriptor {
 void UpdateBoundDescriptorsPostProcess(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
-                                       DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
+                                       DescriptorBindingCommand& descriptor_binding_cmd, const Location& loc);
 void UpdateBoundDescriptorsDescriptorChecks(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
-                                            DescriptorCommandBinding& descriptor_command_binding, const Location& loc);
+                                            DescriptorBindingCommand& descriptor_binding_cmd, const Location& loc);
 void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,
                             const Location& loc);
 [[nodiscard]] bool UpdateDescriptorStateSSBO(Validator& gpuav, CommandBufferSubState& cb_state, const Location& loc);
