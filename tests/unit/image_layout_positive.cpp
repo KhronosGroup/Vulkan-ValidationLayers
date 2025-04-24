@@ -602,3 +602,48 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveImageLayout, MultipleLayoutChanges) {
+    // This test is for manual inspection of the code as of April 2025 and it demos that after multiple
+    // layout transitions the layout entry can store a dangling pointer to initial layout state which
+    // is caused by pointer invalidation after container resize. This test does not cause crash because
+    // the resulting dangling pointer in not used, still this can be a useful regression test.
+    TEST_DESCRIPTION("Perform multiple layout transitions in a row");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    // Create image with 4 mip levels
+    auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 4, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci);
+
+    VkImageMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    m_command_buffer.Begin();
+
+    // This sequence is tied closely to implementation as of April 2025.
+    // The first two barriers just populate 2 entries in small_vector<2> which does not cause resizes.
+    barrier.subresourceRange.baseMipLevel = 0;
+    m_command_buffer.Barrier(barrier);
+
+    barrier.subresourceRange.baseMipLevel = 1;
+    m_command_buffer.Barrier(barrier);
+
+    // The third operation finally allocates dynamic memory and caches a pointer to the heap location.
+    barrier.subresourceRange.baseMipLevel = 2;
+    m_command_buffer.Barrier(barrier);
+
+    // The forth operation reallocates again so the cached pointer becomes a dangling one.
+    barrier.subresourceRange.baseMipLevel = 3;
+    m_command_buffer.Barrier(barrier);
+
+    m_command_buffer.End();
+}
