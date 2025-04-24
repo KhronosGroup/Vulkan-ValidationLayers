@@ -398,7 +398,6 @@ bool CoreChecks::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount
 
 void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo *pSubmits, VkFence fence,
                                            const RecordObject &record_obj) {
-    BaseClass::PostCallRecordQueueSubmit(queue, submitCount, pSubmits, fence, record_obj);
     if (record_obj.result != VK_SUCCESS) {
         return;
     }
@@ -448,7 +447,6 @@ void CoreChecks::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCou
 
 void CoreChecks::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2 *pSubmits, VkFence fence,
                                             const RecordObject &record_obj) {
-    BaseClass::PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
     RecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 

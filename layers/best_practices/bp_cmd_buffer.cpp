@@ -168,8 +168,6 @@ bool BestPractices::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryP
 
 void BestPractices::PostCallRecordCmdSetDepthCompareOp(VkCommandBuffer commandBuffer, VkCompareOp depthCompareOp,
                                                        const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdSetDepthCompareOp(commandBuffer, depthCompareOp, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
 
@@ -185,8 +183,6 @@ void BestPractices::PostCallRecordCmdSetDepthCompareOpEXT(VkCommandBuffer comman
 
 void BestPractices::PostCallRecordCmdSetDepthTestEnable(VkCommandBuffer commandBuffer, VkBool32 depthTestEnable,
                                                         const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdSetDepthTestEnable(commandBuffer, depthTestEnable, record_obj);
-
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
         auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
         auto& sub_state = bp_state::SubState(*cb_state);

@@ -367,7 +367,6 @@ void BestPractices::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffe
 
 void BestPractices::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                                     const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdBeginRendering(commandBuffer, pRenderingInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdBeginRenderingCommon(sub_state, nullptr, pRenderingInfo);
@@ -380,7 +379,6 @@ void BestPractices::PostCallRecordCmdBeginRenderingKHR(VkCommandBuffer commandBu
 
 void BestPractices::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                                  const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdNextSubpass(commandBuffer, contents, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdNextSubpass(sub_state);
@@ -623,7 +621,6 @@ void BestPractices::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuff
 
 void BestPractices::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
                                                   const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdNextSubpass(sub_state);
@@ -634,23 +631,6 @@ void BestPractices::RecordCmdNextSubpass(bp_state::CommandBufferSubState& cb_sta
     if (cb_state.base.active_render_pass && cb_state.base.active_render_pass->has_multiview_enabled) {
         cb_state.UnbindResources();
     }
-}
-
-void BestPractices::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout,
-                                                   VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size,
-                                                   const void* pValues, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues, record_obj);
-}
-
-void BestPractices::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
-                                                    const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
-}
-
-void BestPractices::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer,
-                                                       const VkPushConstantsInfoKHR* pPushConstantsInfo,
-                                                       const RecordObject& record_obj) {
-    PostCallRecordCmdPushConstants2(commandBuffer, pPushConstantsInfo, record_obj);
 }
 
 void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb_state,
@@ -687,7 +667,6 @@ void BestPractices::PostRecordCmdBeginRenderPass(bp_state::CommandBufferSubState
 
 void BestPractices::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                      VkSubpassContents contents, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdBeginRenderPass(commandBuffer, pRenderPassBegin, contents, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     PostRecordCmdBeginRenderPass(sub_state, pRenderPassBegin);
@@ -697,7 +676,6 @@ void BestPractices::PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuff
 
 void BestPractices::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                                       const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdBeginRenderPass2(commandBuffer, pRenderPassBegin, pSubpassBeginInfo, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     PostRecordCmdBeginRenderPass(sub_state, pRenderPassBegin);

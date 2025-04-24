@@ -809,7 +809,6 @@ bool CoreChecks::PreCallValidateReleaseCapturedPipelineDataKHR(VkDevice device, 
 void CoreChecks::PostCallRecordReleaseCapturedPipelineDataKHR(VkDevice device, const VkReleaseCapturedPipelineDataInfoKHR *pInfo,
                                                               const VkAllocationCallbacks *pAllocator,
                                                               const RecordObject &record_obj) {
-    BaseClass::PostCallRecordReleaseCapturedPipelineDataKHR(device, pInfo, pAllocator, record_obj);
     if (record_obj.result != VK_SUCCESS) {
         return;
     }

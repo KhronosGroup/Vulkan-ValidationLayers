@@ -1362,10 +1362,6 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers,
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                              const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdWaitEvents(commandBuffer, eventCount, pEvents, sourceStageMask, dstStageMask, memoryBarrierCount,
-                                           pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                           imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
     RecordBarriers(record_obj.location.function, *cb_state, sourceStageMask, dstStageMask, bufferMemoryBarrierCount,
@@ -1379,7 +1375,6 @@ void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, 
 
 void CoreChecks::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                               const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdWaitEvents2(commandBuffer, eventCount, pEvents, pDependencyInfos, record_obj);
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     for (uint32_t i = 0; i < eventCount; i++) {
@@ -1469,10 +1464,6 @@ void CoreChecks::PostCallRecordCmdPipelineBarrier(
     VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers,
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier *pImageMemoryBarriers, const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount,
-                                                pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
-                                                imageMemoryBarrierCount, pImageMemoryBarriers, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     RecordBarriers(record_obj.location.function, *cb_state, srcStageMask, dstStageMask, bufferMemoryBarrierCount,
@@ -1487,8 +1478,6 @@ void CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuf
 
 void CoreChecks::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo *pDependencyInfo,
                                                    const RecordObject &record_obj) {
-    BaseClass::PostCallRecordCmdPipelineBarrier2(commandBuffer, pDependencyInfo, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     RecordBarriers(record_obj.location.function, *cb_state, *pDependencyInfo);
     TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);

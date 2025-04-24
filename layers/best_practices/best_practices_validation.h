@@ -337,13 +337,6 @@ class BestPractices : public vvl::DeviceProxy {
                                        const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) override;
     void RecordCmdNextSubpass(bp_state::CommandBufferSubState& cb_state);
 
-    void PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags,
-                                        uint32_t offset, uint32_t size, const void* pValues,
-                                        const RecordObject& record_obj) override;
-    void PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo* pPushConstantsInfo,
-                                         const RecordObject& record_obj) override;
-    void PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuffer, const VkPushConstantsInfoKHR* pPushConstantsInfo,
-                                            const RecordObject& record_obj) override;
     void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
     void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
                                         const RecordObject& record_obj) override;

@@ -21,6 +21,7 @@
 
 #pragma once
 // Layer object type identifiers
+// While this doesn't enforce the order, we enforce the order in InitValidationObjects() based on this
 enum LayerObjectTypeId {
     LayerObjectTypeParameterValidation,  // Instance or device parameter validation layer object
     LayerObjectTypeThreading,            // Instance or device threading layer object

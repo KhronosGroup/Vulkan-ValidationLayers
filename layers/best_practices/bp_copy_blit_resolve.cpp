@@ -25,9 +25,6 @@
 void BestPractices::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
                                                       const VkClearAttachment* pClearAttachments, uint32_t rectCount,
                                                       const VkClearRect* pRects, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdClearAttachments(commandBuffer, attachmentCount, pClearAttachments, rectCount, pRects,
-                                                              record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto* rp_state = cb_state->active_render_pass.get();
     auto* fb_state = cb_state->active_framebuffer.get();
@@ -435,9 +432,6 @@ void BestPractices::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer comm
                                                             const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                             const VkImageSubresourceRange* pRanges,
                                                             const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdClearDepthStencilImage(commandBuffer, image, imageLayout, pDepthStencil, rangeCount,
-                                                                    pRanges, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& funcs = cb_state->queue_submit_functions;
     auto dst = Get<vvl::Image>(image);
@@ -456,9 +450,6 @@ void BestPractices::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer comm
 void BestPractices::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                const VkImageCopy* pRegions, const RecordObject& record_obj) {
-    BaseClass::PostCallRecordCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout,
-                                                       regionCount, pRegions, record_obj);
-
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& funcs = cb_state->queue_submit_functions;
     auto src = Get<vvl::Image>(srcImage);
