@@ -879,8 +879,6 @@ void CoreChecks::PreCallRecordDestroyImage(VkDevice device, VkImage image, const
                                            const RecordObject &record_obj) {
     // Clean up validation specific data
     qfo_release_image_barrier_map.erase(image);
-    // Clean up generic image state
-    BaseClass::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
 }
 
 bool CoreChecks::ValidateClearImageSubresourceRange(const LogObjectList &objlist, const VkImageSubresourceRange &range,

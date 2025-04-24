@@ -412,13 +412,6 @@ void Validator::PostCallRecordCreateImage(VkDevice device, const VkImageCreateIn
     }
 }
 
-void Validator::PreCallRecordDestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks *pAllocator,
-                                          const RecordObject &record_obj) {
-    // Clean up validation specific data
-    // Clean up generic image state
-    BaseClass::PreCallRecordDestroyImage(device, image, pAllocator, record_obj);
-}
-
 void Validator::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                                  const VkClearColorValue *pColor, uint32_t rangeCount,
                                                  const VkImageSubresourceRange *pRanges, const RecordObject &record_obj) {
