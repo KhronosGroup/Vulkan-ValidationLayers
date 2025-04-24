@@ -416,16 +416,17 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         }
         vo->PreCallValidateDestroyDevice(device, pAllocator, error_obj);
     }
-    vvl::base::Device* state_tracker = nullptr;
     RecordObject record_obj(vvl::Func::vkDestroyDevice);
+
+    // Even though layer object types reference the base device state tracker,
+    // it needs to be destroyed first: it stores the various object maps,
+    // those need to be destroyed by the time layer objects destroy their
+    // own device state.
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
             continue;
         }
-        if (vo->container_type == LayerObjectTypeStateTracker) {
-            state_tracker = vo.get();
-            continue;
-        }
+
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
     // Before device is destroyed, allow aborted objects to clean up
@@ -435,10 +436,6 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
         }
         vo->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
     }
-    if (state_tracker) {
-        state_tracker->PreCallRecordDestroyDevice(device, pAllocator, record_obj);
-    }
-
 
 #if defined(VVL_TRACY_GPU)
     CleanupTracyVk(device);
@@ -446,11 +443,13 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
     device_dispatch->DestroyDevice(device, pAllocator);
 
+    vvl::base::Device* state_tracker = nullptr;
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {
             continue;
         }
         if (vo->container_type == LayerObjectTypeStateTracker) {
+            state_tracker = vo.get();
             continue;
         }
         vo->PostCallRecordDestroyDevice(device, pAllocator, record_obj);

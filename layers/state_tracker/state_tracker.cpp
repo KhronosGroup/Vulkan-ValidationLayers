@@ -937,9 +937,18 @@ void DeviceState::DestroyObjectMaps() {
 
 void DeviceState::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                              const RecordObject &record_obj) {
-    if (!device) return;
+    if (!device) {
+        return;
+    }
 
     DestroyObjectMaps();
+
+    // Warning: If ever adding new destroy logic here,
+    // consider that the base `DeviceState` object is destroyed
+    // *before* the layer objects referencing it.
+    // Ok as of writing, but this may cause issues in the future.
+    // See `DestroyDevice` in chassis_manual.cpp for accurate
+    // device destroy order.
 }
 
 static void UpdateCmdBufLabelStack(const CommandBuffer &cb_state, Queue &queue_state) {
