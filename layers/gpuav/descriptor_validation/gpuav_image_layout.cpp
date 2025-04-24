@@ -50,9 +50,9 @@ struct LayoutUseCheckAndMessage {
             }
         } else if (layout_entry.initial_layout != kInvalidLayout) {
             if (!ImageLayoutMatches(aspect_mask, expected_layout, layout_entry.initial_layout)) {
-                assert(layout_entry.state);  // If we have an initial layout, we better have a state for it
-                if (!((layout_entry.state->aspect_mask & kDepthOrStencil) &&
-                      ImageLayoutMatches(layout_entry.state->aspect_mask, expected_layout, layout_entry.initial_layout))) {
+                assert(layout_entry.aspect_mask.has_value());  // If we have an initial layout, we better have a state for it
+                if (!((*layout_entry.aspect_mask & kDepthOrStencil) &&
+                      ImageLayoutMatches(*layout_entry.aspect_mask, expected_layout, layout_entry.initial_layout))) {
                     message = "previously used";
                     layout = layout_entry.initial_layout;
                 }
