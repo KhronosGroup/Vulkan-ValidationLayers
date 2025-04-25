@@ -30,9 +30,11 @@ bool Device::ValidateSubpassGraphicsFlags(VkDevice device, const VkRenderPassCre
                                 VK_PIPELINE_STAGE_2_RESOLVE_BIT | VK_PIPELINE_STAGE_2_BLIT_BIT | VK_PIPELINE_STAGE_2_CLEAR_BIT;
     const auto kMetaGraphicsStages = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
                                      VK_PIPELINE_STAGE_2_PRE_RASTERIZATION_SHADERS_BIT |
-                                     // ALL_COMMANDS means only graphics in graphics only context
+                                     // ALL_COMMANDS means only graphics in graphics only context,
+                                     // TOP_OF_PIPE/BOTTOM_OF_PIPE are also always valid
                                      // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4257
-                                     VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+                                     VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT | VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+                                     VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
     const auto kGraphicsStages =
         (sync_utils::ExpandPipelineStages(VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_QUEUE_GRAPHICS_BIT) | kMetaGraphicsStages) &
         ~kExcludeStages;
