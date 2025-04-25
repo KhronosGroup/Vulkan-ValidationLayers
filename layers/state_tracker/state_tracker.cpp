@@ -2036,6 +2036,46 @@ bool DeviceState::PreCallValidateAllocateDescriptorSets(VkDevice device, const V
     return false;
 }
 
+// This is calculated once in DeviceState::PreCallValidateAllocateDescriptorSets, but if found an error, provide a way to show how
+// we calculated this
+std::string DeviceState::PrintDescriptorAllocation(const VkDescriptorSetAllocateInfo &allocate_info,
+                                                   const vvl::DescriptorPool &pool_state, VkDescriptorType type) const {
+    std::stringstream ss;
+    ss << "Where " << string_VkDescriptorType(type) << " is found in the pool:\n";
+    for (const auto [pool_size_i, pool_size] :
+         vvl::enumerate(pool_state.create_info.pPoolSizes, pool_state.create_info.poolSizeCount)) {
+        if (pool_size.type == type) {
+            ss << "  pPoolSizes[" << pool_size_i << "].descriptorCount = " << pool_size.descriptorCount << '\n';
+        }
+    }
+
+    const auto *count_allocate_info =
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(allocate_info.pNext);
+    ss << "Where the allocation are being requested:\n";
+    for (const auto [set_layout_i, set_layout] : vvl::enumerate(allocate_info.pSetLayouts, allocate_info.descriptorSetCount)) {
+        if (auto ds_layout_state = Get<vvl::DescriptorSetLayout>(set_layout)) {
+            for (uint32_t i = 0; i < ds_layout_state->GetBindingCount(); ++i) {
+                const auto &binding_layout = ds_layout_state->GetDescriptorSetLayoutBindingPtrFromIndex(i);
+                if (binding_layout->descriptorType != type) {
+                    continue;
+                }
+                if (count_allocate_info && i < count_allocate_info->descriptorSetCount &&
+                    (ds_layout_state->GetDescriptorBindingFlagsFromIndex(i) &
+                     VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)) {
+                    ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i
+                       << "].descriptorCount = " << count_allocate_info->pDescriptorCounts[i]
+                       << " (adjusted for VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT)\n";
+                } else {
+                    ss << "  pSetLayouts[" << set_layout_i << "]::pBindings[" << i
+                       << "].descriptorCount = " << binding_layout->descriptorCount << '\n';
+                }
+            }
+        }
+    }
+
+    return ss.str();
+}
+
 // Allocation state was good and call down chain was made so update state based on allocating descriptor sets
 void DeviceState::PostCallRecordAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                        VkDescriptorSet *pDescriptorSets, const RecordObject &record_obj,
