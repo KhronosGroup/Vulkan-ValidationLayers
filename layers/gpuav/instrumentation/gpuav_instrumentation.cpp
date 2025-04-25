@@ -424,7 +424,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
             vertex_attribute_fetch_limits_buffer_bi.range = vertex_attribute_fetch_limits_buffer_range.size;
         } else {
             // Point all non-indexed draws to our global buffer that will bypass the check in shader
-            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.Get<VertexAttributeFetchOff>(gpuav, loc);
+            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.GetOrCreate<VertexAttributeFetchOff>(gpuav, loc);
             if (!resource.valid) return;
             vertex_attribute_fetch_limits_buffer_bi.buffer = resource.buffer.VkHandle();
             vertex_attribute_fetch_limits_buffer_bi.offset = 0;

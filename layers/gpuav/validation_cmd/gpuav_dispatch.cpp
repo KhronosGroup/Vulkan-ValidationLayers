@@ -71,7 +71,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
     }
 
     ComputeValidationPipeline<DispatchValidationShader> &validation_pipeline =
-        gpuav.shared_resources_manager.Get<ComputeValidationPipeline<DispatchValidationShader>>(
+        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<DispatchValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;
