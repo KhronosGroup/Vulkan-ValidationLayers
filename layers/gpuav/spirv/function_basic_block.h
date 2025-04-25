@@ -62,6 +62,13 @@ struct BasicBlock {
     // For blocks that are a Loop hader, points to the Merge Target
     uint32_t loop_header_merge_target_ = 0;
     bool IsLoopHeader() const { return loop_header_merge_target_ != 0; }
+
+    // If block terminates with OpBranchConditional/OpSwtich, mark the ID they point to
+    uint32_t selection_merge_target_ = 0;
+    uint32_t branch_conditional_true_ = 0;
+    uint32_t branch_conditional_false_ = 0;
+    uint32_t switch_default_ = 0;
+    std::vector<uint32_t> switch_cases_;
 };
 
 // Control Flow can be tricky, so having this as a List allows use to easily add/remove/edit blocks around without worrying about
