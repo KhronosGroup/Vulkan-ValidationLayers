@@ -267,3 +267,37 @@ TEST_F(PositiveSubpass, AllCommandsInSubpassDependency) {
     rp.AddSubpassDependency(subpass_dep);
     rp.CreateRenderPass();
 }
+
+TEST_F(PositiveSubpass, TopOfPipeInSubpassDependency) {
+    TEST_DESCRIPTION("Test TOP_OF_PIPE is allowed in subpass dependency");
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDependency subpass_dep{};
+    subpass_dep.srcSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dep.dstSubpass = 0;
+    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;  // Here!
+    subpass_dep.srcAccessMask = VK_ACCESS_NONE;
+    subpass_dep.dstAccessMask = VK_ACCESS_NONE;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddSubpassDependency(subpass_dep);
+    rp.CreateRenderPass();
+}
+
+TEST_F(PositiveSubpass, BottomOfPipeInSubpassDependency) {
+    TEST_DESCRIPTION("Test BOTTOM_OF_PIPE is allowed in subpass dependency");
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDependency subpass_dep{};
+    subpass_dep.srcSubpass = 0;
+    subpass_dep.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpass_dep.srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;  // Here!
+    subpass_dep.dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    subpass_dep.srcAccessMask = VK_ACCESS_NONE;
+    subpass_dep.dstAccessMask = VK_ACCESS_NONE;
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddSubpassDependency(subpass_dep);
+    rp.CreateRenderPass();
+}
