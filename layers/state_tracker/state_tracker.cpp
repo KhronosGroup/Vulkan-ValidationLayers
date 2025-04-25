@@ -2004,8 +2004,30 @@ void DeviceState::PostCallRecordResetDescriptorPool(VkDevice device, VkDescripto
 bool DeviceState::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo *pAllocateInfo,
                                                         VkDescriptorSet *pDescriptorSets, const ErrorObject &error_obj,
                                                         AllocateDescriptorSetsData &ads_state) const {
-    // Always update common data
-    UpdateAllocateDescriptorSetsData(pAllocateInfo, ads_state);
+    const auto *count_allocate_info =
+        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(pAllocateInfo->pNext);
+
+    ads_state.layout_nodes.resize(pAllocateInfo->descriptorSetCount);
+    for (uint32_t i = 0; i < pAllocateInfo->descriptorSetCount; i++) {
+        if (auto layout = Get<DescriptorSetLayout>(pAllocateInfo->pSetLayouts[i])) {
+            ads_state.layout_nodes[i] = layout;
+            // Count total descriptors required per type
+            for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
+                const auto &binding_layout = layout->GetDescriptorSetLayoutBindingPtrFromIndex(j);
+                uint32_t type_index = static_cast<uint32_t>(binding_layout->descriptorType);
+                uint32_t descriptor_count = binding_layout->descriptorCount;
+                if (count_allocate_info && i < count_allocate_info->descriptorSetCount) {
+                    // Only binding will have this flag
+                    if (layout->GetDescriptorBindingFlagsFromIndex(j) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
+                        descriptor_count = count_allocate_info->pDescriptorCounts[i];
+                    }
+                }
+
+                ads_state.required_descriptors_by_type[type_index] += descriptor_count;
+            }
+        }
+        // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
+    }
 
     return false;
 }
@@ -4584,33 +4606,6 @@ void DeviceState::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet des
     DecodedTemplateUpdate decoded_update(*this, descriptorSet, template_state, pData);
     PerformUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(), 0,
                                 NULL);
-}
-
-// Update the common AllocateDescriptorSetsData
-void DeviceState::UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo *allocate_info,
-                                                   AllocateDescriptorSetsData &ds_data) const {
-    const auto *count_allocate_info =
-        vku::FindStructInPNextChain<VkDescriptorSetVariableDescriptorCountAllocateInfo>(allocate_info->pNext);
-    for (uint32_t i = 0; i < allocate_info->descriptorSetCount; i++) {
-        if (auto layout = Get<DescriptorSetLayout>(allocate_info->pSetLayouts[i])) {
-            ds_data.layout_nodes[i] = layout;
-            // Count total descriptors required per type
-            for (uint32_t j = 0; j < layout->GetBindingCount(); ++j) {
-                const auto &binding_layout = layout->GetDescriptorSetLayoutBindingPtrFromIndex(j);
-                uint32_t type_index = static_cast<uint32_t>(binding_layout->descriptorType);
-                uint32_t descriptor_count = binding_layout->descriptorCount;
-                if (count_allocate_info && i < count_allocate_info->descriptorSetCount) {
-                    // Only binding will have this flag
-                    if (layout->GetDescriptorBindingFlagsFromIndex(j) & VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT) {
-                        descriptor_count = count_allocate_info->pDescriptorCounts[i];
-                    }
-                }
-
-                ds_data.required_descriptors_by_type[type_index] += descriptor_count;
-            }
-        }
-        // Any unknown layouts will be flagged as errors during ValidateAllocateDescriptorSets() call
-    }
 }
 
 void DeviceState::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount,

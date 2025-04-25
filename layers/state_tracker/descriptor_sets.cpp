@@ -480,8 +480,6 @@ vvl::DescriptorSetLayout::DescriptorSetLayout(const VkDescriptorSetLayoutCreateI
                                               const VkDescriptorSetLayout handle)
     : StateObject(handle, kVulkanObjectTypeDescriptorSetLayout), layout_id_(GetCanonicalId(pCreateInfo)) {}
 
-void vvl::AllocateDescriptorSetsData::Init(uint32_t count) { layout_nodes.resize(count); }
-
 vvl::DescriptorSet::DescriptorSet(const VkDescriptorSet handle, vvl::DescriptorPool *pool_state,
                                   const std::shared_ptr<DescriptorSetLayout const> &layout, uint32_t variable_count,
                                   vvl::DeviceState *state_data)

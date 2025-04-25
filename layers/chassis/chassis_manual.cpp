@@ -958,6 +958,9 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
     bool skip = false;
     ErrorObject error_obj(vvl::Func::vkAllocateDescriptorSets, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
 
+    // Because this is a high frequency function call and want to save time and populate this struct once.
+    // Both CoreCheck and Best Practice need this information during PreCallValidate time.
+    // During State Tracker PreCallValidate (instead of PreCallRecord), we populate this so that everyone else can use it.
     vvl::AllocateDescriptorSetsData ads_state;
 
     {
@@ -966,7 +969,6 @@ VKAPI_ATTR VkResult VKAPI_CALL AllocateDescriptorSets(VkDevice device, const VkD
             if (!vo) {
                 continue;
             }
-            ads_state.Init(pAllocateInfo->descriptorSetCount);
             auto lock = vo->ReadLock();
             skip |= vo->PreCallValidateAllocateDescriptorSets(device, pAllocateInfo, pDescriptorSets, error_obj, ads_state);
             if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;

@@ -1629,7 +1629,6 @@ class DeviceState : public vvl::base::Device {
     void RecordMappedMemory(VkDeviceMemory mem, VkDeviceSize offset, VkDeviceSize size, void** ppData);
     void UpdateBindBufferMemoryState(const VkBindBufferMemoryInfo& bind_info);
     void UpdateBindImageMemoryState(const VkBindImageMemoryInfo& bind_info);
-    void UpdateAllocateDescriptorSetsData(const VkDescriptorSetAllocateInfo*, vvl::AllocateDescriptorSetsData&) const;
 
     void PostCallRecordCopyAccelerationStructureKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                     const VkCopyAccelerationStructureInfoKHR* pInfo,
