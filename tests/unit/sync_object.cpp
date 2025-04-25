@@ -3948,7 +3948,7 @@ TEST_F(NegativeSyncObject, BarrierOwnershipTransferUseAllStages) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeSyncObject, EventOwnershipTransferUseAllStages) {
+TEST_F(NegativeSyncObject, EventOwnershipTransferUseAllStagesNoFeature) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredFeature(vkt::Feature::synchronization2);
     // Enable extension but do not enable maintenance8 feature
@@ -3956,13 +3956,31 @@ TEST_F(NegativeSyncObject, EventOwnershipTransferUseAllStages) {
     RETURN_IF_SKIP(Init());
 
     vkt::Event event(*m_device);
-
     VkDependencyInfo dependency_info = vku::InitStructHelper();
     dependency_info.dependencyFlags = VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
 
     m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-dependencyFlags-10394");
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncObject, EventOwnershipTransferUseAllStages) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance8);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Event event(*m_device);
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags =
+        VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR | VK_DEPENDENCY_VIEW_LOCAL_BIT;
+
+    m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-maintenance8-10205");
-    vk::CmdWaitEvents2(m_command_buffer.handle(), 1, &event.handle(), &dependency_info);
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
