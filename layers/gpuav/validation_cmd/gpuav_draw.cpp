@@ -142,10 +142,10 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
         if (!shared_draw_validation_resources.valid) return;
         ComputeValidationPipeline<FirstInstanceValidationShader> &validation_pipeline =
-            gpuav.shared_resources_manager.Get<ComputeValidationPipeline<FirstInstanceValidationShader>>(
+            gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<FirstInstanceValidationShader>>(
                 gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
         if (!validation_pipeline.valid) return;
 
@@ -347,10 +347,10 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
         if (!shared_draw_validation_resources.valid) return;
         ComputeValidationPipeline<CountBufferValidationShader> &validation_pipeline =
-            gpuav.shared_resources_manager.Get<ComputeValidationPipeline<CountBufferValidationShader>>(
+            gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<CountBufferValidationShader>>(
                 gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
         if (!validation_pipeline.valid) return;
 
@@ -517,10 +517,10 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
          error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
          loc](Validator &gpuav, CommandBufferSubState &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
-                gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
+                gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
             if (!shared_draw_validation_resources.valid) return;
             ComputeValidationPipeline<MeshValidationShader> &validation_pipeline =
-                gpuav.shared_resources_manager.Get<ComputeValidationPipeline<MeshValidationShader>>(
+                gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<MeshValidationShader>>(
                     gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
             if (!validation_pipeline.valid) return;
 
@@ -831,18 +831,18 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.Get<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
         if (!shared_draw_validation_resources.valid) {
             return;
         }
         ComputeValidationPipeline<SetupDrawCountDispatchIndirectShader> &setup_validation_dispatch_pipeline =
-            gpuav.shared_resources_manager.Get<ComputeValidationPipeline<SetupDrawCountDispatchIndirectShader>>(
+            gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<SetupDrawCountDispatchIndirectShader>>(
                 gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
         if (!shared_draw_validation_resources.valid) {
             return;
         }
         ComputeValidationPipeline<DrawIndexedIndirectIndexBufferShader> &validation_pipeline =
-            gpuav.shared_resources_manager.Get<ComputeValidationPipeline<DrawIndexedIndirectIndexBufferShader>>(
+            gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<DrawIndexedIndirectIndexBufferShader>>(
                 gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
         if (!validation_pipeline.valid) {
             return;

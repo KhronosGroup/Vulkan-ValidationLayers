@@ -58,7 +58,7 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
     RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     ComputeValidationPipeline<TraceRaysValidationShader>& validation_pipeline =
-        gpuav.shared_resources_manager.Get<ComputeValidationPipeline<TraceRaysValidationShader>>(
+        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<TraceRaysValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;

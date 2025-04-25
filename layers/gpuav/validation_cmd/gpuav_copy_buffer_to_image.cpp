@@ -100,7 +100,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
     }
 
     ComputeValidationPipeline<CopyBufferToImageValidationShader> &validation_pipeline =
-        gpuav.shared_resources_manager.Get<ComputeValidationPipeline<CopyBufferToImageValidationShader>>(
+        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<CopyBufferToImageValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;
