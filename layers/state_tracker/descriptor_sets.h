@@ -671,13 +671,12 @@ class MutableDescriptor : public Descriptor {
     std::shared_ptr<vvl::AccelerationStructureNV> acc_state_nv_;
 };
 
-// Structs to contain common elements that need to be shared between Validate* and Perform* calls below
+// We will want to build this map and list of layouts once in order to record in the state tracker at PostCallRecord time.
 struct AllocateDescriptorSetsData {
     std::map<uint32_t, uint32_t> required_descriptors_by_type;
     std::vector<std::shared_ptr<DescriptorSetLayout const>> layout_nodes;
-    void Init(uint32_t);
-    AllocateDescriptorSetsData(){};
 };
+
 // "Perform" does the update with the assumption that ValidateUpdateDescriptorSets() has passed for the given update
 void PerformUpdateDescriptorSets(DeviceState &, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet *);
 
