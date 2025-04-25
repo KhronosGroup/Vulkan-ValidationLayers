@@ -3323,17 +3323,17 @@ void DeviceState::PostCallRecordCmdBeginRendering(VkCommandBuffer commandBuffer,
     cb_state->BeginRendering(record_obj.location.function, pRenderingInfo);
 }
 
-void DeviceState::PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    PreCallRecordCmdEndRendering(commandBuffer, record_obj);
+void DeviceState::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+    PostCallRecordCmdEndRendering(commandBuffer, record_obj);
 }
 
-void DeviceState::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->EndRendering(record_obj.location.function);
 }
 
-void DeviceState::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
-                                                   const RecordObject &record_obj) {
+void DeviceState::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
+                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->EndRendering(record_obj.location.function);
 }

@@ -312,11 +312,11 @@ bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
     return ValidateCmdBeginRendering(commandBuffer, pRenderingInfo, error_obj.location);
 }
 
+// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-    // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
+        auto& sub_state = bp_state::SubState(*cb_state);
         RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
@@ -327,12 +327,12 @@ void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer,
     cb_state->queue_submit_functions_after_render_pass.clear();
 }
 
+// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassInfo,
                                                    const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-    // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
+        auto& sub_state = bp_state::SubState(*cb_state);
         RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
@@ -348,11 +348,11 @@ void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuf
     PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassInfo, record_obj);
 }
 
+// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
 void BestPractices::PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-    // Using PreCallRecord because logic relies on render pass state not being destroyed yet
     if (auto rp_state = cb_state->active_render_pass.get()) {
+        auto& sub_state = bp_state::SubState(*cb_state);
         RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 }
