@@ -19,6 +19,8 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 #include "utils/math_utils.h"
+#include "utils/vk_layer_utils.h"
+#include "containers/limits.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 
 #include "generated/instrumentation_buffer_device_address_comp.h"
@@ -80,11 +82,12 @@ uint32_t BufferDeviceAddressPass::CreateFunctionCall(BasicBlock& block, Instruct
             if (range.min_instruction != inst_position) {
                 continue;
             }
+            ASSERT_AND_CONTINUE(range.max_struct_offsets >= range.min_struct_offsets);
 
-            function_range_result = module_.TakeNextId();
             // If there is only a single access found, range diff is zero and this becomes a "normal" check automatically
-            const uint32_t full_access_range = (range.min_struct_offsets - range.max_struct_offsets) + meta.access_size;
+            const uint32_t full_access_range = (range.max_struct_offsets - range.min_struct_offsets) + meta.access_size;
             const uint32_t full_range_id = module_.type_manager_.GetConstantUInt32(full_access_range).Id();
+            function_range_result = module_.TakeNextId();
             block.CreateInstruction(spv::OpFunctionCall,
                                     {bool_type, function_range_result, function_range_id, inst_position_id, address_id,
                                      access_type.Id(), full_range_id},
@@ -225,8 +228,8 @@ bool BufferDeviceAddressPass::Instrument() {
                             block_skip_list_.insert(inst_position);
 
                             Range& range = block_struct_range_map_[struct_type->Id()];
-                            // If there is only a single item in the struct used, we want the begin/end to be the same.
-                            // The final range is ((end - begin) + min_instruction_offset)
+                            // If there is only a single item in the struct used, we want the min/max to be the same.
+                            // The final range is ((max - min) + min_instruction_offset)
                             if (struct_offset < range.min_struct_offsets) {
                                 range.min_instruction = inst_position;
                                 range.min_struct_offsets = struct_offset;

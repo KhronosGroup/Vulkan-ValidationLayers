@@ -1139,7 +1139,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoadLinkedList) {
     char const *shader_source = R"glsl(
         #version 450
         #extension GL_EXT_buffer_reference : enable
-                #extension GL_ARB_gpu_shader_int64 : enable
+        #extension GL_ARB_gpu_shader_int64 : enable
 
         layout(buffer_reference) buffer Node;
         layout(buffer_reference, std430) buffer Node {
@@ -1164,6 +1164,137 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructLoadLinkedList) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, ProxyStructUnsafe) {
+    TEST_DESCRIPTION("Make sure the range for a struct load is the whole struct.");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_buffer_reference2 : require
+
+        struct RealCamera {
+            mat4 viewProjection;
+            vec4 frustum[6];
+        };
+        layout(buffer_reference) restrict readonly buffer CameraBuffer {
+            RealCamera camera;
+        };
+
+        layout(binding = 0, set = 0) buffer OutData {
+            CameraBuffer cameraBuffer;
+            mat4 out_mat;
+        };
+
+        layout(buffer_reference) buffer PerFrame;
+        layout(buffer_reference, std430) readonly buffer PerFrame {
+            mat4 proj;
+            uint texSkyboxRadiance;
+            uint texSkyboxIrradiance;
+            uint sampler0;
+            uint texture0;
+        };
+
+        layout(push_constant, std430) uniform constants {
+            PerFrame perFrame;
+        } pc;
+
+        void main() {
+            uint a = pc.perFrame.texSkyboxRadiance;
+            uint b = pc.perFrame.sampler0;
+
+            restrict const RealCamera camera = cameraBuffer.camera;
+            out_mat = camera.viewProjection;
+        }
+    )glsl";
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 256, 0, vkt::device_address);
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+
+    VkDeviceAddress bda_buffer_addr = bda_buffer.Address();
+    uint8_t *ssbo_buffer_ptr = (uint8_t *)ssbo_buffer.Memory().Map();
+    memcpy(ssbo_buffer_ptr, &bda_buffer_addr, sizeof(VkDeviceAddress));
+
+    descriptor_set.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress),
+                         &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveGpuAVBufferDeviceAddress, BasicRangeUnsafe) {
+    TEST_DESCRIPTION("Simple test to examine how we do the range check in unsafe mode.");
+    RETURN_IF_SKIP(InitGpuVUBufferDeviceAddress(false));
+
+    char const *shader_source = R"glsl(
+        #version 460
+        #extension GL_EXT_buffer_reference2 : require
+
+        struct Foo {
+            uvec4 x;
+        };
+
+        layout(buffer_reference, std430) buffer BDA {
+            mat4 a;
+            uint b[16];
+            uint c;
+            Foo d;
+            uint e[16];
+        };
+
+        layout(push_constant, std430) uniform constants {
+            BDA bda;
+        };
+
+        void bar() {
+            // inst_buffer_device_address_range is 20
+            bda.d.x = uvec4(0) * uvec4(bda.e[0]);
+        }
+
+        void main() {
+            // inst_buffer_device_address_range is 36
+            bda.b[1] = bda.b[9];
+            bar();
+        }
+    )glsl";
+
+    VkPushConstantRange pc_range = {VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress)};
+    const vkt::PipelineLayout pipeline_layout(*m_device, {}, {pc_range});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer bda_buffer(*m_device, 256, 0, vkt::device_address);
+    VkDeviceAddress bda_buffer_addr = bda_buffer.Address();
+
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(VkDeviceAddress),
+                         &bda_buffer_addr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
 TEST_F(PositiveGpuAVBufferDeviceAddress, NonStructPointer) {
