@@ -195,6 +195,22 @@ Module::Module(vvl::span<const uint32_t> words, DebugReport* debug_report, const
             current_block->loop_header_merge_target_ = new_inst->Word(1);
         }
 
+        if (opcode == spv::OpSelectionMerge) {
+            current_block->selection_merge_target_ = new_inst->Word(1);
+        }
+
+        if (opcode == spv::OpSwitch) {
+            current_block->switch_default_ = new_inst->Word(2);
+            for (uint32_t i = 4; i < new_inst->Length(); i++) {
+                current_block->switch_cases_.push_back(new_inst->Word(i));
+            }
+        }
+
+        if (opcode == spv::OpBranchConditional) {
+            current_block->branch_conditional_true_ = new_inst->Word(2);
+            current_block->branch_conditional_false_ = new_inst->Word(3);
+        }
+
         if (opcode == spv::OpLabel) {
             block_found = true;
             auto new_block = std::make_unique<BasicBlock>(std::move(new_inst), *current_function);

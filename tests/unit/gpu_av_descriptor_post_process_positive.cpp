@@ -1168,3 +1168,71 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, DISABLED_VariableIdClash) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveGpuAVDescriptorPostProcess, BranchConditonalPostDominate) {
+    TEST_DESCRIPTION(
+        "Showcase of making sure we can eliminate instrumen in blocks which is post-dominated with a block that already "
+        "instrument");
+    std::vector<VkLayerSettingEXT> layer_settings = {
+        {OBJECT_LAYER_NAME, "gpuav_descriptor_checks", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkFalse},
+    };
+    RETURN_IF_SKIP(InitGpuAvFramework(layer_settings));
+    RETURN_IF_SKIP(InitState());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0, std430) buffer SSBO {
+            uint a;
+            uint b;
+            uint c;
+            uint d;
+            uint e;
+        };
+
+        uint Foo(uint x) {
+            uint data = x + a;
+            switch(data) {
+                case 0:
+                    data += b;
+                case 1:
+                    data += c;
+                default:
+                    data += d;
+            }
+            return data + e;
+        }
+
+        void main() {
+            uint data = a;
+            data += a;
+            if (data > 0) {
+                data += b;
+                if (data == 2) {
+                    data += c;
+                }
+            } else {
+                data += d;
+            }
+            e = data;
+
+            data += Foo(a);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}};
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}

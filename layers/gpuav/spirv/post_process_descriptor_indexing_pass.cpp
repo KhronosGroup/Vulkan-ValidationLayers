@@ -14,6 +14,7 @@
  */
 
 #include "post_process_descriptor_indexing_pass.h"
+#include "containers/custom_containers.h"
 #include "module.h"
 #include <iostream>
 
@@ -57,9 +58,7 @@ void PostProcessDescriptorIndexingPass::CreateFunctionCall(BasicBlock& block, In
 }
 
 bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& function, const Instruction& inst,
-                                                                InstructionMeta& meta,
-                                                                vvl::unordered_set<uint32_t>& found_in_block_set,
-                                                                const DescriptroIndexPushConstantAccess& pc_access) {
+                                                                InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     const Instruction* var_inst = nullptr;
@@ -158,18 +157,78 @@ bool PostProcessDescriptorIndexingPass::RequiresInstrumentation(const Function& 
         return false;
     }
 
-    const uint32_t hash_descriptor_index_id =
-        pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
-    uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id, meta.variable_id};
-    const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
-    if (found_in_block_set.find(hash) != found_in_block_set.end()) {
-        return false;  // duplicate detected
-    }
-    found_in_block_set.insert(hash);
-
     meta.target_instruction = &inst;
 
     return true;
+}
+
+bool PostProcessDescriptorIndexingPass::BlockDuplicateTracker::FindAndUpdate(
+    std::unordered_map<uint32_t, BlockDuplicateTracker>& duplicate_trackers, uint32_t hash) {
+    // Subtle, but important, if you have
+    //
+    // inst_post_process(hash) A
+    // if (x)
+    //   inst_post_process(hash) B
+    //   if (x)
+    //     inst_post_process(hash) C
+    //
+    // A, B, and C are the same, we will be adding the hash here still for B, but never add the actual OpFunctionCall, then C will
+    // detect the block B is in and also do the same. This means we create a Post-Dominated chain effect without having to store any
+    // list of some sort.
+    auto insert_pair = hashes.insert(hash);
+    if (!insert_pair.second) {
+        return true;  // found in this block
+    }
+
+    // Here we look back and see if this block is post-dominated by something with same instrumentation already
+    if (merge_select_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = duplicate_trackers[merge_select_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+    if (branch_conditional_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = duplicate_trackers[branch_conditional_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+    if (switch_cases_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = duplicate_trackers[switch_cases_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+PostProcessDescriptorIndexingPass::BlockDuplicateTracker& PostProcessDescriptorIndexingPass::GetAndUpdate(
+    std::unordered_map<uint32_t, BlockDuplicateTracker>& duplicate_trackers, BasicBlock& block) {
+    const uint32_t current_block_id = block.GetLabelId();
+    BlockDuplicateTracker& current_duplicate_tracker = duplicate_trackers[current_block_id];
+
+    // If the block is terminating, mark the post-dominated blocks
+
+    if (block.selection_merge_target_) {
+        duplicate_trackers[block.selection_merge_target_].merge_select_predecessor = current_block_id;
+    }
+
+    if (block.branch_conditional_true_) {
+        duplicate_trackers[block.branch_conditional_true_].branch_conditional_predecessor = current_block_id;
+    }
+    if (block.branch_conditional_false_) {
+        duplicate_trackers[block.branch_conditional_false_].branch_conditional_predecessor = current_block_id;
+    }
+
+    if (block.switch_default_) {
+        duplicate_trackers[block.switch_default_].switch_cases_predecessor = current_block_id;
+    }
+    for (uint32_t switch_case_id : block.switch_cases_) {
+        duplicate_trackers[switch_case_id].switch_cases_predecessor = current_block_id;
+    }
+
+    return current_duplicate_tracker;
 }
 
 bool PostProcessDescriptorIndexingPass::Instrument() {
@@ -179,6 +238,11 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
 
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
+
+        // This should be a vvl::unordered_map
+        // but seeing issues of it will not preserving the BlockDuplicateTracker::hashes when expanding
+        std::unordered_map<uint32_t, BlockDuplicateTracker> duplicate_trackers;
+
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
@@ -188,14 +252,24 @@ bool PostProcessDescriptorIndexingPass::Instrument() {
             auto& block_instructions = current_block.instructions_;
 
             // We only need to instrument the set/binding/index/variable combo once per block
-            vvl::unordered_set<uint32_t> found_in_block_set;
+            BlockDuplicateTracker& block_duplicate_tracker = GetAndUpdate(duplicate_trackers, current_block);
             DescriptroIndexPushConstantAccess pc_access;
+
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
                 pc_access.Update(module_, inst_it);
 
                 InstructionMeta meta;
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set, pc_access)) {
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
                     continue;
+                }
+
+                const uint32_t hash_descriptor_index_id =
+                    pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
+                uint32_t hash_content[4] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id,
+                                            meta.variable_id};
+                const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 4);
+                if (block_duplicate_tracker.FindAndUpdate(duplicate_trackers, hash)) {
+                    continue;  // duplicate detected
                 }
 
                 if (IsMaxInstrumentationsCount()) continue;
