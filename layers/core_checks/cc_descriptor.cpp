@@ -3452,9 +3452,11 @@ bool CoreChecks::PreCallValidateAllocateDescriptorSets(VkDevice device, const Vk
                         "WARNING-VkDescriptorSetAllocateInfo-descriptorCount", ds_pool_state->Handle(), error_obj.location,
                         "Trying to allocate %" PRIu32 " of %s descriptors from %s, but this pool only has a total of %" PRIu32
                         " descriptors for this type so you will likely get VK_ERROR_OUT_OF_POOL_MEMORY_KHR. While this might "
-                        "succeed on some implementations, it will fail on others.",
+                        "succeed on some implementations, it will fail on others.\n%s",
                         attempt_allocate, string_VkDescriptorType(VkDescriptorType(it->first)),
-                        FormatHandle(*ds_pool_state).c_str(), max_available_count);
+                        FormatHandle(*ds_pool_state).c_str(), max_available_count,
+                        device_state->PrintDescriptorAllocation(*pAllocateInfo, *ds_pool_state, VkDescriptorType(it->first))
+                            .c_str());
                 }
             }
         }

@@ -226,6 +226,33 @@ TEST_F(NegativeDescriptors, AllocateOverDescriptorCount2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, AllocateOverDescriptorCount3) {
+    AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDescriptorPoolSize ds_type_counts[2] = {{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 20}, {VK_DESCRIPTOR_TYPE_SAMPLER, 2}};
+    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
+    ds_pool_ci.maxSets = 4;
+    ds_pool_ci.poolSizeCount = 2;
+    ds_pool_ci.pPoolSizes = ds_type_counts;
+    vkt::DescriptorPool ds_pool(*m_device, ds_pool_ci);
+
+    VkDescriptorSetLayoutBinding dsl_binding_sampler = {1, VK_DESCRIPTOR_TYPE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr};
+    VkDescriptorSetLayoutBinding dsl_binding_buffer = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr};
+    const vkt::DescriptorSetLayout ds_layout_sampler(*m_device, {dsl_binding_buffer, dsl_binding_sampler});
+    const vkt::DescriptorSetLayout ds_layout_buffer(*m_device, {dsl_binding_buffer});
+
+    VkDescriptorSetLayout descriptor_set_layouts[4] = {ds_layout_sampler, ds_layout_buffer, ds_layout_sampler, ds_layout_sampler};
+    VkDescriptorSet descriptor_sets[4];
+    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.descriptorPool = ds_pool;
+    alloc_info.descriptorSetCount = 4;
+    alloc_info.pSetLayouts = descriptor_set_layouts;
+    m_errorMonitor->SetDesiredWarning("WARNING-VkDescriptorSetAllocateInfo-descriptorCount");
+    vk::AllocateDescriptorSets(device(), &alloc_info, descriptor_sets);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, AllocateOverDescriptorCountVariableAllocate) {
     AddRequiredExtensions(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);

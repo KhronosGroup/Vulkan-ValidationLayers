@@ -896,6 +896,8 @@ class DeviceState : public vvl::base::Device {
                                               chassis::CreateComputePipelines& chassis_state) override;
     void PostCallRecordResetDescriptorPool(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorPoolResetFlags flags,
                                            const RecordObject& record_obj) override;
+    std::string PrintDescriptorAllocation(const VkDescriptorSetAllocateInfo& allocate_info, const vvl::DescriptorPool& pool_state,
+                                          VkDescriptorType type) const;
     bool PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDescriptorSetAllocateInfo* pAllocateInfo,
                                                VkDescriptorSet* pDescriptorSets, const ErrorObject& error_obj,
                                                vvl::AllocateDescriptorSetsData& ads_state_data) const override;
