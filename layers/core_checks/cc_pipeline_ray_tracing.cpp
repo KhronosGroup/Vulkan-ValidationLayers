@@ -170,8 +170,7 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
                                                             const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                             const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                             const ErrorObject &error_obj, PipelineStates &pipeline_states) const {
-    bool skip = BaseClass::PreCallValidateCreateRayTracingPipelinesNV(device, pipelineCache, count, pCreateInfos, pAllocator,
-                                                                      pPipelines, error_obj, pipeline_states);
+    bool skip = false;
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     for (uint32_t i = 0; i < count; i++) {
@@ -214,10 +213,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
                                                              const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
                                                              const ErrorObject &error_obj, PipelineStates &pipeline_states,
-                                                             chassis::CreateRayTracingPipelinesKHR &chassis_state) const {
-    bool skip =
-        BaseClass::PreCallValidateCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, count, pCreateInfos,
-                                                               pAllocator, pPipelines, error_obj, pipeline_states, chassis_state);
+                                                             chassis::CreateRayTracingPipelinesKHR &) const {
+    bool skip = false;
 
     skip |= ValidateDeviceQueueSupport(error_obj.location);
     skip |= ValidateDeferredOperation(device, deferredOperation, error_obj.location.dot(Field::deferredOperation),

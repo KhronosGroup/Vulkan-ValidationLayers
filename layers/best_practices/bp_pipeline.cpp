@@ -160,11 +160,7 @@ bool BestPractices::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
                                                            const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                            const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                            chassis::CreateGraphicsPipelines& chassis_state) const {
-    bool skip = BaseClass::PreCallValidateCreateGraphicsPipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                  pPipelines, error_obj, pipeline_states, chassis_state);
-    if (skip) {
-        return skip;
-    }
+    bool skip = false;
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |=
@@ -262,8 +258,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
                                                           const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                           chassis::CreateComputePipelines& chassis_state) const {
-    bool skip = BaseClass::PreCallValidateCreateComputePipelines(device, pipelineCache, createInfoCount, pCreateInfos, pAllocator,
-                                                                 pPipelines, error_obj, pipeline_states, chassis_state);
+    bool skip = false;
 
     if ((createInfoCount > 1) && (!pipelineCache)) {
         skip |=
