@@ -1728,6 +1728,7 @@ std::shared_ptr<Pipeline> DeviceState::CreateGraphicsPipelineState(
                                       stateless_data);
 }
 
+// PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
 bool DeviceState::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                          const VkGraphicsPipelineCreateInfo *pCreateInfos,
                                                          const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1786,6 +1787,7 @@ std::shared_ptr<Pipeline> DeviceState::CreateComputePipelineState(const VkComput
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
+// PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
 bool DeviceState::PreCallValidateCreateComputePipelines(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                         const VkComputePipelineCreateInfo *pCreateInfos,
                                                         const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1826,6 +1828,7 @@ std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineState(const VkRay
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
+// PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
 bool DeviceState::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkPipelineCache pipelineCache, uint32_t count,
                                                              const VkRayTracingPipelineCreateInfoNV *pCreateInfos,
                                                              const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines,
@@ -1864,6 +1867,7 @@ std::shared_ptr<Pipeline> DeviceState::CreateRayTracingPipelineState(const VkRay
     return std::make_shared<Pipeline>(*this, create_info, std::move(pipeline_cache), std::move(layout), stateless_data);
 }
 
+// PreCallValidate used here to have a single global spot to build the vvl::Pipeline object so we can use it right away
 bool DeviceState::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation,
                                                               VkPipelineCache pipelineCache, uint32_t count,
                                                               const VkRayTracingPipelineCreateInfoKHR *pCreateInfos,
