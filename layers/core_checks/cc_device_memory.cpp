@@ -1769,7 +1769,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             const LogObjectList objlist(bind_info.image, bind_info.memory, dedicated_image);
                             skip |= LogError(
                                 vuid, objlist, loc.dot(Field::memory),
-                                "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo:: %s must be equal "
+                                "(%s) is a dedicated memory allocation, but VkMemoryDedicatedAllocateInfo::%s must be equal "
                                 "to %s and memoryOffset %" PRIu64 " must be zero.",
                                 FormatHandle(bind_info.memory).c_str(), FormatHandle(dedicated_image).c_str(),
                                 FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
