@@ -352,6 +352,20 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type | not_supported_type;
 
+    VkImageMemoryRequirementsInfo2 memory_requirements_info = vku::InitStructHelper();
+    memory_requirements_info.image = image;
+
+    VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
+    VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
+    vk::GetImageMemoryRequirements2(*m_device, &memory_requirements_info, &memory_requirements);
+
+    VkMemoryDedicatedAllocateInfo dedicated_allocate_info = vku::InitStructHelper();
+    dedicated_allocate_info.image = image;
+
+    if (memory_dedicated_requirements.requiresDedicatedAllocation) {
+        export_memory_info.pNext = &dedicated_allocate_info;
+    }
+
     m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
     image.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     m_errorMonitor->VerifyFound();
