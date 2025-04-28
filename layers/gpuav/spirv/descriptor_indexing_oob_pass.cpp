@@ -132,9 +132,7 @@ uint32_t DescriptorIndexingOOBPass::CreateFunctionCall(BasicBlock& block, Instru
     return function_result;
 }
 
-bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
-                                                        vvl::unordered_set<uint32_t>& found_in_block_set,
-                                                        const DescriptroIndexPushConstantAccess& pc_access) {
+bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta) {
     const uint32_t opcode = inst.Opcode();
 
     bool array_found = false;
@@ -316,15 +314,6 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
                 descriptor_index_set.emplace(meta.descriptor_index_id);
             }
         }
-
-        const uint32_t hash_descriptor_index_id =
-            pc_access.next_alias_id == meta.descriptor_index_id ? pc_access.descriptor_index_id : meta.descriptor_index_id;
-        uint32_t hash_content[3] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id};
-        const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
-        if (found_in_block_set.find(hash) != found_in_block_set.end()) {
-            return false;  // duplicate detected
-        }
-        found_in_block_set.insert(hash);
     }
 
     // When using a SAMPLED_IMAGE and SAMPLER, they are accessed together so we need check for 2 descriptors at the same time
@@ -381,7 +370,6 @@ bool DescriptorIndexingOOBPass::RequiresInstrumentation(const Function& function
 
     return true;
 }
-
 bool DescriptorIndexingOOBPass::Instrument() {
     if (module_.set_index_to_bindings_layout_lut_.empty()) {
         return false;  // If there is no bindings, nothing to instrument
@@ -394,6 +382,9 @@ bool DescriptorIndexingOOBPass::Instrument() {
     // Can safely loop function list as there is no injecting of new Functions until linking time
     for (const auto& function : module_.functions_) {
         if (function->instrumentation_added_) continue;
+
+        FunctionDuplicateTracker function_duplicate_tracker;
+
         for (auto block_it = function->blocks_.begin(); block_it != function->blocks_.end(); ++block_it) {
             BasicBlock& current_block = **block_it;
 
@@ -412,7 +403,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
             is_original_new_block = true;  // Always reset once we start
 
             // We only need to instrument the set/binding/index combo once per block (in unsafe mode)
-            vvl::unordered_set<uint32_t> found_in_block_set;
+            BlockDuplicateTracker& block_duplicate_tracker = function_duplicate_tracker.GetAndUpdate(current_block);
             DescriptroIndexPushConstantAccess pc_access;
 
             for (auto inst_it = block_instructions.begin(); inst_it != block_instructions.end(); ++inst_it) {
@@ -422,7 +413,7 @@ bool DescriptorIndexingOOBPass::Instrument() {
 
                 InstructionMeta meta;
                 // Every instruction is analyzed by the specific pass and lets us know if we need to inject a function or not
-                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta, found_in_block_set, pc_access)) {
+                if (!RequiresInstrumentation(*function, *(inst_it->get()), meta)) {
                     // TODO - This should be cleaned up then having it injected here
                     // we can have a situation where the incoming SPIR-V looks like
                     // %a = OpSampledImage %type %image %sampler
@@ -441,6 +432,17 @@ bool DescriptorIndexingOOBPass::Instrument() {
                         inst_it--;
                     }
                     continue;
+                }
+
+                if (!module_.settings_.safe_mode) {
+                    const uint32_t hash_descriptor_index_id = pc_access.next_alias_id == meta.descriptor_index_id
+                                                                  ? pc_access.descriptor_index_id
+                                                                  : meta.descriptor_index_id;
+                    uint32_t hash_content[3] = {meta.descriptor_set, meta.descriptor_binding, hash_descriptor_index_id};
+                    const uint32_t hash = hash_util::Hash32(hash_content, sizeof(uint32_t) * 3);
+                    if (function_duplicate_tracker.FindAndUpdate(block_duplicate_tracker, hash)) {
+                        continue;  // duplicate detected
+                    }
                 }
 
                 if (IsMaxInstrumentationsCount()) continue;

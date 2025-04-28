@@ -943,5 +943,70 @@ void DescriptroIndexPushConstantAccess::Update(const Module& module, Instruction
     }
 }
 
+bool FunctionDuplicateTracker::FindAndUpdate(BlockDuplicateTracker& block, uint32_t hash) {
+    // Subtle, but important, if you have
+    //
+    // inst_post_process(hash) A
+    // if (x)
+    //   inst_post_process(hash) B
+    //   if (x)
+    //     inst_post_process(hash) C
+    //
+    // A, B, and C are the same, we will be adding the hash here still for B, but never add the actual OpFunctionCall, then C will
+    // detect the block B is in and also do the same. This means we create a Post-Dominated chain effect without having to store any
+    // list of some sort.
+    auto insert_pair = block.hashes.insert(hash);
+    if (!insert_pair.second) {
+        return true;  // found in this block
+    }
+
+    // Here we look back and see if this block is post-dominated by something with same instrumentation already
+    if (block.merge_select_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = blocks_[block.merge_select_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+    if (block.branch_conditional_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = blocks_[block.branch_conditional_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+    if (block.switch_cases_predecessor != 0) {
+        BlockDuplicateTracker& predecessor_tracker = blocks_[block.switch_cases_predecessor];
+        if (predecessor_tracker.hashes.find(hash) != predecessor_tracker.hashes.end()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// If the block is terminating, mark the post-dominated blocks
+BlockDuplicateTracker& FunctionDuplicateTracker::GetAndUpdate(BasicBlock& block) {
+    const uint32_t current_block_id = block.GetLabelId();
+
+    if (block.selection_merge_target_) {
+        blocks_[block.selection_merge_target_].merge_select_predecessor = current_block_id;
+    }
+
+    if (block.branch_conditional_true_) {
+        blocks_[block.branch_conditional_true_].branch_conditional_predecessor = current_block_id;
+    }
+    if (block.branch_conditional_false_) {
+        blocks_[block.branch_conditional_false_].branch_conditional_predecessor = current_block_id;
+    }
+
+    if (block.switch_default_) {
+        blocks_[block.switch_default_].switch_cases_predecessor = current_block_id;
+    }
+    for (uint32_t switch_case_id : block.switch_cases_) {
+        blocks_[switch_case_id].switch_cases_predecessor = current_block_id;
+    }
+
+    return blocks_[current_block_id];
+}
+
 }  // namespace spirv
 }  // namespace gpuav
