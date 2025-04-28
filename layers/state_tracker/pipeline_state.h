@@ -89,7 +89,7 @@ class Pipeline : public StateObject {
     const VkPipelineLibraryCreateInfoKHR *library_create_info = nullptr;
     VkGraphicsPipelineLibraryFlagsEXT graphics_lib_type = static_cast<VkGraphicsPipelineLibraryFlagsEXT>(0);
     VkPipelineBindPoint pipeline_type;
-    VkPipelineCreateFlags2KHR create_flags;
+    VkPipelineCreateFlags2 create_flags;
     vvl::span<const vku::safe_VkPipelineShaderStageCreateInfo> shader_stages_ci;
     const vku::safe_VkPipelineLibraryCreateInfoKHR *ray_tracing_library_ci = nullptr;
     // If using a shader module identifier, the module itself is not validated, but the shader stage is still known
@@ -417,6 +417,8 @@ class Pipeline : public StateObject {
         const auto *rt = std::get_if<vku::safe_VkRayTracingPipelineCreateInfoCommon>(&create_info);
         return rt->pNext;
     }
+
+    const Location GetCreateFlagsLoc(const Location &create_info_loc) const;
 
     bool BlendConstantsEnabled() const { return fragment_output_state && fragment_output_state->blend_constants_enabled; }
 

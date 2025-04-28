@@ -153,8 +153,7 @@ bool Device::ValidatePipelineBinaryInfo(const void *next, VkPipelineCreateFlags 
                                         const Location &loc) const {
     bool skip = false;
     const auto *temp_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(next);
-    const VkPipelineCreateFlags2KHR create_flags_2 =
-        temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(flags);
+    const VkPipelineCreateFlags2 create_flags_2 = temp_flags_2 ? temp_flags_2->flags : static_cast<VkPipelineCreateFlags2>(flags);
     const Location flag_loc =
         temp_flags_2 ? loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags) : loc.dot(Field::flags);
 
@@ -263,7 +262,7 @@ bool Device::ValidatePipelineRenderingCreateInfo(const Context &context, const V
     return skip;
 }
 
-bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
+bool Device::ValidateCreateGraphicsPipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0 &&
         (flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) == 0) {
@@ -374,8 +373,8 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
         VkGraphicsPipelineCreateInfo create_info = pCreateInfos[i];
 
         const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
-        const VkPipelineCreateFlags2KHR flags =
-            create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(create_info.flags);
+        const VkPipelineCreateFlags2 flags =
+            create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {
@@ -1244,7 +1243,7 @@ bool Device::manual_PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPi
     return skip;
 }
 
-bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2KHR flags, const Location &flags_loc) const {
+bool Device::ValidateCreateComputePipelinesFlags(const VkPipelineCreateFlags2 flags, const Location &flags_loc) const {
     bool skip = false;
     if ((flags & VK_PIPELINE_CREATE_LIBRARY_BIT_KHR) != 0) {
         if (!enabled_features.shaderEnqueue) {
@@ -1337,8 +1336,8 @@ bool Device::manual_PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         }
 
         const auto *create_flags_2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(create_info.pNext);
-        const VkPipelineCreateFlags2KHR flags =
-            create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2KHR>(create_info.flags);
+        const VkPipelineCreateFlags2 flags =
+            create_flags_2 ? create_flags_2->flags : static_cast<VkPipelineCreateFlags2>(create_info.flags);
         const Location flags_loc = create_flags_2 ? create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags)
                                                   : create_info_loc.dot(Field::flags);
         if (!create_flags_2) {

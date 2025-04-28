@@ -150,9 +150,10 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         }
     }
 
-    skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, create_info_loc.dot(Field::flags),
+    const Location flags_loc = pipeline.GetCreateFlagsLoc(create_info_loc);
+    skip |= ValidatePipelineCacheControlFlags(pipeline.create_flags, flags_loc,
                                               "VUID-VkGraphicsPipelineCreateInfo-pipelineCreationCacheControl-02878");
-    skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, create_info_loc.dot(Field::flags));
+    skip |= ValidatePipelineProtectedAccessFlags(pipeline.create_flags, flags_loc);
 
     const void *pipeline_pnext = pipeline.GetCreateInfoPNext();
     if (const auto *discard_rectangle_state =
@@ -282,7 +283,8 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                                                    const Location &create_info_loc) const {
     bool skip = false;
 
-    const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
+    const VkPipelineCreateFlags2 pipeline_flags = pipeline.create_flags;
+    const Location flags_loc = pipeline.GetCreateFlagsLoc(create_info_loc);
     const bool has_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_2_LINK_TIME_OPTIMIZATION_BIT_EXT) != 0;
     const bool has_retain_link_time_opt = (pipeline_flags & VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
     const bool has_capture_internal = (pipeline_flags & VK_PIPELINE_CREATE_2_CAPTURE_INTERNAL_REPRESENTATIONS_BIT_KHR) != 0;
@@ -296,30 +298,28 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
         if (!lib) continue;
 
         const Location &library_loc = create_info_loc.pNext(Struct::VkPipelineLibraryCreateInfoKHR, Field::pLibraries, i);
-        const VkPipelineCreateFlags2KHR lib_pipeline_flags = lib->create_flags;
+        const VkPipelineCreateFlags2 lib_pipeline_flags = lib->create_flags;
 
         const bool lib_has_retain_link_time_opt =
             (lib_pipeline_flags & VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT) != 0;
         if (has_link_time_opt && !lib_has_retain_link_time_opt) {
             const LogObjectList objlist(device, lib->Handle());
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06609", objlist, library_loc,
-                         "(%s) was created with %s, which is missing "
-                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT.\n%s is %s.",
-                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                         string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
-                         create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06609", objlist, library_loc,
+                             "(%s) was created with %s, which is missing "
+                             "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT.\n%s is %s.",
+                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                             string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline_flags).c_str());
         }
 
         if (has_retain_link_time_opt && !lib_has_retain_link_time_opt) {
             const LogObjectList objlist(device, lib->Handle());
-            skip |=
-                LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06610", objlist, library_loc,
-                         "(%s) was created with %s, which is missing "
-                         "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT\n%s is %s.",
-                         string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                         string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
-                         create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06610", objlist, library_loc,
+                             "(%s) was created with %s, which is missing "
+                             "VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT\n%s is %s.",
+                             string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                             string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), flags_loc.Fields().c_str(),
+                             string_VkPipelineCreateFlags2(pipeline_flags).c_str());
         }
 
         const bool lib_has_capture_internal =
@@ -336,8 +336,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                                  "%s is %s.",
                                  string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                  string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), gpl_flags_loc.Fields().c_str(),
-                                 string_VkPipelineCreateFlags2(gpl_info->flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(gpl_info->flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(pipeline_flags).c_str());
             }
         } else {
@@ -356,8 +355,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
                                  "%s is %s.",
                                  string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
                                  string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), gpl_flags_loc.Fields().c_str(),
-                                 string_VkPipelineCreateFlags2(gpl_info->flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(gpl_info->flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(pipeline_flags).c_str());
             }
         }
@@ -384,22 +382,22 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
             if ((pipeline_flags & check_info.bit)) {
                 if (!(lib_pipeline_flags & check_info.bit)) {
                     const LogObjectList objlist(device, lib->Handle());
-                    skip |= LogError(
-                        check_info.first_vuid.c_str(), objlist, library_loc,
-                        "(%s) was created with %s, which is missing %s included in %s (%s).",
-                        string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                        string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), string_VkPipelineCreateFlagBits2(check_info.bit),
-                        create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+                    skip |= LogError(check_info.first_vuid.c_str(), objlist, library_loc,
+                                     "(%s) was created with %s, which is missing %s included in %s (%s).",
+                                     string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                                     string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
+                                     string_VkPipelineCreateFlagBits2(check_info.bit), flags_loc.Fields().c_str(),
+                                     string_VkPipelineCreateFlags2(pipeline_flags).c_str());
                 }
             } else {
                 if ((lib_pipeline_flags & check_info.bit)) {
                     const LogObjectList objlist(device, lib->Handle());
-                    skip |= LogError(
-                        check_info.second_vuid.c_str(), objlist, library_loc,
-                        "(%s) was created with %s, which includes %s not included in %s (%s).",
-                        string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
-                        string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(), string_VkPipelineCreateFlagBits2(check_info.bit),
-                        create_info_loc.dot(Field::flags).Fields().c_str(), string_VkPipelineCreateFlags2(pipeline_flags).c_str());
+                    skip |= LogError(check_info.second_vuid.c_str(), objlist, library_loc,
+                                     "(%s) was created with %s, which includes %s not included in %s (%s).",
+                                     string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),
+                                     string_VkPipelineCreateFlags2(lib_pipeline_flags).c_str(),
+                                     string_VkPipelineCreateFlagBits2(check_info.bit), flags_loc.Fields().c_str(),
+                                     string_VkPipelineCreateFlags2(pipeline_flags).c_str());
                 }
             }
         }
@@ -528,7 +526,8 @@ bool CoreChecks::ValidateGraphicsPipelineNullRenderPass(const vvl::Pipeline &pip
 bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
 
-    const VkPipelineCreateFlags2KHR pipeline_flags = pipeline.create_flags;
+    const VkPipelineCreateFlags2 pipeline_flags = pipeline.create_flags;
+    const Location flags_loc = pipeline.GetCreateFlagsLoc(create_info_loc);
     const bool is_create_library = (pipeline_flags & VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
 
     // It is possible to have no FS state in a complete pipeline whether or not GPL is used
@@ -550,8 +549,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
     if (is_create_library) {
         if (!enabled_features.graphicsPipelineLibrary) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device,
-                             create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-graphicsPipelineLibrary-06606", device, flags_loc,
                              "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but "
                              "graphicsPipelineLibrary feature is not enabled.",
                              string_VkPipelineCreateFlags2(pipeline_flags).c_str());
@@ -589,7 +587,7 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 
     if (pipeline.HasFullState()) {
         if (is_create_library) {
-            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, create_info_loc.dot(Field::flags),
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-flags-06608", device, flags_loc,
                              "(%s) includes VK_PIPELINE_CREATE_LIBRARY_BIT_KHR, but defines a complete set of state.",
                              string_VkPipelineCreateFlags2(pipeline_flags).c_str());
         }
