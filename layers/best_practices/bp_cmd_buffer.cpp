@@ -278,8 +278,8 @@ bool BestPractices::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuf
     return skip;
 }
 
-void BestPractices::PreCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
-                                                    const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
+void BestPractices::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCount,
+                                                     const VkCommandBuffer* pCommandBuffers, const RecordObject& record_obj) {
     auto primary = GetWrite<vvl::CommandBuffer>(commandBuffer);
     if (!primary) {
         return;
