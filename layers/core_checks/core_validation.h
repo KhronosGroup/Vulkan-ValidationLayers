@@ -855,8 +855,13 @@ class CoreChecks : public vvl::DeviceProxy {
                                               const Location& loc) const;
     uint32_t CalcShaderStageCount(const vvl::Pipeline& pipeline, VkShaderStageFlagBits stageBit) const;
     bool GroupHasValidIndex(const vvl::Pipeline& pipeline, uint32_t group, uint32_t stage) const;
-    bool ValidateRayTracingPipeline(const vvl::Pipeline& pipeline, const vku::safe_VkRayTracingPipelineCreateInfoCommon& create_info,
-                                    VkPipelineCreateFlags flags, const Location& create_info_loc) const;
+    bool ValidateRayTracingPipeline(const vvl::Pipeline& pipeline,
+                                    const vku::safe_VkRayTracingPipelineCreateInfoCommon& create_info,
+                                    const Location& create_info_loc) const;
+    bool ValidateRayTracingPipelineLibrary(const vvl::Pipeline& pipeline,
+                                           const VkRayTracingPipelineCreateInfoKHR& pipeline_create_info,
+                                           const VkPipelineLibraryCreateInfoKHR& library_create_info,
+                                           const Location& library_info_loc) const;
     bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                      VkShaderModuleIdentifierEXT* pIdentifier,
                                                      const ErrorObject& error_obj) const override;
