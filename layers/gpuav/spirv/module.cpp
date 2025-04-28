@@ -20,7 +20,6 @@
 #include "generated/spirv_grammar_helper.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "error_message/logging.h"
-#include "error_message/error_location.h"
 #include "error_message/log_message_type.h"
 
 #include <iostream>
@@ -771,8 +770,7 @@ void Module::PostProcess() {
 
 void Module::InternalWarning(const char* tag, const std::string& message) {
     if (debug_report_) {
-        Location loc(vvl::Func::Empty);
-        debug_report_->LogMessage(kWarningBit, tag, {}, loc, message);
+        debug_report_->LogMessage(kWarningBit, tag, {}, settings_.loc, message);
     } else {
         std::cout << "[" << tag << "] " << message << '\n';
     }
@@ -780,8 +778,7 @@ void Module::InternalWarning(const char* tag, const std::string& message) {
 
 void Module::InternalError(const char* tag, const std::string& message) {
     if (debug_report_) {
-        Location loc(vvl::Func::Empty);
-        debug_report_->LogMessage(kErrorBit, tag, {}, loc, message);
+        debug_report_->LogMessage(kErrorBit, tag, {}, settings_.loc, message);
     } else {
         std::cerr << "[" << tag << "] " << message << '\n';
     }

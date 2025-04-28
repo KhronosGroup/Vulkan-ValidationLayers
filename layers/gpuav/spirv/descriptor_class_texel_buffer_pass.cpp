@@ -197,6 +197,14 @@ bool DescriptorClassTexelBufferPass::Instrument() {
         }
     }
 
+    if (instrumentations_count_ > 75) {
+        module_.InternalWarning(
+            "GPUAV-Compile-time-texel-buffer",
+            "This shader will be very slow to compile and runtime performance may also be slow. This is due to the number of OOB "
+            "checks for texel "
+            "buffers. Turn on the |gpuav_force_on_robustness| setting to skip these checks and improve GPU-AV performance.");
+    }
+
     return instrumentations_count_ != 0;
 }
 

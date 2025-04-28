@@ -224,6 +224,14 @@ bool DescriptorClassGeneralBufferPass::Instrument() {
         }
     }
 
+    if (instrumentations_count_ > 75) {
+        module_.InternalWarning(
+            "GPUAV-Compile-time-general-buffer",
+            "This shader will be very slow to compile and runtime performance may also be slow. This is due to the number of OOB "
+            "checks for storage/uniform "
+            "buffers. Turn on the |gpuav_force_on_robustness| setting to skip these checks and improve GPU-AV performance.");
+    }
+
     return instrumentations_count_ != 0;
 }
 

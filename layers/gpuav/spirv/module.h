@@ -17,6 +17,7 @@
 #include <stdint.h>
 #include <vector>
 #include "containers/custom_containers.h"
+#include "error_message/error_location.h"
 #include "link.h"
 #include "interface.h"
 #include "function_basic_block.h"
@@ -52,6 +53,11 @@ struct Settings {
     uint32_t max_instrumentations_count;
     bool support_non_semantic_info;
     bool has_bindless_descriptors;
+
+    // Used if need to report error/warning
+    const Location& loc;
+
+    explicit Settings(const Location& loc) : loc(loc) {}
 };
 
 // This is the "brain" of SPIR-V logic, it stores the memory of all the Instructions and is the main context.
