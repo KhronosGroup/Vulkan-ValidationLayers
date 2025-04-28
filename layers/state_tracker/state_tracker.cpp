@@ -1560,6 +1560,10 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
             shader_object_state = Get<ShaderObject>(pShaders[i]).get();
         }
         cb_state->BindShader(pStages[i], shader_object_state);
+
+        // We use this to mark any previous pipeline bounds are invalidated now
+        // vkspec.html#shaders-objects-pipeline-interaction
+        cb_state->BindPipeline(ConvertToLvlBindPoint(pStages[i]), nullptr);
     }
 }
 
@@ -5731,17 +5735,6 @@ void DeviceState::PostCallRecordGetShaderModuleCreateInfoIdentifierEXT(VkDevice,
                                                                        const RecordObject &record_obj) {
     WriteLockGuard guard(shader_identifier_map_lock_);
     shader_identifier_map_.emplace(*pIdentifier, std::make_shared<ShaderModule>());
-}
-
-void DeviceState::PreCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount,
-                                                 const VkShaderStageFlagBits *pStages, const VkShaderEXT *pShaders,
-                                                 const RecordObject &record_obj) {
-    auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    if (pStages) {
-        for (uint32_t i = 0; i < stageCount; ++i) {
-            cb_state->BindPipeline(ConvertToLvlBindPoint(pStages[i]), nullptr);
-        }
-    }
 }
 
 void DeviceState::PostCallRecordGetBufferDeviceAddress(VkDevice device, const VkBufferDeviceAddressInfo *pInfo,
