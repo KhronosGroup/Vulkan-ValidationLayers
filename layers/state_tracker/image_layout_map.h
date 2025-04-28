@@ -48,18 +48,25 @@ using RangeGenerator = subresource_adapter::RangeGenerator;
 class ImageLayoutRegistry {
   public:
     struct LayoutEntry {
+        // This tracks the first known layout of the subresource in the command buffer (that's why initial).
+        // This value is tracked based on the expected layout parameters from various API functions.
+        // For example, for vkCmdCopyImageToBuffer the expected layout is the srcImageLayout parameter,
+        // and for image barrier it is the oldLayout.
         VkImageLayout initial_layout;
+
+        // This tracks current subresource layout as we progress through the command buffer
         VkImageLayout current_layout;
 
-        // For relaxed matching rules.
-        // NOTE: optional to match pointer semantics of old implementation (there was check for null).
-        // TODO: investigate if we can drop optional and use initialization state of initial_layout.
-        std::optional<VkImageAspectFlags> aspect_mask;
+        // For relaxed matching rules
+        VkImageAspectFlags aspect_mask;
 
-        LayoutEntry() = default;
-        LayoutEntry(VkImageLayout initial, VkImageLayout current);
-        LayoutEntry(VkImageLayout initial);
-        LayoutEntry(VkImageLayout initial, const vvl::ImageView& view_state);
+        // Initialize entry with the current layout. If API also defines the expected layout it can be specified as second parameter
+        static LayoutEntry ForCurrentLayout(VkImageLayout current_layout, VkImageLayout expected_layout = kInvalidLayout);
+
+        // Initialize entry with the expected layout. This is usually used by the APIs that do not perform layout transitions
+        // but just manifest the expected layout, e.g. srcImageLayout parameter in vkCmdCopyImageToBuffer.
+        // The aspect mask is used if API additionally restricts subresource to specific aspect (descriptor image views).
+        static LayoutEntry ForExpectedLayout(VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
 
         bool CurrentWillChange(VkImageLayout new_layout) const;
         bool Update(const LayoutEntry& src);
