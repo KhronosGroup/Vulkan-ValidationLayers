@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #include "state_tracker/pipeline_state.h"
+#include "error_message/error_location.h"
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/cmd_buffer_state.h"
@@ -510,12 +511,20 @@ static VkPrimitiveTopology GetTopologyAtRasterizer(const Pipeline &pipeline) {
     return result;
 }
 
-static VkPipelineCreateFlags2KHR GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags flags) {
+static VkPipelineCreateFlags2 GetPipelineCreateFlags(const void *pNext, VkPipelineCreateFlags flags) {
     const auto flags2 = vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(pNext);
     if (flags2) {
         return flags2->flags;
     }
     return flags;
+}
+
+const Location Pipeline::GetCreateFlagsLoc(const Location &create_info_loc) const {
+    if (vku::FindStructInPNextChain<VkPipelineCreateFlags2CreateInfo>(GetCreateInfoPNext())) {
+        return create_info_loc.pNext(Struct::VkPipelineCreateFlags2CreateInfo, Field::flags);
+    } else {
+        return create_info_loc.dot(Field::flags);
+    }
 }
 
 // static

@@ -53,7 +53,7 @@ bool CoreChecks::ValidateRayTracingPipeline(const vvl::Pipeline &pipeline,
     if ((create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_TRIANGLES_BIT_KHR) != 0 &&
         (create_flags & VK_PIPELINE_CREATE_RAY_TRACING_SKIP_AABBS_BIT_KHR) != 0) {
         skip |=
-            LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-06546", device, create_info_loc.dot(Field::flags),
+            LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-06546", device, pipeline.GetCreateFlagsLoc(create_info_loc),
                      "is %s (contains both SKIP_TRIANGLES and SKIP_AABBS).", string_VkPipelineCreateFlags2(create_flags).c_str());
     }
 
@@ -144,7 +144,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesNV(VkDevice device, VkP
             skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, pCreateInfos[i].pNext,
                                                 create_info_loc.dot(Field::pStages, stage_index++));
         }
-        skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
+        const Location flag_loc = pipeline->GetCreateFlagsLoc(create_info_loc);
+        skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, flag_loc,
                                                   "VUID-VkRayTracingPipelineCreateInfoNV-pipelineCreationCacheControl-02905");
 
         if (create_info.maxRecursionDepth > phys_dev_ext_props.ray_tracing_props_nv.maxRecursionDepth) {
@@ -201,7 +202,8 @@ bool CoreChecks::PreCallValidateCreateRayTracingPipelinesKHR(VkDevice device, Vk
             skip |= ValidatePipelineShaderStage(*pipeline, stage_ci, pCreateInfos[i].pNext,
                                                 create_info_loc.dot(Field::pStages, stage_index++));
         }
-        skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, create_info_loc.dot(Field::flags),
+        const Location flags_loc = pipeline->GetCreateFlagsLoc(create_info_loc);
+        skip |= ValidatePipelineCacheControlFlags(pipeline->create_flags, flags_loc,
                                                   "VUID-VkRayTracingPipelineCreateInfoKHR-pipelineCreationCacheControl-02905");
 
         if (create_info.maxPipelineRayRecursionDepth > phys_dev_ext_props.ray_tracing_props_khr.maxRayRecursionDepth) {
@@ -242,6 +244,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
 
     // Use "pipeline" to refer to the pipeline be created
     const VkPipelineCreateFlags2 pipeline_create_flags = pipeline.create_flags;
+    const Location flags_loc = pipeline.GetCreateFlagsLoc(create_info_loc);
     const Location library_info_loc = create_info_loc.dot(Field::pLibraryInfo);
 
     for (uint32_t i = 0; i < library_create_info.libraryCount; i++) {
@@ -256,10 +259,9 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
         for (const auto &[vuid, flag] : vuid_map) {
             if (pipeline_create_flags & flag) {
                 if ((lib->create_flags & flag) == 0) {
-                    skip |= LogError(vuid, device, library_loc,
-                                     "was created with %s, which is missing %s (VkRayTracingPipelineCreateInfoKHR::flags is %s).",
+                    skip |= LogError(vuid, device, library_loc, "was created with %s, which is missing %s (%s is %s).",
                                      string_VkPipelineCreateFlags2(lib->create_flags).c_str(),
-                                     string_VkPipelineCreateFlags2(flag).c_str(),
+                                     string_VkPipelineCreateFlags2(flag).c_str(), flags_loc.Fields().c_str(),
                                      string_VkPipelineCreateFlags2(pipeline_create_flags).c_str());
                 }
             }
@@ -302,8 +304,7 @@ bool CoreChecks::ValidateRayTracingPipelineLibrary(const vvl::Pipeline &pipeline
                 skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-03594", device, library_loc,
                                  "was created with %s, which is missing "
                                  "VK_PIPELINE_CREATE_RAY_TRACING_SHADER_GROUP_HANDLE_CAPTURE_REPLAY_BIT_KHR included in %s (%s).",
-                                 string_VkPipelineCreateFlags2(pipeline_create_flags).c_str(),
-                                 create_info_loc.dot(Field::flags).Fields().c_str(),
+                                 string_VkPipelineCreateFlags2(pipeline_create_flags).c_str(), flags_loc.Fields().c_str(),
                                  string_VkPipelineCreateFlags2(lib->create_flags).c_str());
             }
         }
