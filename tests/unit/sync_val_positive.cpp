@@ -1823,7 +1823,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     m_default_queue->Wait();
 }
 
-// TODO: this test does not work due to SupressedBoundDescriptorWAW(). That workaround should be removed.
+// TODO: this test does not work due to SuppressedBoundDescriptorWAW(). That workaround should be removed.
 // Two possible solutions:
 // a) Try to detect if there is atomic operation in the buffer access chain. If yes, skip validation.
 // b) If a) is hard to do, then this case is in the category that is not handled by the current heuristic

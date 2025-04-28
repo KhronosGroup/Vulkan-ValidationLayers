@@ -190,7 +190,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 if (recorded_use.first_read_stages_) {
                     // we need to ignore the first use read stage in the active context (so we add them to the ordering rule),
                     // reads in the active context are not "most recent" as all recorded context operations are *after* them
-                    // This supresses only RAW checks for stages present in the recorded context, but not those only present in the
+                    // This suppresses only RAW checks for stages present in the recorded context, but not those only present in the
                     // active context.
                     barrier.exec_scope |= recorded_use.first_read_stages_;
                     // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule

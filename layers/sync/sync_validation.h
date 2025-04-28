@@ -141,7 +141,7 @@ class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
     void RecordCmdNextSubpass(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
                               const VkSubpassEndInfo *pSubpassEndInfo, Func command);
     void RecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo, Func command);
-    bool SupressedBoundDescriptorWAW(const HazardResult &hazard) const;
+    bool SuppressedBoundDescriptorWAW(const HazardResult &hazard) const;
 
     void FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Location &loc) override;
 

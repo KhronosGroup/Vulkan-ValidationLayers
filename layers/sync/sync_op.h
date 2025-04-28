@@ -332,7 +332,7 @@ struct PipelineBarrierOp {
           layout_transition_handle_index(layout_transition_handle_index),
           scope(queue_id) {
         if (queue_id != kQueueIdInvalid) {
-            // This is a submit time application... supress layout transitions to not taint the QueueBatchContext write state
+            // This is a submit time application... suppress layout transitions to not taint the QueueBatchContext write state
             layout_transition = false;
             this->layout_transition_handle_index = vvl::kNoIndex32;
         }
@@ -372,7 +372,7 @@ struct WaitEventBarrierOp {
                        bool layout_transition_)
         : scope_ops(scope_queue_, scope_tag_), barrier(barrier_), layout_transition(layout_transition_) {
         if (scope_queue_ != kQueueIdInvalid) {
-            // This is a submit time application... supress layout transitions to not taint the QueueBatchContext write state
+            // This is a submit time application... suppress layout transitions to not taint the QueueBatchContext write state
             layout_transition = false;
         }
     }

@@ -2142,7 +2142,7 @@ bool CoreChecks::RunSpirvValidation(spv_const_binary_t &binary, const Location &
             delete[] spirv_val_vuid;
         }
     } else if (cache) {
-        // No point to cache anything that is not valid, or it will get supressed on the next run
+        // No point to cache anything that is not valid, or it will get suppressed on the next run
         cache->Insert(hash);
     }
 

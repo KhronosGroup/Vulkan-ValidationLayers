@@ -5416,8 +5416,8 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
 }
 
 // TODO: this very simple case should cause WRITE-AFTER-WRITE hazard but it passes successfully.
-// This happens because of SupressedBoundDescriptorWAW(). Remove SupressedBoundDescriptorWAW()
-// after SDK release. SupressedBoundDescriptorWAW works only for command buffer validation,
+// This happens because of SuppressedBoundDescriptorWAW(). Remove SuppressedBoundDescriptorWAW()
+// after SDK release. SuppressedBoundDescriptorWAW works only for command buffer validation,
 // that's why the next test (WriteSameLocationFromTwoSubmits) that uses Submit does not have this problem.
 //
 // Prevention of tricky/complex false-positives should be done by having descriptor validation feature
