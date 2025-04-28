@@ -180,9 +180,11 @@ bool ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
     // initial_layout and state cannot be updated once they have a valid value.
     if (initial_layout == kInvalidLayout) {
         initial_layout = src.initial_layout;
+        std::terminate();  // TEST
     }
     if (!aspect_mask.has_value()) {
         aspect_mask = src.aspect_mask;
+        std::terminate();  // TEST
     }
     return updated_current;
 }
