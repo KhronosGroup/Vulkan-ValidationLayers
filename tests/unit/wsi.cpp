@@ -4507,3 +4507,31 @@ TEST_F(NegativeWsi, SignalPresentSemaphore) {
 
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeWsi, SignalPresentSemaphoreAfterQueueWait) {
+    TEST_DESCRIPTION("When swapchain maintenance1 is enabled then waiting on the queue is not enough to reuse swapchain semaphore");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::Semaphore acquire_semaphore(*m_device);
+    uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+
+    vkt::Semaphore present_semaphore(*m_device);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+    m_default_queue->Present(m_swapchain, image_index, present_semaphore);
+
+    // Workaround with QueueWait is only allowed when maintenance1 is not used.
+    // Swapchain maintenance1 provides official way how to safely delete present semaphores, so it should be used intsead.
+    m_default_queue->Wait();
+    m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pSignalSemaphores-00067");
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(present_semaphore));
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
