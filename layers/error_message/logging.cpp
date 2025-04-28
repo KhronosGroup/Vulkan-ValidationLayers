@@ -27,6 +27,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "generated/vk_object_types.h"
 #include "generated/vk_validation_error_messages.h"
 #include "error_location.h"
 #include "utils/hash_util.h"
@@ -144,24 +145,25 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
     std::vector<VkDebugUtilsObjectNameInfoEXT> object_name_infos;
     object_name_infos.reserve(objects.object_list.size());
     for (uint32_t i = 0; i < objects.object_list.size(); i++) {
+        const VulkanTypedHandle &current_object = objects.object_list[i];
         // If only one VkDevice was created, it is just noise to print it out in the error message.
         // Also avoid printing unknown objects, likely if new function is calling error with null LogObjectList
-        if ((objects.object_list[i].type == kVulkanObjectTypeDevice && device_created <= 1) ||
-            (objects.object_list[i].type == kVulkanObjectTypeUnknown) || (objects.object_list[i].handle == 0)) {
+        if ((current_object.type == kVulkanObjectTypeDevice && device_created <= 1) ||
+            (current_object.type == kVulkanObjectTypeUnknown) || (current_object.handle == 0)) {
             continue;
         }
 
         VkDebugUtilsObjectNameInfoEXT object_name_info = vku::InitStructHelper();
-        object_name_info.objectType = ConvertVulkanObjectToCoreObject(objects.object_list[i].type);
-        object_name_info.objectHandle = objects.object_list[i].handle;
+        object_name_info.objectType = ConvertVulkanObjectToCoreObject(current_object.type);
+        object_name_info.objectHandle = current_object.handle;
         object_name_info.pObjectName = nullptr;
 
         std::string object_label = {};
         // Look for any debug utils or marker names to use for this object
         // NOTE: the lock (debug_output_mutex) is held by the caller (LogMsg)
-        object_label = GetUtilsObjectNameNoLock(objects.object_list[i].handle);
+        object_label = GetUtilsObjectNameNoLock(current_object.handle);
         if (object_label.empty()) {
-            object_label = GetMarkerObjectNameNoLock(objects.object_list[i].handle);
+            object_label = GetMarkerObjectNameNoLock(current_object.handle);
         }
         if (!object_label.empty()) {
             object_labels.push_back(std::move(object_label));
