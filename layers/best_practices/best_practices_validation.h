@@ -21,6 +21,7 @@
 
 #include "best_practices/bp_constants.h"
 #include "chassis/validation_object.h"
+#include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include <string>
@@ -39,6 +40,13 @@ struct DeprecationData {
     DeprecationReason reason;
     vvl::Requirement target;
 };
+
+struct ShaderStageState;
+
+namespace spirv {
+struct EntryPoint;
+struct Module;
+}  // namespace spirv
 
 DeprecationData GetDeprecatedData(vvl::Extension extension);
 std::string GetSpecialUse(vvl::Extension extension);
@@ -226,9 +234,11 @@ class BestPractices : public vvl::DeviceProxy {
                                                const ErrorObject& error_obj, PipelineStates& pipeline_states,
                                                chassis::CreateComputePipelines& chassis_state) const override;
 
-    bool ValidateCreateComputePipelineArm(const VkComputePipelineCreateInfo& create_info, const Location& create_info_loc) const;
-
-    bool ValidateCreateComputePipelineAmd(const VkComputePipelineCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateShaderStage(const ShaderStageState& stage_state, const vvl::Pipeline* pipeline, const Location& loc) const;
+    bool ValidateComputeShaderArm(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                  const Location& loc) const;
+    bool ValidateComputeShaderAmd(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
+                                  const Location& loc) const;
 
     bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags flags) const;
     bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2KHR flags) const;
