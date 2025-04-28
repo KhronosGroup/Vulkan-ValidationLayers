@@ -1284,7 +1284,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
         DumpSpirvToFile(non_instrumented_spirv_file.string(), input_spirv.data(), input_spirv.size());
     }
 
-    spirv::Settings module_settings{};
+    spirv::Settings module_settings(loc);
     // Use the unique_shader_id as a shader ID so we can look up its handle later in the shader_map.
     module_settings.shader_id = unique_shader_id;
     module_settings.output_buffer_descriptor_set = instrumentation_desc_set_bind_index_;
