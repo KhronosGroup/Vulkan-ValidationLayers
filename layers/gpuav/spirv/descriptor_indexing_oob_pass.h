@@ -48,9 +48,7 @@ class DescriptorIndexingOOBPass : public Pass {
         uint32_t sampler_descriptor_index_id = 0;
     };
 
-    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta,
-                                 vvl::unordered_set<uint32_t>& found_in_block_set,
-                                 const DescriptroIndexPushConstantAccess& pc_access);
+    bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     uint32_t CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
     uint32_t GetLinkFunctionId(bool is_combined_image_sampler);

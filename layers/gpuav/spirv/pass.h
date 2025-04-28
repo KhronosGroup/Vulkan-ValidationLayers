@@ -18,6 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include "function_basic_block.h"
 #include "link.h"
+#include "containers/custom_containers.h"
 
 namespace gpuav {
 namespace spirv {
@@ -119,6 +120,30 @@ struct DescriptroIndexPushConstantAccess {
     uint32_t add_id_value = 0;
 
     void Update(const Module& module, InstructionIt inst_it);
+};
+
+// We want to remove redundant instrumentation as it adds overhead to both compile time and runtime
+// We create a block-scope tracking of all things with instrumentation
+struct BlockDuplicateTracker {
+    // hash or the arguments making it unique/same
+    vvl::unordered_set<uint32_t> hashes;
+
+    // The current goal is not to remove 100% of things as the trade-off to add something like SPIRV-Tools
+    // PostDominatorAnalysis is high. Just trying to find the "simple" if/else cases removes many spots
+    uint32_t merge_select_predecessor = 0;
+    uint32_t branch_conditional_predecessor = 0;
+    uint32_t switch_cases_predecessor = 0;  // will include default as well
+};
+
+// The function level used to hold the blocks
+struct FunctionDuplicateTracker {
+    BlockDuplicateTracker& GetAndUpdate(BasicBlock& block);
+
+    // Return true if found a duplicate
+    bool FindAndUpdate(BlockDuplicateTracker& block, uint32_t hash);
+
+  private:
+    vvl::unordered_map<uint32_t, BlockDuplicateTracker> blocks_;
 };
 
 }  // namespace spirv

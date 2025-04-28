@@ -40,23 +40,6 @@ class PostProcessDescriptorIndexingPass : public Pass {
         uint32_t variable_id = 0;
     };
 
-    // We want to remove redundant instrumentation as it adds overhead to both compile time and runtime
-    // We create a block-scope tracking of all things with instrumentation
-    struct BlockDuplicateTracker {
-        // hash or the arguments making it unique/same
-        vvl::unordered_set<uint32_t> hashes;
-        // Return true if found a duplicate
-        bool FindAndUpdate(std::unordered_map<uint32_t, BlockDuplicateTracker>& duplicate_trackers, uint32_t hash);
-
-        // The current goal is not to remove 100% of things as the trade-off to add something like SPIRV-Tools
-        // PostDominatorAnalysis is high. Just trying to find the "simple" if/else cases removes many spots
-        uint32_t merge_select_predecessor = 0;
-        uint32_t branch_conditional_predecessor = 0;
-        uint32_t switch_cases_predecessor = 0;  // will include default as well
-    };
-
-    BlockDuplicateTracker& GetAndUpdate(std::unordered_map<uint32_t, BlockDuplicateTracker>& duplicate_trackers, BasicBlock& block);
-
     bool RequiresInstrumentation(const Function& function, const Instruction& inst, InstructionMeta& meta);
     void CreateFunctionCall(BasicBlock& block, InstructionIt* inst_it, const InstructionMeta& meta);
 
