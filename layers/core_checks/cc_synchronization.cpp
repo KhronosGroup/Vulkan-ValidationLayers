@@ -217,7 +217,8 @@ bool SemaphoreSubmitState::ValidateWaitSemaphore(const Location &wait_semaphore_
 }
 
 static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::SwapchainWaitInfo &swapchain_info,
-                                                       const vvl::Semaphore &semaphore_state, VkQueue queue, const Logger &logger) {
+                                                       const vvl::Semaphore &semaphore_state, VkQueue queue,
+                                                       bool swapchain_fence_supported, const Logger &logger) {
     std::stringstream ss;
 
     const std::string semaphore_str = logger.FormatHandle(semaphore_state.Handle());
@@ -242,7 +243,11 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 marked_history_index = (history_length - 1) - (swapchain.acquire_count - swapchain_info.acquire_counter_value);
             }
             // Print acquire history
-            ss << "Here are the last " << print_count << " acquired image indices: ";
+            if (print_count == 1) {
+                ss << "The only acquired image index so far: ";
+            } else {
+                ss << "Here are the last " << print_count << " acquired image indices: ";
+            }
             for (uint32_t i = 0; i < print_count; i++) {
                 uint32_t history_index = first_history_index + i;
                 uint32_t acquired_image_index = swapchain.GetAcquiredImageIndexFromHistory(history_index);
@@ -259,9 +264,20 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
             }
             ss << ".\n(brackets mark the last use of " << semaphore_str << " in a presentation operation)\n";
             // Describe problem details
-            ss << "Swapchain image " << swapchain_info.image_index << " was presented but not re-acquired, so " << semaphore_str
-               << " may still be in use and cannot be safely reused with image index "
-               << swapchain.GetAcquiredImageIndexFromHistory(history_length - 1) << ".\n\n";
+            ss << "Swapchain image " << swapchain_info.image_index << " was presented but was ";
+            if (swapchain_fence_supported) {
+                ss << "neither re-acquired nor waited on using a VK_EXT_swapchain_maintenance1 fence";
+            } else {
+                ss << "not re-acquired";
+            }
+            ss << ", so " << semaphore_str << " may still be in use";
+            if (marked_history_index != history_length - 1) {
+                // if a new index is acquired after the image index that the semaphore was used with,
+                // warn that the semaphore cannot yet be used with the new index
+                ss << " and cannot be safely reused with image index "
+                   << swapchain.GetAcquiredImageIndexFromHistory(history_length - 1);
+            }
+            ss << ".\n\n";
             // Additional details
             ss << "Vulkan insight: One solution is to assign each image its own semaphore.";
             if (print_count >= 2 && swapchain.GetAcquiredImageIndexFromHistory(history_length - 2) ==
@@ -269,17 +285,16 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 ss << " This also handles the case where vkAcquireNextImageKHR returns the same index twice in a "
                       "row.";
             }
-            ss << "\n";
         }
     } else {  // Multiple swapchains use case. Describe problem without additional swapchain data
         ss << "(" << semaphore_str << ") is being signaled by " << queue_str
            << ", but it may still be in use by the swapchain since the corresponding swapchain image has not been "
               "re-acquired.\n";
 
-        ss << "Vulkan insight: ";
+        ss << "Vulkan insight:";
     }
     // Shared additional details.
-    ss << "Here are common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in use and can be "
+    ss << " Here are common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in use and can be "
           "safely reused:\n"
           "\ta) Use a separate semaphore per swapchain image. Index these semaphores using the index of the "
           "acquired image.\n"
@@ -320,8 +335,9 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
                         core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
                 } else if (const auto swapchain_info = semaphore_state.GetSwapchainWaitInfo(); swapchain_info.has_value()) {
+                    const bool present_fence_supported = IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1);
                     const std::string error_message =
-                        GetSemaphoreInUseBySwapchainMessage(*swapchain_info, semaphore_state, queue, core);
+                        GetSemaphoreInUseBySwapchainMessage(*swapchain_info, semaphore_state, queue, present_fence_supported, core);
                     const std::string &vuid =
                         GetQueueSubmitVUID(signal_semaphore_loc, sync_vuid_maps::SubmitError::kSemAlreadySignalled);
                     skip |= core.LogError(vuid, objlist, signal_semaphore_loc, "%s", error_message.c_str());
