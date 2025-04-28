@@ -16,9 +16,7 @@
 class NegativeDebugPrintfShaderDebugInfo : public DebugPrintfTests {};
 
 // These tests print out the verbose info to make sure that info is correct
-static const VkBool32 verbose_value = true;
-static const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1,
-                                                &verbose_value};
+static const VkLayerSettingEXT layer_setting = {OBJECT_LAYER_NAME, "printf_verbose", VK_LAYER_SETTING_TYPE_BOOL32_EXT, 1, &kVkTrue};
 static VkLayerSettingsCreateInfoEXT layer_settings_create_info = {VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT, nullptr, 1,
                                                                   &layer_setting};
 

@@ -112,9 +112,17 @@ bool DebugReport::LogMessage(VkFlags msg_flags, std::string_view vuid_text, cons
         return false;
     }
 
+    // We have a few speical VUID we never actually want to suppress.
+    // If a new VUID is added here, make sure to add it in VkLayerTest.VuidHashStability test as well.
+    const bool skip_checking_limit =
+        // We want to print DebugPrintf message forever, otherwise user will mistake duplicate limit for things not printing
+        (vuid_hash == 0x4fe1fef9) ||
+        // GPU-AV gives lots of warnings on setup to inform user which settings we are adjusting under them
+        (vuid_hash == 0x24b5c69f);
+
     // Count for this particular message is over the limit, ignore it
     bool at_message_limit = false;
-    if (duplicate_message_limit > 0) {
+    if (duplicate_message_limit > 0 && !skip_checking_limit) {
         auto vuid_count_it = duplicate_message_count_map.find(vuid_hash);
         if (vuid_count_it == duplicate_message_count_map.end()) {
             duplicate_message_count_map.emplace(vuid_hash, 1);

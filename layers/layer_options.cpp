@@ -870,14 +870,6 @@ static void ProcessDebugReportSettings(ConfigAndEnvSettings *settings_data, VkuL
                 "will not be seen.");
             report_flags |= kInformationBit;
         }
-        // If any non-stdout DebugPrintf is being used, just turn off duplicate_message_limit, it will prevent people thinking
-        // DebugPrintf is broken because nothing is printing.
-        if (!settings_data->gpuav_settings->debug_printf_to_stdout && debug_report->duplicate_message_limit != 0) {
-            debug_report->duplicate_message_limit = 0;
-            setting_warnings.emplace_back("DebugPrintf logs can possibly print many times, but duplicate_message_limit is set to " +
-                                          std::to_string(debug_report->duplicate_message_limit) +
-                                          ", setting enable_message_limit to false so all logs are printed.");
-        }
     }
 
     // Flag as default if these settings are not from a vk_layer_settings.txt file
