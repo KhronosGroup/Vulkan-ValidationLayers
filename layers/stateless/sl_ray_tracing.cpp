@@ -476,6 +476,12 @@ bool Device::ValidateCreateRayTracingPipelinesFlagsKHR(const VkPipelineCreateFla
         }
     }
 
+    if ((flags & VK_PIPELINE_CREATE_2_RAY_TRACING_OPACITY_MICROMAP_BIT_EXT) &&
+        (flags & VK_PIPELINE_CREATE_2_DISALLOW_OPACITY_MICROMAP_BIT_ARM)) {
+        skip |= LogError("VUID-VkRayTracingPipelineCreateInfoKHR-flags-10392", device, flags_loc, "is %s.",
+                         string_VkPipelineCreateFlags2(flags).c_str());
+    }
+
     return skip;
 }
 
