@@ -332,22 +332,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         desc_writes.emplace_back(wds);
     }
 
-    // Post Processing Output buffer
-    VkDescriptorBufferInfo post_process_buffer_info = {};
-    if (cb_state.post_process_buffer_lut != VK_NULL_HANDLE) {
-        post_process_buffer_info.range = VK_WHOLE_SIZE;
-        post_process_buffer_info.buffer = cb_state.post_process_buffer_lut;
-        post_process_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstPostProcess;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &post_process_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
     // Descriptor Indexing input buffer
     VkDescriptorBufferInfo di_input_desc_buffer_info = {};
     if (cb_state.descriptor_indexing_buffer != VK_NULL_HANDLE) {
@@ -437,6 +421,23 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         wds.descriptorCount = 1;
         wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         wds.pBufferInfo = &vertex_attribute_fetch_limits_buffer_bi;
+        desc_writes.emplace_back(wds);
+    }
+
+    std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_desc_set_update_functions.size());
+    for (size_t func_i = 0; func_i < cb_state.on_instrumentation_desc_set_update_functions.size(); ++func_i) {
+        VkWriteDescriptorSet wds = vku::InitStructHelper();
+        wds.dstSet = instrumentation_desc_set;
+        wds.dstBinding = vvl::kU32Max;
+        wds.descriptorCount = 1;
+        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        wds.pBufferInfo = &buffer_infos[func_i];
+
+        cb_state.on_instrumentation_desc_set_update_functions[func_i](cb_state, buffer_infos[func_i], wds.dstBinding);
+
+        assert(buffer_infos[func_i].buffer != VK_NULL_HANDLE);
+        assert(wds.dstBinding != vvl::kU32Max);
+
         desc_writes.emplace_back(wds);
     }
 
@@ -625,8 +626,12 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     // We want to grab the last (current) element in descriptor_binding_commands, but as a std::vector, the refernce might be
     // garbage later, so just hold the index for later. It is possible to have no descriptor sets bound, for example if using push
     // constants.
-    instrumentation_error_blob.descriptor_binding_index =
-        !cb_state.descriptor_binding_commands.empty() ? uint32_t(cb_state.descriptor_binding_commands.size()) - 1 : vvl::kU32Max;
+    instrumentation_error_blob.descriptor_binding_index = vvl::kU32Max;
+    DescriptorSetBindings *desc_set_bindings = cb_state.shared_resources_cache.TryGet<DescriptorSetBindings>();
+    if (desc_set_bindings && !desc_set_bindings->descriptor_set_binding_commands.empty()) {
+        instrumentation_error_blob.descriptor_binding_index =
+            uint32_t(desc_set_bindings->descriptor_set_binding_commands.size() - 1);
+    }
 
     instrumentation_error_blob.label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
@@ -706,8 +711,10 @@ bool LogMessageInstDescriptorIndexingOOB(Validator &gpuav, const CommandBufferSu
         assert(false);  // This means we have hit a situtation where there are no descriptors bound
         return false;
     }
+    const DescriptorSetBindings &desc_set_bindings = cb_state.shared_resources_cache.Get<DescriptorSetBindings>();
     const auto &descriptor_sets =
-        cb_state.descriptor_binding_commands[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
+        desc_set_bindings.descriptor_set_binding_commands[instrumentation_error_blob.descriptor_binding_index]
+            .bound_descriptor_sets;
 
     // Currently we only encode the descriptor index here and save the binding in a parameter slot
     // The issue becomes if the user has kErrorSubCodeDescriptorIndexingBounds then we can't back track to the exact binding because
@@ -779,8 +786,10 @@ bool LogMessageInstDescriptorClass(Validator &gpuav, const CommandBufferSubState
         assert(false);  // This means we have hit a situtation where there are no descriptors bound
         return false;
     }
+    const DescriptorSetBindings &desc_set_bindings = cb_state.shared_resources_cache.Get<DescriptorSetBindings>();
     const auto &descriptor_sets =
-        cb_state.descriptor_binding_commands[instrumentation_error_blob.descriptor_binding_index].bound_descriptor_sets;
+        desc_set_bindings.descriptor_set_binding_commands[instrumentation_error_blob.descriptor_binding_index]
+            .bound_descriptor_sets;
 
     const uint32_t encoded_set_index = error_record[kInstDescriptorIndexingSetAndIndexOffset];
     const uint32_t set_num = encoded_set_index >> kInstDescriptorIndexingSetShift;
