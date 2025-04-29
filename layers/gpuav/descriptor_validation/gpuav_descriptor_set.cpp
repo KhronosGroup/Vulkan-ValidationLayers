@@ -39,14 +39,11 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
 }
 
 DescriptorSetSubState::DescriptorSetSubState(const vvl::DescriptorSet &set, Validator &state_data)
-    : vvl::DescriptorSetSubState(set), post_process_buffer_(state_data), input_buffer_(state_data) {
+    : vvl::DescriptorSetSubState(set), input_buffer_(state_data) {
     BuildBindingLayouts();
 }
 
-DescriptorSetSubState::~DescriptorSetSubState() {
-    post_process_buffer_.Destroy();
-    input_buffer_.Destroy();
-}
+DescriptorSetSubState::~DescriptorSetSubState() { input_buffer_.Destroy(); }
 
 void DescriptorSetSubState::BuildBindingLayouts() {
     const uint32_t binding_count = (base.GetBindingCount() > 0) ? base.GetLayout()->GetMaxBinding() + 1 : 0;
@@ -243,6 +240,7 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Lo
 }
 
 // There are times we need a dummy address because the app is legally using something that doesn't require a post process buffer
+// #ARNO_TODO not used anymore
 bool DescriptorSetSubState::CanPostProcess() const {
     // When no descriptors (only inline, zero bindingCount, etc)
     if (base.GetNonInlineDescriptorCount() == 0) {
@@ -251,69 +249,13 @@ bool DescriptorSetSubState::CanPostProcess() const {
     return true;
 }
 
-VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav) {
+// #ARNO_TODO get rid of this post process specific method
+VkDeviceSize DescriptorSetSubState::GetPostProcessBufferSize() {
     auto guard = Lock();
     // Each set only needs to create its post process buffer once. It is based on total descriptor count, and even with things like
     // VARIABLE_DESCRIPTOR_COUNT_BIT, the size will only get smaller afterwards.
-    if (post_process_buffer_.Address() != 0) {
-        return post_process_buffer_.Address();
-    }
 
-    if (!CanPostProcess()) {
-        return post_process_buffer_.Address();
-    }
-
-    const VkDeviceSize slot_size = base.GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
-    VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-    buffer_info.size = slot_size;
-    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VmaAllocationCreateInfo alloc_info{};
-    // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
-    // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    const bool success = post_process_buffer_.Create(&buffer_info, &alloc_info);
-    if (!success) {
-        return 0;
-    }
-
-    ClearPostProcess();
-
-    return post_process_buffer_.Address();
-}
-
-// cross checks the two buffers (our layout with the output from the GPU-AV run) and builds a map of which indexes in which binding
-// where accessed
-DescriptorAccessMap DescriptorSetSubState::GetDescriptorAccesses(const Location &loc) const {
-    VVL_ZoneScoped;
-    DescriptorAccessMap descriptor_access_map;
-    if (post_process_buffer_.IsDestroyed()) {
-        return descriptor_access_map;
-    }
-
-    auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr();
-    post_process_buffer_.InvalidateAllocation();
-
-    for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
-        const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
-        for (uint32_t descriptor_i = 0; descriptor_i < binding_layout.count; descriptor_i++) {
-            const glsl::PostProcessDescriptorIndexSlot slot = slot_ptr[binding_layout.start + descriptor_i];
-            if (slot.meta_data & glsl::kPostProcessMetaMaskAccessed) {
-                const uint32_t shader_id = slot.meta_data & glsl::kShaderIdMask;
-                const uint32_t action_index =
-                    (slot.meta_data & glsl::kPostProcessMetaMaskActionIndex) >> glsl::kPostProcessMetaShiftActionIndex;
-                descriptor_access_map[shader_id].emplace_back(
-                    DescriptorAccess{binding, descriptor_i, slot.variable_id, action_index});
-            }
-        }
-    }
-
-    return descriptor_access_map;
-}
-
-void DescriptorSetSubState::ClearPostProcess() const {
-    post_process_buffer_.Clear();
-    post_process_buffer_.FlushAllocation();
+    return base.GetNonInlineDescriptorCount() * sizeof(glsl::PostProcessDescriptorIndexSlot);
 }
 
 void DescriptorSetSubState::NotifyUpdate() { current_version_++; }

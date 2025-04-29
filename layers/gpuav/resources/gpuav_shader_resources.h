@@ -27,18 +27,19 @@
 
 namespace gpuav {
 
+// #ARNO_TODO Take DescriptorBindingCommand out of here
 // "binding" here refers to "binding in the command buffer" and not the "binding in a descriptor set"
 struct DescriptorBindingCommand {
     // This is where we hold the list of BDA address for a given bound descriptor snapshot.
-    // The size of the SSBO doesn't change on an UpdateAfterBind so we can allocate it once and update its internals later
+    vko::BufferRange desc_set_binding_to_post_process_buffers_lut;
+
     vko::Buffer descritpor_state_ssbo_buffer;  // type DescriptorStateSSBO
-    vko::Buffer post_process_ssbo_buffer;      // type PostProcessSSBO
 
     // Note: The index here is from vkCmdBindDescriptorSets::firstSet
     // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
     std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
 
-    DescriptorBindingCommand(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav), post_process_ssbo_buffer(gpuav) {}
+    DescriptorBindingCommand(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav) {}
 };
 
 // These match the Structures found in the instrumentation GLSL logic

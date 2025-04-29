@@ -28,8 +28,6 @@ class Validator;
 struct DescriptorBindingCommand;
 
 namespace descriptor {
-void UpdateBoundDescriptorsPostProcess(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
-                                       DescriptorBindingCommand& descriptor_binding_cmd);
 void UpdateBoundDescriptorsDescriptorChecks(Validator& gpuav, CommandBufferSubState& cb_state, const LastBound& last_bound,
                                             DescriptorBindingCommand& descriptor_binding_cmd, const Location& loc);
 void UpdateBoundDescriptors(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint pipeline_bind_point,

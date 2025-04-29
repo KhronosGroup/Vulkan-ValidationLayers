@@ -61,6 +61,7 @@ target_include_directories(gpu_av_spirv PRIVATE .
 
 target_link_libraries(gpu_av_spirv PRIVATE
     SPIRV-Headers::SPIRV-Headers
+    SPIRV-Tools-opt
     VkLayer_utils # To pull in compile_definitions
 )
 
@@ -73,12 +74,19 @@ if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
         -Wno-sign-conversion
         -Wno-implicit-int-conversion
     )
-elseif(MSVC)
+endif()
+if(${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU|Clang)")
+    target_compile_options(gpu_av_spirv PRIVATE
+        -Wno-unused-parameter # unreferenced formal parameter
+    )
+endif()
+if(MSVC)
     target_compile_options(gpu_av_spirv PRIVATE
         /wd4324 # padding
         /wd4458 # hiding class member
         /wd4457 # hiding function parameter
         /wd4702 # unreachable code
         /wd4389 # signed/unsigned mismatch
+        /wd4100 # unreferenced formal parameter
     )
 endif()

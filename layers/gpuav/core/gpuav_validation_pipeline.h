@@ -93,6 +93,13 @@ class ComputePipeline {
         return true;
     }
 
+    void BindPushConstants(Validator& gpuav, VkCommandBuffer cb, const ShaderResources& shader_resources) {
+        if constexpr (sizeof(shader_resources.push_constants) >= 4) {
+            DispatchCmdPushConstants(cb, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(shader_resources.push_constants),
+                                     &shader_resources.push_constants);
+        }
+    }
+
     VkDevice device = VK_NULL_HANDLE;
     VkDescriptorSetLayout specific_desc_set_layout = VK_NULL_HANDLE;
     VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;

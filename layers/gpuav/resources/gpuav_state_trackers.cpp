@@ -271,6 +271,11 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     }
     debug_printf_buffer_infos.clear();
 
+    on_instrumentation_desc_set_update_functions.clear();
+    on_cb_completion_functions.clear();
+    on_cb_submission_functions.clear();
+    shared_resources_cache.Clear();
+
     if (should_destroy) {
         gpu_resources_manager.DestroyResources();
     } else {
@@ -278,13 +283,7 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     }
     per_command_error_loggers.clear();
 
-    for (DescriptorBindingCommand &descriptor_binding_cmd : descriptor_binding_commands) {
-        descriptor_binding_cmd.descritpor_state_ssbo_buffer.Destroy();
-        descriptor_binding_cmd.post_process_ssbo_buffer.Destroy();
-    }
-    descriptor_binding_commands.clear();
     descriptor_indexing_buffer = VK_NULL_HANDLE;
-    post_process_buffer_lut = VK_NULL_HANDLE;
 
     if (should_destroy) {
         error_output_buffer_range_ = {};
@@ -355,7 +354,32 @@ std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
     return debug_region_name;
 }
 
-bool CommandBufferSubState::PreProcess(const Location &loc) {
+bool CommandBufferSubState::PreProcess(QueueSubState &queue, const Location &loc) {
+    if (!on_cb_submission_functions.empty()) {
+        // auto &device_dispatch_table = vvl::dispatch::GetData(gpuav_.device)->device_dispatch_table;
+        vko::CommandBufferPool &cb_pool =
+            queue.shared_resources_cache.GetOrCreate<vko::CommandBufferPool>(gpuav_, queue.base.queue_family_index);
+        auto [per_submission_cb, fence] = cb_pool.GetCommandBuffer();
+        if (per_submission_cb == VK_NULL_HANDLE) {
+            return false;
+        }
+        VkCommandBufferBeginInfo cb_bi = vku::InitStructHelper();
+        cb_bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        DispatchBeginCommandBuffer(per_submission_cb, &cb_bi);
+        for (auto &submission_func : on_cb_submission_functions) {
+            on_cb_completion_functions.emplace_back(submission_func(gpuav_, *this, per_submission_cb));
+        }
+        DispatchEndCommandBuffer(per_submission_cb);
+
+        VkSubmitInfo submit_info = vku::InitStructHelper();
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &per_submission_cb;
+        const VkResult result = DispatchQueueSubmit(queue.base.VkHandle(), 1, &submit_info, fence);
+        if (result != VK_SUCCESS) {
+            gpuav_.InternalError(LogObjectList(), loc, "Failed to submit per submission command buffer");
+        }
+    }
+
     bool succeeded = descriptor::UpdateDescriptorStateSSBO(gpuav_, *this, loc);
     if (!succeeded) {
         return false;
@@ -388,7 +412,6 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
         return;
     }
 
-    bool skip = false;
     {
         auto error_output_buffer_ptr = (uint32_t *)error_output_buffer_range_.offset_mapped_ptr;
 
@@ -415,7 +438,7 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
                 assert(error_logger_i < per_command_error_loggers.size());
                 auto &error_logger = per_command_error_loggers[error_logger_i];
                 const LogObjectList objlist(queue, VkHandle());
-                skip |= error_logger(error_record_ptr, objlist, initial_label_stack);
+                error_logger(error_record_ptr, objlist, initial_label_stack);
 
                 // Next record
                 error_record_ptr += record_size;
@@ -433,24 +456,35 @@ void CommandBufferSubState::PostProcess(VkQueue queue, const std::vector<std::st
     }
 
     cmd_errors_counts_buffer_.Clear();
-    if (gpuav_.aborted_) return;
-
-    // If instrumentation found an error, skip post processing. Errors detected by instrumentation are usually
-    // very serious, such as a prematurely destroyed resource and the state needed below is likely invalid.
-    bool gpuav_success = false;
-    if (!skip && gpuav_.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) {
-        LabelLogging label_logging = {initial_label_stack, action_cmd_i_to_label_cmd_i_map};
-        gpuav_success = ValidateBindlessDescriptorSets(loc, label_logging);
+    if (gpuav_.aborted_) {
+        return;
     }
 
-    if (gpuav_success) {
+    bool success = true;
+    LabelLogging label_logging = {initial_label_stack, action_cmd_i_to_label_cmd_i_map};
+    for (auto &on_cb_completion_func : on_cb_completion_functions) {
+        success = on_cb_completion_func(gpuav_, *this, label_logging, loc);
+        if (!success) {
+            break;
+        }
+    }
+
+    if (success) {
         UpdateCmdBufImageLayouts(gpuav_, base);
+    }
+}
+
+CommandBufferDescriptorBindings::~CommandBufferDescriptorBindings() {
+    for (DescriptorBindingCommand &descriptor_binding_cmd : descriptor_binding_commands) {
+        descriptor_binding_cmd.descritpor_state_ssbo_buffer.Destroy();
     }
 }
 
 QueueSubState::QueueSubState(Validator &gpuav, vvl::Queue &q) : vvl::QueueSubState(q), gpuav_(gpuav), timeline_khr_(false) {}
 
 QueueSubState::~QueueSubState() {
+    shared_resources_cache.Clear();
+
     if (barrier_command_buffer_) {
         DispatchFreeCommandBuffers(gpuav_.device, barrier_command_pool_, 1, &barrier_command_buffer_);
         barrier_command_buffer_ = VK_NULL_HANDLE;
@@ -548,14 +582,14 @@ void QueueSubState::PreSubmit(std::vector<vvl::QueueSubmission> &submissions) {
         for (auto &cb_submission : submission.cb_submissions) {
             auto guard = cb_submission.cb->ReadLock();
             auto &gpu_cb = SubState(*cb_submission.cb);
-            success = gpu_cb.PreProcess(loc);
+            success = gpu_cb.PreProcess(*this, loc);
             if (!success) {
                 return;
             }
             for (auto *secondary_cb : gpu_cb.base.linked_command_buffers) {
                 auto secondary_guard = secondary_cb->ReadLock();
                 auto &secondary_gpu_cb = SubState(*secondary_cb);
-                success = secondary_gpu_cb.PreProcess(loc);
+                success = secondary_gpu_cb.PreProcess(*this, loc);
                 if (!success) {
                     return;
                 }
