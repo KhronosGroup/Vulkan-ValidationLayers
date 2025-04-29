@@ -50,18 +50,12 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
     void NotifyUpdate() override;
 
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
-    VkDeviceAddress GetPostProcessBuffer(Validator &gpuav);
-    bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
-    bool CanPostProcess() const;
-    void ClearPostProcess() const;
 
-    DescriptorAccessMap GetDescriptorAccesses(const Location &loc) const;
+    const std::vector<gpuav::spirv::BindingLayout> &GetBindingLayouts() const { return binding_layouts_; }
 
   private:
     void BuildBindingLayouts();
     std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
-
-    vko::Buffer post_process_buffer_;
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
 

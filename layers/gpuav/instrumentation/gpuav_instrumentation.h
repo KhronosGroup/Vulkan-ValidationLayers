@@ -40,7 +40,6 @@ namespace gpuav {
 class Validator;
 class CommandBufferSubState;
 class Queue;
-struct DescriptorBindingCommand;
 struct InstrumentationErrorBlob;
 
 void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkDescriptorSet instrumentation_desc_set,
