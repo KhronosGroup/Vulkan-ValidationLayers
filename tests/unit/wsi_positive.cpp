@@ -2316,3 +2316,57 @@ TEST_F(PositiveWsi, GetDeviceGroupSurfacePresentModes) {
     VkDeviceGroupPresentModeFlagsKHR present_mode_flags;
     vk::GetDeviceGroupSurfacePresentModesKHR(m_device->handle(), m_surface.Handle(), &present_mode_flags);
 }
+
+TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
+    TEST_DESCRIPTION("Enqueue presentation requests on the dedicated queue");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed to run this test";
+    }
+    VkBool32 supported;
+    vk::GetPhysicalDeviceSurfaceSupportKHR(Gpu(), m_second_queue->family_index, m_surface.Handle(), &supported);
+    if (!supported) {
+        GTEST_SKIP() << "The second queue does not support present";
+    }
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    std::vector<vkt::Semaphore> present_wait_semaphores;
+    for (size_t i = 0; i < swapchain_images.size(); i++) {
+        present_wait_semaphores.emplace_back(*m_device);
+    }
+
+    vkt::Fence frame_fences[2] = {{*m_device, VK_FENCE_CREATE_SIGNALED_BIT}, {*m_device, VK_FENCE_CREATE_SIGNALED_BIT}};
+    vkt::Semaphore acquire_semaphores[2] = {*m_device, *m_device};
+    vkt::CommandBuffer command_buffers[2] = {vkt::CommandBuffer{*m_device, m_command_pool},
+                                             vkt::CommandBuffer{*m_device, m_command_pool}};
+    uint32_t frame_index = 0;
+
+    // NOTE: This test can be used for manual inspection of memory usage.
+    // Increase frame count and observe that the test does not continuously allocate memory.
+    const int frame_count = 100;
+    for (int i = 0; i < frame_count; i++) {
+        const vkt::Fence &frame_fence = frame_fences[frame_index];
+        const vkt::Semaphore &acquire_semaphore = acquire_semaphores[frame_index];
+        vkt::CommandBuffer &command_buffer = command_buffers[frame_index];
+
+        frame_fence.Wait(kWaitTimeout);
+        frame_fence.Reset();
+
+        const uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+        const vkt::Semaphore &present_wait_semaphore = present_wait_semaphores[image_index];
+
+        command_buffer.Begin();
+        command_buffer.End();
+
+        m_default_queue->Submit(command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(present_wait_semaphore), frame_fence);
+        m_second_queue->Present(m_swapchain, image_index, present_wait_semaphore);
+        frame_index = 1 - frame_index;  // 0 or 1
+    }
+    m_default_queue->Wait();
+    m_second_queue->Wait();
+}
