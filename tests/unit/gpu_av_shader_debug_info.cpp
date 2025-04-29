@@ -2266,3 +2266,46 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVShaderDebugInfo, ShaderInternalId) {
+    TEST_DESCRIPTION("Make sure we print the shader id used internally correctly");
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    const char *cs_shader = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform Foo { mat4 x; };
+        void main() {
+            mat4 y = x;
+        }
+    )glsl";
+
+    // Create extra pipelines to increase the internal shader ID
+    for (uint32_t i = 0; i < 16; i++) {
+        CreateComputePipelineHelper unused_pipe(*this);
+        unused_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_shader, VK_SHADER_STAGE_COMPUTE_BIT);
+        unused_pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+        unused_pipe.CreateComputePipeline();
+    }
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_shader, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    pipe.CreateComputePipeline();
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    // VUID-vkCmdDispatch-uniformBuffers-06935
+    m_errorMonitor->SetDesiredError("(internal ID 17)");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}

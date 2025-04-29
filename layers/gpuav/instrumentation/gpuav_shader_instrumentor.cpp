@@ -1507,19 +1507,19 @@ static void GenerateStageMessage(std::ostringstream &ss, const GpuShaderInstrume
         } break;
         case glsl::kExecutionModelTaskEXT: {
             ss << "Stage = TaskEXT. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
-               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << " )";
+               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
         case glsl::kExecutionModelMeshEXT: {
             ss << "Stage = MeshEXT. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
-               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << " )";
+               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
         case glsl::kExecutionModelTaskNV: {
             ss << "Stage = TaskNV. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
-               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << " )";
+               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
         case glsl::kExecutionModelMeshNV: {
             ss << "Stage = MeshNV. Global invocation ID (x, y, z) = (" << shader_info.stage_info_0 << ", "
-               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << " )";
+               << shader_info.stage_info_1 << ", " << shader_info.stage_info_2 << ")";
         } break;
         default: {
             ss << "Internal Error (unexpected stage = " << shader_info.stage_id << "). ";
@@ -1589,17 +1589,19 @@ std::string GpuShaderInstrumentor::GenerateDebugInfoMessage(VkCommandBuffer comm
 
         if (instrumented_shader->shader_module == VK_NULL_HANDLE) {
             ss << "Shader Object " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_object))
-               << "(" << HandleToUint64(instrumented_shader->shader_object) << ") (internal ID " << shader_info.shader_id << ")\n";
+               << "(0x" << HandleToUint64(instrumented_shader->shader_object) << ") (internal ID " << std::dec
+               << shader_info.shader_id << ")\n";
         } else {
-            ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->pipeline)) << "("
+            ss << "Pipeline " << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->pipeline)) << "(0x"
                << HandleToUint64(instrumented_shader->pipeline) << ")";
             if (instrumented_shader->shader_module == kPipelineStageInfoHandle) {
-                ss << " (internal ID " << shader_info.shader_id
+                ss << " (internal ID " << std::dec << shader_info.shader_id
                    << ")\nShader Module was passed in via VkPipelineShaderStageCreateInfo::pNext\n";
             } else {
                 ss << "\nShader Module "
-                   << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_module)) << "("
-                   << HandleToUint64(instrumented_shader->shader_module) << ") (internal ID " << shader_info.shader_id << ")\n";
+                   << LookupDebugUtilsNameNoLock(debug_report, HandleToUint64(instrumented_shader->shader_module)) << "(0x"
+                   << HandleToUint64(instrumented_shader->shader_module) << ") (internal ID " << std::dec << shader_info.shader_id
+                   << ")\n";
             }
         }
     }
