@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "generated/instrumentation_log_error_comp.h"
+#include "utils/vk_layer_utils.h"
 
 namespace gpuav {
 namespace spirv {
@@ -87,7 +88,7 @@ void LogErrorPass::CreateFunctionCallLogError(Function& function, BasicBlock& bl
 // This is a hard thing to fully get right, as things like OpTerminateInvocation/OpKill can end the invocation, but not the shader.
 // The main thing we are trying to find here is if this is our last chance to report an error message
 bool LogErrorPass::IsShaderExiting(const Instruction& inst) const {
-    return inst.Opcode() == spv::OpReturn || inst.Opcode() == spv::OpReturnValue;
+    return IsValueIn((spv::Op)inst.Opcode(), {spv::OpReturn, spv::OpReturnValue, spv::OpEmitMeshTasksEXT});
 }
 
 bool LogErrorPass::Instrument() {
