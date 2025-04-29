@@ -18,7 +18,7 @@
 
 #extension GL_GOOGLE_include_directive : enable
 
-#include "common.h"
+#include "gpuav_shaders_constants.h"
 #include "push_data.h"
 
 layout(push_constant) uniform UniformInfo {
@@ -26,12 +26,12 @@ layout(push_constant) uniform UniformInfo {
 };
 
 // CountBuffer won't be bound for non-count draws
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) 
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer) 
 readonly buffer CountBuffer {
     uint count_buffer[];
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_DispatchIndirectBuffer) 
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_DispatchIndirectBuffer) 
 buffer DipatchIndirectBuffer {
     uint dispatch_indirect_x;
     uint dispatch_indirect_y;

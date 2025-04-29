@@ -61,11 +61,13 @@ const int kBindingInstCmdResourceIndex = 6;
 const int kBindingInstCmdErrorsCount = 7;
 const int kBindingInstVertexAttributeFetchLimits = 8;
 
+// Validation pipelines
+// ---
+const int kValPipeDescSet = 0;
+
 // Diagnostic calls
 // ---
-
-const int kDiagCommonDescriptorSet = 0;
-const int kDiagPerCmdDescriptorSet = 1;
+const int kDiagCommonDescriptorSet = kValPipeDescSet + 1;
 
 // Diagnostic calls bindings in common descriptor set
 const int kBindingDiagErrorBuffer = 0;

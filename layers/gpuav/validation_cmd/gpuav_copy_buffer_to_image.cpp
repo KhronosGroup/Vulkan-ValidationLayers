@@ -17,6 +17,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -32,12 +33,10 @@ struct CopyBufferToImageValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_copy_buffer_to_image_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_copy_buffer_to_image_comp; }
 
-    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
-
     struct EmptyPushData {
     } push_constants;
-    BoundStorageBuffer src_buffer_binding = {glsl::kPreCopyBufferToImageBinding_SrcBuffer};
-    BoundStorageBuffer copy_src_regions_buffer_binding = {glsl::kPreCopyBufferToImageBinding_CopySrcRegions};
+    valpipe::BoundStorageBuffer src_buffer_binding = {glsl::kPreCopyBufferToImageBinding_SrcBuffer};
+    valpipe::BoundStorageBuffer copy_src_regions_buffer_binding = {glsl::kPreCopyBufferToImageBinding_CopySrcRegions};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
@@ -99,14 +98,14 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         return;
     }
 
-    ComputeValidationPipeline<CopyBufferToImageValidationShader> &validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<CopyBufferToImageValidationShader>>(
+    valpipe::ComputePipeline<CopyBufferToImageValidationShader> &validation_pipeline =
+        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CopyBufferToImageValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     uint32_t group_count_x = 0;
     // Setup shader resources
@@ -209,8 +208,8 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
                                                                  copy_src_regions_mem_buffer_range.offset,
                                                                  copy_src_regions_mem_buffer_range.size};
 
-        if (!validation_pipeline.BindShaderResources(gpuav, cb_state, cb_state.compute_index,
-                                                     uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                 uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
             return;
         }
 
