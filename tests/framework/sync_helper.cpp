@@ -183,8 +183,7 @@ void BarrierQueueFamilyTestHelper::operator()(const std::string &img_err, const 
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // no wait after submit
-            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
-            qf->queue->Submit(command_buffers);
+            qf->queue->Submit({qf->command_buffer, qf->command_buffer2});
         } else {
             qf->queue->Submit(*qf->command_buffer);
             qf->queue->Wait();
@@ -236,8 +235,7 @@ void Barrier2QueueFamilyTestHelper::operator()(const std::string &img_err, const
     if (queue_family_index != kInvalidQueueFamily) {
         if (mod == Modifier::DOUBLE_COMMAND_BUFFER) {
             // no wait after submit
-            std::array command_buffers{qf->command_buffer, qf->command_buffer2};
-            qf->queue->Submit(command_buffers);
+            qf->queue->Submit({qf->command_buffer, qf->command_buffer2});
         } else {
             qf->queue->Submit(*qf->command_buffer);
             qf->queue->Wait();

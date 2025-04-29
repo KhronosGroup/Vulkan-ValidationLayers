@@ -21,8 +21,7 @@ TEST_F(PositiveGpuAVIndexBuffer, BadVertexIndex) {
     TEST_DESCRIPTION("If no vertex buffer is used, all index values are legal");
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
-
-    RETURN_IF_SKIP(InitState(nullptr));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
@@ -966,7 +965,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
 TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     AddRequiredExtensions(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState(nullptr));
+    RETURN_IF_SKIP(InitState());
     InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);

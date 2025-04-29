@@ -2523,7 +2523,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     VkDebugUtilsLabelEXT label = vku::InitStructHelper();
@@ -2535,10 +2535,9 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     label.pLabelName = "render_pass_label_cb_1";
     vk::CmdBeginDebugUtilsLabelEXT(cb_1, &label);
 
-    vk::CmdBindPipeline(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDraw(cb_1.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb_1, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_1, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(cb_1, 3, 1, 0, 0);
     cb_1.EndRenderPass();
     vk::CmdEndDebugUtilsLabelEXT(cb_1);
 
@@ -2551,12 +2550,11 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     label.pLabelName = "render_pass_label_cb_2";
     vk::CmdBeginDebugUtilsLabelEXT(cb_2, &label);
 
-    vk::CmdBindPipeline(cb_2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
+    vk::CmdBindPipeline(cb_2, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_2, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
     label.pLabelName = "nested_label_cb_2";
     vk::CmdBeginDebugUtilsLabelEXT(cb_2, &label);
-    vk::CmdDraw(cb_2.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(cb_2, 3, 1, 0, 0);
     cb_2.EndRenderPass();
     vk::CmdEndDebugUtilsLabelEXT(cb_2);
     vk::CmdEndDebugUtilsLabelEXT(cb_2);
@@ -2570,10 +2568,9 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     label.pLabelName = "render_pass_label_cb_3";
     vk::CmdBeginDebugUtilsLabelEXT(cb_3, &label);
 
-    vk::CmdBindPipeline(cb_3.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_3.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDraw(cb_3.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb_3, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_3, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(cb_3, 3, 1, 0, 0);
     label.pLabelName = "nested_label_cb_3";
     vk::CmdBeginDebugUtilsLabelEXT(cb_3, &label);
     cb_3.EndRenderPass();
@@ -2595,10 +2592,9 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     label.pLabelName = "render_pass_label_cb_5";
     vk::CmdBeginDebugUtilsLabelEXT(cb_5, &label);
 
-    vk::CmdBindPipeline(cb_5.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_5.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDraw(cb_5.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb_5, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_5, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDraw(cb_5, 3, 1, 0, 0);
     label.pLabelName = "nested_label_cb_5";
     vk::CmdBeginDebugUtilsLabelEXT(cb_5, &label);
     cb_5.EndRenderPass();
@@ -2621,8 +2617,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, ImageTypeMismatchDebugLabels) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("label_start_cb_4::render_pass_label_cb_5");
-    std::array cbs = {&cb_4, &cb_5};
-    m_default_queue->Submit(cbs);
+    m_default_queue->Submit({cb_4, cb_5});
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }

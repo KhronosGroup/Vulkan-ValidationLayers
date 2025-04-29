@@ -268,9 +268,8 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("RegionA");
-    m_default_queue->Submit(command_buffers);
+    m_default_queue->Submit({cb0, cb1});
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
@@ -370,9 +369,8 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion3) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // VulkanFrame_CommandBuffer1
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
     m_errorMonitor->SetDesiredError("VulkanFrame_CommandBuffer0::FirstPass::CopyAToB");
-    m_default_queue->Submit(command_buffers);
+    m_default_queue->Submit({cb0, cb1});
     m_errorMonitor->VerifyFound();  // SYNC-HAZARD-WRITE-AFTER-READ error message
     m_default_queue->Wait();
 }
@@ -445,8 +443,7 @@ TEST_F(NegativeSyncValReporting, QSDebugRegion5) {
     vk::CmdEndDebugUtilsLabelEXT(cb1);  // RegionA
     cb1.End();
 
-    std::array command_buffers = {&cb0, &cb1};
-    m_default_queue->Submit(command_buffers);
+    m_default_queue->Submit({cb0, cb1});
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
@@ -975,23 +972,21 @@ TEST_F(NegativeSyncValReporting, DebugLabelRegionsFromSecondaryCommandBuffers) {
     primary_0.Begin();
     label.pLabelName = "primary_0";
     vk::CmdBeginDebugUtilsLabelEXT(primary_0, &label);
-    vk::CmdExecuteCommands(primary_0.handle(), 1, &cb.handle());
-    vk::CmdEndDebugUtilsLabelEXT(primary_0.handle());
+    vk::CmdExecuteCommands(primary_0, 1, &cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(primary_0);
     primary_0.End();
 
     vkt::CommandBuffer primary_1(*m_device, m_command_pool);
     primary_1.Begin();
     label.pLabelName = "primary_1";
     vk::CmdBeginDebugUtilsLabelEXT(primary_1, &label);
-    vk::CmdExecuteCommands(primary_1.handle(), 1, &cb.handle());
-    vk::CmdEndDebugUtilsLabelEXT(primary_1.handle());
+    vk::CmdExecuteCommands(primary_1, 1, &cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(primary_1);
     primary_1.End();
-
-    std::vector primaries = {&primary_0, &primary_1};
 
     const char* region_patterns = "(?=.*primary_0::RegionB)(?=.*primary_1::RegionB)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", region_patterns);
-    m_default_queue->Submit(vvl::make_span(primaries.data(), 2));
+    m_default_queue->Submit({primary_0, primary_1});
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }

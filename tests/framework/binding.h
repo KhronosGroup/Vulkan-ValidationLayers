@@ -484,7 +484,7 @@ class Queue : public internal::Handle<VkQueue> {
 
     // vkQueueSubmit()
     VkResult Submit(const CommandBuffer &cmd, const Fence &fence = no_fence);
-    VkResult Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence = no_fence);
+    VkResult Submit(const std::vector<VkCommandBuffer> &cmds, const Fence &fence = no_fence);
 
     VkResult Submit(const CommandBuffer &cmd, const Wait &wait, const Fence &fence = no_fence);
     VkResult Submit(const CommandBuffer &cmd, const Signal &signal, const Fence &fence = no_fence);
@@ -497,7 +497,7 @@ class Queue : public internal::Handle<VkQueue> {
 
     // vkQueueSubmit2()
     VkResult Submit2(const CommandBuffer &cmd, const Fence &fence = no_fence, bool use_khr = false);
-    VkResult Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence &fence = no_fence, bool use_khr = false);
+    VkResult Submit2(const std::vector<VkCommandBuffer> &cmds, const Fence &fence = no_fence, bool use_khr = false);
 
     VkResult Submit2(const CommandBuffer &cmd, const Wait &wait, const Fence &fence = no_fence, bool use_khr = false);
     VkResult Submit2(const CommandBuffer &cmd, const Signal &signal, const Fence &fence = no_fence, bool use_khr = false);

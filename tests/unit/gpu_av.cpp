@@ -593,7 +593,7 @@ TEST_F(NegativeGpuAV, RemoveGpuAvInPresenceOfSyncVal) {
     RETURN_IF_SKIP(InitFramework(&validation_features));
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-GPU-Assisted-Validation");
-    RETURN_IF_SKIP(InitState(nullptr));
+    RETURN_IF_SKIP(InitState());
     m_errorMonitor->VerifyFound();
 }
 
