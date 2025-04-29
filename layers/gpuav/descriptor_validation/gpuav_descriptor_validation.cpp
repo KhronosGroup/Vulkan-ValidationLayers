@@ -66,7 +66,9 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &
 
 void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                             DescriptorBindingCommand &descriptor_binding_cmd, const Location &loc) {
-    if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) return;
+    if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
+        return;
+    }
 
     // Create a new buffer to hold our BDA pointers
     VkBufferCreateInfo buffer_info = vku::InitStructHelper();

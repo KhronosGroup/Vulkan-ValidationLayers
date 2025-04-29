@@ -24,7 +24,7 @@ layout(push_constant) uniform UniformInfo {
     DispatchPushData pc;
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDispatchBinding_DispatchIndirectBuffer) buffer IndirectBuffer {
+layout(set = kValPipeDescSet, binding = kPreDispatchBinding_DispatchIndirectBuffer) buffer IndirectBuffer {
     uint indirect_buffer[];
 };
 

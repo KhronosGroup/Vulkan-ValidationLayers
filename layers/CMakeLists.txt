@@ -290,10 +290,16 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.h
     ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.cpp
     ${API_TYPE}/generated/validation_cmd_trace_rays_comp.h
-    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.cpp
+    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.cpp    
+    gpuav/core/gpuav.h
+    gpuav/core/gpuav_constants.h
+    gpuav/core/gpuav_features.cpp
+    gpuav/core/gpuav_record.cpp
+    gpuav/core/gpuav_setup.cpp
     gpuav/core/gpuav_settings.h
     gpuav/core/gpuav_settings.cpp
-    gpuav/core/gpuav_constants.h
+    gpuav/core/gpuav_validation_pipeline.h
+    gpuav/core/gpuav_validation_pipeline.cpp
     gpuav/validation_cmd/gpuav_validation_cmd_common.h
     gpuav/validation_cmd/gpuav_validation_cmd_common.cpp
     gpuav/validation_cmd/gpuav_draw.h
@@ -310,10 +316,6 @@ target_sources(vvl PRIVATE
     gpuav/descriptor_validation/gpuav_descriptor_set.h
     gpuav/descriptor_validation/gpuav_image_layout.h
     gpuav/descriptor_validation/gpuav_image_layout.cpp
-    gpuav/core/gpuav.h
-    gpuav/core/gpuav_record.cpp
-    gpuav/core/gpuav_setup.cpp
-    gpuav/core/gpuav_features.cpp
     gpuav/debug_printf/debug_printf.cpp
     gpuav/debug_printf/debug_printf.h
     gpuav/error_message/gpuav_vuids.cpp

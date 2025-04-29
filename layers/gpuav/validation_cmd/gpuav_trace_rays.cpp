@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -31,8 +32,6 @@ namespace valcmd {
 struct TraceRaysValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_trace_rays_comp_size * sizeof(uint32_t); }
     static const uint32_t* GetSpirv() { return validation_cmd_trace_rays_comp; }
-
-    static const uint32_t desc_set_id = 0;
 
     glsl::TraceRaysPushData push_constants{};
 
@@ -55,10 +54,10 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    ComputeValidationPipeline<TraceRaysValidationShader>& validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<TraceRaysValidationShader>>(
+    valpipe::ComputePipeline<TraceRaysValidationShader>& validation_pipeline =
+        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<TraceRaysValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;
@@ -90,8 +89,8 @@ void TraceRaysIndirect(Validator& gpuav, const Location& loc, CommandBufferSubSt
             static_cast<uint32_t>(std::min<uint64_t>(ray_query_dimension_max_depth, vvl::kU32Max));
         shader_resources.push_constants.max_ray_dispatch_invocation_count = rt_pipeline_props.maxRayDispatchInvocationCount;
 
-        if (!validation_pipeline.BindShaderResources(gpuav, cb_state, cb_state.compute_index,
-                                                     uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                 uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
             return;
         }
     }

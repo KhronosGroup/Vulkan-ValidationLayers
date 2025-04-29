@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
@@ -30,10 +31,8 @@ struct DispatchValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_dispatch_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_dispatch_comp; }
 
-    static const uint32_t desc_set_id = glsl::kDiagPerCmdDescriptorSet;
-
     glsl::DispatchPushData push_constants{};
-    BoundStorageBuffer indirect_buffer_binding = {glsl::kPreDispatchBinding_DispatchIndirectBuffer};
+    valpipe::BoundStorageBuffer indirect_buffer_binding = {glsl::kPreDispatchBinding_DispatchIndirectBuffer};
 
     static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
         std::vector<VkDescriptorSetLayoutBinding> bindings = {
@@ -70,14 +69,14 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
         return;
     }
 
-    ComputeValidationPipeline<DispatchValidationShader> &validation_pipeline =
-        gpuav.shared_resources_manager.GetOrCreate<ComputeValidationPipeline<DispatchValidationShader>>(
+    valpipe::ComputePipeline<DispatchValidationShader> &validation_pipeline =
+        gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(
             gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
     if (!validation_pipeline.valid) {
         return;
     }
 
-    RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
+    valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
     // Setup shader resources
     // ---
@@ -90,8 +89,8 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
 
         shader_resources.indirect_buffer_binding.info = {indirect_buffer, 0, VK_WHOLE_SIZE};
 
-        if (!validation_pipeline.BindShaderResources(gpuav, cb_state, cb_state.compute_index,
-                                                     uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
+        if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
+                                 uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {
             return;
         }
     }

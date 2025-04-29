@@ -25,7 +25,7 @@ uniform PushConstants {
     CountBufferPushData pc;
 };
 
-layout(set = kDiagPerCmdDescriptorSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
+layout(set = kValPipeDescSet, binding = kPreDrawBinding_CountBuffer) readonly buffer CountBuffer {
     uint count_buffer[];
 };
 

@@ -188,6 +188,8 @@ vvl_sources = [
   "layers/gpuav/core/gpuav_settings.h",
   "layers/gpuav/core/gpuav_setup.cpp",
   "layers/gpuav/core/gpuav_features.cpp",
+  "layers/gpuav/core/gpuav_validation_pipeline.h",
+  "layers/gpuav/core/gpuav_validation_pipeline.cpp",
   "layers/gpuav/debug_printf/debug_printf.cpp",
   "layers/gpuav/debug_printf/debug_printf.h",
   "layers/gpuav/descriptor_validation/gpuav_descriptor_set.cpp",
