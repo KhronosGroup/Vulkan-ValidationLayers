@@ -834,70 +834,132 @@ TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadWorkGroupThreadCountTest) {
     }
 }
 
-TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityTest) {
+TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocality) {
     TEST_DESCRIPTION(
         "Testing for cases where a compute shader's configuration makes poor use of spatial locality, on Arm Mali architectures, "
         "for one or more of its resources.");
-
     RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
     RETURN_IF_SKIP(InitState());
 
-    VkShaderObj compute_sampler_2d_8_8_1(this,
-                                         "#version 450\n"
-                                         "layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;\n\n"
-                                         "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
-                                         "void main() {\n"
-                                         "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
-                                         "}\n",
-                                         VK_SHADER_STAGE_COMPUTE_BIT);
-    VkShaderObj compute_sampler_1d_64_1_1(this,
-                                          "#version 450\n"
-                                          "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
-                                          "layout(set = 0, binding = 0) uniform sampler1D uSampler;\n"
-                                          "void main() {\n"
-                                          "    vec4 value = textureLod(uSampler, 0.5, 0.0);\n"
-                                          "}\n",
-                                          VK_SHADER_STAGE_COMPUTE_BIT);
-    VkShaderObj compute_sampler_2d_64_1_1(this,
-                                          "#version 450\n"
-                                          "layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;\n\n"
-                                          "layout(set = 0, binding = 0) uniform sampler2D uSampler;\n"
-                                          "void main() {\n"
-                                          "    vec4 value = textureLod(uSampler, vec2(0.5), 0.0);\n"
-                                          "}\n",
-                                          VK_SHADER_STAGE_COMPUTE_BIT);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    auto make_pipeline_with_shader = [this](const VkPipelineShaderStageCreateInfo& stage) {
+    char const* compute_sampler_2d_8_8_1 = R"glsl(
+        #version 450
+        layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+        layout(set = 0, binding = 0) uniform sampler2D uSampler;
+        void main(){
+            vec4 value = textureLod(uSampler, vec2(0.5), 0.0);
+        }
+    )glsl";
+
+    char const* compute_sampler_1d_64_1_1 = R"glsl(
+        #version 450
+        layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+        layout(set = 0, binding = 0) uniform sampler1D uSampler;
+        void main(){
+            vec4 value = textureLod(uSampler, 0.5, 0.0);
+        }
+    )glsl";
+
+    char const* compute_sampler_2d_64_1_1 = R"glsl(
+        #version 450
+        layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+        layout(set = 0, binding = 0) uniform sampler2D uSampler;
+        void main(){
+            vec4 value = textureLod(uSampler, vec2(0.5), 0.0);
+        }
+    )glsl";
+
+    {
         CreateComputePipelineHelper pipe(*this);
-        VkDescriptorSetLayoutBinding sampler_binding = {};
-        sampler_binding.binding = 0;
-        sampler_binding.descriptorCount = 1;
-        sampler_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        sampler_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        pipe.cp_ci_.layout = pipeline_layout;
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, compute_sampler_2d_8_8_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.CreateComputePipeline();
+    }
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cp_ci_.layout = pipeline_layout;
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, compute_sampler_1d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        pipe.CreateComputePipeline();
+    }
+    {
+        CreateComputePipelineHelper pipe(*this);
+        pipe.cp_ci_.layout = pipeline_layout;
+        pipe.cs_ = std::make_unique<VkShaderObj>(this, compute_sampler_2d_64_1_1, VK_SHADER_STAGE_COMPUTE_BIT);
+        m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
+                                             "BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality");
+        pipe.CreateComputePipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
 
-        auto ds_layout = std::unique_ptr<vkt::DescriptorSetLayout>(new vkt::DescriptorSetLayout(*m_device, {sampler_binding}));
-        auto pipe_layout = std::unique_ptr<vkt::PipelineLayout>(new vkt::PipelineLayout(*m_device, {ds_layout.get()}));
-        pipe.cp_ci_.stage = stage;
-        pipe.cp_ci_.layout = pipe_layout->handle();
+TEST_F(VkArmBestPracticesLayerTest, ComputeShaderBadSpatialLocalityMultiEntrypoint) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10035");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(InitBestPracticesFramework(kEnableArmValidation));
+    RETURN_IF_SKIP(InitState());
 
-        pipe.CreateComputePipeline(false);
-    };
+    // Empty 1D compute entrypoint
+    // Fragment entrypoint accesses simple 2D sampler
+    char const* cs_source = R"(
+               OpCapability Shader
+          %2 = OpExtInstImport "GLSL.std.450"
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint Fragment %main_frag "main"
+               OpEntryPoint GLCompute %main_comp "main"
+               OpExecutionMode %main_frag OriginUpperLeft
+               OpExecutionMode %main_comp LocalSize 64 1 1
+               OpDecorate %gl_WorkGroupSize BuiltIn WorkgroupSize
+               OpDecorate %uSampler Binding 0
+               OpDecorate %uSampler DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+      %float = OpTypeFloat 32
+    %v4float = OpTypeVector %float 4
+%_ptr_Function_v4float = OpTypePointer Function %v4float
+         %11 = OpTypeImage %float 2D 0 0 0 1 Unknown
+         %12 = OpTypeSampledImage %11
+%_ptr_UniformConstant_12 = OpTypePointer UniformConstant %12
+   %uSampler = OpVariable %_ptr_UniformConstant_12 UniformConstant
+    %v2float = OpTypeVector %float 2
+  %float_0_5 = OpConstant %float 0.5
+         %18 = OpConstantComposite %v2float %float_0_5 %float_0_5
+    %float_0 = OpConstant %float 0
+       %uint = OpTypeInt 32 0
+     %v3uint = OpTypeVector %uint 3
+    %uint_64 = OpConstant %uint 64
+     %uint_1 = OpConstant %uint 1
+%gl_WorkGroupSize = OpConstantComposite %v3uint %uint_64 %uint_1 %uint_1
 
-    auto* this_ptr = this;  // Required for older compilers with c++20 compatibility
-    auto test_spatial_locality = [=](const VkPipelineShaderStageCreateInfo& stage, bool positive_test) {
-        if (!positive_test) {
-            this_ptr->m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
-                                                           "BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality");
-        }
-        make_pipeline_with_shader(stage);
-        if (!positive_test) {
-            this_ptr->m_errorMonitor->VerifyFound();
-        }
-    };
+  %main_frag = OpFunction %void None %4
+         %fl = OpLabel
+      %value = OpVariable %_ptr_Function_v4float Function
+         %15 = OpLoad %12 %uSampler
+         %20 = OpImageSampleExplicitLod %v4float %15 %18 Lod %float_0
+               OpStore %value %20
+               OpReturn
+               OpFunctionEnd
 
-    test_spatial_locality(compute_sampler_2d_8_8_1.GetStageCreateInfo(), true);
-    test_spatial_locality(compute_sampler_1d_64_1_1.GetStageCreateInfo(), true);
-    test_spatial_locality(compute_sampler_2d_64_1_1.GetStageCreateInfo(), false);
+  %main_comp = OpFunction %void None %4
+         %cl = OpLabel
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.CreateComputePipeline();
 }
 
 TEST_F(VkArmBestPracticesLayerTest, RedundantRenderPassStore) {
