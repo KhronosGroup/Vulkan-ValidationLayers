@@ -335,27 +335,22 @@ bool BestPractices::ValidateComputeShaderArm(const spirv::Module& module_state, 
     if (x > 1) dimensions++;
     if (y > 1) dimensions++;
     if (z > 1) dimensions++;
-    // Here the dimension will really depend on the dispatch grid, but assume it's 1D.
-    dimensions = std::max(dimensions, 1u);
 
-    // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
-    // There are some false positives here. We could simply have a shader that does this within a 1D grid,
-    // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
-    bool accesses_2d = false;
-    for (const auto& variable : entrypoint.resource_interface_variables) {
-        if (variable.info.image_dim != spv::Dim1D && variable.info.image_dim != spv::DimBuffer) {
-            accesses_2d = true;
-            break;
+    if (dimensions == 1) {
+        // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
+        // There are some false positives here. We could simply have a shader that does this within a 1D grid,
+        // or we may have a linearly tiled image, but these cases are quite unlikely in practice.
+        for (const auto& variable : entrypoint.resource_interface_variables) {
+            if (variable.IsImage() && variable.info.image_dim != spv::Dim1D && variable.info.image_dim != spv::DimBuffer) {
+                LogPerformanceWarning("BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality", device, loc,
+                                      "%s compute shader has work group dimensions (%" PRIu32 ", %" PRIu32 ", %" PRIu32
+                                      "), which "
+                                      "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
+                                      "exhibiting poor spatial locality with respect to one or more shader resources.",
+                                      VendorSpecificTag(kBPVendorArm), x, y, z);
+                break;  // only need to report once
+            }
         }
-    }
-
-    if (accesses_2d && dimensions < 2) {
-        LogPerformanceWarning("BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality", device, loc,
-                              "%s compute shader has work group dimensions (%" PRIu32 ", %" PRIu32 ", %" PRIu32
-                              "), which "
-                              "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
-                              "exhibiting poor spatial locality with respect to one or more shader resources.",
-                              VendorSpecificTag(kBPVendorArm), x, y, z);
     }
 
     return skip;
@@ -632,10 +627,9 @@ bool BestPractices::ValidateShaderStage(const ShaderStageState& stage_state, con
         return skip;  // checked elsewhere
     }
 
-    const VkShaderStageFlagBits stage = stage_state.GetStage();
     const spirv::EntryPoint& entrypoint = *stage_state.entrypoint;
 
-    if (stage == VK_SHADER_STAGE_COMPUTE_BIT) {
+    if (entrypoint.stage == VK_SHADER_STAGE_COMPUTE_BIT) {
         if (VendorCheckEnabled(kBPVendorArm)) {
             skip |= ValidateComputeShaderArm(module_state, entrypoint, loc);
         }
