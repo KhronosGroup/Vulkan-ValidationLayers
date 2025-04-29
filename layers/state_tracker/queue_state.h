@@ -67,6 +67,9 @@ struct QueueSubmission {
     std::vector<SemaphoreInfo> signal_semaphores;
     std::shared_ptr<Fence> fence;
     bool has_external_fence = false;
+    // Swapchain handle if this submission represents QueuePresent request
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+
     LocationCapture loc;
     uint64_t seq{0};
     uint32_t perf_submit_pass{0};
@@ -139,6 +142,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Check submissions up to and including until_seq.
     std::optional<SemaphoreInfo> FindTimelineWaitWithoutResolvingSignal(uint64_t until_seq) const;
 
+    // VVL needs helps to retire submsissions on present-only queue that does not use explicit host synchronization
+    void UpdatePresentOnlyQueueProgress(const DeviceState &device_state);
+
   public:
     // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
     const uint32_t queue_family_index;
@@ -161,8 +167,9 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // Access to this variable relies on external queue synchronization.
     bool found_unbalanced_cmdbuf_label = false;
 
-    // If at any point this queue was used for presentation.
-    bool is_used_for_presentation = false;
+    // If at any point this queue was used for specific queue operations
+    bool is_used_for_presentation = false;     // QueuePresent
+    bool is_used_for_regular_submits = false;  // QueueSubmit and QueueBindSparse
 
   protected:
     // called from the various PostCallRecordQueueSubmit() methods

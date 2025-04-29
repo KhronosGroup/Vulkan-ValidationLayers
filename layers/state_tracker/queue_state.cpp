@@ -19,7 +19,9 @@
 #include "state_tracker/queue_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/state_tracker.h"
+#include "state_tracker/image_state.h"
 #include "containers/small_vector.h"
+#include "containers/small_container.h"
 
 #include "profiling/profiling.h"
 
@@ -183,6 +185,52 @@ std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSi
         }
     }
     return {};
+}
+
+// The submissions on present-only queue can be retired without explicit fence/semaphore sync.
+// For example, application's main loop uses AcquireNextImage and also waits on the frame fence
+// to sync with the main app queue (different than a present one). This ensures completion of
+// previous presentations even we do not submit any sync primitives on the present-only queue.
+//
+// VVL needs helps to retire submsissions in such scenarios because by default it expects host
+// sync command (such as WaitForFences) to have guarantee that submission has been completed.
+//
+// This implementation assumes that if error-free program has more active present requests than
+// swapchain images, then at least the oldest present request was completed and corresponding
+// image was re-acquired (and it got pushed to the present queue again).
+void vvl::Queue::UpdatePresentOnlyQueueProgress(const DeviceState &device_state) {
+    uint64_t seq_to_advance_to = 0;
+    {
+        auto guard = Lock();
+        assert(is_used_for_presentation && !is_used_for_regular_submits);
+        small_unordered_map<VkSwapchainKHR, uint32_t, 4> active_presentations;
+        for (const QueueSubmission &submission : submissions_) {
+            assert(submission.swapchain != VK_NULL_HANDLE);
+            active_presentations[submission.swapchain]++;
+        }
+        // Search for the swapchain with too many enqueued presentation requests
+        VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+        for (const auto &[handle, count] : active_presentations) {
+            if (auto swapchain_state = device_state.Get<Swapchain>(handle)) {
+                if (count > swapchain_state->images.size()) {
+                    swapchain = handle;
+                    break;
+                }
+            }
+        }
+        // Get seq to retire the oldest presentation submissions.
+        if (swapchain != VK_NULL_HANDLE) {
+            for (const QueueSubmission &submission : submissions_) {
+                if (submission.swapchain == swapchain) {
+                    seq_to_advance_to = submission.seq;
+                    break;
+                }
+            }
+        }
+    }
+    if (seq_to_advance_to) {
+        Notify(seq_to_advance_to);
+    }
 }
 
 void vvl::Queue::Destroy() {

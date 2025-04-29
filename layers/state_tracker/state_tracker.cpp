@@ -1045,6 +1045,7 @@ void DeviceState::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount,
     }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
+    queue_state->is_used_for_regular_submits = true;
 }
 
 void DeviceState::PreCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR *pSubmits, VkFence fence,
@@ -1106,6 +1107,7 @@ void DeviceState::PostCallRecordQueueSubmit2(VkQueue queue, uint32_t submitCount
     }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
+    queue_state->is_used_for_regular_submits = true;
 }
 
 void DeviceState::PostCallRecordAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
@@ -1263,6 +1265,7 @@ void DeviceState::PostCallRecordQueueBindSparse(VkQueue queue, uint32_t bindInfo
     }
     auto queue_state = Get<Queue>(queue);
     queue_state->PostSubmit();
+    queue_state->is_used_for_regular_submits = true;
 }
 
 void DeviceState::PostCallRecordCreateSemaphore(VkDevice device, const VkSemaphoreCreateInfo *pCreateInfo,
@@ -3797,6 +3800,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (present_fence_info) {
             present_submissions.back().AddFence(Get<Fence>(present_fence_info->pFences[i]));
         }
+        present_submissions.back().swapchain = pPresentInfo->pSwapchains[i];
     }
 
     vvl::Semaphore::SwapchainWaitInfo semaphore_swapchain_info;
@@ -3857,6 +3861,10 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     queue_state->is_used_for_presentation = true;
     PreSubmitResult result = queue_state->PreSubmit(std::move(present_submissions));
     const SubmissionReference present_submission_ref(queue_state.get(), result.submission_seq);
+
+    if (!queue_state->is_used_for_regular_submits) {
+        queue_state->UpdatePresentOnlyQueueProgress(*this);
+    }
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
