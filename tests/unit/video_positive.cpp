@@ -63,14 +63,13 @@ TEST_F(PositiveVideo, MultipleCmdBufs) {
     cb1.End();
 
     cb2.Begin();
-    vk::CmdPipelineBarrier2KHR(cb2.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb2, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
     cb2.BeginVideoCoding(context.Begin().AddResource(-1, 0));
     cb2.DecodeVideo(context.DecodeFrame(0));
     cb2.EndVideoCoding(context.End());
     cb2.End();
 
-    std::array cbs = {&cb1, &cb2};
-    context.Queue().Submit(cbs);
+    context.Queue().Submit({cb1, cb2});
     m_device->Wait();
 }
 

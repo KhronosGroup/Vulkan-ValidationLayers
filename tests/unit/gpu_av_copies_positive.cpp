@@ -131,11 +131,130 @@ TEST_F(PositiveGpuAVCopies, CopyBufferToImageTwoSubmit) {
     region.bufferOffset = 0;
 
     cb_0.Begin();
-    vk::CmdCopyBufferToImage(cb_0.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyBufferToImage(cb_0, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     cb_0.End();
     m_default_queue->SubmitAndWait(cb_0);
 
     cb_1.Begin();
     cb_1.End();
     m_default_queue->SubmitAndWait(cb_1);
+}
+
+TEST_F(PositiveGpuAVCopies, Resubmit) {
+    TEST_DESCRIPTION("Recreate and submit command buffers");
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    vkt::Buffer copy_src_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                kHostVisibleMemProps);
+    auto buffer_ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
+    memset(buffer_ptr, 0, 16);
+
+    VkBufferImageCopy2 region2 = vku::InitStructHelper();
+    region2.bufferOffset = 0;
+    region2.bufferRowLength = 0;
+    region2.bufferImageHeight = 0;
+    region2.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    region2.imageOffset = {0, 0, 0};
+    region2.imageExtent = {1, 1, 1};
+
+    VkCopyBufferToImageInfo2 buffer_image_copy = vku::InitStructHelper();
+    buffer_image_copy.srcBuffer = copy_src_buffer;
+    buffer_image_copy.dstImage = copy_dst_image;
+    buffer_image_copy.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    buffer_image_copy.regionCount = 1;
+    buffer_image_copy.pRegions = &region2;
+
+    vkt::CommandBuffer cb_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
+
+    cb_0.Begin();
+    vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
+    region2.imageOffset.x = 1;
+    vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
+    cb_0.End();
+    m_default_queue->SubmitAndWait(cb_0);
+
+    cb_1.Begin();
+    region2.imageOffset.x = 2;
+    vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
+    region2.imageOffset.x = 3;
+    vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
+    cb_1.End();
+    m_default_queue->SubmitAndWait(cb_1);
+
+    cb_1.Begin();
+    region2.imageOffset.x = 4;
+    vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
+    cb_1.End();
+    m_default_queue->SubmitAndWait(cb_1);
+
+    cb_0.Begin();
+    region2.imageOffset.x = 5;
+    vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
+    cb_0.End();
+    m_default_queue->SubmitAndWait(cb_0);
+}
+
+TEST_F(PositiveGpuAVCopies, BatchSubmit) {
+    TEST_DESCRIPTION("Submit multiple command buffers");
+    AddRequiredExtensions(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    vkt::Image copy_dst_image(*m_device, 64, 64, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                              VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    copy_dst_image.SetLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    vkt::Buffer copy_src_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                                kHostVisibleMemProps);
+    auto buffer_ptr = static_cast<uint8_t *>(copy_src_buffer.Memory().Map());
+    memset(buffer_ptr, 0, 16);
+
+    VkBufferImageCopy2 region2 = vku::InitStructHelper();
+    region2.bufferOffset = 0;
+    region2.bufferRowLength = 0;
+    region2.bufferImageHeight = 0;
+    region2.imageSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
+    region2.imageOffset = {0, 0, 0};
+    region2.imageExtent = {1, 1, 1};
+
+    VkCopyBufferToImageInfo2 buffer_image_copy = vku::InitStructHelper();
+    buffer_image_copy.srcBuffer = copy_src_buffer;
+    buffer_image_copy.dstImage = copy_dst_image;
+    buffer_image_copy.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    buffer_image_copy.regionCount = 1;
+    buffer_image_copy.pRegions = &region2;
+
+    vkt::CommandBuffer cb_0(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_1(*m_device, m_command_pool);
+    vkt::CommandBuffer cb_2(*m_device, m_command_pool);
+
+    cb_0.Begin();
+    vk::CmdCopyBufferToImage2KHR(cb_0, &buffer_image_copy);
+    cb_0.End();
+
+    cb_1.Begin();
+    vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
+    cb_1.End();
+
+    cb_2.Begin();
+    vk::CmdCopyBufferToImage2KHR(cb_2, &buffer_image_copy);
+    cb_2.End();
+
+    m_default_queue->Submit({cb_0, cb_1, cb_2});
+    m_default_queue->Wait();
+
+    cb_1.Begin();
+    region2.imageOffset.x = 1;
+    vk::CmdCopyBufferToImage2KHR(cb_1, &buffer_image_copy);
+    cb_1.End();
+
+    m_default_queue->Submit({cb_2, cb_1, cb_0});
+    m_default_queue->Wait();
 }

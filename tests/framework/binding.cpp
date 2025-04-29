@@ -464,15 +464,10 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
     return result;
 }
 
-VkResult Queue::Submit(const vvl::span<CommandBuffer *> &cmds, const Fence &fence) {
-    std::vector<VkCommandBuffer> cmd_handles;
-    cmd_handles.reserve(cmds.size());
-    std::transform(cmds.begin(), cmds.end(), std::back_inserter(cmd_handles),
-                   [](const CommandBuffer *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
-
+VkResult Queue::Submit(const std::vector<VkCommandBuffer> &cmds, const Fence &fence) {
     VkSubmitInfo submit_info = vku::InitStructHelper();
-    submit_info.commandBufferCount = static_cast<uint32_t>(cmd_handles.size());
-    submit_info.pCommandBuffers = cmd_handles.data();
+    submit_info.commandBufferCount = static_cast<uint32_t>(cmds.size());
+    submit_info.pCommandBuffers = cmds.data();
     VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
     return result;
 }
@@ -594,12 +589,12 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_k
     return result;
 }
 
-VkResult Queue::Submit2(const vvl::span<const CommandBuffer> &cmds, const Fence &fence, bool use_khr) {
+VkResult Queue::Submit2(const std::vector<VkCommandBuffer> &cmds, const Fence &fence, bool use_khr) {
     std::vector<VkCommandBufferSubmitInfo> cmd_submit_infos;
     cmd_submit_infos.reserve(cmds.size());
     for (size_t i = 0; i < cmds.size(); i++) {
         VkCommandBufferSubmitInfo cmd_submit_info = vku::InitStructHelper();
-        cmd_submit_info.commandBuffer = cmds[i].handle();
+        cmd_submit_info.commandBuffer = cmds[i];
         cmd_submit_infos.push_back(cmd_submit_info);
     }
     VkSubmitInfo2 submit = vku::InitStructHelper();

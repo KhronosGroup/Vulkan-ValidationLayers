@@ -283,29 +283,28 @@ TEST_F(PositiveDynamicRendering, SuspendResumeDraw) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT | VK_RENDERING_SUSPENDING_BIT;
     cb1.Begin();
     cb1.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(cb1.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb1, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(cb1, 3, 1, 0, 0);
     cb1.EndRendering();
     cb1.End();
 
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
     cb2.Begin();
     cb2.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(cb2.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(cb2, 3, 1, 0, 0);
     cb2.EndRendering();
     cb2.End();
 
-    std::array cbs = {&m_command_buffer, &cb1, &cb2};
-    m_default_queue->Submit(cbs);
+    m_default_queue->Submit({m_command_buffer, cb1, cb2});
     m_default_queue->Wait();
 }
 
@@ -607,21 +606,21 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     // First primary with secondary that suspends render
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     begin_rendering_info.flags = VK_RENDERING_SUSPENDING_BIT;
     secondary.Begin();
     secondary.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(secondary.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(secondary, 3, 1, 0, 0);
     secondary.EndRendering();
     secondary.End();
 
     // Execute secondary
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
 
     m_command_buffer.End();
 
@@ -630,13 +629,12 @@ TEST_F(PositiveDynamicRendering, SuspendSecondaryResumeInPrimary) {
     begin_rendering_info.flags = VK_RENDERING_RESUMING_BIT;
     cb.Begin();
     cb.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(cb.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(cb, 3, 1, 0, 0);
     cb.EndRendering();
     cb.End();
 
-    std::array cbs = {&m_command_buffer, &cb};
-    m_default_queue->Submit(cbs);
+    m_default_queue->Submit({m_command_buffer, cb});
     m_default_queue->Wait();
 }
 

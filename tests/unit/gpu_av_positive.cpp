@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include <vector>
 #include "../framework/layer_validation_tests.h"
 #include "../framework/buffer_helper.h"
@@ -76,7 +77,7 @@ TEST_F(PositiveGpuAV, ReserveBinding) {
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
     AddRequiredFeature(vkt::Feature::inlineUniformBlock);
     RETURN_IF_SKIP(InitGpuAvFramework());
-    RETURN_IF_SKIP(InitState(nullptr));
+    RETURN_IF_SKIP(InitState());
 
     auto ici = GetInstanceCreateInfo();
     VkInstance test_inst;
@@ -2109,4 +2110,138 @@ TEST_F(PositiveGpuAV, ValidationBufferSuballocations) {
     }
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
+}
+
+TEST_F(PositiveGpuAV, MixDynamicNormalRenderPass) {
+    TEST_DESCRIPTION("Test mixing Dynamic rendering and normal renderpass to stress Restore pipeline logic");
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer ssbo_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+
+    OneOffDescriptorSet descriptor_set1(m_device, {
+                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  });
+    OneOffDescriptorSet descriptor_set2(m_device, {
+                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                  });
+    descriptor_set1.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set1.UpdateDescriptorSets();
+    descriptor_set2.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set2.UpdateDescriptorSets();
+
+    VkShaderStageFlags all_stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    VkPushConstantRange pc_ranges = {all_stages, 0, 16};
+    const vkt::PipelineLayout g_pipeline_layout(*m_device, {&descriptor_set1.layout_}, {pc_ranges});
+    const vkt::PipelineLayout c_pipeline_layout(*m_device, {&descriptor_set2.layout_}, {pc_ranges});
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(push_constant) uniform PushConstants {
+            uint a[4];
+        } pc;
+
+        layout(set = 0, binding = 0) buffer SSBO { uint b; };
+        void main() {
+            b = pc.a[0];
+        }
+    )glsl";
+
+    VkShaderObj vs(this, shader_source, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, shader_source, VK_SHADER_STAGE_FRAGMENT_BIT);
+    CreatePipelineHelper g_pipe(*this);
+    g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    g_pipe.gp_ci_.layout = g_pipeline_layout;
+    g_pipe.CreateGraphicsPipeline();
+
+    VkFormat rendering_format = GetRenderTargetFormat();
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &rendering_format;
+
+    CreatePipelineHelper dr_pipe(*this, &pipeline_rendering_info);
+    dr_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    dr_pipe.gp_ci_.layout = g_pipeline_layout;
+    dr_pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    dr_pipe.CreateGraphicsPipeline();
+
+    CreateComputePipelineHelper c_pipe(*this);
+    c_pipe.cp_ci_.layout = c_pipeline_layout;
+    c_pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    c_pipe.CreateComputePipeline();
+
+    vkt::Buffer dispatch_params_buffer(*m_device, sizeof(VkDrawIndirectCommand), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                                       kHostVisibleMemProps);
+    auto &indirect_dispatch_parameters = *static_cast<VkDispatchIndirectCommand *>(dispatch_params_buffer.Memory().Map());
+    indirect_dispatch_parameters.x = 1u;
+    indirect_dispatch_parameters.y = 1u;
+    indirect_dispatch_parameters.z = 1u;
+
+    VkDrawIndexedIndirectCommand draw_params{3, 1, 0, 0, 0};
+    vkt::Buffer draw_params_buffer = vkt::IndirectBuffer<VkDrawIndexedIndirectCommand>(*m_device, {draw_params});
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(
+        m_width, m_height, 1, 1, rendering_format,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image rendering_image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView rendering_view = rendering_image.CreateView();
+
+    uint32_t dummy = 0;
+    m_command_buffer.Begin();
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 0, 4, &dummy);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline_layout, 0, 1, &descriptor_set1.set_, 0,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipeline_layout, 0, 1, &descriptor_set2.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 4, 4, &dummy);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 8, 4, &dummy);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 0, 4, &dummy);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
+    m_command_buffer.EndRenderPass();
+
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline_layout, 0, 1, &descriptor_set2.set_, 0,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipeline_layout, 0, 1, &descriptor_set1.set_, 0,
+                              nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe.Handle());
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 4, 4, &dummy);
+    m_command_buffer.BeginRenderingColor(rendering_view, GetRenderTargetArea());
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 8, 4, &dummy);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
+    m_command_buffer.EndRendering();
+
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdPushConstants(m_command_buffer, g_pipeline_layout, all_stages, 0, 4, &dummy);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
+    m_command_buffer.EndRenderPass();
+
+    m_command_buffer.BeginRenderingColor(rendering_view, GetRenderTargetArea());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dr_pipe.Handle());
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
+    m_command_buffer.EndRendering();
+
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
+
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
 }

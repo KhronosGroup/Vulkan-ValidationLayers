@@ -2178,8 +2178,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("region_0::region_1");
     m_errorMonitor->SetDesiredError("region_0");
-    std::array<vkt::CommandBuffer *, 2> cbs = {{&m_command_buffer, &cb_2}};
-    m_default_queue->Submit(vvl::make_span(cbs.data(), cbs.size()));
+    m_default_queue->Submit({m_command_buffer, cb_2});
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
@@ -2224,7 +2223,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     vkt::CommandBuffer cb_2_label_beginnings(*m_device, m_command_pool);
@@ -2243,18 +2242,18 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     vkt::CommandBuffer cb_4_label_ends(*m_device, m_command_pool);
     cb_4_label_ends.Begin();
 
-    vk::CmdBindPipeline(cb_4_label_ends.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_4_label_ends.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(cb_4_label_ends, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_4_label_ends, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
-    vk::CmdDispatch(cb_4_label_ends.handle(), 2, 1, 1);
+    vk::CmdDispatch(cb_4_label_ends, 2, 1, 1);
 
     vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
     vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
 
     vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
 
-    vk::CmdDispatch(cb_4_label_ends.handle(), 2, 1, 1);
+    vk::CmdDispatch(cb_4_label_ends, 2, 1, 1);
 
     vk::CmdEndDebugUtilsLabelEXT(cb_4_label_ends);
 
@@ -2263,8 +2262,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel7) {
     // UNASSIGNED-Device address out of bounds
     m_errorMonitor->SetDesiredError("region_0::region_1::region_0::region_1");
     m_errorMonitor->SetDesiredError("region_0");
-    std::array<vkt::CommandBuffer *, 3> cbs = {{&cb_2_label_beginnings, &cb_2_label_beginnings, &cb_4_label_ends}};
-    m_default_queue->Submit(vvl::make_span(cbs.data(), cbs.size()));
+    m_default_queue->Submit({cb_2_label_beginnings, cb_2_label_beginnings, cb_4_label_ends});
     m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
