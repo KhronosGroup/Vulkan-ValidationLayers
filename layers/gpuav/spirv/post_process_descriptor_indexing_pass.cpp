@@ -14,12 +14,13 @@
  */
 
 #include "post_process_descriptor_indexing_pass.h"
-#include "module.h"
-#include <iostream>
 
+#include "module.h"
 #include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/hash_util.h"
+
+#include <iostream>
 
 namespace gpuav {
 namespace spirv {

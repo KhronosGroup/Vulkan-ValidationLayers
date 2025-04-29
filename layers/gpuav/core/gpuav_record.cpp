@@ -25,6 +25,7 @@
 #include "gpuav/descriptor_validation/gpuav_image_layout.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
+#include "gpuav/instrumentation/post_process_descriptor_indexing.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
 
@@ -61,6 +62,18 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     if (gpuav_settings.IsBufferValidationEnabled()) {
         chassis_state.modified_create_info.size = Align<VkDeviceSize>(chassis_state.modified_create_info.size, 4);
     }
+}
+
+void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo *pBeginInfo,
+                                                const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    if (!cb_state) {
+        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
+        return;
+    }
+
+    CommandBufferSubState &gpuav_cb_state = SubState(*cb_state);
+    RegisterPostProcessingValidation(*this, gpuav_cb_state);
 }
 
 void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

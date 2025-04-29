@@ -36,7 +36,7 @@
 namespace gpuav {
 
 class Validator;
-struct DescriptorBindingCommand;
+class QueueSubState;
 
 struct DebugPrintfBufferInfo {
     vko::Buffer output_mem_buffer;
@@ -50,18 +50,28 @@ struct DebugPrintfBufferInfo {
 
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
-    // One item per vkCmdBindDescriptorSet() called
-    // We really need this information at the draw/dispatch/action, but assume most apps will either
-    //  1. Update once and only change pipelines, so this information doesn't change between draws
-    //  2. Change once per draw, then this would be the same length as doing this per-draw
-    //
-    // Note: If the app calls vkCmdBindDescriptorSet 10 times to set descriptor set [0, 9] one at a time instead of setting [0, 9]
-    // in a single vkCmdBindDescriptorSet call then this will allocate a lot of redundant memory
-    std::vector<DescriptorBindingCommand> descriptor_binding_commands;
+    struct LabelLogging {
+        const std::vector<std::string> &initial_label_stack;
+        const vvl::unordered_map<uint32_t, uint32_t> &action_cmd_i_to_label_cmd_i_map;
+    };
+
+    using OnInstrumentionDescSetUpdate = stdext::inplace_function<
+        void(CommandBufferSubState &cb, VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding), 48>;
+    using OnCommandBufferSubmission =
+        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
+    using OnCommandBufferCompletion =
+        stdext::inplace_function<bool(Validator &gpuav, CommandBufferSubState &cb,
+                                      const CommandBufferSubState::LabelLogging &label_logging, const Location &loc)>;
+    std::vector<OnInstrumentionDescSetUpdate> on_instrumentation_desc_set_update_functions;
+    std::vector<OnCommandBufferSubmission> on_pre_cb_submission_functions;
+    std::vector<OnCommandBufferCompletion> on_cb_completion_functions;
+
+    vko::SharedResourcesCache shared_resources_cache;
 
     // Buffer to be bound every draw/dispatch/action
+    // #ARNO_TODO update at every descriptor binding cmd, only used
+    // to temporarily store descriptor_binding_cmd.descritpor_state_ssbo_buffer
     VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;
-    VkBuffer post_process_buffer_lut = VK_NULL_HANDLE;
 
     // Used to track which spot in the command buffer the error came from
     bool max_actions_cmd_validation_reached_ = false;
@@ -73,13 +83,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
-    [[nodiscard]] bool PreProcess(const Location &loc);
-    void PostProcess(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
-    struct LabelLogging {
-        const std::vector<std::string> &initial_label_stack;
-        const vvl::unordered_map<uint32_t, uint32_t> &action_cmd_i_to_label_cmd_i_map;
-    };
-    [[nodiscard]] bool ValidateBindlessDescriptorSets(const Location &loc, const LabelLogging &label_logging);
+    [[nodiscard]] bool PreSubmit(QueueSubState &queue, const Location &loc);
+    void OnCompletion(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc);
 
     const VkDescriptorSetLayout &GetInstrumentationDescriptorSetLayout() const {
         assert(instrumentation_desc_set_layout_ != VK_NULL_HANDLE);
@@ -164,6 +169,31 @@ static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
     return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeGpuAssisted));
 }
 
+// #ARNO_TODO: Once `UpdateBoundDescriptorsDescriptorChecks` is redone a la post processing style,
+// move DescriptorSetBindingCommand inside DescriptorSetBindings
+struct DescriptorSetBindingCommand {
+    // A GPU stored LUT where each bound descriptor set is given a spot to store a post processing buffer address.
+    // Those spots are updated at command buffer submission time.
+    vko::BufferRange desc_set_binding_to_post_process_buffers_lut;
+
+    vko::Buffer descritpor_state_ssbo_buffer;  // type DescriptorStateSSBO
+
+    // Note: The index here is from vkCmdBindDescriptorSets::firstSet
+    // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
+    std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
+
+    DescriptorSetBindingCommand(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav) {}
+};
+
+// Track descriptor sets bound in a command buffer
+class DescriptorSetBindings {
+  public:
+    using OnDescriptorSetBindingFunc = stdext::inplace_function<void(CommandBufferSubState &cb, DescriptorSetBindingCommand &)>;
+    std::vector<OnDescriptorSetBindingFunc> on_update_bound_descriptor_sets;
+    std::vector<DescriptorSetBindingCommand> descriptor_set_binding_commands;
+    ~DescriptorSetBindings();
+};
+
 class QueueSubState : public vvl::QueueSubState {
   public:
     QueueSubState(Validator &gpuav, vvl::Queue &q);
@@ -172,6 +202,8 @@ class QueueSubState : public vvl::QueueSubState {
     void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
     void PostSubmit(vvl::QueueSubmission &) override;
     void Retire(vvl::QueueSubmission &) override;
+
+    vko::SharedResourcesCache shared_resources_cache;
 
   protected:
     void SubmitBarrier(const Location &loc, uint64_t seq);

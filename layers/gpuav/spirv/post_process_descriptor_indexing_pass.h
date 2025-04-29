@@ -18,6 +18,7 @@
 #include "pass.h"
 
 namespace gpuav {
+
 namespace spirv {
 
 struct Type;

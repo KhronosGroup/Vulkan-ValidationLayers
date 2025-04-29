@@ -204,6 +204,8 @@ vvl_sources = [
   "layers/gpuav/instrumentation/gpuav_shader_instrumentor.h",
   "layers/gpuav/instrumentation/gpuav_instrumentation.cpp",
   "layers/gpuav/instrumentation/gpuav_instrumentation.h",
+  "layers/gpuav/instrumentation/post_process_descriptor_indexing.cpp",
+  "layers/gpuav/instrumentation/post_process_descriptor_indexing.h",
   "layers/gpuav/resources/gpuav_vulkan_objects.cpp",
   "layers/gpuav/resources/gpuav_vulkan_objects.h",
   "layers/gpuav/resources/gpuav_shader_resources.h",

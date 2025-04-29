@@ -83,6 +83,8 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) final;
     void PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;
+    void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
+                                         const RecordObject& record_obj) final;
     void RecordCmdNextSubpassLayouts(vvl::CommandBuffer& cb_state, VkSubpassContents contents);
     void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
                                       const RecordObject& record_obj) final;

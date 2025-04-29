@@ -345,6 +345,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
             # Generate pre-call state recording source code
             out.append(f'RecordObject record_obj(vvl::Func::{command.name});\n')
             out.append(f'{{\nVVL_ZoneScopedN("PreCallRecord_{command.name}");')
+            if "QueueSubmit" in command.name:
+                out.append(f'''
+                    VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PreCallRecord{command.name}", pre_call_record_gpu_zone);
+                ''')
 
             if not command.instance:
                 out.append(f'''
@@ -364,6 +368,11 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             out.append(f'vo->PreCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('   }\n')
+            if "QueueSubmit" in command.name:
+                out.append('''
+                    VVL_TracyVkNamedZoneEnd(pre_call_record_gpu_zone, queue);
+                ''')
+
             out.append('}\n')
 
             # Insert pre-dispatch debug utils function call
@@ -384,8 +393,8 @@ class LayerChassisOutputGenerator(BaseGenerator):
             out.append(f'{{\nVVL_ZoneScopedN("Dispatch_{command.name}");\n')
 
             if "QueueSubmit" in command.name:
-                out.append('''
-                    VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_QueueSubmit", submit_gpu_zone);
+                out.append(f'''
+                    VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_{command.name}", submit_gpu_zone);
                 ''')
             assignResult = 'result = ' if (command.returnType != 'void') else ''
             method_name = command.name.replace('vk', f'{dispatch}->')
@@ -395,10 +404,6 @@ class LayerChassisOutputGenerator(BaseGenerator):
             if "QueueSubmit" in command.name:
                 out.append('''
                     VVL_TracyVkNamedZoneEnd(submit_gpu_zone, queue);
-                ''')
-                out.append('''#if defined(VVL_TRACY_GPU)
-                    TracyVkCollector::TrySubmitCollectCb(queue);
-                #endif
                 ''')
             out.append('}\n')
 
@@ -420,6 +425,10 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             # Generate post-call object processing source code
             out.append(f'{{\nVVL_ZoneScopedN("PostCallRecord_{command.name}");\n')
+            if "QueueSubmit" in command.name:
+                out.append(f'''
+                    VVL_TracyVkNamedZoneStart(GetTracyVkCtx(), queue, "gpu_PostCallRecord{command.name}", post_call_record_gpu_zone);
+                ''')
 
             # Because each intercept is a copy of vvl::base::Device, we need to update it for each,
             # even if they don't intercept this command.
@@ -464,7 +473,16 @@ class LayerChassisOutputGenerator(BaseGenerator):
 
             out.append(f'vo->PostCallRecord{command.name[2:]}({paramsList}, record_obj);\n')
             out.append('    }\n')
+            if "QueueSubmit" in command.name:
+                out.append('''
+                    VVL_TracyVkNamedZoneEnd(post_call_record_gpu_zone, queue);
+                ''')
             out.append('}\n')
+            if "QueueSubmit" in command.name:
+                out.append('''#if defined(VVL_TRACY_GPU)
+                    TracyVkCollector::TrySubmitCollectCb(queue);
+                #endif
+                ''')
 
             # Return result variable, if any.
             if command.returnType != 'void':
