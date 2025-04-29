@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2023-2024 Valve Corporation
-# Copyright (c) 2023-2024 LunarG, Inc.
+# Copyright (c) 2023-2025 Valve Corporation
+# Copyright (c) 2023-2025 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -71,7 +71,8 @@ def generate_apk(SDK_ROOT : str, CMAKE_INSTALL_DIR : str) -> str:
         common_ci.RunShellCmd(f'keytool -genkey -v -keystore {debug_key} -alias androiddebugkey -storepass {ks_pass} -keypass {ks_pass} -keyalg RSA -keysize 2048 -validity 10000 -dname {dname}')
 
     # Sign APK
-    common_ci.RunShellCmd(f'apksigner sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {test_apk}')
+    apksigner = 'apksigner.bat' if os.name == 'nt' else 'apksigner'
+    common_ci.RunShellCmd(f'{apksigner} sign --verbose --ks {debug_key} --ks-pass pass:{ks_pass} {test_apk}')
 
 # Android APKs can contain binaries for multiple ABIs (armeabi-v7a, arm64-v8a, x86, x86_64).
 # https://en.wikipedia.org/wiki/Apk_(file_format)#Package_contents
