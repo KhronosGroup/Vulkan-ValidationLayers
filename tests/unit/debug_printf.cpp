@@ -1284,8 +1284,8 @@ TEST_F(NegativeDebugPrintf, MeshShaders) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1326,12 +1326,109 @@ TEST_F(NegativeDebugPrintf, TaskShaders) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_NumWorkGroups = 1, 1, 1");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, MeshTaskIndirect) {
+    TEST_DESCRIPTION("Test vkCmdDrawMeshTasksIndirectEXT");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance4);
+    AddRequiredFeature(vkt::Feature::meshShader);
+    AddRequiredFeature(vkt::Feature::taskShader);
+    AddRequiredFeature(vkt::Feature::fragmentStoresAndAtomics);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    InitRenderTarget();
+
+    vkt::Buffer draw_buffer(*m_device, sizeof(VkDrawMeshTasksIndirectCommandEXT), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+                            kHostVisibleMemProps);
+    auto *draw_ptr = static_cast<VkDrawMeshTasksIndirectCommandEXT *>(draw_buffer.Memory().Map());
+    draw_ptr->groupCountX = 1;
+    draw_ptr->groupCountY = 1;
+    draw_ptr->groupCountZ = 1;
+
+    const char *task_source = R"glsl(
+        #version 460
+        #extension GL_EXT_mesh_shader : enable
+        #extension GL_EXT_debug_printf : enable
+        taskPayloadSharedEXT uint payload;
+        void main() {
+            payload = gl_GlobalInvocationID.x + 4;
+            debugPrintfEXT("task %u", payload);
+            EmitMeshTasksEXT(1u, 1u, 1u);
+        }
+    )glsl";
+
+    char const *mesh_source = R"glsl(
+        #version 450
+        #extension GL_EXT_mesh_shader : require
+        #extension GL_EXT_debug_printf : enable
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        layout(max_vertices = 3, max_primitives = 1) out;
+        layout(triangles) out;
+        taskPayloadSharedEXT uint payload;
+
+        void main() {
+            debugPrintfEXT("payload %u", payload);
+            SetMeshOutputsEXT(3, 1);
+            gl_MeshVerticesEXT[0].gl_Position = vec4(-1.0, -1.0, 0.0, 1.0);
+            gl_MeshVerticesEXT[1].gl_Position = vec4(1.0, -1.0, 0.0, 1.0);
+            gl_MeshVerticesEXT[2].gl_Position = vec4(0.0, 1.0, 0.0, 1.0);
+            gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+        }
+    )glsl";
+
+    char const *frag_source = R"glsl(
+        #version 460
+        #extension GL_EXT_debug_printf : enable
+        layout(location = 0) out vec4 uFragColor;
+        layout(set = 0, binding = 0) buffer ssbo { uint x; };
+        void main(){
+            uint count = atomicAdd(x, 1);
+            if (count == 0) {
+                debugPrintfEXT("frag");
+            }
+            uFragColor = vec4(0,1,0,1);
+        }
+    )glsl";
+
+    VkShaderObj ts(this, task_source, VK_SHADER_STAGE_TASK_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj ms(this, mesh_source, VK_SHADER_STAGE_MESH_BIT_EXT, SPV_ENV_VULKAN_1_3);
+    VkShaderObj fs(this, frag_source, VK_SHADER_STAGE_FRAGMENT_BIT, SPV_ENV_VULKAN_1_3);
+
+    vkt::Buffer buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    ((uint32_t *)buffer.Memory().Map())[0] = 0;
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {ts.GetStageCreateInfo(), ms.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, draw_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("task 4");
+    m_errorMonitor->SetDesiredInfo("payload 4");
+    m_errorMonitor->SetDesiredInfo("frag");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
