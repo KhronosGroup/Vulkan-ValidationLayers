@@ -582,6 +582,20 @@
                                     }
                                 },
                                 {
+                                    "key": "gpuav_force_on_robustness",
+                                    "label": "Force on robustness features",
+                                    "description": "This will enable all possible robustness features for the app at device creation time. This can be used to quickly detect if with robustness, your issue disappears. GPU-AV will also skip validating things already covered by robustness, so turning on should reduce GPU-AV performance overhead.",
+                                    "type": "BOOL",
+                                    "default": false,
+                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                    "dependence": {
+                                        "mode": "ALL",
+                                        "settings": [
+                                            { "key": "gpuav_enable", "value": true }
+                                        ]
+                                    }
+                                },
+                                {
                                     "key": "gpuav_shader_instrumentation",
                                     "label": "Shader instrumentation",
                                     "description": "Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.",
@@ -597,11 +611,59 @@
                                     },
                                     "settings": [
                                         {
+                                            "key": "gpuav_select_instrumented_shaders",
+                                            "label": "Enable instrumenting shaders selectively",
+                                            "description": "Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders, it will allow GPU-AV to run much faster.",
+                                            "type": "BOOL",
+                                            "default": false,
+                                            "platforms": [ "WINDOWS", "LINUX" ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            },
+                                            "settings": [
+                                                {
+                                                    "key": "gpuav_shaders_to_instrument",
+                                                    "label": "Shader/pipeline name regexes",
+                                                    "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.",
+                                                    "type": "LIST",
+                                                    "default": [],
+                                                    "platforms": [ "WINDOWS", "LINUX" ],
+                                                    "dependence": {
+                                                        "mode": "ALL",
+                                                        "settings": [
+                                                            { "key": "gpuav_enable", "value": true },
+                                                            { "key": "gpuav_shader_instrumentation", "value": true },
+                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        {
                                             "key": "gpuav_descriptor_checks",
                                             "label": "Descriptors indexing",
                                             "description": "Enable descriptors and buffer out of bounds validation when using descriptor indexing",
                                             "type": "BOOL",
                                             "expanded": true,
+                                            "default": true,
+                                            "platforms": [ "WINDOWS", "LINUX" ],
+                                            "dependence": {
+                                                "mode": "ALL",
+                                                "settings": [
+                                                    { "key": "gpuav_enable", "value": true },
+                                                    { "key": "gpuav_shader_instrumentation", "value": true }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "key": "gpuav_post_process_descriptor_indexing",
+                                            "label": "Post process descriptor indexing",
+                                            "description": "Track which descriptor indexes were used in shader to run normal validation afterwards",
+                                            "type": "BOOL",
                                             "default": true,
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
@@ -652,23 +714,8 @@
                                         },
                                         {
                                             "key": "gpuav_validate_ray_query",
-                                            "label": "RayQuery SPIR-V Instructions",
+                                            "label": "RayQuery SPIR-V instructions",
                                             "description": "Enable shader instrumentation on OpRayQueryInitializeKHR",
-                                            "type": "BOOL",
-                                            "default": true,
-                                            "platforms": [ "WINDOWS", "LINUX" ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true },
-                                                    { "key": "gpuav_shader_instrumentation", "value": true }
-                                                ]
-                                            }
-                                        },
-                                        {
-                                            "key": "gpuav_post_process_descriptor_indexing",
-                                            "label": "Post Process Descriptor Indexing",
-                                            "description": "Track which descriptor indexes were used in shader to run normal validation afterwards",
                                             "type": "BOOL",
                                             "default": true,
                                             "platforms": [ "WINDOWS", "LINUX" ],
@@ -694,40 +741,6 @@
                                                     { "key": "gpuav_shader_instrumentation", "value": true }
                                                 ]
                                             }
-                                        },
-
-                                        {
-                                            "key": "gpuav_select_instrumented_shaders",
-                                            "label": "Enable instrumenting shaders selectively",
-                                            "description": "Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name",
-                                            "type": "BOOL",
-                                            "default": false,
-                                            "platforms": [ "WINDOWS", "LINUX" ],
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "gpuav_enable", "value": true },
-                                                    { "key": "gpuav_shader_instrumentation", "value": true }
-                                                ]
-                                            },
-                                            "settings": [
-                                                {
-                                                    "key": "gpuav_shaders_to_instrument",
-                                                    "label": "Shader/pipeline name regexes",
-                                                    "description": "Any shader or pipeline library debug name (set with vkSetDebugUtilsObjectNameEXT) fully matching any listed regular expression will be instrumented when creating pipelines with those shaders or libraries. Regex grammar: Modified ECMAScript. No support for shader objects yet. Warning: instrumentation being performed at final pipeline creation time, if shaders modules have already been destroyed at this step (possible when using pipeline libraries), they won't be found by this regex selection system. In this case, consider naming pipeline libraries instead.",
-                                                    "type": "LIST",
-                                                    "default": [],
-                                                    "platforms": [ "WINDOWS", "LINUX" ],
-                                                    "dependence": {
-                                                        "mode": "ALL",
-                                                        "settings": [
-                                                            { "key": "gpuav_enable", "value": true },
-                                                            { "key": "gpuav_shader_instrumentation", "value": true },
-                                                            { "key": "gpuav_select_instrumented_shaders", "value": true }
-                                                        ]
-                                                    }
-                                                }
-                                            ]
                                         }
                                     ]
                                 },
@@ -826,20 +839,6 @@
                                     "key": "gpuav_image_layout",
                                     "label": "Image Layout",
                                     "description": "(Warning - still known to have false positives) Use GPU-AV to detect which descriptors where accessed. Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer.",
-                                    "type": "BOOL",
-                                    "default": false,
-                                    "platforms": [ "WINDOWS", "LINUX" ],
-                                    "dependence": {
-                                        "mode": "ALL",
-                                        "settings": [
-                                            { "key": "gpuav_enable", "value": true }
-                                        ]
-                                    }
-                                },
-                                {
-                                    "key": "gpuav_force_on_robustness",
-                                    "label": "Force robustness on behalf of the user",
-                                    "description": "When robustness is enabled, GPU-AV will skip checks already covered by robustness",
                                     "type": "BOOL",
                                     "default": false,
                                     "platforms": [ "WINDOWS", "LINUX" ],
