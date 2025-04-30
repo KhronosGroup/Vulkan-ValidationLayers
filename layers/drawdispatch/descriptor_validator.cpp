@@ -1069,7 +1069,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             // the AccelerationStructure could be null via nullDescriptor and accessing it is legal
             if (acc != VK_NULL_HANDLE || !dev_proxy.enabled_features.nullDescriptor) {
                 const LogObjectList objlist(cb_state.Handle(), *shader_handle, descriptor_set.Handle());
-                skip |= LogError(vuids.descriptor_buffer_bit_set_08114, descriptor_set.Handle(), loc.Get(),
+                skip |= LogError(vuids.descriptor_buffer_bit_set_08114, objlist, loc.Get(),
                                  "the %s is using acceleration structure %s that is invalid or has been destroyed.",
                                  DescribeDescriptor(resource_variable, index, descriptor_type).c_str(), FormatHandle(acc).c_str());
             }

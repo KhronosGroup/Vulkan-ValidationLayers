@@ -1450,7 +1450,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                        VkDeviceSize callableShaderBindingOffset, VkDeviceSize callableShaderBindingStride,
                                        uint32_t width, uint32_t height, uint32_t depth,
                                        const ErrorObject& error_obj) const override;
-    bool ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const Location& table_loc,
+    bool ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer& cb_state, const Location& table_loc,
                                               const char* vuid_single_device_memory, const char* vuid_binding_table_flag,
                                               const VkStridedDeviceAddressRegionKHR& binding_table) const;
     bool ValidateCmdTraceRaysKHR(const Location& loc, const vvl::CommandBuffer& cb_state,
