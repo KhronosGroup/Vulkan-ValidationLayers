@@ -37,58 +37,48 @@ There are various other feature requirements, but if not met, GPU-AV will turn o
 
 If a feature is not enabled, we will try to enable it for you at device creation time.
 
-## Types of GPU-AV
+## Reality
 
-GPU-AV has many things it validates, all of which have different implementation designs.
+There are 5 goals we constantly think about when developing GPU-AV
 
-TODO - Add various internal sections
+1. It is fast enough to use
+3. It won't crash on you
+2. It is accurate (no false positive!)
+4. It has good error messages
+5. It actually catches your invalid code
 
-## Selective Shader Instrumentation
+The development of GPU-AV has taught us showed that to perfectly validate your GPU workload, it can be painfully slow (like multiple seconds a frame slow).
 
-With the `khronos_validation.gpuav_select_instrumented_shaders`/`VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS` feature, an application can control which shaders are instrumented and thus, will return GPU-AV errors.
+There are 2 main reasons people use GPU-AV: `regression mode` and `debug mode`
 
-With the feature enabled, all SPIR-V will not be modified by default.
+### Regression Mode
 
-Inside your `VkShaderModuleCreateInfo` or `vkCreateShadersEXT` pass in a `VkValidationFeaturesEXT` into the `pNext` with `VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT` to have the shader instrumented.
+If you find yourself turning on GPU-AV all the time to "make sure no hidden issues" then this is you. You likely want to have things fast and can compromise not having have try and track multiple error in a single shader.
 
-```c++
-// Example
-VkValidationFeatureEnableEXT enabled[] = {VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT};
-VkValidationFeaturesEXT features = {};
-features.enabledValidationFeatureCount = 1;
-features.pEnabledValidationFeatures = enabled;
+**By default**, we assume this is the use case and why we have the "Safe Mode" setting turned **off** by default.
 
-VkShaderModuleCreateInfo module_ci = {};
-module_ci.pNext = &features;
-```
+By assuming things "should likely be working", we can make GPU-AV much faster
 
-## Validating Vulkan calls made by GPU Assisted Validation
+### Debug Mode
 
-Since GPU-AV itself utilizes the Vulkan API to perform its tasks,
-Vulkan function calls have to valid. To ensure that, those calls have to
-go through another instance of the Vulkan Validation Layer. We refer to this
-as "self validation".
+We realize if we don't stop your Device Lost, no one else will. If you are stuck on a nasty bug and need the extra help, this is for you.
 
-How to setup self validation:
-- Build the self validation layer:
-    - Make sure to use a Release build
-        - Otherwise might be really slow with double validation
-    - Use the the `-DBUILD_SELF_VVL=ON` cmake option when generating the CMake project
-        - The build will produce a manifest file used by the Vulkan loader, `VkLayer_dev_self_validation.json`.
-        The `name` field in this file is `VK_LAYER_DEV_self_validation` to differentiate the self validation layer from the one you work on.
-            - If the name were the same, the loader/os would mark both layers as duplicates and not load the second instance
-- Then use it:
-    - you need to ask the loader to load the self validation layer, and tell it where to find it.
-        Do this by modifying the `VK_INSTANCE_LAYERS` and `VK_LAYER_PATH`, like so for instance:
-```bash
-# Windows
-VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation;VK_LAYER_DEV_self_validation
-VK_LAYER_PATH=C:\Path\To\Vulkan-ValidationLayers\build\debug\layers\Debug;C:\Path\To\Vulkan-ValidationLayers\build_self_vvl\layers\Release
+**Please turn off Safe Mode**, this will sacrifice performance, but GPU-AV will try to stop things from crashing. We have a way to [select the bad shader](./gpu_av_selective_shader.md) as this will **greatly** improve performance if we only need to validate a smaller surface area.
 
-# Linux
-VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation:VK_LAYER_DEV_self_validation
-VK_LAYER_PATH=/Path/To/Vulkan-ValidationLayers/build/debug/layers/Debug:/Path/To/Vulkan-ValidationLayers/build_self_vvl/layers/Release
-```
+#### Force on Robustness
 
-⚠️ Make sure to load the self validation layer **after** the validation layer you work on, by putting its name in `VK_INSTANCE_LAYERS` after the validation layer you work on. Otherwise your Vulkan calls will not be intercepted by the self validation layer.
-To make sure you did it properly, you can use the environment variable `VK_LOADER_DEBUG=layer` to see how the loader sets up layers.
+There is also a "Force robustness on" setting we provide in GPU-AV, this has 2 main purposes
+
+1. A way for developers to toggle this on and off
+2. Improve GPU-AV performance by assuming the developer relies on [robust behavior to work](https://docs.vulkan.org/guide/latest/robustness.html)
+
+## Internal Details
+
+The state of GPU-AV is constantly evolving as we find out what does and doesn't work.
+
+The following are extra information around GPU-AV for those who want to know:
+
+- [General development advice](./gpu_av_development.md)
+- [How descriptor indexing works](./gpu_av_descriptor_indexing.md)
+- [How post processing works](./gpu_av_post_process.md)
+- [How shader instrumentation works](./gpu_av_shader_instrumentation.md)
