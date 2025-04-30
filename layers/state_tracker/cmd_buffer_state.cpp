@@ -1459,8 +1459,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageS
     }
 }
 
-// Set the initial image layout for all slices of an image view
-void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
+void CommandBuffer::TrackImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
     if (dev_data.disabled[image_layout_validation]) {
         return;
     }
@@ -1472,11 +1471,9 @@ void CommandBuffer::SetImageViewInitialLayout(const vvl::ImageView &view_state, 
     }
 }
 
-// Set the initial image layout for a passed non-normalized subresource range
-void CommandBuffer::SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
-                                          VkImageLayout layout) {
-    auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state);
-    if (image_layout_registry) {
+void CommandBuffer::TrackImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
+                                            VkImageLayout layout) {
+    if (auto image_layout_registry = GetOrCreateImageLayoutRegistry(image_state)) {
         image_layout_registry->SetSubresourceRangeInitialLayout(image_state.NormalizeSubresourceRange(range), layout);
     }
 }
