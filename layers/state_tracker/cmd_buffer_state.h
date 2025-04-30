@@ -655,11 +655,12 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordBarriers(const VkDependencyInfo &dep_info);
 
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
-    void SetImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);
+    void TrackImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);
 
     void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);
-    void SetImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
+    // This tracks the first known layout of the subresource in the command buffer (that's why initial).
+    void TrackImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);
 
     void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);

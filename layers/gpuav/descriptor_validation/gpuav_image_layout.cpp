@@ -112,7 +112,7 @@ static void RecordTransitionImageLayout(Validator &gpuav, vvl::CommandBuffer &cb
     //
     // However, we still need to record initial layout for the "initial layout" validation
     if (cb_state.IsReleaseOp(mem_barrier)) {
-        cb_state.SetImageInitialLayout(*image_state, normalized_isr, initial_layout);
+        cb_state.TrackImageInitialLayout(*image_state, normalized_isr, initial_layout);
     } else {
         cb_state.SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
     }
@@ -232,10 +232,9 @@ static void RecordCmdBlitImage(Validator &gpuav, VkCommandBuffer commandBuffer, 
     auto src_image_state = gpuav.Get<vvl::Image>(srcImage);
     auto dst_image_state = gpuav.Get<vvl::Image>(dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
-        // Make sure that all image slices are updated to correct layout
         for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
         }
     }
 }
@@ -291,11 +290,11 @@ void TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, const vvl::R
                 const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
                 VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
                 sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, initial_layout);
+                cb_state.TrackImageInitialLayout(*image_state, sub_range, initial_layout);
                 sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                cb_state.SetImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+                cb_state.TrackImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
             } else {
-                cb_state.SetImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
+                cb_state.TrackImageInitialLayout(*image_state, view_state->normalized_subresource_range, initial_layout);
             }
         }
     }
@@ -418,7 +417,7 @@ void Validator::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, 
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*image_state, pRanges[i], imageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*image_state, pRanges[i], imageLayout);
         }
     }
 }
@@ -430,7 +429,7 @@ void Validator::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandB
     auto image_state = Get<vvl::Image>(image);
     if (cb_state_ptr && image_state) {
         for (uint32_t i = 0; i < rangeCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*image_state, pRanges[i], imageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*image_state, pRanges[i], imageLayout);
         }
     }
 }
@@ -471,8 +470,8 @@ void Validator::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImag
     if (cb_state_ptr && src_image_state && dst_image_state) {
         // Make sure that all image slices are updated to correct layout
         for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
         }
     }
 }
@@ -488,12 +487,11 @@ void Validator::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const
     auto src_image_state = Get<vvl::Image>(pCopyImageInfo->srcImage);
     auto dst_image_state = Get<vvl::Image>(pCopyImageInfo->dstImage);
     if (cb_state_ptr && src_image_state && dst_image_state) {
-        // Make sure that all image slices are updated to correct layout
         for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].srcSubresource),
-                                                pCopyImageInfo->srcImageLayout);
-            cb_state_ptr->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].dstSubresource),
-                                                pCopyImageInfo->dstImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].srcSubresource),
+                                                  pCopyImageInfo->srcImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].dstSubresource),
+                                                  pCopyImageInfo->dstImageLayout);
         }
     }
 }
@@ -504,9 +502,8 @@ void Validator::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(srcImage);
     if (cb_state_ptr && src_image_state) {
-        // Make sure that all image slices record referenced layout
         for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].imageSubresource), srcImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].imageSubresource), srcImageLayout);
         }
     }
 }
@@ -523,11 +520,10 @@ void Validator::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffe
     auto cb_state_ptr = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto src_image_state = Get<vvl::Image>(pCopyImageToBufferInfo->srcImage);
     if (cb_state_ptr && src_image_state) {
-        // Make sure that all image slices record referenced layout
         for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
-            cb_state_ptr->SetImageInitialLayout(*src_image_state,
-                                                RangeFromLayers(pCopyImageToBufferInfo->pRegions[i].imageSubresource),
-                                                pCopyImageToBufferInfo->srcImageLayout);
+            cb_state_ptr->TrackImageInitialLayout(*src_image_state,
+                                                  RangeFromLayers(pCopyImageToBufferInfo->pRegions[i].imageSubresource),
+                                                  pCopyImageToBufferInfo->srcImageLayout);
         }
     }
 }
@@ -538,9 +534,8 @@ void Validator::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     if (auto dst_image_state = Get<vvl::Image>(dstImage)) {
-        // Make sure that all image slices are record referenced layout
         for (uint32_t i = 0; i < regionCount; ++i) {
-            cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].imageSubresource), dstImageLayout);
+            cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].imageSubresource), dstImageLayout);
         }
     }
 }
@@ -557,10 +552,10 @@ void Validator::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffe
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
 
     if (auto dst_image_state = Get<vvl::Image>(pCopyBufferToImageInfo->dstImage)) {
-        // Make sure that all image slices are record referenced layout
         for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
-            cb_state->SetImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyBufferToImageInfo->pRegions[i].imageSubresource),
-                                            pCopyBufferToImageInfo->dstImageLayout);
+            cb_state->TrackImageInitialLayout(*dst_image_state,
+                                              RangeFromLayers(pCopyBufferToImageInfo->pRegions[i].imageSubresource),
+                                              pCopyBufferToImageInfo->dstImageLayout);
         }
     }
 }
