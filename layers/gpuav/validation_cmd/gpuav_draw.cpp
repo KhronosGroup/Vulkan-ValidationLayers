@@ -50,13 +50,13 @@ struct SharedDrawValidationResources {
     vko::Buffer dummy_buffer;  // Used to fill unused buffer bindings in validation pipelines
     bool valid = false;
 
-    SharedDrawValidationResources(Validator &gpuav, const Location &loc) : dummy_buffer(gpuav) {
+    SharedDrawValidationResources(Validator &gpuav) : dummy_buffer(gpuav) {
         VkBufferCreateInfo dummy_buffer_info = vku::InitStructHelper();
         dummy_buffer_info.size = 64;// whatever
         dummy_buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
-        const bool success = dummy_buffer.Create(loc, &dummy_buffer_info, &alloc_info);
+        const bool success = dummy_buffer.Create(&dummy_buffer_info, &alloc_info);
         if (!success) {
             valid = false;
             return;
@@ -141,7 +141,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) return;
         valpipe::ComputePipeline<FirstInstanceValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
@@ -344,7 +344,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) return;
         valpipe::ComputePipeline<CountBufferValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
@@ -512,7 +512,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
          error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
          loc](Validator &gpuav, CommandBufferSubState &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
-                gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
+                gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
             if (!shared_draw_validation_resources.valid) return;
             valpipe::ComputePipeline<MeshValidationShader> &validation_pipeline =
                 gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
@@ -822,7 +822,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                                             error_logger_i = uint32_t(cb_state.per_command_error_loggers.size()),
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
-            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav, loc);
+            gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
         if (!shared_draw_validation_resources.valid) {
             return;
         }
@@ -842,7 +842,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         const uint32_t max_indices_in_buffer = static_cast<uint32_t>(index_buffer_binding.size / (index_bits_size / 8u));
 
         vko::BufferRange validation_dispatch_params_buffer_range =
-            cb_state.gpu_resources_manager.GetDeviceLocalIndirectBufferRange(loc, 3 * sizeof(uint32_t));
+            cb_state.gpu_resources_manager.GetDeviceLocalIndirectBufferRange(3 * sizeof(uint32_t));
 
         if (validation_dispatch_params_buffer_range.buffer == VK_NULL_HANDLE) {
             return;

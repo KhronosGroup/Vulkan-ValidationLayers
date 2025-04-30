@@ -62,7 +62,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
     // Error output buffer
     {
         if (error_output_buffer_range_.buffer == VK_NULL_HANDLE) {
-            error_output_buffer_range_ = gpu_resources_manager.GetHostVisibleBufferRange(loc, glsl::kErrorBufferByteSize);
+            error_output_buffer_range_ = gpu_resources_manager.GetHostVisibleBufferRange(glsl::kErrorBufferByteSize);
             if (error_output_buffer_range_.buffer == VK_NULL_HANDLE) {
                 return;
             }
@@ -83,7 +83,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
             VmaAllocationCreateInfo alloc_info = {};
             alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            const bool success = cmd_errors_counts_buffer_.Create(loc, &buffer_info, &alloc_info);
+            const bool success = cmd_errors_counts_buffer_.Create(&buffer_info, &alloc_info);
             if (!success) {
                 return;
             }
@@ -103,7 +103,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
             // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
             // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
             alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-            bool success = bda_ranges_snapshot_.Create(loc, &buffer_info, &alloc_info);
+            bool success = bda_ranges_snapshot_.Create(&buffer_info, &alloc_info);
             if (!success) {
                 return;
             }
@@ -238,7 +238,7 @@ bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
     // Post update cleanups
     // ---
     // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
-    bda_ranges_snapshot_.FlushAllocation(loc);
+    bda_ranges_snapshot_.FlushAllocation();
     bda_ranges_snapshot_version_ = gpuav_.device_state->buffer_device_address_ranges_version;
 
     return true;

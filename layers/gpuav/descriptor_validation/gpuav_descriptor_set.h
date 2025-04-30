@@ -50,10 +50,10 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
     void NotifyUpdate() override;
 
     VkDeviceAddress GetTypeAddress(Validator &gpuav, const Location &loc);
-    VkDeviceAddress GetPostProcessBuffer(Validator &gpuav, const Location &loc);
+    VkDeviceAddress GetPostProcessBuffer(Validator &gpuav);
     bool HasPostProcessBuffer() const { return !post_process_buffer_.IsDestroyed(); }
     bool CanPostProcess() const;
-    void ClearPostProcess(const Location &loc) const;
+    void ClearPostProcess() const;
 
     DescriptorAccessMap GetDescriptorAccesses(const Location &loc) const;
 

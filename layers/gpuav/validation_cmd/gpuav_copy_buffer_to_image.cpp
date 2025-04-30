@@ -140,8 +140,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
 
         const VkDeviceSize buffer_size =
             uniform_buffer_constants_byte_size + sizeof(BufferImageCopy) * copy_buffer_to_img_info->regionCount;
-        vko::BufferRange copy_src_regions_mem_buffer_range =
-            cb_state.gpu_resources_manager.GetHostVisibleBufferRange(loc, buffer_size);
+        vko::BufferRange copy_src_regions_mem_buffer_range = cb_state.gpu_resources_manager.GetHostVisibleBufferRange(buffer_size);
         if (copy_src_regions_mem_buffer_range.buffer == VK_NULL_HANDLE) {
             return;
         }
