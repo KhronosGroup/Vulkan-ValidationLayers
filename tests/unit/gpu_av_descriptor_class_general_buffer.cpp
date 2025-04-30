@@ -2527,6 +2527,33 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, LoopsWithBranch) {
     ComputeStorageBufferTest(cs_source, true, 256, "VUID-vkCmdDispatch-storageBuffers-06936");
 }
 
+TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ComplexCalculate) {
+    TEST_DESCRIPTION("from Granite meshopt-sandbox test");
+    char const *cs_source = R"glsl(
+        #version 450
+
+        layout(set = 0, binding = 0, std430) buffer SSBO {
+            uint data[]; // holds 450 items
+        } payload;
+
+        uvec2 meshlet_decode2(uint offset_in_words, uint index, uint bit_count) {
+            uint start_bit = index * bit_count * 2;
+            // start_word will be 449 which is the last item
+            uint start_word = offset_in_words + start_bit / 32u;
+            start_bit &= 31u;
+            uint word0 = payload.data[start_word];
+            uint word1 = payload.data[start_word + 1u];
+            return uvec2(word0, word1);
+        }
+
+        void main() {
+            meshlet_decode2(444, 14, 6);
+            meshlet_decode2(444, 15, 6);
+        }
+    )glsl";
+    ComputeStorageBufferTest(cs_source, true, 1800, "VUID-vkCmdDispatch-storageBuffers-06936");
+}
+
 TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, TaskShader) {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_EXT_MESH_SHADER_EXTENSION_NAME);

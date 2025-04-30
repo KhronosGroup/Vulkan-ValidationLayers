@@ -941,3 +941,47 @@ TEST_F(NegativeGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 }
+
+TEST_F(NegativeGpuAVIndirectBuffer, BufferUsageFlags2) {
+    TEST_DESCRIPTION("test VkBufferUsageFlags2CreateInfo");
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(InitGpuAvFramework());
+
+    PFN_vkSetPhysicalDeviceLimitsEXT fpvkSetPhysicalDeviceLimitsEXT = nullptr;
+    PFN_vkGetOriginalPhysicalDeviceLimitsEXT fpvkGetOriginalPhysicalDeviceLimitsEXT = nullptr;
+    if (!LoadDeviceProfileLayer(fpvkSetPhysicalDeviceLimitsEXT, fpvkGetOriginalPhysicalDeviceLimitsEXT)) {
+        GTEST_SKIP() << "Failed to load device profile layer.";
+    }
+
+    VkPhysicalDeviceProperties props;
+    fpvkGetOriginalPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+    props.limits.maxComputeWorkGroupCount[0] = 2;
+    props.limits.maxComputeWorkGroupCount[1] = 2;
+    props.limits.maxComputeWorkGroupCount[2] = 2;
+    fpvkSetPhysicalDeviceLimitsEXT(Gpu(), &props.limits);
+
+    RETURN_IF_SKIP(InitState());
+
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT;
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
+    buffer_ci.size = sizeof(VkDispatchIndirectCommand);
+    vkt::Buffer indirect_buffer(*m_device, buffer_ci, kHostVisibleMemProps);
+    VkDispatchIndirectCommand *ptr = static_cast<VkDispatchIndirectCommand *>(indirect_buffer.Memory().Map());
+    ptr->x = 4;  // over
+    ptr->y = 2;
+    ptr->z = 1;
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-VkDispatchIndirectCommand-x-00417");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
