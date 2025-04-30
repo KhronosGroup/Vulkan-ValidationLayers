@@ -33,17 +33,28 @@ namespace gpuav {
 void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateInfo *pCreateInfo,
                                           const VkAllocationCallbacks *pAllocator, VkBuffer *pBuffer,
                                           const RecordObject &record_obj, chassis::CreateBuffer &chassis_state) {
+    const auto *flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(chassis_state.modified_create_info.pNext);
+    const VkBufferUsageFlags2 in_usage = flags2 ? flags2->usage : chassis_state.modified_create_info.usage;
+
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
     // acceleration structure build validation will find and replace invalid acceleration structure
     // handles inside of a compute shader.
-    if (chassis_state.modified_create_info.usage & VK_BUFFER_USAGE_RAY_TRACING_BIT_NV) {
-        chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    if (in_usage & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR) {
+        if (flags2) {
+            const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
+        } else {
+            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
     }
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
     if (gpuav_settings.IsBufferValidationEnabled() &&
-        (chassis_state.modified_create_info.usage & (VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))) {
-        chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        (in_usage & (VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))) {
+        if (flags2) {
+            const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
+        } else {
+            chassis_state.modified_create_info.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        }
     }
 
     // Align index buffer size to 4: validation shader reads DWORDS
