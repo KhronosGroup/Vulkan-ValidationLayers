@@ -1845,6 +1845,12 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
             objlist.add(shader);
         }
     }
+
+    // If using dynamic rendering, will just not add anything
+    if (pipeline_bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS && active_render_pass) {
+        objlist.add(active_render_pass->Handle());
+    }
+
     return objlist;
 }
 

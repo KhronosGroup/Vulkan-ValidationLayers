@@ -849,9 +849,9 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
 
         const vvl::DescriptorBinding *binding = descriptor_set.GetBinding(binding_index);
         if (!binding) {  //  End at construction is the condition for an invalid binding.
-            auto set = descriptor_set.Handle();
-            result |= LogError(vuids.descriptor_buffer_bit_set_08114, set, loc, "%s %s is invalid.", FormatHandle(set).c_str(),
-                               resource_variable.DescribeDescriptor().c_str());
+            const LogObjectList objlist(cb_state.Handle(), shader_handle, descriptor_set.Handle());
+            result |= LogError(vuids.descriptor_buffer_bit_set_08114, objlist, loc, "%s %s is invalid.",
+                               FormatHandle(descriptor_set).c_str(), resource_variable.DescribeDescriptor().c_str());
             return result;
         }
 

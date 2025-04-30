@@ -2152,7 +2152,7 @@ bool CoreChecks::ValidateGeometryNV(const VkGeometryNV &geometry, const Location
     return skip;
 }
 
-bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuffer, const Location &table_loc,
+bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &cb_state, const Location &table_loc,
                                                       const char *vuid_single_device_memory, const char *vuid_binding_table_flag,
                                                       const VkStridedDeviceAddressRegionKHR &binding_table) const {
     bool skip = false;
@@ -2163,7 +2163,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
 
     const auto buffer_states = GetBuffersByAddress(binding_table.deviceAddress);
     if (buffer_states.empty()) {
-        skip |= LogError("VUID-VkStridedDeviceAddressRegionKHR-size-04631", commandBuffer, table_loc.dot(Field::deviceAddress),
+        skip |= LogError("VUID-VkStridedDeviceAddressRegionKHR-size-04631",
+                         cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::deviceAddress),
                          "(0x%" PRIx64 ") has no buffer associated with it.", binding_table.deviceAddress);
     } else {
         const vvl::range<VkDeviceSize> requested_range(binding_table.deviceAddress,
@@ -2226,7 +2227,8 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(VkCommandBuffer commandBuf
         }}};
 
         skip |= buffer_address_validator.LogErrorsIfNoValidBuffer(*this, buffer_states, table_loc.dot(Field::deviceAddress),
-                                                                  LogObjectList(commandBuffer), binding_table.deviceAddress);
+                                                                  cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
+                                                                  binding_table.deviceAddress);
     }
 
     return skip;

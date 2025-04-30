@@ -55,9 +55,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&
         ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
          static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(cb_state.active_render_pass->Handle());
-        skip |= LogError(vuid.max_multiview_instance_index_02688, objlist, loc,
+        skip |= LogError(vuid.max_multiview_instance_index_02688, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                          "renderpass instance has multiview enabled, and maxMultiviewInstanceIndex: %" PRIu32
                          ", but instanceCount: %" PRIu32 " and firstInstance: %" PRIu32 ".",
                          phys_dev_props_core11.maxMultiviewInstanceIndex, instanceCount, firstInstance);
@@ -73,8 +71,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                 firstInstance != 0u) {
                 for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                     if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
-                        const LogObjectList objlist(cb_state.Handle(), pipeline_state->Handle());
-                        skip |= LogError(vuid.vertex_input_09461, objlist, loc,
+                        skip |= LogError(vuid.vertex_input_09461, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                          "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32
                                          "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
                                          ", but supportsNonZeroFirstInstance is VK_FALSE.",
@@ -91,11 +88,7 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                 for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
                     const auto &desc = binding_state.second.desc;
                     if (desc.divisor != 1u) {
-                        LogObjectList objlist(cb_state.Handle());
-                        if (pipeline_state) {
-                            objlist.add(pipeline_state->Handle());
-                        }
-                        skip |= LogError(vuid.vertex_input_09462, objlist, loc,
+                        skip |= LogError(vuid.vertex_input_09462, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
                                          "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
                                          ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
                                          " and supportsNonZeroFirstInstance is VK_FALSE.",
@@ -151,12 +144,12 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
         const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
         if (!query_pool_state) continue;
         if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
-            skip |= LogError(vuid.xfb_queries_07074, cb_state.Handle(), loc, "Query with type %s is active.",
-                             string_VkQueryType(query_pool_state->create_info.queryType));
+            skip |= LogError(vuid.xfb_queries_07074, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
         }
         if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-            skip |= LogError(vuid.pg_queries_07075, cb_state.Handle(), loc, "Query with type %s is active.",
-                             string_VkQueryType(query_pool_state->create_info.queryType));
+            skip |= LogError(vuid.pg_queries_07075, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+                             "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
         }
     }
     return skip;
@@ -872,26 +865,30 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
             if (pHitShaderBindingTable->deviceAddress == 0) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03697" : "VUID-vkCmdTraceRaysKHR-flags-03697";
-                skip |= LogError(vuid, cb_state.Handle(), table_loc.dot(Field::deviceAddress), "is zero.");
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
+                                 table_loc.dot(Field::deviceAddress), "is zero.");
             }
             if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03514" : "VUID-vkCmdTraceRaysKHR-flags-03514";
-                skip |= LogError(vuid, cb_state.Handle(), table_loc, "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.",
-                                 pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
+                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 pHitShaderBindingTable->stride);
             }
         }
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR) {
             if (pHitShaderBindingTable->deviceAddress == 0) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03696" : "VUID-vkCmdTraceRaysKHR-flags-03696";
-                skip |= LogError(vuid, cb_state.Handle(), table_loc.dot(Field::deviceAddress), "is zero.");
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
+                                 table_loc.dot(Field::deviceAddress), "is zero.");
             }
             if ((pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0)) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03513" : "VUID-vkCmdTraceRaysKHR-flags-03513";
-                skip |= LogError(vuid, cb_state.Handle(), table_loc, "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.",
-                                 pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
+                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 pHitShaderBindingTable->stride);
             }
         }
         if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_ANY_HIT_SHADERS_BIT_KHR) {
@@ -900,8 +897,9 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
             if (pHitShaderBindingTable->size == 0 || pHitShaderBindingTable->stride == 0) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03512" : "VUID-vkCmdTraceRaysKHR-flags-03512";
-                skip |= LogError(vuid, cb_state.Handle(), table_loc, "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.",
-                                 pHitShaderBindingTable->size, pHitShaderBindingTable->stride);
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc,
+                                 "either size (%" PRIu64 ") and stride (%" PRIu64 ") is zero.", pHitShaderBindingTable->size,
+                                 pHitShaderBindingTable->stride);
             }
         }
 
@@ -909,8 +907,8 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                                             : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03687";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pHitShaderBindingTable-03688"
                                                           : "VUID-vkCmdTraceRaysKHR-pHitShaderBindingTable-03688";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
-                                                     vuid_binding_table_flag, *pHitShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
+                                                     *pHitShaderBindingTable);
     }
 
     if (pRaygenShaderBindingTable) {
@@ -922,12 +920,12 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
         // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9368
         // TODO - waiting for https://gitlab.khronos.org/vulkan/vulkan/-/issues/4173
         if (const auto buffers = GetBuffersByAddress(pRaygenShaderBindingTable->deviceAddress); buffers.empty()) {
-            skip |= LogError("UNASSIGNED-TraceRays-InvalidRayGenSBTAddress", cb_state.Handle(), table_loc.dot(Field::deviceAddress),
-                             "(0x%" PRIx64 ") does not belong to a valid VkBuffer.",
-                             pRaygenShaderBindingTable->deviceAddress);
+            skip |= LogError("UNASSIGNED-TraceRays-InvalidRayGenSBTAddress",
+                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR), table_loc.dot(Field::deviceAddress),
+                             "(0x%" PRIx64 ") does not belong to a valid VkBuffer.", pRaygenShaderBindingTable->deviceAddress);
         }
-        skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
-                                                     vuid_binding_table_flag, *pRaygenShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
+                                                     *pRaygenShaderBindingTable);
     }
 
     if (pMissShaderBindingTable) {
@@ -936,13 +934,14 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                                             : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03683";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pMissShaderBindingTable-03684"
                                                           : "VUID-vkCmdTraceRaysKHR-pMissShaderBindingTable-03684";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
-                                                     vuid_binding_table_flag, *pMissShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
+                                                     *pMissShaderBindingTable);
         if (pMissShaderBindingTable->deviceAddress == 0) {
             if (pipeline_state->create_flags & VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR) {
                 const char *vuid =
                     is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-flags-03511" : "VUID-vkCmdTraceRaysKHR-flags-03511";
-                skip |= LogError(vuid, cb_state.Handle(), loc.dot(Field::pMissShaderBindingTable),
+                skip |= LogError(vuid, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR),
+                                 loc.dot(Field::pMissShaderBindingTable),
                                  "is 0 but last bound ray tracing pipeline (%s) was created with flags (%s).",
                                  FormatHandle(pipeline_state->Handle()).c_str(),
                                  string_VkPipelineCreateFlags2(pipeline_state->create_flags).c_str());
@@ -956,8 +955,8 @@ bool CoreChecks::ValidateCmdTraceRaysKHR(const Location &loc, const vvl::Command
                                                             : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03691";
         const char *vuid_binding_table_flag = is_indirect ? "VUID-vkCmdTraceRaysIndirectKHR-pCallableShaderBindingTable-03692"
                                                           : "VUID-vkCmdTraceRaysKHR-pCallableShaderBindingTable-03692";
-        skip |= ValidateRaytracingShaderBindingTable(cb_state.VkHandle(), table_loc, vuid_single_device_memory,
-                                                     vuid_binding_table_flag, *pCallableShaderBindingTable);
+        skip |= ValidateRaytracingShaderBindingTable(cb_state, table_loc, vuid_single_device_memory, vuid_binding_table_flag,
+                                                     *pCallableShaderBindingTable);
     }
     return skip;
 }
@@ -1354,7 +1353,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         // TODO - This currently implicitly is checking for VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT being set
         if (pipeline.descriptor_buffer_mode) {
             if (ds_slot.ds_state && !ds_slot.ds_state->IsPushDescriptor()) {
-                const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), ds_slot.ds_state->Handle());
+                LogObjectList objlist = cb_state.GetObjectList(bind_point);
+                objlist.add(ds_slot.ds_state->Handle());
                 skip |= LogError(vuid.descriptor_buffer_bit_not_set_08115, objlist, vuid.loc(),
                                  "pipeline bound to %s requires a descriptor buffer (because it was created with "
                                  "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound VkDescriptorSet (%s)",
@@ -1363,8 +1363,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             }
 
         } else if (ds_slot.descriptor_buffer_binding.has_value()) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, objlist, vuid.loc(),
+            skip |= LogError(vuid.descriptor_buffer_set_offset_missing_08117, cb_state.GetObjectList(bind_point), vuid.loc(),
                              "pipeline bound to %s requires a VkDescriptorSet (because it was not created with "
                              "VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT), but has a bound descriptor buffer"
                              " (index=%" PRIu32 " offset=%" PRIu64 ")",
@@ -1424,7 +1423,6 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                 VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
                 LogObjectList objlist = cb_state.GetObjectList(bind_point);
                 objlist.add(set_handle);
-                objlist.add(pipeline_layout->Handle());
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
                                  "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
                                  FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
@@ -1551,6 +1549,7 @@ bool CoreChecks::ValidateActionStatePushConstant(const LastBound &last_bound_sta
 bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
                                                     const vvl::Pipeline *pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     if (pipeline) {
         for (const auto &stage : pipeline->stage_states) {
@@ -1558,7 +1557,7 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
             if (!stage.spirv_state) continue;
 
             if (stage.spirv_state->HasCapability(spv::CapabilityRayQueryKHR)) {
-                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), vuid.loc(),
+                skip |= LogError(vuid.ray_query_04617, cb_state.GetObjectList(bind_point), vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
                                  string_VkShaderStageFlags(stage.GetStage()).c_str());
             }
@@ -1566,7 +1565,8 @@ bool CoreChecks::ValidateActionStateProtectedMemory(const LastBound &last_bound_
     } else {
         for (const auto &stage : last_bound_state.shader_object_states) {
             if (stage && stage->spirv->HasCapability(spv::CapabilityRayQueryKHR)) {
-                skip |= LogError(vuid.ray_query_04617, last_bound_state.cb_state.GetObjectList(bind_point), vuid.loc(),
+                const LogObjectList objlist(cb_state.Handle(), stage->Handle());
+                skip |= LogError(vuid.ray_query_04617, objlist, vuid.loc(),
                                  "Shader in %s uses OpCapability RayQueryKHR but the command buffer is protected.",
                                  string_VkShaderStageFlags(stage->create_info.stage).c_str());
             }
@@ -1731,8 +1731,7 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
                 IsSecondaryColorInputBlendFactor(color_blend_equation.dstColorBlendFactor) ||
                 IsSecondaryColorInputBlendFactor(color_blend_equation.srcAlphaBlendFactor) ||
                 IsSecondaryColorInputBlendFactor(color_blend_equation.dstAlphaBlendFactor)) {
-                const LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-                skip |= LogError(vuid.blend_dual_source_09239, objlist, vuid.loc(),
+                skip |= LogError(vuid.blend_dual_source_09239, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                                  "Fragment output attachment %" PRIu32
                                  " is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
                                  ") is not less than maxFragmentDualSrcAttachments (%" PRIu32
@@ -1752,9 +1751,8 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
                 IsSecondaryColorInputBlendFactor(attachment.dstColorBlendFactor) ||
                 IsSecondaryColorInputBlendFactor(attachment.srcAlphaBlendFactor) ||
                 IsSecondaryColorInputBlendFactor(attachment.dstAlphaBlendFactor)) {
-                const LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
                 skip |= LogError(
-                    vuid.blend_dual_source_09239, objlist, vuid.loc(),
+                    vuid.blend_dual_source_09239, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                     "Fragment output attachment %" PRIu32
                     " is using Dual-Source Blending, but the largest output fragment Location (%" PRIu32
                     ") is not less than maxFragmentDualSrcAttachments (%" PRIu32
