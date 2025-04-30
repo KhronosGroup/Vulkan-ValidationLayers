@@ -62,11 +62,10 @@ class Buffer {
     // No error propagation, but if hitting a VMA error, GPU-AV is likely not going to recover anyway.
 
     [[nodiscard]] void *GetMappedPtr() const;
-    void FlushAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
-    void InvalidateAllocation(const Location &loc, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void FlushAllocation(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
+    void InvalidateAllocation(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE) const;
 
-    [[nodiscard]] bool Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                              const VmaAllocationCreateInfo *allocation_create_info);
+    [[nodiscard]] bool Create(const VkBufferCreateInfo *buffer_create_info, const VmaAllocationCreateInfo *allocation_create_info);
     void Destroy();
 
     bool IsDestroyed() const { return buffer == VK_NULL_HANDLE; }
@@ -100,8 +99,8 @@ class GpuResourcesManager {
 
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
-    vko::BufferRange GetHostVisibleBufferRange(const Location &loc, VkDeviceSize size);
-    vko::BufferRange GetDeviceLocalIndirectBufferRange(const Location &loc, VkDeviceSize size);
+    vko::BufferRange GetHostVisibleBufferRange(VkDeviceSize size);
+    vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
 
     void ReturnResources();
     void DestroyResources();
@@ -123,7 +122,7 @@ class GpuResourcesManager {
       public:
         BufferCache() = default;
         void Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci);
-        vko::BufferRange GetBufferRange(Validator &gpuav, const Location &loc, VkDeviceSize byte_size, VkDeviceSize alignment,
+        vko::BufferRange GetBufferRange(Validator &gpuav, VkDeviceSize byte_size, VkDeviceSize alignment,
                                         VkDeviceSize min_buffer_block_byte_size = 0);
         ~BufferCache();
         void ReturnBufferRange(const vko::BufferRange &buffer_range);

@@ -33,7 +33,7 @@ namespace gpuav {
 namespace descriptor {
 
 void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
-                                       DescriptorBindingCommand &descriptor_binding_cmd, const Location &loc) {
+                                       DescriptorBindingCommand &descriptor_binding_cmd) {
     if (!gpuav.gpuav_settings.shader_instrumentation.post_process_descriptor_indexing) return;
 
     // Create a new buffer to hold our BDA pointers
@@ -43,7 +43,7 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    const bool success = descriptor_binding_cmd.post_process_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = descriptor_binding_cmd.post_process_ssbo_buffer.Create(&buffer_info, &alloc_info);
     if (!success) {
         return;
     }
@@ -60,7 +60,7 @@ void UpdateBoundDescriptorsPostProcess(Validator &gpuav, CommandBufferSubState &
             continue;  // can have gaps in descriptor sets
         }
 
-        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = SubState(*ds_slot.ds_state).GetPostProcessBuffer(gpuav, loc);
+        ssbo_buffer_ptr->descriptor_index_post_process_buffers[i] = SubState(*ds_slot.ds_state).GetPostProcessBuffer(gpuav);
     }
 }
 
@@ -75,7 +75,7 @@ void UpdateBoundDescriptorsDescriptorChecks(Validator &gpuav, CommandBufferSubSt
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.pool = VK_NULL_HANDLE;
-    const bool success = descriptor_binding_cmd.descritpor_state_ssbo_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = descriptor_binding_cmd.descritpor_state_ssbo_buffer.Create(&buffer_info, &alloc_info);
     if (!success) {
         return;
     }
@@ -128,7 +128,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
         descriptor_binding_cmd.bound_descriptor_sets.emplace_back(ds_slot.ds_state);
     }
 
-    UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_binding_cmd, loc);
+    UpdateBoundDescriptorsPostProcess(gpuav, cb_state, last_bound, descriptor_binding_cmd);
     UpdateBoundDescriptorsDescriptorChecks(gpuav, cb_state, last_bound, descriptor_binding_cmd, loc);
 
     cb_state.descriptor_binding_commands.emplace_back(std::move(descriptor_binding_cmd));
@@ -205,7 +205,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
 
             DescriptorAccessMap descriptor_access_map = ds_sub_state.GetDescriptorAccesses(loc);
             // Once we have accessed everything and created the DescriptorAccess, we can clear this buffer
-            ds_sub_state.ClearPostProcess(loc);
+            ds_sub_state.ClearPostProcess();
 
             // For each shader ID we can do the state object lookup once, then validate all the accesses inside of it
             for (const auto &[shader_id, descriptor_accesses] : descriptor_access_map) {

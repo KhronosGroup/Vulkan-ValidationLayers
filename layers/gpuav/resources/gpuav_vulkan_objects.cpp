@@ -148,26 +148,25 @@ void SharedResourcesCache::Clear() {
 
 void *Buffer::GetMappedPtr() const { return mapped_ptr; }
 
-void Buffer::FlushAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::FlushAllocation(VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaFlushAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to flush device memory.");
+        gpuav.InternalVmaError(gpuav.device, result, "Unable to flush device memory.");
     }
 }
 
-void Buffer::InvalidateAllocation(const Location &loc, VkDeviceSize offset, VkDeviceSize size) const {
+void Buffer::InvalidateAllocation(VkDeviceSize offset, VkDeviceSize size) const {
     VkResult result = vmaInvalidateAllocation(gpuav.vma_allocator_, allocation, offset, size);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to invalidate device memory.");
+        gpuav.InternalVmaError(gpuav.device, result, "Unable to invalidate device memory.");
     }
 }
 
-bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create_info,
-                    const VmaAllocationCreateInfo *allocation_create_info) {
+bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAllocationCreateInfo *allocation_create_info) {
     VkResult result =
         vmaCreateBuffer(gpuav.vma_allocator_, buffer_create_info, allocation_create_info, &buffer, &allocation, nullptr);
     if (result != VK_SUCCESS) {
-        gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to allocate device memory for internal buffer.");
+        gpuav.InternalVmaError(gpuav.device, result, "Unable to allocate device memory for internal buffer.");
         return false;
     }
     size = buffer_create_info->size;
@@ -176,7 +175,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
         // After creating the buffer, get the address right away
         device_address = gpuav.device_state->GetBufferDeviceAddressHelper(buffer, &gpuav.modified_extensions);
         if (device_address == 0) {
-            gpuav.InternalError(gpuav.device, loc, "Failed to get address with DispatchGetBufferDeviceAddress.");
+            gpuav.InternalVmaError(gpuav.device, VK_ERROR_UNKNOWN, "Failed to get address with DispatchGetBufferDeviceAddress.");
             return false;
         }
     }
@@ -185,7 +184,7 @@ bool Buffer::Create(const Location &loc, const VkBufferCreateInfo *buffer_create
         result = vmaMapMemory(gpuav.vma_allocator_, allocation, &mapped_ptr);
         if (result != VK_SUCCESS) {
             mapped_ptr = nullptr;
-            gpuav.InternalVmaError(gpuav.device, loc, result, "Unable to map device memory.");
+            gpuav.InternalVmaError(gpuav.device, result, "Unable to map device memory.");
             return false;
         }
     }
@@ -257,20 +256,20 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
     return GetManagedDescriptorSet(desc_set_layout);
 }
 
-vko::BufferRange GpuResourcesManager::GetHostVisibleBufferRange(const Location &loc, VkDeviceSize size) {
+vko::BufferRange GpuResourcesManager::GetHostVisibleBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"
     constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
     // Buffers are used as storage buffers, align to corresponding limit
     const VkDeviceSize alignment = gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment;
-    return host_visible_buffer_cache_.GetBufferRange(gpuav_, loc, size, alignment, min_buffer_block_size);
+    return host_visible_buffer_cache_.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
-vko::BufferRange GpuResourcesManager::GetDeviceLocalIndirectBufferRange(const Location &loc, VkDeviceSize size) {
+vko::BufferRange GpuResourcesManager::GetDeviceLocalIndirectBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"
     constexpr VkDeviceSize min_buffer_block_size = 4 * 1024;
     // Buffers are used as storage buffers, align to corresponding limit
     const VkDeviceSize alignment = gpuav_.phys_dev_props.limits.minStorageBufferOffsetAlignment;
-    return device_local_indirect_buffer_cache_.GetBufferRange(gpuav_, loc, size, alignment, min_buffer_block_size);
+    return device_local_indirect_buffer_cache_.GetBufferRange(gpuav_, size, alignment, min_buffer_block_size);
 }
 
 void GpuResourcesManager::ReturnResources() {
@@ -302,8 +301,8 @@ void GpuResourcesManager::BufferCache::Create(VkBufferUsageFlags buffer_usage_fl
 
 GpuResourcesManager::BufferCache::~BufferCache() { DestroyBuffers(); }
 
-vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpuav, const Location &loc, VkDeviceSize byte_size,
-                                                                  VkDeviceSize alignment, VkDeviceSize min_buffer_block_byte_size) {
+vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpuav, VkDeviceSize byte_size, VkDeviceSize alignment,
+                                                                  VkDeviceSize min_buffer_block_byte_size) {
     // Try to find a cached buffer block big enough to sub-allocate from it
     if (total_available_byte_size_ >= byte_size) {
         for (size_t i = 0; i < cached_buffers_blocks_.size(); ++i) {
@@ -347,7 +346,7 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
     buffer_ci.size = std::max(min_buffer_block_byte_size, byte_size);
     buffer_ci.usage = buffer_usage_flags_;
-    const bool success = buffer.Create(loc, &buffer_ci, &allocation_ci_);
+    const bool success = buffer.Create(&buffer_ci, &allocation_ci_);
     if (!success) {
         return {VK_NULL_HANDLE, 0, 0, nullptr};
     }

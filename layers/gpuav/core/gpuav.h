@@ -72,7 +72,7 @@ class Validator : public GpuShaderInstrumentor {
   public:
     void FinishDeviceSetup(const VkDeviceCreateInfo* pCreateInfo, const Location& loc) final;
 
-    void InternalVmaError(LogObjectList objlist, const Location& loc, VkResult result, const char* const specific_message) const;
+    void InternalVmaError(LogObjectList objlist, VkResult result, const char* const specific_message) const;
 
   private:
     void InitSettings(const Location& loc);

@@ -197,7 +197,7 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Lo
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    const bool success = input_buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = input_buffer_.Create(&buffer_info, &alloc_info);
     if (!success) {
         return 0;
     }
@@ -237,7 +237,7 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Lo
     }
 
     // Flush the descriptor state buffer before unmapping so that the new state is visible to the GPU
-    input_buffer_.FlushAllocation(loc);
+    input_buffer_.FlushAllocation();
 
     return input_buffer_.Address();
 }
@@ -251,7 +251,7 @@ bool DescriptorSetSubState::CanPostProcess() const {
     return true;
 }
 
-VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav, const Location &loc) {
+VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav) {
     auto guard = Lock();
     // Each set only needs to create its post process buffer once. It is based on total descriptor count, and even with things like
     // VARIABLE_DESCRIPTOR_COUNT_BIT, the size will only get smaller afterwards.
@@ -272,12 +272,12 @@ VkDeviceAddress DescriptorSetSubState::GetPostProcessBuffer(Validator &gpuav, co
     // The descriptor state buffer can be very large (4mb+ in some games). Allocating it as HOST_CACHED
     // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-    const bool success = post_process_buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = post_process_buffer_.Create(&buffer_info, &alloc_info);
     if (!success) {
         return 0;
     }
 
-    ClearPostProcess(loc);
+    ClearPostProcess();
 
     return post_process_buffer_.Address();
 }
@@ -292,7 +292,7 @@ DescriptorAccessMap DescriptorSetSubState::GetDescriptorAccesses(const Location 
     }
 
     auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot *)post_process_buffer_.GetMappedPtr();
-    post_process_buffer_.InvalidateAllocation(loc);
+    post_process_buffer_.InvalidateAllocation();
 
     for (uint32_t binding = 0; binding < binding_layouts_.size(); binding++) {
         const gpuav::spirv::BindingLayout &binding_layout = binding_layouts_[binding];
@@ -311,9 +311,9 @@ DescriptorAccessMap DescriptorSetSubState::GetDescriptorAccesses(const Location 
     return descriptor_access_map;
 }
 
-void DescriptorSetSubState::ClearPostProcess(const Location &loc) const {
+void DescriptorSetSubState::ClearPostProcess() const {
     post_process_buffer_.Clear();
-    post_process_buffer_.FlushAllocation(loc);
+    post_process_buffer_.FlushAllocation();
 }
 
 void DescriptorSetSubState::NotifyUpdate() { current_version_++; }
@@ -332,7 +332,7 @@ DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const
 
     VmaAllocationCreateInfo alloc_info{};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    const bool success = buffer_.Create(loc, &buffer_info, &alloc_info);
+    const bool success = buffer_.Create(&buffer_info, &alloc_info);
     if (!success) {
         return;
     }

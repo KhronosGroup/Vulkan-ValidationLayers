@@ -387,7 +387,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         // This check is only for indexed draws
         if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
             vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
-                cb_state.gpu_resources_manager.GetHostVisibleBufferRange(loc, 4 * sizeof(uint32_t));
+                cb_state.gpu_resources_manager.GetHostVisibleBufferRange(4 * sizeof(uint32_t));
             if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
                 return;
             }
@@ -424,7 +424,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
             vertex_attribute_fetch_limits_buffer_bi.range = vertex_attribute_fetch_limits_buffer_range.size;
         } else {
             // Point all non-indexed draws to our global buffer that will bypass the check in shader
-            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.GetOrCreate<VertexAttributeFetchOff>(gpuav, loc);
+            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.GetOrCreate<VertexAttributeFetchOff>(gpuav);
             if (!resource.valid) return;
             vertex_attribute_fetch_limits_buffer_bi.buffer = resource.buffer.VkHandle();
             vertex_attribute_fetch_limits_buffer_bi.offset = 0;
@@ -500,7 +500,7 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     assert(gpuav.instrumentation_bindings_.size() == 9);
 
     if (gpuav.gpuav_settings.debug_printf_enabled) {
-        if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point, loc)) {
+        if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point)) {
             // TODO - need cleaner way to indicate if we want to return because of an error or because we want to save from doing
             // unnecessary work
             return;

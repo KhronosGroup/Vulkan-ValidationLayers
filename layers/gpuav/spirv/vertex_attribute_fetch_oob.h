@@ -32,14 +32,14 @@ struct VertexAttributeFetchOff {
     vko::Buffer buffer;
     bool valid = false;
 
-    VertexAttributeFetchOff(Validator &gpuav, const Location &loc) : buffer(gpuav) {
+    VertexAttributeFetchOff(Validator& gpuav) : buffer(gpuav) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = 4 * sizeof(uint32_t);
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        const bool success = buffer.Create(loc, &buffer_info, &alloc_info);
+        const bool success = buffer.Create(&buffer_info, &alloc_info);
         if (!success) {
             valid = false;
             return;

@@ -383,7 +383,7 @@ void AnalyzeAndGenerateMessage(Validator &gpuav, VkCommandBuffer command_buffer,
 #endif
 
 bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  VkPipelineBindPoint bind_point, const Location &loc) {
+                                  VkPipelineBindPoint bind_point) {
     gpuav::vko::Buffer debug_printf_output_buffer(gpuav);
 
     // Allocate memory for the output block that the gpu will use to return values for printf
@@ -393,7 +393,7 @@ bool UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
     VmaAllocationCreateInfo alloc_info = {};
     alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    const bool success = debug_printf_output_buffer.Create(loc, &buffer_info, &alloc_info);
+    const bool success = debug_printf_output_buffer.Create(&buffer_info, &alloc_info);
     if (!success) {
         return false;
     }
