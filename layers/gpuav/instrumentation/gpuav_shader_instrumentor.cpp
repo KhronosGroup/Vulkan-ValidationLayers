@@ -239,9 +239,7 @@ void GpuShaderInstrumentor::PreCallRecordCreatePipelineLayout(VkDevice device, c
             strm << "pCreateInfo::setLayoutCount (" << chassis_state.modified_create_info.setLayoutCount
                  << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Pipeline Layout has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
-                    "for "
-                    "pipelines created with it, therefor no validation error will be repored for them by GPU-AV at "
-                    "runtime.";
+                    "for pipelines created with it, therefore no validation error will be repored for them by GPU-AV at runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
             // Modify the pipeline layout by:
@@ -378,7 +376,7 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
             strm << "pCreateInfos[" << i << "]::setLayoutCount (" << new_create_info.setLayoutCount
                  << ") will conflicts with validation's descriptor set at slot " << instrumentation_desc_set_bind_index_ << ". "
                  << "This Shader Object has too many descriptor sets that will not allow GPU shader instrumentation to be setup "
-                    "for VkShaderEXT created with it, therefor no validation error will be repored for them by GPU-AV at "
+                    "for VkShaderEXT created with it, therefore no validation error will be repored for them by GPU-AV at "
                     "runtime.";
             InternalWarning(device, record_obj.location, strm.str().c_str());
         } else {
@@ -402,10 +400,10 @@ void GpuShaderInstrumentor::PreCallRecordCreateShadersEXT(VkDevice device, uint3
                 new_create_info.pSetLayouts[k] = dummy_desc_layout_;
             }
             new_create_info.pSetLayouts[instrumentation_desc_set_bind_index_] = instrumentation_desc_layout_;
-        }
 
-        chassis_state.is_modified |=
-            PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+            chassis_state.is_modified |=
+                PreCallRecordShaderObjectInstrumentation(new_create_info, create_info_loc, instrumentation_data);
+        }
     }
 
     chassis_state.pCreateInfos = reinterpret_cast<VkShaderCreateInfoEXT *>(chassis_state.modified_create_infos.data());
