@@ -2853,8 +2853,7 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
     }
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7178
-TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) {
+TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectReserved) {
     TEST_DESCRIPTION("Reserve a descriptor slot and proceed to use them all anyway so debug printf can't");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -2877,7 +2876,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     std::vector<VkDescriptorSetLayout> layouts;
     for (uint32_t i = 0; i < set_limit; i++) {
-        layouts.push_back(descriptor_set.layout_.handle());
+        layouts.push_back(descriptor_set.layout_);
     }
 
     // First try to use too many sets in the Shader Object
@@ -2892,7 +2891,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShader(comp_shader);
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
@@ -2901,12 +2900,21 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
 
     // Reduce by one (so there is room now) and print something
     {
+        uint32_t under_set_limit = set_limit - 1;
+        std::vector<const vkt::DescriptorSetLayout *> vkt_layouts;
+        for (uint32_t i = 0; i < under_set_limit; i++) {
+            vkt_layouts.push_back(&descriptor_set.layout_);
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, vkt_layouts);
+
         const vkt::Shader comp_shader(*m_device,
-                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
+                                      ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, under_set_limit, layouts.data()));
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShader(comp_shader);
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2915,8 +2923,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectReserved) 
     }
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7178
-TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserved) {
+TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsShaderObjectNotReserved) {
     TEST_DESCRIPTION("Dont reserve a descriptor slot and proceed to use them all anyway so debug printf can't");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::shaderObject);
@@ -2938,7 +2945,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     std::vector<VkDescriptorSetLayout> layouts;
     for (uint32_t i = 0; i < set_limit; i++) {
-        layouts.push_back(descriptor_set.layout_.handle());
+        layouts.push_back(descriptor_set.layout_);
     }
 
     // First try to use too many sets in the Shader Object
@@ -2953,7 +2960,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShader(comp_shader);
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
@@ -2962,12 +2969,21 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
 
     // Reduce by one (so there is room now) and print something
     {
+        uint32_t under_set_limit = set_limit - 1;
+        std::vector<const vkt::DescriptorSetLayout *> vkt_layouts;
+        for (uint32_t i = 0; i < under_set_limit; i++) {
+            vkt_layouts.push_back(&descriptor_set.layout_);
+        }
+        vkt::PipelineLayout pipe_layout(*m_device, vkt_layouts);
+
         const vkt::Shader comp_shader(*m_device,
                                       ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, set_limit - 1, layouts.data()));
 
         m_command_buffer.Begin();
         m_command_buffer.BindCompShader(comp_shader);
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2976,8 +2992,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_UseAllDescriptorSlotsShaderObjectNotReserve
     }
 }
 
-// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7178
-TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
+TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
     TEST_DESCRIPTION("Make sure we instrument every index of VkShaderCreateInfoEXT");
     AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
@@ -2986,6 +3001,19 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     RETURN_IF_SKIP(InitDebugPrintfFramework());
     RETURN_IF_SKIP(InitState());
     InitDynamicRenderTarget();
+
+    char const *vs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        vec2 vertices[3];
+        void main(){
+            vertices[0] = vec2(-1.0, -1.0);
+            vertices[1] = vec2( 1.0, -1.0);
+            vertices[2] = vec2( 0.0,  1.0);
+            debugPrintfEXT("vertex == %u", gl_VertexIndex);
+            gl_Position = vec4(vertices[gl_VertexIndex % 3], 0.0, 1.0);
+        }
+    )glsl";
 
     char const *fs_source = R"glsl(
         #version 450
@@ -2996,7 +3024,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
         }
     )glsl";
 
-    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexDrawPassthroughGlsl);
+    const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_source);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, fs_source);
 
     VkShaderCreateInfoEXT shader_create_infos[2];
@@ -3006,20 +3034,23 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     VkShaderEXT shaders[2];
     vk::CreateShadersEXT(m_device->handle(), 2, shader_create_infos, nullptr, shaders);
 
-    VkRenderingInfo renderingInfo = vku::InitStructHelper();
-    renderingInfo.colorAttachmentCount = 0;
-    renderingInfo.layerCount = 1;
-    renderingInfo.renderArea = {{0, 0}, {1, 1}};
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 0;
+    rendering_info.layerCount = 1;
+    rendering_info.renderArea = {{0, 0}, {1, 1}};
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRendering(renderingInfo);
+    m_command_buffer.BeginRendering(rendering_info);
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT};
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 2, stages, shaders);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindShadersEXT(m_command_buffer, 2, stages, shaders);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
+    m_errorMonitor->SetDesiredInfo("vertex == 0");
+    m_errorMonitor->SetDesiredInfo("vertex == 1");
+    m_errorMonitor->SetDesiredInfo("vertex == 2");
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
@@ -3027,6 +3058,83 @@ TEST_F(NegativeDebugPrintf, DISABLED_ShaderObjectMultiCreate) {
     for (uint32_t i = 0; i < 2; ++i) {
         vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
     }
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectBoundDescriptor) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO { uint x; };
+        void main() {
+            debugPrintfEXT("x is undefined %u", x);
+        }
+    )glsl";
+    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source);
+
+    vkt::Buffer storage_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    const vkt::Shader comp_shader(*m_device,
+                                  ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
+    m_command_buffer.Begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("x is undefined");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugPrintf, ShaderObjectUnusedBoundDescriptor) {
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+    m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kInformationBit);
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer SSBO { uint x; };
+        void main() {
+            debugPrintfEXT("x is undefined %u", x);
+        }
+    )glsl";
+    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, shader_source);
+
+    vkt::Buffer storage_buffer(*m_device, 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    OneOffDescriptorSet descriptor_set0(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set1(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set0.layout_, &descriptor_set1.layout_});
+    descriptor_set0.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set0.UpdateDescriptorSets();
+    descriptor_set1.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set1.UpdateDescriptorSets();
+
+    VkDescriptorSetLayout layouts[2] = {descriptor_set0.layout_, descriptor_set1.layout_};
+    const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, layouts));
+    m_command_buffer.Begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("x is undefined");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDebugPrintf, OverflowBuffer) {
