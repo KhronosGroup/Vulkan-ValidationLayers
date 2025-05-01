@@ -742,12 +742,12 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding& b1, const VkDescriptorSetLayoutBinding& b2,
                                    bool& out_exception) const;
-    bool VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout& layout_dsl,
-                                      const vvl::DescriptorSetLayout& bound_dsl, std::string& error_msg) const;
-
-    bool VerifySetLayoutCompatibility(const vvl::DescriptorSet& descriptor_set,
-                                      const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& set_layouts,
-                                      const VulkanTypedHandle& handle, const uint32_t layoutIndex, std::string& error_msg) const;
+    bool VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout& reference_dsl,
+                                                const vvl::DescriptorSetLayout& to_bind_dsl, std::string& error_msg) const;
+    bool VerifyDescriptorSetIsCompatibile(
+        const vvl::DescriptorSet& to_bind_descriptor_set,
+        const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>>& descriptor_set_layouts, const uint32_t index,
+        std::string& error_msg) const;
 
     bool VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout& layout_a, const vvl::PipelineLayout& layout_b,
                                            std::string& error_msg) const;
@@ -1763,11 +1763,11 @@ class CoreChecks : public vvl::DeviceProxy {
                                                const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdSetStencilReference(VkCommandBuffer commandBuffer, VkStencilFaceFlags faceMask, uint32_t reference,
                                                const ErrorObject& error_obj) const override;
-    bool ValidateCmdBindDescriptorSets(const vvl::CommandBuffer&, VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
-                                       const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
-                                       const uint32_t* pDynamicOffsets, const Location& loc) const;
+    bool ValidateCmdBindDescriptorSets(const vvl::CommandBuffer&, VkPipelineLayout layout, uint32_t firstSet,
+                                       uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets,
+                                       uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets, const Location& loc) const;
     bool PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                              VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                               const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount,
                                               const uint32_t* pDynamicOffsets, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBindDescriptorSets2(VkCommandBuffer commandBuffer,

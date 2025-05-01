@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/vk_enum_string_helper.h>
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "core_validation.h"
 #include "generated/vk_extension_helper.h"
@@ -27,6 +28,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/vk_layer_utils.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
@@ -1374,12 +1376,26 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     }
 
     // Check if the current pipeline is compatible for the maximum used set with the bound sets.
-    if (pipeline.descriptor_buffer_mode) return skip;
+    if (pipeline.descriptor_buffer_mode) {
+        return skip;
+    }
 
     const auto pipeline_layout = pipeline.PipelineLayoutState();
     if (!pipeline.active_slots.empty() && !last_bound_state.IsBoundSetCompatible(pipeline.max_active_slot, *pipeline_layout)) {
+        // If they never bound any descriptors
+        if (!last_bound_state.desc_set_pipeline_layout) {
+            skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
+                             "The %s statically uses descriptor set %" PRIu32
+                             ", but because a descriptor was never bound, the pipeline layouts are not compatible.\nIf using a "
+                             "descriptor, make sure to call one of vkCmdBindDescriptorSets, vkCmdPushDescriptorSet, "
+                             "vkCmdSetDescriptorBufferOffset, etc for %s",
+                             FormatHandle(pipeline).c_str(), pipeline.max_active_slot, string_VkPipelineBindPoint(bind_point));
+            return skip;
+        }
+
         LogObjectList objlist(pipeline.Handle());
         const auto layouts = pipeline.PipelineLayoutStateUnion();
+        // GPL can have multiple pipeline layouts used to build up a single valid compatible set
         std::ostringstream pipe_layouts_log;
         if (layouts.size() > 1) {
             pipe_layouts_log << "a union of layouts [ ";
@@ -1391,13 +1407,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
         } else {
             pipe_layouts_log << FormatHandle(*layouts.front());
         }
-        std::string pipeline_layout_handle_str;
-        if (last_bound_state.desc_set_pipeline_layout) {
-            pipeline_layout_handle_str = FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle());
-            objlist.add(last_bound_state.desc_set_pipeline_layout->Handle());
-        } else {
-            pipeline_layout_handle_str = "Pipeline Layout never bound";  // < can happen when dealing with multiview
-        }
+
+        objlist.add(last_bound_state.desc_set_pipeline_layout->Handle());
 
         std::string range =
             pipeline.max_active_slot == 0 ? "set 0 is" : "all sets 0 to " + std::to_string(pipeline.max_active_slot) + " are";
@@ -1405,7 +1416,8 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
                          "The %s (created with %s) statically uses descriptor set %" PRIu32
                          ", but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
                          FormatHandle(pipeline).c_str(), pipe_layouts_log.str().c_str(), pipeline.max_active_slot, range.c_str(),
-                         String(last_bound_state.desc_set_bound_command), pipeline_layout_handle_str.c_str(),
+                         String(last_bound_state.desc_set_bound_command),
+                         FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle()).c_str(),
                          last_bound_state.DescribeNonCompatibleSet(pipeline.max_active_slot, *pipeline_layout).c_str());
     } else {
         // if the bound set is not compatible, the rest will just be extra redundant errors
@@ -1414,17 +1426,16 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
             const auto ds_slot = last_bound_state.ds_slots[set_index];
             if (!ds_slot.ds_state) {
                 skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
-                                 "%s uses set #%" PRIu32
+                                 "%s uses set %" PRIu32
                                  " but that set is not bound. (Need to use a command like vkCmdBindDescriptorSets to bind the set)",
                                  FormatHandle(pipeline).c_str(), set_index);
-            } else if (!VerifySetLayoutCompatibility(*ds_slot.ds_state, pipeline_layout->set_layouts, pipeline_layout->Handle(),
-                                                     set_index, error_string)) {
-                // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
+            } else if (!VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, pipeline_layout->set_layouts, set_index,
+                                                         error_string)) {
+                // Set is bound but not compatible w/ corresponding VkPipelineLayoutCreateInfo::pSetLayouts
                 VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
-                LogObjectList objlist = cb_state.GetObjectList(bind_point);
-                objlist.add(set_handle);
+                const LogObjectList objlist(cb_state.Handle(), set_handle, pipeline.Handle(), pipeline_layout->Handle());
                 skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
-                                 "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
+                                 "%s bound as set %" PRIu32 " is not compatible with corresponding %s\n%s",
                                  FormatHandle(set_handle).c_str(), set_index, FormatHandle(*pipeline_layout).c_str(),
                                  error_string.c_str());
             } else {  // Valid set is bound and layout compatible, validate that it's updated
@@ -1450,16 +1461,37 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
 
     // Check if the current shader objects are compatible for the maximum used set with the bound sets.
     for (const auto &shader_state : last_bound_state.shader_object_states) {
-        if (!shader_state) continue;
+        if (!shader_state) {
+            continue;
+        }
 
-        if (shader_state && !shader_state->active_slots.empty() &&
+        if (!shader_state->active_slots.empty() &&
             !last_bound_state.IsBoundSetCompatible(shader_state->max_active_slot, *shader_state)) {
             LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
-            skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
-                             "The %s statically uses descriptor set (index #%" PRIu32
-                             ") which is not compatible with the currently bound descriptor set's layout\n%s",
-                             FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot,
-                             last_bound_state.DescribeNonCompatibleSet(shader_state->max_active_slot, *shader_state).c_str());
+
+            if (!last_bound_state.desc_set_pipeline_layout) {
+                // If they never bound any descriptors
+                skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
+                                 "The %s statically uses descriptor set %" PRIu32
+                                 ", but because a descriptor was never bound, the pipeline layouts are not compatible.\nIf using "
+                                 "a descriptor, make sure to call one of vkCmdBindDescriptorSets, vkCmdPushDescriptorSet, "
+                                 "vkCmdSetDescriptorBufferOffset, etc for %s",
+                                 FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot,
+                                 string_VkPipelineBindPoint(bind_point));
+
+            } else {
+                objlist.add(last_bound_state.desc_set_pipeline_layout->Handle());
+                std::string range = shader_state->max_active_slot == 0
+                                        ? "set 0 is"
+                                        : "all sets 0 to " + std::to_string(shader_state->max_active_slot) + " are";
+                skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
+                                 "The %s statically uses descriptor set %" PRIu32
+                                 " but %s not compatible with the pipeline layout bound with %s (%s)\n%s",
+                                 FormatHandle(shader_state->Handle()).c_str(), shader_state->max_active_slot, range.c_str(),
+                                 String(last_bound_state.desc_set_bound_command),
+                                 FormatHandle(last_bound_state.desc_set_pipeline_layout->Handle()).c_str(),
+                                 last_bound_state.DescribeNonCompatibleSet(shader_state->max_active_slot, *shader_state).c_str());
+            }
         } else {
             // if the bound set is not copmatible, the rest will just be extra redundant errors
             for (const auto &[set_index, binding_req_map] : shader_state->active_slots) {
@@ -1468,15 +1500,15 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
                 if (!ds_slot.ds_state) {
                     const LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
-                                     "%s uses set #%" PRIu32 " but that set is not bound.",
+                                     "%s uses set %" PRIu32 " but that set is not bound.",
                                      FormatHandle(shader_state->Handle()).c_str(), set_index);
-                } else if (!VerifySetLayoutCompatibility(*ds_slot.ds_state, shader_state->set_layouts, shader_state->Handle(),
-                                                         set_index, error_string)) {
-                    // Set is bound but not compatible w/ overlapping pipeline_layout from PSO
+                } else if (!VerifyDescriptorSetIsCompatibile(*ds_slot.ds_state, shader_state->set_layouts, set_index,
+                                                             error_string)) {
+                    // Set is bound but not compatible w/ corresponding VkShaderCreateInfoEXT::pSetLayouts
                     VkDescriptorSet set_handle = ds_slot.ds_state->VkHandle();
                     const LogObjectList objlist(cb_state.Handle(), set_handle, shader_state->Handle());
                     skip |= LogError(vuid.compatible_pipeline_08600, objlist, vuid.loc(),
-                                     "%s bound as set #%" PRIu32 " is not compatible with overlapping %s due to: %s",
+                                     "%s bound as set %" PRIu32 " is not compatible with corresponding %s\n%s",
                                      FormatHandle(set_handle).c_str(), set_index, FormatHandle(shader_state->Handle()).c_str(),
                                      error_string.c_str());
                 } else {  // Valid set is bound and layout compatible, validate that it's updated

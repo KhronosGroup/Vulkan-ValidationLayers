@@ -582,7 +582,9 @@ bool LastBound::IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shad
 std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const {
     std::ostringstream ss;
     if (set >= ds_slots.size()) {
-        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size() << ")\n";
+        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size()
+           << ")\nHint: Make sure the previous calls to " << String(desc_set_bound_command)
+           << " has all sets bound that are needed.";
     } else if (set >= pipeline_layout.set_compat_ids.size()) {
         ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkPipelineLayout ("
            << pipeline_layout.set_compat_ids.size() << ")\n";
@@ -595,7 +597,9 @@ std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::Pipelin
 std::string LastBound::DescribeNonCompatibleSet(uint32_t set, const vvl::ShaderObject &shader_object_state) const {
     std::ostringstream ss;
     if (set >= ds_slots.size()) {
-        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size() << ")\n";
+        ss << "The set (" << set << ") is out of bounds for the number of sets bound (" << ds_slots.size()
+           << ")\nHint: Make sure the previous calls to " << String(desc_set_bound_command)
+           << " has all sets bound that are needed.";
     } else if (set >= shader_object_state.set_compat_ids.size()) {
         ss << "The set (" << set << ") is out of bounds for the number of sets in the non-compatible VkDescriptorSetLayout ("
            << shader_object_state.set_compat_ids.size() << ")\n";
