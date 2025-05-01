@@ -228,7 +228,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
         const vvl::Swapchain &swapchain = *swapchain_info.swapchain;
 
         ss << "(" << semaphore_str << ") is being signaled by " << queue_str << ", but it may still be in use by "
-           << logger.FormatHandle(swapchain.Handle()) << ".\n\n";
+           << logger.FormatHandle(swapchain.Handle()) << ".\n";
 
         if (swapchain_info.acquire_counter_value > 0) {
             const uint32_t max_print_count = 8;  // max number of history items to print
@@ -243,11 +243,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 marked_history_index = (history_length - 1) - (swapchain.acquire_count - swapchain_info.acquire_counter_value);
             }
             // Print acquire history
-            if (print_count == 1) {
-                ss << "The only acquired image index so far: ";
-            } else {
-                ss << "Here are the last " << print_count << " acquired image indices: ";
-            }
+            ss << "Here are the most recently acquired image indices: ";
             for (uint32_t i = 0; i < print_count; i++) {
                 uint32_t history_index = first_history_index + i;
                 uint32_t acquired_image_index = swapchain.GetAcquiredImageIndexFromHistory(history_index);
@@ -277,7 +273,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
                 ss << " and cannot be safely reused with image index "
                    << swapchain.GetAcquiredImageIndexFromHistory(history_length - 1);
             }
-            ss << ".\n\n";
+            ss << ".\n";
             // Additional details
             ss << "Vulkan insight: One solution is to assign each image its own semaphore.";
             if (print_count >= 2 && swapchain.GetAcquiredImageIndexFromHistory(history_length - 2) ==
@@ -294,7 +290,7 @@ static std::string GetSemaphoreInUseBySwapchainMessage(const vvl::Semaphore::Swa
         ss << "Vulkan insight:";
     }
     // Shared additional details.
-    ss << " Here are common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in use and can be "
+    ss << " Here are some common methods to ensure that a semaphore passed to vkQueuePresentKHR is not in use and can be "
           "safely reused:\n"
           "\ta) Use a separate semaphore per swapchain image. Index these semaphores using the index of the "
           "acquired image.\n"
