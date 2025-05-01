@@ -437,20 +437,6 @@
                                                     { "key": "validate_sync", "value": true }
                                                 ]
                                             }
-                                        },
-                                        {
-                                            "key": "syncval_message_extra_properties_pretty_print",
-                                            "label": "Pretty print extra properties",
-                                            "description": "Enable formatted output of key-value properties. Disabled by default to simplify pattern matching when filtering errors.",
-                                            "type": "BOOL",
-                                            "default": false,
-                                            "dependence": {
-                                                "mode": "ALL",
-                                                "settings": [
-                                                    { "key": "validate_sync", "value": true },
-                                                    { "key": "syncval_message_extra_properties", "value": true }
-                                                ]
-                                            }
                                         }
                                     ]
                                 }

@@ -42,7 +42,7 @@ std::string ErrorMessages::Error(const HazardResult& hazard, const CommandExecut
             message += '\n';
         }
         const ReportProperties properties = GetErrorMessageProperties(hazard, context, command, message_type, additional_info);
-        message += properties.FormatExtraPropertiesSection(validator_.syncval_settings.message_extra_properties_pretty_print);
+        message += properties.FormatExtraPropertiesSection();
     }
     return message;
 }
