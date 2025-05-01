@@ -40,7 +40,7 @@ struct ReportProperties {
 
     void Add(std::string_view property_name, std::string_view value);
     void Add(std::string_view property_name, uint64_t value);
-    std::string FormatExtraPropertiesSection(bool pretty_print) const;
+    std::string FormatExtraPropertiesSection() const;
 };
 
 // Customization options to modify the standard form of the synchronization error message.

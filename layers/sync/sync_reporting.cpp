@@ -325,11 +325,10 @@ void ReportProperties::Add(std::string_view property_name, uint64_t value) {
     name_values.emplace_back(NameValue{std::string(property_name), std::to_string(value)});
 }
 
-std::string ReportProperties::FormatExtraPropertiesSection(bool pretty_print) const {
+std::string ReportProperties::FormatExtraPropertiesSection() const {
     if (name_values.empty()) {
         return {};
     }
-    const uint32_t pretty_print_alignment = 18;
     const auto sorted = SortKeyValues(name_values);
     std::stringstream ss;
     ss << "[Extra properties]\n";
@@ -339,11 +338,7 @@ std::string ReportProperties::FormatExtraPropertiesSection(bool pretty_print) co
             ss << "\n";
         }
         first = false;
-        uint32_t extra_space_count = 0;
-        if (pretty_print && property.name.length() < pretty_print_alignment) {
-            extra_space_count = pretty_print_alignment - (uint32_t)property.name.length();
-        }
-        ss << property.name << std::string(extra_space_count, ' ') << " = " << property.value;
+        ss << property.name << " = " << property.value;
     }
     return ss.str();
 }
