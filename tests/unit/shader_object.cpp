@@ -1077,42 +1077,88 @@ TEST_F(NegativeShaderObject, DrawWithShadersInNonDynamicRenderPass) {
 
 TEST_F(NegativeShaderObject, IncompatibleDescriptorSet) {
     TEST_DESCRIPTION("Bind an incompatible descriptor set.");
-
-    SetTargetApiVersion(VK_API_VERSION_1_1);
-    AddRequiredFeature(vkt::Feature::vertexPipelineStoresAndAtomics);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
-
-    static const char vert_src[] = R"glsl(
-        #version 460
-        layout(set = 0, binding = 1) buffer foo {
-            int x;
-        } bar;
-        void main() {
-           gl_Position = vec4(bar.x);
-        }
-    )glsl";
 
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
-                                           {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
                                        });
+    OneOffDescriptorSet descriptor_set_bad(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           });
+    vkt::PipelineLayout pipeline_layout_bad(*m_device, {&descriptor_set_bad.layout_});
 
-    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vert_src, &descriptor_set.layout_.handle());
+    const vkt::Shader vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, kMinimalShaderGlsl, &descriptor_set.layout_.handle());
     const vkt::Shader frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentUniformGlsl, &descriptor_set.layout_.handle());
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_bad, 0u, 1u,
+                              &descriptor_set_bad.set_, 0u, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08600");
     vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, DescriptorSetNotBound) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO { uint x; };
+        void main() {
+            x = 0;
+        }
+    )glsl";
+    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    const vkt::Shader comp_shader(*m_device,
+                                  ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &descriptor_set.layout_.handle()));
+    m_command_buffer.Begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeShaderObject, DescriptorSetBoundRange) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+
+    char const* cs_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) buffer SSBO0 { uint x; };
+        layout(set = 1, binding = 0) buffer SSBO1 { uint y; };
+        void main() {
+            x = y;
+        }
+    )glsl";
+    auto cs_spirv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source);
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    VkDescriptorSetLayout dsl_handles[2] = {descriptor_set.layout_, descriptor_set.layout_};
+    const vkt::Shader comp_shader(*m_device, ShaderCreateInfo(cs_spirv, VK_SHADER_STAGE_COMPUTE_BIT, 2, dsl_handles));
+
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BindCompShader(comp_shader);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 

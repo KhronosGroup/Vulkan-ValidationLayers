@@ -23,6 +23,8 @@
 
 #include "core_validation.h"
 #include "error_message/error_location.h"
+#include "generated/error_location_helper.h"
+#include "generated/vk_object_types.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -74,27 +76,29 @@ bool CoreChecks::ImmutableSamplersAreEqual(const VkDescriptorSetLayoutBinding &b
     }
 }
 
-// If our layout is compatible with bound_dsl, return true,
-//  else return false and fill in error_msg will description of what causes incompatibility
-bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &layout_dsl, const vvl::DescriptorSetLayout &bound_dsl,
-                                              std::string &error_msg) const {
+// Check if the |reference_dsl| (from PipelineLayout) is compatibile with |to_bind_dsl|
+// For GPL this is also used, but we don't care which DSL is which
+bool CoreChecks::VerifyDescriptorSetLayoutIsCompatibile(const vvl::DescriptorSetLayout &reference_dsl,
+                                                        const vvl::DescriptorSetLayout &to_bind_dsl, std::string &error_msg) const {
     // Short circuit the detailed check.
-    if (layout_dsl.IsCompatible(&bound_dsl)) return true;
+    if (reference_dsl.IsCompatible(&to_bind_dsl)) {
+        return true;
+    }
 
     // Do a detailed compatibility check of this lhs def (referenced by layout_dsl), vs. the rhs (layout and def)
     // Should only be run if trivial accept has failed, and in that context should return false.
-    VkDescriptorSetLayout layout_dsl_handle = layout_dsl.VkHandle();
-    VkDescriptorSetLayout bound_dsl_handle = bound_dsl.VkHandle();
-    DescriptorSetLayoutDef const *layout_ds_layout_def = layout_dsl.GetLayoutDef();
-    DescriptorSetLayoutDef const *bound_ds_layout_def = bound_dsl.GetLayoutDef();
+    VkDescriptorSetLayout reference_dsl_handle = reference_dsl.VkHandle();
+    VkDescriptorSetLayout to_bind_dsl_handle = to_bind_dsl.VkHandle();
+    const DescriptorSetLayoutDef *reference_ds_layout_def = reference_dsl.GetLayoutDef();
+    const DescriptorSetLayoutDef *to_bind_ds_layout_def = to_bind_dsl.GetLayoutDef();
 
     // Check descriptor counts
-    const auto bound_total_count = bound_ds_layout_def->GetTotalDescriptorCount();
-    if (layout_ds_layout_def->GetTotalDescriptorCount() != bound_ds_layout_def->GetTotalDescriptorCount()) {
+    const auto bound_total_count = to_bind_ds_layout_def->GetTotalDescriptorCount();
+    if (reference_ds_layout_def->GetTotalDescriptorCount() != to_bind_ds_layout_def->GetTotalDescriptorCount()) {
         std::stringstream error_str;
-        error_str << FormatHandle(layout_dsl_handle) << " from pipeline layout has "
-                  << layout_ds_layout_def->GetTotalDescriptorCount() << " total descriptors, but " << FormatHandle(bound_dsl_handle)
-                  << ", which is bound, has " << bound_total_count << " total descriptors.";
+        error_str << FormatHandle(reference_dsl_handle) << " from pipeline layout has "
+                  << reference_ds_layout_def->GetTotalDescriptorCount() << " total descriptors, but "
+                  << FormatHandle(to_bind_dsl_handle) << ", trying to bind, has " << bound_total_count << " total descriptors";
         error_msg = error_str.str();
         return false;  // trivial fail case
     }
@@ -102,14 +106,14 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &la
     bool exception = false;
     // Descriptor counts match so need to go through bindings one-by-one
     //  and verify that type and stageFlags match
-    for (const auto &layout_binding : layout_ds_layout_def->GetBindings()) {
-        const auto bound_binding = bound_ds_layout_def->GetBindingInfoFromBinding(layout_binding.binding);
+    for (const auto &layout_binding : reference_ds_layout_def->GetBindings()) {
+        const auto bound_binding = to_bind_ds_layout_def->GetBindingInfoFromBinding(layout_binding.binding);
         if (layout_binding.descriptorCount != bound_binding->descriptorCount) {
             std::stringstream error_str;
-            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(layout_dsl_handle)
+            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout has a descriptorCount of " << layout_binding.descriptorCount << " but binding "
-                      << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
-                      << ", which is bound, has a descriptorCount of " << bound_binding->descriptorCount;
+                      << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
+                      << ", trying to bind, has a descriptorCount of " << bound_binding->descriptorCount;
             if (bound_binding->descriptorCount == 0 || layout_binding.descriptorCount == 0) {
                 error_str << " (descriptorCount value of zero likely means there is descriptor for binding "
                           << layout_binding.binding << ")";
@@ -118,30 +122,31 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &la
             return false;
         } else if (layout_binding.descriptorType != bound_binding->descriptorType) {
             std::stringstream error_str;
-            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(layout_dsl_handle)
+            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout is type " << string_VkDescriptorType(layout_binding.descriptorType)
-                      << " but binding " << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
-                      << ", which is bound, is type " << string_VkDescriptorType(bound_binding->descriptorType) << "";
+                      << " but binding " << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
+                      << ", trying to bind, is type " << string_VkDescriptorType(bound_binding->descriptorType) << "";
             error_msg = error_str.str();
             return false;
         } else if (layout_binding.stageFlags != bound_binding->stageFlags) {
             std::stringstream error_str;
-            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(layout_dsl_handle)
+            error_str << "Binding " << layout_binding.binding << " for " << FormatHandle(reference_dsl_handle)
                       << " from pipeline layout has stageFlags " << string_VkShaderStageFlags(layout_binding.stageFlags)
-                      << " but binding " << layout_binding.binding << " for " << FormatHandle(bound_dsl_handle)
-                      << ", which is bound, has stageFlags " << string_VkShaderStageFlags(bound_binding->stageFlags);
+                      << " but binding " << layout_binding.binding << " for " << FormatHandle(to_bind_dsl_handle)
+                      << ", trying to bind, has stageFlags " << string_VkShaderStageFlags(bound_binding->stageFlags);
             error_msg = error_str.str();
             return false;
         } else if (!ImmutableSamplersAreEqual(*layout_binding.ptr(), *bound_binding, exception)) {
             error_msg = "Immutable samplers from binding " + std::to_string(layout_binding.binding) + " in pipeline layout " +
-                        FormatHandle(layout_dsl_handle) + " do not match the immutable samplers in the layout currently bound (" +
-                        FormatHandle(bound_dsl_handle) + ")";
+                        FormatHandle(reference_dsl_handle) +
+                        " do not match the immutable samplers in the layout currently bound (" + FormatHandle(to_bind_dsl_handle) +
+                        ")";
             return false;
         }
     }
 
-    const auto &ds_layout_flags = layout_ds_layout_def->GetBindingFlags();
-    const auto &bound_layout_flags = bound_ds_layout_def->GetBindingFlags();
+    const auto &ds_layout_flags = reference_ds_layout_def->GetBindingFlags();
+    const auto &bound_layout_flags = to_bind_ds_layout_def->GetBindingFlags();
     if (bound_layout_flags != ds_layout_flags) {
         std::stringstream error_str;
         assert(ds_layout_flags.size() == bound_layout_flags.size());
@@ -149,9 +154,10 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &la
         for (i = 0; i < ds_layout_flags.size(); i++) {
             if (ds_layout_flags[i] != bound_layout_flags[i]) break;
         }
-        error_str << FormatHandle(layout_dsl_handle) << " from pipeline layout does not have the same binding flags at binding "
-                  << i << " ( " << string_VkDescriptorBindingFlags(ds_layout_flags[i]) << " ) as " << FormatHandle(bound_dsl_handle)
-                  << " ( " << string_VkDescriptorBindingFlags(bound_layout_flags[i]) << " ), which is bound";
+        error_str << FormatHandle(reference_dsl_handle) << " from pipeline layout does not have the same binding flags at binding "
+                  << i << " ( " << string_VkDescriptorBindingFlags(ds_layout_flags[i]) << " ) as "
+                  << FormatHandle(to_bind_dsl_handle) << " ( " << string_VkDescriptorBindingFlags(bound_layout_flags[i])
+                  << " ), which is bound";
         error_msg = error_str.str();
         return false;
     }
@@ -164,29 +170,23 @@ bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSetLayout &la
     return true;
 }
 
-// For given vvl::DescriptorSet, verify that its Set is compatible w/ the setLayout corresponding to
-// pipelineLayout[layoutIndex]
-bool CoreChecks::VerifySetLayoutCompatibility(const vvl::DescriptorSet &descriptor_set,
-                                              const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &set_layouts,
-                                              const VulkanTypedHandle &handle, const uint32_t layoutIndex,
-                                              std::string &error_msg) const {
-    size_t num_sets = set_layouts.size();
-    if (layoutIndex >= num_sets) {
-        std::stringstream error_str;
-        error_str << FormatHandle(handle) << ") only contains ";
-        if (num_sets == 1) {
-            error_str << "1 setLayout, corresponding to index 0";
-        } else {
-            error_str << num_sets << " setLayouts, corresponding to index from 0 to " << num_sets - 1;
-        }
-        error_str << ", but you're attempting to bind set to index " << layoutIndex;
-        error_msg = error_str.str();
-        return false;
+// For a given vkDescriptorSet, we take the list of DescriptorSetLayouts (ex, from a pipeline layout) and check if the DSL at
+// |index| is compatibile
+bool CoreChecks::VerifyDescriptorSetIsCompatibile(
+    const vvl::DescriptorSet &to_bind_descriptor_set,
+    const std::vector<std::shared_ptr<vvl::DescriptorSetLayout const>> &descriptor_set_layouts, const uint32_t index,
+    std::string &error_msg) const {
+    if (to_bind_descriptor_set.IsPushDescriptor()) {
+        return true;
     }
-    if (descriptor_set.IsPushDescriptor()) return true;
-    const auto *layout_node = set_layouts[layoutIndex].get();
-    if (layout_node) {
-        return VerifySetLayoutCompatibility(*layout_node, *descriptor_set.GetLayout(), error_msg);
+
+    if (index >= descriptor_set_layouts.size()) {
+        // This means there is an active set in the SPIR-V that was not in
+        // VkPipelineLayoutCreateInfo/VkShaderCreateInfoEXT::pSetLayouts which would have broke way before
+        assert(false);
+        return true;
+    } else if (const auto *layout_node = descriptor_set_layouts[index].get()) {
+        return VerifyDescriptorSetLayoutIsCompatibile(*layout_node, *to_bind_descriptor_set.GetLayout(), error_msg);
     } else {
         // It's possible the DSL is null when creating a graphics pipeline library, in which case we can't verify compatibility
         // here.
@@ -201,7 +201,7 @@ bool CoreChecks::VerifyPipelineLayoutCompatibility(const vvl::PipelineLayout &la
         const auto ds_a = layout_a.set_layouts[i];
         const auto ds_b = layout_b.set_layouts[i];
         if (ds_a && ds_b) {
-            if (!VerifySetLayoutCompatibility(*ds_a, *ds_b, error_msg)) {
+            if (!VerifyDescriptorSetLayoutIsCompatibile(*ds_a, *ds_b, error_msg)) {
                 return false;
             }
         }
@@ -224,7 +224,7 @@ bool CoreChecks::VerifyPipeleinLayoutCompatibilityUnion(const vvl::PipelineLayou
             ds_b = fs_layout.set_layouts[i];
         }
         if (ds_a && ds_b) {
-            if (!VerifySetLayoutCompatibility(*ds_a, *ds_b, error_msg)) {
+            if (!VerifyDescriptorSetLayoutIsCompatibile(*ds_a, *ds_b, error_msg)) {
                 return false;
             }
         }
@@ -233,40 +233,52 @@ bool CoreChecks::VerifyPipeleinLayoutCompatibilityUnion(const vvl::PipelineLayou
 }
 
 bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout, uint32_t firstSet,
-                                               uint32_t setCount, const VkDescriptorSet *pDescriptorSets,
+                                               uint32_t descriptorSetCount, const VkDescriptorSet *pDescriptorSets,
                                                uint32_t dynamicOffsetCount, const uint32_t *pDynamicOffsets,
                                                const Location &loc) const {
     bool skip = false;
     const bool is_2 = loc.function != Func::vkCmdBindDescriptorSets;
 
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
-    if (!pipeline_layout) return skip;  // dynamicPipelineLayout feature
+    if (!pipeline_layout) {
+        return skip;  // dynamicPipelineLayout feature
+    }
 
     // Track total count of dynamic descriptor types to make sure we have an offset for each one
     uint32_t total_dynamic_descriptors = 0;
 
-    for (uint32_t set_idx = 0; set_idx < setCount; set_idx++) {
+    // If we detect we are binding to many sets, the extra sets will always be incompatible, so check first
+    if ((firstSet + descriptorSetCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
+        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
+        const LogObjectList objlist(cb_state.Handle(), layout);
+        skip |= LogError(vuid, objlist, loc.dot(Field::firstSet),
+                         "(%" PRIu32 ") plus descriptorSetCount (%" PRIu32
+                         ") is greater than VkPipelineLayoutCreateInfo::setLayoutCount (%zu) when pipeline layout was created",
+                         firstSet, descriptorSetCount, pipeline_layout->set_layouts.size());
+        return skip;
+    }
+
+    for (uint32_t set_idx = 0; set_idx < descriptorSetCount; set_idx++) {
         const Location set_loc = loc.dot(Field::pDescriptorSets, set_idx);
-        if (auto descriptor_set = Get<vvl::DescriptorSet>(pDescriptorSets[set_idx])) {
+        const VkDescriptorSet set_handle = pDescriptorSets[set_idx];
+        if (auto descriptor_set = Get<vvl::DescriptorSet>(set_handle)) {
             // Verify that set being bound is compatible with overlapping setLayout of pipelineLayout
             std::string error_string = "";
-            if (!VerifySetLayoutCompatibility(*descriptor_set, pipeline_layout->set_layouts, pipeline_layout->Handle(),
-                                              set_idx + firstSet, error_string)) {
-                const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
+            if (!VerifyDescriptorSetIsCompatibile(*descriptor_set, pipeline_layout->set_layouts, set_idx + firstSet,
+                                                  error_string)) {
+                const LogObjectList objlist(cb_state.Handle(), pipeline_layout->Handle(), set_handle);
                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-00358"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-00358";
                 skip |= LogError(vuid, objlist, set_loc,
-                                 "(%s) being bound is not compatible with overlapping "
-                                 "descriptorSetLayout at index %" PRIu32
-                                 " of "
-                                 "%s due to: %s.",
-                                 FormatHandle(pDescriptorSets[set_idx]).c_str(), set_idx + firstSet, FormatHandle(layout).c_str(),
+                                 "(%s) being bound is not compatible with the corresponding "
+                                 "VkPipelineLayoutCreateInfo::pSetLayouts[%" PRIu32 "] of %s due to:\n%s.",
+                                 FormatHandle(set_handle).c_str(), set_idx + firstSet, FormatHandle(layout).c_str(),
                                  error_string.c_str());
             }
 
             const auto &dsl = descriptor_set->GetLayout();
             if (dsl->GetCreateFlags() & VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT) {
-                const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx], dsl->VkHandle());
+                const LogObjectList objlist(cb_state.Handle(), set_handle, dsl->VkHandle());
                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-08010"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-08010";
                 skip |= LogError(vuid, objlist, set_loc, "was allocated from VkDescriptorSetLayout with %s flags.",
@@ -278,7 +290,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                 // First make sure we won't overstep bounds of pDynamicOffsets array
                 if ((total_dynamic_descriptors + set_dynamic_descriptor_count) > dynamicOffsetCount) {
                     // Test/report this here, such that we don't run past the end of pDynamicOffsets in the else clause
-                    const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
+                    const LogObjectList objlist(cb_state.Handle(), set_handle);
                     const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-dynamicOffsetCount-00359"
                                             : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
                     skip |=
@@ -287,7 +299,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                                  " "
                                  "dynamicOffsets are left in "
                                  "pDynamicOffsets array. There must be one dynamic offset for each dynamic descriptor being bound.",
-                                 FormatHandle(pDescriptorSets[set_idx]).c_str(), descriptor_set->GetDynamicDescriptorCount(),
+                                 FormatHandle(set_handle).c_str(), descriptor_set->GetDynamicDescriptorCount(),
                                  (dynamicOffsetCount - total_dynamic_descriptors));
                     // Set the number found to the maximum to prevent duplicate messages, or subsquent descriptor sets from
                     // testing against the "short tail" we're skipping below.
@@ -355,8 +367,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
 
                                 // Validate offset didn't go over buffer
                                 if ((bound_range == VK_WHOLE_SIZE) && (offset > 0)) {
-                                    const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx],
-                                                                buffer_descriptor->GetBuffer());
+                                    const LogObjectList objlist(cb_state.Handle(), set_handle, buffer_descriptor->GetBuffer());
                                     const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06715"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06715";
                                     skip |= LogError(vuid, objlist, loc.dot(Field::pDynamicOffsets, cur_dyn_offset),
@@ -370,8 +381,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
 
                                 } else if (buffer_state && (bound_range != VK_WHOLE_SIZE) &&
                                            ((offset + bound_range + bound_offset) > buffer_state->create_info.size)) {
-                                    const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx],
-                                                                buffer_descriptor->GetBuffer());
+                                    const LogObjectList objlist(cb_state.Handle(), set_handle, buffer_descriptor->GetBuffer());
                                     const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-01979"
                                                             : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-01979";
                                     skip |=
@@ -393,20 +403,20 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
             }
             auto ds_pool_state = descriptor_set->GetPoolState();
             if (ds_pool_state && ds_pool_state->create_info.flags & VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT) {
-                const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx], ds_pool_state->Handle());
+                const LogObjectList objlist(cb_state.Handle(), set_handle, ds_pool_state->Handle());
                 const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-04616"
                                         : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-04616";
                 skip |= LogError(vuid, objlist, set_loc,
                                  "was allocated from a pool that was created with VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT.");
             }
         } else if (!enabled_features.graphicsPipelineLibrary) {
-            const LogObjectList objlist(cb_state.Handle(), pDescriptorSets[set_idx]);
+            const LogObjectList objlist(cb_state.Handle(), set_handle);
             const char *vuid =
                 is_2 ? "VUID-VkBindDescriptorSetsInfo-pDescriptorSets-06563" : "VUID-vkCmdBindDescriptorSets-pDescriptorSets-06563";
             skip |= LogError(vuid, objlist, set_loc,
                              "(%s) does not exist, and the pipeline layout was not created "
                              "VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT.",
-                             FormatHandle(pDescriptorSets[set_idx]).c_str());
+                             FormatHandle(set_handle).c_str());
         }
     }
     //  dynamicOffsetCount must equal the total number of dynamic descriptors in the sets being bound
@@ -415,34 +425,22 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                                 : "VUID-vkCmdBindDescriptorSets-dynamicOffsetCount-00359";
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "Attempting to bind %" PRIu32 " descriptorSets with %" PRIu32
-                         " dynamic descriptors, but "
-                         "dynamicOffsetCount is %" PRIu32
-                         ". It should "
-                         "exactly match the number of dynamic descriptors.",
-                         setCount, total_dynamic_descriptors, dynamicOffsetCount);
-    }
-    // firstSet and descriptorSetCount sum must be less than setLayoutCount
-    if ((firstSet + setCount) > static_cast<uint32_t>(pipeline_layout->set_layouts.size())) {
-        const char *vuid = is_2 ? "VUID-VkBindDescriptorSetsInfo-firstSet-00360" : "VUID-vkCmdBindDescriptorSets-firstSet-00360";
-        skip |= LogError(vuid, cb_state.Handle(), loc,
-                         "Sum of firstSet (%" PRIu32 ") and descriptorSetCount (%" PRIu32
-                         ") is greater than "
-                         "VkPipelineLayoutCreateInfo::setLayoutCount "
-                         "(%zu) when pipeline layout was created",
-                         firstSet, setCount, pipeline_layout->set_layouts.size());
+                         " dynamic descriptors, but dynamicOffsetCount is %" PRIu32
+                         ". It should exactly match the number of dynamic descriptors.",
+                         descriptorSetCount, total_dynamic_descriptors, dynamicOffsetCount);
     }
 
     return skip;
 }
 
 bool CoreChecks::PreCallValidateCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
-                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t setCount,
+                                                      VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                       const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,
                                                       const uint32_t *pDynamicOffsets, const ErrorObject &error_obj) const {
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    skip |= ValidateCmdBindDescriptorSets(*cb_state, layout, firstSet, setCount, pDescriptorSets, dynamicOffsetCount,
+    skip |= ValidateCmdBindDescriptorSets(*cb_state, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount,
                                           pDynamicOffsets, error_obj.location);
     skip |= ValidatePipelineBindPoint(*cb_state, pipelineBindPoint, error_obj.location);
 
