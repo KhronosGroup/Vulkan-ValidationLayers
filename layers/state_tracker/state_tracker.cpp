@@ -4964,8 +4964,16 @@ void DeviceState::PostCallRecordCreateShadersEXT(VkDevice device, uint32_t creat
         if (shader_handle == VK_NULL_HANDLE) {
             continue;
         }
-        Add(std::make_shared<ShaderObject>(*this, pCreateInfos[i], shader_handle, chassis_state.module_states[i], createInfoCount,
-                                           pShaders));
+        std::shared_ptr<ShaderObject> shader_object_state =
+            std::make_shared<ShaderObject>(*this, pCreateInfos[i], shader_handle, chassis_state.module_states[i]);
+
+        for (uint32_t j = 0; j < createInfoCount; ++j) {
+            if (i != j && pShaders[j] != VK_NULL_HANDLE && (pCreateInfos[j].flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
+                shader_object_state->linked_shaders.push_back(pShaders[j]);
+            }
+        }
+
+        Add(std::move(shader_object_state));
     }
 }
 
