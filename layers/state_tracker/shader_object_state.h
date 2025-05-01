@@ -31,8 +31,8 @@ class ShaderObjectSubState;
 
 // Represents a VkShaderEXT (VK_EXT_shader_object) handle
 struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSubState> {
-    ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info, VkShaderEXT shader_object,
-                 std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders);
+    ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT shader_object,
+                 std::shared_ptr<spirv::Module> &spirv_module);
 
     const vku::safe_VkShaderCreateInfoEXT safe_create_info;
     const VkShaderCreateInfoEXT &create_info;

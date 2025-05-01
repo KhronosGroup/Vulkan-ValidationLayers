@@ -30,7 +30,7 @@ static ShaderObject::SetLayoutVector GetSetLayouts(DeviceState &dev_data, const 
 }
 
 ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &create_info_i, VkShaderEXT handle,
-                           std::shared_ptr<spirv::Module> &spirv_module, uint32_t createInfoCount, VkShaderEXT *pShaders)
+                           std::shared_ptr<spirv::Module> &spirv_module)
     : StateObject(handle, kVulkanObjectTypeShaderEXT),
       safe_create_info(&create_info_i),
       create_info(*safe_create_info.ptr()),
@@ -41,14 +41,6 @@ ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &c
       set_layouts(GetSetLayouts(dev_data, create_info)),
       push_constant_ranges(GetCanonicalId(create_info.pushConstantRangeCount, create_info.pPushConstantRanges)),
       set_compat_ids(GetCompatForSet(set_layouts, push_constant_ranges, 0)) {
-    if ((create_info.flags & VK_SHADER_CREATE_LINK_STAGE_BIT_EXT) != 0) {
-        for (uint32_t i = 0; i < createInfoCount; ++i) {
-            const VkShaderEXT shader_handle = pShaders[i];
-            if (shader_handle != handle && shader_handle != VK_NULL_HANDLE) {
-                linked_shaders.push_back(shader_handle);
-            }
-        }
-    }
     // We need to update handle, but if using VK_SHADER_CODE_TYPE_SPIRV_EXT, it will be null
     if (spirv_module) {
         spirv_module->handle_ = handle_;
