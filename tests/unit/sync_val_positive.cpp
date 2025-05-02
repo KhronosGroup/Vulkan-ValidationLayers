@@ -227,7 +227,7 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     m_command_buffer.Begin();
     // Write 1: Copy to render target's layer 0
     vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, rt, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, width, height);
     // Write 2: Clear render target's layer 1
     vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
@@ -449,7 +449,7 @@ TEST_F(PositiveSyncVal, ShaderReferencesNotBoundSet) {
     OneOffDescriptorSet set(m_device, {binding});
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -1204,7 +1204,7 @@ TEST_F(PositiveSyncVal, DISABLED_RenderPassStoreOpNone) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
@@ -1504,7 +1504,7 @@ TEST_F(PositiveSyncVal, SignalUnsignalSignalSingleSubmit) {
     semaphore_info.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
 
     VkCommandBufferSubmitInfo cmd_info = vku::InitStructHelper();
-    cmd_info.commandBuffer = m_command_buffer.handle();
+    cmd_info.commandBuffer = m_command_buffer;
 
     VkCommandBufferSubmitInfo cmd_info2 = vku::InitStructHelper();
     cmd_info2.commandBuffer = command_buffer2.handle();
@@ -1555,8 +1555,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
                                            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
                                        });
     // copy_dst_area_size offset ensures uniform region does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), copy_dst_area_size, uniform_data_size,
-                                             VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, copy_dst_area_size, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     const char *cs_source = R"glsl(
@@ -1611,7 +1610,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
                                        });
 
     // Specify 0 base offset, but dynamic offset will ensure that uniform data does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
     const char *cs_source = R"glsl(
@@ -1671,7 +1670,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
                                        });
 
     // Specify 0 base offset, but dynamic offset will ensure that uniform data does not overlap with copy destination.
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a.handle(), 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_a, 0, uniform_data_size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC);
     descriptor_set.UpdateDescriptorSets();
 
     const char *cs_source = R"glsl(
@@ -1735,12 +1734,12 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
     region.imageExtent = {32, 32, 1};
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     // this should not cause WRITE-AFTER-READ because previous dispatch reads only image descriptor
-    vk::CmdCopyBufferToImage(m_command_buffer.handle(), copy_source, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    vk::CmdCopyBufferToImage(m_command_buffer, copy_source, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
 
@@ -1780,11 +1779,11 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
 
@@ -1812,10 +1811,10 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -1856,11 +1855,11 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
 
@@ -1893,10 +1892,10 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -2122,7 +2121,7 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
 
         VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
         render_pass_begin_info.renderPass = rp.Handle();
-        render_pass_begin_info.framebuffer = framebuffer.handle();
+        render_pass_begin_info.framebuffer = framebuffer;
         render_pass_begin_info.renderArea = {{0, 0}, {32u, 32u}};
         render_pass_begin_info.clearValueCount = 1u;
         render_pass_begin_info.pClearValues = &color_clear_value;
@@ -2135,11 +2134,11 @@ TEST_F(PositiveSyncVal, DynamicRenderingDSWithOnlyStencilAspect) {
 
     VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = color_image_view.handle();
+    color_attachment.imageView = color_image_view;
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depth_image_view.handle();
+    depth_stencil_attachment.imageView = depth_image_view;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea = {{0, 0}, {32u, 32u}};

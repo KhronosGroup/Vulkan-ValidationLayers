@@ -76,7 +76,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     m_command_buffer.Begin();
     // This copy is be completely legal as long as we change the memory for buffer_sparse to not overlap with
     // buffer_sparse2's memory on queue submission
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
     m_command_buffer.End();
 
     // Rebind buffer_mem2 so it does not overlap
@@ -162,7 +162,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
     m_command_buffer.End();
 
@@ -239,7 +239,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -318,7 +318,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment / 2;
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -399,7 +399,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -502,7 +502,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
     m_command_buffer.End();
 
@@ -602,7 +602,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer.handle(), buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
                       copy_info_list.data());
     m_command_buffer.End();
 

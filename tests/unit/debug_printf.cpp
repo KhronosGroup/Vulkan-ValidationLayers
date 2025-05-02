@@ -57,8 +57,8 @@ void NegativeDebugPrintf::BasicComputeTest(const char *shader, const char *messa
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo(message);
@@ -878,14 +878,14 @@ TEST_F(NegativeDebugPrintf, Pointers) {
     in_buffer_ptr[0] = block_buffer.Address();
     in_buffer_ptr[1] = block_buffer.Address();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("address = 0x");
@@ -919,8 +919,8 @@ TEST_F(NegativeDebugPrintf, Empty) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("First printf with a % and no value");
@@ -964,8 +964,8 @@ TEST_F(NegativeDebugPrintf, MultipleFunctions) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("START");
@@ -1004,8 +1004,8 @@ TEST_F(NegativeDebugPrintf, Fragment) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1083,8 +1083,8 @@ TEST_F(NegativeDebugPrintf, HLSL) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("launchIndex 2, 0");
@@ -1104,7 +1104,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -1136,7 +1136,7 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo()};
     pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
@@ -1145,10 +1145,10 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDrawMultiEXT(m_command_buffer, 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1167,11 +1167,11 @@ TEST_F(NegativeDebugPrintf, MultiDraw) {
     ptr[2] = 2;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1239,8 +1239,8 @@ TEST_F(NegativeDebugPrintf, MeshTaskShadersNV) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawMeshTasksNV(m_command_buffer.handle(), 1, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawMeshTasksNV(m_command_buffer, 1, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1447,7 +1447,7 @@ TEST_F(NegativeDebugPrintf, GPL) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -1503,14 +1503,14 @@ TEST_F(NegativeDebugPrintf, GPL) {
         }
     )glsl";
 
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), shader_source);
+    vkt::SimpleGPL pipe(*this, pipeline_layout, shader_source);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1557,7 +1557,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source = R"glsl(
@@ -1584,7 +1584,7 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
             gl_Position = vec4(0.0);
         }
     )glsl";
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), shader_source);
+    vkt::SimpleGPL pipe(*this, pipeline_layout, shader_source);
 
     VkMultiDrawInfoEXT multi_draws[3] = {};
     multi_draws[0].vertexCount = multi_draws[1].vertexCount = multi_draws[2].vertexCount = 3;
@@ -1592,10 +1592,10 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     multi_draw_indices[0].indexCount = multi_draw_indices[1].indexCount = multi_draw_indices[2].indexCount = 3;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDrawMultiEXT(m_command_buffer.handle(), 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDrawMultiEXT(m_command_buffer, 3, multi_draws, 1, 0, sizeof(VkMultiDrawInfoEXT));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1614,11 +1614,11 @@ TEST_F(NegativeDebugPrintf, GPLMultiDraw) {
     ptr[2] = 2;
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 3, multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1641,7 +1641,7 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
     char const *shader_source_int64 = R"glsl(
@@ -1671,14 +1671,14 @@ TEST_F(NegativeDebugPrintf, GPLInt64) {
         }
     )glsl";
 
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), shader_source_int64);
+    vkt::SimpleGPL pipe(*this, pipeline_layout, shader_source_int64);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1717,9 +1717,9 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
 
     // "Normal" sets
     const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &fragment_set.layout_});
-    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vertex_set.UpdateDescriptorSets();
-    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     fragment_set.UpdateDescriptorSets();
 
     {
@@ -1769,14 +1769,14 @@ TEST_F(NegativeDebugPrintf, GPLFragment) {
         }
     )glsl";
 
-    vkt::SimpleGPL pipe(*this, pipeline_layout.handle(), vert_shader, frag_shader);
+    vkt::SimpleGPL pipe(*this, pipeline_layout, vert_shader, frag_shader);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1803,17 +1803,14 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     // Independent sets
     const vkt::PipelineLayout pipeline_layout_vs(*m_device, {&vertex_set.layout_, nullptr}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const auto vs_layout = pipeline_layout_vs.handle();
     const vkt::PipelineLayout pipeline_layout_fs(*m_device, {nullptr, &fragment_set.layout_}, {},
                                                  VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const auto fs_layout = pipeline_layout_fs.handle();
     const vkt::PipelineLayout pipeline_layout(*m_device, {&vertex_set.layout_, &fragment_set.layout_}, {},
                                               VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT);
-    const auto layout = pipeline_layout.handle();
 
-    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vertex_set.WriteDescriptorBufferInfo(0, vs_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vertex_set.UpdateDescriptorSets();
-    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    fragment_set.WriteDescriptorBufferInfo(0, fs_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     fragment_set.UpdateDescriptorSets();
 
     {
@@ -1863,7 +1860,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.vp_state_ci_.pViewports = &viewport;
     pre_raster_lib.vp_state_ci_.pScissors = &scissor;
-    pre_raster_lib.gp_ci_.layout = vs_layout;
+    pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
     pre_raster_lib.CreateGraphicsPipeline(false);
 
     static const char frag_shader[] = R"glsl(
@@ -1882,7 +1879,7 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     CreatePipelineHelper frag_shader_lib(*this);
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
-    frag_shader_lib.gp_ci_.layout = fs_layout;
+    frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
     frag_shader_lib.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper frag_out_lib(*this);
@@ -1905,10 +1902,10 @@ TEST_F(NegativeDebugPrintf, GPLFragmentIndependentSets) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -1986,8 +1983,8 @@ TEST_F(NegativeDebugPrintf, ShaderObjects) {
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1, stages, &cs.handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindShadersEXT(m_command_buffer, 1, stages, &cs.handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Here are two float values 1.000000, 3.141500");
@@ -2027,8 +2024,8 @@ TEST_F(NegativeDebugPrintf, ShaderObjectsInt64) {
 
     m_command_buffer.Begin();
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1, stages, &cs.handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindShadersEXT(m_command_buffer, 1, stages, &cs.handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("Here's an unsigned long 0x2000000000000001");
@@ -2206,8 +2203,8 @@ TEST_F(NegativeDebugPrintf, VertexFragmentSeparateShader) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -2318,8 +2315,8 @@ TEST_F(NegativeDebugPrintf, VertexFragmentMultiEntrypoint) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -2362,7 +2359,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectFragment) {
     m_command_buffer.BeginRendering(renderingInfo);
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -2389,7 +2386,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectCompute) {
 
     m_command_buffer.Begin();
     m_command_buffer.BindCompShader(comp_shader);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2439,8 +2436,8 @@ TEST_F(NegativeDebugPrintf, SetupErrorVersion) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -2519,8 +2516,8 @@ TEST_F(NegativeDebugPrintf, LocalSizeId) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 32, 32, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 32, 32, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("TEST");
@@ -2560,12 +2557,12 @@ TEST_F(NegativeDebugPrintf, Maintenance5) {
     vkt::PipelineLayout layout(*m_device, {});
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = layout.handle();
+    pipe.cp_ci_.layout = layout;
     pipe.CreateComputePipeline(false);
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2605,12 +2602,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.cp_ci_.layout = pipe_layout.handle();
+        pipe.cp_ci_.layout = pipe_layout;
         pipe.CreateComputePipeline();
 
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
@@ -2628,12 +2625,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineReserved) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.cp_ci_.layout = pipe_layout.handle();
+        pipe.cp_ci_.layout = pipe_layout;
         pipe.CreateComputePipeline();
 
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2673,12 +2670,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.cp_ci_.layout = pipe_layout.handle();
+        pipe.cp_ci_.layout = pipe_layout;
         pipe.CreateComputePipeline();
 
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         // Will not print out because no slot was possible to put output buffer
@@ -2695,12 +2692,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineNotReserved) {
 
         CreateComputePipelineHelper pipe(*this);
         pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-        pipe.cp_ci_.layout = pipe_layout.handle();
+        pipe.cp_ci_.layout = pipe_layout;
         pipe.CreateComputePipeline();
 
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -2742,13 +2739,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-        pipe.gp_ci_.layout = pipe_layout.handle();
+        pipe.gp_ci_.layout = pipe_layout;
         pipe.CreateGraphicsPipeline();
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
@@ -2766,13 +2763,13 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGraphics) {
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-        pipe.gp_ci_.layout = pipe_layout.handle();
+        pipe.gp_ci_.layout = pipe_layout;
         pipe.CreateGraphicsPipeline();
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
@@ -2816,12 +2813,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
         m_errorMonitor->VerifyFound();
 
-        vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
+        vkt::SimpleGPL pipe(*this, pipe_layout, shader_source);
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
@@ -2836,12 +2833,12 @@ TEST_F(NegativeDebugPrintf, UseAllDescriptorSlotsPipelineGPL) {
             layouts[i] = &descriptor_set.layout_;
         }
         vkt::PipelineLayout pipe_layout(*m_device, layouts);
-        vkt::SimpleGPL pipe(*this, pipe_layout.handle(), shader_source);
+        vkt::SimpleGPL pipe(*this, pipe_layout, shader_source);
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
 
@@ -3156,8 +3153,8 @@ TEST_F(NegativeDebugPrintf, OverflowBuffer) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 4, 4, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 4, 4, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredWarning(
@@ -3187,8 +3184,8 @@ TEST_F(NegativeDebugPrintf, OverflowBufferLoop) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 4, 4, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 4, 4, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredWarning(
@@ -3612,8 +3609,8 @@ TEST_F(NegativeDebugPrintf, ValidationAbort) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -3640,18 +3637,18 @@ TEST_F(NegativeDebugPrintf, DualPipelines) {
     pipe_normal.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // no print
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // no print
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // print
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // print
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // no print
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // no print
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // print
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // print
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -3686,18 +3683,18 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferHalfPrint) {
     vkt::CommandBuffer cb1(*m_device, m_command_pool);
 
     cb0.Begin();
-    vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
-    vk::CmdDispatch(cb0.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb0, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_normal.Handle());
+    vk::CmdDispatch(cb0, 1, 1, 1);
     cb0.End();
 
     cb1.Begin();
-    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(cb1, 1, 1, 1);
     cb1.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
 
-    VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
+    VkCommandBuffer cbs[2] = {cb0, cb1};
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = 2;
     submit.pCommandBuffers = cbs;
@@ -3727,7 +3724,7 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferBothPrint) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     vkt::CommandBuffer cb0(*m_device, m_command_pool);
@@ -3735,22 +3732,22 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferBothPrint) {
 
     uint32_t data = 4;
     cb0.Begin();
-    vk::CmdPushConstants(cb0.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
-    vk::CmdBindPipeline(cb0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(cb0.handle(), 1, 1, 1);
+    vk::CmdPushConstants(cb0, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
+    vk::CmdBindPipeline(cb0, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(cb0, 1, 1, 1);
     cb0.End();
 
     cb1.Begin();
     data = 8;
-    vk::CmdPushConstants(cb1.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
-    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    vk::CmdPushConstants(cb1, pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t), &data);
+    vk::CmdBindPipeline(cb1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(cb1, 1, 1, 1);
     cb1.End();
 
     m_errorMonitor->SetDesiredInfo("int == 4");  // cb0
     m_errorMonitor->SetDesiredInfo("int == 8");  // cb1
 
-    VkCommandBuffer cbs[2] = {cb0.handle(), cb1.handle()};
+    VkCommandBuffer cbs[2] = {cb0, cb1};
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = 2;
     submit.pCommandBuffers = cbs;
@@ -3791,13 +3788,13 @@ TEST_F(NegativeDebugPrintf, DualCommandBufferEmpty) {
     cb2.End();
 
     cb1.Begin();
-    vk::CmdBindPipeline(cb1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
-    vk::CmdDispatch(cb1.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_debug.Handle());
+    vk::CmdDispatch(cb1, 1, 1, 1);
     cb1.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
 
-    VkCommandBuffer cbs[3] = {cb0.handle(), cb1.handle(), cb2.handle()};
+    VkCommandBuffer cbs[3] = {cb0, cb1, cb2};
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = 3;
     submit.pCommandBuffers = cbs;
@@ -3831,8 +3828,8 @@ TEST_F(NegativeDebugPrintf, DispatchIndirect) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatchIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -3859,8 +3856,8 @@ TEST_F(NegativeDebugPrintf, DispatchBase) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatchBase(m_command_buffer.handle(), 1, 1, 1, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatchBase(m_command_buffer, 1, 1, 1, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float == 3.141500");
@@ -3907,9 +3904,9 @@ TEST_F(NegativeDebugPrintf, DrawIndexed) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -3957,9 +3954,9 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirect) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -4008,9 +4005,8 @@ TEST_F(NegativeDebugPrintf, DrawIndirectCount) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                             sizeof(VkDrawIndirectCommand));
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -4061,10 +4057,9 @@ TEST_F(NegativeDebugPrintf, DrawIndexedIndirectCount) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                    sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -4122,7 +4117,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
     VkDeviceSize pre_process_size = 0;
     {
         VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper(&pipeline_info);
-        dgc_mem_reqs.indirectCommandsLayout = command_layout.handle();
+        dgc_mem_reqs.indirectCommandsLayout = command_layout;
         dgc_mem_reqs.indirectExecutionSet = VK_NULL_HANDLE;
         dgc_mem_reqs.maxSequenceCount = 1;
         VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
@@ -4144,7 +4139,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
     generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
-    generated_commands_info.indirectCommandsLayout = command_layout.handle();
+    generated_commands_info.indirectCommandsLayout = command_layout;
     generated_commands_info.indirectAddressSize = sizeof(VkDispatchIndirectCommand);
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = pre_process_buffer.Address();
@@ -4153,8 +4148,8 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsCompute) {
     generated_commands_info.maxSequenceCount = 1;
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_NumWorkGroups 2, 1, 1");
@@ -4215,7 +4210,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     VkDeviceSize pre_process_size = 0;
     {
         VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper(&pipeline_info);
-        dgc_mem_reqs.indirectCommandsLayout = command_layout.handle();
+        dgc_mem_reqs.indirectCommandsLayout = command_layout;
         dgc_mem_reqs.indirectExecutionSet = VK_NULL_HANDLE;
         dgc_mem_reqs.maxSequenceCount = 1;
         VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
@@ -4238,7 +4233,7 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper(&pipeline_info);
     generated_commands_info.shaderStages = VK_SHADER_STAGE_VERTEX_BIT;
     generated_commands_info.indirectExecutionSet = VK_NULL_HANDLE;
-    generated_commands_info.indirectCommandsLayout = command_layout.handle();
+    generated_commands_info.indirectCommandsLayout = command_layout;
     generated_commands_info.indirectAddressSize = sizeof(VkDrawIndirectCommand);
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = pre_process_buffer.Address();
@@ -4247,8 +4242,8 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     generated_commands_info.maxSequenceCount = 1;
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 0");
@@ -4337,7 +4332,7 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     write_exe_sets[1] = vku::InitStructHelper();
     write_exe_sets[1].index = 2;
     write_exe_sets[1].pipeline = pipe_2.Handle();
-    vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set.handle(), 2, write_exe_sets);
+    vk::UpdateIndirectExecutionSetPipelineEXT(device(), exe_set, 2, write_exe_sets);
 
     VkMemoryAllocateFlagsInfo allocate_flag_info = vku::InitStructHelper();
     allocate_flag_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
@@ -4346,8 +4341,8 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     VkDeviceSize pre_process_size = 0;
     {
         VkGeneratedCommandsMemoryRequirementsInfoEXT dgc_mem_reqs = vku::InitStructHelper();
-        dgc_mem_reqs.indirectCommandsLayout = command_layout.handle();
-        dgc_mem_reqs.indirectExecutionSet = exe_set.handle();
+        dgc_mem_reqs.indirectCommandsLayout = command_layout;
+        dgc_mem_reqs.indirectExecutionSet = exe_set;
         dgc_mem_reqs.maxSequenceCount = 1;
         VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper();
         vk::GetGeneratedCommandsMemoryRequirementsEXT(device(), &dgc_mem_reqs, &mem_reqs2);
@@ -4369,8 +4364,8 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
 
     VkGeneratedCommandsInfoEXT generated_commands_info = vku::InitStructHelper();
     generated_commands_info.shaderStages = VK_SHADER_STAGE_COMPUTE_BIT;
-    generated_commands_info.indirectExecutionSet = exe_set.handle();
-    generated_commands_info.indirectCommandsLayout = command_layout.handle();
+    generated_commands_info.indirectExecutionSet = exe_set;
+    generated_commands_info.indirectCommandsLayout = command_layout;
     generated_commands_info.indirectAddressSize = sizeof(uint32_t) + sizeof(VkDispatchIndirectCommand);
     generated_commands_info.indirectAddress = block_buffer.Address();
     generated_commands_info.preprocessAddress = pre_process_buffer.Address();
@@ -4379,8 +4374,8 @@ TEST_F(NegativeDebugPrintf, DISABLED_DeviceGeneratedCommandsIES) {
     generated_commands_info.maxSequenceCount = 1;
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.Handle());
-    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer.handle(), false, &generated_commands_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, init_pipe.Handle());
+    vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("IndirectExecutionSet Pipeline 2");
@@ -4414,12 +4409,12 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
     vkt::Buffer buffer_in(*m_device, 8, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in.handle(), 0, sizeof(uint32_t));
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer_in, 0, sizeof(uint32_t));
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe1(*this);
     pipe1.cs_ = std::make_unique<VkShaderObj>(this, shader_source_1, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe1.cp_ci_.layout = pipeline_layout.handle();
+    pipe1.cp_ci_.layout = pipeline_layout;
     pipe1.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe2(*this);
@@ -4427,13 +4422,13 @@ TEST_F(NegativeDebugPrintf, MultipleComputePasses) {
     pipe2.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe1.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe2.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("float x ==");
@@ -4477,12 +4472,12 @@ TEST_F(NegativeDebugPrintf, SpecConstant) {
     pipe_88.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_22.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_44.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe_88.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_22.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_44.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_88.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("value is = 22");
@@ -4524,8 +4519,8 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
                                        },
                                        0, nullptr, 0, nullptr, &pool_inline_info);
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE);
-    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer, 0, VK_WHOLE_SIZE);
     descriptor_set.UpdateDescriptorSets();
 
     const uint32_t print_value = 5;
@@ -4543,14 +4538,14 @@ TEST_F(NegativeDebugPrintf, InlineUniformBlock) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("binding [0] = 3 | [1] = 5 | [2] = 3");
@@ -4590,15 +4585,15 @@ TEST_F(NegativeDebugPrintf, StorageBufferLength) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("c length = 8");
@@ -4613,10 +4608,10 @@ TEST_F(NegativeDebugPrintf, StorageBufferLength) {
 
     // Need to rebind even for the length - https://gitlab.khronos.org/vulkan/vulkan/-/issues/4143
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("c length = 1");
@@ -4657,15 +4652,15 @@ TEST_F(NegativeDebugPrintf, StorageBufferLengthUpdateAfterBind) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     vkt::Buffer buffer_large(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
@@ -4709,8 +4704,8 @@ TEST_F(NegativeDebugPrintf, DuplicateMessageLimit) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("here", 6);
@@ -4749,8 +4744,8 @@ TEST_F(NegativeDebugPrintf, DuplicateMessageLimitExplicit) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("here", 6);

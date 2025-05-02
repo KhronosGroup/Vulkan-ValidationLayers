@@ -95,7 +95,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     imageViewCreateInfo.pNext = nullptr;
     vkt::ImageView imageView(*m_device, imageViewCreateInfo);
 
-    VkImageView image_views[2] = {imageView.handle(), imageView.handle()};
+    VkImageView image_views[2] = {imageView, imageView};
     VkRenderPassAttachmentBeginInfo renderPassAttachmentBeginInfo = vku::InitStructHelper();
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = image_views;
@@ -112,7 +112,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         framebufferCreateInfo.pAttachments = nullptr;
         framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
+        renderPassBeginInfo.framebuffer = framebuffer;
         m_command_buffer.Begin(&cmd_begin_info);
         m_command_buffer.BeginRenderPass(renderPassBeginInfo);
         m_command_buffer.Reset();
@@ -123,8 +123,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         framebufferCreateInfo.pAttachments = &imageView.handle();
         framebufferCreateInfo.flags = 0;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03207", "VUID-VkRenderPassBeginInfo-framebuffer-03207");
     }
     {
@@ -132,8 +132,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         renderPassAttachmentBeginInfo.attachmentCount = 2;
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03208", "VUID-VkRenderPassBeginInfo-framebuffer-03208");
         renderPassAttachmentBeginInfo.attachmentCount = 1;
     }
@@ -142,8 +142,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
         renderPassAttachmentBeginInfo.attachmentCount = 2;
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03208", "VUID-VkRenderPassBeginInfo-framebuffer-03208");
         renderPassAttachmentBeginInfo.attachmentCount = 1;
     }
@@ -152,8 +152,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.flags = 0;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03209", "VUID-VkRenderPassBeginInfo-framebuffer-03209");
         framebufferAttachmentImageInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
     }
@@ -162,8 +162,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-04627", "VUID-VkRenderPassBeginInfo-framebuffer-04627");
         framebufferAttachmentImageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     }
@@ -172,8 +172,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         renderPassAttachmentBeginInfo.pAttachments = &imageViewSubset.handle();
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-04627", "VUID-VkRenderPassBeginInfo-framebuffer-04627");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
     }
@@ -182,8 +182,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.width += 1;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03211", "VUID-VkRenderPassBeginInfo-framebuffer-03211");
         framebufferAttachmentImageInfo.width -= 1;
     }
@@ -192,8 +192,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.height += 1;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03212", "VUID-VkRenderPassBeginInfo-framebuffer-03212");
         framebufferAttachmentImageInfo.height -= 1;
     }
@@ -202,8 +202,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.layerCount += 1;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03213", "VUID-VkRenderPassBeginInfo-framebuffer-03213");
         framebufferAttachmentImageInfo.layerCount -= 1;
     }
@@ -212,8 +212,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentImageInfo.viewFormatCount = 3;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03214", "VUID-VkRenderPassBeginInfo-framebuffer-03214");
         framebufferAttachmentImageInfo.viewFormatCount = 2;
     }
@@ -222,8 +222,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     {
         framebufferAttachmentFormats[1] = VK_FORMAT_B8G8R8A8_SRGB;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03215", "VUID-VkRenderPassBeginInfo-framebuffer-03215");
         framebufferAttachmentFormats[1] = VK_FORMAT_B8G8R8A8_UNORM;
     }
@@ -234,8 +234,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         vkt::ImageView imageView2(*m_device, imageViewCreateInfo);
         renderPassAttachmentBeginInfo.pAttachments = &imageView2.handle();
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-03216", "VUID-VkRenderPassBeginInfo-framebuffer-03216");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
         imageViewCreateInfo.format = attachmentFormats[0];
@@ -246,15 +246,15 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         imageCreateInfo.samples = VK_SAMPLE_COUNT_4_BIT;
         imageCreateInfo.mipLevels = 1;
         vkt::Image imageObject2(*m_device, imageCreateInfo, vkt::set_layout);
-        imageViewCreateInfo.image = imageObject2.handle();
+        imageViewCreateInfo.image = imageObject2;
         vkt::ImageView imageView2(*m_device, imageViewCreateInfo);
         renderPassAttachmentBeginInfo.pAttachments = &imageView2.handle();
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassBeginInfo-framebuffer-09047", "VUID-VkRenderPassBeginInfo-framebuffer-09047");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
-        imageViewCreateInfo.image = image.handle();
+        imageViewCreateInfo.image = image;
         imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageCreateInfo.mipLevels = 10;
     }
@@ -265,8 +265,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         vkt::ImageView imageView2(*m_device, imageViewCreateInfo);
         renderPassAttachmentBeginInfo.pAttachments = &imageView2.handle();
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218",
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03218");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
@@ -279,8 +279,8 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         vkt::ImageView imageView2(*m_device, imageViewCreateInfo);
         renderPassAttachmentBeginInfo.pAttachments = &imageView2.handle();
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
-        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+        renderPassBeginInfo.framebuffer = framebuffer;
+        TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219",
                             "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-03219");
         renderPassAttachmentBeginInfo.pAttachments = &imageView.handle();
@@ -296,7 +296,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
         framebufferCreateInfo.height = framebufferCreateInfo.height / 2;
         framebufferCreateInfo.width = framebufferCreateInfo.width / 2;
         vkt::Framebuffer framebuffer(*m_device, framebufferCreateInfo);
-        renderPassBeginInfo.framebuffer = framebuffer.handle();
+        renderPassBeginInfo.framebuffer = framebuffer;
         renderPassBeginInfo.renderArea.extent.height = renderPassBeginInfo.renderArea.extent.height / 2;
         renderPassBeginInfo.renderArea.extent.width = renderPassBeginInfo.renderArea.extent.width / 2;
         m_command_buffer.Begin(&cmd_begin_info);
@@ -972,10 +972,10 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     renderPassBeginInfo.renderPass = rp.Handle();
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
     renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
-    renderPassBeginInfo.framebuffer = framebuffer.handle();
+    renderPassBeginInfo.framebuffer = framebuffer;
 
     // Try to use 3D Image View with imageless flag
-    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer.handle(), &renderPassBeginInfo, rp2Supported,
+    TestRenderPassBegin(m_errorMonitor, device(), m_command_buffer, &renderPassBeginInfo, rp2Supported,
                         "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114",
                         "VUID-VkRenderPassAttachmentBeginInfo-pAttachments-04114");
 }
@@ -1136,6 +1136,6 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-06002");
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferBeginInfo-flags-09240");
-    vk::BeginCommandBuffer(secondary.handle(), &beginInfo);
+    vk::BeginCommandBuffer(secondary, &beginInfo);
     m_errorMonitor->VerifyFound();
 }

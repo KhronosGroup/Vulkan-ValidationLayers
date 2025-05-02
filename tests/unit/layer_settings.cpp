@@ -44,7 +44,7 @@ TEST_F(NegativeLayerSettings, CustomStypeStructString) {
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct);  // Add custom struct through pNext
-    bvci.buffer = buffer.handle();
+    bvci.buffer = buffer;
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView buffer_view(*m_device, bvci);
@@ -108,7 +108,7 @@ TEST_F(NegativeLayerSettings, CustomStypeStructStringArray) {
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct_b);  // Add custom struct through pNext
-    bvci.buffer = buffer.handle();
+    bvci.buffer = buffer;
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView buffer_view(*m_device, bvci);
@@ -153,7 +153,7 @@ TEST_F(NegativeLayerSettings, CustomStypeStructIntegerArray) {
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper(&custom_struct_b);  // Add custom struct through pNext
-    bvci.buffer = buffer.handle();
+    bvci.buffer = buffer;
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     vkt::BufferView buffer_view(*m_device, bvci);

@@ -502,7 +502,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-pNext-06851");
     pipe.CreateComputePipeline(false);

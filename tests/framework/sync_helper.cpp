@@ -254,8 +254,7 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     cb.Begin();
     uint32_t num_buf_barrier = (buf_barrier) ? 1 : 0;
     uint32_t num_img_barrier = (img_barrier) ? 1 : 0;
-    vk::CmdPipelineBarrier(cb.handle(), src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier,
-                           img_barrier);
+    vk::CmdPipelineBarrier(cb, src_stages, dst_stages, 0, 0, nullptr, num_buf_barrier, buf_barrier, num_img_barrier, img_barrier);
     cb.End();
     queue->Submit(cb);
     queue->Wait();
@@ -277,7 +276,7 @@ void ValidOwnershipTransferOp(ErrorMonitor *monitor, vkt::Queue *queue, vkt::Com
     dep_info.pBufferMemoryBarriers = buf_barrier;
     dep_info.imageMemoryBarrierCount = (img_barrier) ? 1 : 0;
     dep_info.pImageMemoryBarriers = img_barrier;
-    vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info);
+    vk::CmdPipelineBarrier2KHR(cb, &dep_info);
     cb.End();
     queue->Submit(cb);
     queue->Wait();

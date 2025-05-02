@@ -696,7 +696,7 @@ TEST_F(NegativeShaderCompute, LocalSizeIdExecutionModeMaintenance5) {
     vkt::PipelineLayout layout(*m_device, {});
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = layout.handle();
+    pipe.cp_ci_.layout = layout;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-LocalSizeId-06434");
     pipe.CreateComputePipeline(false);
@@ -773,33 +773,33 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
 
     // Bind pipeline to command buffer
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     // Dispatch counts that exceed device limits
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountX-00386");
-    vk::CmdDispatch(m_command_buffer.handle(), x_count_limit + 1, y_count_limit, z_count_limit);
+    vk::CmdDispatch(m_command_buffer, x_count_limit + 1, y_count_limit, z_count_limit);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountY-00387");
-    vk::CmdDispatch(m_command_buffer.handle(), x_count_limit, y_count_limit + 1, z_count_limit);
+    vk::CmdDispatch(m_command_buffer, x_count_limit, y_count_limit + 1, z_count_limit);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-groupCountZ-00388");
-    vk::CmdDispatch(m_command_buffer.handle(), x_count_limit, y_count_limit, z_count_limit + 1);
+    vk::CmdDispatch(m_command_buffer, x_count_limit, y_count_limit, z_count_limit + 1);
     m_errorMonitor->VerifyFound();
 
     if (device_group_creation) {
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupX-00421");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupX-00422");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_count_limit - 1, y_count_limit, z_count_limit - 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupZ-00423");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_count_limit - 1, y_count_limit - 1, z_count_limit, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // (Base + count) exceeds limit
@@ -811,15 +811,15 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
         z_count_limit -= z_base;
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-groupCountX-00424");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_base, y_base, z_base, x_count_limit + 1, y_count_limit, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-groupCountY-00425");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_base, y_base, z_base, x_count_limit, y_count_limit + 1, z_count_limit);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-groupCountZ-00426");
-        vk::CmdDispatchBaseKHR(m_command_buffer.handle(), x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
+        vk::CmdDispatchBaseKHR(m_command_buffer, x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
         m_errorMonitor->VerifyFound();
     } else {
         printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
@@ -838,9 +838,9 @@ TEST_F(NegativeShaderCompute, DispatchBaseFlag) {
 
     // Bind pipeline to command buffer
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupX-00427");
-    vk::CmdDispatchBaseKHR(m_command_buffer.handle(), 1, 1, 1, 0, 0, 0);
+    vk::CmdDispatchBaseKHR(m_command_buffer, 1, 1, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

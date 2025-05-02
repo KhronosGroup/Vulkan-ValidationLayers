@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,7 +40,7 @@ TEST_F(NegativeRayTracingPipelineNV, BasicUsage) {
     VkPipeline pipeline = VK_NULL_HANDLE;
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-    stage_create_info.module = rgen_shader.handle();
+    stage_create_info.module = rgen_shader;
     stage_create_info.pName = "main";
     VkRayTracingShaderGroupCreateInfoNV group_create_info = vku::InitStructHelper();
     group_create_info.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
@@ -172,7 +172,7 @@ TEST_F(NegativeRayTracingPipelineNV, BindPoint) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, pipe.Handle());
 
     m_errorMonitor->VerifyFound();
 }
@@ -197,7 +197,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
     {
         VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
         stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_info.module = chit_shader.handle();
+        stage_create_info.module = chit_shader;
         stage_create_info.pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_info = vku::InitStructHelper();
@@ -224,12 +224,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[1].module = rgen_shader.handle();
+        stage_create_infos[1].module = rgen_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -262,7 +262,7 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
     {
         VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
         stage_create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_info.module = rgen_shader.handle();
+        stage_create_info.module = rgen_shader;
         stage_create_info.pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_info = vku::InitStructHelper();
@@ -289,12 +289,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].module = chit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -329,12 +329,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].module = chit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -369,12 +369,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].module = intr_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -409,12 +409,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].module = intr_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -449,12 +449,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_INTERSECTION_BIT_NV;
-        stage_create_infos[1].module = intr_shader.handle();
+        stage_create_infos[1].module = intr_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -489,12 +489,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-        stage_create_infos[1].module = ahit_shader.handle();
+        stage_create_infos[1].module = ahit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -529,12 +529,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].module = chit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -569,12 +569,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
-        stage_create_infos[1].module = chit_shader.handle();
+        stage_create_infos[1].module = chit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};
@@ -609,12 +609,12 @@ TEST_F(NegativeRayTracingPipelineNV, ShaderGroups) {
         VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
         stage_create_infos[0] = vku::InitStructHelper();
         stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
-        stage_create_infos[0].module = rgen_shader.handle();
+        stage_create_infos[0].module = rgen_shader;
         stage_create_infos[0].pName = "main";
 
         stage_create_infos[1] = vku::InitStructHelper();
         stage_create_infos[1].stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
-        stage_create_infos[1].module = ahit_shader.handle();
+        stage_create_infos[1].module = ahit_shader;
         stage_create_infos[1].pName = "main";
 
         VkRayTracingShaderGroupCreateInfoNV group_create_infos[2] = {};

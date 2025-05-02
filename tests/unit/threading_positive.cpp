@@ -86,7 +86,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
     data.device = device();
     data.descriptorSet = descriptor_set.set_;
     data.binding = 0;
-    data.buffer = buffer.handle();
+    data.buffer = buffer;
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -99,7 +99,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUpdateAfterBindNoCollision) {
     data2.device = device();
     data2.descriptorSet = descriptor_set.set_;
     data2.binding = 1;
-    data2.buffer = buffer.handle();
+    data2.buffer = buffer;
     data2.bailout = &bailout;
 
     UpdateDescriptor(&data2);
@@ -129,7 +129,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUnusedWhilePendingNoCollision) {
     data.device = device();
     data.descriptorSet = descriptor_set.set_;
     data.binding = 0;
-    data.buffer = buffer.handle();
+    data.buffer = buffer;
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -142,7 +142,7 @@ TEST_F(PositiveThreading, UpdateDescriptorUnusedWhilePendingNoCollision) {
     data2.device = device();
     data2.descriptorSet = descriptor_set.set_;
     data2.binding = 1;
-    data2.buffer = buffer.handle();
+    data2.buffer = buffer;
     data2.bailout = &bailout;
 
     UpdateDescriptor(&data2);
@@ -219,7 +219,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     vkt::Buffer buffer(*m_device, 256u, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     VkDescriptorBufferInfo buffer_info;
-    buffer_info.buffer = buffer.handle();
+    buffer_info.buffer = buffer;
     buffer_info.offset = 0u;
     buffer_info.range = 256u;
 
@@ -262,7 +262,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     const auto bind_descriptor = [&]() {
         m_command_buffer.Begin();
         for (uint32_t i = 0; i < count; ++i) {
-            vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
+            vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u,
                                       &descriptor_sets[i], 0u, nullptr);
         }
         m_command_buffer.End();
@@ -301,7 +301,7 @@ TEST_F(PositiveThreading, Queue) {
     vk::GetDeviceQueue(device(), queue_family, queue_index, &queue_h);
     vkt::Queue queue_o(queue_h, queue_family);
 
-    const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool.handle(),
+    const VkCommandBufferAllocateInfo cbai = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, nullptr, command_pool,
                                               VK_COMMAND_BUFFER_LEVEL_PRIMARY, 1};
     vkt::CommandBuffer mock_cmdbuff(*m_device, cbai);
     const VkCommandBufferBeginInfo cbbi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,

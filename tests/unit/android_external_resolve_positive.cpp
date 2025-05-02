@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -222,7 +222,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
     render_pass_bi.renderPass = rp.Handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea.extent = {1, 1};
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
@@ -386,7 +386,7 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle());
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer);
 
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -398,7 +398,7 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
     image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
                            &image_barrier);
 

@@ -1,5 +1,5 @@
-/* Copyright (c) 2021-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2021-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 LunarG, Inc.
  * Copyright (c) 2021 NVIDIA Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -420,7 +420,7 @@ TEST_F(NegativeViewportInheritance, BasicUsage) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_command_pool.handle();
+    VkCommandPool pool = m_command_pool;
 
     VkCommandBuffer subpass_cmd = test_data.MakeBeginSubpassCommandBuffer(pool, 1, test_data.kViewportDepthOnlyArray);
     test_data.BindGraphicsPipeline(subpass_cmd, true, 1);
@@ -653,7 +653,7 @@ TEST_F(NegativeViewportInheritance, MissingFeature) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_command_pool.handle();
+    VkCommandPool pool = m_command_pool;
 
     test_data.MakeBeginSubpassCommandBuffer(pool, 0, nullptr);
 
@@ -682,7 +682,7 @@ TEST_F(NegativeViewportInheritance, MultiViewport) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_command_pool.handle();
+    VkCommandPool pool = m_command_pool;
 
     // Test using viewport/scissor with count state without providing it to be inherited.
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07850");  // viewport
@@ -912,7 +912,7 @@ TEST_F(NegativeViewportInheritance, ScissorMissingFeature) {
     if (test_data.FailureReason()) {
         GTEST_SKIP() << "Test internal failure: " << test_data.FailureReason();
     }
-    VkCommandPool pool = m_command_pool.handle();
+    VkCommandPool pool = m_command_pool;
 
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceViewportScissorInfoNV-viewportScissor2D-04783");
     test_data.MakeBeginSubpassCommandBuffer(pool, 2, test_data.kViewportArray);
@@ -979,10 +979,10 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
     pipe.gp_ci_.pDynamicState = &dyn_state_ci;
     pipe.CreateGraphicsPipeline();
 
-    vk::BeginCommandBuffer(secondary.handle(), &cbbi);
+    vk::BeginCommandBuffer(secondary, &cbbi);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-04809");
-    vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->VerifyFound();
 
     if (DeviceExtensionSupported(VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME, 2)) {
@@ -992,7 +992,7 @@ TEST_F(NegativeViewportInheritance, PipelineMissingDynamicStateDiscardRectangle)
         pipe2.gp_ci_.pDynamicState = &dyn_state_ci;
         pipe2.CreateGraphicsPipeline();
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-04809");
-        vk::CmdBindPipeline(secondary.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+        vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
         m_errorMonitor->VerifyFound();
     }
 }

@@ -93,7 +93,7 @@ TEST_F(PositiveShaderObject, BindShaderObject) {
     const vkt::Shader vert_shader(*m_device, stage, kVertexMinimalGlsl);
 
     m_command_buffer.Begin();
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &stage, &vert_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &vert_shader.handle());
     m_command_buffer.End();
 }
 
@@ -108,7 +108,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragShaderObjects) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -141,7 +141,7 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(binary_vert_shader, binary_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -204,9 +204,9 @@ TEST_F(PositiveShaderObject, MissingCmdSetDepthBiasEnable) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE});
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -254,11 +254,11 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer, &begin_rendering_info);
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     SetDefaultDynamicStatesExclude();
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer);
 
     {
         VkImageMemoryBarrier image_memory_barrier = vku::InitStructHelper();
@@ -268,14 +268,14 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
         image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
         image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        image_memory_barrier.image = image.handle();
+        image_memory_barrier.image = image;
         image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         image_memory_barrier.subresourceRange.baseMipLevel = 0u;
         image_memory_barrier.subresourceRange.levelCount = 1u;
         image_memory_barrier.subresourceRange.baseArrayLayer = 0u;
         image_memory_barrier.subresourceRange.layerCount = 1u;
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                               VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u,
+                               0u, nullptr, 0u, nullptr, 1u, &image_memory_barrier);
     }
 
     VkBufferImageCopy copy_region = {};
@@ -284,7 +284,7 @@ TEST_F(PositiveShaderObject, VertFragShaderDraw) {
     copy_region.imageOffset.y = static_cast<int32_t>(m_height / 2) + 1;
     copy_region.imageExtent = {1, 1, 1};
 
-    vk::CmdCopyImageToBuffer(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, buffer.handle(), 1u, &copy_region);
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1u, &copy_region);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -392,11 +392,11 @@ TEST_F(PositiveShaderObject, DrawWithAllGraphicsShaderStagesUsed) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer, &begin_rendering_info);
     m_command_buffer.BindShaders(vert_shader, tesc_shader, tese_shader, geom_shader, frag_shader);
     SetDefaultDynamicStatesExclude({}, true);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -423,20 +423,20 @@ TEST_F(PositiveShaderObject, ComputeShader) {
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, storage_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
-    VkDescriptorSetLayout descriptor_set_layout = descriptor_set.layout_.handle();
+    VkDescriptorSetLayout descriptor_set_layout = descriptor_set.layout_;
 
     const vkt::Shader comp_shader(*m_device, VK_SHADER_STAGE_COMPUTE_BIT, comp_src, &descriptor_set_layout);
 
     m_command_buffer.Begin();
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0u, 1u,
-                              &descriptor_set.set_, 0u, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0u, 1u, &descriptor_set.set_, 0u,
+                              nullptr);
 
     m_command_buffer.BindCompShader(comp_shader);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -505,11 +505,11 @@ TEST_F(PositiveShaderObject, TaskMeshShadersDraw) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &begin_rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer, &begin_rendering_info);
     m_command_buffer.BindMeshShaders(task_shader, mesh_shader, frag_shader);
     SetDefaultDynamicStatesExclude();
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
-    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
+    vk::CmdEndRenderingKHR(m_command_buffer);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -654,35 +654,35 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStates) {
 
     VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
     VkRect2D scissor = {{0, 0}, {m_width, m_height}};
-    vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 1u, &viewport);
-    vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 1u, &scissor);
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetStencilTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetPolygonModeEXT(m_command_buffer.handle(), VK_POLYGON_MODE_FILL);
-    vk::CmdSetRasterizationSamplesEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 1u, &viewport);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 1u, &scissor);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetStencilTestEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetPolygonModeEXT(m_command_buffer, VK_POLYGON_MODE_FILL);
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT);
     VkSampleMask sampleMask = 1u;
-    vk::CmdSetSampleMaskEXT(m_command_buffer.handle(), VK_SAMPLE_COUNT_1_BIT, &sampleMask);
-    vk::CmdSetAlphaToCoverageEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetCullModeEXT(m_command_buffer.handle(), VK_CULL_MODE_NONE);
-    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetDepthWriteEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetDepthBoundsTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 0u, nullptr, 0u, nullptr);
-    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT, &sampleMask);
+    vk::CmdSetAlphaToCoverageEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetCullModeEXT(m_command_buffer, VK_CULL_MODE_NONE);
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetDepthWriteEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetDepthBoundsTestEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetDepthBiasEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 0u, nullptr, 0u, nullptr);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_FALSE);
     VkBool32 colorBlendEnable = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0u, 1u, &colorBlendEnable);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &colorBlendEnable);
     VkColorComponentFlags colorWriteMask =
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    vk::CmdSetColorWriteMaskEXT(m_command_buffer.handle(), 0u, 1u, &colorWriteMask);
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer, 0u, 1u, &colorWriteMask);
     VkColorBlendEquationEXT colorBlendEquation = {
         VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD, VK_BLEND_FACTOR_ONE, VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
     };
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &colorBlendEquation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0u, 1u, &colorBlendEquation);
 
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -699,16 +699,16 @@ TEST_F(PositiveShaderObject, DrawMinimalDynamicStatesRasterizationDisabled) {
 
     VkViewport viewport = {0, 0, static_cast<float>(m_width), static_cast<float>(m_height), 0.0f, 1.0f};
     VkRect2D scissor = {{0, 0}, {m_width, m_height}};
-    vk::CmdSetViewportWithCountEXT(m_command_buffer.handle(), 1u, &viewport);
-    vk::CmdSetScissorWithCountEXT(m_command_buffer.handle(), 1u, &scissor);
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdSetStencilTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 0u, nullptr, 0u, nullptr);
-    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetViewportWithCountEXT(m_command_buffer, 1u, &viewport);
+    vk::CmdSetScissorWithCountEXT(m_command_buffer, 1u, &scissor);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetStencilTestEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 0u, nullptr, 0u, nullptr);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_FALSE);
 
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -762,7 +762,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     const vkt::Shader frag_shader(*m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer.handle(), 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    vert_descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     vert_descriptor_set.UpdateDescriptorSets();
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 2, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -770,18 +770,18 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 1, 1);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler.handle());
+    frag_descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     frag_descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0u, 1u,
-                              &vert_descriptor_set.set_, 0u, nullptr);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1u, 1u,
-                              &frag_descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0u, 1u, &vert_descriptor_set.set_,
+                              0u, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1u, 1u, &frag_descriptor_set.set_,
+                              0u, nullptr);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -823,8 +823,8 @@ TEST_F(PositiveShaderObject, DescriptorBuffer) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &buffer_binding_info);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -877,14 +877,13 @@ TEST_F(PositiveShaderObject, MultiplePushConstants) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
 
     int pos = 1;
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(int), &pos);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0u, sizeof(int), &pos);
     float color = 1.0f;
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int),
-                         sizeof(float), &color);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(int), sizeof(float), &color);
 
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -944,7 +943,7 @@ TEST_F(PositiveShaderObject, MultipleSpecializationConstants) {
 
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1038,7 +1037,7 @@ TEST_F(PositiveShaderObject, IndirectDraw) {
 
     SetDefaultDynamicStatesExclude({}, true);
     m_command_buffer.BindShaders(vert_shader, tesc_shader, tese_shader, geom_shader, frag_shader);
-    vk::CmdDrawIndirect(m_command_buffer.handle(), indirect_buffer.handle(), 0u, 1u, 0u);
+    vk::CmdDrawIndirect(m_command_buffer, indirect_buffer, 0u, 1u, 0u);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1058,12 +1057,12 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
-    vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(command_buffer, 4, 1, 0, 0);
     command_buffer.EndRendering();
     command_buffer.End();
 
     m_command_buffer.Begin();
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &command_buffer.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &command_buffer.handle());
     m_command_buffer.End();
 }
 
@@ -1114,17 +1113,17 @@ TEST_F(PositiveShaderObject, OutputToMultipleAttachments) {
     rendering_info.pColorAttachments = attachments;
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderingKHR(m_command_buffer.handle(), &rendering_info);
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
     SetDefaultDynamicStatesExclude();
     VkBool32 blend_enable = VK_TRUE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 1u, 1u, &blend_enable);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 1u, 1u, &blend_enable);
     VkColorBlendEquationEXT color_blend_equation = {};
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 1u, 1u, &color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1u, 1u, &color_blend_equation);
     VkColorComponentFlags color_write_mask = VK_COLOR_COMPONENT_R_BIT;
-    vk::CmdSetColorWriteMaskEXT(m_command_buffer.handle(), 1u, 1u, &color_write_mask);
+    vk::CmdSetColorWriteMaskEXT(m_command_buffer, 1u, 1u, &color_write_mask);
     m_command_buffer.BindShaders(vert_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
-    vk::CmdEndRenderingKHR(m_command_buffer.handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
+    vk::CmdEndRenderingKHR(m_command_buffer);
     m_command_buffer.End();
 }
 
@@ -1134,7 +1133,7 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
     RETURN_IF_SKIP(InitBasicShaderObject());
 
     VkFormatProperties props;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), VK_FORMAT_R32_UINT, &props);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), VK_FORMAT_R32_UINT, &props);
 
     if ((props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT) == 0 ||
         (props.optimalTilingFeatures & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) != 0) {
@@ -1149,8 +1148,8 @@ TEST_F(PositiveShaderObject, DrawWithNonBlendableFormat) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     VkBool32 enabled = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0, 1, &enabled);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0, 1, &enabled);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1179,7 +1178,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     command_buffer.Begin(&begin_info);
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
-    vk::CmdDraw(command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(command_buffer, 4, 1, 0, 0);
     command_buffer.End();
 
     m_command_buffer.Begin();
@@ -1197,7 +1196,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
 
     m_command_buffer.BeginRendering(rendering_info);
 
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &command_buffer.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &command_buffer.handle());
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1235,26 +1234,26 @@ TEST_F(PositiveShaderObject, DrawRebindingShaders) {
 
     SetDefaultDynamicStatesExclude({}, true);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &vert_stage, &vert_shader.handle());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tesc_stage, &null_shader);
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &null_shader);
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &null_shader);
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &frag_stage, &frag_shader.handle());
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &vert_stage, &vert_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &tesc_stage, &null_shader);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &tese_stage, &null_shader);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &geom_stage, &null_shader);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &frag_stage, &frag_shader.handle());
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &geom_shader.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &geom_stage, &geom_shader.handle());
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tesc_stage, &tesc_shader.handle());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &tese_shader.handle());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &geom_stage, &null_shader);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &tesc_stage, &tesc_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &tese_stage, &tese_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &geom_stage, &null_shader);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &tese_stage, &tese_no_next_shader.handle());
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1u, &frag_stage, &null_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &tese_stage, &tese_no_next_shader.handle());
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &frag_stage, &null_shader);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
 
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -1313,9 +1312,9 @@ TEST_F(PositiveShaderObject, DrawWithBinaryShaders) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({}, true);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, shader_stages, binary_shaders);
+    vk::CmdBindShadersEXT(m_command_buffer, 5u, shader_stages, binary_shaders);
 
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -1335,9 +1334,9 @@ TEST_F(PositiveShaderObject, NotSettingDepthBounds) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE, VK_DYNAMIC_STATE_DEPTH_BOUNDS});
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_TRUE);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1381,9 +1380,9 @@ TEST_F(PositiveShaderObject, CreateAndDrawLinkedAndUnlinkedShaders) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({}, true);
 
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 5u, stages, shaders);
+    vk::CmdBindShadersEXT(m_command_buffer, 5u, stages, shaders);
 
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 
@@ -1408,7 +1407,7 @@ TEST_F(PositiveShaderObject, IgnoredColorAttachmentCount) {
 
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1425,8 +1424,8 @@ TEST_F(PositiveShaderObject, DisabledColorBlend) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
     VkBool32 color_blend_enable = VK_FALSE;
-    vk::CmdSetColorBlendEnableEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_enable);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &color_blend_enable);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1496,7 +1495,7 @@ TEST_F(PositiveShaderObject, DrawWithVertGeomFragShaderObjects) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     m_command_buffer.BindShaders(vert_shader, geom_shader, frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1514,10 +1513,10 @@ TEST_F(PositiveShaderObject, LineRasterization) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT, VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                     VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
-    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdSetLineRasterizationModeEXT(m_command_buffer.handle(), VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetLineRasterizationModeEXT(m_command_buffer, VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1537,11 +1536,11 @@ TEST_F(PositiveShaderObject, DiscardRectangleModeEXT) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
-    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdSetDiscardRectangleEXT(m_command_buffer.handle(), 0u, discard_rectangles.size(), discard_rectangles.data());
-    vk::CmdSetDiscardRectangleModeEXT(m_command_buffer.handle(), VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT);
+    vk::CmdSetDiscardRectangleEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetDiscardRectangleEXT(m_command_buffer, 0u, discard_rectangles.size(), discard_rectangles.data());
+    vk::CmdSetDiscardRectangleModeEXT(m_command_buffer, VK_DISCARD_RECTANGLE_MODE_EXCLUSIVE_EXT);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1560,9 +1559,9 @@ TEST_F(PositiveShaderObject, SetPatchControlPointsEXT) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT, VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY});
     m_command_buffer.BindShaders(vert_shader, tesc_shader, tese_shader, frag_shader);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-    vk::CmdSetPatchControlPointsEXT(m_command_buffer.handle(), 3);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
+    vk::CmdSetPatchControlPointsEXT(m_command_buffer, 3);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
@@ -1579,8 +1578,8 @@ TEST_F(PositiveShaderObject, SetPointTopologyNoWrite) {
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }

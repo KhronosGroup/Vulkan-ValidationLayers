@@ -210,7 +210,7 @@ TEST_F(NegativeExternalMemorySync, ExportImageHandleType) {
 
     // vkBindImageMemory2
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
-    bind_image_info.image = image.handle();
+    bind_image_info.image = image;
     bind_image_info.memory = image.Memory();  // re-use memory object from the previous check
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-memory-02728");
     vk::BindImageMemory2(device(), 1, &bind_image_info);
@@ -462,7 +462,7 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = handle_type2;
     VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info = vku::InitStructHelper();
-    buffer_memory_requirements_info.buffer = buffer.handle();
+    buffer_memory_requirements_info.buffer = buffer;
     VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
     VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper(&memory_dedicated_requirements);
     vk::GetBufferMemoryRequirements2(device(), &buffer_memory_requirements_info, &mem_reqs2);
@@ -476,11 +476,11 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     if (memory_dedicated_requirements.requiresDedicatedAllocation) {
         m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01444");
     }
-    vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
-    bind_buffer_info.buffer = buffer.handle();
+    bind_buffer_info.buffer = buffer;
     bind_buffer_info.memory = memory.handle();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
@@ -778,7 +778,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdExportFromImportedFence) {
     vkt::Fence fence(*m_device, create_info);
 
     VkSubmitInfo si = vku::InitStructHelper();
-    vk::QueueSubmit(m_default_queue->handle(), 1, &si, fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 1, &si, fence);
 
     int handle = 0;
     fence.ExportHandle(handle, handle_type);
@@ -889,16 +889,16 @@ TEST_F(NegativeExternalMemorySync, TemporaryFence) {
     vk::ResetFences(device(), 1, &import_fence.handle());
 
     // Signal the previously imported fence twice, the second signal should produce a validation error
-    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence);
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-fence-00064");
-    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
 
     // Signal without reseting
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-fence-00063");
-    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, import_fence);
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
@@ -971,7 +971,7 @@ TEST_F(NegativeExternalMemorySync, Fence) {
     m_errorMonitor->VerifyFound();
 #ifdef VK_USE_PLATFORM_WIN32_KHR
     VkImportFenceWin32HandleInfoKHR ifi = vku::InitStructHelper();
-    ifi.fence = import_fence.handle();
+    ifi.fence = import_fence;
     ifi.handleType = handle_type;
     ifi.handle = ext_handle;
     ifi.flags = 0;
@@ -1028,7 +1028,7 @@ TEST_F(NegativeExternalMemorySync, SyncFdFence) {
     export_fence.ExportHandle(fd_handle, handle_type);
     m_errorMonitor->VerifyFound();
 
-    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, export_fence.handle());
+    vk::QueueSubmit(m_default_queue->handle(), 0, nullptr, export_fence);
 
     export_fence.ExportHandle(fd_handle, handle_type);
 
@@ -2117,7 +2117,7 @@ TEST_F(NegativeExternalMemorySync, ImageDedicatedAllocation) {
     image.InitNoMemory(*m_device, image_info);
     {
         VkImageMemoryRequirementsInfo2 image_memory_requirements_info = vku::InitStructHelper();
-        image_memory_requirements_info.image = image.handle();
+        image_memory_requirements_info.image = image;
         VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
 
         VkMemoryRequirements2 memory_requirements = vku::InitStructHelper(&memory_dedicated_requirements);
@@ -2236,7 +2236,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
-    dedicated_info.buffer = buffer.handle();
+    dedicated_info.buffer = buffer;
 
     VkExportMemoryAllocateInfo export_info = vku::InitStructHelper(&dedicated_info);
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2254,7 +2254,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
 
     buffer_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
-    dedicated_info.buffer = buffer2.handle();
+    dedicated_info.buffer = buffer2;
 
     VkImportMemoryWin32HandleInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -2403,7 +2403,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferNoDedicated) {
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;
-    dedicated_info.buffer = buffer.handle();
+    dedicated_info.buffer = buffer;
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2442,7 +2442,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;
-    dedicated_info.buffer = buffer.handle();
+    dedicated_info.buffer = buffer;
 
     VkExportMemoryAllocateInfo export_info = vku::InitStructHelper(&dedicated_info);
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2461,7 +2461,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     buffer_info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     vkt::Buffer buffer2(*m_device, buffer_info, vkt::no_mem);
 
-    dedicated_info.buffer = buffer2.handle();
+    dedicated_info.buffer = buffer2;
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2552,7 +2552,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
     dedicated_info.image = VK_NULL_HANDLE;
-    dedicated_info.buffer = buffer.handle();
+    dedicated_info.buffer = buffer;
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -2581,7 +2581,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     }
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
-    dedicated_info.image = image.handle();
+    dedicated_info.image = image;
     dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
@@ -2669,7 +2669,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryHostDedicated) {
     vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper();
-    dedicated_info.buffer = buffer.handle();
+    dedicated_info.buffer = buffer;
     dedicated_info.image = VK_NULL_HANDLE;
 
     VkImportMemoryHostPointerInfoEXT import_info = vku::InitStructHelper(&dedicated_info);
@@ -2805,7 +2805,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
 
     vkt::Buffer buffer(*m_device, buffer_create_info);
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
-    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.buffer = buffer;
     buff_view_ci.format = VK_FORMAT_B8G8R8A8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
     buff_view_ci.pNext = &metal_object_create_info;
@@ -2813,7 +2813,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
 
     vkt::Image image_obj(*m_device, 256, 256, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_STORAGE_BIT);
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image_obj.handle();
+    ivci.image = image_obj;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
     ivci.subresourceRange.layerCount = 1;
@@ -2885,7 +2885,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
 
     // Image not created with struct in pNext
     metal_texture_info.bufferView = VK_NULL_HANDLE;
-    metal_texture_info.image = image_obj.handle();
+    metal_texture_info.image = image_obj;
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06795");
     vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
@@ -2937,7 +2937,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     m_errorMonitor->VerifyFound();
 
     VkExportMetalIOSurfaceInfoEXT metal_iosurface_info = vku::InitStructHelper();
-    metal_iosurface_info.image = image_obj.handle();
+    metal_iosurface_info.image = image_obj;
     export_metal_objects_info.pNext = &metal_iosurface_info;
     // metal_iosurface_info.image not created with struct in pNext
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06803");

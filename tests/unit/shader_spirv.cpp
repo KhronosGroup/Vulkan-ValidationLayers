@@ -124,7 +124,7 @@ TEST_F(NegativeShaderSpirv, CodeSizeMaintenance5Compute) {
     vkt::PipelineLayout layout(*m_device, {});
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = layout.handle();
+    pipe.cp_ci_.layout = layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-codeSize-01085");
     pipe.CreateComputePipeline(false);
@@ -209,7 +209,7 @@ TEST_F(NegativeShaderSpirv, MagicMaintenance5Compute) {
     vkt::PipelineLayout layout(*m_device, {});
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.stage = stage_ci;
-    pipe.cp_ci_.layout = layout.handle();
+    pipe.cp_ci_.layout = layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08738");
     pipe.CreateComputePipeline(false);
@@ -1247,7 +1247,7 @@ TEST_F(NegativeShaderSpirv, SpecializationOffsetOutOfBoundsWithIdentifier) {
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 

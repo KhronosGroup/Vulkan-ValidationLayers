@@ -249,7 +249,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     VkDescriptorSetAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
@@ -292,14 +292,13 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-ClearAttachment-ClearImage-color");
 
-        vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &image_range);
+        vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &image_range);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.End();
     }
 
-    vk::ResetCommandPool(device(), m_command_pool.handle(), 0);
+    vk::ResetCommandPool(device(), m_command_pool, 0);
 
     {
         auto image_ci =
@@ -320,8 +319,7 @@ TEST_F(VkAmdBestPracticesLayerTest, ClearImage) {
 
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-ClearAttachment-ClearImage-depth-stencil");
 
-        vk::CmdClearDepthStencilImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value,
-                                      1, &image_range);
+        vk::CmdClearDepthStencilImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &image_range);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.End();
@@ -353,8 +351,8 @@ TEST_F(VkAmdBestPracticesLayerTest, ImageToImageCopy) {
     copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy.dstSubresource.layerCount = 1;
     copy.srcSubresource = copy.dstSubresource;
-    vk::CmdCopyImage(m_command_buffer.handle(), image_1.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_2.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+    vk::CmdCopyImage(m_command_buffer, image_1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_2, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1, &copy);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -516,13 +514,13 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     // record a secondary command buffer
     secondary_cmd_buf.Begin(&binfo);
 
-    vk::CmdBindPipeline(secondary_cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     VkDeviceSize offset = 0;
-    vk::CmdBindVertexBuffers(secondary_cmd_buf.handle(), 0, 1, &vertex_buffer.handle(), &offset);
-    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
-    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
-    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
-    vk::CmdDraw(secondary_cmd_buf.handle(), 1, 0, 0, 0);
+    vk::CmdBindVertexBuffers(secondary_cmd_buf, 0, 1, &vertex_buffer.handle(), &offset);
+    vk::CmdDraw(secondary_cmd_buf, 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf, 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf, 1, 0, 0, 0);
+    vk::CmdDraw(secondary_cmd_buf, 1, 0, 0, 0);
 
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -533,7 +531,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     color_attachment.colorAttachment = 0;
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
-    vk::CmdClearAttachments(secondary_cmd_buf.handle(), 1, &color_attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(secondary_cmd_buf, 1, &color_attachment, 1, &clear_rect);
 
     secondary_cmd_buf.End();
 
@@ -542,7 +540,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-DrawState-ClearCmdBeforeDraw");
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-VkCommandBuffer-AvoidSecondaryCmdBuffers");
 
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_cmd_buf.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cmd_buf.handle());
 
     m_errorMonitor->VerifyFound();
 }

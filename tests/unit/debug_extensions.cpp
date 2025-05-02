@@ -34,7 +34,7 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
+    vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
     memory_allocate_info.allocationSize = memRequirements.size;
@@ -48,11 +48,11 @@ TEST_F(NegativeDebugExtensions, DebugMarkerName) {
     name_info.pObjectName = memory_name.c_str();
     vk::DebugMarkerSetObjectNameEXT(device(), &name_info);
 
-    vk::BindBufferMemory(device(), buffer.handle(), memory_1.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory_1.handle(), 0);
 
     // Test core_validation layer
     m_errorMonitor->SetDesiredError(memory_name.c_str());
-    vk::BindBufferMemory(device(), buffer.handle(), memory_2.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory_2.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     VkCommandBuffer commandBuffer;
@@ -162,7 +162,7 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements memRequirements;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &memRequirements);
+    vk::GetBufferMemoryRequirements(device(), buffer, &memRequirements);
 
     VkMemoryAllocateInfo memory_allocate_info = vku::InitStructHelper();
     memory_allocate_info.allocationSize = memRequirements.size;
@@ -197,11 +197,11 @@ TEST_F(NegativeDebugExtensions, DebugUtilsName) {
     name_info.objectType = VK_OBJECT_TYPE_DEVICE_MEMORY;
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
-    vk::BindBufferMemory(device(), buffer.handle(), memory_1.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory_1.handle(), 0);
 
     // Test core_validation layer
     m_errorMonitor->SetDesiredError(memory_name.c_str());
-    vk::BindBufferMemory(device(), buffer.handle(), memory_2.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory_2.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     VkCommandBuffer commandBuffer;

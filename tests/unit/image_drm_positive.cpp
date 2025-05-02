@@ -225,7 +225,7 @@ TEST_F(PositiveImageDrm, GetImageSubresourceLayoutPlane) {
 
     VkImageSubresource subresource{VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT, 0, 0};
     VkSubresourceLayout layout{};
-    vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
+    vk::GetImageSubresourceLayout(m_device->handle(), image, &subresource, &layout);
 }
 
 TEST_F(PositiveImageDrm, MutableFormat) {
@@ -377,7 +377,7 @@ TEST_F(PositiveImageDrm, GetImageDrmFormatModifierProperties) {
     vkt::Image image(*m_device, image_info);
 
     VkImageDrmFormatModifierPropertiesEXT props = vku::InitStructHelper();
-    vk::GetImageDrmFormatModifierPropertiesEXT(device(), image.handle(), &props);
+    vk::GetImageDrmFormatModifierPropertiesEXT(device(), image, &props);
 }
 
 TEST_F(PositiveImageDrm, PhysicalDeviceImageDrmFormatModifierInfoExclusive) {

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2022 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2021 ARM, Inc. All rights reserved.
  *
@@ -59,7 +59,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     vkt::DescriptorPool pool(*m_device, dspci);
 
     VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper();
-    ds_alloc_info.descriptorPool = pool.handle();
+    ds_alloc_info.descriptorPool = pool;
     ds_alloc_info.descriptorSetCount = 1;
     ds_alloc_info.pSetLayouts = &ds_layout.handle();
 
@@ -70,7 +70,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
     vkt::Buffer dynamic_uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffInfo[2] = {};
-    buffInfo[0].buffer = dynamic_uniform_buffer.handle();
+    buffInfo[0].buffer = dynamic_uniform_buffer;
     buffInfo[0].offset = 0;
     buffInfo[0].range = 1024;
 
@@ -106,7 +106,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     // Make both bindings valid before binding to the command buffer
@@ -118,7 +118,7 @@ TEST_F(NegativeDescriptorIndexing, UpdateAfterBind) {
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00059");
 
-    vk::EndCommandBuffer(m_command_buffer.handle());
+    vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -156,7 +156,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     vkt::DescriptorPool pool(*m_device, dspci);
 
     VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper();
-    ds_alloc_info.descriptorPool = pool.handle();
+    ds_alloc_info.descriptorPool = pool;
     ds_alloc_info.descriptorSetCount = 1;
     ds_alloc_info.pSetLayouts = &ds_layout.handle();
     VkDescriptorSet ds = VK_NULL_HANDLE;
@@ -165,7 +165,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo bufferInfo[3] = {};
-    bufferInfo[0].buffer = buffer.handle();
+    bufferInfo[0].buffer = buffer;
     bufferInfo[0].offset = 0;
     bufferInfo[0].range = 1024;
     bufferInfo[1] = bufferInfo[0];
@@ -260,7 +260,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
         vkt::DescriptorPool pool(*m_device, dspci);
 
         VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper();
-        ds_alloc_info.descriptorPool = pool.handle();
+        ds_alloc_info.descriptorPool = pool;
         ds_alloc_info.descriptorSetCount = 1;
         ds_alloc_info.pSetLayouts = &ds_layout.handle();
 
@@ -293,7 +293,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             count_alloc_info.pDescriptorCounts = &variable_count;
 
             VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&count_alloc_info);
-            ds_alloc_info.descriptorPool = pool.handle();
+            ds_alloc_info.descriptorPool = pool;
             ds_alloc_info.descriptorSetCount = 1;
             ds_alloc_info.pSetLayouts = &ds_layout.handle();
 
@@ -314,7 +314,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             count_alloc_info.pDescriptorCounts = &variable_count;
 
             VkDescriptorSetAllocateInfo ds_alloc_info = vku::InitStructHelper(&count_alloc_info);
-            ds_alloc_info.descriptorPool = pool.handle();
+            ds_alloc_info.descriptorPool = pool;
             ds_alloc_info.descriptorSetCount = 1;
             ds_alloc_info.pSetLayouts = &ds_layout.handle();
 
@@ -324,7 +324,7 @@ TEST_F(NegativeDescriptorIndexing, SetLayout) {
             vkt::Buffer buffer(*m_device, 128 * 128, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
             VkDescriptorBufferInfo buffer_info[3] = {};
             for (int i = 0; i < 3; i++) {
-                buffer_info[i].buffer = buffer.handle();
+                buffer_info[i].buffer = buffer;
                 buffer_info[i].offset = 0;
                 buffer_info[i].range = 128 * 128;
             }

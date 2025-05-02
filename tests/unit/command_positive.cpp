@@ -46,11 +46,10 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
     // Make calls to valid commands
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndirectCountKHR(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                sizeof(VkDrawIndirectCommand));
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirectCountKHR(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -83,11 +82,10 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     // Make calls to valid commands
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                             sizeof(VkDrawIndirectCommand));
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -117,11 +115,10 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     // Make calls to valid commands
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndirectCount(m_command_buffer.handle(), indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                             sizeof(VkDrawIndirectCommand));
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_command_buffer.handle(), indexed_indirect_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -267,7 +264,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
 
         VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
         rpbi.renderPass = rp.Handle();
-        rpbi.framebuffer = framebuffer.handle();
+        rpbi.framebuffer = framebuffer;
         rpbi.renderArea = {{0, 0}, {image_ci.extent.width, image_ci.extent.height}};
         rpbi.clearValueCount = 1;
         rpbi.pClearValues = &clearValue;
@@ -276,7 +273,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         m_command_buffer.BeginRenderPass(rpbi);
 
         VkClearRect clear_rect = {{{0, 0}, {image_ci.extent.width, image_ci.extent.height}}, 0, image_ci.extent.depth};
-        vk::CmdClearAttachments(m_command_buffer.handle(), 1, &color_attachment, 1, &clear_rect);
+        vk::CmdClearAttachments(m_command_buffer, 1, &color_attachment, 1, &clear_rect);
 
         m_command_buffer.EndRenderPass();
         m_command_buffer.End();
@@ -299,7 +296,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
 
         constexpr int command_buffers_per_pool = 4;
         VkCommandBufferAllocateInfo commands_allocate_info = vku::InitStructHelper();
-        commands_allocate_info.commandPool = pool.handle();
+        commands_allocate_info.commandPool = pool;
         commands_allocate_info.commandBufferCount = command_buffers_per_pool;
         commands_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         const VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
@@ -317,7 +314,7 @@ TEST_F(PositiveCommand, ThreadedCommandBuffersWithLabels) {
                 vk::CmdInsertDebugUtilsLabelEXT(command_buffers[i], &label);
                 ASSERT_EQ(VK_SUCCESS, vk::EndCommandBuffer(command_buffers[i]));
             }
-            vk::FreeCommandBuffers(device(), pool.handle(), command_buffers_per_pool, command_buffers.data());
+            vk::FreeCommandBuffers(device(), pool, command_buffers_per_pool, command_buffers.data());
         }
     };
     std::vector<std::thread> workers;
@@ -335,7 +332,7 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
     InitRenderTarget();
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     VkClearAttachment attachment;
     attachment.colorAttachment = 0;
@@ -346,14 +343,14 @@ TEST_F(PositiveCommand, ClearAttachmentsDepthStencil) {
     clear_rect.layerCount = 1;
 
     attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    vk::CmdClearAttachments(m_command_buffer.handle(), 1, &attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
 
     attachment.clearValue.depthStencil.depth = 0.0f;
     // Aspect Mask can be non-color because pDepthStencilAttachment is null
     attachment.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    vk::CmdClearAttachments(m_command_buffer.handle(), 1, &attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
     attachment.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-    vk::CmdClearAttachments(m_command_buffer.handle(), 1, &attachment, 1, &clear_rect);
+    vk::CmdClearAttachments(m_command_buffer, 1, &attachment, 1, &clear_rect);
 }
 
 TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
@@ -372,7 +369,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     // Try good case
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(m_command_buffer, image.handle(), image_layout, &clear_color, 1, &range);
+        vk::CmdClearColorImage(m_command_buffer, image, image_layout, &clear_color, 1, &range);
     }
 
     image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
@@ -381,7 +378,7 @@ TEST_F(PositiveCommand, ClearColorImageWithValidRange) {
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearColorImage(m_command_buffer, image.handle(), image_layout, &clear_color, 1, &range);
+        vk::CmdClearColorImage(m_command_buffer, image, image_layout, &clear_color, 1, &range);
     }
 }
 
@@ -403,7 +400,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     // Try good case
     {
         VkImageSubresourceRange range = {ds_aspect, 0, 1, 0, 1};
-        vk::CmdClearDepthStencilImage(m_command_buffer, image.handle(), image_layout, &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(m_command_buffer, image, image_layout, &clear_value, 1, &range);
     }
 
     image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT, image_layout,
@@ -412,7 +409,7 @@ TEST_F(PositiveCommand, ClearDepthStencilWithValidRange) {
     // Try good case with VK_REMAINING
     {
         VkImageSubresourceRange range = {ds_aspect, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
-        vk::CmdClearDepthStencilImage(m_command_buffer, image.handle(), image_layout, &clear_value, 1, &range);
+        vk::CmdClearDepthStencilImage(m_command_buffer, image, image_layout, &clear_value, 1, &range);
     }
 }
 
@@ -428,7 +425,7 @@ TEST_F(PositiveCommand, ClearColor64Bit) {
     m_command_buffer.Begin();
     const VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vk::CmdClearColorImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
 }
 
 TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
@@ -449,7 +446,7 @@ TEST_F(PositiveCommand, FillBufferCmdPoolTransferQueue) {
     vkt::Buffer buffer(*m_device, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
     cb.Begin();
-    vk::CmdFillBuffer(cb.handle(), buffer.handle(), 0, 12, 0x11111111);
+    vk::CmdFillBuffer(cb, buffer, 0, 12, 0x11111111);
     cb.End();
 }
 
@@ -471,28 +468,28 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // New VUIDs added with multi_draw (also see GPU-AV)
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 511, 0};
 
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 0, 1024, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 0, 1024, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 2, 1022, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 2, 1022, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 0, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 0, VK_WHOLE_SIZE, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 
     multi_draw_indices.firstIndex = 16;
     multi_draw_indices.indexCount = 128;
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 32, 288, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 32, 288, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 }
 
 TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
@@ -512,19 +509,19 @@ TEST_F(PositiveCommand, MultiDrawMaintenance5Mixed) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, NULL);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // New VUIDs added with multi_draw (also see GPU-AV)
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMultiDrawIndexedInfoEXT multi_draw_indices = {0, 511, 0};
 
     // too small
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 0, 1000, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 0, 1000, VK_INDEX_TYPE_UINT16);
     // should be overwritten
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
+    vk::CmdBindIndexBuffer(m_command_buffer, buffer, 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 1, &multi_draw_indices, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), 0);
 }
 
 TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
@@ -584,11 +581,11 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchWithZeroExtend) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
 }
@@ -652,11 +649,11 @@ TEST_F(PositiveCommand, ImageFormatTypeMismatchRedundantExtend) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
     m_command_buffer.End();
 }
@@ -674,7 +671,7 @@ TEST_F(PositiveCommand, DeviceLost) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.End();
 
     // Destroying should not throw VUID-vkDestroyFence-fence-01120
@@ -687,7 +684,7 @@ TEST_F(PositiveCommand, DeviceLost) {
     VkSubmitInfo submit_info = vku::InitStructHelper(&fault_injection);
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_command_buffer.handle();
-    VkResult result = vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence.handle());
+    VkResult result = vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, fence);
 
     if (result != VK_ERROR_DEVICE_LOST) {
         vk::QueueWaitIdle(m_default_queue->handle());
@@ -750,7 +747,6 @@ TEST_F(PositiveCommand, ResolveImageImageTypeRemainingLayerCount) {
     region.dstOffset = {0, 0, 0};
     region.extent = {1, 1, 1};
 
-    vk::CmdResolveImage(m_command_buffer.handle(), src_image_2D, VK_IMAGE_LAYOUT_GENERAL, dst_image_3D, VK_IMAGE_LAYOUT_GENERAL, 1,
-                        &region);
+    vk::CmdResolveImage(m_command_buffer, src_image_2D, VK_IMAGE_LAYOUT_GENERAL, dst_image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }

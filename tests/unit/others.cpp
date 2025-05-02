@@ -108,13 +108,13 @@ TEST_F(VkLayerTest, RequiredParameter) {
     // Specify 0 for a required array count
     // Expected to trigger an error with StatelessValidation::ValidateArray
     VkViewport viewport = {0.0f, 0.0f, 64.0f, 64.0f, 0.0f, 1.0f};
-    vk::CmdSetViewport(m_command_buffer.handle(), 0, 0, &viewport);
+    vk::CmdSetViewport(m_command_buffer, 0, 0, &viewport);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-pViewports-parameter");
     // Specify NULL for a required array
     // Expected to trigger an error with StatelessValidation::ValidateArray
-    vk::CmdSetViewport(m_command_buffer.handle(), 0, 1, NULL);
+    vk::CmdSetViewport(m_command_buffer, 0, 1, NULL);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-GeneralParameterError-RequiredHandle");
@@ -143,7 +143,7 @@ TEST_F(VkLayerTest, RequiredParameter) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilReference-faceMask-requiredbitmask");
     // Specify 0 for a required VkFlags parameter
     // Expected to trigger an error with StatelessValidation::ValidateFlags
-    vk::CmdSetStencilReference(m_command_buffer.handle(), 0, 0);
+    vk::CmdSetStencilReference(m_command_buffer, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-sType-sType");
@@ -594,18 +594,18 @@ TEST_F(VkLayerTest, UnclosedAndDuplicateQueries) {
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 5);
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 5);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 5);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-01922");
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 1, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1, 0);
     // Attempt to begin a query that has the same type as an active query
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 3, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 3, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-commandBuffer-00061");
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::EndCommandBuffer(m_command_buffer.handle());
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -622,7 +622,7 @@ TEST_F(VkLayerTest, ExecuteUnrecordedCB) {
     // Testing an "unfinished secondary CB" crashes on some HW/drivers (notably Pixel 3 and RADV)
     // vkt::CommandBuffer cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     // m_command_buffer.Begin();
-    // vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &cb.handle());
+    // vk::CmdExecuteCommands(m_command_buffer, 1u, &cb.handle());
     // m_command_buffer.End();
 
     // m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00072");
@@ -651,7 +651,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->SetDesiredError("VUID-vkAllocateCommandBuffers-pAllocateInfo::commandBufferCount-arraylength");
     {
         VkCommandBufferAllocateInfo info = vku::InitStructHelper();
-        info.commandPool = m_command_pool.handle();
+        info.commandPool = m_command_pool;
         info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         info.commandBufferCount = 0;  // invalid
         vk::AllocateCommandBuffers(device(), &info, &unused_command_buffer);
@@ -671,7 +671,7 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeCommandBuffers-commandBufferCount-arraylength");
-    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 0, &unused_command_buffer);
+    vk::FreeCommandBuffers(device(), m_command_pool, 0, &unused_command_buffer);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeDescriptorSets-descriptorSetCount-arraylength");
@@ -690,17 +690,17 @@ TEST_F(VkLayerTest, ValidateArrayLength) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-descriptorSetCount-arraylength");
-    vk::CmdBindDescriptorSets(command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 0,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 0, &descriptor_set.set_, 0,
+                              nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBufferCount-arraylength");
-    vk::CmdExecuteCommands(command_buffer.handle(), 0, &unused_command_buffer);
+    vk::CmdExecuteCommands(command_buffer, 0, &unused_command_buffer);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-eventCount-arraylength");
-    vk::CmdWaitEvents(command_buffer.handle(), 0, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                      0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(command_buffer, 0, &event.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     command_buffer.End();
@@ -874,12 +874,12 @@ TEST_F(VkLayerTest, GetPhysicalDeviceImageFormatPropertiesFlags) {
 
     VkImageFormatProperties dummy_props;
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-usage-requiredbitmask");
-    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
                                                VK_IMAGE_TILING_OPTIMAL, 0, 0, &dummy_props);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-flags-parameter");
-    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
+    vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TYPE_2D,
                                                VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 0xBAD00000, &dummy_props);
     m_errorMonitor->VerifyFound();
 }

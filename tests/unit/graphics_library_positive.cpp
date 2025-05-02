@@ -215,9 +215,9 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     const std::array<VkDescriptorSet, 3> desc_sets = {ds.set_, VK_NULL_HANDLE, VK_NULL_HANDLE};
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer, 0, 1024);
     ds.UpdateDescriptorSets();
-    ds2.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds2.WriteDescriptorBufferInfo(0, uniform_buffer, 0, 1024);
     ds2.UpdateDescriptorSets();
 
     CreatePipelineHelper vertex_input_lib(*this);
@@ -236,7 +236,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vs_src);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
         pre_raster_lib.CreateGraphicsPipeline(false);
     }
 
@@ -245,7 +245,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
         const auto fs_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage fs_stage(fs_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci);
-        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 
@@ -272,10 +272,10 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Draw with pipeline created with null set
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -453,9 +453,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyAllState) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdSetPrimitiveTopology(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -540,9 +540,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateAndLinked) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdSetPrimitiveTopology(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -621,9 +621,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicPrimitiveTopolgyVertexStateOnly) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdSetPrimitiveTopology(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdSetPrimitiveTopology(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -695,9 +695,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentOutput) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -769,9 +769,9 @@ TEST_F(PositiveGraphicsLibrary, DynamicAlphaToOneEnableFragmentShader) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdSetAlphaToOneEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -787,7 +787,7 @@ TEST_F(PositiveGraphicsLibrary, FragmentShaderNoStageCount) {
     frag_shader_lib.InitFragmentLibInfo(nullptr);
     frag_shader_lib.gp_ci_.stageCount = 0;
     frag_shader_lib.shader_stages_.clear();
-    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.gp_ci_.layout = pipeline_layout;
     frag_shader_lib.CreateGraphicsPipeline(false);
 }
 
@@ -1049,7 +1049,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe.handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
@@ -1633,7 +1633,7 @@ TEST_F(PositiveGraphicsLibrary, SetLayoutCount) {
         const auto vs_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, kVertexMinimalGlsl);
         vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
         pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
-        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs.handle();
+        pre_raster_lib.gp_ci_.layout = pipeline_layout_vs;
         pre_raster_lib.CreateGraphicsPipeline(false);
     }
 
@@ -1648,7 +1648,7 @@ TEST_F(PositiveGraphicsLibrary, SetLayoutCount) {
 
         frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
 
-        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs.handle();
+        frag_shader_lib.gp_ci_.layout = pipeline_layout_fs;
         frag_shader_lib.CreateGraphicsPipeline(false);
     }
 }
@@ -1677,7 +1677,7 @@ TEST_F(PositiveGraphicsLibrary, MultisampleStateFragShaderNull) {
 
     frag_shader_lib.InitFragmentLibInfo(&fs_stage.stage_ci, &link_info);
     frag_shader_lib.gp_ci_.pMultisampleState = nullptr;
-    frag_shader_lib.gp_ci_.layout = pipeline_layout.handle();
+    frag_shader_lib.gp_ci_.layout = pipeline_layout;
     frag_shader_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     frag_shader_lib.CreateGraphicsPipeline(false);
 }
@@ -1947,7 +1947,7 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
 
     VkRenderingAttachmentInfoKHR color_attachment = vku::InitStructHelper();
     color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    color_attachment.imageView = color_image_view.handle();
+    color_attachment.imageView = color_image_view;
 
     VkRenderingInfoKHR begin_rendering_info = vku::InitStructHelper();
     begin_rendering_info.colorAttachmentCount = 1;
@@ -1958,8 +1958,8 @@ TEST_F(PositiveGraphicsLibrary, LegacyDitheringEnable) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }

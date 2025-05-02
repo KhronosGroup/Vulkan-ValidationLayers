@@ -81,7 +81,7 @@ TEST_F(PositiveBuffer, TexelBufferAlignmentIn13) {
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buff_view_ci.range = VK_WHOLE_SIZE;
-    buff_view_ci.buffer = buffer.handle();
+    buff_view_ci.buffer = buffer;
     buff_view_ci.offset = minTexelBufferOffsetAlignment + block_size;
     vkt::BufferView buffer_view(*m_device, buff_view_ci);
 }
@@ -117,7 +117,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressWorstCase) {
         vkt::Buffer &buffer = buffers[i];
         buffer_ci.size = (i + 1) * 4096;
         buffer.InitNoMemory(*m_device, buffer_ci);
-        vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), 0);
+        vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
         VkDeviceAddress addr = buffer.Address();
         if (ref_address == 0) {
             ref_address = addr;
@@ -157,7 +157,7 @@ TEST_F(PositiveBuffer, DISABLED_PerfGetBufferAddressGoodCase) {
         vkt::Buffer &buffer = buffers[i];
         buffer.InitNoMemory(*m_device, buffer_ci);
         // Consecutive offsets
-        vk::BindBufferMemory(device(), buffer.handle(), buffer_memory.handle(), i * buffer_ci.size);
+        vk::BindBufferMemory(device(), buffer, buffer_memory, i * buffer_ci.size);
         (void)buffer.Address();
     }
 }
@@ -175,9 +175,9 @@ TEST_F(PositiveBuffer, IndexBuffer2Size) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 4, 8, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 4, 8, VK_INDEX_TYPE_UINT32);
 
-    vk::CmdBindIndexBuffer2KHR(m_command_buffer.handle(), buffer.handle(), 0, buffer_size, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindIndexBuffer2KHR(m_command_buffer, buffer, 0, buffer_size, VK_INDEX_TYPE_UINT32);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -195,11 +195,11 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 0, 1, 0, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 0, 1, 0, 0, 0);
+    vk::CmdBindIndexBuffer(m_command_buffer, VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -219,7 +219,7 @@ TEST_F(PositiveBuffer, BufferViewUsageBasic) {
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
-    buffer_view_ci.buffer = buffer.handle();
+    buffer_view_ci.buffer = buffer;
     vkt::BufferView buffer_view(*m_device, buffer_view_ci);
 }
 
@@ -238,7 +238,7 @@ TEST_F(PositiveBuffer, BufferUsageFlags2Subset) {
     VkBufferViewCreateInfo buffer_view_ci = vku::InitStructHelper(&buffer_usage_flags);
     buffer_view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     buffer_view_ci.range = VK_WHOLE_SIZE;
-    buffer_view_ci.buffer = buffer.handle();
+    buffer_view_ci.buffer = buffer;
     vkt::BufferView buffer_view(*m_device, buffer_view_ci);
 }
 

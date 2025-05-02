@@ -85,7 +85,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     // Missing acquire lock
     {
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-03223");
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0, 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
     }
 
@@ -158,11 +158,11 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
     {
         vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
         m_command_buffer.Begin();
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-        vk::CmdFillBuffer(m_command_buffer.handle(), buffer, 0, 4096, 0);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4096, 0);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-03224");
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.End();
@@ -184,9 +184,9 @@ TEST_F(NegativeQuery, PerformanceCounterCommandbufferScope) {
         vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
         m_command_buffer.Begin();
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-        vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
-        vk::CmdFillBuffer(m_command_buffer.handle(), buffer, 0, 4096, 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+        vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4096, 0);
         m_command_buffer.End();
 
         VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -275,7 +275,7 @@ TEST_F(NegativeQuery, PerformanceCounterRenderPassScope) {
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-03225");
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
 
         m_command_buffer.EndRenderPass();
@@ -363,7 +363,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
     {
         m_command_buffer.Reset();
         m_command_buffer.Begin();
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
         m_command_buffer.End();
 
         VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -385,7 +385,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
         m_command_buffer.Reset();
         m_command_buffer.Begin();
 
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
 
         // Release while recording.
         vk::ReleaseProfilingLockKHR(device());
@@ -395,7 +395,7 @@ TEST_F(NegativeQuery, PerformanceReleaseProfileLockBeforeSubmit) {
             ASSERT_TRUE(result == VK_SUCCESS);
         }
 
-        vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
         m_command_buffer.End();
 
@@ -509,12 +509,12 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         VkCommandBufferBeginInfo command_buffer_begin_info = vku::InitStructHelper();
         command_buffer_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-        vk::ResetQueryPoolEXT(device(), query_pool.handle(), 0, 1);
+        vk::ResetQueryPoolEXT(device(), query_pool, 0, 1);
 
         m_command_buffer.Begin(&command_buffer_begin_info);
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-        vk::CmdFillBuffer(m_command_buffer.handle(), buffer, 0, buf_size, 0);
-        vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        vk::CmdFillBuffer(m_command_buffer, buffer, 0, buf_size, 0);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
         m_command_buffer.End();
 
         // Invalid pass index
@@ -557,8 +557,8 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         results.resize(counterIndices.size());
 
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09441");
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
         m_errorMonitor->VerifyFound();
 
         // submit the last pass
@@ -582,8 +582,8 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         // The stride is too small to return the data
         if (counterIndices.size() > 2) {
             m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-04519");
-            vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                    &results[0], sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1), 0);
+            vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                    sizeof(VkPerformanceCounterResultKHR) * (results.size() - 1), 0);
             m_errorMonitor->VerifyFound();
         }
 
@@ -593,7 +593,7 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
             results_invalid_stride.resize(counterIndices.size() * 2);
             m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-03229");
             vk::GetQueryPoolResults(
-                device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
+                device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size(),
                 &results_invalid_stride[0], sizeof(VkPerformanceCounterResultKHR) * results_invalid_stride.size() + 4,
                 VK_QUERY_RESULT_WAIT_BIT);
             m_errorMonitor->VerifyFound();
@@ -603,21 +603,21 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
         if (perf_query_props.allowCommandBufferQueryCopies) {
             m_command_buffer.Begin(&command_buffer_begin_info);
             m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09440");
-            vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer, 0,
+            vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                         VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
             m_errorMonitor->VerifyFound();
             m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09440");
-            vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer, 0,
+            vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
             m_errorMonitor->VerifyFound();
             m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09440");
-            vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer, 0,
+            vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0,
                                         sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
             m_errorMonitor->VerifyFound();
             if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
                 m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09440");
-                vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer, 0,
+                vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0,
                                             sizeof(VkPerformanceCounterResultKHR) * results.size(),
                                             VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
                 m_errorMonitor->VerifyFound();
@@ -627,28 +627,26 @@ TEST_F(NegativeQuery, PerformanceIncompletePasses) {
 
         // Invalid flags for vkGetQueryPoolResults
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09440");
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09440");
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_PARTIAL_BIT);
         m_errorMonitor->VerifyFound();
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09440");
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_64_BIT);
         m_errorMonitor->VerifyFound();
         if (IsExtensionsEnabled(VK_KHR_VIDEO_QUEUE_EXTENSION_NAME)) {
             m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09440");
-            vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                    &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                    VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
+            vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                    sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WITH_STATUS_BIT_KHR);
             m_errorMonitor->VerifyFound();
         }
 
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(),
-                                &results[0], sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(VkPerformanceCounterResultKHR) * results.size(), &results[0],
+                                sizeof(VkPerformanceCounterResultKHR) * results.size(), VK_QUERY_RESULT_WAIT_BIT);
     }
 
     vk::ReleaseProfilingLockKHR(device());
@@ -724,9 +722,9 @@ TEST_F(NegativeQuery, PerformanceResetAndBegin) {
 
         m_command_buffer.Reset();
         m_command_buffer.Begin(&command_buffer_begin_info);
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-        vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
         m_command_buffer.End();
 
         {
@@ -776,7 +774,7 @@ TEST_F(NegativeQuery, HostResetFirstQuery) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-firstQuery-09436");
-    vk::ResetQueryPoolEXT(device(), query_pool.handle(), 1, 0);
+    vk::ResetQueryPoolEXT(device(), query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -790,7 +788,7 @@ TEST_F(NegativeQuery, HostResetBadRange) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-firstQuery-09437");
-    vk::ResetQueryPool(device(), query_pool.handle(), 0, 2);
+    vk::ResetQueryPool(device(), query_pool, 0, 2);
     m_errorMonitor->VerifyFound();
 }
 
@@ -803,7 +801,7 @@ TEST_F(NegativeQuery, HostResetQueryPool) {
 
     // Create and destroy a query pool.
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
-    VkQueryPool bad_pool = query_pool.handle();
+    VkQueryPool bad_pool = query_pool;
     query_pool.destroy();
 
     // Attempt to reuse the query pool handle.
@@ -840,7 +838,7 @@ TEST_F(NegativeQuery, HostResetDevice) {
 
     m_errorMonitor->SetDesiredError("VUID-vkResetQueryPool-queryPool-parent");
     // Run vk::ResetQueryPoolExt on the wrong device.
-    vk::ResetQueryPool(second_device, query_pool.handle(), 0, 1);
+    vk::ResetQueryPool(second_device, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyDevice(second_device, nullptr);
@@ -853,7 +851,7 @@ TEST_F(NegativeQuery, CmdBufferQueryPoolDestroyed) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkQueueSubmit-pCommandBuffers-00070");
@@ -873,10 +871,10 @@ TEST_F(NegativeQuery, BeginQueryOnTimestampPool) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-02804");
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
 
-    vk::BeginCommandBuffer(m_command_buffer.handle(), &begin_info);
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::EndCommandBuffer(m_command_buffer.handle());
+    vk::BeginCommandBuffer(m_command_buffer, &begin_info);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::EndCommandBuffer(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -887,16 +885,16 @@ TEST_F(NegativeQuery, InsideRenderPass) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-07007");
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -907,9 +905,9 @@ TEST_F(NegativeQuery, OutsideRenderPass) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndRenderPass-None-07004");
     m_command_buffer.EndRenderPass();
@@ -934,16 +932,16 @@ TEST_F(NegativeQuery, InsideRenderPassDynamicRendering) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_command_buffer.BeginRendering(begin_rendering_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-07007");
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -965,9 +963,9 @@ TEST_F(NegativeQuery, OutsideRenderPassDynamicRendering) {
     begin_rendering_info.pColorAttachments = &color_attachment;
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndRendering-None-06999");
     m_command_buffer.EndRendering();
@@ -1020,7 +1018,7 @@ TEST_F(NegativeQuery, Sizes) {
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkMemoryRequirements mem_reqs = {};
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
     const VkDeviceSize buffer_size = mem_reqs.size;
 
     const uint32_t query_pool_size = 4;
@@ -1031,50 +1029,46 @@ TEST_F(NegativeQuery, Sizes) {
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09436");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer.handle(), occlusion_query_pool.handle(), query_pool_size, 1);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), query_pool_size, 1);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer.handle(), occlusion_query_pool.handle(), 1, query_pool_size);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), 1, query_pool_size);
     m_errorMonitor->VerifyFound();
 
     // Actually reset all queries so they can be used
-    vk::CmdResetQueryPool(m_command_buffer.handle(), occlusion_query_pool.handle(), 0, query_pool_size);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), 0, query_pool_size);
 
-    vk::CmdBeginQuery(m_command_buffer.handle(), occlusion_query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, occlusion_query_pool.handle(), 0, 0);
 
     // Query index to large
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-query-00810");
-    vk::CmdEndQuery(m_command_buffer.handle(), occlusion_query_pool.handle(), query_pool_size);
+    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool.handle(), query_pool_size);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndQuery(m_command_buffer.handle(), occlusion_query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool.handle(), 0);
 
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09436");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), occlusion_query_pool.handle(), query_pool_size, 1, buffer.handle(), 0, 0,
-                                0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), query_pool_size, 1, buffer, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), occlusion_query_pool.handle(), 1, query_pool_size, buffer.handle(), 0, 0,
-                                0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 1, query_pool_size, buffer, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Offset larger than buffer size
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), occlusion_query_pool.handle(), 0, 1, buffer.handle(), buffer_size + 4, 0,
-                                0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 0, 1, buffer, buffer_size + 4, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Buffer does not have enough storage from offset to contain result of each query
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), occlusion_query_pool.handle(), 0, 2, buffer.handle(), buffer_size - 4, 4,
-                                0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 0, 2, buffer, buffer_size - 4, 4, 0);
     m_errorMonitor->VerifyFound();
 
     // Query is not a timestamp type
@@ -1082,7 +1076,7 @@ TEST_F(NegativeQuery, Sizes) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-timestampValidBits-00829");
     }
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-queryPool-01416");
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool.handle(), 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -1122,7 +1116,7 @@ TEST_F(NegativeQuery, PreciseBit) {
         vkt::QueryPool query_pool(*m_device, query_pool_create_info);
 
         m_command_buffer.Begin();
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, query_pool_create_info.queryCount);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, query_pool_create_info.queryCount);
         m_command_buffer.End();
 
         m_default_queue->SubmitAndWait(m_command_buffer);
@@ -1130,16 +1124,16 @@ TEST_F(NegativeQuery, PreciseBit) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00800");
 
         m_command_buffer.Begin();
-        vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
         m_errorMonitor->VerifyFound();
-        // vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
+        // vk::CmdBeginQuery(m_command_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
         m_command_buffer.End();
 
         const size_t out_data_size = 64;
         uint8_t data[out_data_size];
         // The dataSize is too small to return the data
         m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-        vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 3, 8, &data, 12, 0);
+        vk::GetQueryPoolResults(device(), query_pool, 0, 3, 8, &data, 12, 0);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1176,7 +1170,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     vkt::QueryPool query_pool(test_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     vk::BeginCommandBuffer(cmd_buffer2, &begin_info);
-    vk::CmdResetQueryPool(cmd_buffer2, query_pool.handle(), 0, 2);
+    vk::CmdResetQueryPool(cmd_buffer2, query_pool, 0, 2);
     vk::EndCommandBuffer(cmd_buffer2);
 
     VkSubmitInfo submit_info = vku::InitStructHelper();
@@ -1187,7 +1181,7 @@ TEST_F(NegativeQuery, PreciseBit) {
 
     vk::BeginCommandBuffer(cmd_buffer, &begin_info);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00800");
-    vk::CmdBeginQuery(cmd_buffer, query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
+    vk::CmdBeginQuery(cmd_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
     m_errorMonitor->VerifyFound();
     vk::EndCommandBuffer(cmd_buffer);
 
@@ -1195,7 +1189,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     uint8_t data[out_data_size];
     // The dataSize is too small to return the data
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-    vk::GetQueryPoolResults(test_device.handle(), query_pool.handle(), 0, 2, 8, &data, out_data_size / 2, 0);
+    vk::GetQueryPoolResults(test_device.handle(), query_pool, 0, 2, 8, &data, out_data_size / 2, 0);
     m_errorMonitor->VerifyFound();
 
     vk::DestroyEvent(test_device.handle(), event, nullptr);
@@ -1217,12 +1211,11 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
 
     // Use setup as a positive test...
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09439");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, 8,
-                                VK_QUERY_RESULT_PARTIAL_BIT);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, 8, VK_QUERY_RESULT_PARTIAL_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -1258,7 +1251,7 @@ TEST_F(NegativeQuery, PerformanceQueryIntel) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-02734");
     m_command_buffer.Begin();
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, 8, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, 8, 0);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 }
@@ -1280,8 +1273,8 @@ TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
 
     m_command_buffer.Begin();
     // Use query pool to create binding with cmd buffer
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, 1);
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
     m_command_buffer.End();
 
     // Submit cmd buffer and then destroy query pool while in-flight
@@ -1313,7 +1306,7 @@ TEST_F(NegativeQuery, WriteTimeStamp) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-query-04904");
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1334,20 +1327,20 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTIndex) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), tf_query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), tf_query_pool.handle(), 0,
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0,
                               transform_feedback_properties.maxTransformFeedbackStreams);
 
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06695");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-None-02342");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-query-02343");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 1, 0);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1372,26 +1365,26 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-02339");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), tf_query_pool.handle(), 0, 0,
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0,
                                 transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), tf_query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), tf_query_pool.handle(), 0,
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0,
                               transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06690");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), pg_query_pool.handle(), 0, 0,
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, pg_query_pool.handle(), 0, 0,
                                 transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06695");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1411,9 +1404,9 @@ TEST_F(NegativeQuery, TransformFeedbackStream) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-02328");
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1432,7 +1425,7 @@ TEST_F(NegativeQuery, GetResultsFlags) {
     VkQueryResultFlags flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-09443");
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, data + 1, 4, flags);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, data + 1, 4, flags);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1445,7 +1438,7 @@ TEST_F(NegativeQuery, GetResultsStride) {
     uint8_t data[8];
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryCount-09438");
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 2, 8, data, 0, 0);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 2, 8, data, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1464,7 +1457,7 @@ TEST_F(NegativeQuery, ResultStatusOnly) {
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09442");
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, sizeof(uint32_t), 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1486,8 +1479,8 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     VkCommandBufferBeginInfo cmd_begin = vku::InitStructHelper();
     cmd_begin.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     m_command_buffer.Begin(&cmd_begin);
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, 1);
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -1562,16 +1555,16 @@ TEST_F(NegativeQuery, MultiviewBeginQuery) {
     image_ci.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 4);
-    VkImageView image_view_handle = image_view.handle();
+    VkImageView image_view_handle = image_view;
 
-    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view_handle, 64, 64);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view_handle, 64, 64);
 
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass.handle(), framebuffer.handle(), 64, 64);
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 64, 64);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-query-00808");
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 1, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1601,7 +1594,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
         vkt::QueryPool query_pool(*m_device, qpci);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00805");
-        vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+        vk::CmdBeginQuery(command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
 
         command_buffer.End();
@@ -1618,7 +1611,7 @@ TEST_F(NegativeQuery, PipelineStatisticsQuery) {
         vkt::QueryPool query_pool(*m_device, qpci);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-00804");
-        vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+        vk::CmdBeginQuery(command_buffer, query_pool, 0, 0);
         m_errorMonitor->VerifyFound();
 
         command_buffer.End();
@@ -1636,7 +1629,7 @@ TEST_F(NegativeQuery, TestGetQueryPoolResultsDataAndStride) {
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
     const size_t out_data_size = 16;
     uint8_t data[out_data_size];
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, out_data_size, &data, 3, 0);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, out_data_size, &data, 3, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1665,28 +1658,27 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-06687");
-    vk::CmdBeginQuery(command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(command_buffer, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06689");
-    vk::CmdBeginQueryIndexedEXT(command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06690");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06691");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 0,
-                                transform_feedback_properties.maxTransformFeedbackStreams);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
     vkt::QueryPool occlusion_query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06692");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), occlusion_query_pool.handle(), 0, 0, 1);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, occlusion_query_pool.handle(), 0, 0, 1);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1701,11 +1693,11 @@ TEST_F(NegativeQuery, PrimitivesGeneratedFeature) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT, 1);
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-06688");
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06693");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer.handle(), query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1736,10 +1728,10 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1780,10 +1772,10 @@ TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1811,15 +1803,15 @@ TEST_F(NegativeQuery, CommandBufferMissingOcclusion) {
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
 
-    VkCommandBuffer secondary_handle = secondary.handle();
+    VkCommandBuffer secondary_handle = secondary;
     vk::BeginCommandBuffer(secondary_handle, &cbbi);
     vk::EndCommandBuffer(secondary_handle);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-00102");
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 }
@@ -1844,15 +1836,15 @@ TEST_F(NegativeQuery, CommandBufferInheritanceFlags) {
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
 
-    VkCommandBuffer secondary_handle = secondary.handle();
+    VkCommandBuffer secondary_handle = secondary;
     vk::BeginCommandBuffer(secondary_handle, &cbbi);
     vk::EndCommandBuffer(secondary_handle);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-00103");
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, VK_QUERY_CONTROL_PRECISE_BIT);
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_handle);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, VK_QUERY_CONTROL_PRECISE_BIT);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_handle);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
     m_errorMonitor->VerifyFound();
 }
@@ -1903,11 +1895,11 @@ TEST_F(NegativeQuery, WriteTimestampWithoutQueryPool) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-queryPool-parameter");
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, bad_query_pool, 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, bad_query_pool, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp2-queryPool-parameter");
-    vk::CmdWriteTimestamp2KHR(m_command_buffer.handle(), VK_PIPELINE_STAGE_2_NONE, bad_query_pool, 0);
+    vk::CmdWriteTimestamp2KHR(m_command_buffer, VK_PIPELINE_STAGE_2_NONE, bad_query_pool, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1940,13 +1932,13 @@ TEST_F(NegativeQuery, CmdEndQueryWithoutQueryPool) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-queryPool-parameter");
-    vk::CmdEndQuery(m_command_buffer.handle(), bad_query_pool, 0);
+    vk::CmdEndQuery(m_command_buffer, bad_query_pool, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -1958,13 +1950,13 @@ TEST_F(NegativeQuery, CmdCopyQueryPoolResultsWithoutQueryPool) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryPool-parameter");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), bad_query_pool, 0, 1, buffer.handle(), 0, 0, VK_QUERY_RESULT_WAIT_BIT);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, bad_query_pool, 0, 1, buffer, 0, 0, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -1976,7 +1968,7 @@ TEST_F(NegativeQuery, CmdResetQueryPoolWithoutQueryPool) {
     VkQueryPool bad_query_pool = CastFromUint64<VkQueryPool>(0xFFFFEEEE);
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-queryPool-parameter");
-    vk::CmdResetQueryPool(m_command_buffer.handle(), bad_query_pool, 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, bad_query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1998,9 +1990,9 @@ TEST_F(NegativeQuery, ActiveEndQuery) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-01923");
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -2012,12 +2004,12 @@ TEST_F(NegativeQuery, ActiveCmdResetQueryPool) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-None-02841");
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -2030,13 +2022,12 @@ TEST_F(NegativeQuery, ActiveCmdCopyQueryPoolResults) {
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-07429");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, 0,
-                                VK_QUERY_RESULT_WAIT_BIT);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, 0, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -2060,16 +2051,16 @@ TEST_F(NegativeQuery, CmdExecuteCommandsActiveQueries) {
     cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     cmd_buf_info.pInheritanceInfo = &cmd_buf_hinfo;
 
-    vk::BeginCommandBuffer(secondary.handle(), &cmd_buf_info);
-    vk::EndCommandBuffer(secondary.handle());
+    vk::BeginCommandBuffer(secondary, &cmd_buf_info);
+    vk::EndCommandBuffer(secondary);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-07594");
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 }
 
@@ -2091,16 +2082,16 @@ TEST_F(NegativeQuery, CmdExecuteBeginActiveQuery) {
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin(&cbbi);
-    vk::CmdBeginQuery(secondary.handle(), query_pool.handle(), 1u, 0u);
-    vk::CmdEndQuery(secondary.handle(), query_pool.handle(), 1u);
+    vk::CmdBeginQuery(secondary, query_pool, 1u, 0u);
+    vk::CmdEndQuery(secondary, query_pool, 1u);
     secondary.End();
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-pCommandBuffers-00105");
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
     m_command_buffer.End();
 }
 
@@ -2152,7 +2143,7 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
 
     {
         m_command_buffer.Begin();
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
         m_command_buffer.End();
 
         m_default_queue->Submit(m_command_buffer);
@@ -2161,19 +2152,19 @@ TEST_F(NegativeQuery, PerformanceQueryReset) {
 
     vkt::CommandBuffer command_buffer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     command_buffer.Begin();
-    vk::CmdBeginQuery(command_buffer.handle(), query_pool, 0u, 0u);
-    vk::CmdEndQuery(command_buffer.handle(), query_pool, 0u);
+    vk::CmdBeginQuery(command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(command_buffer, query_pool, 0u);
     command_buffer.End();
 
     for (uint32_t i = 0; i < 2; ++i) {
         m_command_buffer.Begin();
         if (i == 0) {
-            vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0u, 0u);
-            vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 0u);
+            vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+            vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
         } else {
-            vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &command_buffer.handle());
+            vk::CmdExecuteCommands(m_command_buffer, 1u, &command_buffer.handle());
         }
-        vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0u, 1u);
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
         m_command_buffer.End();
 
         auto performance_query_submit_info = vku::InitStruct<VkPerformanceQuerySubmitInfoKHR>();
@@ -2202,11 +2193,11 @@ TEST_F(NegativeQuery, GetQueryPoolResultsWithoutReset) {
 
     uint32_t data = 0u;
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-None-09401");
-    vk::GetQueryPoolResults(*m_device, query_pool.handle(), 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
+    vk::GetQueryPoolResults(*m_device, query_pool, 0u, 1u, sizeof(uint32_t), &data, sizeof(uint32_t), 0u);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, sizeof(uint32_t), 0u);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 1u, buffer, 0u, sizeof(uint32_t), 0u);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-09402");
@@ -2233,12 +2224,12 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0u, 0u);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-stage-07073");
-    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -2270,11 +2261,11 @@ TEST_F(NegativeQuery, PipelineStatisticsQueryWithSecondaryCmdBuffer) {
     secondary.End();
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdExecuteCommands-commandBuffer-00104");
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1u, &secondary.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1u, &secondary.handle());
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
     m_command_buffer.End();
 }
 
@@ -2322,7 +2313,7 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     vkt::RenderPass render_pass(*m_device, render_pass_ci);
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper();
-    framebuffer_ci.renderPass = render_pass.handle();
+    framebuffer_ci.renderPass = render_pass;
     framebuffer_ci.width = 32u;
     framebuffer_ci.height = 32u;
     framebuffer_ci.layers = 1u;
@@ -2330,8 +2321,8 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     vkt::Framebuffer framebuffer(*m_device, framebuffer_ci);
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = render_pass.handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.renderPass = render_pass;
+    render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea = {{0, 0}, {32u, 32u}};
     render_pass_bi.clearValueCount = 1u;
     render_pass_bi.pClearValues = m_renderPassClearValues.data();
@@ -2340,7 +2331,7 @@ TEST_F(NegativeQuery, WriteTimestampInsideRenderPass) {
     m_command_buffer.BeginRenderPass(render_pass_bi);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-query-00831");
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, query_pool.handle(), 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, query_pool, 1);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2364,29 +2355,27 @@ TEST_F(NegativeQuery, Stride) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0, 1);
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     char data_space;
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
-                            VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-00815");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space), &data_space, 1,
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyFound();
 
     char data_space4[4] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space4), &data_space4, 4,
-                            VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
 
     char data_space8[8] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool.handle(), 0, 1, sizeof(data_space8), &data_space8, 8,
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -2394,18 +2383,16 @@ TEST_F(NegativeQuery, Stride) {
     m_command_buffer.Reset();
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-00822");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 1, 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-00823");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 1, 1,
-                                VK_QUERY_RESULT_64_BIT);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 1, 1, VK_QUERY_RESULT_64_BIT);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 4, 4, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 4, 4, 0);
 
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 8, 8,
-                                VK_QUERY_RESULT_64_BIT);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 8, 8, VK_QUERY_RESULT_64_BIT);
 }
 
 TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
@@ -2460,12 +2447,12 @@ TEST_F(NegativeQuery, PerfQueryQueueFamilyIndex) {
     vk::AcquireProfilingLockKHR(*m_device, &acquire_profiling_lock_info);
 
     cb.Begin();
-    vk::CmdResetQueryPool(cb.handle(), query_pool.handle(), 0u, 1u);
+    vk::CmdResetQueryPool(cb, query_pool, 0u, 1u);
     cb.End();
 
     cb.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryPool-07289");
-    vk::CmdBeginQuery(cb.handle(), query_pool, 0, 0);
+    vk::CmdBeginQuery(cb, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
     cb.End();
     vk::ReleaseProfilingLockKHR(*m_device);
@@ -2481,8 +2468,8 @@ TEST_F(NegativeQuery, NoInitReset) {
     vkt::QueryPool query_pool(*m_device, qpci);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-00807");
@@ -2498,8 +2485,8 @@ TEST_F(NegativeQuery, CopyUnavailableQueries) {
     vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, 0u, 0u);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 1u, buffer, 0u, 0u, 0u);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-None-08752");
@@ -2515,10 +2502,10 @@ TEST_F(NegativeQuery, QueryResultCopyBufferInvalidFlags) {
     vkt::Buffer buffer(*m_device, 16u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 1u);
-    vk::CmdWriteTimestamp(m_command_buffer.handle(), VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool.handle(), 0u);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, query_pool, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00825");
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0u, 1u, buffer.handle(), 0u, 0u, 0u);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0u, 1u, buffer, 0u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -2533,11 +2520,11 @@ TEST_F(NegativeQuery, QueryPoolResultsStride) {
     vkt::QueryPool query_pool(*m_device, qpci);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 2u);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0u, 0u);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 0u);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 1u, 0u);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 1u);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 2u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 1u);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);

@@ -608,7 +608,7 @@ TEST_F(NegativeMesh, BasicUsageNV) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718");
-    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer.handle(), buffer, 0, 2, 0);
+    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer, buffer, 0, 2, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -639,43 +639,43 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-04095");
-    vk::CmdSetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
+    vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-stageMask-04096");
-    vk::CmdSetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
+    vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-stageMask-04095");
-    vk::CmdResetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
+    vk::CmdResetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-stageMask-04096");
-    vk::CmdResetEvent(m_command_buffer.handle(), event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
+    vk::CmdResetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-04095");
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-04095");
-    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
-                      VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(m_command_buffer, 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-04096");
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-04096");
-    vk::CmdWaitEvents(m_command_buffer.handle(), 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
-                      VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(m_command_buffer, 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0,
+                      nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-04095");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04095");
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0,
-                           0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-04096");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-dstStageMask-04096");
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0,
-                           0, nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, 0,
+                           nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -843,7 +843,7 @@ TEST_F(NegativeMesh, DrawCmds) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     uint32_t max_group_count_X = mesh_shader_properties.maxTaskWorkGroupCount[0];
     uint32_t max_group_count_Y = mesh_shader_properties.maxTaskWorkGroupCount[1];
@@ -865,46 +865,45 @@ TEST_F(NegativeMesh, DrawCmds) {
     }
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-TaskEXT-07325");
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), max_group_count_X, max_group_count_Y, max_group_count_Z);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, max_group_count_X, max_group_count_Y, max_group_count_Z);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     if (m_device->Physical().limits_.maxDrawIndirectCount < vvl::MaxTypeValue(m_device->Physical().limits_.maxDrawIndirectCount)) {
         m_errorMonitor->SetUnexpectedError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02718");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
         m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-02719");
-        vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0,
-                                        m_device->Physical().limits_.maxDrawIndirectCount + 1,
+        vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, m_device->Physical().limits_.maxDrawIndirectCount + 1,
                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
         m_errorMonitor->VerifyFound();
     }
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089");
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandEXT) * 2, 1,
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, sizeof(VkDrawMeshTasksIndirectCommandEXT) * 2, 1,
                                     sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-stage-06481");
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-stage-06480");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-MeshEXT-07087");
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-MeshEXT-07091");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-stage-06480");
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-MeshEXT-07100");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-06480");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer.handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, buffer, 0, count_buffer, 0, 1,
                                          sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
@@ -981,15 +980,14 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088");
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0, 2,
-                                    sizeof(VkDrawMeshTasksIndirectCommandEXT) - 2);
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, 2, sizeof(VkDrawMeshTasksIndirectCommandEXT) - 2);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090");
-    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer.handle(), buffer.handle(), 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, buffer, 0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     vkt::Buffer draw_buffer(*m_device, buffer_create_info, vkt::no_mem);
@@ -1006,24 +1004,23 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vkt::Buffer count_buffer_wrong_usage(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer.handle(), draw_buffer.handle(), 0, count_buffer_unbound.handle(), 0, 1,
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_unbound.handle(), 0, 1,
                                          sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer.handle(), draw_buffer.handle(), 0, count_buffer_wrong_usage.handle(), 0,
-                                         1, sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_wrong_usage.handle(), 0, 1,
+                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer.handle(), draw_buffer.handle(), 0, count_buffer.handle(), 0, 1,
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer, 0, 1,
                                          sizeof(VkDrawMeshTasksIndirectCommandEXT) - 3);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer.handle(), draw_buffer.handle(),
-                                         2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), count_buffer.handle(), 0, 4,
-                                         sizeof(VkDrawMeshTasksIndirectCommandEXT));
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 2 * sizeof(VkDrawMeshTasksIndirectCommandEXT), count_buffer,
+                                         0, 4, sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -1079,28 +1076,27 @@ TEST_F(NegativeMesh, DrawCmdsNV) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156");
-    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer.handle(), buffer.handle(), sizeof(VkDrawMeshTasksIndirectCommandNV) * 2, 1,
+    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer, buffer, sizeof(VkDrawMeshTasksIndirectCommandNV) * 2, 1,
                                    sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksNV-MeshNV-07080");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksNV-stage-06480");
-    vk::CmdDrawMeshTasksNV(m_command_buffer.handle(), 1, 0);
+    vk::CmdDrawMeshTasksNV(m_command_buffer, 1, 0);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-MeshNV-07081");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectNV-stage-06480");
-    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer.handle(), buffer.handle(), 0, 1, sizeof(VkDrawMeshTasksIndirectCommandNV));
+    vk::CmdDrawMeshTasksIndirectNV(m_command_buffer, buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountNV-MeshNV-07082");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-06480");
-    vk::CmdDrawMeshTasksIndirectCountNV(m_command_buffer.handle(), buffer.handle(), 0, count_buffer.handle(), 0, 1,
-                                        sizeof(VkDrawMeshTasksIndirectCommandNV));
+    vk::CmdDrawMeshTasksIndirectCountNV(m_command_buffer, buffer, 0, count_buffer, 0, 1, sizeof(VkDrawMeshTasksIndirectCommandNV));
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -1287,19 +1283,19 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdBeginQuery(m_command_buffer.handle(), xfb_query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, xfb_query_pool.handle(), 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-07074");
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1u, 1u, 1u);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), xfb_query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, xfb_query_pool.handle(), 0u);
 
-    vk::CmdBeginQuery(m_command_buffer.handle(), pg_query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, pg_query_pool.handle(), 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-07075");
-    vk::CmdDrawMeshTasksEXT(m_command_buffer.handle(), 1u, 1u, 1u);
+    vk::CmdDrawMeshTasksEXT(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer.handle(), pg_query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, pg_query_pool.handle(), 0u);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

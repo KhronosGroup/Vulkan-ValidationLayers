@@ -142,8 +142,8 @@ TEST_F(PositiveHostImageCopy, BasicUsage) {
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &image_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &image_barrier);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -286,8 +286,8 @@ TEST_F(PositiveHostImageCopy, BasicUsage14) {
     image_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     image_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &image_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &image_barrier);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -331,7 +331,7 @@ TEST_F(PositiveHostImageCopy, CopyImageToMemoryMipLevel) {
 
     VkCopyImageToMemoryInfo copy_to_image_memory = vku::InitStructHelper();
     copy_to_image_memory.flags = VK_HOST_IMAGE_COPY_MEMCPY;
-    copy_to_image_memory.srcImage = image.handle();
+    copy_to_image_memory.srcImage = image;
     copy_to_image_memory.srcImageLayout = layout;
     copy_to_image_memory.regionCount = 1u;
     copy_to_image_memory.pRegions = &region;
@@ -344,9 +344,8 @@ TEST_F(PositiveHostImageCopy, CompressedFormat) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
-                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                                 image_ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_BC3_SRGB_BLOCK, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
     image_ci.format = VK_FORMAT_BC3_SRGB_BLOCK;

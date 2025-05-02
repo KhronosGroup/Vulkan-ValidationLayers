@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020-2021 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,12 +40,12 @@ TEST_F(NegativeThreading, CommandBufferCollision) {
     vkt::Event event(*m_device);
     VkResult err;
 
-    err = vk::ResetEvent(device(), event.handle());
+    err = vk::ResetEvent(device(), event);
     ASSERT_EQ(VK_SUCCESS, err);
 
     ThreadTestData data;
     data.commandBuffer = commandBuffer.handle();
-    data.event = event.handle();
+    data.event = event;
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -96,7 +96,7 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     data.device = device();
     data.descriptorSet = normal_descriptor_set.set_;
     data.binding = 0;
-    data.buffer = buffer.handle();
+    data.buffer = buffer;
     std::atomic<bool> bailout{false};
     data.bailout = &bailout;
     m_errorMonitor->SetBailout(data.bailout);
@@ -109,7 +109,7 @@ TEST_F(NegativeThreading, UpdateDescriptorCollision) {
     data2.device = device();
     data2.descriptorSet = normal_descriptor_set.set_;
     data2.binding = 1;
-    data2.buffer = buffer.handle();
+    data2.buffer = buffer;
     data2.bailout = &bailout;
 
     UpdateDescriptor(&data2);
