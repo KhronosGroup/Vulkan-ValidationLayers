@@ -449,6 +449,8 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
     AddRequiredFeature(vkt::Feature::shaderInt8);
     AddRequiredFeature(vkt::Feature::shaderInt16);
     AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout8BitAccess);
+    AddRequiredFeature(vkt::Feature::workgroupMemoryExplicitLayout16BitAccess);
     RETURN_IF_SKIP(Init());
 
     // WorkgroupMemoryExplicitLayoutKHR
@@ -515,7 +517,6 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
         m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
         VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
         m_errorMonitor->VerifyFound();
@@ -559,7 +560,6 @@ TEST_F(NegativeShaderCompute, WorkgroupMemoryExplicitLayout) {
                OpFunctionEnd
         )";
 
-        m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08740");
         m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
         VkShaderObj::CreateFromASM(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
         m_errorMonitor->VerifyFound();
