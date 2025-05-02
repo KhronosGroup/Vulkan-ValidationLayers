@@ -254,6 +254,15 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                          FormatHandle(queryPool).c_str(), dataSize);
     }
 
+    if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
+        const uint32_t required_stride = query_size_in_bytes * (1 + query_avail_data);
+        if (stride < required_stride) {
+            skip |= LogError("VUID-vkGetQueryPoolResults-stride-08993", queryPool, error_obj.location.dot(Field::flags),
+                             "are (%s) and stride is %" PRIu64 ", but stride must be at least %" PRIu32 ".",
+                             string_VkQueryResultFlags(flags).c_str(), stride, required_stride);
+        }
+    }
+
     skip |= ValidateQueryPoolWasReset(*query_pool_state, firstQuery, queryCount, error_obj.location, nullptr, 0u);
 
     return skip;
