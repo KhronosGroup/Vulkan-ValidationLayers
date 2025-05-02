@@ -2522,3 +2522,29 @@ TEST_F(NegativeQuery, QueryResultCopyBufferInvalidFlags) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeQuery, QueryPoolResultsStride) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 2u);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool.handle(), 0u, 2u);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 0u);
+    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 1u, 0u);
+    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 1u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t data_space[4];
+    m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-stride-08993");
+    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0u, 2u, sizeof(uint32_t) * 4, data_space, sizeof(uint32_t),
+                            VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+    m_errorMonitor->VerifyFound();
+}
