@@ -4322,7 +4322,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
             GetDescriptorCountMaxPerStage(&enabled_features, set_layouts, false);
         // Samplers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLERS] >
-            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSamplers) {
+                phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSamplers &&
+            device_state->special_supported.descriptor_binding_sampled_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03022", device, error_obj.location,
                              "max per-stage sampler bindings count (%" PRIu64
                              ") exceeds device "
@@ -4333,7 +4334,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Uniform buffers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_UNIFORM_BUFFERS] >
-            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindUniformBuffers) {
+                phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindUniformBuffers &&
+            device_state->special_supported.descriptor_binding_uniform_buffer_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03023", device, error_obj.location,
                              "max per-stage uniform buffer bindings count (%" PRIu64
                              ") exceeds device "
@@ -4344,7 +4346,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Storage buffers
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_BUFFERS] >
-            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageBuffers) {
+                phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageBuffers &&
+            device_state->special_supported.descriptor_binding_storage_buffer_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03024", device, error_obj.location,
                              "max per-stage storage buffer bindings count (%" PRIu64
                              ") exceeds device "
@@ -4355,7 +4358,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Sampled images
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_SAMPLED_IMAGES] >
-            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSampledImages) {
+                phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindSampledImages &&
+            device_state->special_supported.descriptor_binding_sampled_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03025", device, error_obj.location,
                              "max per-stage sampled image bindings count (%" PRIu64
                              ") exceeds device "
@@ -4366,7 +4370,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Storage images
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_STORAGE_IMAGES] >
-            phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageImages) {
+                phys_dev_props_core12.maxPerStageDescriptorUpdateAfterBindStorageImages &&
+            device_state->special_supported.descriptor_binding_storage_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-03026", device, error_obj.location,
                              "max per-stage storage image bindings count (%" PRIu64
                              ") exceeds device "
@@ -4388,7 +4393,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Inline uniform blocks
         if (max_descriptors_per_stage_update_after_bind[DSL_TYPE_INLINE_UNIFORM_BLOCK] >
-            phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks) {
+                phys_dev_props_core13.maxPerStageDescriptorUpdateAfterBindInlineUniformBlocks &&
+            device_state->special_supported.descriptor_binding_inline_uniform_buffer_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02215", device, error_obj.location,
                              "max per-stage inline uniform block bindings count (%" PRIu64
                              ") exceeds device "
@@ -4414,7 +4420,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         // Samplers
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER];
-        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSamplers) {
+        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSamplers &&
+            device_state->special_supported.descriptor_binding_sampled_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03036", device, error_obj.location,
                              "sum of sampler bindings among all stages (%" PRIu64
                              ") exceeds device "
@@ -4424,7 +4431,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Uniform buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER] >
-            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffers) {
+                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffers &&
+            device_state->special_supported.descriptor_binding_uniform_buffer_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03037", device, error_obj.location,
                              "sum of uniform buffer bindings among all stages (%" PRIu64
                              ") exceeds device "
@@ -4435,7 +4443,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Storage buffers
         if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER] >
-            phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers) {
+                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffers &&
+            device_state->special_supported.descriptor_binding_storage_buffer_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03039", device, error_obj.location,
                              "sum of storage buffer bindings among all stages (%" PRIu64
                              ") exceeds device "
@@ -4447,7 +4456,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         if (enabled_features.maintenance7) {
             // Dynamic uniform buffers
             if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] >
-                phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic) {
+                    phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic &&
+                device_state->special_supported.descriptor_binding_uniform_buffer_uab) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10007", device, error_obj.location,
                                  "sum of dynamic uniform buffer bindings among all stages (%" PRIu64
                                  ") exceeds device "
@@ -4458,7 +4468,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
             // Dynamic storage buffers
             if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] >
-                phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic) {
+                    phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic &&
+                device_state->special_supported.descriptor_binding_storage_buffer_uab) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-maintenance7-10008", device, error_obj.location,
                                  "sum of dynamic storage buffer bindings among all stages (%" PRIu64
                                  ") exceeds device "
@@ -4469,7 +4480,9 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
             sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] +
                   sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC];
-            if (sum > phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalBuffersDynamic) {
+            if (sum > phys_dev_ext_props.maintenance7_props.maxDescriptorSetUpdateAfterBindTotalBuffersDynamic &&
+                (device_state->special_supported.descriptor_binding_uniform_buffer_uab ||
+                 device_state->special_supported.descriptor_binding_storage_buffer_uab)) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-10006", device, error_obj.location,
                                  "sum of both dynamic storage buffer bindings (%" PRIu64
                                  ") and dynamic uniform buffer bindings (%" PRIu64 ") among all stages (%" PRIu64
@@ -4482,7 +4495,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         } else {
             // Dynamic uniform buffers
             if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC] >
-                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic) {
+                    phys_dev_props_core12.maxDescriptorSetUpdateAfterBindUniformBuffersDynamic &&
+                device_state->special_supported.descriptor_binding_uniform_buffer_uab) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03038", device, error_obj.location,
                                  "sum of dynamic uniform buffer bindings among all stages (%" PRIu64
                                  ") exceeds device "
@@ -4493,7 +4507,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
             // Dynamic storage buffers
             if (sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC] >
-                phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic) {
+                    phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageBuffersDynamic &&
+                device_state->special_supported.descriptor_binding_storage_buffer_uab) {
                 skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03040", device, error_obj.location,
                                  "sum of dynamic storage buffer bindings among all stages (%" PRIu64
                                  ") exceeds device "
@@ -4507,7 +4522,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER];
-        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSampledImages) {
+        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindSampledImages &&
+            device_state->special_supported.descriptor_binding_sampled_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03041", device, error_obj.location,
                              "sum of sampled image bindings among all stages (%" PRIu64
                              ") exceeds device "
@@ -4518,7 +4534,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
         // Storage images
         sum = sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_IMAGE] +
               sum_all_stages_update_after_bind[VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER];
-        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageImages) {
+        if (sum > phys_dev_props_core12.maxDescriptorSetUpdateAfterBindStorageImages &&
+            device_state->special_supported.descriptor_binding_storage_image_uab) {
             skip |= LogError("VUID-VkPipelineLayoutCreateInfo-pSetLayouts-03042", device, error_obj.location,
                              "sum of storage image bindings among all stages (%" PRIu64
                              ") exceeds device "
@@ -4539,7 +4556,8 @@ bool CoreChecks::PreCallValidateCreatePipelineLayout(VkDevice device, const VkPi
 
         // Inline uniform blocks
         const uint64_t inline_uniform_block_bindings = GetInlineUniformBlockBindingCount(set_layouts, false);
-        if (inline_uniform_block_bindings > phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks) {
+        if (inline_uniform_block_bindings > phys_dev_props_core13.maxDescriptorSetUpdateAfterBindInlineUniformBlocks &&
+            device_state->special_supported.descriptor_binding_inline_uniform_buffer_uab) {
             skip |=
                 LogError("VUID-VkPipelineLayoutCreateInfo-descriptorType-02217", device, error_obj.location,
                          "sum of inline uniform block bindings among all stages (%" PRIu64
