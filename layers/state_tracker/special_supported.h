@@ -28,4 +28,13 @@ struct SpecialSupported {
     bool robust_image_access{false};    // robustImageAccess (VK_EXT_image_robustness)
     bool robust_image_access2{false};   // robustImageAccess2 (VK_EXT_robustness2)
     bool robust_buffer_access2{false};  // robustBufferAccess2 (VK_EXT_robustness2)
+
+    // There are various VK_EXT_descriptor_indexing limits that can be hit because when the feature is not supported, the property
+    // limit will be zero see https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7298
+    bool descriptor_binding_sampled_image_uab{false};   // descriptorBindingSampledImageUpdateAfterBind
+    bool descriptor_binding_uniform_buffer_uab{false};  // descriptorBindingUniformBufferUpdateAfterBind
+    bool descriptor_binding_storage_buffer_uab{false};  // descriptorBindingStorageBufferUpdateAfterBind
+    bool descriptor_binding_storage_image_uab{false};   // descriptorBindingStorageImageUpdateAfterBind
+    // From VK_EXT_inline_uniform_block, but interacts with VK_EXT_descriptor_indexing
+    bool descriptor_binding_inline_uniform_buffer_uab{false};  // descriptorBindingInlineUniformBlockUpdateAfterBind
 };

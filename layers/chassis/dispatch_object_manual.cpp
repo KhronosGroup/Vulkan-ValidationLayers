@@ -469,6 +469,42 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             special_supported.robust_image_access2 = robustness_2_features.robustImageAccess2;
             special_supported.robust_buffer_access2 = robustness_2_features.robustBufferAccess2;
         }
+
+        if (api_version >= VK_API_VERSION_1_2) {
+            VkPhysicalDeviceVulkan12Features vulkan_12_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&vulkan_12_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            special_supported.descriptor_binding_sampled_image_uab =
+                vulkan_12_features.descriptorBindingSampledImageUpdateAfterBind;
+            special_supported.descriptor_binding_uniform_buffer_uab =
+                vulkan_12_features.descriptorBindingUniformBufferUpdateAfterBind;
+            special_supported.descriptor_binding_storage_buffer_uab =
+                vulkan_12_features.descriptorBindingStorageBufferUpdateAfterBind;
+            special_supported.descriptor_binding_storage_image_uab =
+                vulkan_12_features.descriptorBindingStorageImageUpdateAfterBind;
+        } else if (phys_dev_extensions.find(Extension::_VK_EXT_descriptor_indexing) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceDescriptorIndexingFeatures di_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&di_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            special_supported.descriptor_binding_sampled_image_uab = di_features.descriptorBindingSampledImageUpdateAfterBind;
+            special_supported.descriptor_binding_uniform_buffer_uab = di_features.descriptorBindingUniformBufferUpdateAfterBind;
+            special_supported.descriptor_binding_storage_buffer_uab = di_features.descriptorBindingStorageBufferUpdateAfterBind;
+            special_supported.descriptor_binding_storage_image_uab = di_features.descriptorBindingStorageImageUpdateAfterBind;
+        }
+
+        if (api_version >= VK_API_VERSION_1_3) {
+            VkPhysicalDeviceVulkan13Features vulkan_13_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&vulkan_13_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            special_supported.descriptor_binding_inline_uniform_buffer_uab =
+                vulkan_13_features.descriptorBindingInlineUniformBlockUpdateAfterBind;
+        } else if (phys_dev_extensions.find(Extension::_VK_EXT_inline_uniform_block) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceInlineUniformBlockFeatures inline_ubo_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&inline_ubo_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            special_supported.descriptor_binding_inline_uniform_buffer_uab =
+                inline_ubo_features.descriptorBindingInlineUniformBlockUpdateAfterBind;
+        }
     }
 }
 
