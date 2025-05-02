@@ -313,10 +313,6 @@ void CommandBuffer::ResetCBState() {
 
     // Clean up the label data
     dev_data.debug_report->ResetCmdDebugUtilsLabel(VkHandle());
-
-    push_constant_data_chunks.clear();
-    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
-    push_constant_ranges_layout = nullptr;
 }
 
 void CommandBuffer::Reset(const Location &loc) {
