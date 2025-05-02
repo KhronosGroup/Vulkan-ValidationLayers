@@ -91,11 +91,11 @@ TEST_F(VkPositiveBestPracticesLayerTest, TestDestroyFreeNullHandles) {
     VkDescriptorSetAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::FreeDescriptorSets(device(), ds_pool.handle(), 3, descriptor_sets);
+    vk::FreeDescriptorSets(device(), ds_pool, 3, descriptor_sets);
 
     vk::FreeMemory(device(), VK_NULL_HANDLE, NULL);
 }
@@ -120,16 +120,15 @@ TEST_F(VkPositiveBestPracticesLayerTest, DrawingWithUnboundUnusedSet) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                              &empty_ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1, 1, &empty_ds.set_, 0, nullptr);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
 
     // The draw command will most likely produce a crash in case of a regression.
-    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -165,7 +164,7 @@ TEST_F(VkPositiveBestPracticesLayerTest, DynStateIgnoreAttachments) {
     pipe.gp_ci_.pDynamicState = &dynamic_create_info;
     pipe.CreateGraphicsPipeline();
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.End();
 }
 
@@ -230,10 +229,10 @@ TEST_F(VkPositiveBestPracticesLayerTest, PushConstantSet) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 16, data);
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4, data);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, 16, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_FRAGMENT_BIT, 16, 4, data);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -268,13 +267,13 @@ TEST_F(VkPositiveBestPracticesLayerTest, VertexBufferNotForAllDraws) {
     m_errorMonitor->ExpectSuccess(kErrorBit | kWarningBit | kPerformanceWarningBit);
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vbo.handle(), &kZeroDeviceSize);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -497,9 +496,9 @@ TEST_F(VkPositiveBestPracticesLayerTest, ShaderObjectDraw) {
     VkDeviceSize offset = 0u;
     m_command_buffer.BindShaders(vert_shader, frag_shader);
     SetDefaultDynamicStatesExclude();
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &m_vertex_buffer->handle(), &offset);
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &binding_desc, 1u, &attr_desc);
-    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0u, 1u, &m_vertex_buffer->handle(), &offset);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &binding_desc, 1u, &attr_desc);
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }

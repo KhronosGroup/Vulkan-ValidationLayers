@@ -265,7 +265,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.image = image;  // Image mis-matches with FB image
             img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -273,16 +273,16 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
             img_barrier.subresourceRange.baseMipLevel = 0;
             img_barrier.subresourceRange.layerCount = 1;
             img_barrier.subresourceRange.levelCount = 1;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &img_barrier);
         }
 
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
-                                  0, 1, &ds.set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
+                                  &ds.set_, 0, nullptr);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07028");
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_READ_WITHOUT_FORMAT_BIT_KHR) == 0) {
@@ -410,7 +410,7 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
             img_barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
             img_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            img_barrier.image = image.handle();  // Image mis-matches with FB image
+            img_barrier.image = image;  // Image mis-matches with FB image
             img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -418,18 +418,18 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
             img_barrier.subresourceRange.baseMipLevel = 0;
             img_barrier.subresourceRange.layerCount = 1;
             img_barrier.subresourceRange.levelCount = 1;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0,
-                                   0, nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0,
+                                   nullptr, 0, nullptr, 1, &img_barrier);
         }
 
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
-        vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(),
-                                  0, 1, &ds.set_, 0, nullptr);
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.Handle());
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
+                                  &ds.set_, 0, nullptr);
 
         if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07027");
         }
-        vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
         m_command_buffer.End();
 
         if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
@@ -785,11 +785,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteLessComponent) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &ds.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-08795");
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -865,11 +864,10 @@ TEST_F(NegativeShaderStorageImage, UnknownWriteComponentA8Unorm) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &ds.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpImageWrite-08796");
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -898,16 +896,16 @@ void NegativeShaderStorageImage::FormatComponentMismatchTest(std::string spirv_f
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.c_str(), VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredWarning("Undefined-Value-StorageImage-FormatMismatch-ImageView");
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

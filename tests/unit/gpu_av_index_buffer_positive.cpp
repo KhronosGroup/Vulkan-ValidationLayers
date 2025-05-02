@@ -38,11 +38,11 @@ TEST_F(PositiveGpuAVIndexBuffer, BadVertexIndex) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, 0);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -77,10 +77,10 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -138,21 +138,21 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedDynamicStates) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetCullModeEXT(m_command_buffer.handle(), VK_CULL_MODE_NONE);
-    vk::CmdSetFrontFaceEXT(m_command_buffer.handle(), VK_FRONT_FACE_CLOCKWISE);
-    vk::CmdSetDepthBiasEnableEXT(m_command_buffer.handle(), VK_TRUE);
-    vk::CmdSetDepthBias(m_command_buffer.handle(), 0.0f, 0.0f, 1.0f);
-    vk::CmdSetLineWidth(m_command_buffer.handle(), 1.0f);
-    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetCullModeEXT(m_command_buffer, VK_CULL_MODE_NONE);
+    vk::CmdSetFrontFaceEXT(m_command_buffer, VK_FRONT_FACE_CLOCKWISE);
+    vk::CmdSetDepthBiasEnableEXT(m_command_buffer, VK_TRUE);
+    vk::CmdSetDepthBias(m_command_buffer, 0.0f, 0.0f, 1.0f);
+    vk::CmdSetLineWidth(m_command_buffer, 1.0f);
+    vk::CmdSetPrimitiveRestartEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -183,11 +183,11 @@ TEST_F(PositiveGpuAVIndexBuffer, IndexedIndirectRobustness) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, 0);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -239,7 +239,7 @@ TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     std::vector<Vertex> vertices;
     for (int i = 0; i < 3; ++i) {
@@ -249,12 +249,12 @@ TEST_F(PositiveGpuAVIndexBuffer, NoShaderInputsVertexIndex16) {
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
     // Offset vertex buffer so that only first Vertex can correctly be fetched
     VkDeviceSize vertex_buffer_offset = 2 * sizeof(Vertex);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 1, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -312,7 +312,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexShaderUnusedLocations) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     std::vector<float> positions;
     for (int i = 0; i < 3 * 3; ++i) {
@@ -333,15 +333,15 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexShaderUnusedLocations) {
 
     // Only position buffer will not cause OOB vertex attribute fetching, uv/normal would - should be fine, vertex shader does not
     // use those two.
-    std::array<VkBuffer, 3> vertex_buffers_handles = {{positions_buffer.handle(), uvs_buffer.handle(), normals_buffer.handle()}};
+    std::array<VkBuffer, 3> vertex_buffers_handles = {{positions_buffer, uvs_buffer, normals_buffer}};
     std::array<VkDeviceSize, 3> vertex_buffer_offsets = {{0, 0, 0}};
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, size32(vertex_buffers_handles), vertex_buffers_handles.data(),
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, size32(vertex_buffers_handles), vertex_buffers_handles.data(),
                              vertex_buffer_offsets.data());
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 1, 2});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -406,7 +406,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndex) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     std::vector<Vertex> vertices;
     for (int i = 0; i < 3; ++i) {
@@ -416,17 +416,17 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndex) {
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
     // Offset vertex buffer so that only first Vertex can correctly be fetched
     const VkDeviceSize vertex_buffer_offset = 2 * sizeof(Vertex);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     std::vector<float> instance_data = {42.0f, 39.5f, 1233.0f};
     vkt::Buffer instance_buffer = vkt::VertexBuffer<float>(*m_device, instance_data);
     const VkDeviceSize instance_data_offset = 0;
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &instance_buffer.handle(), &instance_data_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &instance_buffer.handle(), &instance_data_offset);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 0, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 3, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 3, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -501,9 +501,9 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &input_binding, size32(vertex_attributes), vertex_attributes.data());
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1, &input_binding, size32(vertex_attributes), vertex_attributes.data());
 
     std::vector<Vertex> vertices;
     for (int i = 0; i < 3; ++i) {
@@ -513,12 +513,12 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT) {
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
     // Offset vertex buffer so that only first and second vertices can correctly be fetched
     VkDeviceSize vertex_buffer_offset = 1 * sizeof(Vertex);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 1, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -594,9 +594,9 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1, &input_binding, size32(vertex_attributes), vertex_attributes.data());
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1, &input_binding, size32(vertex_attributes), vertex_attributes.data());
 
     std::vector<Vertex> vertices;
     for (int i = 0; i < 3; ++i) {
@@ -608,13 +608,13 @@ TEST_F(PositiveGpuAVIndexBuffer, CmdSetVertexInputEXT_CmdBindVertexBuffers2EXT) 
     const VkDeviceSize vertex_buffer_offset = 1 * sizeof(Vertex);
     const VkDeviceSize vertex_buffer_size = 2 * sizeof(Vertex);
     const VkDeviceSize vertex_stride = sizeof(Vertex);
-    vk::CmdBindVertexBuffers2EXT(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset,
-                                 &vertex_buffer_size, &vertex_stride);
+    vk::CmdBindVertexBuffers2EXT(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset, &vertex_buffer_size,
+                                 &vertex_stride);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 1, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 1, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -665,17 +665,17 @@ TEST_F(PositiveGpuAVIndexBuffer, IndirectDrawBadVertexIndex32) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // The last 2 indices cause an OOB access in the vertex buffer, but if robustness is on,
     // no validation is performed
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 666, 42});
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
     VkDeviceSize vertex_buffer_offset = 0;
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), 0, 1, sizeof(VkDrawIndexedIndirectCommand));
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, 0, 1, sizeof(VkDrawIndexedIndirectCommand));
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -718,14 +718,14 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex32MultiDraw) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, 1, 2});
     vkt::Buffer vertex_buffer =
         vkt::VertexBuffer<float>(*m_device, {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f});
     VkDeviceSize vertex_buffer_offset = 0;
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     VkMultiDrawIndexedInfoEXT multi_draw_info[2] = {};
     multi_draw_info[0].firstIndex = 0;
@@ -736,7 +736,7 @@ TEST_F(PositiveGpuAVIndexBuffer, VertexIndex32MultiDraw) {
     multi_draw_info[1].indexCount = 3;
     multi_draw_info[1].vertexOffset = 1;
 
-    vk::CmdDrawMultiIndexedEXT(m_command_buffer.handle(), 2, multi_draw_info, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), nullptr);
+    vk::CmdDrawMultiIndexedEXT(m_command_buffer, 2, multi_draw_info, 1, 0, sizeof(VkMultiDrawIndexedInfoEXT), nullptr);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -812,7 +812,7 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     std::vector<Vertex> vertices;
     for (int i = 0; i < 3; ++i) {
@@ -822,19 +822,19 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisor) {
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
     // Offset vertex buffer so that only first Vertex can correctly be fetched
     const VkDeviceSize vertex_buffer_offset = 2 * sizeof(Vertex);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     std::vector<float> instance_data = {42.0f};
     vkt::Buffer instance_buffer = vkt::VertexBuffer<float>(*m_device, instance_data);
     const VkDeviceSize instance_data_offset = 0;
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &instance_buffer.handle(), &instance_data_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &instance_buffer.handle(), &instance_data_offset);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 0, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
     // gl_InstanceIndex is divided by 3 => effective instance index of 0, so no OOB
 
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 3, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 3, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -930,9 +930,9 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), size32(input_bindings), input_bindings.data(), size32(vertex_attributes),
+    vk::CmdSetVertexInputEXT(m_command_buffer, size32(input_bindings), input_bindings.data(), size32(vertex_attributes),
                              vertex_attributes.data());
 
     std::vector<Vertex> vertices;
@@ -943,18 +943,18 @@ TEST_F(PositiveGpuAVIndexBuffer, InstanceIndexVertexAttributeDivisorDynamic) {
     vkt::Buffer vertex_buffer = vkt::VertexBuffer<Vertex>(*m_device, vertices);
     // Offset vertex buffer so that only first Vertex can correctly be fetched
     const VkDeviceSize vertex_buffer_offset = 2 * sizeof(Vertex);
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &vertex_buffer_offset);
 
     std::vector<float> instance_data = {42.0f};
     vkt::Buffer instance_buffer = vkt::VertexBuffer<float>(*m_device, instance_data);
     const VkDeviceSize instance_data_offset = 0;
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 1, 1, &instance_buffer.handle(), &instance_data_offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &instance_buffer.handle(), &instance_data_offset);
 
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint16_t>(*m_device, {0, 0, 0});
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT16);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
 
     // gl_InstanceIndex is divided by 3 => effective instance index of 0, so no OOB
-    vk::CmdDrawIndexed(m_command_buffer.handle(), 3, 3, 0, 0, 0);
+    vk::CmdDrawIndexed(m_command_buffer, 3, 3, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -987,11 +987,11 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vkt::Buffer index_buffer = vkt::IndexBuffer<uint32_t>(*m_device, {0, std::numeric_limits<uint32_t>::max(), 42});
 
-    vk::CmdBindIndexBuffer(m_command_buffer.handle(), index_buffer.handle(), 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirect(m_command_buffer.handle(), draw_params_buffer.handle(), offset, 1u, 0u);
+    vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    vk::CmdDrawIndexedIndirect(m_command_buffer, draw_params_buffer, offset, 1u, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

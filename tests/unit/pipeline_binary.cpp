@@ -45,7 +45,7 @@ TEST_F(NegativePipelineBinary, GetPipelineKey) {
 
         VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
         compute_create_info.stage = cs.GetStageCreateInfo();
-        compute_create_info.layout = pipeline_layout.handle();
+        compute_create_info.layout = pipeline_layout;
 
         VkPipelineBinaryInfoKHR pipeline_binary_info = vku::InitStructHelper();
         pipeline_binary_info.binaryCount = 1;
@@ -90,7 +90,7 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedDataAllocator) {
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
+    compute_create_info.layout = pipeline_layout;
 
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
@@ -578,7 +578,7 @@ TEST_F(NegativePipelineBinary, Creation3) {
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
+    compute_create_info.layout = pipeline_layout;
 
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
@@ -726,7 +726,7 @@ TEST_F(NegativePipelineBinary, CreateCacheControl) {
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
+    compute_create_info.layout = pipeline_layout;
 
     VkPipelineCreateFlags2CreateInfo flags2 = vku::InitStructHelper();
     flags2.flags = VK_PIPELINE_CREATE_2_CAPTURE_DATA_BIT_KHR;
@@ -761,7 +761,7 @@ TEST_F(NegativePipelineBinary, InvalidPNext) {
 
     VkComputePipelineCreateInfo compute_create_info = vku::InitStructHelper();
     compute_create_info.stage = cs.GetStageCreateInfo();
-    compute_create_info.layout = pipeline_layout.handle();
+    compute_create_info.layout = pipeline_layout;
 
     VkPipelineBinaryInfoKHR pipeline_binary_info = vku::InitStructHelper();
     pipeline_binary_info.binaryCount = 0;

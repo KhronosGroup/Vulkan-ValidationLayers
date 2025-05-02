@@ -68,7 +68,7 @@ TEST_F(NegativeSyncValVideo, DecodeReconstructedPicture) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.DecodeVideo(context.DecodeFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
@@ -78,13 +78,13 @@ TEST_F(NegativeSyncValVideo, DecodeReconstructedPicture) {
     cb.DecodeVideo(context.DecodeFrame(0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     cb.DecodeVideo(context.DecodeFrame(1).AddReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
@@ -122,26 +122,26 @@ TEST_F(NegativeSyncValVideo, DecodeReferencePicture) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     cb.DecodeVideo(context.DecodeReferenceFrame(1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 1));
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 1));
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(1, 2));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(1, 2));
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(1));
 
     cb.EndVideoCoding(context.End());
@@ -202,7 +202,7 @@ TEST_F(NegativeSyncValVideo, EncodeReconstructedPicture) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.EncodeVideo(context.EncodeFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
@@ -212,13 +212,13 @@ TEST_F(NegativeSyncValVideo, EncodeReconstructedPicture) {
     cb.EncodeVideo(context.EncodeFrame(0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
 
     cb.EncodeVideo(context.EncodeFrame(1).AddReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
@@ -256,26 +256,26 @@ TEST_F(NegativeSyncValVideo, EncodeReferencePicture) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
 
     cb.EncodeVideo(context.EncodeReferenceFrame(1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(0));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 1));
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 1));
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1));
     m_errorMonitor->VerifyFound();
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(1, 2));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(1, 2));
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(1));
 
     cb.EndVideoCoding(context.End());
@@ -333,8 +333,7 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
 
         VkClearColorValue clear_value{};
         VkImageSubresourceRange subres_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &subres_range);
+        vk::CmdClearColorImage(cb, quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &subres_range);
 
         cb.BeginVideoCoding(context.Begin().SetSessionParams(params));
         cb.ControlVideoCoding(context.Control().Reset());
@@ -356,8 +355,7 @@ TEST_F(NegativeSyncValVideo, EncodeQuantizationMap) {
         cb.EndVideoCoding(context.End());
 
         m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &subres_range);
+        vk::CmdClearColorImage(cb, quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &subres_range);
         m_errorMonitor->VerifyFound();
 
         cb.End();

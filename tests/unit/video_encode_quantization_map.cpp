@@ -1152,7 +1152,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, EncodeQuantMapImageLayout) {
 
         cb.Begin();
         // quantization map must be in VK_IMAGE_LAYOUT_ENCODE_QUANTIZATION_MAP_KHR
-        vk::CmdPipelineBarrier2KHR(cb.handle(), quantization_map.LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
+        vk::CmdPipelineBarrier2KHR(cb, quantization_map.LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
         cb.BeginVideoCoding(context.Begin().SetSessionParams(params));
 
         if (test.encode_flag == VK_VIDEO_ENCODE_WITH_EMPHASIS_MAP_BIT_KHR) {
@@ -1633,7 +1633,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, CreateImageViewQuantMapInvalidViewTyp
 
         vkt::Image image(*m_device, image_ci);
         VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
-        image_view_ci.image = image.handle();
+        image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_1D;
         image_view_ci.format = image_ci.format;
         image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1696,7 +1696,7 @@ TEST_F(NegativeVideoEncodeQuantizationMap, CreateImageViewQuantMapUnsupportedFor
 
         vkt::Image image(*m_device, image_ci);
         VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
-        image_view_ci.image = image.handle();
+        image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         // We will just use a definitely not supported view format here because we anyway
         // did not create the image with MUTABLE, so no need to worry about video format compatibility

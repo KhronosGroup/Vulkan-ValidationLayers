@@ -52,7 +52,7 @@ TEST_F(PositiveSyncValVideo, ImageRangeGenYcbcrSubsampling) {
     decode_info->dstPictureResource.codedExtent = coded_extent;
     cb.DecodeVideo(decode_info);
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
 
     // Also test with an offset (ignoring other validation violations)
     decode_info->dstPictureResource.codedOffset = {1, 1};
@@ -89,18 +89,18 @@ TEST_F(PositiveSyncValVideo, DecodeCoincide) {
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
     cb.DecodeVideo(context.DecodeFrame(1));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(1, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(1, 1));
     cb.DecodeVideo(context.DecodeFrame(1));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(0));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(1, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(1, 1));
     cb.DecodeVideo(context.DecodeReferenceFrame(1));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 2));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 2));
     cb.DecodeVideo(context.DecodeFrame(0).AddReferenceFrame(1));
 
     cb.EndVideoCoding(context.End());
@@ -132,18 +132,18 @@ TEST_F(PositiveSyncValVideo, DecodeDistinct) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
     cb.DecodeVideo(context.DecodeFrame(1));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.DecodeVideo(context.DecodeFrame(2).AddReferenceFrame(0));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
     cb.DecodeVideo(context.DecodeReferenceFrame(3));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 2));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 2));
     cb.DecodeVideo(context.DecodeReferenceFrame(2).AddReferenceFrame(3));
 
     cb.EndVideoCoding(context.End());
@@ -174,18 +174,18 @@ TEST_F(PositiveSyncValVideo, Encode) {
     cb.ControlVideoCoding(context.Control().Reset());
 
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
     cb.EncodeVideo(context.EncodeFrame(1));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(0, 1));
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(0, 1));
     cb.EncodeVideo(context.EncodeFrame(2).AddReferenceFrame(0));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
     cb.EncodeVideo(context.EncodeReferenceFrame(3));
 
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->MemoryBarrier(2, 2));
+    vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->MemoryBarrier(2, 2));
     cb.EncodeVideo(context.EncodeReferenceFrame(2).AddReferenceFrame(3));
 
     cb.EndVideoCoding(context.End());
@@ -246,8 +246,7 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
 
         VkClearColorValue clear_value{};
         VkImageSubresourceRange subres_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &subres_range);
+        vk::CmdClearColorImage(cb, quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &subres_range);
 
         auto barrier_from_transfer = vku::InitStruct<VkImageMemoryBarrier2>();
         barrier_from_transfer.srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
@@ -263,13 +262,13 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
         auto dep_info_from_transfer = vku::InitStruct<VkDependencyInfo>();
         dep_info_from_transfer.imageMemoryBarrierCount = 1;
         dep_info_from_transfer.pImageMemoryBarriers = &barrier_from_transfer;
-        vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info_from_transfer);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info_from_transfer);
 
         cb.BeginVideoCoding(context.Begin().SetSessionParams(params));
         cb.ControlVideoCoding(context.Control().Reset());
 
         cb.EncodeVideo(context.EncodeFrame().QuantizationMap(encode_flag, texel_size, quantization_map));
-        vk::CmdPipelineBarrier2KHR(cb.handle(), context.Bitstream().MemoryBarrier());
+        vk::CmdPipelineBarrier2KHR(cb, context.Bitstream().MemoryBarrier());
         cb.EncodeVideo(context.EncodeFrame().QuantizationMap(encode_flag, texel_size, quantization_map));
 
         auto barrier_to_transfer = vku::InitStruct<VkImageMemoryBarrier2>();
@@ -286,12 +285,11 @@ TEST_F(PositiveSyncValVideo, EncodeQuantizationMap) {
         auto dep_info_to_transfer = vku::InitStruct<VkDependencyInfo>();
         dep_info_to_transfer.imageMemoryBarrierCount = 1;
         dep_info_to_transfer.pImageMemoryBarriers = &barrier_to_transfer;
-        vk::CmdPipelineBarrier2KHR(cb.handle(), &dep_info_to_transfer);
+        vk::CmdPipelineBarrier2KHR(cb, &dep_info_to_transfer);
 
         cb.EndVideoCoding(context.End());
 
-        vk::CmdClearColorImage(cb.handle(), quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1,
-                               &subres_range);
+        vk::CmdClearColorImage(cb, quantization_map.Image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value, 1, &subres_range);
 
         cb.End();
     }

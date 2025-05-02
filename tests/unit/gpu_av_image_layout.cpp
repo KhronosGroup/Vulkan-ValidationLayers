@@ -57,7 +57,7 @@ TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     VkDescriptorBufferInfo buffer_info[kDescCount] = {};
-    buffer_info[0].buffer = buffer0.handle();
+    buffer_info[0].buffer = buffer0;
     buffer_info[0].offset = 0;
     buffer_info[0].range = sizeof(uint32_t);
 
@@ -117,15 +117,15 @@ TEST_F(NegativeGpuAVImageLayout, ImageArrayDynamicIndexing) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -182,7 +182,7 @@ TEST_F(NegativeGpuAVImageLayout, DISABLED_Mutable) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     const VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM;
@@ -200,10 +200,10 @@ TEST_F(NegativeGpuAVImageLayout, DISABLED_Mutable) {
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
@@ -243,7 +243,7 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
@@ -267,10 +267,10 @@ TEST_F(NegativeGpuAVImageLayout, DescriptorArrayLayout) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -297,8 +297,8 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.image = image;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -326,7 +326,7 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
@@ -340,10 +340,10 @@ TEST_F(NegativeGpuAVImageLayout, MultiArrayLayers) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -395,24 +395,22 @@ TEST_F(NegativeGpuAVImageLayout, MultipleCommandBuffersSameDescriptorSet) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     descriptor_set.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     cb_0.Begin();
-    vk::CmdBindPipeline(cb_0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_0.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb_0.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb_0, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_0, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb_0, 1, 1, 1);
     cb_0.End();
 
     cb_1.Begin();
-    vk::CmdBindPipeline(cb_1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_1.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb_1.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb_1, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_1, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb_1, 1, 1, 1);
     cb_1.End();
 
     uint32_t *in_buffer_ptr = (uint32_t *)buffer.Memory().Map();

@@ -359,8 +359,8 @@ TEST_F(PositivePipelineTopology, PolygonModeValid) {
         CreatePipelineHelper pipe(*this);
         pipe.device_ = &test_device;
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        pipe.gp_ci_.layout = pipeline_layout.handle();
-        pipe.gp_ci_.renderPass = render_pass.handle();
+        pipe.gp_ci_.layout = pipeline_layout;
+        pipe.gp_ci_.renderPass = render_pass;
         // Set polygonMode to a good value
         rs_ci.polygonMode = VK_POLYGON_MODE_FILL;
         pipe.gp_ci_.pRasterizationState = &rs_ci;
@@ -450,8 +450,8 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -484,10 +484,10 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     cb.Begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindVertexBuffers(cb.handle(), 0, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdSetPrimitiveTopologyEXT(cb.handle(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
-    vk::CmdDraw(cb.handle(), 1, 1, 0, 0);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindVertexBuffers(cb, 0, 1, &vbo.handle(), &kZeroDeviceSize);
+    vk::CmdSetPrimitiveTopologyEXT(cb, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
+    vk::CmdDraw(cb, 1, 1, 0, 0);
 
     cb.EndRenderPass();
 
@@ -519,9 +519,9 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnrestricted) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -612,9 +612,9 @@ TEST_F(PositivePipelineTopology, PatchListTopology) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer.handle(), VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 4, 1, 0, 0);
+    vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

@@ -460,7 +460,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Fence &fence) {
     VkSubmitInfo submit = vku::InitStructHelper();
     submit.commandBufferCount = cmd.initialized() ? 1 : 0;
     submit.pCommandBuffers = &cmd.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -468,7 +468,7 @@ VkResult Queue::Submit(const std::vector<VkCommandBuffer> &cmds, const Fence &fe
     VkSubmitInfo submit_info = vku::InitStructHelper();
     submit_info.commandBufferCount = static_cast<uint32_t>(cmds.size());
     submit_info.pCommandBuffers = cmds.data();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit_info, fence);
     return result;
 }
 
@@ -494,7 +494,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const Signal &signal, const Fen
     submit.pCommandBuffers = &cmd.handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &signal.semaphore.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -511,7 +511,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const vkt::Wait &wait, const Si
     submit.pCommandBuffers = &cmd.handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &signal.semaphore.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -529,7 +529,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const
     submit.pWaitDstStageMask = &wait_stage_mask;
     submit.commandBufferCount = cmd.initialized() ? 1 : 0;
     submit.pCommandBuffers = &cmd.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -545,7 +545,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineSignal &signal, c
     submit.pCommandBuffers = &cmd.handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &signal.semaphore.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -568,7 +568,7 @@ VkResult Queue::Submit(const CommandBuffer &cmd, const TimelineWait &wait, const
     submit.pCommandBuffers = &cmd.handle();
     submit.signalSemaphoreCount = 1;
     submit.pSignalSemaphores = &signal.semaphore.handle();
-    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -582,9 +582,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Fence &fence, bool use_k
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -603,9 +603,9 @@ VkResult Queue::Submit2(const std::vector<VkCommandBuffer> &cmds, const Fence &f
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -626,9 +626,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const F
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -649,9 +649,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const Signal &signal, const Fe
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -678,9 +678,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const S
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -702,9 +702,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -726,9 +726,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineSignal &signal, 
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -758,9 +758,9 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
 
     VkResult result;
     if (use_khr) {
-        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2KHR(handle(), 1, &submit, fence);
     } else {
-        result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+        result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     }
     return result;
 }
@@ -786,7 +786,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const vkt::Wait &wait, const T
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
 
-    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -811,7 +811,7 @@ VkResult Queue::Submit2(const CommandBuffer &cmd, const TimelineWait &wait, cons
     submit.signalSemaphoreInfoCount = 1;
     submit.pSignalSemaphoreInfos = &signal_info;
 
-    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence.handle());
+    VkResult result = vk::QueueSubmit2(handle(), 1, &submit, fence);
     return result;
 }
 
@@ -1154,7 +1154,7 @@ void Buffer::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_
 }
 
 void Buffer::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
-    const auto result = vk::BindBufferMemory(device(), handle(), mem.handle(), mem_offset);
+    const auto result = vk::BindBufferMemory(device(), handle(), mem, mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);
@@ -1342,7 +1342,7 @@ void Image::AllocateAndBindMemory(const Device &dev, VkMemoryPropertyFlags mem_p
 }
 
 void Image::BindMemory(const DeviceMemory &mem, VkDeviceSize mem_offset) {
-    const auto result = vk::BindImageMemory(device(), handle(), mem.handle(), mem_offset);
+    const auto result = vk::BindImageMemory(device(), handle(), mem, mem_offset);
     // Allow successful calls and the calls that cause validation errors (but not actual Vulkan errors).
     // In the case of a validation error, it's part of the test logic how to handle it.
     ASSERT_TRUE(result == VK_SUCCESS || result == VK_ERROR_VALIDATION_FAILED_EXT);

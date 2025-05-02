@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,8 @@ TEST_F(PositiveRobustness, BindVertexBuffers2EXTNullDescriptors) {
     m_command_buffer.Begin();
     VkBuffer buffer = VK_NULL_HANDLE;
     VkDeviceSize offset = 0;
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer, &offset);
-    vk::CmdBindVertexBuffers2EXT(m_command_buffer.handle(), 0, 1, &buffer, &offset, nullptr, nullptr);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer, &offset);
+    vk::CmdBindVertexBuffers2EXT(m_command_buffer, 0, 1, &buffer, &offset, nullptr, nullptr);
     m_command_buffer.End();
 }
 

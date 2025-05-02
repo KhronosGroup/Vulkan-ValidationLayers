@@ -113,8 +113,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     for (size_t i = 0; i < aspects.size(); ++i) {
         buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
-        vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffers[i].handle(), image.handle(),
-                                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i].handle(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
     m_command_buffer.End();
 }
@@ -165,8 +164,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
 
     m_command_buffer.Begin();
     image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
-    vk::CmdCopyImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &copyRegion);
+    vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copyRegion);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -298,11 +296,10 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     copy_region.imageSubresource = {VK_IMAGE_ASPECT_PLANE_1_BIT, 0, 0, 1};
     copy_region.imageExtent = {64, 64, 1};
 
-    vk::ResetCommandBuffer(m_command_buffer.handle(), 0);
+    vk::ResetCommandBuffer(m_command_buffer, 0);
     m_command_buffer.Begin();
     image.ImageMemoryBarrier(m_command_buffer, 0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    vk::CmdCopyBufferToImage(m_command_buffer.handle(), buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
-                             &copy_region);
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -313,7 +310,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo(&conversion_info));
 
     auto ivci = vku::InitStruct<VkImageViewCreateInfo>(&conversion_info);
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_G8_B8_R8_3PLANE_422_UNORM;
     ivci.subresourceRange.layerCount = 1;
@@ -328,7 +325,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
                   });
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     descriptor_set.UpdateDescriptorSets();
 
     CreatePipelineHelper pipe(*this);
@@ -340,7 +337,7 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     img_barrier.dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    img_barrier.image = image.handle();
+    img_barrier.image = image;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -348,14 +345,14 @@ TEST_F(PositiveYcbcr, ImageLayout) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &img_barrier);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
 
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -394,7 +391,7 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
                   });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     descriptor_set.UpdateDescriptorSets();
 
     const char fsSource[] = R"glsl(
@@ -409,15 +406,15 @@ TEST_F(PositiveYcbcr, DrawCombinedImageSampler) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -455,7 +452,7 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
                       {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
                   });
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorImageInfo(0, view.handle(), sampler.handle());
+    descriptor_set.WriteDescriptorImageInfo(0, view, sampler);
     descriptor_set.UpdateDescriptorSets();
 
     const char fsSource[] = R"glsl(
@@ -471,15 +468,15 @@ TEST_F(PositiveYcbcr, ImageQuerySizeLod) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -573,8 +570,7 @@ TEST_F(PositiveYcbcr, DISABLED_CopyImageSinglePlane422Alignment) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
 
-    vk::CmdCopyImage(m_command_buffer.handle(), image_color, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &copy_region);
+    vk::CmdCopyImage(m_command_buffer, image_color, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     m_command_buffer.End();
 }

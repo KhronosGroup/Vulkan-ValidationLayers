@@ -44,13 +44,13 @@ TEST_F(NegativeImageDrm, Basic) {
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_format_info.pNext = (void *)&drm_format_mod_info;
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
 
     {
         VkImageFormatProperties dummy_props;
         m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties-tiling-02248");
-        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), image_info.format, image_info.imageType,
-                                                   image_info.tiling, image_info.usage, image_info.flags, &dummy_props);
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), image_info.format, image_info.imageType, image_info.tiling,
+                                                   image_info.usage, image_info.flags, &dummy_props);
         m_errorMonitor->VerifyFound();
     }
 
@@ -102,7 +102,7 @@ TEST_F(NegativeImageDrm, Basic2) {
     drm_format_mod_info.drmFormatModifier = mods[0];
     drm_format_mod_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     image_format_info.pNext = (void *)&drm_format_mod_info;
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
 
     VkSubresourceLayout fake_plane_layout = {0, 0, 0, 0, 0};
 
@@ -119,8 +119,7 @@ TEST_F(NegativeImageDrm, Basic2) {
     VkPhysicalDeviceImageDrmFormatModifierInfoEXT drm_format_modifier = vku::InitStructHelper();
     drm_format_modifier.drmFormatModifier = mods[1];
     image_format_info.pNext = &drm_format_modifier;
-    VkResult result =
-        vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &image_format_info, &image_format_prop);
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &image_format_info, &image_format_prop);
     if (result == VK_ERROR_FORMAT_NOT_SUPPORTED) {
         GTEST_SKIP() << "Format VK_FORMAT_R8G8B8A8_UNORM not supported with format modifiers";
     }
@@ -229,7 +228,7 @@ TEST_F(NegativeImageDrm, GetImageSubresourceLayoutPlane) {
     subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
     VkSubresourceLayout layout{};
     m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-tiling-09433");
-    vk::GetImageSubresourceLayout(m_device->handle(), image.handle(), &subresource, &layout);
+    vk::GetImageSubresourceLayout(m_device->handle(), image, &subresource, &layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -279,7 +278,7 @@ TEST_F(NegativeImageDrm, ImageSubresourceRangeAspectMask) {
     vkt::SamplerYcbcrConversion conversion(*m_device, mp_format);
     auto conversion_info = conversion.ConversionInfo();
     VkImageViewCreateInfo ivci = vku::InitStructHelper(&conversion_info);
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = mp_format;
     ivci.subresourceRange.layerCount = 1;
@@ -376,7 +375,7 @@ TEST_F(NegativeImageDrm, GetImageDrmFormatModifierProperties) {
 
     VkImageDrmFormatModifierPropertiesEXT props = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-02272");
-    vk::GetImageDrmFormatModifierPropertiesEXT(device(), image.handle(), &props);
+    vk::GetImageDrmFormatModifierPropertiesEXT(device(), image, &props);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetImageDrmFormatModifierPropertiesEXT-image-parameter");

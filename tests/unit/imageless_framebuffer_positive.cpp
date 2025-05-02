@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
     render_pass_bi.renderPass = rp.Handle();
-    render_pass_bi.framebuffer = framebuffer.handle();
+    render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea.extent = {1, 1};
     render_pass_bi.clearValueCount = 1;
     render_pass_bi.pClearValues = &clear_value;
@@ -185,7 +185,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
 
     VkCommandBufferInheritanceInfo inheritanceInfo = vku::InitStructHelper();
     inheritanceInfo.renderPass = rp.Handle();
-    inheritanceInfo.framebuffer = framebuffer_null.handle();
+    inheritanceInfo.framebuffer = framebuffer_null;
 
     VkCommandBufferBeginInfo beginInfo = vku::InitStructHelper();
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
@@ -206,7 +206,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin(&beginInfo);
-    vk::CmdClearAttachments(secondary.handle(), 1u, &clearAttachment, 1u, &clearRect);
+    vk::CmdClearAttachments(secondary, 1u, &clearAttachment, 1u, &clearRect);
     secondary.End();
 }
 

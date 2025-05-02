@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  * Modifications Copyright (C) 2020 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -82,11 +82,11 @@ TEST_F(PositiveObjectLifetime, DestroyFreeNullHandles) {
     VkDescriptorSet descriptor_sets[3] = {};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
     err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[1]);
     ASSERT_EQ(VK_SUCCESS, err);
-    vk::FreeDescriptorSets(device(), ds_pool.handle(), 3, descriptor_sets);
+    vk::FreeDescriptorSets(device(), ds_pool, 3, descriptor_sets);
 
     vk::FreeMemory(device(), VK_NULL_HANDLE, NULL);
 }
@@ -98,13 +98,13 @@ TEST_F(PositiveObjectLifetime, FreeCommandBuffersNull) {
 
     VkCommandBuffer command_buffer = VK_NULL_HANDLE;
     VkCommandBufferAllocateInfo command_buffer_allocate_info = vku::InitStructHelper();
-    command_buffer_allocate_info.commandPool = m_command_pool.handle();
+    command_buffer_allocate_info.commandPool = m_command_pool;
     command_buffer_allocate_info.commandBufferCount = 1;
     command_buffer_allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     vk::AllocateCommandBuffers(device(), &command_buffer_allocate_info, &command_buffer);
 
     VkCommandBuffer free_command_buffers[2] = {command_buffer, VK_NULL_HANDLE};
-    vk::FreeCommandBuffers(device(), m_command_pool.handle(), 2, &free_command_buffers[0]);
+    vk::FreeCommandBuffers(device(), m_command_pool, 2, &free_command_buffers[0]);
 }
 
 TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {
@@ -129,11 +129,11 @@ TEST_F(PositiveObjectLifetime, FreeDescriptorSetsNull) {
     VkDescriptorSet descriptor_sets[2] = {VK_NULL_HANDLE, VK_NULL_HANDLE};
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
     // Only set first set, second is still null
     vk::AllocateDescriptorSets(device(), &alloc_info, &descriptor_sets[0]);
-    vk::FreeDescriptorSets(device(), ds_pool.handle(), 2, descriptor_sets);
+    vk::FreeDescriptorSets(device(), ds_pool, 2, descriptor_sets);
 }
 
 TEST_F(PositiveObjectLifetime, DescriptorBufferInfoCopy) {
@@ -145,7 +145,7 @@ TEST_F(PositiveObjectLifetime, DescriptorBufferInfoCopy) {
 
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    descriptor_set_0.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    descriptor_set_0.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     descriptor_set_0.UpdateDescriptorSets();
     buffer.destroy();
 
@@ -201,15 +201,15 @@ TEST_F(PositiveObjectLifetime, DescriptorSetMutableBufferDestroyed) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     // uniform_buffer.destroy();  // Destroy the UNUSED buffer before it's bound to the cmd buffer
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set0.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set0.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }

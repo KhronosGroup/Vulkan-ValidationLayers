@@ -726,20 +726,18 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer_SubmitTime) {
     // Submit dispatch that writes to buffer_b
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb, 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
 
     // One more dispatch that writes to the same buffer (WAW hazard). Expect BufferB in the error message but not BufferA.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb2, 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_a = "(?=.*BufferB)(?!.*BufferA)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_a);
@@ -788,10 +786,9 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer2_SubmitTime) {
     // Submit dispatch that writes to buffer_b
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb, 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
 
@@ -863,10 +860,9 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorBuffer3_SubmitTime) {
 
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb2, 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_d = "(?=.*BufferB)(?!.*BufferD)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_d);
@@ -926,20 +922,18 @@ TEST_F(NegativeSyncValReporting, ReportDescriptorImage_SubmitTime) {
     // Submit dispatch that writes to image
     vkt::CommandBuffer cb(*m_device, m_command_pool);
     cb.Begin();
-    vk::CmdBindPipeline(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb, 1, 1, 1);
     cb.End();
     m_default_queue->Submit(cb);
 
     // One more dispatch that writes to the same image (WAW hazard). Expect ImageB in the error message but not BufferA.
     vkt::CommandBuffer cb2(*m_device, m_command_pool);
     cb2.Begin();
-    vk::CmdBindPipeline(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(cb2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
-                              nullptr);
-    vk::CmdDispatch(cb2.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(cb2, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0, nullptr);
+    vk::CmdDispatch(cb2, 1, 1, 1);
     cb2.End();
     const char* contains_b_but_not_a = "(?=.*ImageB)(?!.*BufferA)";
     m_errorMonitor->SetDesiredErrorRegex("SYNC-HAZARD-WRITE-AFTER-WRITE", contains_b_but_not_a);

@@ -212,7 +212,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     vkt::Buffer uniform_buffer(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(uniform_buffer.Memory().Map());
     data[0] = rt_params_buffer.Address();
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer.handle(), 0, 16, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, uniform_buffer, 0, 16, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 

@@ -35,7 +35,7 @@ TEST_F(NegativeVideo, CodingScope) {
     cb.BeginVideoCoding(context.Begin());
 
     m_errorMonitor->SetDesiredError("VUID-vkEndCommandBuffer-None-06991");
-    vk::EndCommandBuffer(cb.handle());
+    vk::EndCommandBuffer(cb);
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -718,11 +718,11 @@ TEST_F(NegativeVideo, BeginCodingActiveQueriesNotAllowed) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 0, 0);
+    vk::CmdBeginQuery(cb, context.StatusQueryPool(), 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginVideoCodingKHR-None-07232");
     cb.BeginVideoCoding(context.Begin());
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(cb.handle(), context.StatusQueryPool(), 0);
+    vk::CmdEndQuery(cb, context.StatusQueryPool(), 0);
     cb.End();
 }
 
@@ -1227,11 +1227,11 @@ TEST_F(NegativeVideo, EndCodingActiveQueriesNotAllowed) {
 
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
-    vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 0, 0);
+    vk::CmdBeginQuery(cb, context.StatusQueryPool(), 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndVideoCodingKHR-None-07251");
     cb.EndVideoCoding(context.End());
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(cb.handle(), context.StatusQueryPool(), 0);
+    vk::CmdEndQuery(cb, context.StatusQueryPool(), 0);
     cb.EndVideoCoding(context.End());
     cb.End();
 }
@@ -1642,7 +1642,7 @@ TEST_F(NegativeVideo, CreateImageViewInvalidViewType) {
         vkt::Image image(*m_device, image_ci);
 
         VkImageViewCreateInfo image_view_ci = vku::InitStructHelper();
-        image_view_ci.image = image.handle();
+        image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
         image_view_ci.format = image_ci.format;
         image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1724,7 +1724,7 @@ TEST_F(NegativeVideo, CreateImageViewProfileIndependent) {
         auto image_usage_ci = vku::InitStruct<VkImageViewUsageCreateInfo>();
         image_usage_ci.usage = test_case.usage;
         auto image_view_ci = vku::InitStruct<VkImageViewCreateInfo>(&image_usage_ci);
-        image_view_ci.image = image.handle();
+        image_view_ci.image = image;
         image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
         image_view_ci.format = format;
         image_view_ci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1765,7 +1765,7 @@ TEST_F(NegativeVideo, BeginQueryIncompatibleQueueFamily) {
     cb.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-07126");
-    vk::CmdBeginQuery(cb.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(cb, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.End();
@@ -1793,14 +1793,14 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeQueryAlreadyActive) {
 
     cb.Begin();
     cb.BeginVideoCoding(context.Begin());
-    vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 0, 0);
+    vk::CmdBeginQuery(cb, context.StatusQueryPool(), 0, 0);
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryPool-01922");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-07127");
-    vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 1, 0);
+    vk::CmdBeginQuery(cb, context.StatusQueryPool(), 1, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndQuery(cb.handle(), context.StatusQueryPool(), 0);
+    vk::CmdEndQuery(cb, context.StatusQueryPool(), 0);
     cb.EndVideoCoding(context.End());
     cb.End();
 }
@@ -1830,7 +1830,7 @@ TEST_F(NegativeVideo, BeginQueryResultStatusProfileMismatch) {
     cb.BeginVideoCoding(context1.Begin());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-07128");
-    vk::CmdBeginQuery(cb.handle(), context2.StatusQueryPool(), 0, 0);
+    vk::CmdBeginQuery(cb, context2.StatusQueryPool(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context1.End());
@@ -1860,7 +1860,7 @@ TEST_F(NegativeVideo, BeginQueryVideoCodingScopeIncompatibleQueryType) {
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-00803");
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdBeginQuery-queryType-07128");
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-07131");
-    vk::CmdBeginQuery(cb.handle(), query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(cb, query_pool, 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1894,7 +1894,7 @@ TEST_F(NegativeVideo, BeginQueryInlineQueries) {
     cb.BeginVideoCoding(context.Begin());
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-None-08370");
-    vk::CmdBeginQuery(cb.handle(), context.StatusQueryPool(), 0, 0);
+    vk::CmdBeginQuery(cb, context.StatusQueryPool(), 0, 0);
     m_errorMonitor->VerifyFound();
 
     cb.EndVideoCoding(context.End());
@@ -1988,12 +1988,12 @@ TEST_F(NegativeVideo, GetQueryPoolResultsStatusBit) {
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09442");
     flags = 0;
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(status), &status, sizeof(status), flags);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(status), &status, sizeof(status), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-09443");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::GetQueryPoolResults(device(), query_pool.handle(), 0, 1, sizeof(status), &status, sizeof(status), flags);
+    vk::GetQueryPoolResults(device(), query_pool, 0, 1, sizeof(status), &status, sizeof(status), flags);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2016,12 +2016,12 @@ TEST_F(NegativeVideo, CopyQueryPoolResultsStatusBit) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryType-09442");
     flags = 0;
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-flags-09443");
     flags = VK_QUERY_RESULT_WITH_STATUS_BIT_KHR | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT;
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool.handle(), 0, 1, buffer.handle(), 0, sizeof(uint32_t), flags);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, sizeof(uint32_t), flags);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();

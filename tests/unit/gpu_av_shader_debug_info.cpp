@@ -38,14 +38,14 @@ void NegativeGpuAVShaderDebugInfo::BasicSingleStorageBufferComputeOOB(const char
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -694,7 +694,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     std::vector<uint32_t> cs_spv;
@@ -703,9 +703,9 @@ TEST_F(NegativeGpuAVShaderDebugInfo, BasicGlslangShaderDebugInfoWithSourceShader
 
     m_command_buffer.Begin();
     m_command_buffer.BindCompShader(comp_shader);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -1207,14 +1207,14 @@ void main() {
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     // VUID-vkCmdDispatch-storageBuffers-06936
@@ -1517,14 +1517,14 @@ TEST_F(NegativeGpuAVShaderDebugInfo, PipelineHandles) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -1567,11 +1567,11 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     data[0] = block_buffer.Address();
 
     OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    descriptor_set.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     descriptor_set.UpdateDescriptorSets();
 
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-    VkDescriptorSetLayout descriptorSetLayout = descriptor_set.layout_.handle();
+    VkDescriptorSetLayout descriptorSetLayout = descriptor_set.layout_;
     VkShaderStageFlagBits shader_stages[] = {VK_SHADER_STAGE_COMPUTE_BIT};
     const vkt::Shader comp_shader(*m_device, shader_stages[0], GLSLToSPV(shader_stages[0], comp_src), &descriptorSetLayout);
 
@@ -1583,10 +1583,10 @@ TEST_F(NegativeGpuAVShaderDebugInfo, ShaderObjectHandle) {
     vk::SetDebugUtilsObjectNameEXT(device(), &name_info);
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindShadersEXT(m_command_buffer.handle(), 1, shader_stages, &comp_shader.handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindShadersEXT(m_command_buffer, 1, shader_stages, &comp_shader.handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -1631,7 +1631,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     CreateComputePipelineHelper empty_compute_pipe(*this);
@@ -1640,18 +1640,18 @@ TEST_F(NegativeGpuAVShaderDebugInfo, CommandBufferCommandIndex) {
     empty_graphics_pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, empty_compute_pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // dispatch index 0
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, empty_compute_pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // dispatch index 0
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, empty_graphics_pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);  // draw index 0
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, empty_graphics_pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);  // draw index 0
     m_command_buffer.EndRenderPass();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);  // dispatch index 1
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);  // dispatch index 1
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -1697,14 +1697,14 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfo) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(m_command_buffer.handle(), 2, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -1751,7 +1751,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -1759,11 +1759,11 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel1) {
     label.pLabelName = "Dispatch debug label region";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
     // Dispatch is within debug label region
-    vk::CmdDispatch(m_command_buffer.handle(), 2, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_command_buffer.End();
@@ -1812,7 +1812,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -1820,13 +1820,13 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel2) {
     label.pLabelName = "Dispatch debug label region";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
     // Dispatch is not within debug label region
-    vk::CmdDispatch(m_command_buffer.handle(), 2, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
 
     m_command_buffer.End();
 
@@ -1875,7 +1875,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -1883,8 +1883,8 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
     region_0_label.pLabelName = "region_0";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &region_0_label);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
     VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
@@ -1898,7 +1898,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel3) {
     // End of region 2
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 2, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
 
     // End of region 1
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
@@ -1952,7 +1952,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -1963,33 +1963,33 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel4) {
     region_0_label.pLabelName = "region_0";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_0_label);
 
-    vk::CmdBindPipeline(secondary_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(secondary_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(secondary_cb, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(secondary_cb, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
     VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
     region_1_label.pLabelName = "region_1";
-    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb.handle(), &region_1_label);
+    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_1_label);
 
     VkDebugUtilsLabelEXT region_2_label = vku::InitStructHelper();
     region_2_label.pLabelName = "region_2";
-    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb.handle(), &region_2_label);
+    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_2_label);
 
     // End of region 2
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
-    vk::CmdDispatch(secondary_cb.handle(), 2, 1, 1);
+    vk::CmdDispatch(secondary_cb, 2, 1, 1);
 
     // End of region 1
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
     // End of region 0
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
     secondary_cb.End();
 
     m_command_buffer.Begin();
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_cb.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb.handle());
     m_command_buffer.End();
 
     // UNASSIGNED-Device address out of bounds
@@ -2039,7 +2039,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
@@ -2050,28 +2050,28 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
     region_0_label.pLabelName = "region_0";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_0_label);
 
-    vk::CmdBindPipeline(secondary_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(secondary_cb.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(secondary_cb, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(secondary_cb, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
     VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
     region_1_label.pLabelName = "region_1";
-    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb.handle(), &region_1_label);
+    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_1_label);
 
     VkDebugUtilsLabelEXT region_2_label = vku::InitStructHelper();
     region_2_label.pLabelName = "region_2";
-    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb.handle(), &region_2_label);
+    vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &region_2_label);
 
     // End of region 2
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
-    vk::CmdDispatch(secondary_cb.handle(), 2, 1, 1);
+    vk::CmdDispatch(secondary_cb, 2, 1, 1);
 
     // End of region 1
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
     // End of region 0
-    vk::CmdEndDebugUtilsLabelEXT(secondary_cb.handle());
+    vk::CmdEndDebugUtilsLabelEXT(secondary_cb);
 
     secondary_cb.End();
 
@@ -2081,9 +2081,9 @@ TEST_F(NegativeGpuAVShaderDebugInfo, DISABLED_StageInfoWithDebugLabel5) {
     primary_region_label.pLabelName = "primary";
     vk::CmdBeginDebugUtilsLabelEXT(secondary_cb, &primary_region_label);
 
-    vk::CmdExecuteCommands(m_command_buffer.handle(), 1, &secondary_cb.handle());
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb.handle());
 
-    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer.handle());
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
     m_command_buffer.End();
 
@@ -2133,7 +2133,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     auto data = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     data[0] = block_buffer.Address();
 
-    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    bad_pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     bad_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
@@ -2141,8 +2141,8 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     region_0_label.pLabelName = "region_0";
     vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &region_0_label);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
 
     VkDebugUtilsLabelEXT region_1_label = vku::InitStructHelper();
@@ -2156,7 +2156,7 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     // End of region 2
     vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 2, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 2, 1, 1);
 
     m_command_buffer.End();
 
@@ -2165,10 +2165,10 @@ TEST_F(NegativeGpuAVShaderDebugInfo, StageInfoWithDebugLabel6) {
     // End of region 1
     vk::CmdEndDebugUtilsLabelEXT(cb_2);
 
-    vk::CmdBindPipeline(cb_2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
-    vk::CmdBindDescriptorSets(cb_2.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(cb_2, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.Handle());
+    vk::CmdBindDescriptorSets(cb_2, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe.pipeline_layout_, 0, 1,
                               &bad_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDispatch(cb_2.handle(), 2, 1, 1);
+    vk::CmdDispatch(cb_2, 2, 1, 1);
 
     // End of region 0
     vk::CmdEndDebugUtilsLabelEXT(cb_2);

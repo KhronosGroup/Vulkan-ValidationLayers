@@ -38,8 +38,8 @@ TEST_F(PositiveVideoDecodeH265, Basic) {
     vkt::CommandBuffer& cb = context.CmdBuffer();
 
     cb.Begin();
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
-    vk::CmdPipelineBarrier2KHR(cb.handle(), context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
     cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1).AddResource(-1, 2));
     cb.ControlVideoCoding(context.Control().Reset());
     cb.DecodeVideo(context.DecodeReferenceFrame(0));

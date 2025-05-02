@@ -109,7 +109,7 @@ VkBufferMemoryBarrier QSTestContext::InitBufferBarrier(const vkt::Buffer& buffer
     VkBufferMemoryBarrier buffer_barrier = vku::InitStructHelper();
     buffer_barrier.srcAccessMask = src;
     buffer_barrier.dstAccessMask = dst;
-    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.buffer = buffer;
     buffer_barrier.offset = 0;
     buffer_barrier.size = 256;
     return buffer_barrier;

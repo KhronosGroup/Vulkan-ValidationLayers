@@ -132,7 +132,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatSwizzle) {
 
     VkImageViewCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
-    ci.image = image.handle();
+    ci.image = image;
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     // Incorrect swizzling due to portability
@@ -179,7 +179,7 @@ TEST_F(NegativePortabilitySubset, ImageViewFormatReinterpretationComponentCount)
 
     VkImageViewCreateInfo ci = vku::InitStructHelper();
     ci.flags = 0;
-    ci.image = image.handle();
+    ci.image = image;
     ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ci.format = VK_FORMAT_B10G11R11_UFLOAT_PACK32;
     // Incorrect swizzling due to portability
@@ -456,8 +456,8 @@ TEST_F(VkPortabilitySubsetTest, UpdateDescriptorSets) {
     vkt::ImageView view(*m_device, image_view_create_info);
 
     VkDescriptorImageInfo img_info = {};
-    img_info.sampler = sampler.handle();
-    img_info.imageView = view.handle();
+    img_info.sampler = sampler;
+    img_info.imageView = view;
     img_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     VkWriteDescriptorSet descriptor_writes[2] = {};
@@ -589,13 +589,13 @@ TEST_F(VkPortabilitySubsetTest, PortabilitySubsetColorBlendFactor) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07362");
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
     color_blend_equation.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
     color_blend_equation.dstColorBlendFactor = VK_BLEND_FACTOR_CONSTANT_ALPHA;
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-constantAlphaColorBlendFactors-07363");
-    vk::CmdSetColorBlendEquationEXT(m_command_buffer.handle(), 0u, 1u, &color_blend_equation);
+    vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0u, 1u, &color_blend_equation);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();

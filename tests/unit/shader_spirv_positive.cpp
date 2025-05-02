@@ -571,28 +571,28 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     bci.size = 1024;
     vkt::Buffer buffer(*m_device, bci, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer.handle(), 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     // Make sure spec constants were updated correctly
     void *pData;
-    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), buffer.Memory().handle(), 0, VK_WHOLE_SIZE, 0, &pData));
+    ASSERT_EQ(VK_SUCCESS, vk::MapMemory(device(), buffer.Memory(), 0, VK_WHOLE_SIZE, 0, &pData));
     uint32_t *ssbo_data = reinterpret_cast<uint32_t *>(pData);
     ASSERT_EQ(ssbo_data[0], 0x02);
     ASSERT_EQ(ssbo_data[1], 0x05040302);
     ASSERT_EQ(ssbo_data[2], 0x06050403);
     ASSERT_EQ(ssbo_data[3], 0x07060504);
     ASSERT_EQ(ssbo_data[4], 0x04);
-    vk::UnmapMemory(device(), buffer.Memory().handle());
+    vk::UnmapMemory(device(), buffer.Memory());
 }
 
 TEST_F(PositiveShaderSpirv, Spirv16Vulkan13) {
@@ -803,15 +803,15 @@ TEST_F(PositiveShaderSpirv, UnnormalizedCoordinatesNotSampled) {
     sampler_ci.maxLod = 0;
     vkt::Sampler sampler(*m_device, sampler_ci);
 
-    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     g_pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

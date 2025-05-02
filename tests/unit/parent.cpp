@@ -33,7 +33,7 @@ TEST_F(NegativeParent, FillBuffer) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commonparent");
-    vk::CmdFillBuffer(m_command_buffer.handle(), buffer, 0, VK_WHOLE_SIZE, 0);
+    vk::CmdFillBuffer(m_command_buffer, buffer, 0, VK_WHOLE_SIZE, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -53,9 +53,9 @@ TEST_F(NegativeParent, BindBuffer) {
 
     VkMemoryRequirements mem_reqs;
     m_errorMonitor->SetDesiredError("VUID-vkGetBufferMemoryRequirements-buffer-parent");
-    vk::GetBufferMemoryRequirements(m_second_device->handle(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(m_second_device->handle(), buffer, &mem_reqs);
     m_errorMonitor->VerifyFound();
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
@@ -63,7 +63,7 @@ TEST_F(NegativeParent, BindBuffer) {
     vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
-    bind_buffer_info.buffer = buffer.handle();
+    bind_buffer_info.buffer = buffer;
     bind_buffer_info.memory = memory.handle();
     bind_buffer_info.memoryOffset = 0;
 
@@ -87,9 +87,9 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
 
     VkMemoryRequirements mem_reqs;
     m_errorMonitor->SetDesiredError("VUID-vkGetImageMemoryRequirements-image-parent");
-    vk::GetImageMemoryRequirements(m_second_device->handle(), image.handle(), &mem_reqs);
+    vk::GetImageMemoryRequirements(m_second_device->handle(), image, &mem_reqs);
     m_errorMonitor->VerifyFound();
-    vk::GetImageMemoryRequirements(device(), image.handle(), &mem_reqs);
+    vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
 
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper();
     mem_alloc.allocationSize = mem_reqs.size;
@@ -97,7 +97,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
     vkt::DeviceMemory memory(*m_second_device, mem_alloc);
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
-    bind_image_info.image = image.handle();
+    bind_image_info.image = image;
     bind_image_info.memory = memory.handle();
     bind_image_info.memoryOffset = 0;
 
@@ -118,7 +118,7 @@ TEST_F(NegativeParent, ImageView) {
 
     VkImageView image_view;
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     ivci.format = VK_FORMAT_B8G8R8A8_UNORM;
     ivci.subresourceRange.layerCount = 1;
@@ -146,13 +146,13 @@ TEST_F(NegativeParent, BindPipeline) {
     cs.InitFromGLSLTry(m_second_device);
 
     VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.layout = pipeline_layout.handle();
+    pipeline_ci.layout = pipeline_layout;
     pipeline_ci.stage = cs.GetStageCreateInfo();
     vkt::Pipeline pipeline(*m_second_device, pipeline_ci);
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commonparent");
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -170,7 +170,7 @@ TEST_F(NegativeParent, PipelineShaderStageCreateInfo) {
     cs.InitFromGLSLTry(m_second_device);
 
     VkComputePipelineCreateInfo pipeline_ci = vku::InitStructHelper();
-    pipeline_ci.layout = pipeline_layout.handle();
+    pipeline_ci.layout = pipeline_layout;
     pipeline_ci.stage = cs.GetStageCreateInfo();
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkPipelineShaderStageCreateInfo-module-parent");
     vkt::Pipeline pipeline(*m_device, pipeline_ci);
@@ -233,7 +233,7 @@ TEST_F(NegativeParent, RenderPassImagelessFramebuffer) {
     render_pass_attachment_bi.pAttachments = &image_view.handle();
 
     m_renderPassBeginInfo.pNext = &render_pass_attachment_bi;
-    m_renderPassBeginInfo.framebuffer = fb.handle();
+    m_renderPassBeginInfo.framebuffer = fb;
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-02780");
@@ -258,7 +258,7 @@ TEST_F(NegativeParent, RenderPassCommandBuffer) {
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-commonparent");
     auto subpass_begin_info = vku::InitStruct<VkSubpassBeginInfo>(nullptr, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBeginRenderPass2(command_buffer.handle(), &m_renderPassBeginInfo, &subpass_begin_info);
+    vk::CmdBeginRenderPass2(command_buffer, &m_renderPassBeginInfo, &subpass_begin_info);
     m_errorMonitor->VerifyFound();
     command_buffer.End();
 }
@@ -667,7 +667,7 @@ TEST_F(NegativeParent, UpdateDescriptorSetsBuffer) {
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                      });
-    ds.WriteDescriptorBufferInfo(0, buffer.handle(), 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    ds.WriteDescriptorBufferInfo(0, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     m_errorMonitor->SetDesiredError("VUID-vkUpdateDescriptorSets-pDescriptorWrites-06237");
     ds.UpdateDescriptorSets();
@@ -828,7 +828,7 @@ TEST_F(NegativeParent, BufferView) {
 
     vkt::Buffer buffer(*m_second_device, 64, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     VkBufferViewCreateInfo bvci = vku::InitStructHelper();
-    bvci.buffer = buffer.handle();
+    bvci.buffer = buffer;
     bvci.format = VK_FORMAT_R32_SFLOAT;
     bvci.range = VK_WHOLE_SIZE;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkBufferViewCreateInfo-buffer-parent");
@@ -849,8 +849,8 @@ TEST_F(NegativeParent, CmdPipelineBarrier) {
                                                                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, image_sub_range)};
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdPipelineBarrier-commandBuffer-commonparent");
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, image_barriers);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, image_barriers);
     m_errorMonitor->VerifyFound();
 }
 
@@ -869,7 +869,7 @@ TEST_F(NegativeParent, CmdPipelineBarrier2) {
     buffer_barrier.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
     buffer_barrier.srcQueueFamilyIndex = 0;
     buffer_barrier.dstQueueFamilyIndex = 0;
-    buffer_barrier.buffer = buffer.handle();
+    buffer_barrier.buffer = buffer;
     buffer_barrier.size = VK_WHOLE_SIZE;
 
     m_command_buffer.Begin();
@@ -887,7 +887,7 @@ TEST_F(NegativeParent, ShaderObjectDescriptorSetLayout) {
     m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
 
     OneOffDescriptorSet descriptor_set(m_second_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
-    VkDescriptorSetLayout dsl_handle = descriptor_set.layout_.handle();
+    VkDescriptorSetLayout dsl_handle = descriptor_set.layout_;
 
     VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkShaderCreateInfoEXT-pSetLayouts-parent");

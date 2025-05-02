@@ -251,7 +251,7 @@ void BuildHostAccelerationStructuresKHR(VkDevice device, std::vector<BuildGeomet
 //    as_build_info.SetFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
 //
 //    m_command_buffer.Begin();
-//    as_build_info.BuildCmdBuffer(*m_device, m_command_buffer.handle());
+//    as_build_info.BuildCmdBuffer(*m_device, m_command_buffer);
 //    m_command_buffer.End();
 // }
 namespace blueprint {

@@ -260,35 +260,32 @@ TEST_F(NegativeShaderPushConstants, Range) {
 
     // size of 0
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-arraylength");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 0, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, 0, data);
     m_errorMonitor->VerifyFound();
 
     // offset not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00368");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 1, 4, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 1, 4, data);
     m_errorMonitor->VerifyFound();
 
     // size not a multiple of 4
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00369");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0, 5, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, 5, data);
     m_errorMonitor->VerifyFound();
 
     // offset at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-offset-00370");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT,
-                         maxPushConstantsSize, 4, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 4, data);
     m_errorMonitor->VerifyFound();
 
     // size at limit
     m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-size-00371");
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                         maxPushConstantsSize + 4, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4, data);
     m_errorMonitor->VerifyFound();
 
     // Size at limit, should be valid
-    vk::CmdPushConstants(m_command_buffer.handle(), pipe.pipeline_layout_.handle(), VK_SHADER_STAGE_VERTEX_BIT, 0,
-                         maxPushConstantsSize, data);
+    vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize, data);
 
     m_command_buffer.End();
 }
@@ -377,10 +374,10 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // vertex
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // fragment
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     const float dummy_values[128] = {};
@@ -390,19 +387,19 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
     //       https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/2689
     //       for more details.
     // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
-    // vk::CmdPushConstants(m_command_buffer.handle(), g_pipe.pipeline_layout_.handle(),
+    // vk::CmdPushConstants(m_command_buffer, g_pipe.pipeline_layout_,
     //                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, 96, dummy_values);
-    // vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    // vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     // m_errorMonitor->VerifyFound();
 
     // m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");
-    // vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
-    // vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    // vk::CmdPushConstants(m_command_buffer, pipeline_layout_small, VK_SHADER_STAGE_VERTEX_BIT, 4, 4, dummy_values);
+    // vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     // m_errorMonitor->VerifyFound();
 
-    vk::CmdPushConstants(m_command_buffer.handle(), pipeline_layout.handle(),
-                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32, 68, dummy_values);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 32, 68,
+                         dummy_values);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -526,7 +523,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07987");
     pipe.CreateGraphicsPipeline();
@@ -535,7 +532,7 @@ TEST_F(NegativeShaderPushConstants, MultipleEntryPoint) {
     // Make sure Vertex is ok when used
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     vkt::PipelineLayout pipeline_layout_good(*m_device, pipeline_layout_info);
-    pipe.gp_ci_.layout = pipeline_layout_good.handle();
+    pipe.gp_ci_.layout = pipeline_layout_good;
     pipe.CreateGraphicsPipeline();
 }
 

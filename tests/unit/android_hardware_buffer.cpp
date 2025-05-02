@@ -149,12 +149,12 @@ TEST_F(NegativeAndroidHardwareBuffer, FetchUnboundImageInfo) {
     sub_rsrc.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     VkSubresourceLayout sub_layout = {};
     m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-image-09432");
-    vk::GetImageSubresourceLayout(device(), image.handle(), &sub_rsrc, &sub_layout);
+    vk::GetImageSubresourceLayout(device(), image, &sub_rsrc, &sub_layout);
     m_errorMonitor->VerifyFound();
 
     // attempt to get memory reqs from unbound image
     VkImageMemoryRequirementsInfo2 imri = vku::InitStructHelper();
-    imri.image = image.handle();
+    imri.image = image;
     VkMemoryRequirements2 mem_reqs = vku::InitStructHelper();
     m_errorMonitor->SetDesiredError("VUID-VkImageMemoryRequirementsInfo2-image-01897");
     vk::GetImageMemoryRequirements2(device(), &imri, &mem_reqs);
@@ -257,7 +257,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageColor) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -313,7 +313,7 @@ TEST_F(NegativeAndroidHardwareBuffer, DedicatedUsageDS) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -368,7 +368,7 @@ TEST_F(NegativeAndroidHardwareBuffer, MipmapChainComplete) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -418,7 +418,7 @@ TEST_F(NegativeAndroidHardwareBuffer, NoMipmapChain) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info = vku::InitStructHelper(&dedicated_allocation_info);
@@ -470,7 +470,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImageDimensions) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -513,7 +513,7 @@ TEST_F(NegativeAndroidHardwareBuffer, UnknownFormat) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -575,7 +575,7 @@ TEST_F(NegativeAndroidHardwareBuffer, GpuUsage) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -625,7 +625,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocateImage) {
     vkt::Image image(*m_device, ici, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
-    dedicated_allocation_info.image = image.handle();
+    dedicated_allocation_info.image = image;
     dedicated_allocation_info.buffer = VK_NULL_HANDLE;
 
     // Non-import allocation - replace import struct in chain with export struct
@@ -665,7 +665,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportMemoryAllocateBuffer) {
 
     VkMemoryDedicatedAllocateInfo dedicated_allocation_info = vku::InitStructHelper();
     dedicated_allocation_info.image = VK_NULL_HANDLE;
-    dedicated_allocation_info.buffer = buffer.handle();
+    dedicated_allocation_info.buffer = buffer;
 
     // Non-import allocation - replace import struct in chain with export struct
     VkExportMemoryAllocateInfo export_memory = vku::InitStructHelper(&dedicated_allocation_info);
@@ -740,7 +740,7 @@ TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
 
     // AHB_usage chained to input without a matching external image format struc chained to output
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &pdifi, &ifp);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &pdifi, &ifp);
     m_errorMonitor->VerifyFound();
 
     // output struct chained, but does not include VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID usage
@@ -748,7 +748,7 @@ TEST_F(NegativeAndroidHardwareBuffer, PhysDevImageFormatProp2) {
     pdeifi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT;
     pdifi.pNext = &pdeifi;
     m_errorMonitor->SetDesiredError("VUID-vkGetPhysicalDeviceImageFormatProperties2-pNext-01868");
-    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical().handle(), &pdifi, &ifp);
+    vk::GetPhysicalDeviceImageFormatProperties2(m_device->Physical(), &pdifi, &ifp);
     m_errorMonitor->VerifyFound();
 }
 
@@ -978,7 +978,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportBufferAllocationSize) {
     vkt::Buffer buffer(*m_device, buffer_create_info, vkt::no_mem);
 
     VkMemoryRequirements mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer.handle(), &mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
 
     VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper();
     export_memory_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_ANDROID_HARDWARE_BUFFER_BIT_ANDROID;
@@ -1023,7 +1023,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ExportImageNonBound) {
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
-    memory_dedicated_info.image = image.handle();
+    memory_dedicated_info.image = image;
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkExportMemoryAllocateInfo export_memory_info = vku::InitStructHelper(&memory_dedicated_info);
@@ -1073,7 +1073,7 @@ TEST_F(NegativeAndroidHardwareBuffer, InvalidBindBufferMemory) {
 
     // Try to get memory requirements prior to binding memory
     VkBufferMemoryRequirementsInfo2 buffer_memory_requirements_info = vku::InitStructHelper();
-    buffer_memory_requirements_info.buffer = buffer.handle();
+    buffer_memory_requirements_info.buffer = buffer;
     VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();
     VkMemoryRequirements2 mem_reqs2 = vku::InitStructHelper(&memory_dedicated_requirements);
     vk::GetBufferMemoryRequirements2(device(), &buffer_memory_requirements_info, &mem_reqs2);
@@ -1096,7 +1096,7 @@ TEST_F(NegativeAndroidHardwareBuffer, InvalidBindBufferMemory) {
         m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
         m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10739");
         m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10741");
-        vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), 1);
+        vk::BindBufferMemory(device(), buffer, memory.handle(), 1);
         m_errorMonitor->VerifyFound();
     }
 
@@ -1106,7 +1106,7 @@ TEST_F(NegativeAndroidHardwareBuffer, InvalidBindBufferMemory) {
         if (memory_dedicated_requirements.requiresDedicatedAllocation) {
             m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01444");
         }
-        vk::BindBufferMemory(device(), buffer.handle(), memory.handle(), buffer_offset);
+        vk::BindBufferMemory(device(), buffer, memory.handle(), buffer_offset);
         m_errorMonitor->VerifyFound();
     }
 }
@@ -1146,11 +1146,11 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportBufferHandleType) {
 
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-02986");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindBufferMemory-memory-01035");
-    vk::BindBufferMemory(device(), buffer.handle(), memory, 0);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
     m_errorMonitor->VerifyFound();
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
-    bind_buffer_info.buffer = buffer.handle();
+    bind_buffer_info.buffer = buffer;
     bind_buffer_info.memory = memory;
     bind_buffer_info.memoryOffset = 0;
 
@@ -1184,7 +1184,7 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
     VkMemoryDedicatedAllocateInfo memory_dedicated_info = vku::InitStructHelper();
-    memory_dedicated_info.image = image.handle();
+    memory_dedicated_info.image = image;
     memory_dedicated_info.buffer = VK_NULL_HANDLE;
 
     VkImportAndroidHardwareBufferInfoANDROID import_ahb_Info =
@@ -1210,11 +1210,11 @@ TEST_F(NegativeAndroidHardwareBuffer, ImportImageHandleType) {
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02990");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-memory-01047");
     m_errorMonitor->SetUnexpectedError("VUID-vkBindImageMemory-None-10737");
-    vk::BindImageMemory(device(), image.handle(), memory, 0);
+    vk::BindImageMemory(device(), image, memory, 0);
     m_errorMonitor->VerifyFound();
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
-    bind_image_info.image = image.handle();
+    bind_image_info.image = image;
     bind_image_info.memory = memory;
     bind_image_info.memoryOffset = 0;
 

@@ -54,10 +54,10 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     // bug is triggered at the beginning of the second renderpass, when the
     // command buffer already has a layout recorded for the attachment.
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_errorMonitor->SetAllowedFailureMsg("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -124,7 +124,7 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     // missing tracking of the subpass layout by throwing a validation error
     // if it doesn't occur.
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
 
     image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -149,12 +149,12 @@ TEST_F(PositiveRenderPass, BeginTransitionsAttachmentUnused) {
     vkt::RenderPass rp(*m_device, rpci);
 
     // A compatible framebuffer.
-    vkt::Framebuffer fb(*m_device, rp.handle(), 0, nullptr);
+    vkt::Framebuffer fb(*m_device, rp, 0, nullptr);
 
     // Record a command buffer which just begins and ends the renderpass. The
     // bug manifests in BeginRenderPass.
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -189,7 +189,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_image_view.handle(), 100, 100);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 100, 100, 1, &clear);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 100, 100, 1, &clear);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -212,7 +212,7 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     cregion.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1};
     cregion.dstOffset = {0, 0, 0};
     cregion.extent = {100, 100, 1};
-    vk::CmdCopyImage(cmdbuf.handle(), m_depthStencil->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destImage.handle(),
+    vk::CmdCopyImage(cmdbuf, m_depthStencil->handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destImage,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &cregion);
     cmdbuf.End();
     m_default_queue->SubmitAndWait(cmdbuf);
@@ -224,9 +224,9 @@ TEST_F(PositiveRenderPass, BeginInlineAndSecondaryCommandBuffers) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+    vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_command_buffer.EndRenderPass();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
@@ -262,7 +262,7 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -287,12 +287,12 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // Destroy renderPass before pipeline is used in Draw
     //  We delay until after CmdBindPipeline to verify that invalid binding isn't
     //  created between CB & renderPass, which we used to do.
     rp.Destroy();
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -349,7 +349,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     image_ci.imageType = VK_IMAGE_TYPE_1D;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView image_view_obj = image.CreateView(VK_IMAGE_VIEW_TYPE_1D_ARRAY, base_mip, 1, 0, 1);
-    VkImageView image_view = image_view_obj.handle();
+    VkImageView image_view = image_view_obj;
 
     VkRenderPassAttachmentBeginInfo rp_attachment_begin_info = vku::InitStructHelper();
     rp_attachment_begin_info.attachmentCount = 1;
@@ -358,13 +358,13 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     rp_begin_info.renderPass = rp.Handle();
     rp_begin_info.renderArea.extent.width = width >> base_mip;
     rp_begin_info.renderArea.extent.height = height;
-    rp_begin_info.framebuffer = fb.handle();
+    rp_begin_info.framebuffer = fb;
 
     VkCommandBufferBeginInfo cmd_begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                                VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
 
     m_command_buffer.Begin(&cmd_begin_info);
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBeginRenderPass(m_command_buffer, &rp_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 TEST_F(PositiveRenderPass, ValidStages) {
@@ -455,19 +455,19 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     vinfo.components.a = VK_COMPONENT_SWIZZLE_A;
     vinfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
 
-    vinfo.image = colorImage.handle();
+    vinfo.image = colorImage;
     vinfo.format = VK_FORMAT_R8G8B8A8_UNORM;
     vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
     vkt::ImageView fullView0(*m_device, vinfo);
 
-    vinfo.image = depthImage.handle();
+    vinfo.image = depthImage;
     vinfo.format = VK_FORMAT_D32_SFLOAT;
     vinfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
     vkt::ImageView fullView1(*m_device, vinfo);
 
-    VkImageView fullViews[] = {fullView0.handle(), fullView1.handle()};
+    VkImageView fullViews[] = {fullView0, fullView1};
 
     vkt::Framebuffer fb(*m_device, rp.Handle(), 2, baseViews);
 
@@ -503,7 +503,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.ds_ci_ = ds_ci;
     pipe.CreateGraphicsPipeline();
@@ -511,11 +511,11 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     // Start pushing commands.
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, NULL);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              NULL);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
 
     // At this point the first miplevel should be in GENERAL due to the "finalLayout" in the render pass.
@@ -568,11 +568,11 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     helper.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), ds_image.Width(), ds_image.Height());
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    m_command_buffer.BeginRenderPass(rp.Handle(), fb, ds_image.Width(), ds_image.Height());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -624,15 +624,15 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     imb.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imb.srcQueueFamilyIndex = 0;
     imb.dstQueueFamilyIndex = 0;
-    imb.image = image.handle();
+    imb.image = image;
     imb.subresourceRange.aspectMask = 0x6;
     imb.subresourceRange.baseMipLevel = 0;
     imb.subresourceRange.levelCount = 0x1;
     imb.subresourceRange.baseArrayLayer = 0;
     imb.subresourceRange.layerCount = 0x1;
 
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                           VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &imb);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -665,7 +665,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
 
     // 2D image views to be used as color attchments for framebuffer
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
-    view_info.image = image_3d.handle();
+    view_info.image = image_3d;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.format = image_info.format;
     view_info.components.r = VK_COMPONENT_SWIZZLE_R;
@@ -678,7 +678,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     for (unsigned i = 0; i < depth_count; ++i) {
         view_info.subresourceRange.baseArrayLayer = i;
         image_views[i].init(*m_device, view_info);
-        views[i] = image_views[i].handle();
+        views[i] = image_views[i];
     }
 
     // Render pass with 2 subpasses
@@ -718,11 +718,10 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     rp_info.pDependencies = &dependency;
 
     vkt::RenderPass renderpass(*m_device, rp_info);
-    vkt::Framebuffer framebuffer(*m_device, renderpass.handle(), depth_count, views, image_info.extent.width,
-                                 image_info.extent.height);
+    vkt::Framebuffer framebuffer(*m_device, renderpass, depth_count, views, image_info.extent.width, image_info.extent.height);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(renderpass.handle(), framebuffer.handle(), image_info.extent.width, image_info.extent.height);
+    m_command_buffer.BeginRenderPass(renderpass, framebuffer, image_info.extent.width, image_info.extent.height);
     for (unsigned i = 0; i < (depth_count - 1); ++i) {
         m_command_buffer.NextSubpass();
     }
@@ -765,7 +764,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
 
     // 2D image views for each slice of the 3D image
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
-    view_info.image = image_3d.handle();
+    view_info.image = image_3d;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.format = image_info.format;
     view_info.components.r = VK_COMPONENT_SWIZZLE_R;
@@ -778,7 +777,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     for (unsigned i = 0; i < image_depth; ++i) {
         view_info.subresourceRange.baseArrayLayer = i;
         image_views[i].init(*m_device, view_info);
-        views[i] = image_views[i].handle();
+        views[i] = image_views[i];
     }
 
     // Render pass 1, referencing first slice
@@ -807,12 +806,12 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
 
     m_command_buffer.Begin();
 
-    m_command_buffer.BeginRenderPass(rp_1.Handle(), framebuffer_1.handle(), image_info.extent.width, image_info.extent.height);
+    m_command_buffer.BeginRenderPass(rp_1.Handle(), framebuffer_1, image_info.extent.width, image_info.extent.height);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.FullMemoryBarrier();
 
-    m_command_buffer.BeginRenderPass(rp_2.Handle(), framebuffer_2.handle(), image_info.extent.width, image_info.extent.height);
+    m_command_buffer.BeginRenderPass(rp_2.Handle(), framebuffer_2, image_info.extent.width, image_info.extent.height);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
@@ -859,12 +858,12 @@ TEST_F(PositiveRenderPass, SubpassWithReadOnlyLayoutWithoutDependency) {
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    std::array<VkImageView, size> views = {{view.handle(), view.handle()}};
+    std::array<VkImageView, size> views = {{view, view}};
 
-    vkt::Framebuffer fb(*m_device, rp.handle(), size, views.data());
+    vkt::Framebuffer fb(*m_device, rp, size, views.data());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.handle(), fb.handle(), 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.NextSubpass();
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -897,7 +896,7 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
         image.SubresourceRange(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 
     VkImageViewCreateInfo view_info = vku::InitStructHelper();
-    view_info.image = image.handle();
+    view_info.image = image;
     view_info.subresourceRange = depth_stencil_range;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     view_info.format = ds_format;
@@ -911,10 +910,10 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
             image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, depth_range);
         auto stencil_barrier =
             image.ImageMemoryBarrier(0, 0, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL, stencil_range);
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                               0, nullptr, 0, nullptr, 1, &depth_barrier);
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                               0, nullptr, 0, nullptr, 1, &stencil_barrier);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &depth_barrier);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &stencil_barrier);
         m_command_buffer.End();
         m_default_queue->SubmitAndWait(m_command_buffer);
         m_command_buffer.Reset();
@@ -989,18 +988,18 @@ TEST_F(PositiveRenderPass, SeparateDepthStencilSubresourceLayout) {
     att.pNext = nullptr;
     vkt::RenderPass render_pass_combined(*m_device, rp2);
 
-    vkt::Framebuffer framebuffer_separate(*m_device, render_pass_separate.handle(), 1, &view.handle(), 1, 1);
-    vkt::Framebuffer framebuffer_combined(*m_device, render_pass_combined.handle(), 1, &view.handle(), 1, 1);
+    vkt::Framebuffer framebuffer_separate(*m_device, render_pass_separate, 1, &view.handle(), 1, 1);
+    vkt::Framebuffer framebuffer_combined(*m_device, render_pass_combined, 1, &view.handle(), 1, 1);
 
     for (auto &barrier : barriers) {
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                               0, nullptr, 0, nullptr, 1, &barrier);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &barrier);
     }
 
-    m_command_buffer.BeginRenderPass(render_pass_separate.handle(), framebuffer_separate.handle());
+    m_command_buffer.BeginRenderPass(render_pass_separate, framebuffer_separate);
     m_command_buffer.EndRenderPass();
 
-    m_command_buffer.BeginRenderPass(render_pass_combined.handle(), framebuffer_combined.handle());
+    m_command_buffer.BeginRenderPass(render_pass_combined, framebuffer_combined);
     m_command_buffer.EndRenderPass();
 
     m_command_buffer.End();
@@ -1063,7 +1062,7 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
 
         m_command_buffer.Begin();
 
-        m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle(), 32, 32);
+        m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
         m_command_buffer.EndRenderPass();
 
         VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
@@ -1071,12 +1070,12 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
         img_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         img_barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-        img_barrier.image = depthImage.handle();
+        img_barrier.image = depthImage;
         img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
         img_barrier.subresourceRange.layerCount = 1;
         img_barrier.subresourceRange.levelCount = 1;
 
-        vk::CmdPipelineBarrier(m_command_buffer.handle(),
+        vk::CmdPipelineBarrier(m_command_buffer,
                                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
                                VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &img_barrier);
         m_command_buffer.End();
@@ -1133,7 +1132,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     for (uint32_t i = 0; i < stripe_count; ++i) {
         semaphores[i].init(*m_device, semaphore_create_info);
         semaphore_submit_infos[i] = vku::InitStructHelper();
-        semaphore_submit_infos[i].semaphore = semaphores[i].handle();
+        semaphore_submit_infos[i].semaphore = semaphores[i];
     }
 
     VkRenderPassStripeSubmitInfoARM rp_stripe_submit_info = vku::InitStructHelper();
@@ -1141,7 +1140,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     rp_stripe_submit_info.pStripeSemaphoreInfos = semaphore_submit_infos;
 
     VkCommandBufferSubmitInfo cb_submit_info = vku::InitStructHelper(&rp_stripe_submit_info);
-    cb_submit_info.commandBuffer = cmd_buffer.handle();
+    cb_submit_info.commandBuffer = cmd_buffer;
 
     VkSubmitInfo2 submit_info = vku::InitStructHelper();
     submit_info.commandBufferInfoCount = 1;
@@ -1162,9 +1161,8 @@ TEST_F(PositiveRenderPass, NestedCommandBuffersFeatureMaintenance7) {
     InitRenderTarget();
 
     m_command_buffer.Begin();
-    vk::CmdBeginRenderPass(m_command_buffer.handle(), &m_renderPassBeginInfo,
-                           VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
-    vk::CmdEndRenderPass(m_command_buffer.handle());
+    vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE_AND_SECONDARY_COMMAND_BUFFERS_KHR);
+    vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
 }
 
@@ -1207,7 +1205,7 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle());
 
     VkSampleLocationEXT sample_location = {0.5f, 0.5f};
     VkSampleLocationsInfoEXT sample_locations_info = vku::InitStructHelper();
@@ -1227,7 +1225,7 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.pMultisampleState = &multi_sample_state;
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = render_pass;
     pipe.CreateGraphicsPipeline();
 
     VkClearValue color_clear_value;
@@ -1257,8 +1255,8 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
     sample_locations_begin_info.pPostSubpassSampleLocations = &subpass_sample_loc;
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper(&sample_locations_begin_info);
-    render_pass_begin_info.renderPass = render_pass.handle();
-    render_pass_begin_info.framebuffer = framebuffer.handle();
+    render_pass_begin_info.renderPass = render_pass;
+    render_pass_begin_info.framebuffer = framebuffer;
     render_pass_begin_info.renderArea.extent = {32, 32};
     render_pass_begin_info.renderArea.offset = {0, 0};
     render_pass_begin_info.clearValueCount = 1;
@@ -1269,7 +1267,7 @@ TEST_F(PositiveRenderPass, RenderPassSampleLocationsBeginInfo) {
 
     sample_location.x = 1.0f;
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

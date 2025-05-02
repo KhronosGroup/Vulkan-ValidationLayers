@@ -71,13 +71,13 @@ TEST_F(PositiveImageLayout, BarriersAndImageUsage) {
 
             img_barrier.oldLayout = buffer_layouts[i].old_layout;
             img_barrier.newLayout = buffer_layouts[i].new_layout;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0,
-                                   nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
+                                   0, nullptr, 1, &img_barrier);
 
             img_barrier.oldLayout = buffer_layouts[i].new_layout;
             img_barrier.newLayout = buffer_layouts[i].old_layout;
-            vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0,
-                                   nullptr, 0, nullptr, 1, &img_barrier);
+            vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr,
+                                   0, nullptr, 1, &img_barrier);
         }
         m_command_buffer.End();
 
@@ -145,7 +145,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     bind_swapchain_info.imageIndex = 0;
 
     VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
-    bind_info.image = image.handle();
+    bind_info.image = image;
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -209,23 +209,23 @@ TEST_F(PositiveImageLayout, Subresource) {
     const VkImageSubresourceRange subresource_range = image.SubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
     auto barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
                                             VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, subresource_range);
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.subresourceRange.baseMipLevel = 1;
     barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.subresourceRange.baseMipLevel = 2;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &barrier);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
@@ -251,7 +251,7 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
     VkImageSubresourceRange first_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 5};
     VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
-    image_view_create_info.image = image.handle();
+    image_view_create_info.image = image;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
     image_view_create_info.subresourceRange = view_range;
@@ -266,7 +266,7 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
@@ -284,7 +284,7 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         cmd_buf.Begin();
         image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-        image_barrier.image = image.handle();
+        image_barrier.image = image;
         image_barrier.subresourceRange = full_range;
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = init_layout;
@@ -313,8 +313,8 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, NULL);
+        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  NULL);
 
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
@@ -373,7 +373,7 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view_2d, other_view;
     VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
-    image_view_create_info.image = image_3d.handle();
+    image_view_create_info.image = image_3d;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
     image_view_create_info.subresourceRange = view_range;
@@ -434,8 +434,8 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     VkShaderObj fs(this, kFragmentSamplerGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
-    pipe.gp_ci_.renderPass = rp.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     vkt::CommandBuffer cmd_buf(*m_device, m_command_pool);
@@ -449,12 +449,12 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     for (TestType test_type : test_list) {
         VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
 
-        vkt::Framebuffer fb(*m_device, rp.handle(), 1, &view_2d.handle(), kWidth, kHeight);
+        vkt::Framebuffer fb(*m_device, rp, 1, &view_2d.handle(), kWidth, kHeight);
 
         cmd_buf.Begin();
         image_barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
         image_barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
-        image_barrier.image = image_3d.handle();
+        image_barrier.image = image_3d;
         image_barrier.subresourceRange = full_range;
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -472,14 +472,14 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
             cmd_buf.Begin();
         }
 
-        m_renderPassBeginInfo.renderPass = rp.handle();
-        m_renderPassBeginInfo.framebuffer = fb.handle();
+        m_renderPassBeginInfo.renderPass = rp;
+        m_renderPassBeginInfo.framebuffer = fb;
         m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
         vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                  &descriptor_set.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
         vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
@@ -508,8 +508,8 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
     img_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     img_barrier.image = image;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -527,10 +527,10 @@ TEST_F(PositiveImageLayout, ArrayLayers) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -569,7 +569,7 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer in_buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
@@ -593,10 +593,10 @@ TEST_F(PositiveImageLayout, DescriptorArray) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 

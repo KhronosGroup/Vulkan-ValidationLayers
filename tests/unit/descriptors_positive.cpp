@@ -81,12 +81,12 @@ TEST_F(PositiveDescriptors, DeleteDescriptorSetLayoutsBeforeDescriptorSets) {
 
         VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
         alloc_info.descriptorSetCount = 1;
-        alloc_info.descriptorPool = ds_pool_one.handle();
+        alloc_info.descriptorPool = ds_pool_one;
         alloc_info.pSetLayouts = &ds_layout.handle();
         err = vk::AllocateDescriptorSets(device(), &alloc_info, &descriptorSet);
         ASSERT_EQ(VK_SUCCESS, err);
     }  // ds_layout destroyed
-    vk::FreeDescriptorSets(device(), ds_pool_one.handle(), 1, &descriptorSet);
+    vk::FreeDescriptorSets(device(), ds_pool_one, 1, &descriptorSet);
 }
 
 TEST_F(PositiveDescriptors, PoolSizeCountZero) {
@@ -158,7 +158,7 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
                                                      });
 
         VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = buffer.handle();
+        buffer_info.buffer = buffer;
         buffer_info.offset = 0;
         buffer_info.range = 1024;
 
@@ -231,7 +231,7 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
                                            {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
 
-    descriptor_set.WriteDescriptorImageInfo(1, image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                                             VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
@@ -258,11 +258,11 @@ TEST_F(PositiveDescriptors, ImmutableSamplerOnlyDescriptor) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -283,7 +283,7 @@ TEST_F(PositiveDescriptors, EmptyDescriptorUpdate) {
 
     // Only update the descriptor at binding 2
     VkDescriptorBufferInfo buff_info = {};
-    buff_info.buffer = buffer.handle();
+    buff_info.buffer = buffer;
     buff_info.offset = 0;
     buff_info.range = VK_WHOLE_SIZE;
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -320,13 +320,13 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     // Update descriptors
     const uint32_t BINDING_COUNT = 3;
     VkDescriptorBufferInfo buff_info[BINDING_COUNT] = {};
-    buff_info[0].buffer = dynamic_uniform_buffer_1.handle();
+    buff_info[0].buffer = dynamic_uniform_buffer_1;
     buff_info[0].offset = 0;
     buff_info[0].range = 256;
-    buff_info[1].buffer = dynamic_uniform_buffer_1.handle();
+    buff_info[1].buffer = dynamic_uniform_buffer_1;
     buff_info[1].offset = 256;
     buff_info[1].range = 512;
-    buff_info[2].buffer = dynamic_uniform_buffer_2.handle();
+    buff_info[2].buffer = dynamic_uniform_buffer_2;
     buff_info[2].offset = 0;
     buff_info[2].range = 512;
 
@@ -360,13 +360,13 @@ TEST_F(PositiveDescriptors, DynamicOffsetWithInactiveBinding) {
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateGraphicsPipeline();
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // This update should succeed, but offset of inactive binding 1 oversteps binding 2 buffer size
     //   we used to have a bug in this case.
     uint32_t dyn_off[BINDING_COUNT] = {0, 1024, 256};
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &descriptor_set.set_, BINDING_COUNT, dyn_off);
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &descriptor_set.set_,
+                              BINDING_COUNT, dyn_off);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -421,12 +421,12 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     create_info.pBindings = bindings;
 
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
-    VkDescriptorSetLayout set_layout_handle = set_layout.handle();
+    VkDescriptorSetLayout set_layout_handle = set_layout;
 
     VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
-    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = 2;
     allocate_info.pSetLayouts = layouts;
 
@@ -438,7 +438,7 @@ TEST_F(PositiveDescriptors, CopyMutableDescriptors) {
     vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 
     VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.buffer = buffer.handle();
+    buffer_info.buffer = buffer;
     buffer_info.offset = 0;
     buffer_info.range = VK_WHOLE_SIZE;
 
@@ -506,14 +506,14 @@ TEST_F(PositiveDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
 
     CreateComputePipelineHelper pipeline(*this);
     pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
-    pipeline.cp_ci_.layout = pipeline_layout_0.handle();
+    pipeline.cp_ci_.layout = pipeline_layout_0;
     pipeline.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1.handle(), 0, 1,
-                              &descriptor_set_1.set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_1, 0, 1, &descriptor_set_1.set_, 0,
+                              nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.Handle());
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 }
 
@@ -576,10 +576,10 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
 
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
 
-    std::array<VkDescriptorSetLayout, 2> layouts = {set_layout.handle(), set_layout.handle()};
+    std::array<VkDescriptorSetLayout, 2> layouts = {set_layout, set_layout};
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
-    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = layouts.size();
     allocate_info.pSetLayouts = layouts.data();
 
@@ -628,7 +628,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
         vkt::Image::ImageCreateInfo2D(32, 32, 1, 3, format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D, 0, 1, 0, 1);
-    VkImageView image_view_handle = image_view.handle();
+    VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle);
@@ -658,7 +658,7 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_layout, &descriptor_set_layout2});
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
@@ -676,13 +676,13 @@ TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     descriptor_set2.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 1, 1,
-                              &descriptor_set2.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 1, 1, &descriptor_set2.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -704,7 +704,7 @@ TEST_F(PositiveDescriptors, UpdateImageDescriptorSetThatHasImageViewUsage) {
     OneOffDescriptorSet ds(m_device, {
                                          {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                      });
-    ds.WriteDescriptorImageInfo(0, image_view.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    ds.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     ds.UpdateDescriptorSets();
 }
 
@@ -770,8 +770,7 @@ TEST_F(PositiveDescriptors, BindingEmptyDescriptorSets) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&empty_ds.layout_});
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &empty_ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &empty_ds.set_, 0, nullptr);
     m_command_buffer.End();
 }
 
@@ -820,20 +819,20 @@ TEST_F(PositiveDescriptors, DrawingWithUnboundUnusedSetWithInputAttachments) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     m_renderPassBeginInfo.renderPass = rp.Handle();
-    m_renderPassBeginInfo.framebuffer = fb.handle();
+    m_renderPassBeginInfo.framebuffer = fb;
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
 
     // This draw command will likely produce a crash in case of a regression.
-    vk::CmdDraw(m_command_buffer.handle(), 1, 0, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -896,7 +895,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
 
         CreatePipelineHelper pipe(*this);
         pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-        pipe.gp_ci_.layout = pipeline_layout.handle();
+        pipe.gp_ci_.layout = pipeline_layout;
         pipe.CreateGraphicsPipeline();
 
         auto update_set = [this](VkDescriptorSet set, VkBuffer buffer) {
@@ -923,7 +922,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         {
             auto &cb = use_single_command_buffer ? m_command_buffer : cb0;
             cb.Begin();
-            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_A, 0, nullptr);
+            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set_A, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             cb.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdDraw(cb, 0, 0, 0, 0);
@@ -939,7 +938,7 @@ TEST_F(PositiveDescriptors, UpdateDescritorSetsNoLongerInUse) {
         {
             auto &cb = use_single_command_buffer ? m_command_buffer : cb1;
             cb.Begin();
-            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1, &set_B, 0, nullptr);
+            vk::CmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &set_B, 0, nullptr);
             vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
             cb.BeginRenderPass(m_renderPassBeginInfo);
             vk::CmdDraw(cb, 0, 0, 0, 0);
@@ -1022,7 +1021,7 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
                                            {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                        });
 
-    descriptor_set.WriteDescriptorImageInfo(0u, image_view, sampler.handle(), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    descriptor_set.WriteDescriptorImageInfo(0u, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                             VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT);
     descriptor_set.UpdateDescriptorSets();
 
@@ -1044,12 +1043,12 @@ TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, &clear_value);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0u, 1u,
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, &clear_value);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0u, 1u,
                               &descriptor_set.set_, 0u, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3u, 1u, 0u, 0u);
-    vk::CmdEndRenderPass(m_command_buffer.handle());
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
+    vk::CmdEndRenderPass(m_command_buffer);
     m_command_buffer.End();
 }
 
@@ -1106,7 +1105,7 @@ TEST_F(PositiveDescriptors, VariableDescriptorCount) {
     variable_allocate.pDescriptorCounts = &descriptor_count;
     VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper(&variable_allocate);
     alloc_info.descriptorSetCount = 1;
-    alloc_info.descriptorPool = ds_pool.handle();
+    alloc_info.descriptorPool = ds_pool;
     alloc_info.pSetLayouts = &ds_layout.handle();
 
     VkDescriptorSet descriptor_set;
@@ -1148,7 +1147,7 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     vkt::ImageView image_view = image.CreateView();
-    VkImageView image_view_handle = image_view.handle();
+    VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
     vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle);
 
@@ -1222,22 +1221,20 @@ TEST_F(PositiveDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
-    descriptor_set.WriteDescriptorImageInfo(0, image_view.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                            VK_IMAGE_LAYOUT_GENERAL);
-    descriptor_set.WriteDescriptorImageInfo(1, image_view_2.handle(), sampler.handle(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                                            VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
+    descriptor_set.WriteDescriptorImageInfo(1, image_view_2, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer.handle(), 32, 32, 1, m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, m_renderPassClearValues.data());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -1255,8 +1252,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutSameSampler) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler.handle()}});
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
-                              &ds_1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
     m_command_buffer.End();
 }
 
@@ -1274,8 +1270,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSampler) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, &sampler_1.handle()}});
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
-                              &ds_1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
     m_command_buffer.End();
 }
 
@@ -1283,7 +1278,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutSameSamplerArray) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8497");
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    VkSampler sampler_array[3] = {sampler.handle(), sampler.handle(), sampler.handle()};
+    VkSampler sampler_array[3] = {sampler, sampler, sampler};
 
     OneOffDescriptorSet ds_0(m_device,
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array}});
@@ -1293,8 +1288,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutSameSamplerArray) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array}});
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
-                              &ds_1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
     m_command_buffer.End();
 }
 
@@ -1303,8 +1297,8 @@ TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSamplerArray) {
     RETURN_IF_SKIP(Init());
     vkt::Sampler sampler_0(*m_device, SafeSaneSamplerCreateInfo());
     vkt::Sampler sampler_1(*m_device, SafeSaneSamplerCreateInfo());
-    VkSampler sampler_array_0[3] = {sampler_0.handle(), sampler_0.handle(), sampler_0.handle()};
-    VkSampler sampler_array_1[3] = {sampler_1.handle(), sampler_1.handle(), sampler_1.handle()};
+    VkSampler sampler_array_0[3] = {sampler_0, sampler_0, sampler_0};
+    VkSampler sampler_array_1[3] = {sampler_1, sampler_1, sampler_1};
 
     OneOffDescriptorSet ds_0(m_device,
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array_0}});
@@ -1314,8 +1308,7 @@ TEST_F(PositiveDescriptors, DuplicateLayoutDuplicateSamplerArray) {
                              {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 3, VK_SHADER_STAGE_COMPUTE_BIT, sampler_array_1}});
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0.handle(), 0, 1,
-                              &ds_1.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_0, 0, 1, &ds_1.set_, 0, nullptr);
     m_command_buffer.End();
 }
 
@@ -1389,12 +1382,12 @@ TEST_F(PositiveDescriptors, CopyDestroyedMutableDescriptors) {
     create_info.pBindings = bindings;
 
     vkt::DescriptorSetLayout set_layout(*m_device, create_info);
-    VkDescriptorSetLayout set_layout_handle = set_layout.handle();
+    VkDescriptorSetLayout set_layout_handle = set_layout;
 
     VkDescriptorSetLayout layouts[2] = {set_layout_handle, set_layout_handle};
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
-    allocate_info.descriptorPool = pool.handle();
+    allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = 2;
     allocate_info.pSetLayouts = layouts;
 

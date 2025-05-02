@@ -94,8 +94,8 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
 
         image_barrier.subresourceRange = full_image;
         m_command_buffer.Begin();
-        vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
         m_command_buffer.End();
     };
 

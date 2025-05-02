@@ -485,7 +485,7 @@ TEST_F(VkPositiveLayerTest, ExclusiveScissorVersionCount) {
 
     m_command_buffer.Begin();
     VkBool32 exclusiveScissorEnable = VK_TRUE;
-    vk::CmdSetExclusiveScissorEnableNV(m_command_buffer.handle(), 0u, 1u, &exclusiveScissorEnable);
+    vk::CmdSetExclusiveScissorEnableNV(m_command_buffer, 0u, 1u, &exclusiveScissorEnable);
     m_command_buffer.End();
 }
 

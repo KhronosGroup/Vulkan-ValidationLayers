@@ -27,8 +27,8 @@ void WsiTest::SetImageLayoutPresentSrc(VkImage image) {
                                         image,
                                         {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
 
-    vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &layout_barrier);
+    vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &layout_barrier);
     cmd_buf.End();
     m_default_queue->Submit(cmd_buf);
     m_default_queue->Wait();
@@ -292,7 +292,7 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
     bind_swapchain_info.imageIndex = 0;
 
     VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
-    bind_info.image = image_from_swapchain.handle();
+    bind_info.image = image_from_swapchain;
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -308,8 +308,8 @@ TEST_F(PositiveWsi, CmdCopySwapchainImage) {
 
     m_command_buffer.Begin();
 
-    vk::CmdCopyImage(m_command_buffer.handle(), srcImage.handle(), VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    vk::CmdCopyImage(m_command_buffer, srcImage, VK_IMAGE_LAYOUT_GENERAL, image_from_swapchain, VK_IMAGE_LAYOUT_GENERAL, 1,
+                     &copy_region);
 }
 
 TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
@@ -380,7 +380,7 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     bind_swapchain_info.imageIndex = 0;
 
     VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
-    bind_info.image = peer_image.handle();
+    bind_info.image = peer_image;
     bind_info.memory = VK_NULL_HANDLE;
     bind_info.memoryOffset = 0;
 
@@ -407,8 +407,8 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     img_barrier.subresourceRange.baseMipLevel = 0;
     img_barrier.subresourceRange.layerCount = 1;
     img_barrier.subresourceRange.levelCount = 1;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0,
-                           nullptr, 0, nullptr, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &img_barrier);
 
     VkImageCopy copy_region = {};
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -416,8 +416,8 @@ TEST_F(PositiveWsi, TransferImageToSwapchainDeviceGroup) {
     copy_region.srcOffset = {0, 0, 0};
     copy_region.dstOffset = {0, 0, 0};
     copy_region.extent = {test_extent_value, test_extent_value, 1};
-    vk::CmdCopyImage(m_command_buffer.handle(), src_Image.handle(), VK_IMAGE_LAYOUT_GENERAL, peer_image.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    vk::CmdCopyImage(m_command_buffer, src_Image, VK_IMAGE_LAYOUT_GENERAL, peer_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1,
+                     &copy_region);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -691,19 +691,19 @@ TEST_F(PositiveWsi, SwapchainImageLayout) {
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView view(*m_device, ivci);
 
-    vkt::Framebuffer fb1(*m_device, rp1.handle(), 1, &view.handle(), 1, 1);
-    vkt::Framebuffer fb2(*m_device, rp2.handle(), 1, &view.handle(), 1, 1);
+    vkt::Framebuffer fb1(*m_device, rp1, 1, &view.handle(), 1, 1);
+    vkt::Framebuffer fb2(*m_device, rp2, 1, &view.handle(), 1, 1);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp1.handle(), fb1.handle());
+    m_command_buffer.BeginRenderPass(rp1, fb1);
     m_command_buffer.EndRenderPass();
-    m_command_buffer.BeginRenderPass(rp2.handle(), fb2.handle());
+    m_command_buffer.BeginRenderPass(rp2, fb2);
     m_command_buffer.EndRenderPass();
 
     const VkImageMemoryBarrier present_transition =
         TransitionToPresent(swapchainImages[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0);
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-                           0, nullptr, 0, nullptr, 1, &present_transition);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
 
     vk::WaitForFences(device(), 1, &fence.handle(), VK_TRUE, kWaitTimeout);
@@ -938,7 +938,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
         VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = render_pass.handle();
+    pipe.gp_ci_.renderPass = render_pass;
     pipe.cb_attachments_ = pcbas;
     pipe.CreateGraphicsPipeline();
 
@@ -959,13 +959,13 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     ivci.format = format;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
     vkt::ImageView image_view(*m_device, ivci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass.handle(), 1, &image_view.handle(), 1, 1);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 1, &image_view.handle(), 1, 1);
 
     vkt::CommandBuffer cmdbuff(*m_device, m_command_pool);
     cmdbuff.Begin();
-    cmdbuff.BeginRenderPass(render_pass.handle(), framebuffer.handle());
+    cmdbuff.BeginRenderPass(render_pass, framebuffer);
 
-    vk::CmdBindPipeline(cmdbuff.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(cmdbuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 }
 
 TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
@@ -1051,7 +1051,7 @@ TEST_F(PositiveWsi, DestroySwapchainWithBoundImages) {
         bind_swapchain_info.imageIndex = i++;
 
         VkBindImageMemoryInfo bind_info = vku::InitStructHelper(&bind_swapchain_info);
-        bind_info.image = image.handle();
+        bind_info.image = image;
         bind_info.memory = VK_NULL_HANDLE;
         bind_info.memoryOffset = 0;
 
@@ -1178,11 +1178,11 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     VkRect2D render_area = {{0, 0}, swapchain_create_info.imageExtent};
     VkRenderPassBeginInfo render_pass_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, fb.handle(), render_area, 0u, nullptr);
-    vk::CmdBeginRenderPass(protectedCommandBuffer.handle(), &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(protectedCommandBuffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBeginRenderPass(protectedCommandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
+    vk::CmdBindPipeline(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     // This should be valid since the framebuffer color attachment is a protected swapchain image
-    vk::CmdDraw(protectedCommandBuffer.handle(), 3, 1, 0, 0);
-    vk::CmdEndRenderPass(protectedCommandBuffer.handle());
+    vk::CmdDraw(protectedCommandBuffer, 3, 1, 0, 0);
+    vk::CmdEndRenderPass(protectedCommandBuffer);
     protectedCommandBuffer.End();
 }
 
@@ -1337,8 +1337,8 @@ TEST_F(PositiveWsi, AcquireImageBeforeGettingSwapchainImages) {
 
     const VkImageMemoryBarrier present_transition = TransitionToPresent(images[imageIndex], VK_IMAGE_LAYOUT_UNDEFINED, 0);
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-                           0, nullptr, 0, nullptr, 1, &present_transition);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0,
+                           nullptr, 0, nullptr, 1, &present_transition);
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Present(swapchain, imageIndex, vkt::no_semaphore);
@@ -1541,12 +1541,12 @@ TEST_F(PositiveWsi, QueueWaitsForPresentFence2) {
 
     vkt::Fence present_fence(*m_device);
     vkt::Fence present_fence2(*m_device);
-    const VkFence present_fences[2] = {present_fence.handle(), present_fence2.handle()};
+    const VkFence present_fences[2] = {present_fence, present_fence2};
     VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
     present_fence_info.swapchainCount = 2;
     present_fence_info.pFences = present_fences;
 
-    const VkSemaphore wait_semaphores[2] = {acquire_semaphore.handle(), acquire_semaphore2.handle()};
+    const VkSemaphore wait_semaphores[2] = {acquire_semaphore, acquire_semaphore2};
     const VkSwapchainKHR swapchains[2] = {m_swapchain, swapchain2};
     const uint32_t image_indices[2]{image_index, image_index2};
     VkPresentInfoKHR present = vku::InitStructHelper(&present_fence_info);
@@ -1783,7 +1783,7 @@ TEST_F(PositiveWsi, ReleaseSwapchainImages) {
     m_default_queue->Present(m_swapchain, present_index, submit_semaphore);
 
     VkReleaseSwapchainImagesInfoEXT releaseInfo = vku::InitStructHelper();
-    releaseInfo.swapchain = m_swapchain.handle();
+    releaseInfo.swapchain = m_swapchain;
     releaseInfo.imageIndexCount = (uint32_t)release_indices.size();
     releaseInfo.pImageIndices = release_indices.data();
     vk::ReleaseSwapchainImagesEXT(device(), &releaseInfo);
@@ -1811,7 +1811,7 @@ TEST_F(PositiveWsi, ReleaseAndAcquireSwapchainImages) {
         vk::ResetFences(device(), 1, &fence.handle());
 
         VkReleaseSwapchainImagesInfoEXT releaseInfo = vku::InitStructHelper();
-        releaseInfo.swapchain = m_swapchain.handle();
+        releaseInfo.swapchain = m_swapchain;
         releaseInfo.imageIndexCount = 1u;
         releaseInfo.pImageIndices = &image_index;
         vk::ReleaseSwapchainImagesEXT(device(), &releaseInfo);
@@ -2160,7 +2160,7 @@ TEST_F(PositiveWsi, CreateSwapchainWithOldSwapchain) {
     swapchain_ci.presentMode = m_surface_non_shared_present_mode;
     vkt::Swapchain swapchain1(*m_device, swapchain_ci);
 
-    swapchain_ci.oldSwapchain = swapchain1.handle();
+    swapchain_ci.oldSwapchain = swapchain1;
     vkt::Swapchain swapchain2(*m_device, swapchain_ci);
 }
 

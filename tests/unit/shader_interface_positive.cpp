@@ -883,21 +883,20 @@ TEST_F(PositiveShaderInterface, InputOutputMatch) {
     pipe.CreateGraphicsPipeline();
 
     vkt::Buffer uniform_buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    ds.WriteDescriptorBufferInfo(0, uniform_buffer.handle(), 0, 1024);
+    ds.WriteDescriptorBufferInfo(0, uniform_buffer, 0, 1024);
     ds.UpdateDescriptorSets();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    VkBuffer buffer_handle = buffer.handle();
+    VkBuffer buffer_handle = buffer;
     VkDeviceSize offset = 0;
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0, 1, &buffer_handle, &offset);
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer_handle, &offset);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &ds.set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -1468,8 +1467,8 @@ TEST_F(PositiveShaderInterface, FragmentOutputDynamicRenderingUnusedAttachments)
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }

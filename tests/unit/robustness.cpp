@@ -110,7 +110,7 @@ TEST_F(NegativeRobustness, PipelineRobustnessDisabledShaderStageWithIdentifier) 
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), cs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), cs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 

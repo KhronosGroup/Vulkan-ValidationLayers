@@ -34,7 +34,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-    stage_create_info.module = chit_shader.handle();
+    stage_create_info.module = chit_shader;
     stage_create_info.pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
@@ -54,7 +54,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     library_pipeline.pStages = &stage_create_info;
     library_pipeline.groupCount = 1;
     library_pipeline.pGroups = &group_create_info;
-    library_pipeline.layout = pipeline_layout.handle();
+    library_pipeline.layout = pipeline_layout;
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
@@ -67,12 +67,12 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     VkPipelineShaderStageCreateInfo stage_create_infos[2] = {};
     stage_create_infos[0] = vku::InitStructHelper();
     stage_create_infos[0].stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-    stage_create_infos[0].module = rgen_shader.handle();
+    stage_create_infos[0].module = rgen_shader;
     stage_create_infos[0].pName = "main";
 
     stage_create_infos[1] = vku::InitStructHelper();
     stage_create_infos[1].stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-    stage_create_infos[1].module = chit_shader.handle();
+    stage_create_infos[1].module = chit_shader;
     stage_create_infos[1].pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR group_create_infos[2] = {};
@@ -125,7 +125,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
 
     VkPipelineShaderStageCreateInfo stage_create_info = vku::InitStructHelper();
     stage_create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-    stage_create_info.module = chit_shader.handle();
+    stage_create_info.module = chit_shader;
     stage_create_info.pName = "main";
 
     VkRayTracingShaderGroupCreateInfoKHR group_create_info = vku::InitStructHelper();
@@ -145,7 +145,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     library_pipeline.pStages = &stage_create_info;
     library_pipeline.groupCount = 1;
     library_pipeline.pGroups = &group_create_info;
-    library_pipeline.layout = pipeline_layout.handle();
+    library_pipeline.layout = pipeline_layout;
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;

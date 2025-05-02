@@ -44,7 +44,7 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
-    buff_info.buffer = vbo.handle();
+    buff_info.buffer = vbo;
     buff_info.offset = 0;
     buff_info.range = data_size;
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -59,8 +59,8 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                                 &descriptor_write);
 }
 
@@ -92,7 +92,7 @@ TEST_F(PositivePushDescriptor, NullDstSet14) {
     vkt::Buffer vbo(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     VkDescriptorBufferInfo buff_info;
-    buff_info.buffer = vbo.handle();
+    buff_info.buffer = vbo;
     buff_info.offset = 0;
     buff_info.range = data_size;
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
@@ -107,8 +107,8 @@ TEST_F(PositivePushDescriptor, NullDstSet14) {
     m_command_buffer.Begin();
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSet(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
+    vk::CmdPushDescriptorSet(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
                              &descriptor_write);
 }
 
@@ -155,21 +155,21 @@ TEST_F(PositivePushDescriptor, UnboundSet) {
     vkt::Buffer buffer(*m_device, data_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
     // Update descriptor set
-    descriptor_set.WriteDescriptorBufferInfo(2, buffer.handle(), 0, data_size);
+    descriptor_set.WriteDescriptorBufferInfo(2, buffer, 0, data_size);
     descriptor_set.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     // Push descriptors and bind descriptor set
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
                                 descriptor_set.descriptor_writes.data());
-    vk::CmdBindDescriptorSets(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 1, 1,
-                              &descriptor_set.set_, 0, NULL);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 1, 1, &descriptor_set.set_,
+                              0, NULL);
 
     // No errors should be generated.
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -188,7 +188,7 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
     vkt::Buffer buffer(*m_device, sizeof(uint32_t) * 4,
                        VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, VK_WHOLE_SIZE};
 
     const VkDescriptorSetLayoutBinding ds_binding_0 = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT,
                                                        nullptr};
@@ -224,18 +224,17 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
 
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe0.shader_stages_[1] = fs.GetStageCreateInfo();
-        pipe0.gp_ci_.layout = pipeline_layout.handle();
+        pipe0.gp_ci_.layout = pipeline_layout;
         pipe0.CreateGraphicsPipeline();
 
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe0.Handle());
 
         const VkWriteDescriptorSet descriptor_write =
             vkt::Device::WriteDescriptorSet(vkt::DescriptorSet(), 0, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, &buffer_info);
 
         // Note: pushing to desciptor set number 2.
-        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 2, 1,
-                                    &descriptor_write);
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 2, 1, &descriptor_write);
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     }
 
     {
@@ -257,15 +256,14 @@ TEST_F(PositivePushDescriptor, SetUpdatingSetNumber) {
 
         VkShaderObj fs(this, fsSource, VK_SHADER_STAGE_FRAGMENT_BIT);
         pipe1.shader_stages_[1] = fs.GetStageCreateInfo();
-        pipe1.gp_ci_.layout = pipeline_layout.handle();
+        pipe1.gp_ci_.layout = pipeline_layout;
         pipe1.CreateGraphicsPipeline();
 
-        vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
 
         // Note: now pushing to desciptor set number 3.
-        vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 3, 1,
-                                    &descriptor_write);
-        vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+        vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 3, 1, &descriptor_write);
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     }
 
     m_command_buffer.EndRenderPass();
@@ -326,7 +324,7 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     RETURN_IF_SKIP(Init());
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    VkSampler sampler_handle = sampler.handle();
+    VkSampler sampler_handle = sampler;
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
@@ -354,8 +352,7 @@ TEST_F(PositivePushDescriptor, ImmutableSampler) {
     descriptor_write.dstSet = descriptor_set.set_;
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
     m_command_buffer.End();
 }
 
@@ -392,18 +389,17 @@ TEST_F(PositivePushDescriptor, TemplateBasic) {
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
-    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    update_template_ci.pipelineLayout = pipeline_layout.handle();
+    update_template_ci.pipelineLayout = pipeline_layout;
 
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
-    update_template_data.buff_info = {buffer.handle(), 0, 32};
+    update_template_data.buff_info = {buffer, 0, 32};
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 0,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 0, &update_template_data);
     m_command_buffer.End();
 }
 
@@ -432,7 +428,7 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     // "Each element of pDescriptorWrites is interpreted as in VkWriteDescriptorSet, except the dstSet member is ignored"
     VkDescriptorSet bad_set = CastFromUint64<VkDescriptorSet>(0xcadecade);
 
-    VkDescriptorBufferInfo buffer_info = {buffer.handle(), 0, 32};
+    VkDescriptorBufferInfo buffer_info = {buffer, 0, 32};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
     descriptor_write.dstSet = bad_set;
     descriptor_write.dstBinding = 0;
@@ -443,13 +439,11 @@ TEST_F(PositivePushDescriptor, WriteDescriptorSetNotAllocated) {
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
 
     VkDescriptorSet null_set = CastFromUint64<VkDescriptorSet>(0);
     descriptor_write.dstSet = null_set;
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
     m_command_buffer.End();
 }
 
@@ -490,19 +484,18 @@ TEST_F(PositivePushDescriptor, PushDescriptorWithTemplateMultipleSets) {
     update_template_ci.descriptorUpdateEntryCount = 1;
     update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
     update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
-    update_template_ci.descriptorSetLayout = descriptor_set.layout_.handle();
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
     update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    update_template_ci.pipelineLayout = pipeline_layout.handle();
+    update_template_ci.pipelineLayout = pipeline_layout;
     update_template_ci.set = 1;
 
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;
-    update_template_data.buff_info = {buffer.handle(), 0, 32};
+    update_template_data.buff_info = {buffer, 0, 32};
 
     m_command_buffer.Begin();
-    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer.handle(), update_template, pipeline_layout.handle(), 1,
-                                            &update_template_data);
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 1, &update_template_data);
     m_command_buffer.End();
 }
 

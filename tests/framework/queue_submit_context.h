@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,18 +90,16 @@ struct QSTestContext {
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q0, cb, wait, wait_mask, signal, fence);
     }
-    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore.handle(), wait_mask); }
-    void Submit0Signal(vkt::CommandBuffer& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore.handle()); }
+    void Submit0Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit0(cb, semaphore, wait_mask); }
+    void Submit0Signal(vkt::CommandBuffer& cb) { Submit0(cb, VK_NULL_HANDLE, 0U, semaphore); }
 
     void Submit1(vkt::CommandBuffer& cb, VkSemaphore wait = VK_NULL_HANDLE,
                  VkPipelineStageFlags wait_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkSemaphore signal = VK_NULL_HANDLE,
                  VkFence fence = VK_NULL_HANDLE) {
         Submit(q1, cb, wait, wait_mask, signal, fence);
     }
-    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore.handle(), wait_mask); }
-    void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) {
-        Submit1(cb, VK_NULL_HANDLE, 0U, semaphore.handle());
-    }
+    void Submit1Wait(vkt::CommandBuffer& cb, VkPipelineStageFlags wait_mask) { Submit1(cb, semaphore, wait_mask); }
+    void Submit1Signal(vkt::CommandBuffer& cb, VkPipelineStageFlags signal_mask) { Submit1(cb, VK_NULL_HANDLE, 0U, semaphore); }
     void SetEvent(VkPipelineStageFlags src_mask) { event.CmdSet(*current_cb, src_mask); }
     void WaitEventBufferTransfer(vkt::Buffer& buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask);
 

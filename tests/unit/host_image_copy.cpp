@@ -546,9 +546,8 @@ TEST_F(NegativeHostImageCopy, CompressedFormat) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
-                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                                 image_ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_BC3_SRGB_BLOCK, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
 
@@ -747,10 +746,10 @@ TEST_F(NegativeHostImageCopy, DepthStencil) {
     m_errorMonitor->VerifyFound();
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), stencil_format, image_ci.imageType, image_ci.tiling,
-                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT, image_ci.flags,
-                          &img_prop)) {
+    if (VK_SUCCESS ==
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), stencil_format, image_ci.imageType, image_ci.tiling,
+                                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT,
+                                                   image_ci.flags, &img_prop)) {
         // The aspectMask member of imageSubresource must only have a single bit set
         image_ci.format = stencil_format;
         image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT;
@@ -803,9 +802,8 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
 
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D,
-                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0,
-                          &img_prop)) {
+                          m_device->Physical(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_prop)) {
         // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT
         vkt::Image image_multi_planar2(*m_device, 128, 128, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                                        VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -823,9 +821,8 @@ TEST_F(NegativeHostImageCopy, MultiPlanar) {
     }
 
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TYPE_2D,
-                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0,
-                          &img_prop)) {
+                          m_device->Physical(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_prop)) {
         // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or
         // VK_IMAGE_ASPECT_PLANE_2_BIT
         vkt::Image image_multi_planar3(*m_device, 128, 128, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
@@ -1553,9 +1550,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImagePlanar) {
     copy_image_to_image.dstImageLayout = layout;
 
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D,
-                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0,
-                          &img_prop)) {
+                          m_device->Physical(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_prop)) {
         // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT or VK_IMAGE_ASPECT_PLANE_1_BIT
         vkt::Image image_multi_twoplane1(*m_device, 128, 128, VK_FORMAT_G8_B8R8_2PLANE_420_UNORM,
                                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -1574,9 +1570,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImagePlanar) {
     }
 
     if (VK_SUCCESS == vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TYPE_2D,
-                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0,
-                          &img_prop)) {
+                          m_device->Physical(), VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0, &img_prop)) {
         // imageSubresource.aspectMask must be VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, or
         // VK_IMAGE_ASPECT_PLANE_2_BIT
         vkt::Image image_multi_threeplane1(*m_device, 128, 128, VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM,
@@ -1704,9 +1699,8 @@ TEST_F(NegativeHostImageCopy, CopyImageToImageCompressed) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
-                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                                 image_ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_BC3_SRGB_BLOCK, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
 
@@ -1936,9 +1930,9 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutMultiPlanar) {
 
     VkImageFormatProperties img_prop = {};
     if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D,
-                          VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                          VK_IMAGE_CREATE_DISJOINT_BIT, &img_prop)) {
+                          m_device->Physical(), VK_FORMAT_G8_B8R8_2PLANE_420_UNORM, VK_IMAGE_TYPE_2D, VK_IMAGE_TILING_OPTIMAL,
+                          VK_IMAGE_USAGE_HOST_TRANSFER_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_IMAGE_CREATE_DISJOINT_BIT,
+                          &img_prop)) {
         GTEST_SKIP() << "Image Format Properties not supported";
     }
 
@@ -2055,10 +2049,10 @@ TEST_F(NegativeHostImageCopy, TransitionImageLayoutDepthStencil) {
     }
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(
-                          m_device->Physical().handle(), stencil_format, image_ci.imageType, image_ci.tiling,
-                          VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT, image_ci.flags,
-                          &img_prop)) {
+    if (VK_SUCCESS !=
+        vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), stencil_format, image_ci.imageType, image_ci.tiling,
+                                                   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT,
+                                                   image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image Format Properties not supported";
     }
 
@@ -2137,7 +2131,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     region.imageExtent = {32, 32, 1};
     const uint32_t copy_size = (32 * 32 * 4) / 8;  // 64 bit pointer
     VkCopyImageToMemoryInfo copy_image_to_memory = vku::InitStructHelper();
-    copy_image_to_memory.srcImage = image.handle();
+    copy_image_to_memory.srcImage = image;
     copy_image_to_memory.srcImageLayout = layout;
     copy_image_to_memory.regionCount = 1;
     copy_image_to_memory.pRegions = &region;
@@ -2170,7 +2164,7 @@ TEST_F(NegativeHostImageCopy, ImageMemoryOverlap) {
     region2.imageExtent = {32, 32, 1};
 
     VkCopyMemoryToImageInfo copy_memory_to_image = vku::InitStructHelper();
-    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImage = image;
     copy_memory_to_image.dstImageLayout = layout;
     copy_memory_to_image.regionCount = 1;
     copy_memory_to_image.pRegions = &region2;
@@ -2185,9 +2179,8 @@ TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
     RETURN_IF_SKIP(InitHostImageCopyTest());
 
     VkImageFormatProperties img_prop = {};
-    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical().handle(), VK_FORMAT_BC3_SRGB_BLOCK,
-                                                                 image_ci.imageType, image_ci.tiling, image_ci.usage,
-                                                                 image_ci.flags, &img_prop)) {
+    if (VK_SUCCESS != vk::GetPhysicalDeviceImageFormatProperties(m_device->Physical(), VK_FORMAT_BC3_SRGB_BLOCK, image_ci.imageType,
+                                                                 image_ci.tiling, image_ci.usage, image_ci.flags, &img_prop)) {
         GTEST_SKIP() << "Image format properties not supported";
     }
 
@@ -2208,7 +2201,7 @@ TEST_F(NegativeHostImageCopy, DISABLED_ImageMemoryOverlapCompressed) {
     region2.imageExtent = {4, 4, 1};
 
     VkCopyMemoryToImageInfo copy_memory_to_image = vku::InitStructHelper();
-    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImage = image;
     copy_memory_to_image.dstImageLayout = layout;
     copy_memory_to_image.regionCount = 1;
     copy_memory_to_image.pRegions = &region2;
@@ -2248,7 +2241,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     region.imageExtent = {width, height, 1};
 
     VkCopyImageToMemoryInfo copy_image_to_memory = vku::InitStructHelper();
-    copy_image_to_memory.srcImage = image.handle();
+    copy_image_to_memory.srcImage = image;
     copy_image_to_memory.srcImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     copy_image_to_memory.regionCount = 1;
     copy_image_to_memory.pRegions = &region;
@@ -2268,7 +2261,7 @@ TEST_F(NegativeHostImageCopy, ImageMemorySparseUnbound) {
     region2.imageExtent = {width, height, 1};
 
     VkCopyMemoryToImageInfo copy_memory_to_image = vku::InitStructHelper();
-    copy_memory_to_image.dstImage = image.handle();
+    copy_memory_to_image.dstImage = image;
     copy_memory_to_image.dstImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     copy_memory_to_image.regionCount = 1;
     copy_memory_to_image.pRegions = &region2;

@@ -65,7 +65,7 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     const uint32_t index = 0;
@@ -73,10 +73,10 @@ TEST_F(PositiveDescriptorBuffer, BindBufferAndSetOffset) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &buffer_binding_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -104,7 +104,7 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
     flags_2_ci.flags = VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT;
 
     CreatePipelineHelper pipe(*this, &flags_2_ci);
-    pipe.gp_ci_.layout = pipeline_layout.handle();
+    pipe.gp_ci_.layout = pipeline_layout;
     pipe.CreateGraphicsPipeline();
 
     const uint32_t index = 0;
@@ -112,10 +112,10 @@ TEST_F(PositiveDescriptorBuffer, PipelineFlags2) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &buffer_binding_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
-    vk::CmdDraw(m_command_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -134,7 +134,7 @@ TEST_F(PositiveDescriptorBuffer, BindingMidBuffer) {
     VkDescriptorBufferBindingInfoEXT dbbi = vku::InitStructHelper();
     dbbi.address = buffer.Address() + descriptor_buffer_properties.descriptorBufferOffsetAlignment;
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
     m_command_buffer.End();
 }
 
@@ -161,7 +161,7 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
 
     VkDeviceSize ds_layout_size = 0;
-    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
+    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout, &ds_layout_size);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
@@ -195,22 +195,22 @@ TEST_F(PositiveDescriptorBuffer, Basic) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &descriptor_buffer_binding_info);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                                         &buffer_index, &buffer_offset);
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -239,14 +239,14 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
 
-    const VkDescriptorSetLayout set_layouts[3] = {ds_layout.handle(), ds_layout.handle(), ds_layout.handle()};
+    const VkDescriptorSetLayout set_layouts[3] = {ds_layout.handle(), ds_layout, ds_layout};
     VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
     pipe_layout_ci.setLayoutCount = 3;
     pipe_layout_ci.pSetLayouts = set_layouts;
     vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
 
     VkDeviceSize ds_layout_size = 0;
-    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
+    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout, &ds_layout_size);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size * 3, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
@@ -297,31 +297,31 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &descriptor_buffer_binding_info);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                                         &buffer_index, &buffer_offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
 
     buffer_offset += ds_layout_size;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1,
-                                         &buffer_index, &buffer_offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &buffer_index,
+                                         &buffer_offset);
 
     buffer_offset += ds_layout_size;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 2, 1,
-                                         &buffer_index, &buffer_offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 2, 1, &buffer_index,
+                                         &buffer_offset);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -358,12 +358,12 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     vkt::PipelineLayout pipeline_layout(*m_device, pipe_layout_ci);
 
     VkDeviceSize ds_layout_size = 0;
-    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout.handle(), &ds_layout_size);
+    vk::GetDescriptorSetLayoutSizeEXT(device(), ds_layout, &ds_layout_size);
 
     VkDeviceSize ds_layout_binding_offsets[3];
-    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout.handle(), 0, &ds_layout_binding_offsets[0]);
-    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout.handle(), 1, &ds_layout_binding_offsets[1]);
-    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout.handle(), 2, &ds_layout_binding_offsets[2]);
+    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout, 0, &ds_layout_binding_offsets[0]);
+    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout, 1, &ds_layout_binding_offsets[1]);
+    vk::GetDescriptorSetLayoutBindingOffsetEXT(device(), ds_layout, 2, &ds_layout_binding_offsets[2]);
 
     vkt::Buffer descriptor_buffer(*m_device, ds_layout_size, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,
                                   vkt::device_address);
@@ -412,23 +412,23 @@ TEST_F(PositiveDescriptorBuffer, MultipleBinding) {
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    pipe.cp_ci_.layout = pipeline_layout.handle();
+    pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
 
     VkDescriptorBufferBindingInfoEXT descriptor_buffer_binding_info = vku::InitStructHelper();
     descriptor_buffer_binding_info.address = descriptor_buffer.Address();
     descriptor_buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &descriptor_buffer_binding_info);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &descriptor_buffer_binding_info);
 
     uint32_t buffer_index = 0;
     VkDeviceSize buffer_offset = 0;
-    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1,
-                                         &buffer_index, &buffer_offset);
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &buffer_index,
+                                         &buffer_offset);
 
-    vk::CmdDispatch(m_command_buffer.handle(), 1, 1, 1);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -464,7 +464,7 @@ TEST_F(PositiveDescriptorBuffer, BindingInfoUsage2) {
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
     m_command_buffer.End();
 }
 
@@ -484,6 +484,6 @@ TEST_F(PositiveDescriptorBuffer, DescriptorBufferBindingInfoUsage2) {
     dbbi.address = buffer.Address();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorBuffersEXT(m_command_buffer.handle(), 1, &dbbi);
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
     m_command_buffer.End();
 }

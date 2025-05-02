@@ -50,14 +50,14 @@ TEST_F(PositiveMultiview, RenderPassQueries) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 2);
 
     m_command_buffer.Begin();
-    vk::CmdResetQueryPool(m_command_buffer.handle(), query_pool, 0, 2);
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 2);
 
     m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool, 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool, 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.EndRenderPass();
 
-    vk::CmdCopyQueryPoolResults(m_command_buffer.handle(), query_pool, 0, 2, buffer, 0, 4, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 2, buffer, 0, 4, 0);
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -147,9 +147,8 @@ TEST_F(PositiveMultiview, PushDescriptor) {
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    vk::CmdPushDescriptorSetKHR(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_.handle(), 0, 1,
-                                &descriptor_write);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &descriptor_write);
     m_command_buffer.BeginRenderPass(render_pass, fb, 32, 32);
     m_command_buffer.NextSubpass();
     m_command_buffer.EndRenderPass();

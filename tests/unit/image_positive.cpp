@@ -223,7 +223,7 @@ TEST_F(PositiveImage, FramebufferFrom3DImage) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkImageViewCreateInfo dsvci = vku::InitStructHelper();
-    dsvci.image = image.handle();
+    dsvci.image = image;
     dsvci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     dsvci.format = VK_FORMAT_B8G8R8A8_UNORM;
     dsvci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -279,7 +279,7 @@ TEST_F(PositiveImage, ExtendedUsageWithDifferentFormatViews) {
 
     // Since the format is compatible with all image's usage, there's no need to restrict usage
     VkImageViewCreateInfo iv_ci = vku::InitStructHelper();
-    iv_ci.image = image.handle();
+    iv_ci.image = image;
     iv_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
     iv_ci.format = VK_FORMAT_R32G32B32A32_UINT;
     iv_ci.subresourceRange.layerCount = 1;
@@ -417,7 +417,7 @@ TEST_F(PositiveImage, SlicedCreateInfo) {
     VkImageViewSlicedCreateInfoEXT sliced_info = vku::InitStructHelper();
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper(&sliced_info);
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
     ivci.format = ci.format;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -536,12 +536,12 @@ TEST_F(PositiveImage, BlitRemainingArrayLayers) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+                     VK_FILTER_NEAREST);
     m_command_buffer.FullMemoryBarrier();
     blitRegion.dstSubresource.layerCount = 2;  // same as VK_REMAINING_ARRAY_LAYERS
-    vk::CmdBlitImage(m_command_buffer.handle(), image.handle(), VK_IMAGE_LAYOUT_GENERAL, image.handle(), VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blitRegion, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
+                     VK_FILTER_NEAREST);
 }
 
 TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
@@ -569,14 +569,14 @@ TEST_F(PositiveImage, BlockTexelViewCompatibleMultipleLayers) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
     if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         GTEST_SKIP() << "Image usage and format not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange.baseMipLevel = 0;
@@ -699,14 +699,14 @@ TEST_F(PositiveImage, RemainingMipLevelsBlockTexelView) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
     if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         GTEST_SKIP() << "Image usage and format not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, 1};
@@ -752,8 +752,8 @@ TEST_F(PositiveImage, BlitMaintenance8) {
     blit_region.dstOffsets[1] = {64, 64, 1};
 
     m_command_buffer.Begin();
-    vk::CmdBlitImage(m_command_buffer.handle(), image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1,
-                     &blit_region, VK_FILTER_NEAREST);
+    vk::CmdBlitImage(m_command_buffer, image_2d, VK_IMAGE_LAYOUT_GENERAL, image_3d, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
+                     VK_FILTER_NEAREST);
     m_command_buffer.End();
 }
 
@@ -773,7 +773,7 @@ TEST_F(PositiveImage, ImageViewIncompatibleFormat) {
     imgViewInfo.subresourceRange.baseMipLevel = 0;
     imgViewInfo.subresourceRange.levelCount = 1;
     imgViewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imgViewInfo.image = mutImage.handle();
+    imgViewInfo.image = mutImage;
 
     // With a identical format, there should be no error
     imgViewInfo.format = image_ci.format;
@@ -781,7 +781,7 @@ TEST_F(PositiveImage, ImageViewIncompatibleFormat) {
 
     vkt::Image mut_compat_image(*m_device, image_ci);
 
-    imgViewInfo.image = mut_compat_image.handle();
+    imgViewInfo.image = mut_compat_image;
     imgViewInfo.format = VK_FORMAT_R8_SINT;  // different, but size compatible
     vkt::ImageView image_view2(*m_device, imgViewInfo);
 }
@@ -805,14 +805,14 @@ TEST_F(PositiveImage, BlockTexelViewType) {
     image_create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
 
     VkFormatProperties image_fmt;
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical().handle(), image_create_info.format, &image_fmt);
+    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), image_create_info.format, &image_fmt);
     if (!vkt::Image::IsCompatible(*m_device, image_create_info.usage, image_fmt.optimalTilingFeatures)) {
         GTEST_SKIP() << "Image usage and format not compatible on device";
     }
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
 
     VkImageViewCreateInfo ivci = vku::InitStructHelper();
-    ivci.image = image.handle();
+    ivci.image = image;
     ivci.viewType = VK_IMAGE_VIEW_TYPE_3D;
     ivci.format = VK_FORMAT_R16G16B16A16_UNORM;
     ivci.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
