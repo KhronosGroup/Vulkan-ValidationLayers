@@ -23,7 +23,7 @@
 #include "containers/limits.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 
-#include "generated/instrumentation_buffer_device_address_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 
 namespace gpuav {
 namespace spirv {

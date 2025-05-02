@@ -22,7 +22,7 @@
 #include <iostream>
 #include "generated/device_features.h"
 
-#include "generated/instrumentation_descriptor_class_general_buffer_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 
 namespace gpuav {

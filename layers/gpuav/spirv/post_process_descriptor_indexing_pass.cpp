@@ -17,7 +17,7 @@
 #include "module.h"
 #include <iostream>
 
-#include "generated/instrumentation_post_process_descriptor_index_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/hash_util.h"
 

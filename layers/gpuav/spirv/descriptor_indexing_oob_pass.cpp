@@ -19,7 +19,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
-#include "generated/instrumentation_descriptor_indexing_oob_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/hash_util.h"
 

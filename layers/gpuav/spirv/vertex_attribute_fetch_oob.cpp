@@ -17,7 +17,7 @@
 
 #include "vertex_attribute_fetch_oob.h"
 #include "module.h"
-#include "generated/instrumentation_vertex_attribute_fetch_oob_vert.h"
+#include "generated/gpuav_offline_spirv.h"
 
 #include <iostream>
 

@@ -18,7 +18,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
-#include "generated/instrumentation_ray_query_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 
 namespace gpuav {
 namespace spirv {
