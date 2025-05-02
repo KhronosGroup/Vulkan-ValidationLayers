@@ -275,22 +275,8 @@ target_sources(vvl PRIVATE
     ${API_TYPE}/generated/thread_safety.cpp
     ${API_TYPE}/generated/thread_safety_device_defs.h
     ${API_TYPE}/generated/thread_safety_instance_defs.h
-    ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.h
-    ${API_TYPE}/generated/validation_cmd_copy_buffer_to_image_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_dispatch_comp.h
-    ${API_TYPE}/generated/validation_cmd_dispatch_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_count_buffer_comp.h
-    ${API_TYPE}/generated/validation_cmd_count_buffer_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_first_instance_comp.h
-    ${API_TYPE}/generated/validation_cmd_first_instance_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.h
-    ${API_TYPE}/generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.h
-    ${API_TYPE}/generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.h
-    ${API_TYPE}/generated/validation_cmd_draw_mesh_indirect_comp.cpp
-    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.h
-    ${API_TYPE}/generated/validation_cmd_trace_rays_comp.cpp    
+    ${API_TYPE}/generated/gpuav_offline_spirv.h
+    ${API_TYPE}/generated/gpuav_offline_spirv.cpp
     gpuav/core/gpuav.h
     gpuav/core/gpuav_constants.h
     gpuav/core/gpuav_features.cpp

@@ -22,7 +22,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
-#include "generated/validation_cmd_dispatch_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 
 namespace gpuav {
 namespace valcmd {

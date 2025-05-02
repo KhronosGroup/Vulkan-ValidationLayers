@@ -32,11 +32,7 @@
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
-#include "generated/validation_cmd_draw_mesh_indirect_comp.h"
-#include "generated/validation_cmd_first_instance_comp.h"
-#include "generated/validation_cmd_count_buffer_comp.h"
-#include "generated/validation_cmd_draw_indexed_indirect_index_buffer_comp.h"
-#include "generated/validation_cmd_setup_draw_indexed_indirect_index_buffer_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 
 #include "profiling/profiling.h"
 

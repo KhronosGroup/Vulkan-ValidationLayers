@@ -22,7 +22,7 @@
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
-#include "generated/validation_cmd_trace_rays_comp.h"
+#include "generated/gpuav_offline_spirv.h"
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
 
