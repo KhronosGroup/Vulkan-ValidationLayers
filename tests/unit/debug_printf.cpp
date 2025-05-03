@@ -4242,8 +4242,10 @@ TEST_F(NegativeDebugPrintf, DeviceGeneratedCommandsGraphics) {
     generated_commands_info.maxSequenceCount = 1;
 
     m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
+    m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     m_errorMonitor->SetDesiredInfo("gl_VertexIndex 0");
