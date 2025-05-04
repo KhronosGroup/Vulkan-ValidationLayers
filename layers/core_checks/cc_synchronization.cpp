@@ -1959,10 +1959,9 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
     // This check is only valid in sync1 because in sync2 if oldLayout==newLayout then layout
     // is ignored and not checked against current layout
     if (barrier_loc.function == vvl::Func::vkCmdPipelineBarrier) {
-        // VUID request: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
         if (sub_image_found && sub_image_layout != img_barrier.oldLayout) {
             const LogObjectList objlist(rp_handle, img_bar_image);
-            skip |= LogError("UNASSIGNED-sync1-render-pass-barrier-layout-mismatch", objlist, image_loc,
+            skip |= LogError("VUID-vkCmdPipelineBarrier-oldLayout-10758", objlist, image_loc,
                              "(%s) is referenced by the VkSubpassDescription for active "
                              "subpass (%" PRIu32 ") of current %s as having layout %s, but image barrier has layout %s.",
                              FormatHandle(img_bar_image).c_str(), active_subpass, FormatHandle(rp_handle).c_str(),
@@ -2463,8 +2462,7 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pColorAttachments[i].imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
-                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
-                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                skip |= LogError("VUID-vkCmdPipelineBarrier-oldLayout-10759", objlist, image_loc,
                                  "(%s) is referenced by pColorAttachments[%" PRIu32
                                  "] of the active render pass instance as having layout %s, but image barrier has layout %s.",
                                  FormatHandle(image_barrier.image).c_str(), i,
@@ -2479,8 +2477,7 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pDepthAttachment->imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
-                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
-                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                skip |= LogError("VUID-vkCmdPipelineBarrier-oldLayout-10759", objlist, image_loc,
                                  "(%s) is referenced by pDepthAttachment of the active render pass instance as having layout %s, "
                                  "but image barrier has layout %s.",
                                  FormatHandle(image_barrier.image).c_str(),
@@ -2495,8 +2492,7 @@ bool CoreChecks::ValidateDynamicRenderingImageBarrierLayoutMismatch(const vvl::C
         if (attachment.image_view && attachment.image_view->image_state->VkHandle() == image_barrier.image) {
             if (rendering_info.pStencilAttachment->imageLayout != image_barrier.oldLayout) {
                 const LogObjectList objlist(cb_state.Handle(), attachment.image_view->image_state->Handle());
-                // TODO: VUID is being created: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4240
-                skip |= LogError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch", objlist, image_loc,
+                skip |= LogError("VUID-vkCmdPipelineBarrier-oldLayout-10759", objlist, image_loc,
                                  "(%s) is referenced by pStencilAttachment of the active render pass instance as having layout %s, "
                                  "but image barrier has layout %s.",
                                  FormatHandle(image_barrier.image).c_str(),

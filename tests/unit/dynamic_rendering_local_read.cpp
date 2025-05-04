@@ -514,7 +514,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, ImageBarrierLayoutMismatch) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
-    m_errorMonitor->SetDesiredError("UNASSIGNED-sync1-dynamic-rendering-barrier-layout-mismatch");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-oldLayout-10759");
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1, &local_read_barrier);
     m_errorMonitor->VerifyFound();
