@@ -306,11 +306,6 @@ class Bindable : public StateObject {
         const BindableMemoryTracker::MemoryRange &memory_region, const Bindable *other_resource,
         const BindableMemoryTracker::MemoryRange &other_memory_region) const;
 
-    bool DoesResourceMemoryOverlap(const BindableMemoryTracker::MemoryRange &memory_region, const Bindable *other_resource,
-                                   const BindableMemoryTracker::MemoryRange &other_memory_region) const {
-        return GetResourceMemoryOverlap(memory_region, other_resource, other_memory_region).first != VK_NULL_HANDLE;
-    }
-
     BindableMemoryTracker::BoundMemoryRange GetBoundMemoryRange(const BindableMemoryTracker::MemoryRange &range) const {
         return memory_tracker_->GetBoundMemoryRange(range);
     }
