@@ -2214,10 +2214,17 @@ bool CoreChecks::ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer &
     }
     auto image_region = vvl::range<VkDeviceSize>{image_offset, image_offset + copy_size};
     auto buffer_region = vvl::range<VkDeviceSize>{region.bufferOffset, region.bufferOffset + copy_size};
-    if (image_state.DoesResourceMemoryOverlap(image_region, &buffer_state, buffer_region)) {
-        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+
+    if (const auto [memory, overlap_range] = image_state.GetResourceMemoryOverlap(image_region, &buffer_state, buffer_region);
+        memory != VK_NULL_HANDLE) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle(), buffer_state.Handle(), memory);
         skip |= LogError(GetCopyBufferImageDeviceVUID(region_loc, vvl::CopyError::MemoryOverlap_00173), objlist, region_loc,
-                         "Detected overlap between source and dest regions in memory.");
+                         "Detected overlap between src and dst regions in memory while trying to copy 0x%" PRIu64
+                         " bytes.\nOverlapped memory is (%s) on range %s.\nbufferOffset (%" PRIu64
+                         ") creates region of %s\nimageOffset (%s) creates region of %s",
+                         copy_size, FormatHandle(memory).c_str(), string_range(overlap_range).c_str(), region.bufferOffset,
+                         string_range(buffer_region).c_str(), string_VkOffset3D(region.imageOffset).c_str(),
+                         string_range(image_region).c_str());
     }
 
     return skip;

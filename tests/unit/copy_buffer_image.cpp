@@ -2368,6 +2368,47 @@ TEST_F(NegativeCopyBufferImage, ImageOverlappingMemory) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCopyBufferImage, ImageOverlappingMemoryOffsets) {
+    RETURN_IF_SKIP(Init());
+
+    VkDeviceSize buff_size = 16 * 16 * 4;
+    vkt::Buffer buffer(*m_device,
+                       vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
+                       vkt::no_mem);
+    const auto buffer_memory_requirements = buffer.MemoryRequirements();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+    const auto image_memory_requirements = image.MemoryRequirements();
+
+    vkt::DeviceMemory mem;
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
+    bool has_memtype = m_device->Physical().SetMemoryType(
+        buffer_memory_requirements.memoryTypeBits & image_memory_requirements.memoryTypeBits, &alloc_info, 0);
+    if (!has_memtype) {
+        GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
+    }
+    mem.init(*m_device, alloc_info);
+
+    buffer.BindMemory(mem, 0);
+    image.BindMemory(mem, 0);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageOffset = {1, 1, 0};
+    region.bufferOffset = 48;
+
+    region.imageExtent = {4, 4, 1};
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-pRegions-00184");
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeCopyBufferImage, ImageRemainingLayers) {
     TEST_DESCRIPTION("Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS");
     RETURN_IF_SKIP(Init());
