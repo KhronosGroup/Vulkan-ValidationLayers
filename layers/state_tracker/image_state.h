@@ -252,6 +252,9 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
         return false;
     }
 
+    template <typename RegionType>
+    VkDeviceSize GetBufferSizeFromCopyImage(const RegionType &region) const;
+
   protected:
     void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) override;
 

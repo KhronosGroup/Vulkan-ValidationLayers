@@ -1055,8 +1055,7 @@ bool SyncValidator::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, 
         if (dst_image) {
             if (src_buffer) {
                 ResourceAccessRange src_range =
-                    MakeRange(copy_region.bufferOffset, vvl::GetBufferSizeFromCopyImage(copy_region, dst_image->create_info.format,
-                                                                                        dst_image->create_info.arrayLayers));
+                    MakeRange(copy_region.bufferOffset, dst_image->GetBufferSizeFromCopyImage(copy_region));
                 hazard = context->DetectHazard(*src_buffer, SYNC_COPY_TRANSFER_READ, src_range);
                 if (hazard.IsHazard()) {
                     // PHASE1 TODO -- add tag information to log msg when useful.
@@ -1128,8 +1127,7 @@ void SyncValidator::RecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, Vk
         if (dst_image) {
             if (src_buffer) {
                 ResourceAccessRange src_range =
-                    MakeRange(copy_region.bufferOffset, vvl::GetBufferSizeFromCopyImage(copy_region, dst_image->create_info.format,
-                                                                                        dst_image->create_info.arrayLayers));
+                    MakeRange(copy_region.bufferOffset, dst_image->GetBufferSizeFromCopyImage(copy_region));
                 context->UpdateAccessState(*src_buffer, SYNC_COPY_TRANSFER_READ, SyncOrdering::kNonAttachment, src_range,
                                            src_tag_ex);
             }
@@ -1191,8 +1189,7 @@ bool SyncValidator::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, 
             }
             if (dst_memory != VK_NULL_HANDLE) {
                 ResourceAccessRange dst_range =
-                    MakeRange(copy_region.bufferOffset, vvl::GetBufferSizeFromCopyImage(copy_region, src_image->create_info.format,
-                                                                                        src_image->create_info.arrayLayers));
+                    MakeRange(copy_region.bufferOffset, src_image->GetBufferSizeFromCopyImage(copy_region));
                 hazard = context->DetectHazard(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, dst_range);
                 if (hazard.IsHazard()) {
                     const LogObjectList objlist(commandBuffer, dstBuffer);
@@ -1254,8 +1251,7 @@ void SyncValidator::RecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, Vk
                                        copy_region.imageExtent, src_tag_ex);
             if (dst_buffer) {
                 ResourceAccessRange dst_range =
-                    MakeRange(copy_region.bufferOffset, vvl::GetBufferSizeFromCopyImage(copy_region, src_image->create_info.format,
-                                                                                        src_image->create_info.arrayLayers));
+                    MakeRange(copy_region.bufferOffset, src_image->GetBufferSizeFromCopyImage(copy_region));
                 context->UpdateAccessState(*dst_buffer, SYNC_COPY_TRANSFER_WRITE, SyncOrdering::kNonAttachment, dst_range,
                                            dst_tag_ex);
             }

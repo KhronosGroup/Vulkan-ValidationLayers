@@ -2138,8 +2138,7 @@ bool CoreChecks::ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image &imag
                                       const RegionType &region, const Location &region_loc) const {
     bool skip = false;
 
-    const VkDeviceSize buffer_copy_size =
-        vvl::GetBufferSizeFromCopyImage(region, image_state.create_info.format, image_state.create_info.arrayLayers);
+    const VkDeviceSize buffer_copy_size = image_state.GetBufferSizeFromCopyImage(region);
     // This blocks against invalid VkBufferCopyImage that already have been caught elsewhere
     if (buffer_copy_size != 0) {
         const VkDeviceSize max_buffer_copy = buffer_copy_size + region.bufferOffset;
