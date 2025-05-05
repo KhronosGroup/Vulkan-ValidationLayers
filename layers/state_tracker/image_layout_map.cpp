@@ -20,7 +20,6 @@
  */
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/image_state.h"
-#include "state_tracker/cmd_buffer_state.h"
 
 namespace image_layout_map {
 using LayoutEntry = ImageLayoutRegistry::LayoutEntry;
@@ -47,7 +46,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
             if (!intersected_range.empty() && pos->lower_bound->second.CurrentWillChange(new_entry.current_layout)) {
                 LayoutEntry orig_entry = pos->lower_bound->second;  // intentional copy
                 orig_entry.Update(new_entry);                       // this returns true because of CurrentWillChange check above
-                updated_current = true; 
+                updated_current = true;
                 auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, orig_entry));
                 // If we didn't cover the whole range, we'll need to go around again
                 pos.invalidate(overwrite_result, intersected_range.begin);
@@ -174,3 +173,15 @@ bool ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
 }
 
 }  // namespace image_layout_map
+
+bool ImageLayoutRangeMap::AnyInRange(RangeGenerator& gen,
+                                     std::function<bool(const key_type& range, const mapped_type& state)>&& func) const {
+    for (; gen->non_empty(); ++gen) {
+        for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
+            if (func(pos->first, pos->second)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

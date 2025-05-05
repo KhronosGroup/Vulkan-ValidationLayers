@@ -374,6 +374,8 @@ target_sources(vvl PRIVATE
     state_tracker/vertex_index_buffer_state.h
     state_tracker/video_session_state.cpp
     state_tracker/video_session_state.h
+    state_tracker/wsi_state.cpp
+    state_tracker/wsi_state.h
     stateless/sl_buffer.cpp
     stateless/sl_cmd_buffer_dynamic.cpp
     stateless/sl_cmd_buffer.cpp

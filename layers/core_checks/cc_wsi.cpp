@@ -31,6 +31,7 @@
 #include "state_tracker/fence_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/device_state.h"
+#include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
 
 static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) {

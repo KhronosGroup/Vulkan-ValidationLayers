@@ -27,6 +27,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/ray_tracing_state.h"
+#include "state_tracker/wsi_state.h"
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
 #include "generated/dispatch_functions.h"

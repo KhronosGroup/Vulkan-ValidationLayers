@@ -39,6 +39,7 @@
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/device_generated_commands_state.h"
+#include "state_tracker/wsi_state.h"
 #include "chassis/chassis_modification_state.h"
 #include "spirv-tools/optimizer.hpp"
 

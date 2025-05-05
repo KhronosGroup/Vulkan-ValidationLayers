@@ -33,6 +33,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/wsi_state.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/math_utils.h"
 
