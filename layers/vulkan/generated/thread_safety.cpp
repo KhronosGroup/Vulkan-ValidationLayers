@@ -4885,30 +4885,36 @@ void Instance::PostCallRecordCreateMacOSSurfaceMVK(VkInstance instance, const Vk
 #endif  // VK_USE_PLATFORM_MACOS_MVK
 void Device::PreCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                        const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    StartWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PostCallRecordQueueBeginDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    FinishWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PreCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    StartWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PostCallRecordQueueEndDebugUtilsLabelEXT(VkQueue queue, const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    FinishWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PreCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                         const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    StartWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PostCallRecordQueueInsertDebugUtilsLabelEXT(VkQueue queue, const VkDebugUtilsLabelEXT* pLabelInfo,
                                                          const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    FinishWriteObject(queue, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PreCallRecordCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo,

@@ -746,6 +746,14 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->depthClampZeroOne |= enabled->depthClampZeroOne == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_KHR: {
+                const VkPhysicalDeviceRobustness2FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesKHR *>(pNext);
+                features->robustBufferAccess2 |= enabled->robustBufferAccess2 == VK_TRUE;
+                features->robustImageAccess2 |= enabled->robustImageAccess2 == VK_TRUE;
+                features->nullDescriptor |= enabled->nullDescriptor == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT: {
                 const VkPhysicalDeviceTransformFeedbackFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceTransformFeedbackFeaturesEXT *>(pNext);
@@ -1005,14 +1013,6 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceDeviceMemoryReportFeaturesEXT *>(pNext);
                 features->deviceMemoryReport |= enabled->deviceMemoryReport == VK_TRUE;
-                break;
-            }
-            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT: {
-                const VkPhysicalDeviceRobustness2FeaturesEXT *enabled =
-                    reinterpret_cast<const VkPhysicalDeviceRobustness2FeaturesEXT *>(pNext);
-                features->robustBufferAccess2 |= enabled->robustBufferAccess2 == VK_TRUE;
-                features->robustImageAccess2 |= enabled->robustImageAccess2 == VK_TRUE;
-                features->nullDescriptor |= enabled->nullDescriptor == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT: {

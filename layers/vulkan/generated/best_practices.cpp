@@ -144,6 +144,7 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_EXT_shader_demote_to_helper_invocation,
          {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_texel_buffer_alignment, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
+        {vvl::Extension::_VK_EXT_robustness2, {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_robustness2}}},
         {vvl::Extension::_VK_EXT_private_data, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_pipeline_creation_cache_control, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},
         {vvl::Extension::_VK_EXT_ycbcr_2plane_444_formats, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_3}}},

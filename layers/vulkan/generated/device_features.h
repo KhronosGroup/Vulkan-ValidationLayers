@@ -724,11 +724,11 @@ struct DeviceFeatures {
     bool renderPassStriped;
     // VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV
     bool representativeFragmentTest;
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     bool nullDescriptor;
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     bool robustBufferAccess2;
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     bool robustImageAccess2;
     // VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceVulkan11Features
     bool samplerYcbcrConversion;

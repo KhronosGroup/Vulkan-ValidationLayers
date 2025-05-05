@@ -5318,10 +5318,10 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
         }
 
         case Feature::nullDescriptor: {
-            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesEXT *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceRobustness2FeaturesEXT;
+                vk_struct = new VkPhysicalDeviceRobustness2FeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -5329,14 +5329,14 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     *inout_pnext_chain = vk_struct;
                 }
             }
-            return {&vk_struct->nullDescriptor, "VkPhysicalDeviceRobustness2FeaturesEXT::nullDescriptor"};
+            return {&vk_struct->nullDescriptor, "VkPhysicalDeviceRobustness2FeaturesKHR::nullDescriptor"};
         }
 
         case Feature::robustBufferAccess2: {
-            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesEXT *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceRobustness2FeaturesEXT;
+                vk_struct = new VkPhysicalDeviceRobustness2FeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -5344,14 +5344,14 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     *inout_pnext_chain = vk_struct;
                 }
             }
-            return {&vk_struct->robustBufferAccess2, "VkPhysicalDeviceRobustness2FeaturesEXT::robustBufferAccess2"};
+            return {&vk_struct->robustBufferAccess2, "VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2"};
         }
 
         case Feature::robustImageAccess2: {
-            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesEXT *>(
-                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(*inout_pnext_chain));
+            auto vk_struct = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(*inout_pnext_chain));
             if (!vk_struct) {
-                vk_struct = new VkPhysicalDeviceRobustness2FeaturesEXT;
+                vk_struct = new VkPhysicalDeviceRobustness2FeaturesKHR;
                 *vk_struct = vku::InitStructHelper();
                 if (*inout_pnext_chain) {
                     vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
@@ -5359,7 +5359,7 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
                     *inout_pnext_chain = vk_struct;
                 }
             }
-            return {&vk_struct->robustImageAccess2, "VkPhysicalDeviceRobustness2FeaturesEXT::robustImageAccess2"};
+            return {&vk_struct->robustImageAccess2, "VkPhysicalDeviceRobustness2FeaturesKHR::robustImageAccess2"};
         }
 
         case Feature::samplerYcbcrConversion:
