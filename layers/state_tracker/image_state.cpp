@@ -188,6 +188,77 @@ void Image::Destroy() {
     Bindable::Destroy();
 }
 
+// Get buffer size from VkBufferImageCopy / VkBufferImageCopy2 structure, for a given format
+template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy>(const VkBufferImageCopy &) const;
+template VkDeviceSize Image::GetBufferSizeFromCopyImage<VkBufferImageCopy2>(const VkBufferImageCopy2 &) const;
+
+template <typename RegionType>
+VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
+    VkDeviceSize buffer_size = 0;
+    VkExtent3D copy_extent = region.imageExtent;
+    VkDeviceSize buffer_width = (0 == region.bufferRowLength ? copy_extent.width : region.bufferRowLength);
+    VkDeviceSize buffer_height = (0 == region.bufferImageHeight ? copy_extent.height : region.bufferImageHeight);
+    uint32_t layer_count = region.imageSubresource.layerCount != VK_REMAINING_ARRAY_LAYERS
+                               ? region.imageSubresource.layerCount
+                               : create_info.arrayLayers - region.imageSubresource.baseArrayLayer;
+    // VUID-VkImageCreateInfo-imageType-00961 prevents having both depth and layerCount ever both be greater than 1 together. Take
+    // max to logic simple. This is the number of 'slices' to copy.
+    const uint32_t z_copies = std::max(copy_extent.depth, layer_count);
+
+    // Invalid if copy size is 0 and other validation checks will catch it. Returns zero as the caller should have fallback already
+    // to ignore.
+    if (copy_extent.width == 0 || copy_extent.height == 0 || copy_extent.depth == 0 || z_copies == 0) {
+        return 0;
+    }
+
+    VkDeviceSize unit_size = 0;
+    if (region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
+        // Spec in VkBufferImageCopy section list special cases for each format
+        if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+            unit_size = 1;
+        } else {
+            // VK_IMAGE_ASPECT_DEPTH_BIT
+            switch (create_info.format) {
+                case VK_FORMAT_D16_UNORM:
+                case VK_FORMAT_D16_UNORM_S8_UINT:
+                    unit_size = 2;
+                    break;
+                case VK_FORMAT_D32_SFLOAT:
+                case VK_FORMAT_D32_SFLOAT_S8_UINT:
+                // packed with the D24 value in the LSBs of the word, and undefined values in the eight MSBs
+                case VK_FORMAT_X8_D24_UNORM_PACK32:
+                case VK_FORMAT_D24_UNORM_S8_UINT:
+                    unit_size = 4;
+                    break;
+                default:
+                    // Any misuse of formats vs aspect mask should be caught before here
+                    return 0;
+            }
+        }
+    } else {
+        // size (bytes) of texel or block
+        unit_size = vkuFormatElementSizeWithAspect(create_info.format,
+                                                   static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
+    }
+
+    if (vkuFormatIsBlockedImage(create_info.format)) {
+        // Switch to texel block units, rounding up for any partially-used blocks
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(create_info.format);
+        buffer_width = (buffer_width + block_extent.width - 1) / block_extent.width;
+        buffer_height = (buffer_height + block_extent.height - 1) / block_extent.height;
+
+        copy_extent.width = (copy_extent.width + block_extent.width - 1) / block_extent.width;
+        copy_extent.height = (copy_extent.height + block_extent.height - 1) / block_extent.height;
+        copy_extent.depth = (copy_extent.depth + block_extent.depth - 1) / block_extent.depth;
+    }
+
+    // Calculate buffer offset of final copied byte, + 1.
+    buffer_size = (z_copies - 1) * buffer_height * buffer_width;                   // offset to slice
+    buffer_size += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
+    buffer_size *= unit_size;                                                      // convert to bytes
+    return buffer_size;
+}
+
 void Image::NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {
     for (auto &item : sub_states_) {
         item.second->NotifyInvalidate(invalid_nodes, unlink);
