@@ -38,6 +38,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/wsi_state.h"
 #include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
 

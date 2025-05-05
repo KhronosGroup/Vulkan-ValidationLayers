@@ -20,6 +20,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/wsi_state.h"
 #include "containers/small_vector.h"
 #include "containers/small_container.h"
 

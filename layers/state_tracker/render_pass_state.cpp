@@ -20,6 +20,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "utils/convert_utils.h"
 #include "state_tracker/image_state.h"
+#include "containers/span.h"
 
 static const VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 

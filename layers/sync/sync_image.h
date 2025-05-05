@@ -18,6 +18,7 @@
 
 #include "sync/sync_submit.h"
 #include "state_tracker/image_state.h"
+#include "state_tracker/wsi_state.h"
 
 namespace syncval_state {
 
