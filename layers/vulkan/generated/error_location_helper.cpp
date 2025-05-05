@@ -1509,8 +1509,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceRenderPassStripedFeaturesARM", 45},
     {"VkPhysicalDeviceRenderPassStripedPropertiesARM", 47},
     {"VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV", 53},
-    {"VkPhysicalDeviceRobustness2FeaturesEXT", 39},
-    {"VkPhysicalDeviceRobustness2PropertiesEXT", 41},
+    {"VkPhysicalDeviceRobustness2FeaturesKHR", 39},
+    {"VkPhysicalDeviceRobustness2PropertiesKHR", 41},
     {"VkPhysicalDeviceSampleLocationsPropertiesEXT", 45},
     {"VkPhysicalDeviceSamplerFilterMinmaxProperties", 46},
     {"VkPhysicalDeviceSamplerYcbcrConversionFeatures", 47},
@@ -5495,6 +5495,7 @@ const char* String(Extension extension) {
     {"VK_KHR_ray_tracing_pipeline", 28},
     {"VK_KHR_ray_tracing_position_fetch", 34},
     {"VK_KHR_relaxed_block_layout", 28},
+    {"VK_KHR_robustness2", 19},
     {"VK_KHR_sampler_mirror_clamp_to_edge", 36},
     {"VK_KHR_sampler_ycbcr_conversion", 32},
     {"VK_KHR_separate_depth_stencil_layouts", 38},
@@ -7166,6 +7167,10 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkVideoDecodeAV1InlineSessionParametersInfoKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_ZERO_ONE_FEATURES_KHR:
        return Struct::VkPhysicalDeviceDepthClampZeroOneFeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceRobustness2FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceRobustness2PropertiesKHR;
     case VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT:
        return Struct::VkDebugReportCallbackCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD:
@@ -7568,10 +7573,6 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDeviceMemoryReportCallbackDataEXT;
     case VK_STRUCTURE_TYPE_DEVICE_DEVICE_MEMORY_REPORT_CREATE_INFO_EXT:
        return Struct::VkDeviceDeviceMemoryReportCreateInfoEXT;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT:
-       return Struct::VkPhysicalDeviceRobustness2FeaturesEXT;
-    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_PROPERTIES_EXT:
-       return Struct::VkPhysicalDeviceRobustness2PropertiesEXT;
     case VK_STRUCTURE_TYPE_SAMPLER_CUSTOM_BORDER_COLOR_CREATE_INFO_EXT:
        return Struct::VkSamplerCustomBorderColorCreateInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT:

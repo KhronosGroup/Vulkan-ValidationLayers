@@ -714,11 +714,11 @@ enum class Feature {
     renderPassStriped,
     // VkPhysicalDeviceRepresentativeFragmentTestFeaturesNV
     representativeFragmentTest,
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     nullDescriptor,
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     robustBufferAccess2,
-    // VkPhysicalDeviceRobustness2FeaturesEXT
+    // VkPhysicalDeviceRobustness2FeaturesKHR
     robustImageAccess2,
     // VkPhysicalDeviceSamplerYcbcrConversionFeatures, VkPhysicalDeviceVulkan11Features
     samplerYcbcrConversion,
