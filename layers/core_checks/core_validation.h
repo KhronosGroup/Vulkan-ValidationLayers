@@ -1098,11 +1098,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                           CommandBufferImageLayoutMap& layout_updates_state) const;
 
     void RecordQueuedQFOTransfers(vvl::CommandBuffer& cb_state);
-
-    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier2* image_barriers);
-    void TransitionImageLayouts(vvl::CommandBuffer& cb_state, uint32_t barrier_count, const VkImageMemoryBarrier* image_barriers,
-                                VkPipelineStageFlags src_stage_mask, VkPipelineStageFlags dst_stage_mask);
-
     void RecordTransitionImageLayout(vvl::CommandBuffer& cb_state, const ImageBarrier& image_barrier);
     void RecordBarriers(Func func_name, vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
                         VkPipelineStageFlags dst_stage_mask, uint32_t bufferBarrierCount,

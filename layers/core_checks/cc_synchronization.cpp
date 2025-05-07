@@ -1383,7 +1383,6 @@ void CoreChecks::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint
                                              uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, sourceStageMask, dstStageMask);
     RecordBarriers(record_obj.location.function, *cb_state, sourceStageMask, dstStageMask, bufferMemoryBarrierCount,
                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
 }
@@ -1396,10 +1395,7 @@ void CoreChecks::PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, 
 void CoreChecks::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent *pEvents,
                                               const VkDependencyInfo *pDependencyInfos, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-
-    for (uint32_t i = 0; i < eventCount; i++) {
-        const auto &dep_info = pDependencyInfos[i];
-        TransitionImageLayouts(*cb_state, dep_info.imageMemoryBarrierCount, dep_info.pImageMemoryBarriers);
+    for (const VkDependencyInfo &dep_info : vvl::make_span(pDependencyInfos, eventCount)) {
         RecordBarriers(record_obj.location.function, *cb_state, dep_info);
     }
 }
@@ -1488,7 +1484,6 @@ void CoreChecks::PostCallRecordCmdPipelineBarrier(
 
     RecordBarriers(record_obj.location.function, *cb_state, srcStageMask, dstStageMask, bufferMemoryBarrierCount,
                    pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
-    TransitionImageLayouts(*cb_state, imageMemoryBarrierCount, pImageMemoryBarriers, srcStageMask, dstStageMask);
 }
 
 void CoreChecks::PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR *pDependencyInfo,
@@ -1500,7 +1495,6 @@ void CoreChecks::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer
                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     RecordBarriers(record_obj.location.function, *cb_state, *pDependencyInfo);
-    TransitionImageLayouts(*cb_state, pDependencyInfo->imageMemoryBarrierCount, pDependencyInfo->pImageMemoryBarriers);
 }
 
 bool CoreChecks::PreCallValidateSetEvent(VkDevice device, VkEvent event, const ErrorObject &error_obj) const {
@@ -2089,6 +2083,7 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        RecordTransitionImageLayout(cb_state, img_barrier);
         EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }
@@ -2104,6 +2099,7 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
+        RecordTransitionImageLayout(cb_state, img_barrier);
         EnqueueSubmitTimeValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
     }
 }

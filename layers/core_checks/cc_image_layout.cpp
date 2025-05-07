@@ -1016,23 +1016,6 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     }
 }
 
-void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                        const VkImageMemoryBarrier2 *image_barriers) {
-    for (uint32_t i = 0; i < barrier_count; i++) {
-        const ImageBarrier barrier(image_barriers[i]);
-        RecordTransitionImageLayout(cb_state, barrier);
-    }
-}
-
-void CoreChecks::TransitionImageLayouts(vvl::CommandBuffer &cb_state, uint32_t barrier_count,
-                                        const VkImageMemoryBarrier *image_barriers, VkPipelineStageFlags src_stage_mask,
-                                        VkPipelineStageFlags dst_stage_mask) {
-    for (uint32_t i = 0; i < barrier_count; i++) {
-        const ImageBarrier barrier(image_barriers[i], src_stage_mask, dst_stage_mask);
-        RecordTransitionImageLayout(cb_state, barrier);
-    }
-}
-
 bool CoreChecks::IsCompliantSubresourceRange(const VkImageSubresourceRange &subres_range, const vvl::Image &image_state) const {
     if (!(subres_range.layerCount) || !(subres_range.levelCount)) return false;
     if (subres_range.baseMipLevel + subres_range.levelCount > image_state.create_info.mipLevels) return false;
