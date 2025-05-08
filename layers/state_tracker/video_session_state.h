@@ -791,4 +791,7 @@ using VideoSessionUpdateList =
     std::vector<std::function<bool(const VideoSession *vs_state, VideoSessionDeviceState &dev_state, bool do_validate)>>;
 using VideoSessionUpdateMap = unordered_map<VkVideoSessionKHR, VideoSessionUpdateList>;
 
+std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile);
+std::string string_SupportedVideoProfiles(const SupportedVideoProfiles &profiles);
+
 }  // namespace vvl
