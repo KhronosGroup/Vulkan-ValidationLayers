@@ -475,12 +475,12 @@
                         {
                             "key": "validate_gpu_based",
                             "label": "GPU Base",
-                            "description": "[Deprecated] Setting to choose between DebugPrintf and GPU-AV",
+                            "description": "Setting to choose between DebugPrintf and GPU-AV",
                             "type": "ENUM",
                             "default": "GPU_BASED_NONE",
                             "expanded": true,
                             "view": "HIDDEN",
-                            "status": "STABLE",
+                            "status": "DEPRECATED",
                             "platforms": [ "WINDOWS", "LINUX" ],
                             "flags": [
                                 {
@@ -513,6 +513,7 @@
                             "type": "BOOL",
                             "default": false,
                             "view": "HIDDEN",
+                            "status": "DEPRECATED",
                             "platforms": [ "WINDOWS", "LINUX" ]
                         },
                         {
@@ -647,14 +648,14 @@
                                         "default": "BUTTON0",
                                         "BUTTON0": {
                                             "type": "OK",
-                                            "settings": [
-                                                { "key": "report_flags", "value": ["info"]} // info needs to be appended to report flags
+                                            "changes": [
+                                                { "setting": { "key": "report_flags", "value": ["info"] }}
                                             ]
                                         },
                                         "BUTTON1": {
                                             "type": "CANCEL",
-                                            "settings": [
-                                                // don't do anything
+                                            "changes": [
+                                                
                                             ]
                                         }
                                     }
@@ -958,6 +959,7 @@
                                     "label": "Advanced Settings",
                                     "description": "GPU-AV advanced settings",
                                     "type": "GROUP",
+                                    "status": "DEPRECATED",
                                     "view": "ADVANCED",
                                     "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
@@ -1017,6 +1019,7 @@
                                             "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
                                             "type": "BOOL",
                                             "view": "HIDDEN",
+                                            "status": "DEPRECATED",
                                             "default": false,
                                             "platforms": [ "WINDOWS", "LINUX" ],
                                             "dependence": {
@@ -1247,7 +1250,7 @@
                         {
                             "key": "info",
                             "label": "Info",
-                            "description": "Report informational messages."
+                            "description": "Report informational messages.",
                             "messages": [
                                 {
                                     "key": "printf_enable_msg2",
@@ -1370,6 +1373,7 @@
                     "description": "Specify areas of validation to be disabled",
                     "type": "FLAGS",
                     "view": "HIDDEN",
+                    "status": "DEPRECATED",
                     "env": "VK_LAYER_DISABLES",
                     "flags": [
                         {
@@ -1444,6 +1448,7 @@
                     "description": "Setting an option here will enable specialized areas of validation",
                     "type": "FLAGS",
                     "view": "HIDDEN",
+                    "status": "DEPRECATED",
                     "env": "VK_LAYER_ENABLES",
                     "flags": [
                         {
