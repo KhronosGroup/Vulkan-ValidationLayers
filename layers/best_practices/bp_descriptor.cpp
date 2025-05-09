@@ -163,3 +163,27 @@ bool BestPractices::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice devic
     return skip;
 }
 
+bool BestPractices::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto* mutable_descriptor_type_ci = vku::FindStructInPNextChain<VkMutableDescriptorTypeCreateInfoEXT>(pCreateInfo->pNext);
+    if (mutable_descriptor_type_ci && mutable_descriptor_type_ci->mutableDescriptorTypeListCount > pCreateInfo->poolSizeCount) {
+        std::stringstream msg;
+        if (pCreateInfo->poolSizeCount == 1) {
+            msg << "first element";
+        } else {
+            msg << "first " << pCreateInfo->poolSizeCount << "elements";
+        }
+
+        skip |= LogWarning(
+            "BestPractices-MutableDescriptor-TypeListCount", device,
+            error_obj.location.pNext(Struct::VkMutableDescriptorTypeCreateInfoEXT, Field::mutableDescriptorTypeListCount),
+            "is %" PRIu32 ", but VkDescriptorPoolCreateInfo::poolSizeCount is only %" PRIu32
+            ". Only %s from VkMutableDescriptorTypeCreateInfoEXT::pMutableDescriptorTypeLists will be used",
+            mutable_descriptor_type_ci->mutableDescriptorTypeListCount, pCreateInfo->poolSizeCount, msg.str().c_str());
+    }
+
+    return skip;
+}

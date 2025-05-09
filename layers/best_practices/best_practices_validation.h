@@ -638,6 +638,9 @@ class BestPractices : public vvl::DeviceProxy {
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
                                                        const ErrorObject& error_obj) const override;
+    bool PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescriptorPoolCreateInfo* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkDescriptorPool* pDescriptorPool,
+                                             const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
                                            const VkImageSubresourceRange* pRanges, const ErrorObject& error_obj) const override;
