@@ -3369,6 +3369,11 @@ void PnextChainFree(void *chain) {
             delete reinterpret_cast<const VkPhysicalDevicePresentMeteringFeaturesNV *>(header);
             break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
+            PnextChainFree(header->pNext);
+            header->pNext = nullptr;
+            delete reinterpret_cast<const VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *>(header);
+            break;
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR:
             PnextChainFree(header->pNext);
             header->pNext = nullptr;

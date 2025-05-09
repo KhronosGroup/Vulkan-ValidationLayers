@@ -94,6 +94,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const {
             return IsExtEnabled(extensions.vk_ext_attachment_feedback_loop_layout) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
             return IsExtEnabled(extensions.vk_khr_video_encode_quantization_map) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT:
+            return IsExtEnabled(extensions.vk_ext_zero_initialize_device_memory) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2273,6 +2275,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkImageLayout value) const
             return {vvl::Extension::_VK_EXT_attachment_feedback_loop_layout};
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
             return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
+        case VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT:
+            return {vvl::Extension::_VK_EXT_zero_initialize_device_memory};
         default:
             return {};
     };

@@ -3003,6 +3003,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
         } break;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
+        // Validation code for VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT: {  // Covers
+                                                                                              // VUID-VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc =
+                    loc.pNext(Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT);
+                VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT* structure =
+                    (VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::zeroInitializeDeviceMemory), structure->zeroInitializeDeviceMemory);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceAccelerationStructureFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR: {  // Covers
                                                                                        // VUID-VkPhysicalDeviceAccelerationStructureFeaturesKHR-sType-sType
@@ -7433,6 +7445,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_2_PLANE_444_FORMATS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_DEGAMMA_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_YCBCR_IMAGE_ARRAYS_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_WORKGROUP_MEMORY_FEATURES};
 
         skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkDeviceCreateInfo.size(),

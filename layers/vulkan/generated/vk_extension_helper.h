@@ -509,6 +509,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_nv_present_metering{kNotEnabled};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotEnabled};
+    ExtEnabled vk_ext_zero_initialize_device_memory{kNotEnabled};
     ExtEnabled vk_khr_acceleration_structure{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_pipeline{kNotEnabled};
     ExtEnabled vk_khr_ray_query{kNotEnabled};
@@ -950,6 +951,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
+        case vvl::Extension::_VK_EXT_zero_initialize_device_memory:
         case vvl::Extension::_VK_KHR_acceleration_structure:
         case vvl::Extension::_VK_KHR_ray_tracing_pipeline:
         case vvl::Extension::_VK_KHR_ray_query:

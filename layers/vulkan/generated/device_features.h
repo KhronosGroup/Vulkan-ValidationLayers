@@ -980,6 +980,8 @@ struct DeviceFeatures {
     bool ycbcrDegamma;
     // VkPhysicalDeviceYcbcrImageArraysFeaturesEXT
     bool ycbcrImageArrays;
+    // VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT
+    bool zeroInitializeDeviceMemory;
 };
 
 void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatures *features, const APIVersion &api_version);
