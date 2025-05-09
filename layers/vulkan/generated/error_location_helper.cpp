@@ -1610,6 +1610,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT", 49},
     {"VkPhysicalDeviceYcbcrDegammaFeaturesQCOM", 41},
     {"VkPhysicalDeviceYcbcrImageArraysFeaturesEXT", 44},
+    {"VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT", 54},
     {"VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures", 54},
     {"VkPipelineBinaryCreateInfoKHR", 30},
     {"VkPipelineBinaryDataInfoKHR", 28},
@@ -4924,6 +4925,7 @@ const char* String(Field field) {
     {"ycbcrRange", 11},
     {"ycoeff", 7},
     {"z", 2},
+    {"zeroInitializeDeviceMemory", 27},
     {"zirconHandle", 13},
     };
     return table[(int)field].data();
@@ -5401,6 +5403,7 @@ const char* String(Extension extension) {
     {"VK_EXT_vertex_input_dynamic_state", 34},
     {"VK_EXT_ycbcr_2plane_444_formats", 32},
     {"VK_EXT_ycbcr_image_arrays", 26},
+    {"VK_EXT_zero_initialize_device_memory", 37},
     {"VK_FUCHSIA_buffer_collection", 29},
     {"VK_FUCHSIA_external_memory", 27},
     {"VK_FUCHSIA_external_semaphore", 30},
@@ -8209,6 +8212,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDevicePresentMeteringFeaturesNV;
     case VK_STRUCTURE_TYPE_RENDERING_END_INFO_EXT:
        return Struct::VkRenderingEndInfoEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ZERO_INITIALIZE_DEVICE_MEMORY_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR:
        return Struct::VkAccelerationStructureGeometryTrianglesDataKHR;
     case VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR:

@@ -970,6 +970,8 @@ enum class Feature {
     ycbcrDegamma,
     // VkPhysicalDeviceYcbcrImageArraysFeaturesEXT
     ycbcrImageArrays,
+    // VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT
+    zeroInitializeDeviceMemory,
 };
 
 struct FeatureAndName {

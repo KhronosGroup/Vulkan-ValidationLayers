@@ -7706,6 +7706,22 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
             return {&vk_struct->ycbcrImageArrays, "VkPhysicalDeviceYcbcrImageArraysFeaturesEXT::ycbcrImageArrays"};
         }
+
+        case Feature::zeroInitializeDeviceMemory: {
+            auto vk_struct = const_cast<VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->zeroInitializeDeviceMemory,
+                    "VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT::zeroInitializeDeviceMemory"};
+        }
         default:
             assert(false);
             return {nullptr, ""};

@@ -1604,6 +1604,7 @@ enum class Struct {
     VkPhysicalDeviceYcbcr2Plane444FormatsFeaturesEXT,
     VkPhysicalDeviceYcbcrDegammaFeaturesQCOM,
     VkPhysicalDeviceYcbcrImageArraysFeaturesEXT,
+    VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT,
     VkPhysicalDeviceZeroInitializeWorkgroupMemoryFeatures,
     VkPipelineBinaryCreateInfoKHR,
     VkPipelineBinaryDataInfoKHR,
@@ -4915,6 +4916,7 @@ enum class Field {
     ycbcrRange,
     ycoeff,
     z,
+    zeroInitializeDeviceMemory,
     zirconHandle,
 };
 
@@ -5383,6 +5385,7 @@ enum class Extension {
     _VK_EXT_vertex_input_dynamic_state,
     _VK_EXT_ycbcr_2plane_444_formats,
     _VK_EXT_ycbcr_image_arrays,
+    _VK_EXT_zero_initialize_device_memory,
     _VK_FUCHSIA_buffer_collection,
     _VK_FUCHSIA_external_memory,
     _VK_FUCHSIA_external_semaphore,

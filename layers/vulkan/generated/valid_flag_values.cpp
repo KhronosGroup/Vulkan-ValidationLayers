@@ -259,7 +259,7 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QCOM_image_processing};
                 }
             }
-            if (value & (VK_IMAGE_USAGE_TILE_MEMORY_QCOM)) {
+            if (value & (VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM)) {
                 if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
                     return {vvl::Extension::_VK_QCOM_tile_memory_heap};
                 }
@@ -426,7 +426,7 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
                 }
             }
-            if (value & (VK_BUFFER_USAGE_TILE_MEMORY_QCOM)) {
+            if (value & (VK_BUFFER_USAGE_TILE_MEMORY_BIT_QCOM)) {
                 if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
                     return {vvl::Extension::_VK_QCOM_tile_memory_heap};
                 }
@@ -764,6 +764,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_buffer_device_address};
                 }
             }
+            if (value & (VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT)) {
+                if (!IsExtEnabled(extensions.vk_ext_zero_initialize_device_memory)) {
+                    return {vvl::Extension::_VK_EXT_zero_initialize_device_memory};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits:
             if (value & (VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT)) {
@@ -1096,7 +1101,7 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
-            if (value & (VK_BUFFER_USAGE_2_TILE_MEMORY_QCOM)) {
+            if (value & (VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM)) {
                 if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
                     return {vvl::Extension::_VK_QCOM_tile_memory_heap};
                 }
