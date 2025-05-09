@@ -362,6 +362,8 @@ bool vvl::Semaphore::CanRetireTimelineWait(const vvl::Queue *current_queue, uint
 
 void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, const Location &loc, bool queue_thread) {
     std::shared_future<void> waiter;
+    bool retire_external_payload = false;
+    uint64_t external_payload = 0;
     {
         auto guard = WriteLock();
         if (payload <= completed_.payload) {
@@ -372,7 +374,22 @@ void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, con
                 // GetSemaphoreCounterValue for external semaphore might not have a registered timepoint.
                 // Add timepoint so we can retire timeline up to that point.
                 assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
-                timeline_[payload] = TimePoint{};
+                auto payload_it = timeline_.insert({payload, TimePoint{}}).first;
+
+                // Search existing signal. If found, notify corresponding submission.
+                // (external payload, which is already reached by the gpu, is larger then found signal,
+                // this means that earlier signals were also processed, so we can retire them)
+                for (auto it = std::make_reverse_iterator(payload_it); it != timeline_.rend(); ++it) {
+                    const TimePoint &t = it->second;
+                    if (t.signal_submit.has_value() && t.signal_submit->queue) {
+                        retire_external_payload = true;
+                        external_payload = payload;
+                        // Update payload value to retire existing signal.
+                        // External payload will be retired after that to update current payload value.
+                        payload = it->first;
+                        break;
+                    }
+                }
             }
             if (scope_ == kExternalTemporary) {
                 scope_ = kInternal;
@@ -403,7 +420,13 @@ void vvl::Semaphore::RetireWait(vvl::Queue *current_queue, uint64_t payload, con
         // the current timepoint should get destroyed while we're waiting, so copy out the waiter.
         waiter = timepoint.waiter;
     }
+
     WaitTimePoint(std::move(waiter), payload, !queue_thread, loc);
+
+    if (retire_external_payload) {
+        auto guard = WriteLock();
+        RetireTimePoint(external_payload, kWait, SubmissionReference{});
+    }
 }
 
 void vvl::Semaphore::RetireSignal(uint64_t payload) {
