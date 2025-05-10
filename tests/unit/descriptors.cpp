@@ -4685,22 +4685,24 @@ TEST_F(NegativeDescriptors, CopyMutableDescriptors) {
 
         VkMutableDescriptorTypeListEXT mutable_descriptor_type_lists[2] = {};
         mutable_descriptor_type_lists[0].descriptorTypeCount = 1;
-        mutable_descriptor_type_lists[0].pDescriptorTypes = descriptor_types;
-        mutable_descriptor_type_lists[1].descriptorTypeCount = 2;
-        mutable_descriptor_type_lists[1].pDescriptorTypes = descriptor_types;
+        mutable_descriptor_type_lists[0].pDescriptorTypes = &descriptor_types[0];
+        mutable_descriptor_type_lists[1].descriptorTypeCount = 1;
+        mutable_descriptor_type_lists[1].pDescriptorTypes = &descriptor_types[1];
 
         VkMutableDescriptorTypeCreateInfoEXT mdtci = vku::InitStructHelper();
         mdtci.mutableDescriptorTypeListCount = 2;
         mdtci.pMutableDescriptorTypeLists = mutable_descriptor_type_lists;
 
-        VkDescriptorPoolSize pool_size = {};
-        pool_size.type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
-        pool_size.descriptorCount = 8;
+        VkDescriptorPoolSize pool_sizes[2] = {};
+        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+        pool_sizes[0].descriptorCount = 4;
+        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_MUTABLE_EXT;
+        pool_sizes[1].descriptorCount = 4;
 
         VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper(&mdtci);
         ds_pool_ci.maxSets = 2;
-        ds_pool_ci.poolSizeCount = 1;
-        ds_pool_ci.pPoolSizes = &pool_size;
+        ds_pool_ci.poolSizeCount = 2;
+        ds_pool_ci.pPoolSizes = pool_sizes;
 
         vkt::DescriptorPool pool(*m_device, ds_pool_ci);
 
