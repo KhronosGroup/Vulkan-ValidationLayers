@@ -57,7 +57,7 @@ static const VulkanTypedHandle kNoObjects;
 void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceCreateInfo *modified_create_info,
                            const Location &loc) {
     // Query things here to make sure we don't attempt to add a feature this is just not supported
-    VkPhysicalDeviceRobustness2FeaturesEXT supported_robustness2_feature = vku::InitStructHelper();
+    VkPhysicalDeviceRobustness2FeaturesKHR supported_robustness2_feature = vku::InitStructHelper();
     VkPhysicalDevice8BitStorageFeatures supported_8bit_feature = vku::InitStructHelper(&supported_robustness2_feature);
     VkPhysicalDeviceBufferDeviceAddressFeatures supported_bda_feature = vku::InitStructHelper(&supported_8bit_feature);
     VkPhysicalDeviceVulkanMemoryModelFeatures supported_memory_model_feature = vku::InitStructHelper(&supported_bda_feature);
@@ -278,34 +278,40 @@ void Instance::AddFeatures(VkPhysicalDevice physical_device, vku::safe_VkDeviceC
 
     if (gpuav_settings.force_on_robustness &&
         (supported_robustness2_feature.robustBufferAccess2 || supported_robustness2_feature.robustImageAccess2)) {
-        if (IsExtensionAvailable(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, available_extensions)) {
+        const bool has_ext = IsExtensionAvailable(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME, available_extensions);
+        const bool has_khr = IsExtensionAvailable(VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, available_extensions);
+        if (has_ext || has_khr) {
             // Only adds if not found already
-            vku::AddExtension(*modified_create_info, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+            if (has_khr) {
+                vku::AddExtension(*modified_create_info, VK_KHR_ROBUSTNESS_2_EXTENSION_NAME);
+            } else {
+                vku::AddExtension(*modified_create_info, VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+            }
 
-            if (auto *robust_buffer_2_feature = const_cast<VkPhysicalDeviceRobustness2FeaturesEXT *>(
-                    vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(modified_create_info))) {
+            if (auto *robust_buffer_2_feature = const_cast<VkPhysicalDeviceRobustness2FeaturesKHR *>(
+                    vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(modified_create_info))) {
                 if (!robust_buffer_2_feature->robustBufferAccess2 && supported_robustness2_feature.robustBufferAccess2) {
                     InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceRobustness2FeaturesEXT::robustBufferAccess2 to VK_TRUE");
+                                    "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustBufferAccess2 to VK_TRUE");
                     robust_buffer_2_feature->robustBufferAccess2 = VK_TRUE;
                 }
                 if (!robust_buffer_2_feature->robustImageAccess2 && supported_robustness2_feature.robustImageAccess2) {
                     InternalWarning(kNoObjects, loc,
-                                    "Forcing VkPhysicalDeviceRobustness2FeaturesEXT::robustImageAccess2 to VK_TRUE");
+                                    "Forcing VkPhysicalDeviceRobustness2FeaturesKHR::robustImageAccess2 to VK_TRUE");
                     robust_buffer_2_feature->robustImageAccess2 = VK_TRUE;
                 }
             } else {
-                VkPhysicalDeviceRobustness2FeaturesEXT new_robust_buffer_2_feature = vku::InitStructHelper();
+                VkPhysicalDeviceRobustness2FeaturesKHR new_robust_buffer_2_feature = vku::InitStructHelper();
                 if (supported_robustness2_feature.robustBufferAccess2) {
                     InternalWarning(
                         kNoObjects, loc,
-                        "Adding a VkPhysicalDeviceRobustness2FeaturesEXT to pNext with robustBufferAccess2 set to VK_TRUE");
+                        "Adding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with robustBufferAccess2 set to VK_TRUE");
                     new_robust_buffer_2_feature.robustBufferAccess2 = VK_TRUE;
                 }
                 if (supported_robustness2_feature.robustImageAccess2) {
                     InternalWarning(
                         kNoObjects, loc,
-                        "Adding a VkPhysicalDeviceRobustness2FeaturesEXT to pNext with robustImageAccess2 set to VK_TRUE");
+                        "Adding a VkPhysicalDeviceRobustness2FeaturesKHR to pNext with robustImageAccess2 set to VK_TRUE");
                     new_robust_buffer_2_feature.robustImageAccess2 = VK_TRUE;
                 }
                 vku::AddToPnext(*modified_create_info, new_robust_buffer_2_feature);

@@ -444,9 +444,9 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
     const VkPhysicalDeviceFeatures *features = features2 ? &features2->features : pCreateInfo->pEnabledFeatures;
 
     if (const auto *robustness2_features =
-            vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesEXT>(pCreateInfo->pNext)) {
+            vku::FindStructInPNextChain<VkPhysicalDeviceRobustness2FeaturesKHR>(pCreateInfo->pNext)) {
         if (features && robustness2_features->robustBufferAccess2 && !features->robustBufferAccess) {
-            skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000", physicalDevice,
+            skip |= LogError("VUID-VkPhysicalDeviceRobustness2FeaturesKHR-robustBufferAccess2-04000", physicalDevice,
                              error_obj.location, "If robustBufferAccess2 is enabled then robustBufferAccess must be enabled.");
         }
     }

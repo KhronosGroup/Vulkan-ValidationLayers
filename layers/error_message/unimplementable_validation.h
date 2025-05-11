@@ -508,7 +508,7 @@ const char* unimplementable_validation[] = {
     "VUID-VkPhysicalDeviceRayTracingPipelinePropertiesKHR-sType-sType",
     "VUID-VkPhysicalDeviceRayTracingPropertiesNV-sType-sType",
     "VUID-VkPhysicalDeviceRenderPassStripedPropertiesARM-sType-sType",
-    "VUID-VkPhysicalDeviceRobustness2PropertiesEXT-sType-sType",
+    "VUID-VkPhysicalDeviceRobustness2PropertiesKHR-sType-sType",
     "VUID-VkPhysicalDeviceSampleLocationsPropertiesEXT-sType-sType",
     "VUID-VkPhysicalDeviceSamplerFilterMinmaxProperties-sType-sType",
     "VUID-VkPhysicalDeviceSchedulingControlsPropertiesARM-sType-sType",

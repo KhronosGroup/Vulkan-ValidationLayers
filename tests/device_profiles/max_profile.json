@@ -634,6 +634,11 @@
                     "robustImageAccess2": false,
                     "nullDescriptor": true
                 },
+                "VkPhysicalDeviceRobustness2FeaturesKHR": {
+                    "robustBufferAccess2": false,
+                    "robustImageAccess2": false,
+                    "nullDescriptor": true
+                },
                 "VkPhysicalDeviceImageRobustnessFeatures": {
                     "robustImageAccess": false
                 },
@@ -820,20 +825,20 @@
                     "tileProperties": true
                 },
                 "VkPhysicalDeviceTileShadingFeaturesQCOM": {
-                    "tileShading" : true,
-                    "tileShadingFragmentStage" : true,
-                    "tileShadingColorAttachments" : true,
-                    "tileShadingDepthAttachments" : true,
-                    "tileShadingStencilAttachments" : true,
-                    "tileShadingInputAttachments" : true,
-                    "tileShadingSampledAttachments" : true,
-                    "tileShadingPerTileDraw" : true,
-                    "tileShadingPerTileDispatch" : true,
-                    "tileShadingDispatchTile" : true,
-                    "tileShadingApron" : true,
-                    "tileShadingAnisotropicApron" : true,
-                    "tileShadingAtomicOps" : true,
-                    "tileShadingImageProcessing" : true
+                    "tileShading": true,
+                    "tileShadingFragmentStage": true,
+                    "tileShadingColorAttachments": true,
+                    "tileShadingDepthAttachments": true,
+                    "tileShadingStencilAttachments": true,
+                    "tileShadingInputAttachments": true,
+                    "tileShadingSampledAttachments": true,
+                    "tileShadingPerTileDraw": true,
+                    "tileShadingPerTileDispatch": true,
+                    "tileShadingDispatchTile": true,
+                    "tileShadingApron": true,
+                    "tileShadingAnisotropicApron": true,
+                    "tileShadingAtomicOps": true,
+                    "tileShadingImageProcessing": true
                 },
                 "VkPhysicalDeviceAmigoProfilingFeaturesSEC": {
                     "amigoProfiling": true
@@ -2230,6 +2235,7 @@
                 "VK_KHR_present_id": 1,
                 "VK_KHR_present_wait": 1,
                 "VK_KHR_push_descriptor": 1,
+                "VK_KHR_robustness2": 1,
                 "VK_KHR_ray_query": 1,
                 "VK_KHR_ray_tracing_maintenance1": 1,
                 "VK_KHR_ray_tracing_pipeline": 1,

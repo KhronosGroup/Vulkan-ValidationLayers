@@ -462,8 +462,9 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             api_version >= VK_API_VERSION_1_3 ||
             phys_dev_extensions.find(Extension::_VK_EXT_image_robustness) != phys_dev_extensions.end();
 
-        if (phys_dev_extensions.find(Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
-            VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+        if (phys_dev_extensions.find(Extension::_VK_KHR_robustness2) != phys_dev_extensions.end() ||
+            phys_dev_extensions.find(Extension::_VK_EXT_robustness2) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceRobustness2FeaturesKHR robustness_2_features = vku::InitStructHelper();
             VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
             DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
             special_supported.robust_image_access2 = robustness_2_features.robustImageAccess2;
