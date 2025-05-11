@@ -616,6 +616,11 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
                          string_VkShaderStageFlags(props.supportedIndirectCommandsShaderStages).c_str());
     }
 
+    if (indirect_commands_layout->has_draw_token) {
+        skip |=
+            OutsideRenderPass(cb_state, error_obj.location, "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-10769");
+    }
+
     skip |= ValidateGeneratedCommandsInfo(cb_state, *indirect_commands_layout, *pGeneratedCommandsInfo, isPreprocessed, info_loc);
 
     return skip;
