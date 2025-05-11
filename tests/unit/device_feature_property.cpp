@@ -367,11 +367,11 @@ TEST_F(NegativeDeviceFeatureProperty, BufferDeviceAddress) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustness) {
+TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustnessEXT) {
     AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
     RETURN_IF_SKIP(InitDeviceFeatureProperty());
 
-    VkPhysicalDeviceRobustness2FeaturesEXT robustness_2_features = vku::InitStructHelper();
+    VkPhysicalDeviceRobustness2FeaturesKHR robustness_2_features = vku::InitStructHelper();
     GetPhysicalDeviceFeatures2(robustness_2_features);
     if (!robustness_2_features.robustBufferAccess2) {
         GTEST_SKIP() << "robustBufferAccess2 not supported.";
@@ -380,7 +380,25 @@ TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustness) {
     VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
     m_second_device_ci.pNext = &features2;
 
-    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceRobustness2FeaturesEXT-robustBufferAccess2-04000");
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceRobustness2FeaturesKHR-robustBufferAccess2-04000");
+    vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDeviceFeatureProperty, Robustness2WithoutRobustnessKHR) {
+    AddRequiredExtensions(VK_KHR_ROBUSTNESS_2_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDeviceFeatureProperty());
+
+    VkPhysicalDeviceRobustness2FeaturesKHR robustness_2_features = vku::InitStructHelper();
+    GetPhysicalDeviceFeatures2(robustness_2_features);
+    if (!robustness_2_features.robustBufferAccess2) {
+        GTEST_SKIP() << "robustBufferAccess2 not supported.";
+    }
+
+    VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&robustness_2_features);
+    m_second_device_ci.pNext = &features2;
+
+    m_errorMonitor->SetDesiredError("VUID-VkPhysicalDeviceRobustness2FeaturesKHR-robustBufferAccess2-04000");
     vk::CreateDevice(Gpu(), &m_second_device_ci, nullptr, &m_second_device);
     m_errorMonitor->VerifyFound();
 }
