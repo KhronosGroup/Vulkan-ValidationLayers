@@ -1361,7 +1361,8 @@ bool core::Instance::PreCallValidateCreateDisplayPlaneSurfaceKHR(VkInstance inst
                          device_properties.limits.maxImageDimension2D);
     }
 
-    if (pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) != vvl::CallState::Uncalled) {
+    if (pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) ||
+        pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR)) {
         if (plane_index >= pd_state->display_plane_property_count) {
             skip |= LogError("VUID-VkDisplaySurfaceCreateInfoKHR-planeIndex-01252", display_mode,
                              create_info_loc.dot(Field::planeIndex),
@@ -1651,12 +1652,15 @@ bool core::Instance::ValidateGetPhysicalDeviceDisplayPlanePropertiesKHRQuery(VkP
                                                                              const Location &loc) const {
     bool skip = false;
     auto pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    if (pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) != vvl::CallState::Uncalled) {
+    if (pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlanePropertiesKHR) ||
+        pd_state->WasCalled(vvl::Func::vkGetPhysicalDeviceDisplayPlaneProperties2KHR)) {
         if (planeIndex >= pd_state->display_plane_property_count) {
-            skip |= LogError("VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, loc,
-                             "is %" PRIu32 ", but vkGetPhysicalDeviceDisplayPlaneProperties(2)KHR returned %" PRIu32
-                             ". (Do you have the plane index hardcoded?).",
-                             planeIndex, pd_state->display_plane_property_count);
+            skip |= LogError(
+                "VUID-vkGetDisplayPlaneSupportedDisplaysKHR-planeIndex-01249", physicalDevice, loc,
+                "is %" PRIu32
+                ", but vkGetPhysicalDeviceDisplayPlanePropertiesKHR/vkGetPhysicalDeviceDisplayPlaneProperties2KHR returned %" PRIu32
+                ". (Do you have the plane index hardcoded?).",
+                planeIndex, pd_state->display_plane_property_count);
         }
     }
 

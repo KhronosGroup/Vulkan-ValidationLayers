@@ -64,6 +64,8 @@ class PhysicalDevice : public StateObject {
     void SetCallState(vvl::Func func, CallState new_state);
     void SetCallState(vvl::Func func, bool has_ptr);
     CallState GetCallState(vvl::Func func) const;
+    bool WasUncalled(vvl::Func func) const;
+    bool WasCalled(vvl::Func func) const;
 
   private:
     // Multiple threads can be querying GetPhysicalDevice type functions

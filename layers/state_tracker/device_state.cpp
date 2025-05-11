@@ -21,7 +21,7 @@
 
 namespace vvl {
 
-void PhysicalDevice::SetCallState(vvl::Func func, CallState new_state) {
+void PhysicalDevice::SetCallState(Func func, CallState new_state) {
     WriteLockGuard guard(call_state_lock_);
     auto result = call_state_.emplace(func, new_state);
     if (!result.second) {
@@ -31,16 +31,20 @@ void PhysicalDevice::SetCallState(vvl::Func func, CallState new_state) {
     }
 }
 
-void PhysicalDevice::SetCallState(vvl::Func func, bool has_ptr) {
+void PhysicalDevice::SetCallState(Func func, bool has_ptr) {
     CallState new_state = has_ptr ? CallState::QueryDetails : CallState::QueryCount;
     SetCallState(func, new_state);
 }
 
-CallState PhysicalDevice::GetCallState(vvl::Func func) const {
+CallState PhysicalDevice::GetCallState(Func func) const {
     ReadLockGuard guard(call_state_lock_);
     auto iter = call_state_.find(func);
     return iter != call_state_.end() ? iter->second : CallState::Uncalled;
 }
+
+bool PhysicalDevice::WasUncalled(Func func) const { return GetCallState(func) == vvl::CallState::Uncalled; }
+
+bool PhysicalDevice::WasCalled(Func func) const { return GetCallState(func) != vvl::CallState::Uncalled; }
 
 const std::vector<VkQueueFamilyProperties> PhysicalDevice::GetQueueFamilyProps(VkPhysicalDevice phys_dev) {
     std::vector<VkQueueFamilyProperties> result;

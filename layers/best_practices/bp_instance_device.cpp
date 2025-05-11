@@ -169,7 +169,7 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
     }
 
     const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    if (bp_pd_state && (bp_pd_state->GetCallState(vvl::Func::vkGetPhysicalDeviceFeatures) == vvl::CallState::Uncalled) &&
+    if (bp_pd_state && bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceFeatures) &&
         (pCreateInfo->pEnabledFeatures != NULL)) {
         skip |= LogWarning("BestPractices-vkCreateDevice-physical-device-features-not-retrieved", instance, error_obj.location,
                            "called before getting physical device features from vkGetPhysicalDeviceFeatures().");
