@@ -52,6 +52,7 @@ class Bindable;
 
 namespace spirv {
 struct StatelessData;
+struct LocalSize;
 }  // namespace spirv
 
 namespace core {
@@ -892,8 +893,8 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateShaderStageMaxResources(VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline, const Location& loc) const;
     bool ValidateCooperativeMatrix(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                   const ShaderStageState& stage_state, const uint32_t local_size_x, const uint32_t local_size_y,
-                                   const uint32_t local_size_z, const Location& loc) const;
+                                   const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
+                                   const Location& loc) const;
     bool ValidateCooperativeVector(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateShaderResolveQCOM(const spirv::Module& module_state, VkShaderStageFlagBits stage, const vvl::Pipeline& pipeline,
@@ -2279,14 +2280,12 @@ class CoreChecks : public vvl::DeviceProxy {
     bool PreCallValidateGetSemaphoreCounterValue(VkDevice device, VkSemaphore sempahore, uint64_t* pValue,
                                                  const ErrorObject& error_obj) const override;
     bool ValidateRequiredSubgroupSize(const spirv::Module& module_state, const ShaderStageState& stage_state, uint64_t invocations,
-                                      uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
-                                      const Location& loc) const;
+                                      const spirv::LocalSize& local_size, const Location& loc) const;
     bool ValidateComputeWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                       const ShaderStageState& stage_state, uint32_t local_size_x, uint32_t local_size_y,
-                                       uint32_t local_size_z, const Location& loc) const;
+                                       const ShaderStageState& stage_state, const spirv::LocalSize& local_size,
+                                       const Location& loc) const;
     bool ValidateTaskMeshWorkGroupSizes(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
-                                        uint32_t local_size_x, uint32_t local_size_y, uint32_t local_size_z,
-                                        const Location& loc) const;
+                                        const spirv::LocalSize& local_size, const Location& loc) const;
     bool ValidateEmitMeshTasksSize(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                    const ShaderStageState& stage_state, const Location& loc) const;
     bool ValidateMeshMemorySize(const spirv::Module& module_state, uint32_t total_workgroup_shared_memory,

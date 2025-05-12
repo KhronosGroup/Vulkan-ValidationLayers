@@ -187,15 +187,15 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeLocalSizeId:
             flags |= local_size_id_bit;
             // Store ID here, will use flag to know to pull then out
-            local_size_x = insn.Word(3);
-            local_size_y = insn.Word(4);
-            local_size_z = insn.Word(5);
+            local_size.x = insn.Word(3);
+            local_size.y = insn.Word(4);
+            local_size.z = insn.Word(5);
             break;
         case spv::ExecutionModeLocalSize:
             flags |= local_size_bit;
-            local_size_x = insn.Word(3);
-            local_size_y = insn.Word(4);
-            local_size_z = insn.Word(5);
+            local_size.x = insn.Word(3);
+            local_size.y = insn.Word(4);
+            local_size.z = insn.Word(5);
             break;
         case spv::ExecutionModeOutputVertices:
             output_vertices = value;
@@ -1103,6 +1103,9 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
             case spv::OpTypeCooperativeMatrixNV:
             case spv::OpCooperativeMatrixMulAddNV:
             case spv::OpTypeCooperativeMatrixKHR:
+            case spv::OpCooperativeMatrixLoadKHR:
+            case spv::OpCooperativeMatrixStoreKHR:
+            case spv::OpCooperativeMatrixLengthKHR:
             case spv::OpCooperativeMatrixMulAddKHR: {
                 cooperative_matrix_inst.push_back(&insn);
                 break;
@@ -1470,35 +1473,31 @@ std::shared_ptr<const EntryPoint> Module::FindEntrypoint(char const* name, VkSha
 //    OpEntryPoint GLCompute %main "name_a"
 //    OpEntryPoint GLCompute %main "name_b"
 // Assumes shader module contains no spec constants used to set the local size values
-bool Module::FindLocalSize(const EntryPoint& entrypoint, uint32_t& local_size_x, uint32_t& local_size_y,
-                           uint32_t& local_size_z) const {
+LocalSize Module::FindLocalSize(const EntryPoint& entrypoint) const {
+    LocalSize local_size;
     // "If an object is decorated with the WorkgroupSize decoration, this takes precedence over any LocalSize or LocalSizeId
     // execution mode."
     if (static_data_.has_builtin_workgroup_size) {
         const Instruction* composite_def = FindDef(static_data_.builtin_workgroup_size_id);
         if (composite_def->Opcode() == spv::OpConstantComposite) {
             // VUID-WorkgroupSize-WorkgroupSize-04427 makes sure this is a OpTypeVector of int32
-            local_size_x = GetConstantValueById(composite_def->Word(3));
-            local_size_y = GetConstantValueById(composite_def->Word(4));
-            local_size_z = GetConstantValueById(composite_def->Word(5));
-            return true;
+            local_size.x = GetConstantValueById(composite_def->Word(3));
+            local_size.y = GetConstantValueById(composite_def->Word(4));
+            local_size.z = GetConstantValueById(composite_def->Word(5));
+            return local_size;
         }
     }
 
     if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_bit)) {
-        local_size_x = entrypoint.execution_mode.local_size_x;
-        local_size_y = entrypoint.execution_mode.local_size_y;
-        local_size_z = entrypoint.execution_mode.local_size_z;
-        return true;
+        local_size = entrypoint.execution_mode.local_size;
     } else if (entrypoint.execution_mode.Has(ExecutionModeSet::local_size_id_bit)) {
         // Uses ExecutionModeLocalSizeId so need to resolve ID value
-        local_size_x = GetConstantValueById(entrypoint.execution_mode.local_size_x);
-        local_size_y = GetConstantValueById(entrypoint.execution_mode.local_size_y);
-        local_size_z = GetConstantValueById(entrypoint.execution_mode.local_size_z);
-        return true;
+        local_size.x = GetConstantValueById(entrypoint.execution_mode.local_size.x);
+        local_size.y = GetConstantValueById(entrypoint.execution_mode.local_size.y);
+        local_size.z = GetConstantValueById(entrypoint.execution_mode.local_size.z);
     }
 
-    return false;  // not found
+    return local_size;
 }
 
 uint32_t Module::CalculateWorkgroupSharedMemory() const {
