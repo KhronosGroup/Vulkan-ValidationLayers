@@ -105,6 +105,7 @@ class TestIcdGenerator(BaseGenerator):
             'vkGetAccelerationStructureDeviceAddressKHR',
             'vkGetVideoSessionMemoryRequirementsKHR',
             'vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR',
+            'vkGetPhysicalDeviceCooperativeVectorPropertiesNV',
             'vkGetPhysicalDeviceVideoCapabilitiesKHR',
             'vkGetPhysicalDeviceVideoFormatPropertiesKHR',
             'vkGetDescriptorSetLayoutSupport',

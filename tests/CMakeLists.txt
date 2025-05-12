@@ -73,8 +73,6 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/buffer_positive.cpp
     unit/command.cpp
     unit/command_positive.cpp
-    unit/cooperative_vector.cpp
-    unit/cooperative_vector_positive.cpp
     unit/copy_buffer_image.cpp
     unit/copy_buffer_image_positive.cpp
     unit/debug_extensions.cpp
@@ -204,6 +202,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/shader_compute_positive.cpp
     unit/shader_cooperative_matrix.cpp
     unit/shader_cooperative_matrix_positive.cpp
+    unit/shader_cooperative_vector.cpp
+    unit/shader_cooperative_vector_positive.cpp
     unit/shader_debug_info.cpp
     unit/shader_image_access.cpp
     unit/shader_image_access_positive.cpp

@@ -5521,12 +5521,6 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetDynamicRenderingTilePropertiesQCOM(VkDe
     return VK_SUCCESS;
 }
 
-static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
-                                                                                     uint32_t* pPropertyCount,
-                                                                                     VkCooperativeVectorPropertiesNV* pProperties) {
-    return VK_SUCCESS;
-}
-
 static VKAPI_ATTR VkResult VKAPI_CALL ConvertCooperativeVectorMatrixNV(VkDevice device,
                                                                        const VkConvertCooperativeVectorMatrixInfoNV* pInfo) {
     return VK_SUCCESS;
