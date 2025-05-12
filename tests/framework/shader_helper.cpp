@@ -19,8 +19,17 @@
 #include "shader_helper.h"
 #include "glslang/SPIRV/GlslangToSpv.h"
 #include <glslang/Public/ShaderLang.h>
+
+#pragma push_macro("None")
+#pragma push_macro("Bool")
+#undef None
+#undef Bool
+
 #include "slang.h"
 #include "slang-com-ptr.h"
+
+#pragma pop_macro("None")
+#pragma pop_macro("Bool")
 
 static void ProcessConfigFile(const VkPhysicalDeviceLimits &device_limits, TBuiltInResource &out_resources) {
     // These are the default resources for TBuiltInResources.

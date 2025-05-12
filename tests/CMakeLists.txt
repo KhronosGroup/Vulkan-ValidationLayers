@@ -324,85 +324,141 @@ find_package(SPIRV-Tools CONFIG)
 
 include(ExternalProject)
 
-
 set(SLANG_BINARY_DIR "${CMAKE_BINARY_DIR}/slang")
+set(SLANG_DOWNLOAD_DIR "${SLANG_BINARY_DIR}/download")
+set(SLANG_EXTRACT_DIR "${SLANG_BINARY_DIR}/extract")
 
 # Function to determine the correct binary URL based on platform
-function(get_slang_binary_url RESULT_VAR)
+function(get_slang_binary_url RESULT_VAR VERSION_VAR)
+    set(SLANG_VERSION "2025.8.1" CACHE STRING "Slang version to use")
+    set(${VERSION_VAR} ${SLANG_VERSION} PARENT_SCOPE)
+
     if(WIN32)
-        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-windows-x86_64.zip" PARENT_SCOPE)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-x86_64.zip" PARENT_SCOPE)
     elseif(UNIX AND NOT APPLE)
-        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-linux-x86_64.zip" PARENT_SCOPE)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-x86_64.zip" PARENT_SCOPE)
     elseif(APPLE)
-        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-macos-aarch64.zip" PARENT_SCOPE)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-macos-aarch64.zip" PARENT_SCOPE)
     else()
         message(FATAL_ERROR "Unsupported platform for Slang prebuilt binaries")
     endif()
 endfunction()
 
-get_slang_binary_url(SLANG_URL)
+# Get the URL and version
+get_slang_binary_url(SLANG_URL SLANG_VERSION)
+message(STATUS "Using Slang version: ${SLANG_VERSION}")
+message(STATUS "Downloading from: ${SLANG_URL}")
 
-# Download and extract the binaries
-ExternalProject_Add(slang_binaries
-    URL ${SLANG_URL}
-    DOWNLOAD_DIR ${SLANG_BINARY_DIR}/download
-    SOURCE_DIR ${SLANG_BINARY_DIR}/source
-    BINARY_DIR ${SLANG_BINARY_DIR}/build
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ""
-    # Ensure extraction happens
-    UPDATE_COMMAND ""
-    PATCH_COMMAND ""
+# Download the ZIP file directly using file(DOWNLOAD)
+file(DOWNLOAD "${SLANG_URL}" "${SLANG_DOWNLOAD_DIR}/slang-${SLANG_VERSION}.zip"
+     SHOW_PROGRESS
+     STATUS DOWNLOAD_STATUS
+)
+list(GET DOWNLOAD_STATUS 0 STATUS_CODE)
+if(NOT STATUS_CODE EQUAL 0)
+    list(GET DOWNLOAD_STATUS 1 ERROR_MESSAGE)
+    message(FATAL_ERROR "Failed to download Slang: ${ERROR_MESSAGE}")
+endif()
+
+# Extract the ZIP file using CMake's capabilities
+file(MAKE_DIRECTORY "${SLANG_EXTRACT_DIR}")
+file(ARCHIVE_EXTRACT 
+     INPUT "${SLANG_DOWNLOAD_DIR}/slang-${SLANG_VERSION}.zip"
+     DESTINATION "${SLANG_EXTRACT_DIR}"
 )
 
-# Define paths to Slang libraries and includes based on extracted structure
-set(SLANG_INCLUDE_DIR "${SLANG_BINARY_DIR}/source/include")
+# Print the directory structure for debugging
+message(STATUS "Listing contents of extracted directory:")
+file(GLOB_RECURSE EXTRACTED_FILES "${SLANG_EXTRACT_DIR}/*")
+foreach(FILE ${EXTRACTED_FILES})
+    message(STATUS "  ${FILE}")
+endforeach()
+
+# Define paths based on actual structure - these might need adjustment
 if(WIN32)
-    set(SLANG_LIBRARY "${SLANG_BINARY_DIR}/source/lib/slang.lib") 
-    set(SLANG_DLL "${SLANG_BINARY_DIR}/source/lib/slang.dll")
+    # Most Windows releases put files in bin/ directory
+    set(SLANG_BIN_DIR "${SLANG_EXTRACT_DIR}/bin")
+    set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/bin")
+    set(SLANG_INCLUDE_DIR "${SLANG_EXTRACT_DIR}/include")
+
+    # Double-check if lib directory exists separately
+    if(EXISTS "${SLANG_EXTRACT_DIR}/lib")
+        set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/lib")
+    endif()
+
+    # Check for slang.lib in both potential locations
+    if(EXISTS "${SLANG_BIN_DIR}/slang.lib")
+        set(SLANG_LIBRARY "${SLANG_BIN_DIR}/slang.lib")
+    elseif(EXISTS "${SLANG_LIB_DIR}/slang.lib")
+        set(SLANG_LIBRARY "${SLANG_LIB_DIR}/slang.lib")
+    else()
+        # Try to find the file with glob
+        file(GLOB SLANG_LIB_FILES "${SLANG_EXTRACT_DIR}/**/slang.lib")
+        if(SLANG_LIB_FILES)
+            list(GET SLANG_LIB_FILES 0 SLANG_LIBRARY)
+            message(STATUS "Found slang.lib at: ${SLANG_LIBRARY}")
+        else()
+            message(FATAL_ERROR "Could not locate slang.lib in extracted directory")
+        endif()
+    endif()
 else()
-    set(SLANG_LIBRARY "${SLANG_BINARY_DIR}/source/lib/libslang.so")
+    # Unix systems typically have lib/ and include/ directories
+    set(SLANG_INCLUDE_DIR "${SLANG_EXTRACT_DIR}/include")
+    set(SLANG_LIB_DIR "${SLANG_EXTRACT_DIR}/lib")
+
+    if(EXISTS "${SLANG_LIB_DIR}/libslang.so")
+        set(SLANG_LIBRARY "${SLANG_LIB_DIR}/libslang.so")
+    else()
+        file(GLOB SLANG_LIB_FILES "${SLANG_EXTRACT_DIR}/**/libslang.so")
+        if(SLANG_LIB_FILES)
+            list(GET SLANG_LIB_FILES 0 SLANG_LIBRARY)
+            message(STATUS "Found libslang.so at: ${SLANG_LIBRARY}")
+        else()
+            message(FATAL_ERROR "Could not locate libslang.so in extracted directory")
+        endif()
+    endif()
 endif()
 
 # Create an imported target for easier usage
 add_library(slang SHARED IMPORTED GLOBAL)
-add_dependencies(slang slang_binaries) # Ensure binaries are downloaded/extracted before use
 
-# Set properties after extraction is completed
-file(MAKE_DIRECTORY ${SLANG_INCLUDE_DIR}) # Avoid include directory warnings
+# Set properties
+file(MAKE_DIRECTORY ${SLANG_INCLUDE_DIR})
+message(STATUS "Setting Slang include dir: ${SLANG_INCLUDE_DIR}")
+message(STATUS "Setting Slang library: ${SLANG_LIBRARY}")
 
 set_target_properties(slang PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES ${SLANG_INCLUDE_DIR}
 )
 
-# Set platform-specific properties
 if(WIN32)
+    message(STATUS "Setting Slang .lib: ${SLANG_LIBRARY}")
     set_target_properties(slang PROPERTIES
         IMPORTED_IMPLIB ${SLANG_LIBRARY}
-        IMPORTED_LOCATION ${SLANG_DLL}
     )
 else()
     set_target_properties(slang PROPERTIES
         IMPORTED_LOCATION ${SLANG_LIBRARY}
     )
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${SLANG_LIBRARY}
+            $<TARGET_FILE_DIR:${TARGET_NAME}>
+        COMMENT "Copying Slang .so to output directory for ${TARGET_NAME}"
+    )
 endif()
 
 # Function to copy the DLL to the target's output directory (for Windows)
-# function(copy_slang_dll TARGET_NAME)
-#     if(WIN32)
-#         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#                 ${SLANG_DLL}
-#                 $<TARGET_FILE_DIR:${TARGET_NAME}>
-#             COMMENT "Copying Slang DLL to output directory"
-#         )
-#     endif()
-# endfunction()
-
-# Usage in your project:
-# target_link_libraries(your_target PRIVATE slang)
-# copy_slang_dll(your_target)
+function(copy_slang_dll TARGET_NAME)
+    if(WIN32)
+        add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                ${SLANG_DLL}
+                $<TARGET_FILE_DIR:${TARGET_NAME}>
+            COMMENT "Copying Slang DLL to output directory for ${TARGET_NAME}"
+        )
+    endif()
+endfunction()
 
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
