@@ -425,6 +425,27 @@ bool CoreChecks::ValidateCooperativeMatrix(const spirv::Module &module_state, co
         return skip;  // If the capability isn't enabled, don't bother with the rest of this function.
     }
 
+    if (!module_state.static_data_.cooperative_matrix_inst.empty() && api_version < VK_API_VERSION_1_3) {
+        bool has_full_subgroups = false;
+        if (stage_state.pipeline_create_info) {
+            has_full_subgroups =
+                stage_state.pipeline_create_info->flags & VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
+        } else {
+            has_full_subgroups = stage_state.shader_object_create_info->flags & VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+        }
+
+        if (!has_full_subgroups) {
+            const char *vuid = stage_state.HasPipeline() ? "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10770"
+                                                         : "VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10771";
+            skip |= LogError(vuid, module_state.handle(), loc,
+                             "SPIR-V (%s) contains SPV_KHR_cooperative_matrix which requires SPIR-V 1.6 (Vulkan 1.3). In order to "
+                             "use it with older versions, you need to use %s (which requires VK_EXT_subgroup_size_control).",
+                             string_VkShaderStageFlagBits(entrypoint.stage),
+                             stage_state.HasPipeline() ? "VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT"
+                                                       : "VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT");
+        }
+    }
+
     // Map SPIR-V result ID to the ID of its type.
     // TODO - Should have more robust way in ModuleState to find the type
     vvl::unordered_map<uint32_t, uint32_t> id_to_type_id;
