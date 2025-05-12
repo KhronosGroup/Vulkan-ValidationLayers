@@ -1535,6 +1535,8 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageBindingPartiallyBound) {
 }
 
 TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
+    RETURN_IF_SKIP(CheckSlangSupport());
+
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredExtensions(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::descriptorBindingPartiallyBound);
@@ -1542,88 +1544,27 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     RETURN_IF_SKIP(InitGpuAvFramework());
     RETURN_IF_SKIP(InitState());
 
-    // [[vk::binding(0, 0)]]
-    // Texture2D texture[];
-    // [[vk::binding(1, 0)]]
-    // SamplerState sampler;
-    //
-    // struct StorageBuffer {
-    //     uint data; // Will be one
-    //     float4 color;
-    // };
-    //
-    // [[vk::binding(2, 0)]]
-    // RWStructuredBuffer<StorageBuffer> storageBuffer;
-    //
-    // [shader("compute")]
-    // void main() {
-    //     uint dataIndex = storageBuffer[0].data;
-    //     float4 sampledColor = texture[dataIndex].SampleLevel(sampler, float2(0), 0);
-    //     storageBuffer[0].color = sampledColor;
-    // }
-    char const *cs_source = R"(
-               OpCapability RuntimeDescriptorArray
-               OpCapability Shader
-               OpExtension "SPV_KHR_storage_buffer_storage_class"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %main "main" %storageBuffer %texture %sampler
-               OpExecutionMode %main LocalSize 1 1 1
-               OpMemberDecorate %StorageBuffer_std430 0 Offset 0
-               OpMemberDecorate %StorageBuffer_std430 1 Offset 16
-               OpDecorate %_runtimearr_StorageBuffer_std430 ArrayStride 32
-               OpDecorate %RWStructuredBuffer Block
-               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
-               OpDecorate %storageBuffer Binding 2
-               OpDecorate %storageBuffer DescriptorSet 0
-               OpDecorate %texture Binding 0
-               OpDecorate %texture DescriptorSet 0
-               OpDecorate %sampler Binding 1
-               OpDecorate %sampler DescriptorSet 0
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-        %int = OpTypeInt 32 1
-      %int_0 = OpConstant %int 0
-       %uint = OpTypeInt 32 0
-      %float = OpTypeFloat 32
-    %v4float = OpTypeVector %float 4
-%StorageBuffer_std430 = OpTypeStruct %uint %v4float
-%_ptr_StorageBuffer_StorageBuffer_std430 = OpTypePointer StorageBuffer %StorageBuffer_std430
-%_runtimearr_StorageBuffer_std430 = OpTypeRuntimeArray %StorageBuffer_std430
-%RWStructuredBuffer = OpTypeStruct %_runtimearr_StorageBuffer_std430
-%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
-%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
-         %21 = OpTypeImage %float 2D 2 0 0 1 Unknown
-%_runtimearr_21 = OpTypeRuntimeArray %21
-%_ptr_UniformConstant__runtimearr_21 = OpTypePointer UniformConstant %_runtimearr_21
-%_ptr_UniformConstant_21 = OpTypePointer UniformConstant %21
-    %v2float = OpTypeVector %float 2
-         %32 = OpTypeSampler
-%_ptr_UniformConstant_32 = OpTypePointer UniformConstant %32
-         %36 = OpTypeSampledImage %21
-    %float_0 = OpConstant %float 0
-      %int_1 = OpConstant %int 1
-%_ptr_StorageBuffer_v4float = OpTypePointer StorageBuffer %v4float
-%storageBuffer = OpVariable %_ptr_StorageBuffer_RWStructuredBuffer StorageBuffer
-    %texture = OpVariable %_ptr_UniformConstant__runtimearr_21 UniformConstant
-    %sampler = OpVariable %_ptr_UniformConstant_32 UniformConstant
-         %47 = OpConstantComposite %v2float %float_0 %float_0
-       %main = OpFunction %void None %3
-          %4 = OpLabel
-         %12 = OpAccessChain %_ptr_StorageBuffer_StorageBuffer_std430 %storageBuffer %int_0 %int_0
-         %18 = OpAccessChain %_ptr_StorageBuffer_uint %12 %int_0
-  %dataIndex = OpLoad %uint %18
-         %25 = OpAccessChain %_ptr_UniformConstant_21 %texture %dataIndex
-         %31 = OpLoad %21 %25
-         %33 = OpLoad %32 %sampler
-%sampledImage = OpSampledImage %36 %31 %33
-    %sampled = OpImageSampleExplicitLod %v4float %sampledImage %47 Lod %float_0
-         %41 = OpAccessChain %_ptr_StorageBuffer_StorageBuffer_std430 %storageBuffer %int_0 %int_0
-         %44 = OpAccessChain %_ptr_StorageBuffer_v4float %41 %int_1
-               OpStore %44 %sampled
-               OpReturn
-               OpFunctionEnd
-    )";
-
+    const char *slang_shader = R"slang(
+        [[vk::binding(0, 0)]]
+        Texture2D texture[];
+        [[vk::binding(1, 0)]]
+        SamplerState sampler;
+        
+        struct StorageBuffer {
+            uint data; // Will be one
+            float4 color;
+        };
+        
+        [[vk::binding(2, 0)]]
+        RWStructuredBuffer<StorageBuffer> storageBuffer;
+        
+        [shader("compute")]
+        void main() {
+            uint dataIndex = storageBuffer[0].data;
+            float4 sampledColor = texture[dataIndex].SampleLevel(sampler, float2(0), 0);
+            storageBuffer[0].color = sampledColor;
+        }
+    )slang";
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     uint32_t *buffer_ptr = (uint32_t *)buffer.Memory().Map();
     *buffer_ptr = 1;
@@ -1652,7 +1593,7 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, DescriptorIndexingSlang) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(this, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
