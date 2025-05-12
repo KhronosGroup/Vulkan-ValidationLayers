@@ -296,45 +296,38 @@ bool BestPractices::ValidateComputeShaderArm(const spirv::Module& module_state, 
                                              const Location& loc) const {
     bool skip = false;
 
-    uint32_t x = {}, y = {}, z = {};
-    if (!module_state.FindLocalSize(entrypoint, x, y, z)) {
+    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+    if (local_size.x == 0) {
         return false;
     }
 
-    const uint64_t thread_count = x * y * z;
+    const uint64_t thread_count = local_size.x * local_size.y * local_size.z;
 
     // Generate a priori warnings about work group sizes.
     if (thread_count > kMaxEfficientWorkGroupThreadCountArm) {
         skip |= LogPerformanceWarning(
             "BestPractices-Arm-vkCreateComputePipelines-compute-work-group-size", device, loc,
-            "%s compute shader with work group dimensions (%" PRIu32 ", %" PRIu32
-            ", "
-            "%" PRIu32 ") (%" PRIu64
+            "%s compute shader with work group dimensions (%s) (%" PRIu64
             " threads total), has more threads than advised in a single work group. It is advised to use work "
             "groups with less than %" PRIu32 " threads, especially when using barrier() or shared memory.",
-            VendorSpecificTag(kBPVendorArm), x, y, z, thread_count, kMaxEfficientWorkGroupThreadCountArm);
+            VendorSpecificTag(kBPVendorArm), local_size.ToString().c_str(), thread_count, kMaxEfficientWorkGroupThreadCountArm);
     }
 
-    if (thread_count == 1 || ((x > 1) && (x & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
-        ((y > 1) && (y & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
-        ((z > 1) && (z & (kThreadGroupDispatchCountAlignmentArm - 1)))) {
+    if (thread_count == 1 || ((local_size.x > 1) && (local_size.x & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
+        ((local_size.y > 1) && (local_size.y & (kThreadGroupDispatchCountAlignmentArm - 1))) ||
+        ((local_size.z > 1) && (local_size.z & (kThreadGroupDispatchCountAlignmentArm - 1)))) {
         skip |= LogPerformanceWarning("BestPractices-Arm-vkCreateComputePipelines-compute-thread-group-alignment", device, loc,
-                                      "%s compute shader with work group dimensions (%" PRIu32
-                                      ", "
-                                      "%" PRIu32 ", %" PRIu32 ") is not aligned to %" PRIu32
-                                      " "
-                                      "threads. On Arm Mali architectures, not aligning work group sizes to %" PRIu32
-                                      " may "
-                                      "leave threads idle on the shader "
-                                      "core.",
-                                      VendorSpecificTag(kBPVendorArm), x, y, z, kThreadGroupDispatchCountAlignmentArm,
-                                      kThreadGroupDispatchCountAlignmentArm);
+                                      "%s compute shader with work group dimensions (%s) is not aligned to %" PRIu32
+                                      " threads. On Arm Mali architectures, not aligning work group sizes to %" PRIu32
+                                      " may leave threads idle on the shader core.",
+                                      VendorSpecificTag(kBPVendorArm), local_size.ToString().c_str(),
+                                      kThreadGroupDispatchCountAlignmentArm, kThreadGroupDispatchCountAlignmentArm);
     }
 
     uint32_t dimensions = 0;
-    if (x > 1) dimensions++;
-    if (y > 1) dimensions++;
-    if (z > 1) dimensions++;
+    if (local_size.x > 1) dimensions++;
+    if (local_size.y > 1) dimensions++;
+    if (local_size.z > 1) dimensions++;
 
     if (dimensions == 1) {
         // If we're accessing images, we almost certainly want to have a 2D workgroup for cache reasons.
@@ -343,11 +336,10 @@ bool BestPractices::ValidateComputeShaderArm(const spirv::Module& module_state, 
         for (const auto& variable : entrypoint.resource_interface_variables) {
             if (variable.IsImage() && variable.info.image_dim != spv::Dim1D && variable.info.image_dim != spv::DimBuffer) {
                 LogPerformanceWarning("BestPractices-Arm-vkCreateComputePipelines-compute-spatial-locality", device, loc,
-                                      "%s compute shader has work group dimensions (%" PRIu32 ", %" PRIu32 ", %" PRIu32
-                                      "), which "
+                                      "%s compute shader has work group dimensions (%s), which "
                                       "suggests a 1D dispatch, but the shader is accessing 2D or 3D images. The shader may be "
                                       "exhibiting poor spatial locality with respect to one or more shader resources.",
-                                      VendorSpecificTag(kBPVendorArm), x, y, z);
+                                      VendorSpecificTag(kBPVendorArm), local_size.ToString().c_str());
                 break;  // only need to report once
             }
         }
@@ -360,22 +352,21 @@ bool BestPractices::ValidateComputeShaderAmd(const spirv::Module& module_state, 
                                              const Location& loc) const {
     bool skip = false;
 
-    uint32_t x = {}, y = {}, z = {};
-    if (!module_state.FindLocalSize(entrypoint, x, y, z)) {
+    spirv::LocalSize local_size = module_state.FindLocalSize(entrypoint);
+    if (local_size.x == 0) {
         return false;
     }
 
-    const uint64_t thread_count = x * y * z;
+    const uint64_t thread_count = local_size.x * local_size.y * local_size.z;
 
     const bool multiple_64 = ((thread_count % 64) == 0);
 
     if (!multiple_64) {
         skip |= LogPerformanceWarning("BestPractices-AMD-LocalWorkgroup-Multiple64", device, loc,
-                                      "%s compute shader with work group dimensions (%" PRIu32 ", %" PRIu32 ", %" PRIu32
-                                      "), workgroup size (%" PRIu64
+                                      "%s compute shader with work group dimensions (%s), workgroup size (%" PRIu64
                                       "), is not a multiple of 64. Make the workgroup size a multiple of 64 to obtain best "
                                       "performance across all AMD GPU generations.",
-                                      VendorSpecificTag(kBPVendorAMD), x, y, z, thread_count);
+                                      VendorSpecificTag(kBPVendorAMD), local_size.ToString().c_str(), thread_count);
     }
 
     return skip;
