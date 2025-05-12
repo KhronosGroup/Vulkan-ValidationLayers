@@ -4122,63 +4122,24 @@ TEST_F(NegativeGpuAVDescriptorIndexing, CommandBufferRerecordSameDescriptorSet) 
 
 TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
     TEST_DESCRIPTION("Slang will produce a chain of OpAccessChains");
+
+    RETURN_IF_SKIP(CheckSlangSupport());
     RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
 
-    // struct Bar {
-    //     uint x;
-    // };
-    //
-    // [[vk::binding(0, 0)]]
-    // RWStructuredBuffer<Bar> foo[4];
-    //
-    // [shader("compute")]
-    // void main() {
-    //     uint index = foo[0][0].x;
-    //     foo[index][7].x = 8;
-    // }
-    char const *cs_source = R"(
-               OpCapability Shader
-               OpExtension "SPV_KHR_storage_buffer_storage_class"
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %main "main" %foo
-               OpExecutionMode %main LocalSize 1 1 1
-               OpMemberDecorate %Bar_std430 0 Offset 0
-               OpDecorate %_runtimearr_Bar_std430 ArrayStride 4
-               OpDecorate %RWStructuredBuffer Block
-               OpMemberDecorate %RWStructuredBuffer 0 Offset 0
-               OpDecorate %foo Binding 0
-               OpDecorate %foo DescriptorSet 0
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-       %uint = OpTypeInt 32 0
- %Bar_std430 = OpTypeStruct %uint
-%_runtimearr_Bar_std430 = OpTypeRuntimeArray %Bar_std430
-%RWStructuredBuffer = OpTypeStruct %_runtimearr_Bar_std430
-        %int = OpTypeInt 32 1
-      %int_4 = OpConstant %int 4
-%_arr_RWStructuredBuffer_int_4 = OpTypeArray %RWStructuredBuffer %int_4
-%_ptr_StorageBuffer__arr_RWStructuredBuffer_int_4 = OpTypePointer StorageBuffer %_arr_RWStructuredBuffer_int_4
-%_ptr_StorageBuffer_RWStructuredBuffer = OpTypePointer StorageBuffer %RWStructuredBuffer
-      %int_0 = OpConstant %int 0
-%_ptr_StorageBuffer_Bar_std430 = OpTypePointer StorageBuffer %Bar_std430
-%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
-      %int_7 = OpConstant %int 7
-     %uint_8 = OpConstant %uint 8
-        %foo = OpVariable %_ptr_StorageBuffer__arr_RWStructuredBuffer_int_4 StorageBuffer
-       %main = OpFunction %void None %3
-          %4 = OpLabel
-         %15 = OpAccessChain %_ptr_StorageBuffer_RWStructuredBuffer %foo %int_0
-         %18 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %15 %int_0 %int_0
-         %20 = OpAccessChain %_ptr_StorageBuffer_uint %18 %int_0
-      %index = OpLoad %uint %20
-         %22 = OpAccessChain %_ptr_StorageBuffer_RWStructuredBuffer %foo %index
-         %24 = OpAccessChain %_ptr_StorageBuffer_Bar_std430 %22 %int_0 %int_7
-         %25 = OpAccessChain %_ptr_StorageBuffer_uint %24 %int_0
-               OpStore %25 %uint_8
-               OpReturn
-               OpFunctionEnd
-    )";
-
+    const char *slang_shader = R"slang(
+        struct Bar {
+            uint x;
+        };
+        
+        [[vk::binding(0, 0)]]
+        RWStructuredBuffer<Bar> foo[4];
+        
+        [shader("compute")]
+        void main() {
+            uint index = foo[0][0].x;
+            foo[index][7].x = 8;
+        }
+    )slang";
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
@@ -4196,7 +4157,7 @@ TEST_F(NegativeGpuAVDescriptorIndexing, MultipleAccessChains) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(this, slang_shader, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_SLANG);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
