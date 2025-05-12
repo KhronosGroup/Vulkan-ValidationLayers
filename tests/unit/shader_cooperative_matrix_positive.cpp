@@ -14,6 +14,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
+#include "../framework/shader_object_helper.h"
 
 const char *vkComponentTypeToGLSL(VkComponentTypeKHR type) {
     switch (type) {
@@ -323,4 +324,92 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredSubgroupSize) {
     pipe.cp_ci_.stage.pNext = &subgroup_size_control;
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline(false);
+}
+
+TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionPipeline) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/847");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
+    }
+
+    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+
+    const char *cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_shader_subgroup_basic : enable
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+         layout(local_size_x = 32) in;
+         layout(set=0, binding=0) coherent buffer InputA { uint32_t x[]; } inputA;
+         coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+         void main() {
+             coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cp_ci_.stage = cs.GetStageCreateInfo();
+    pipe.cp_ci_.stage.flags = VK_PIPELINE_SHADER_STAGE_CREATE_REQUIRE_FULL_SUBGROUPS_BIT;
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline(false);
+}
+
+TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/spirv/SPIR-V/-/issues/847");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SUBGROUP_SIZE_CONTROL_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderObject);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::computeFullSubgroups);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+    if (!IsPlatformMockICD()) {
+        GTEST_SKIP() << "This makes assumption about possible coop matrix subgroup size and support.";
+    }
+
+    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&dsl});
+
+    const char *cs_source = R"glsl(
+         #version 450 core
+         #pragma use_vulkan_memory_model
+         #extension GL_KHR_shader_subgroup_basic : enable
+         #extension GL_KHR_memory_scope_semantics : enable
+         #extension GL_KHR_cooperative_matrix : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types : enable
+         #extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
+         layout(local_size_x = 32) in;
+         layout(set=0, binding=0) coherent buffer InputA { uint32_t x[]; } inputA;
+         coopmat<uint32_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> matA;
+         void main() {
+             coopMatLoad(matA, inputA.x, 0, 16, gl_CooperativeMatrixLayoutRowMajor);
+         }
+    )glsl";
+
+    const auto spv = GLSLToSPV(VK_SHADER_STAGE_COMPUTE_BIT, cs_source, SPV_ENV_VULKAN_1_1);
+    auto shader_ci = ShaderCreateInfoNoNextStage(spv, VK_SHADER_STAGE_COMPUTE_BIT, 1, &dsl.handle());
+    shader_ci.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
+    const vkt::Shader comp_shader(*m_device, shader_ci);
 }
