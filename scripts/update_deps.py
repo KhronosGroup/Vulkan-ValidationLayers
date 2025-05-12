@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 # Copyright 2017 The Glslang Authors. All rights reserved.
-# Copyright (c) 2018-2024 Valve Corporation
-# Copyright (c) 2018-2024 LunarG, Inc.
+# Copyright (c) 2018-2025 Valve Corporation
+# Copyright (c) 2018-2025 LunarG, Inc.
 # Copyright (c) 2023-2023 RasterGrid Kft.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -623,6 +623,21 @@ def GetInstallNames(args):
         else:
             return None
 
+def GetRepoBinaries(args):
+    """Returns the repo binaries version list.       
+    """
+    if args.known_good_dir:
+        known_good_file = os.path.join(os.path.abspath(args.known_good_dir),
+            KNOWN_GOOD_FILE_NAME)
+    else:
+        known_good_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), KNOWN_GOOD_FILE_NAME)
+    with open(known_good_file) as known_good:
+        json_data = json.loads(known_good.read())
+        if json_data.get('repo_binaries_version'):
+            return json_data['repo_binaries_version']
+        else:
+            return []
 
 def CreateHelper(args, repos, filename):
     """Create a CMake config helper file.
@@ -648,6 +663,12 @@ def CreateHelper(args, repos, filename):
                                       var=install_names[repo.name],
                                       dir=escape(repo.install_dir)))
 
+        repo_binaries_version = GetRepoBinaries(args)
+        for binary_entry in repo_binaries_version:
+            for binary_name, binary_version in binary_entry.items():
+                helper_file.write(f'set({binary_name.upper()}_VERSION "{binary_version}" CACHE STRING "{binary_name} version to use")\n')
+                if VERBOSE:
+                    print(f'Added {binary_name} version {binary_version} to helper.cmake')
 
 def GetDefaultArch():
     machine = platform.machine().lower()

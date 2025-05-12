@@ -119,6 +119,9 @@
             ]
         }
     ],
+    "repo_binaries_version": [
+       { "slang": "2025.12.1" }
+    ],
     "install_names": {
         "glslang": "GLSLANG_INSTALL_DIR",
         "Vulkan-Headers": "VULKAN_HEADERS_INSTALL_DIR",
