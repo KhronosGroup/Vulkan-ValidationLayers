@@ -15,6 +15,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include "utils/cast_utils.h"
+#include "../framework/external_memory_sync.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/render_pass_helper.h"
 #include "../framework/sync_helper.h"
@@ -5013,4 +5014,57 @@ TEST_F(NegativeSyncObject, RayTracingStageFlagWithoutFeature) {
     m_command_buffer.End();
 
     m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncObject, TimelineSemaphoreAndExportedCopyCooperation) {
+    TEST_DESCRIPTION("Signal smaller value than the current value when semaphores share payload");
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(extension_name);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    if (!SemaphoreExportImportSupported(Gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
+    }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
+    export_info.handleTypes = handle_type;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+    vkt::Semaphore import_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    ExternalHandle handle{};
+    semaphore.ExportHandle(handle, handle_type);
+    import_semaphore.ImportHandle(handle, handle_type);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineWait(import_semaphore, 1), vkt::TimelineSignal(import_semaphore, 3));
+
+    // Wait until imported copy reaches value 3
+    import_semaphore.Wait(3, kWaitTimeout);
+
+    // This will update current value for original semaphore to 3.
+    semaphore.GetCounterValue();
+
+    // Signal smaller value (2) than the current value (3)
+    m_errorMonitor->SetDesiredError("VUID-VkSemaphoreSignalInfo-value-03258");
+    semaphore.Signal(2);
+    m_errorMonitor->VerifyFound();
+    m_device->Wait();
 }

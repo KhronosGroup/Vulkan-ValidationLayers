@@ -2612,3 +2612,111 @@ TEST_F(PositiveSyncObject, AccessFlags3) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveSyncObject, TimelineSemaphoreAndExportedCopyCooperation) {
+    TEST_DESCRIPTION("Test that queue submission state is updated properly when using semaphores with shared payload");
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(extension_name);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    if (!SemaphoreExportImportSupported(Gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
+    }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
+    export_info.handleTypes = handle_type;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+    vkt::Semaphore import_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    ExternalHandle handle{};
+    semaphore.ExportHandle(handle, handle_type);
+    import_semaphore.ImportHandle(handle, handle_type);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
+    m_second_queue->Submit(vkt::no_cmd, vkt::TimelineWait(import_semaphore, 1), vkt::TimelineSignal(import_semaphore, 2));
+
+    // Wait until imported copy reaches value 2
+    import_semaphore.Wait(2, kWaitTimeout);
+
+    // This will update current value for original semaphore to 2.
+    semaphore.GetCounterValue();
+
+    // Test that quering semaphroe counter also processed signal=1 and we don't get
+    // an error that semaphore signaled with smaller value 1 than current value 2.
+    m_device->Wait();
+}
+
+TEST_F(PositiveSyncObject, TimelineSemaphoreAndExportedCopyCooperation2) {
+    TEST_DESCRIPTION("Test that queue submission state is updated properly when using semaphores with shared payload");
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(extension_name);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by MockICD";
+    }
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+    if (!SemaphoreExportImportSupported(Gpu(), handle_type)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
+    }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
+    export_info.handleTypes = handle_type;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+    vkt::Semaphore imported_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    ExternalHandle handle{};
+    semaphore.ExportHandle(handle, handle_type);
+    imported_semaphore.ImportHandle(handle, handle_type);
+
+    vkt::Fence fence(*m_device);
+
+    const uint32_t N = 20;
+    for (uint32_t i = 0; i < N; i += 4) {
+        // q0: (w=0, s=1) (w=2, s=3) (w=4, s=5) ...
+        m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, i), vkt::TimelineSignal(semaphore, i + 1));
+        m_default_queue->Submit(vkt::no_cmd, vkt::TimelineWait(semaphore, i + 2), vkt::TimelineSignal(semaphore, i + 3), fence);
+        // q1: (w=1, s2) (w=3, s=4) (w=5, s=6) ...
+        m_second_queue->Submit(vkt::no_cmd, vkt::TimelineWait(imported_semaphore, i + 1),
+                               vkt::TimelineSignal(imported_semaphore, i + 2));
+        m_second_queue->Submit(vkt::no_cmd, vkt::TimelineWait(imported_semaphore, i + 3),
+                               vkt::TimelineSignal(imported_semaphore, i + 4));
+
+        semaphore.GetCounterValue();
+        fence.Wait(kWaitTimeout);
+        fence.Reset();
+    }
+    m_device->Wait();
+}
