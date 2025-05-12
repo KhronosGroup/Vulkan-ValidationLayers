@@ -83,9 +83,8 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
     skip |= ValidateAtomicsTypes(module_state, stateless_data, loc);
     skip |= ValidateVariables(module_state, loc);
 
-    if (enabled_features.transformFeedback) {
-        skip |= ValidateTransformFeedbackDecorations(module_state, loc);
-    }
+    skip |= ValidateTransformFeedbackDecorations(module_state, loc);
+    skip |= ValidateRelaxedExtendedInstruction(module_state, stateless_data, loc);
 
     // The following tries to limit the number of passes through the shader module.
     // It save a good amount of memory and complex state tracking to just check these in a 2nd pass
@@ -102,9 +101,7 @@ bool SpirvValidator::Validate(const spirv::Module &module_state, const spirv::St
         skip |= ValidateShaderFloatControl(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateExecutionModes(module_state, *entry_point, stateless_data, loc);
         skip |= ValidateConservativeRasterization(module_state, *entry_point, stateless_data, loc);
-        if (enabled_features.transformFeedback) {
-            skip |= ValidateTransformFeedbackEmitStreams(module_state, *entry_point, stateless_data, loc);
-        }
+        skip |= ValidateTransformFeedbackEmitStreams(module_state, *entry_point, stateless_data, loc);
     }
     return skip;
 }
@@ -520,6 +517,10 @@ bool SpirvValidator::ValidateShaderStorageImageFormatsVariables(const spirv::Mod
 bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &module_state, const Location &loc) const {
     bool skip = false;
 
+    if (!enabled_features.transformFeedback) {
+        return skip;
+    }
+
     std::vector<const spirv::Instruction *> xfb_streams;
     std::vector<const spirv::Instruction *> xfb_buffers;
     std::vector<const spirv::Instruction *> xfb_offsets;
@@ -620,7 +621,7 @@ bool SpirvValidator::ValidateTransformFeedbackDecorations(const spirv::Module &m
 bool SpirvValidator::ValidateTransformFeedbackEmitStreams(const spirv::Module &module_state, const spirv::EntryPoint &entrypoint,
                                                           const spirv::StatelessData &stateless_data, const Location &loc) const {
     bool skip = false;
-    if (entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
+    if (!enabled_features.transformFeedback || entrypoint.stage != VK_SHADER_STAGE_GEOMETRY_BIT) {
         return skip;  // GeometryStreams are only used in Geomtry Shaders
     }
 
@@ -653,6 +654,19 @@ bool SpirvValidator::ValidateTransformFeedbackEmitStreams(const spirv::Module &m
                          emitted_streams_size);
     }
 
+    return skip;
+}
+
+bool SpirvValidator::ValidateRelaxedExtendedInstruction(const spirv::Module &module_state,
+                                                        const spirv::StatelessData &stateless_data, const Location &loc) const {
+    bool skip = false;
+    if (!enabled_features.shaderRelaxedExtendedInstruction && stateless_data.has_ext_inst_with_forward_refs) {
+        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7336
+        skip |= LogError("UNASSIGNED-RuntimeSpirv-shaderRelaxedExtendedInstruction", module_state.handle(), loc,
+                         "SPIR-V uses OpExtInstWithForwardRefsKHR but shaderRelaxedExtendedInstruction was not enabled.\nWhen "
+                         "using VK_KHR_shader_non_semantic_info (how you can map SPIR-V back to your source language) this "
+                         "instruction is required when dealing with forward reference to a pointer.");
+    }
     return skip;
 }
 

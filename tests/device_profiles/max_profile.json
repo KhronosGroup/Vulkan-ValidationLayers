@@ -124,6 +124,9 @@
                     "storagePushConstant16": true,
                     "storageInputOutput16": true
                 },
+                "VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR": {
+                    "shaderRelaxedExtendedInstruction": true
+                },
                 "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures": {
                     "shaderSubgroupExtendedTypes": true
                 },
@@ -820,20 +823,20 @@
                     "tileProperties": true
                 },
                 "VkPhysicalDeviceTileShadingFeaturesQCOM": {
-                    "tileShading" : true,
-                    "tileShadingFragmentStage" : true,
-                    "tileShadingColorAttachments" : true,
-                    "tileShadingDepthAttachments" : true,
-                    "tileShadingStencilAttachments" : true,
-                    "tileShadingInputAttachments" : true,
-                    "tileShadingSampledAttachments" : true,
-                    "tileShadingPerTileDraw" : true,
-                    "tileShadingPerTileDispatch" : true,
-                    "tileShadingDispatchTile" : true,
-                    "tileShadingApron" : true,
-                    "tileShadingAnisotropicApron" : true,
-                    "tileShadingAtomicOps" : true,
-                    "tileShadingImageProcessing" : true
+                    "tileShading": true,
+                    "tileShadingFragmentStage": true,
+                    "tileShadingColorAttachments": true,
+                    "tileShadingDepthAttachments": true,
+                    "tileShadingStencilAttachments": true,
+                    "tileShadingInputAttachments": true,
+                    "tileShadingSampledAttachments": true,
+                    "tileShadingPerTileDraw": true,
+                    "tileShadingPerTileDispatch": true,
+                    "tileShadingDispatchTile": true,
+                    "tileShadingApron": true,
+                    "tileShadingAnisotropicApron": true,
+                    "tileShadingAtomicOps": true,
+                    "tileShadingImageProcessing": true
                 },
                 "VkPhysicalDeviceAmigoProfilingFeaturesSEC": {
                     "amigoProfiling": true
@@ -2249,6 +2252,7 @@
                 "VK_KHR_shader_maximal_reconvergence": 1,
                 "VK_KHR_shader_non_semantic_info": 1,
                 "VK_KHR_shader_quad_control": 1,
+                "VK_KHR_shader_relaxed_extended_instruction": 1,
                 "VK_KHR_shader_subgroup_extended_types": 1,
                 "VK_KHR_shader_subgroup_uniform_control_flow": 1,
                 "VK_KHR_shader_subgroup_rotate": 1,
