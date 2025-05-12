@@ -1278,6 +1278,12 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceProperties2(VkPhysicalDevice 
         device_generated_commands_props->deviceGeneratedCommandsMultiDrawIndirectCount = VK_TRUE;
     }
 
+    auto* coop_vec_nv_props = vku::FindStructInPNextChain<VkPhysicalDeviceCooperativeVectorPropertiesNV>(pProperties->pNext);
+    if (coop_vec_nv_props) {
+        coop_vec_nv_props->cooperativeVectorTrainingFloat16Accumulation = VK_TRUE;
+        coop_vec_nv_props->cooperativeVectorTrainingFloat32Accumulation = VK_TRUE;
+    }
+
     const uint32_t num_copy_layouts = 5;
     const VkImageLayout HostCopyLayouts[]{
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,        VK_IMAGE_LAYOUT_GENERAL,
@@ -1619,6 +1625,44 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperti
 
         pProperties[1] = pProperties[0];
         pProperties[1].scope = VK_SCOPE_DEVICE_KHR;
+    }
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice,
+                                                                                     uint32_t* pPropertyCount,
+                                                                                     VkCooperativeVectorPropertiesNV* pProperties) {
+    if (!pProperties) {
+        *pPropertyCount = 4;
+    } else {
+        // arbitrary
+        pProperties[0].inputType = VK_COMPONENT_TYPE_UINT32_KHR;
+        pProperties[0].inputInterpretation = VK_COMPONENT_TYPE_UINT32_KHR;
+        pProperties[0].matrixInterpretation = VK_COMPONENT_TYPE_UINT32_KHR;
+        pProperties[0].biasInterpretation = VK_COMPONENT_TYPE_UINT32_KHR;
+        pProperties[0].resultType = VK_COMPONENT_TYPE_UINT32_KHR;
+        pProperties[0].transpose = VK_FALSE;
+
+        pProperties[1].inputType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[1].inputInterpretation = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[1].matrixInterpretation = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[1].biasInterpretation = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[1].resultType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[1].transpose = VK_FALSE;
+
+        pProperties[2].inputType = VK_COMPONENT_TYPE_FLOAT32_KHR;
+        pProperties[2].inputInterpretation = VK_COMPONENT_TYPE_FLOAT32_KHR;
+        pProperties[2].matrixInterpretation = VK_COMPONENT_TYPE_FLOAT32_KHR;
+        pProperties[2].biasInterpretation = VK_COMPONENT_TYPE_FLOAT32_KHR;
+        pProperties[2].resultType = VK_COMPONENT_TYPE_FLOAT32_KHR;
+        pProperties[2].transpose = VK_FALSE;
+
+        pProperties[3].inputType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[3].inputInterpretation = VK_COMPONENT_TYPE_FLOAT_E4M3_NV;
+        pProperties[3].matrixInterpretation = VK_COMPONENT_TYPE_FLOAT_E4M3_NV;
+        pProperties[3].biasInterpretation = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[3].resultType = VK_COMPONENT_TYPE_FLOAT16_KHR;
+        pProperties[3].transpose = VK_FALSE;
     }
     return VK_SUCCESS;
 }

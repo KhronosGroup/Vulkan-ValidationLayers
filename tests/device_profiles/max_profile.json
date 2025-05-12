@@ -118,6 +118,10 @@
                     "cooperativeMatrix": true,
                     "cooperativeMatrixRobustBufferAccess": true
                 },
+                "VkPhysicalDeviceCooperativeVectorFeaturesNV": {
+                    "cooperativeVector": true,
+                    "cooperativeVectorTraining": true
+                },
                 "VkPhysicalDevice16BitStorageFeatures": {
                     "storageBuffer16BitAccess": true,
                     "uniformAndStorageBuffer16BitAccess": true,
@@ -126,6 +130,9 @@
                 },
                 "VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR": {
                     "shaderRelaxedExtendedInstruction": true
+                },
+                "VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT": {
+                    "shaderReplicatedComposites": true
                 },
                 "VkPhysicalDeviceShaderSubgroupExtendedTypesFeatures": {
                     "shaderSubgroupExtendedTypes": true
@@ -1291,6 +1298,19 @@
                         "VK_SHADER_STAGE_CALLABLE_BIT_KHR"
                     ]
                 },
+                "VkPhysicalDeviceCooperativeVectorPropertiesNV": {
+                    "cooperativeVectorSupportedStages": [
+                        "VK_SHADER_STAGE_FRAGMENT_BIT",
+                        "VK_SHADER_STAGE_COMPUTE_BIT",
+                        "VK_SHADER_STAGE_RAYGEN_BIT_KHR",
+                        "VK_SHADER_STAGE_ANY_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR",
+                        "VK_SHADER_STAGE_MISS_BIT_KHR",
+                        "VK_SHADER_STAGE_INTERSECTION_BIT_KHR",
+                        "VK_SHADER_STAGE_CALLABLE_BIT_KHR"
+                    ],
+                    "maxCooperativeVectorComponents": 4096
+                },
                 "VkPhysicalDeviceDriverProperties": {},
                 "VkPhysicalDeviceIDProperties": {},
                 "VkPhysicalDeviceMultiviewProperties": {
@@ -2133,6 +2153,7 @@
                 "VK_EXT_shader_image_atomic_int64": 1,
                 "VK_EXT_shader_module_identifier": 1,
                 "VK_EXT_shader_object": 1,
+                "VK_EXT_shader_replicated_composites": 1,
                 "VK_EXT_shader_stencil_export": 1,
                 "VK_EXT_shader_subgroup_ballot": 1,
                 "VK_EXT_shader_subgroup_vote": 1,
@@ -2306,6 +2327,7 @@
                 "VK_NV_clip_space_w_scaling": 1,
                 "VK_NV_compute_shader_derivatives": 1,
                 "VK_NV_cooperative_matrix": 1,
+                "VK_NV_cooperative_vector": 1,
                 "VK_NV_copy_memory_indirect": 1,
                 "VK_NV_corner_sampled_image": 1,
                 "VK_NV_coverage_reduction_mode": 1,

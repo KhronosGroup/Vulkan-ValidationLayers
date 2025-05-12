@@ -14,20 +14,17 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
-class PositiveCooperativeVector : public VkLayerTest {};
+class PositiveShaderCooperativeVector : public VkLayerTest {};
 
-TEST_F(PositiveCooperativeVector, ConvertCooperativeVectorMatrixNV) {
+TEST_F(PositiveShaderCooperativeVector, ConvertCooperativeVectorMatrixNV) {
     TEST_DESCRIPTION("Validate using vkConvertCooperativeVectorMatrixNV.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
     AddRequiredFeature(vkt::Feature::cooperativeVector);
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     VkConvertCooperativeVectorMatrixInfoNV info = vku::InitStructHelper();
-    size_t dstSize = 0;
+    size_t dstSize = 16 * 32 * 2;
     info.srcSize = 16 * 32 * 2;
     info.srcData.hostAddress = nullptr;
     info.pDstSize = &dstSize;
@@ -50,24 +47,13 @@ TEST_F(PositiveCooperativeVector, ConvertCooperativeVectorMatrixNV) {
     vk::ConvertCooperativeVectorMatrixNV(*m_device, &info);
 }
 
-TEST_F(PositiveCooperativeVector, CmdConvertCooperativeVectorMatrixNV) {
+TEST_F(PositiveShaderCooperativeVector, CmdConvertCooperativeVectorMatrixNV) {
     TEST_DESCRIPTION("Validate using vkCmdConvertCooperativeVectorMatrixNV.");
-
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
-    VkPhysicalDeviceCooperativeVectorFeaturesNV coopvec_features = vku::InitStructHelper();
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    features12.bufferDeviceAddress = true;
-    features12.pNext = &coopvec_features;
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (coopvec_features.cooperativeVector != VK_TRUE) {
-        GTEST_SKIP() << "cooperativeVector feature not supported";
-    }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
-
-    m_command_buffer.Begin();
+    AddRequiredFeature(vkt::Feature::cooperativeVector);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
 
     VkConvertCooperativeVectorMatrixInfoNV info = vku::InitStructHelper();
     size_t dstSize = 16 * 32 * 2;
@@ -89,29 +75,30 @@ TEST_F(PositiveCooperativeVector, CmdConvertCooperativeVectorMatrixNV) {
     info.srcData.deviceAddress = src_address;
     info.dstData.deviceAddress = dst_address;
 
+    m_command_buffer.Begin();
     vk::CmdConvertCooperativeVectorMatrixNV(m_command_buffer, 1, &info);
-
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCooperativeVector, CooperativeVectorSPIRV) {
+TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
+    AddRequiredFeature(vkt::Feature::cooperativeVector);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
 
-    VkPhysicalDeviceCooperativeVectorFeaturesNV coopvec_features = vku::InitStructHelper();
-    VkPhysicalDeviceVulkan12Features features12 = vku::InitStructHelper();
-    features12.bufferDeviceAddress = true;
-    features12.pNext = &coopvec_features;
-    auto features2 = GetPhysicalDeviceFeatures2(features12);
-    if (coopvec_features.cooperativeVector != VK_TRUE) {
-        GTEST_SKIP() << "cooperativeVector feature not supported";
+    VkPhysicalDeviceCooperativeVectorPropertiesNV props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if (!props.cooperativeVectorTrainingFloat16Accumulation) {
+        GTEST_SKIP() << "cooperativeVectorTrainingFloat16Accumulation not supported";
     }
-    RETURN_IF_SKIP(InitState(nullptr, &features2));
 
-    char const *vtSource = R"glsl(
+    char const *vt_source = R"glsl(
         #version 450
         #extension GL_NV_cooperative_vector : enable
         #extension GL_KHR_shader_subgroup_basic : enable
@@ -123,7 +110,6 @@ TEST_F(PositiveCooperativeVector, CooperativeVectorSPIRV) {
             coopvecNV<float16_t, 32> R;
             coopVecMatMulNV(R, A, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
             coopVecMatMulAddNV(R, A, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
-
        }
     )glsl";
 
@@ -133,31 +119,51 @@ TEST_F(PositiveCooperativeVector, CooperativeVectorSPIRV) {
     const vkt::DescriptorSetLayout dsl(*m_device, bindings);
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-    {
-        CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
-        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
-        pipe.CreateComputePipeline();
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderCooperativeVector, CooperativeVectorTraingingSPIRV) {
+    TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::cooperativeVector);
+    AddRequiredFeature(vkt::Feature::cooperativeVectorTraining);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceCooperativeVectorPropertiesNV props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(props);
+    if (!props.cooperativeVectorTrainingFloat16Accumulation) {
+        GTEST_SKIP() << "cooperativeVectorTrainingFloat16Accumulation not supported";
     }
 
-    if (coopvec_features.cooperativeVectorTraining) {
-        char const *vtSource2 = R"glsl(
-            #version 450
-            #extension GL_NV_cooperative_vector : enable
-            #extension GL_KHR_shader_subgroup_basic : enable
-            #extension GL_KHR_memory_scope_semantics : enable
-            #extension GL_EXT_shader_explicit_arithmetic_types : enable
-            layout(set=0, binding=0) buffer B { uint8_t x[]; } b;
-            void main() {
-                coopvecNV<float16_t, 16> A;
-                coopVecReduceSumAccumulateNV(A, b.x, 0);
-                coopVecOuterProductAccumulateNV(A, A, b.x, 0, 0, gl_CooperativeVectorMatrixLayoutTrainingOptimalNV, gl_ComponentTypeFloat16NV);
+    const std::vector<VkDescriptorSetLayoutBinding> bindings = {
+        {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+    };
+    const vkt::DescriptorSetLayout dsl(*m_device, bindings);
+    const vkt::PipelineLayout pl(*m_device, {&dsl});
 
-           }
-        )glsl";
-        CreateComputePipelineHelper pipe(*this);
-        pipe.cs_ = std::make_unique<VkShaderObj>(this, vtSource2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
-        pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
-        pipe.CreateComputePipeline();
-    }
+    char const *vt_source = R"glsl(
+        #version 450
+        #extension GL_NV_cooperative_vector : enable
+        #extension GL_KHR_shader_subgroup_basic : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        layout(set=0, binding=0) buffer B { uint8_t x[]; } b;
+        void main() {
+            coopvecNV<float16_t, 16> A;
+            coopVecReduceSumAccumulateNV(A, b.x, 0);
+            coopVecOuterProductAccumulateNV(A, A, b.x, 0, 0, gl_CooperativeVectorMatrixLayoutTrainingOptimalNV, gl_ComponentTypeFloat16NV);
+        }
+    )glsl";
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
+    pipe.CreateComputePipeline();
 }

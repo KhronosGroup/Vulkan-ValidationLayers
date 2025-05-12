@@ -14,7 +14,7 @@
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
 
-class NegativeCooperativeVector : public VkLayerTest {
+class NegativeShaderCooperativeVector : public VkLayerTest {
   public:
     void SetupConvertCooperativeVectorMatrixNVTest();
     void SetupCmdConvertCooperativeVectorMatrixNVTest();
@@ -26,12 +26,10 @@ class NegativeCooperativeVector : public VkLayerTest {
     vkt::Buffer src_buffer, dst_buffer;
 };
 
-void NegativeCooperativeVector::SetupConvertCooperativeVectorMatrixNVTest() {
+void NegativeShaderCooperativeVector::SetupConvertCooperativeVectorMatrixNVTest() {
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME);
-    RETURN_IF_SKIP(InitFramework());
-
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
     AddRequiredFeature(vkt::Feature::shaderInt8);
@@ -41,7 +39,7 @@ void NegativeCooperativeVector::SetupConvertCooperativeVectorMatrixNVTest() {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     AddRequiredFeature(vkt::Feature::cooperativeVector);
     AddRequiredFeature(vkt::Feature::cooperativeVectorTraining);
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(Init());
 
     // initialize info to reasonable values
     info = vku::InitStructHelper();
@@ -63,7 +61,7 @@ void NegativeCooperativeVector::SetupConvertCooperativeVectorMatrixNVTest() {
     info.dstData.hostAddress = dst;
 }
 
-void NegativeCooperativeVector::SetupCmdConvertCooperativeVectorMatrixNVTest() {
+void NegativeShaderCooperativeVector::SetupCmdConvertCooperativeVectorMatrixNVTest() {
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     src_buffer = vkt::Buffer(*m_device, 16 * 32 * 4, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, vkt::device_address);
@@ -74,9 +72,8 @@ void NegativeCooperativeVector::SetupCmdConvertCooperativeVectorMatrixNVTest() {
     m_command_buffer.Begin();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertDstAddressNull) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertDstAddressNull) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - dst address should also be null");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcData.hostAddress = nullptr;
@@ -85,9 +82,8 @@ TEST_F(NegativeCooperativeVector, HostConvertDstAddressNull) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertSrcTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertSrcTooSmall) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - src size is too small");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcSize--;
@@ -96,9 +92,8 @@ TEST_F(NegativeCooperativeVector, HostConvertSrcTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertDstTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertDstTooSmall) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - dst size is too small");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     dstSize--;
@@ -107,9 +102,8 @@ TEST_F(NegativeCooperativeVector, HostConvertDstTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertOverlap) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertOverlap) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - detect overlapping ranges");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.dstData.hostAddress = &src[info.srcSize - 1];
@@ -118,9 +112,8 @@ TEST_F(NegativeCooperativeVector, HostConvertOverlap) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertSrcStrideTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertSrcStrideTooSmall) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - src stride too small");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcStride = 62;
@@ -129,9 +122,8 @@ TEST_F(NegativeCooperativeVector, HostConvertSrcStrideTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertSrcStrideUnaligned) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertSrcStrideUnaligned) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - src stride unaligned");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcStride = 65;
@@ -141,9 +133,8 @@ TEST_F(NegativeCooperativeVector, HostConvertSrcStrideUnaligned) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertDstStrideTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertDstStrideTooSmall) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - dst stride too small");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.dstStride = 62;
@@ -152,9 +143,8 @@ TEST_F(NegativeCooperativeVector, HostConvertDstStrideTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertDstStrideUnaligned) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertDstStrideUnaligned) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - dst stride unaligned");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.dstStride = 65;
@@ -164,9 +154,8 @@ TEST_F(NegativeCooperativeVector, HostConvertDstStrideUnaligned) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertSrcComponentUnsupported) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertSrcComponentUnsupported) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - src component unsupported");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcComponentType = VK_COMPONENT_TYPE_SINT32_KHR;
@@ -177,9 +166,8 @@ TEST_F(NegativeCooperativeVector, HostConvertSrcComponentUnsupported) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertUnsupportedConversion) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertUnsupportedConversion) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - unsupported conversion");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcComponentType = VK_COMPONENT_TYPE_FLOAT_E4M3_NV;
@@ -191,9 +179,8 @@ TEST_F(NegativeCooperativeVector, HostConvertUnsupportedConversion) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertUnsupportedFP8Layout) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertUnsupportedFP8Layout) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - unsupported fp8 layout");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.dstComponentType = VK_COMPONENT_TYPE_FLOAT_E4M3_NV;
@@ -202,9 +189,8 @@ TEST_F(NegativeCooperativeVector, HostConvertUnsupportedFP8Layout) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, HostConvertUnsupportedMatrixType) {
+TEST_F(NegativeShaderCooperativeVector, HostConvertUnsupportedMatrixType) {
     TEST_DESCRIPTION("vkConvertCooperativeVectorMatrixNV - unsupported matrix type");
-
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     info.srcComponentType = VK_COMPONENT_TYPE_SINT32_KHR;
@@ -219,9 +205,8 @@ TEST_F(NegativeCooperativeVector, HostConvertUnsupportedMatrixType) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertUnalignedSrcAddress) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertUnalignedSrcAddress) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - unaligned src address");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.srcData.deviceAddress++;
@@ -230,9 +215,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertUnalignedSrcAddress) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertUnalignedDstAddress) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertUnalignedDstAddress) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - unaligned dst address");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.dstData.deviceAddress++;
@@ -241,9 +225,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertUnalignedDstAddress) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertSrcTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertSrcTooSmall) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - src too small");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.srcSize--;
@@ -252,9 +235,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertSrcTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertDstTooSmall) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertDstTooSmall) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - dst too small");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     dstSize--;
@@ -263,9 +245,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertDstTooSmall) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertOverlap) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertOverlap) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - overlapping ranges");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     VkConvertCooperativeVectorMatrixInfoNV infos[2] = {info, info};
@@ -276,9 +257,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertOverlap) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertSrcAddressInvalid) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertSrcAddressInvalid) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - src not from a buffer");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.srcData.deviceAddress = 64;
@@ -287,9 +267,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertSrcAddressInvalid) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertDstAddressInvalid) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertDstAddressInvalid) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - dst not from a buffer");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.dstData.deviceAddress = 64;
@@ -298,9 +277,8 @@ TEST_F(NegativeCooperativeVector, DeviceConvertDstAddressInvalid) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, DeviceConvertUnsupportedMatrixType) {
+TEST_F(NegativeShaderCooperativeVector, DeviceConvertUnsupportedMatrixType) {
     TEST_DESCRIPTION("vkCmdConvertCooperativeVectorMatrixNV - unsupported matrix type");
-
     RETURN_IF_SKIP(SetupCmdConvertCooperativeVectorMatrixNVTest());
 
     info.srcComponentType = VK_COMPONENT_TYPE_SINT32_KHR;
@@ -315,7 +293,7 @@ TEST_F(NegativeCooperativeVector, DeviceConvertUnsupportedMatrixType) {
     m_errorMonitor->VerifyFound();
 }
 
-void NegativeCooperativeVector::RunSPIRVTest(const char *expected_error, const char *shaderBody, uint32_t count) {
+void NegativeShaderCooperativeVector::RunSPIRVTest(const char *expected_error, const char *shaderBody, uint32_t count) {
     RETURN_IF_SKIP(SetupConvertCooperativeVectorMatrixNVTest());
 
     std::string shader_source = std::string(R"(
@@ -340,7 +318,7 @@ void NegativeCooperativeVector::RunSPIRVTest(const char *expected_error, const c
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVTooManyComponents) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVTooManyComponents) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-maxCooperativeVectorComponents-10094",
@@ -349,7 +327,7 @@ TEST_F(NegativeCooperativeVector, SPIRVTooManyComponents) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVUnsupportedComponentType) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVUnsupportedComponentType) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpTypeCooperativeVector-10095",
@@ -358,7 +336,7 @@ TEST_F(NegativeCooperativeVector, SPIRVUnsupportedComponentType) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVMatMulAddParams) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVMatMulAddParams) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10089",
@@ -369,7 +347,7 @@ TEST_F(NegativeCooperativeVector, SPIRVMatMulAddParams) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVMatMulParams) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVMatMulParams) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10089",
@@ -380,7 +358,7 @@ TEST_F(NegativeCooperativeVector, SPIRVMatMulParams) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVFP8Layout) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVFP8Layout) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10090",
@@ -391,7 +369,7 @@ TEST_F(NegativeCooperativeVector, SPIRVFP8Layout) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVReduceSumType) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVReduceSumType) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092",
@@ -401,7 +379,7 @@ TEST_F(NegativeCooperativeVector, SPIRVReduceSumType) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVReduceSumStorageClass) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVReduceSumStorageClass) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorReduceSumAccumulateNV-10092",
@@ -411,7 +389,7 @@ TEST_F(NegativeCooperativeVector, SPIRVReduceSumStorageClass) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVOuterProductType) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVOuterProductType) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
@@ -423,7 +401,7 @@ TEST_F(NegativeCooperativeVector, SPIRVOuterProductType) {
                  2);
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVOuterProductInterpretation) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVOuterProductInterpretation) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
@@ -434,7 +412,7 @@ TEST_F(NegativeCooperativeVector, SPIRVOuterProductInterpretation) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVOuterProductLayout) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVOuterProductLayout) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
@@ -444,7 +422,7 @@ TEST_F(NegativeCooperativeVector, SPIRVOuterProductLayout) {
         )");
 }
 
-TEST_F(NegativeCooperativeVector, SPIRVOuterProductStorageClass) {
+TEST_F(NegativeShaderCooperativeVector, SPIRVOuterProductStorageClass) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
     RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093",
