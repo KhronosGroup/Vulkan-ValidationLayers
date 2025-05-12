@@ -323,10 +323,13 @@ class Pipeline {
     void SetPushConstantRangeSize(uint32_t byte_size);
     void SetGlslRayGenShader(const char* glsl);
     void AddSpirvRayGenShader(const char* spirv, const char* entry_point);
+    void AddSlangRayGenShader(const char* slang, const char* entry_point);
     void AddGlslMissShader(const char* glsl);
     void AddSpirvMissShader(const char* spirv, const char* entry_point);
+    void AddSlangMissShader(const char* slang, const char* entry_point);
     void AddGlslClosestHitShader(const char* glsl);
     void AddSpirvClosestHitShader(const char* spirv, const char* entry_point);
+    void AddSlangClosestHitShader(const char* slang, const char* entry_point);
     void AddLibrary(const Pipeline& library);
     void AddDynamicState(VkDynamicState dynamic_state);
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 #include "shader_helper.h"
 #include "glslang/SPIRV/GlslangToSpv.h"
 #include <glslang/Public/ShaderLang.h>
+#include "slang.h"
+#include "slang-com-ptr.h"
 
 static void ProcessConfigFile(const VkPhysicalDeviceLimits &device_limits, TBuiltInResource &out_resources) {
     // These are the default resources for TBuiltInResources.
@@ -304,6 +306,124 @@ bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const cha
     return true;
 }
 
+bool SlangToSPV(const char *slang_shader, const char *entry_point_name, std::vector<uint8_t> &out_bytes) {
+    // Function adapted from
+    // https://github.com/shader-slang/slang/blob/master/examples/hello-world/main.cpp#L114
+    // Used https://github.com/shader-slang/slang/issues/6678 to figure out how to use
+    // `slang::IModule::loadModuleFromSourceString`
+
+    using namespace Slang;
+
+    // First we need to create slang global session with work with the Slang API.
+    ComPtr<slang::IGlobalSession> slang_session;
+    {
+        SlangGlobalSessionDesc slang_session_desc = {};
+        // slang_session_desc.enableGLSL = true; // Could be needed in the future
+        slang::createGlobalSession(&slang_session_desc, slang_session.writeRef());
+    }
+
+    // Next we create a compilation session to generate SPIRV code from Slang source.
+    slang::TargetDesc targetDesc = {};
+    targetDesc.format = SLANG_SPIRV;
+    targetDesc.profile = slang_session->findProfile("glsl_460");  // todo what spirv profile ?
+    targetDesc.flags = 0;
+    slang::SessionDesc sessionDesc = {};
+    sessionDesc.targets = &targetDesc;
+    sessionDesc.targetCount = 1;
+
+    std::vector<slang::CompilerOptionEntry> options;
+    options.push_back(
+        {slang::CompilerOptionName::EmitSpirvDirectly, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}});
+    // https://github.com/shader-slang/slang/issues/6248
+    options.push_back(
+        {slang::CompilerOptionName::VulkanUseEntryPointName, {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}});
+    sessionDesc.compilerOptionEntries = options.data();
+    sessionDesc.compilerOptionEntryCount = options.size();
+
+    ComPtr<slang::ISession> session;
+    SlangResult result = slang_session->createSession(sessionDesc, session.writeRef());
+    if (result != 0) {
+        ADD_FAILURE() << "Slang failure: slang_session->createSession()";
+    }
+
+    // Handle errors
+    Slang::ComPtr<ISlangBlob> diagnostics;
+
+    // Compile the source code
+    // Once the session has been obtained, we can start loading code into it.
+    // Here we use `loadModuleFromSourceString` and not `loadModule`.
+    // moduleName and path are just placeholders
+    Slang::ComPtr<slang::IModule> slang_module;
+    slang_module = session->loadModuleFromSourceString("my_shader", "my_shader.slang", slang_shader, diagnostics.writeRef());
+    if (slang_module == NULL) {
+        ADD_FAILURE() << "Slang failure: loadModuleFromSourceString()\n" << ((const char *)diagnostics->getBufferPointer());
+        return false;
+    }
+
+    // Loading the module will compile and check all the shader code in it,
+    // including the shader entry points we want to use. Now that the module is loaded
+    // we can look up those entry points by name.
+    //
+    // Note: If you are using this `loadModule` approach to load your shader code it is
+    // important to tag your entry point functions with the `[shader("...")]` attribute
+    // (e.g., `[shader("compute")] void computeMain(...)`). Without that information there
+    // is no unambiguous way for the compiler to know which functions represent entry
+    // points when it parses your code via `loadModule()`.
+    //
+    ComPtr<slang::IEntryPoint> entry_point;
+    slang_module->findEntryPointByName(entry_point_name, entry_point.writeRef());
+
+    // At this point we have a few different Slang API objects that represent
+    // pieces of our code: `module`, `vertexEntryPoint`, and `fragmentEntryPoint`.
+    //
+    // A single Slang module could contain many different entry points (e.g.,
+    // four vertex entry points, three fragment entry points, and two compute
+    // shaders), and before we try to generate output code for our target API
+    // we need to identify which entry points we plan to use together.
+    //
+    // Modules and entry points are both examples of *component types* in the
+    // Slang API. The API also provides a way to build a *composite* out of
+    // other pieces, and that is what we are going to do with our module
+    // and entry points.
+    //
+    std::vector<slang::IComponentType *> componentTypes;
+    componentTypes.emplace_back(slang_module);
+    componentTypes.emplace_back(entry_point);
+
+    // Actually creating the composite component type is a single operation
+    // on the Slang session, but the operation could potentially fail if
+    // something about the composite was invalid (e.g., you are trying to
+    // combine multiple copies of the same module), so we need to deal
+    // with the possibility of diagnostic output.
+    //
+    ComPtr<slang::IComponentType> composedProgram;
+    {
+        result = session->createCompositeComponentType(componentTypes.data(), (SlangInt)componentTypes.size(),
+                                                       composedProgram.writeRef(), diagnostics.writeRef());
+        if (result != 0) {
+            ADD_FAILURE() << "Slang failure: createCompositeComponentType()\n" << ((const char *)diagnostics->getBufferPointer());
+            return false;
+        }
+    }
+
+    // Now we can call `composedProgram->getEntryPointCode()` to retrieve the
+    // compiled SPIRV code that we will use to create a vulkan compute pipeline.
+    // This will trigger the final Slang compilation and spirv code generation.
+    ComPtr<slang::IBlob> spirvCode;
+    {
+        result = composedProgram->getEntryPointCode(0, 0, spirvCode.writeRef(), diagnostics.writeRef());
+        if (result != 0) {
+            ADD_FAILURE() << "Slang failure: createCompositeComponentType()\n" << ((const char *)diagnostics->getBufferPointer());
+            return false;
+        }
+    }
+
+    out_bytes.resize(spirvCode->getBufferSize());
+    std::memcpy(out_bytes.data(), spirvCode->getBufferPointer(), spirvCode->getBufferSize());
+
+    return true;
+}
+
 VkPipelineShaderStageCreateInfo const &VkShaderObj::GetStageCreateInfo() const { return m_stage_info; }
 
 VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkShaderStageFlagBits stage, const spv_target_env env,
@@ -320,6 +440,8 @@ VkShaderObj::VkShaderObj(VkRenderFramework *framework, const char *source, VkSha
         InitFromGLSL(pNext);
     } else if (source_type == SPV_SOURCE_ASM) {
         InitFromASM();
+    } else if (source_type == SPV_SOURCE_SLANG) {
+        InitFromSlang();
     }
 }
 
@@ -380,6 +502,25 @@ VkResult VkShaderObj::InitFromASMTry() {
     const auto result = InitTry(m_device, moduleCreateInfo);
     m_stage_info.module = handle();
     return result;
+}
+
+bool VkShaderObj::InitFromSlang() {
+    std::vector<uint8_t> bytes;
+    if (!SlangToSPV(m_source, m_stage_info.pName, bytes)) {
+        return false;
+    }
+    // Maxi hack: slang always output "main" as OpEntryPoint.
+    // But when compiling slang source, the entry point name provided earlier is expected
+    // => TL;DR: things will work as expeced, as long GetStageCreateInfo().pName is used to access the entry point name
+    // after compiling the shader
+    // m_stage_info.pName = "main";
+    VkShaderModuleCreateInfo module_ci = vku::InitStructHelper();
+    module_ci.codeSize = bytes.size();
+    module_ci.pCode = (uint32_t *)bytes.data();
+
+    init(m_device, module_ci);
+    m_stage_info.module = handle();
+    return VK_NULL_HANDLE != handle();
 }
 
 // static

@@ -1091,7 +1091,7 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9559
-TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
+TEST_F(NegativeDebugPrintfRayTracing, OneMultiEntryPointsShader) {
     TEST_DESCRIPTION(
         "Test debug printf in a multi entry points shader. 1 ray generation shader, 1 miss shader, 1 closest hit shader");
 
@@ -1137,9 +1137,72 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
 
     vkt::rt::Pipeline pipeline(*this, m_device);
 
-    pipeline.AddSpirvRayGenShader(GetSlangShader2(), "main");
-    pipeline.AddSpirvMissShader(GetSlangShader2(), "main");
-    pipeline.AddSpirvClosestHitShader(GetSlangShader2(), "main");
+    const char* slang_shader = R"slang(
+        [[vk::binding(0, 0)]] uniform RaytracingAccelerationStructure tlas;
+        [[vk::binding(1, 0)]] RWStructuredBuffer<uint32_t> debug_buffer;
+        
+        struct RayPayload {
+            float3 hit;
+        };
+        
+        [shader("raygeneration")]
+        void rayGenShader()
+        {
+            printf("In Raygen");
+            InterlockedAdd(debug_buffer[0], 1);
+            RayPayload ray_payload = { float3(0) };
+            RayDesc ray;
+            ray.TMin = 0.01;
+            ray.TMax = 1000.0;
+        
+            // Will hit
+            ray.Origin = float3(0,0,-50);
+            ray.Direction = float3(0,0,1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        
+            // Will miss
+            ray.Origin = float3(0,0,-50);
+            ray.Direction = float3(0,0,-1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        
+            // Will miss
+            ray.Origin = float3(0,0,50);
+            ray.Direction = float3(0,0,1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        
+            // Will miss
+            ray.Origin = float3(0,0,50);
+            ray.Direction = float3(0,0,-1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        
+            // Will miss
+            ray.Origin = float3(0,0,0);
+            ray.Direction = float3(0,0,1);
+            TraceRay(tlas, RAY_FLAG_NONE, 0xff, 0, 0, 0, ray, ray_payload);
+        
+        }
+        
+        [shader("miss")]
+        void missShader(inout RayPayload payload)
+        {
+            printf("In Miss");
+            InterlockedAdd(debug_buffer[1], 1);
+            payload.hit = float3(0.1, 0.2, 0.3);
+        }
+        
+        [shader("closesthit")]
+        void closestHitShader(inout RayPayload payload, in BuiltInTriangleIntersectionAttributes attr)
+        {
+            printf("In Closest Hit");
+            InterlockedAdd(debug_buffer[2], 1);
+            const float3 barycentric_coords = float3(1.0f - attr.barycentrics.x - attr.barycentrics.y, attr.barycentrics.x,
+        attr.barycentrics.y); payload.hit = barycentric_coords;
+        }        
+    )slang";
+
+    pipeline.AddSlangRayGenShader(slang_shader, "rayGenShader");
+    pipeline.AddSlangMissShader(slang_shader, "missShader");
+    pipeline.AddSlangClosestHitShader(slang_shader, "closestHitShader");
 
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
     pipeline.AddBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);

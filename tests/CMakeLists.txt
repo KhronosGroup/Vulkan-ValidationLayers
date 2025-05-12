@@ -322,8 +322,91 @@ find_package(GTest CONFIG)
 find_package(glslang CONFIG)
 find_package(SPIRV-Tools CONFIG)
 
+include(ExternalProject)
+
+
+set(SLANG_BINARY_DIR "${CMAKE_BINARY_DIR}/slang")
+
+# Function to determine the correct binary URL based on platform
+function(get_slang_binary_url RESULT_VAR)
+    if(WIN32)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-windows-x86_64.zip" PARENT_SCOPE)
+    elseif(UNIX AND NOT APPLE)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-linux-x86_64.zip" PARENT_SCOPE)
+    elseif(APPLE)
+        set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v2025.8.1/slang-2025.8.1-macos-aarch64.zip" PARENT_SCOPE)
+    else()
+        message(FATAL_ERROR "Unsupported platform for Slang prebuilt binaries")
+    endif()
+endfunction()
+
+get_slang_binary_url(SLANG_URL)
+
+# Download and extract the binaries
+ExternalProject_Add(slang_binaries
+    URL ${SLANG_URL}
+    DOWNLOAD_DIR ${SLANG_BINARY_DIR}/download
+    SOURCE_DIR ${SLANG_BINARY_DIR}/source
+    BINARY_DIR ${SLANG_BINARY_DIR}/build
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    # Ensure extraction happens
+    UPDATE_COMMAND ""
+    PATCH_COMMAND ""
+)
+
+# Define paths to Slang libraries and includes based on extracted structure
+set(SLANG_INCLUDE_DIR "${SLANG_BINARY_DIR}/source/include")
+if(WIN32)
+    set(SLANG_LIBRARY "${SLANG_BINARY_DIR}/source/lib/slang.lib") 
+    set(SLANG_DLL "${SLANG_BINARY_DIR}/source/lib/slang.dll")
+else()
+    set(SLANG_LIBRARY "${SLANG_BINARY_DIR}/source/lib/libslang.so")
+endif()
+
+# Create an imported target for easier usage
+add_library(slang SHARED IMPORTED GLOBAL)
+add_dependencies(slang slang_binaries) # Ensure binaries are downloaded/extracted before use
+
+# Set properties after extraction is completed
+file(MAKE_DIRECTORY ${SLANG_INCLUDE_DIR}) # Avoid include directory warnings
+
+set_target_properties(slang PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES ${SLANG_INCLUDE_DIR}
+)
+
+# Set platform-specific properties
+if(WIN32)
+    set_target_properties(slang PROPERTIES
+        IMPORTED_IMPLIB ${SLANG_LIBRARY}
+        IMPORTED_LOCATION ${SLANG_DLL}
+    )
+else()
+    set_target_properties(slang PROPERTIES
+        IMPORTED_LOCATION ${SLANG_LIBRARY}
+    )
+endif()
+
+# Function to copy the DLL to the target's output directory (for Windows)
+# function(copy_slang_dll TARGET_NAME)
+#     if(WIN32)
+#         add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#                 ${SLANG_DLL}
+#                 $<TARGET_FILE_DIR:${TARGET_NAME}>
+#             COMMENT "Copying Slang DLL to output directory"
+#         )
+#     endif()
+# endfunction()
+
+# Usage in your project:
+# target_link_libraries(your_target PRIVATE slang)
+# copy_slang_dll(your_target)
+
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
+    slang
     glslang::SPIRV
     glslang::SPVRemapper
     SPIRV-Tools-static
