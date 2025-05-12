@@ -1005,6 +1005,12 @@ Module::StaticData::StaticData(const Module& module_state, StatelessData* statel
                 }
                 break;
 
+            case spv::OpExtInstWithForwardRefsKHR:
+                if (stateless_data) {
+                    stateless_data->has_ext_inst_with_forward_refs = true;
+                }
+                break;
+
             // Entry points
             case spv::OpEntryPoint: {
                 entry_point_instructions.push_back(&insn);

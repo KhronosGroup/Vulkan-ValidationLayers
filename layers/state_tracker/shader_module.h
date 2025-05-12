@@ -580,6 +580,7 @@ struct StatelessData {
     bool has_builtin_fully_covered{false};
     bool has_invocation_repack_instruction{false};
     bool has_group_decoration{false};
+    bool has_ext_inst_with_forward_refs{false};  // OpExtInstWithForwardRefsKHR
 };
 
 // Represents a SPIR-V Module

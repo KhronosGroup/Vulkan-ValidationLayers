@@ -2173,3 +2173,75 @@ TEST_F(PositiveShaderSpirv, NonSemanticInfoEnabled) {
     // m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-pCode-08742");
     VkShaderObj::CreateFromASM(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
 }
+
+TEST_F(PositiveShaderSpirv, ShaderRelaxedExtendedInstruction) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4252");
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderRelaxedExtendedInstruction);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    const char *spv_source = R"(
+               OpCapability Shader
+               OpCapability PhysicalStorageBufferAddresses
+               OpExtension "SPV_KHR_physical_storage_buffer"
+               OpExtension "SPV_KHR_storage_buffer_storage_class"
+               OpExtension "SPV_KHR_non_semantic_info"
+               OpExtension "SPV_KHR_relaxed_extended_instruction"
+          %1 = OpExtInstImport "GLSL.std.450"
+         %ns = OpExtInstImport "NonSemantic.Shader.DebugInfo.100"
+               OpMemoryModel PhysicalStorageBuffer64 GLSL450
+               OpEntryPoint GLCompute %main "main"
+               OpExecutionMode %main LocalSize 1 1 1
+          %x = OpString "x"
+       %file = OpString "a.comp"
+         %40 = OpString "float"
+        %mvp = OpString "MeshVertexPositions"
+     %source = OpString "test
+                         test
+                         test"
+               OpDecorate %_runtimearr_float ArrayStride 4
+               OpDecorate %MeshVertexPositions Block
+               OpMemberDecorate %MeshVertexPositions 0 Offset 0
+               OpDecorate %meshData AliasedPointer
+               OpMemberDecorate %Mesh_0 0 Offset 0
+       %void = OpTypeVoid
+          %3 = OpTypeFunction %void
+               OpTypeForwardPointer %_fptr_MeshVertexPositions PhysicalStorageBuffer
+       %Mesh = OpTypeStruct %_fptr_MeshVertexPositions
+      %float = OpTypeFloat 32
+       %uint = OpTypeInt 32 0
+        %int = OpTypeInt 32 1
+    %float_0 = OpConstant %float 0
+      %int_0 = OpConstant %int 0
+     %uint_0 = OpConstant %uint 0
+     %uint_1 = OpConstant %uint 1
+     %uint_2 = OpConstant %uint 2
+     %uint_3 = OpConstant %uint 3
+     %uint_4 = OpConstant %uint 4
+     %uint_32 = OpConstant %uint 32
+  %uint_5349 = OpConstant %uint 5349
+%_runtimearr_float = OpTypeRuntimeArray %float
+%MeshVertexPositions = OpTypeStruct %_runtimearr_float
+%_fptr_MeshVertexPositions = OpTypePointer PhysicalStorageBuffer %MeshVertexPositions
+%_ptr_Function_Mesh = OpTypePointer Function %Mesh
+         %18 = OpExtInst %void %ns DebugSource %file %source
+         %55 = OpExtInst %void %ns DebugCompilationUnit %uint_1 %uint_4 %18 %uint_2
+         %30 = OpExtInstWithForwardRefsKHR %void %ns DebugTypePointer %48 %uint_5349 %uint_0
+     %Mesh_0 = OpTypeStruct %_fptr_MeshVertexPositions
+         %41 = OpExtInst %void %ns DebugTypeBasic %40 %uint_32 %uint_3 %uint_0
+         %43 = OpExtInst %void %ns DebugTypeArray %41 %uint_0
+         %45 = OpExtInst %void %ns DebugTypeMember %x %43 %18 %uint_1 %uint_0 %uint_0 %uint_0 %uint_3
+         %48 = OpExtInst %void %ns DebugTypeComposite %mvp %uint_1 %18 %uint_1 %uint_0 %55 %mvp %uint_0 %uint_3 %45
+       %main = OpFunction %void None %3
+          %5 = OpLabel
+   %meshData = OpVariable %_ptr_Function_Mesh Function
+               OpReturn
+               OpFunctionEnd
+        )";
+
+    VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+}
