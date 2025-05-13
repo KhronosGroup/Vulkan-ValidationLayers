@@ -23,9 +23,11 @@
 #include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/vulkan_core.h>
 #include "core_checks/cc_synchronization.h"
 #include "core_checks/cc_state_tracker.h"
 #include "core_checks/core_validation.h"
+#include "error_message/logging.h"
 #include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"
 #include "generated/enum_flag_bits.h"
@@ -1870,6 +1872,43 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
     return skip;
 }
 
+bool CoreChecks::ValidateImageBarrierZeroInitializedSubresourceRange(const vvl::CommandBuffer &cb_state,
+                                                                     const ImageBarrier &barrier, const vvl::Image &image_state,
+                                                                     const Location &barrier_loc) const {
+    bool skip = false;
+    const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kZeroInitializeSubresource);
+    const Location subresource_range_loc = barrier_loc.dot(Field::subresourceRange);
+    const VkImageSubresourceRange subresource_range = barrier.subresourceRange;
+
+    if (subresource_range.baseArrayLayer != 0) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::baseArrayLayer),
+                         "(%" PRIu32 ") is not zero, but you need to zero initialize the entire image resource at once.",
+                         subresource_range.baseArrayLayer);
+    } else if (subresource_range.baseMipLevel != 0) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::baseMipLevel),
+                         "(%" PRIu32 ") is not zero, but you need to zero initialize the entire image resource at once.",
+                         subresource_range.baseMipLevel);
+    } else if (subresource_range.layerCount != VK_REMAINING_ARRAY_LAYERS &&
+               subresource_range.layerCount != image_state.create_info.arrayLayers) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::layerCount),
+                         "(%" PRIu32 ") is not the same as VkImageCreateInfo::arrayLayers (%" PRIu32
+                         "), but you need to zero initialize the entire image resource at once.",
+                         subresource_range.layerCount, image_state.create_info.arrayLayers);
+    } else if (subresource_range.levelCount != VK_REMAINING_MIP_LEVELS &&
+               subresource_range.levelCount != image_state.create_info.mipLevels) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, subresource_range_loc.dot(Field::levelCount),
+                         "(%" PRIu32 ") is not the same as VkImageCreateInfo::mipLevels (%" PRIu32
+                         "), but you need to zero initialize the entire image resource at once.",
+                         subresource_range.levelCount, image_state.create_info.mipLevels);
+    }
+
+    return skip;
+}
+
 // Verify image barrier image state and that the image is consistent with FB image
 bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, const vvl::CommandBuffer &cb_state,
                                                 const vvl::Framebuffer &fb_state, uint32_t active_subpass,
@@ -2329,9 +2368,9 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
     const VkImageLayout old_layout = barrier.oldLayout;
     const VkImageLayout new_layout = barrier.newLayout;
 
-    bool is_ilt = true;
+    bool is_image_layout_transition = true;
     if (enabled_features.synchronization2) {
-        is_ilt = old_layout != new_layout;
+        is_image_layout_transition = old_layout != new_layout;
     } else {
         if (IsValueIn(old_layout, {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL})) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadSync2OldLayout);
@@ -2345,12 +2384,19 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
         }
     }
 
-    if (is_ilt) {
+    if (is_image_layout_transition) {
         if (IsValueIn(new_layout,
                       {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadLayout);
             skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout), "is %s.", string_VkImageLayout(new_layout));
         }
+    }
+
+    if (old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT && !enabled_features.zeroInitializeDeviceMemory) {
+        const auto &vuid =
+            sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadZeroInitializeOldLayout);
+        skip |= LogError(vuid, objlist, barrier_loc.dot(Field::oldLayout),
+                         "is %s, but the zeroInitializeDeviceMemory feature was not enabled.", string_VkImageLayout(old_layout));
     }
 
     if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
@@ -2368,6 +2414,10 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
         skip |=
             ValidateMemoryIsBoundToImage(cb_state.Handle(), *image_state, barrier_loc.dot(Field::image), vuid_no_memory.c_str());
         skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, layout_updates_state);
+
+        if (old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
+            skip |= ValidateImageBarrierZeroInitializedSubresourceRange(cb_state, barrier, *image_state, barrier_loc);
+        }
     }
     return skip;
 }

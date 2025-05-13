@@ -2720,3 +2720,32 @@ TEST_F(PositiveSyncObject, TimelineSemaphoreAndExportedCopyCooperation2) {
     }
     m_device->Wait();
 }
+
+TEST_F(PositiveSyncObject, ZeroInitializeLayoutSubresource) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo info =
+        vkt::Image::ImageCreateInfo2D(4, 4, 2, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image1(*m_device, info);
+    info.initialLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    vkt::Image image2(*m_device, info);
+
+    m_command_buffer.Begin();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
+    img_barrier.image = image1;
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 2};
+    m_command_buffer.Barrier(img_barrier);
+
+    img_barrier.image = image2;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS};
+    m_command_buffer.Barrier(img_barrier);
+}

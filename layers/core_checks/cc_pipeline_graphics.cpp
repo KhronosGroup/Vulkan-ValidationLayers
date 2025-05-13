@@ -361,8 +361,7 @@ bool CoreChecks::ValidatePipelineLibraryCreateInfo(const vvl::Pipeline &pipeline
         }
 
         if ((lib->uses_shader_module_id) && !(pipeline_flags & VK_PIPELINE_CREATE_2_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT)) {
-            const LogObjectList objlist(device);
-            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855", objlist, library_loc,
+            skip |= LogError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-06855", device, library_loc,
                              "(%s) was created with %s but VkPipelineShaderStageModuleIdentifierCreateInfoEXT::identifierSize was "
                              "not equal to 0 for the pipeline",
                              string_VkGraphicsPipelineLibraryFlagsEXT(lib->graphics_lib_type).c_str(),

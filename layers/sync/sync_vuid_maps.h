@@ -71,6 +71,8 @@ enum class ImageError {
     kBadAttFeedbackLoopLayout,
     kBadSync2OldLayout,
     kBadSync2NewLayout,
+    kBadZeroInitializeOldLayout,
+    kZeroInitializeSubresource,
     kNotColorAspectSinglePlane,
     kNotColorAspectNonDisjoint,
     kBadMultiplanarAspect,

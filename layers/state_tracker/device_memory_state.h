@@ -22,6 +22,9 @@
 #include <vulkan/utility/vk_safe_struct.hpp>
 
 namespace vvl {
+
+std::optional<VkExternalMemoryHandleTypeFlagBits> GetImportHandleType(const VkMemoryAllocateInfo &alloc_info);
+
 struct MemRange {
     VkDeviceSize offset = 0;
     VkDeviceSize size = 0;

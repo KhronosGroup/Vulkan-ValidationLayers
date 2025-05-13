@@ -2256,6 +2256,70 @@ TEST_F(NegativeSyncObject, Sync2LayoutFeature) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeSyncObject, ZeroInitializeLayoutFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo info =
+        vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, info, vkt::set_layout);
+
+    m_command_buffer.Begin();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
+    img_barrier.image = image;
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-10767");
+    m_command_buffer.Barrier(img_barrier);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeSyncObject, ZeroInitializeLayoutSubresource) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo info =
+        vkt::Image::ImageCreateInfo2D(4, 4, 2, 2, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, info);
+
+    m_command_buffer.Begin();
+    VkImageMemoryBarrier2 img_barrier = vku::InitStructHelper();
+    img_barrier.image = image;
+    img_barrier.srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    img_barrier.oldLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 1, 1};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-10768");
+    m_command_buffer.Barrier(img_barrier);
+    m_errorMonitor->VerifyFound();
+
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 1, 0, 2};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-10768");
+    m_command_buffer.Barrier(img_barrier);
+    m_errorMonitor->VerifyFound();
+
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 2};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-10768");
+    m_command_buffer.Barrier(img_barrier);
+    m_errorMonitor->VerifyFound();
+
+    img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 2, 0, 1};
+    m_errorMonitor->SetDesiredError("VUID-VkImageMemoryBarrier2-oldLayout-10768");
+    m_command_buffer.Barrier(img_barrier);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeSyncObject, SubmitSignaledFence) {
     RETURN_IF_SKIP(Init());
 

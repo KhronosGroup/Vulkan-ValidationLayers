@@ -1257,6 +1257,16 @@ const vvl::unordered_map<ImageError, std::vector<Entry>> &GetImageErrorsMap() {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-synchronization2-07794"},
              {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-synchronization2-07794"},
          }},
+        {ImageError::kBadZeroInitializeOldLayout,
+         {
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-10767"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-10767"},
+         }},
+        {ImageError::kZeroInitializeSubresource,
+         {
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-oldLayout-10768"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-oldLayout-10768"},
+         }},
         {ImageError::kNotColorAspectSinglePlane,
          {
              {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-image-09241"},
