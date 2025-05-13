@@ -1039,16 +1039,19 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetSwapchainImagesKHR(VkDevice device, VkS
                                                             uint32_t* pSwapchainImageCount, VkImage* pSwapchainImages) {
     if (!pSwapchainImages) {
         *pSwapchainImageCount = icd_swapchain_image_count;
+    } else if (swapchain_image_map.empty()) {
+        return VK_INCOMPLETE;
     } else {
         unique_lock_t lock(global_lock);
         for (uint32_t img_i = 0; img_i < (std::min)(*pSwapchainImageCount, icd_swapchain_image_count); ++img_i) {
             pSwapchainImages[img_i] = swapchain_image_map.at(swapchain)[img_i];
         }
 
-        if (*pSwapchainImageCount < icd_swapchain_image_count)
+        if (*pSwapchainImageCount < icd_swapchain_image_count) {
             return VK_INCOMPLETE;
-        else if (*pSwapchainImageCount > icd_swapchain_image_count)
+        } else if (*pSwapchainImageCount > icd_swapchain_image_count) {
             *pSwapchainImageCount = icd_swapchain_image_count;
+        }
     }
     return VK_SUCCESS;
 }
