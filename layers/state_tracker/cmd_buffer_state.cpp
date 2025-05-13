@@ -1117,8 +1117,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
                 image_state->GetId() != image_layout_registry->GetImageId()) {
                 continue;
             }
-            auto cb_image_layout_registry = GetOrCreateImageLayoutRegistry(*image_state);
-            if (cb_image_layout_registry) {
+            if (auto cb_image_layout_registry = GetOrCreateImageLayoutRegistry(*image_state)) {
                 cb_image_layout_registry->UpdateFrom(*image_layout_registry);
             }
         }
