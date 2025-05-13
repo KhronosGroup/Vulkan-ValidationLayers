@@ -220,15 +220,17 @@ QueueCreateInfoArray::QueueCreateInfoArray(const std::vector<VkQueueFamilyProper
     }
 }
 
-void Device::destroy() noexcept {
-    if (!initialized()) return;
-    vk::DestroyDevice(handle(), NULL);
+void Device::Destroy() noexcept {
+    if (!initialized()) {
+        return;
+    }
+    vk::DestroyDevice(handle(), nullptr);
     handle_ = VK_NULL_HANDLE;
 }
 
-Device::~Device() noexcept { destroy(); }
+Device::~Device() noexcept { Destroy(); }
 
-void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext,
+void Device::Init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features, void *create_device_pnext,
                   bool all_queue_count) {
     // request all queues
     QueueCreateInfoArray queue_info(physical_device_.queue_properties_, all_queue_count);
@@ -274,13 +276,13 @@ void Device::init(std::vector<const char *> &extensions, VkPhysicalDeviceFeature
         features_ = *dev_info.pEnabledFeatures;
     }
 
-    init(dev_info);
+    Init(dev_info);
 }
 
-void Device::init(const VkDeviceCreateInfo &info) {
+void Device::Init(const VkDeviceCreateInfo &info) {
     VkDevice dev;
 
-    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_.handle(), &info, NULL, &dev));
+    ASSERT_EQ(VK_SUCCESS, vk::CreateDevice(physical_device_.handle(), &info, nullptr, &dev));
     Handle::init(dev);
 
     InitQueues(info);

@@ -58,7 +58,7 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
 
     VkPipelineLibraryCreateInfoKHR library_info_one = vku::InitStructHelper();
     library_info_one.libraryCount = 1;
@@ -99,13 +99,12 @@ TEST_F(PositiveRayTracingPipeline, ShaderGroupsKHR) {
     pipeline_ci.layout = empty_pipeline_layout.handle();
     pipeline_ci.pLibraryInterface = &interface_ci;
 
-    VkResult err =
-        vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
+    VkResult err = vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline);
     ASSERT_EQ(VK_SUCCESS, err);
     ASSERT_NE(pipeline, VK_NULL_HANDLE);
 
-    vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
-    vk::DestroyPipeline(m_device->handle(), library, nullptr);
+    vk::DestroyPipeline(*m_device, pipeline, nullptr);
+    vk::DestroyPipeline(*m_device, library, nullptr);
 }
 
 TEST_F(PositiveRayTracingPipeline, CacheControl) {
@@ -149,7 +148,7 @@ TEST_F(PositiveRayTracingPipeline, CacheControl) {
     library_pipeline.pLibraryInterface = &interface_ci;
 
     VkPipeline library = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &library_pipeline, nullptr, &library);
     vk::DestroyPipeline(device(), library, nullptr);
 }
 
@@ -195,7 +194,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     GetPhysicalDeviceProperties2(ray_tracing_properties);
     const size_t buffer_size = (3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
     void* out_buffer = malloc(buffer_size);
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(m_device->handle(), rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
     free(out_buffer);
 }
 

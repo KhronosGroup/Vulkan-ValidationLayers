@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ TEST_F(PositiveParent, ImagelessFramebuffer) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();  // Renderpass created on first device
     auto features = m_device->Physical().Features();
-    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features, nullptr);
+    m_second_device = new vkt::Device(gpu_, m_device_extension_names, &features);
 
     VkFormat format = VK_FORMAT_B8G8R8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(256, 256, 1, 1, format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);

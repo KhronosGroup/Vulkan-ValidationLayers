@@ -3029,7 +3029,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
     shader_create_infos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
-    vk::CreateShadersEXT(m_device->handle(), 2, shader_create_infos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2, shader_create_infos, nullptr, shaders);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.colorAttachmentCount = 0;
@@ -3053,7 +3053,7 @@ TEST_F(NegativeDebugPrintf, ShaderObjectMultiCreate) {
     m_errorMonitor->VerifyFound();
 
     for (uint32_t i = 0; i < 2; ++i) {
-        vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }
 

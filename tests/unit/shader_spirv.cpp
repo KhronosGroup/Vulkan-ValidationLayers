@@ -64,7 +64,7 @@ TEST_F(NegativeShaderSpirv, CodeSize) {
         module_create_info.codeSize = shader.size() * sizeof(uint32_t) - 1;
 
         m_errorMonitor->SetDesiredError("VUID-VkShaderModuleCreateInfo-codeSize-08735");
-        vk::CreateShaderModule(m_device->handle(), &module_create_info, nullptr, &module);
+        vk::CreateShaderModule(*m_device, &module_create_info, nullptr, &module);
         m_errorMonitor->VerifyFound();
     }
 }

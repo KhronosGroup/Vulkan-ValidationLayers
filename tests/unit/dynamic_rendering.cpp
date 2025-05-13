@@ -430,7 +430,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
             } else {
                 renderpass_image_views[0] = depth_image_view;
 
-                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[0]);
+                const VkResult err = vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffers[0]);
                 ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[0];
                 m_command_buffer.BeginRenderPass(renderpass_bi);
@@ -466,7 +466,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
             } else {
                 renderpass_image_views[0] = stencil_image_view;
 
-                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[1]);
+                const VkResult err = vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffers[1]);
                 ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[1];
                 m_command_buffer.FullMemoryBarrier();
@@ -494,7 +494,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
 
         {
             if (!use_dynamic_rendering) {
-                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[2]);
+                const VkResult err = vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffers[2]);
                 ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[2];
             }
@@ -594,7 +594,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
             if (use_dynamic_rendering) {
                 cmd_buffer_inheritance_info.pNext = &inheritance_rendering_info;
             } else {
-                const VkResult err = vk::CreateFramebuffer(m_device->handle(), &framebuffer_ci, nullptr, &framebuffers[3]);
+                const VkResult err = vk::CreateFramebuffer(*m_device, &framebuffer_ci, nullptr, &framebuffers[3]);
                 ASSERT_EQ(VK_SUCCESS, err);
                 renderpass_bi.framebuffer = framebuffers[3];
                 cmd_buffer_inheritance_info.renderPass = renderpass;
@@ -648,7 +648,7 @@ TEST_F(NegativeDynamicRendering, ClearAttachments) {
         }
 
         for (auto framebuffer : framebuffers) {
-            vk::DestroyFramebuffer(m_device->handle(), framebuffer, nullptr);
+            vk::DestroyFramebuffer(*m_device, framebuffer, nullptr);
         }
     };
 

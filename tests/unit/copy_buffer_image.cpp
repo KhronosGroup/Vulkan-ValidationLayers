@@ -2546,7 +2546,7 @@ TEST_F(NegativeCopyBufferImage, BufferToCompressedImage) {
     depth_image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     VkImage depth_image = VK_NULL_HANDLE;
-    err = vk::CreateImage(m_device->handle(), &depth_image_create_info, NULL, &depth_image);
+    err = vk::CreateImage(*m_device, &depth_image_create_info, NULL, &depth_image);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkDeviceMemory mem1;

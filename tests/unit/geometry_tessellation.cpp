@@ -26,13 +26,12 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    std::vector<const char *> device_extension_names;
     auto features = m_device->Physical().Features();
     // Make sure gs & ts are disabled
     features.geometryShader = false;
     features.tessellationShader = false;
     // The sacrificial device object
-    vkt::Device test_device(Gpu(), device_extension_names, &features);
+    vkt::Device test_device(Gpu(), m_device_extension_names, &features);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;

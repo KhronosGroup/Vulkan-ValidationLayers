@@ -1102,7 +1102,6 @@ TEST_F(NegativeQuery, PreciseBit) {
     AddRequiredFeature(vkt::Feature::occlusionQueryPrecise);
     RETURN_IF_SKIP(Init());
 
-    std::vector<const char *> device_extension_names;
     auto features = m_device->Physical().Features();
 
     // Test for precise bit when query type is not OCCLUSION
@@ -1139,7 +1138,7 @@ TEST_F(NegativeQuery, PreciseBit) {
 
     // Test for precise bit when precise feature is not available
     features.occlusionQueryPrecise = false;
-    vkt::Device test_device(Gpu(), device_extension_names, &features);
+    vkt::Device test_device(Gpu(), m_device_extension_names, &features);
 
     VkCommandPoolCreateInfo pool_create_info = vku::InitStructHelper();
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
@@ -1231,7 +1230,7 @@ TEST_F(NegativeQuery, PoolPartialTimestamp) {
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-queryType-09439");
     uint32_t data_space[16];
     m_errorMonitor->SetUnexpectedError("Cannot get query results on queryPool");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space), &data_space, sizeof(uint32_t),
                             VK_QUERY_RESULT_PARTIAL_BIT);
     m_errorMonitor->VerifyFound();
 }
@@ -1281,14 +1280,14 @@ TEST_F(NegativeQuery, PoolInUseDestroyedSignaled) {
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyQueryPool-queryPool-00793");
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(*m_device, query_pool, NULL);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
     // Now that cmd buffer done we can safely destroy query_pool
     m_errorMonitor->SetUnexpectedError("If queryPool is not VK_NULL_HANDLE, queryPool must be a valid VkQueryPool handle");
     m_errorMonitor->SetUnexpectedError("Unable to remove QueryPool obj");
-    vk::DestroyQueryPool(m_device->handle(), query_pool, NULL);
+    vk::DestroyQueryPool(*m_device, query_pool, NULL);
 }
 
 TEST_F(NegativeQuery, WriteTimeStamp) {
@@ -1496,11 +1495,11 @@ TEST_F(NegativeQuery, DestroyActiveQueryPool) {
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyQueryPool-queryPool-00793");
-    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+    vk::DestroyQueryPool(*m_device, query_pool, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
-    vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+    vk::DestroyQueryPool(*m_device, query_pool, nullptr);
 }
 
 TEST_F(NegativeQuery, MultiviewBeginQuery) {
@@ -1865,18 +1864,18 @@ TEST_F(NegativeQuery, MeshShaderQueries) {
     query_pool_info.queryCount = 1;
     query_pool_info.pipelineStatistics = 0;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07068");
-    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    vk::CreateQueryPool(*m_device, &query_pool_info, nullptr, &pool);
     m_errorMonitor->VerifyFound();
 
     query_pool_info.queryType = VK_QUERY_TYPE_PIPELINE_STATISTICS;
     query_pool_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_TASK_SHADER_INVOCATIONS_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069");
-    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    vk::CreateQueryPool(*m_device, &query_pool_info, nullptr, &pool);
     m_errorMonitor->VerifyFound();
 
     query_pool_info.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_MESH_SHADER_INVOCATIONS_BIT_EXT;
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-meshShaderQueries-07069");
-    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &pool);
+    vk::CreateQueryPool(*m_device, &query_pool_info, nullptr, &pool);
     m_errorMonitor->VerifyFound();
 }
 
@@ -2363,19 +2362,19 @@ TEST_F(NegativeQuery, Stride) {
 
     char data_space;
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-02828");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space), &data_space, 1, VK_QUERY_RESULT_WAIT_BIT);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-flags-00815");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space), &data_space, 1,
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space), &data_space, 1,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
     m_errorMonitor->VerifyFound();
 
     char data_space4[4] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space4), &data_space4, 4, VK_QUERY_RESULT_WAIT_BIT);
 
     char data_space8[8] = "";
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 1, sizeof(data_space8), &data_space8, 8,
                             (VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT));
 
     vkt::Buffer buffer(*m_device, 128, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -2531,7 +2530,7 @@ TEST_F(NegativeQuery, QueryPoolResultsStride) {
 
     uint32_t data_space[4];
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-stride-08993");
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0u, 2u, sizeof(uint32_t) * 4, data_space, sizeof(uint32_t),
+    vk::GetQueryPoolResults(*m_device, query_pool, 0u, 2u, sizeof(uint32_t) * 4, data_space, sizeof(uint32_t),
                             VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
     m_errorMonitor->VerifyFound();
 }

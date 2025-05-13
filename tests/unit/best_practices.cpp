@@ -989,7 +989,7 @@ TEST_F(VkBestPracticesLayerTest, ExpectedQueryDetails) {
     queue_family_props2.resize(queue_count);
     vk::GetPhysicalDeviceQueueFamilyProperties2KHR(phys_device_obj, &queue_count, queue_family_props2.data());
 
-    vkt::Device device(phys_device_obj);
+    vkt::Device device(phys_device_obj, m_device_extension_names);
 }
 
 TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {

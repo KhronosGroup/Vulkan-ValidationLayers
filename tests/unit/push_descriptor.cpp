@@ -365,7 +365,7 @@ TEST_F(NegativePushDescriptor, SetLayoutWithoutExtension) {
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
 
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-parameter");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -396,7 +396,7 @@ TEST_F(NegativePushDescriptor, AllocateSet) {
 
     VkDescriptorSet ds = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetAllocateInfo-pSetLayouts-00308");
-    vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
+    vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
     m_errorMonitor->VerifyFound();
 }
 
@@ -433,8 +433,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     auto do_test = [&](const char* err) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredError(err);
-        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(*m_device, &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplateKHR(*m_device, dut, nullptr);
         }
         m_errorMonitor->VerifyFound();
     };
@@ -449,8 +449,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
         create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
         create_info.descriptorSetLayout = ds_layout_ub.handle();
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-            vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(*m_device, &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplateKHR(*m_device, dut, nullptr);
         }
     }
 
@@ -484,8 +484,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     create_info.set = 2;
     create_info.descriptorSetLayout = CastFromUint64<VkDescriptorSetLayout>(badhandle);
     VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-    if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(m_device->handle(), &create_info, nullptr, &dut)) {
-        vk::DestroyDescriptorUpdateTemplateKHR(m_device->handle(), dut, nullptr);
+    if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(*m_device, &create_info, nullptr, &dut)) {
+        vk::DestroyDescriptorUpdateTemplateKHR(*m_device, dut, nullptr);
     }
     // Bad descriptorSetLayout handle
     create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -525,8 +525,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
     auto do_test = [&](const char* err) {
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         m_errorMonitor->SetDesiredError(err);
-        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(m_device->handle(), &create_info, nullptr, &dut)) {
-            vk::DestroyDescriptorUpdateTemplate(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(*m_device, &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplate(*m_device, dut, nullptr);
         }
         m_errorMonitor->VerifyFound();
     };
@@ -541,8 +541,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
         create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
         create_info.descriptorSetLayout = ds_layout_ub.handle();
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(m_device->handle(), &create_info, nullptr, &dut)) {
-            vk::DestroyDescriptorUpdateTemplate(m_device->handle(), dut, nullptr);
+        if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(*m_device, &create_info, nullptr, &dut)) {
+            vk::DestroyDescriptorUpdateTemplate(*m_device, dut, nullptr);
         }
     }
 
@@ -576,8 +576,8 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
     create_info.set = 2;
     create_info.descriptorSetLayout = CastFromUint64<VkDescriptorSetLayout>(badhandle);
     VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
-    if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(m_device->handle(), &create_info, nullptr, &dut)) {
-        vk::DestroyDescriptorUpdateTemplate(m_device->handle(), dut, nullptr);
+    if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(*m_device, &create_info, nullptr, &dut)) {
+        vk::DestroyDescriptorUpdateTemplate(*m_device, dut, nullptr);
     }
     // Bad descriptorSetLayout handle
     create_info.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
@@ -599,12 +599,12 @@ TEST_F(NegativePushDescriptor, SetLayout) {
     // Starting with the initial VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC type set above..
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 
     binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-00280");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 
@@ -632,7 +632,7 @@ TEST_F(NegativePushDescriptor, SetLayoutMaxPushDescriptors) {
     binding.descriptorCount = push_descriptor_prop.maxPushDescriptors + 1;
     VkDescriptorSetLayout ds_layout = VK_NULL_HANDLE;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutCreateInfo-flags-00281");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &ds_layout_ci, nullptr, &ds_layout);
+    vk::CreateDescriptorSetLayout(*m_device, &ds_layout_ci, nullptr, &ds_layout);
     m_errorMonitor->VerifyFound();
 }
 

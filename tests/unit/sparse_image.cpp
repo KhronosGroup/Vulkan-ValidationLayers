@@ -983,7 +983,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), image, &image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
     const auto image_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -991,14 +991,14 @@ TEST_F(NegativeSparseImage, ImageMemoryBind) {
     image_mem.init(*m_device, image_mem_alloc);
 
     uint32_t requirements_count = 0u;
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, nullptr);
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, nullptr);
 
     if (requirements_count == 0u) {
         GTEST_SKIP() << "No sparse image requirements for image format VK_FORMAT_B8G8R8A8_UNORM";
     }
 
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(requirements_count);
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, sparse_reqs.data());
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, sparse_reqs.data());
 
     VkExtent3D granularity = sparse_reqs[0].formatProperties.imageGranularity;
     VkSparseImageMemoryBind image_bind{};
@@ -1099,7 +1099,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), image, &image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
     const auto image_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -1110,7 +1110,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     vkt::Image invalid_image(*m_device, invalid_create_info, vkt::no_mem);
 
     VkMemoryRequirements invalid_image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), invalid_image.handle(), &invalid_image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, invalid_image.handle(), &invalid_image_mem_reqs);
 
     // Make sure that the same memory type is not chosen.
     invalid_image_mem_reqs.memoryTypeBits = ~image_mem_reqs.memoryTypeBits;
@@ -1127,14 +1127,14 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidMemory) {
     invalid_image_mem.init(*m_device, invalid_image_mem_alloc);
 
     uint32_t requirements_count = 0u;
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, nullptr);
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, nullptr);
 
     if (requirements_count == 0u) {
         GTEST_SKIP() << "No sparse image requirements for image format VK_FORMAT_B8G8R8A8_UNORM";
     }
 
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(requirements_count);
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, sparse_reqs.data());
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, sparse_reqs.data());
 
     VkExtent3D granularity = sparse_reqs[0].formatProperties.imageGranularity;
     VkSparseImageMemoryBind image_bind{};
@@ -1179,7 +1179,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), image, &image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
     if (image_mem_reqs.alignment == 1) {
         GTEST_SKIP() << "Need image memory required alignment to be more than 1";
     }
@@ -1194,7 +1194,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     vkt::Image invalid_image(*m_device, invalid_create_info, vkt::no_mem);
 
     VkMemoryRequirements invalid_image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), invalid_image.handle(), &invalid_image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, invalid_image.handle(), &invalid_image_mem_reqs);
 
     // Make sure that the same memory type is not chosen.
     invalid_image_mem_reqs.memoryTypeBits = ~image_mem_reqs.memoryTypeBits;
@@ -1211,14 +1211,14 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidAlignment) {
     invalid_image_mem.init(*m_device, invalid_image_mem_alloc);
 
     uint32_t requirements_count = 0u;
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, nullptr);
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, nullptr);
 
     if (requirements_count == 0u) {
         GTEST_SKIP() << "No sparse image requirements for image format VK_FORMAT_B8G8R8A8_UNORM";
     }
 
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(requirements_count);
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, sparse_reqs.data());
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, sparse_reqs.data());
 
     VkExtent3D granularity = sparse_reqs[0].formatProperties.imageGranularity;
     VkSparseImageMemoryBind image_bind{};
@@ -1265,7 +1265,7 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     vkt::Image image(*m_device, create_info, vkt::no_mem);
 
     VkMemoryRequirements image_mem_reqs;
-    vk::GetImageMemoryRequirements(m_device->handle(), image, &image_mem_reqs);
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
     const auto image_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -1273,14 +1273,14 @@ TEST_F(NegativeSparseImage, ImageMemoryBindInvalidExtent) {
     image_mem.init(*m_device, image_mem_alloc);
 
     uint32_t requirements_count = 0u;
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, nullptr);
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, nullptr);
 
     if (requirements_count == 0u) {
         GTEST_SKIP() << "No sparse image requirements for image format VK_FORMAT_B8G8R8A8_UNORM";
     }
 
     std::vector<VkSparseImageMemoryRequirements> sparse_reqs(requirements_count);
-    vk::GetImageSparseMemoryRequirements(m_device->handle(), image, &requirements_count, sparse_reqs.data());
+    vk::GetImageSparseMemoryRequirements(*m_device, image, &requirements_count, sparse_reqs.data());
 
     VkExtent3D granularity = sparse_reqs[0].formatProperties.imageGranularity;
     VkSparseImageMemoryBind image_bind{};

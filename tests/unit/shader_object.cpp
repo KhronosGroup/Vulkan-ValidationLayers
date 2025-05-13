@@ -35,7 +35,7 @@ TEST_F(NegativeShaderObject, SpirvCodeSize) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeSize-08735");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -56,7 +56,7 @@ TEST_F(NegativeShaderObject, LinkedComputeShader) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08412");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -77,22 +77,22 @@ TEST_F(NegativeShaderObject, InvalidFlags) {
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08992");
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08485");
     create_info.flags = VK_SHADER_CREATE_DISPATCH_BASE_BIT_EXT;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08486");
     create_info.flags = VK_SHADER_CREATE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_EXT;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08488");
     create_info.flags = VK_SHADER_CREATE_FRAGMENT_DENSITY_MAP_ATTACHMENT_BIT_EXT;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -113,7 +113,7 @@ TEST_F(NegativeShaderObject, InvalidMeshShaderExtFlags) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08414");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -134,7 +134,7 @@ TEST_F(NegativeShaderObject, VertexNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08427");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -155,7 +155,7 @@ TEST_F(NegativeShaderObject, TessellationControlNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08430");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -176,7 +176,7 @@ TEST_F(NegativeShaderObject, TessellationEvaluationNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08431");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -197,7 +197,7 @@ TEST_F(NegativeShaderObject, GeometryNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08433");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -218,7 +218,7 @@ TEST_F(NegativeShaderObject, FragmentNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08434");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -239,7 +239,7 @@ TEST_F(NegativeShaderObject, TaskNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08435");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -260,7 +260,7 @@ TEST_F(NegativeShaderObject, MeshNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08436");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -281,7 +281,7 @@ TEST_F(NegativeShaderObject, TaskNVNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08435");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -314,7 +314,7 @@ TEST_F(NegativeShaderObject, MeshNVNextStage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08436");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -336,7 +336,7 @@ TEST_F(NegativeShaderObject, BinaryCodeAlignment) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08492");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -357,7 +357,7 @@ TEST_F(NegativeShaderObject, SpirvCodeAlignment) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08493");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -374,7 +374,7 @@ TEST_F(NegativeShaderObject, SpirvMagic) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08738");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -395,14 +395,14 @@ TEST_F(NegativeShaderObject, InvalidStage) {
     VkShaderEXT shader;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08425");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkShaderCreateInfoEXT-stage-parameter");
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-stage-08426");
 
     createInfo.stage = VK_SHADER_STAGE_CLUSTER_CULLING_BIT_HUAWEI;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -653,13 +653,13 @@ TEST_F(NegativeShaderObject, GetShaderBinaryDataInvalidPointer) {
     VkShaderEXT shaderHandle = shader.handle();
 
     size_t dataSize = 0;
-    vk::GetShaderBinaryDataEXT(m_device->handle(), shaderHandle, &dataSize, nullptr);
+    vk::GetShaderBinaryDataEXT(*m_device, shaderHandle, &dataSize, nullptr);
     std::vector<uint8_t> data(dataSize + 1u);
     auto ptr = reinterpret_cast<std::uintptr_t>(data.data()) + sizeof(uint8_t);
     void* dataPtr = reinterpret_cast<void*>(ptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkGetShaderBinaryDataEXT-None-08499");
-    vk::GetShaderBinaryDataEXT(m_device->handle(), shaderHandle, &dataSize, dataPtr);
+    vk::GetShaderBinaryDataEXT(*m_device, shaderHandle, &dataSize, dataPtr);
     m_errorMonitor->VerifyFound();
 }
 
@@ -736,7 +736,7 @@ TEST_F(NegativeShaderObject, FlagAttachmentFragmentShadingRate) {
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08487");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -750,7 +750,7 @@ TEST_F(NegativeShaderObject, FlagFragmentDensityMap) {
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08489");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -768,7 +768,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBit) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08402");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -786,7 +786,7 @@ TEST_F(NegativeShaderObject, MissingLinkStageBitMesh) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08403");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -804,7 +804,7 @@ TEST_F(NegativeShaderObject, LinkedVertexAndMeshStages) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08404");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -823,7 +823,7 @@ TEST_F(NegativeShaderObject, LinkedTaskAndMeshNoTaskShaders) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08405");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -842,12 +842,12 @@ TEST_F(NegativeShaderObject, MissingNextStage) {
     createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08409");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08409");
     createInfos[0].nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -864,7 +864,7 @@ TEST_F(NegativeShaderObject, SameLinkedStage) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08410");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -885,21 +885,21 @@ TEST_F(NegativeShaderObject, LinkedStagesWithDifferentCodeType) {
     createInfos[0] = ShaderCreateInfoLink(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_FRAGMENT_BIT);
     createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shaders[2];
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
     size_t dataSize = 0u;
-    vk::GetShaderBinaryDataEXT(m_device->handle(), shaders[0], &dataSize, nullptr);
+    vk::GetShaderBinaryDataEXT(*m_device, shaders[0], &dataSize, nullptr);
     std::vector<uint8_t> binaryData(dataSize);
-    vk::GetShaderBinaryDataEXT(m_device->handle(), shaders[0], &dataSize, binaryData.data());
+    vk::GetShaderBinaryDataEXT(*m_device, shaders[0], &dataSize, binaryData.data());
 
     createInfos[0].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
     createInfos[0].codeSize = dataSize;
     createInfos[0].pCode = binaryData.data();
 
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
     for (uint32_t i = 0; i < 2; ++i) {
-        vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 
     m_errorMonitor->VerifyFound();
@@ -923,12 +923,12 @@ TEST_F(NegativeShaderObject, UnsupportedNextStage) {
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08428");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     create_info.nextStage = VK_SHADER_STAGE_GEOMETRY_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08429");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -941,7 +941,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationControlNextStage) {
         ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08430");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -954,7 +954,7 @@ TEST_F(NegativeShaderObject, InvalidTessellationEvaluationNextStage) {
         ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08431");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -966,7 +966,7 @@ TEST_F(NegativeShaderObject, InvalidGeometryNextStage) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08433");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -978,7 +978,7 @@ TEST_F(NegativeShaderObject, InvalidFragmentNextStage) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_FRAGMENT_BIT, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08434");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -990,7 +990,7 @@ TEST_F(NegativeShaderObject, InvalidTaskNextStage) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TASK_BIT_EXT, VK_SHADER_STAGE_FRAGMENT_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08435");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1002,7 +1002,7 @@ TEST_F(NegativeShaderObject, InvalidMeshNextStage) {
     VkShaderCreateInfoEXT create_info = ShaderCreateInfoLink(spv, VK_SHADER_STAGE_MESH_BIT_EXT, VK_SHADER_STAGE_GEOMETRY_BIT);
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-nextStage-08436");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3635,7 +3635,7 @@ TEST_F(NegativeShaderObject, SharedMemoryOverLimit) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3649,7 +3649,7 @@ TEST_F(NegativeShaderObject, InvalidRequireFullSubgroupsFlag) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08992");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3686,7 +3686,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntryOffset) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkSpecializationInfo-offset-00773");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3723,7 +3723,7 @@ TEST_F(NegativeShaderObject, SpecializationMapEntrySize) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkSpecializationInfo-pMapEntries-00774");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3760,7 +3760,7 @@ TEST_F(NegativeShaderObject, SpecializationMismatch) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkSpecializationMapEntry-constantID-00776");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3800,7 +3800,7 @@ TEST_F(NegativeShaderObject, SpecializationSameConstantId) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkSpecializationInfo-constantID-04911");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3815,7 +3815,7 @@ TEST_F(NegativeShaderObject, MissingEntrypoint) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pName-08440");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3876,7 +3876,7 @@ TEST_F(NegativeShaderObject, SpecializationApplied) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08460");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -3951,7 +3951,7 @@ TEST_F(NegativeShaderObject, MinTexelGatherOffset) {
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06376");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06377");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImage-06377");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4026,7 +4026,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvCapability) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08740");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4062,7 +4062,7 @@ TEST_F(NegativeShaderObject, UnsupportedSpirvExtension) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08741");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4096,7 +4096,7 @@ TEST_F(NegativeShaderObject, SpirvExtensionRequirementsNotMet) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08742");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4126,7 +4126,7 @@ TEST_F(NegativeShaderObject, MemoryModelNotEnabled) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-vulkanMemoryModel-06265");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4198,7 +4198,7 @@ TEST_F(NegativeShaderObject, MaxTransformFeedbackStream) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpEmitStreamVertex-06310");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4260,7 +4260,7 @@ TEST_F(NegativeShaderObject, TransformFeedbackStride) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-XfbStride-06313");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4303,7 +4303,7 @@ TEST_F(NegativeShaderObject, MeshOutputVertices) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-MeshEXT-07115");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4333,7 +4333,7 @@ TEST_F(NegativeShaderObject, Atomics) {
     VkShaderEXT shader;
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06278");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4374,7 +4374,7 @@ TEST_F(NegativeShaderObject, ExtendedTypesDisabled) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-06275");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4399,7 +4399,7 @@ TEST_F(NegativeShaderObject, ReadShaderClock) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderSubgroupClock-06267");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4444,7 +4444,7 @@ TEST_F(NegativeShaderObject, WriteLessComponent) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpImageWrite-07112");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4479,7 +4479,7 @@ TEST_F(NegativeShaderObject, LocalSizeIdExecutionMode) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-LocalSizeId-06434");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4517,7 +4517,7 @@ TEST_F(NegativeShaderObject, ZeroInitializeWorkgroupMemory) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderZeroInitializeWorkgroupMemory-06372");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4573,7 +4573,7 @@ TEST_F(NegativeShaderObject, MissingNonReadableDecorationFormatRead) {
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-apiVersion-07954");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-apiVersion-07955");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4651,7 +4651,7 @@ TEST_F(NegativeShaderObject, MaxSampleMaskWords) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08451");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4699,7 +4699,7 @@ TEST_F(NegativeShaderObject, ConservativeRasterizationPostDepthCoverage) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-FullyCoveredEXT-conservativeRasterizationPostDepthCoverage-04235");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -4748,7 +4748,7 @@ TEST_F(NegativeShaderObject, LocalSizeExceedLimits) {
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-x-06429");
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-x-06432");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5272,7 +5272,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingAndFullSubgroups) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08416");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5301,7 +5301,7 @@ TEST_F(NegativeShaderObject, ComputeVaryingSubgroups) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-08417");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5371,7 +5371,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxOutputVertices) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08454");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5441,7 +5441,7 @@ TEST_F(NegativeShaderObject, GeometryShaderMaxInvocations) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pCode-08455");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5702,7 +5702,7 @@ TEST_F(NegativeShaderObject, CooperativeMatrix) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-OpTypeCooperativeMatrixKHR-10163");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5829,7 +5829,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSubdivision) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08867");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -5956,7 +5956,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationOrientation) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08868");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6083,7 +6083,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationPointMode) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08869");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6210,7 +6210,7 @@ TEST_F(NegativeShaderObject, MismatchedTessellationSpacing) {
 
     VkShaderEXT shaders[2];
     m_errorMonitor->SetDesiredError("VUID-vkCreateShadersEXT-pCreateInfos-08870");
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6225,7 +6225,7 @@ TEST_F(NegativeShaderObject, MissingSubgroupSizeControlFeature) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-09404");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6253,7 +6253,7 @@ TEST_F(NegativeShaderObject, MissingComputeFullSubgroups) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-flags-09405");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 }
 
@@ -6374,7 +6374,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSubdivision) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6440,7 +6440,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationOrientation) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6506,7 +6506,7 @@ TEST_F(NegativeShaderObject, MissingTessellationEvaluationSpacing) {
     ASMtoSPV(SPV_ENV_VULKAN_1_0, 0, tese_src, spv);
     VkShaderCreateInfoEXT create_info = ShaderCreateInfo(spv, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
     m_errorMonitor->VerifyFound();
 }
@@ -6580,7 +6580,7 @@ TEST_F(NegativeShaderObject, TessellationPatchSize) {
         VkShaderCreateInfoEXT create_info =
             ShaderCreateInfoLink(spv, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT);
         VkShaderEXT shader;
-        vk::CreateShadersEXT(m_device->handle(), 1u, &create_info, nullptr, &shader);
+        vk::CreateShadersEXT(*m_device, 1u, &create_info, nullptr, &shader);
 
         m_errorMonitor->VerifyFound();
     }
@@ -6846,21 +6846,21 @@ TEST_F(NegativeShaderObject, PushConstantNotDeclared) {
 
     VkShaderEXT shader;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10064");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     createInfo.pushConstantRangeCount = 1u;
     createInfo.pPushConstantRanges = &push_constant_range;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10064");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_constant_range.offset = 4u;
 
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-codeType-10065");
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
     m_errorMonitor->VerifyFound();
 
     push_constant_range.offset = 0u;

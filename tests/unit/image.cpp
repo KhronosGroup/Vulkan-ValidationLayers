@@ -3807,7 +3807,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3823,7 +3823,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3839,7 +3839,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3856,7 +3856,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3872,7 +3872,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3889,7 +3889,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3906,7 +3906,7 @@ TEST_F(NegativeImage, ImageCompressionControl) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3950,7 +3950,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3967,7 +3967,7 @@ TEST_F(NegativeImage, ImageCompressionControlMultiPlane) {
             VkImageCompressionPropertiesEXT compressionProperties = vku::InitStructHelper();
             VkSubresourceLayout2 layout = vku::InitStructHelper(&compressionProperties);
 
-            vk::GetImageSubresourceLayout2EXT(m_device->handle(), image, &subresource, &layout);
+            vk::GetImageSubresourceLayout2EXT(*m_device, image, &subresource, &layout);
             m_errorMonitor->VerifyFound();
         }
     }
@@ -3992,19 +3992,19 @@ TEST_F(NegativeImage, GetImageSubresourceLayout2Maintenance5) {
     VkImageSubresource2 subresource = vku::InitStructHelper();
     subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 1, 0};
     VkSubresourceLayout2 layout = vku::InitStructHelper();
-    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image, &subresource, &layout);
+    vk::GetImageSubresourceLayout2KHR(*m_device, image, &subresource, &layout);
     m_errorMonitor->VerifyFound();
 
     // Exceed ArrayLayers
     m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-arrayLayer-01717");
     subresource.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1};
-    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image, &subresource, &layout);
+    vk::GetImageSubresourceLayout2KHR(*m_device, image, &subresource, &layout);
     m_errorMonitor->VerifyFound();
 
     // Color format aspect
     m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout2-format-08886");
     subresource.imageSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0};
-    vk::GetImageSubresourceLayout2KHR(m_device->handle(), image, &subresource, &layout);
+    vk::GetImageSubresourceLayout2KHR(*m_device, image, &subresource, &layout);
     m_errorMonitor->VerifyFound();
 }
 

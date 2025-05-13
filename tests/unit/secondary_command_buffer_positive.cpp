@@ -166,14 +166,14 @@ TEST_F(PositiveSecondaryCommandBuffer, CommandPoolDeleteWithReferences) {
     cmd_pool_info.flags = 0;
 
     VkCommandPool secondary_cmd_pool;
-    VkResult res = vk::CreateCommandPool(m_device->handle(), &cmd_pool_info, NULL, &secondary_cmd_pool);
+    VkResult res = vk::CreateCommandPool(*m_device, &cmd_pool_info, NULL, &secondary_cmd_pool);
     ASSERT_EQ(VK_SUCCESS, res);
 
     VkCommandBufferAllocateInfo cmdalloc = vkt::CommandBuffer::CreateInfo(secondary_cmd_pool);
     cmdalloc.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
 
     VkCommandBuffer secondary_cmds;
-    res = vk::AllocateCommandBuffers(m_device->handle(), &cmdalloc, &secondary_cmds);
+    res = vk::AllocateCommandBuffers(*m_device, &cmdalloc, &secondary_cmds);
 
     VkCommandBufferInheritanceInfo cmd_buf_inheritance_info = vku::InitStructHelper();
     cmd_buf_inheritance_info.renderPass = VK_NULL_HANDLE;
@@ -196,9 +196,9 @@ TEST_F(PositiveSecondaryCommandBuffer, CommandPoolDeleteWithReferences) {
     m_command_buffer.End();
 
     // DestroyCommandPool *implicitly* frees the command buffers allocated from it
-    vk::DestroyCommandPool(m_device->handle(), secondary_cmd_pool, NULL);
+    vk::DestroyCommandPool(*m_device, secondary_cmd_pool, NULL);
     // If bookkeeping has been lax, validating the reset will attempt to touch deleted data
-    res = vk::ResetCommandPool(m_device->handle(), m_command_pool, 0);
+    res = vk::ResetCommandPool(*m_device, m_command_pool, 0);
     ASSERT_EQ(VK_SUCCESS, res);
 }
 

@@ -80,8 +80,8 @@ TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
     createInfo.pName = "main";
 
     VkShaderEXT shader;
-    vk::CreateShadersEXT(m_device->handle(), 1u, &createInfo, nullptr, &shader);
-    vk::DestroyShaderEXT(m_device->handle(), shader, nullptr);
+    vk::CreateShadersEXT(*m_device, 1u, &createInfo, nullptr, &shader);
+    vk::DestroyShaderEXT(*m_device, shader, nullptr);
 }
 
 TEST_F(PositiveShaderObject, BindShaderObject) {
@@ -159,10 +159,10 @@ TEST_F(PositiveShaderObject, LinkedVertexAndFragmentShaders) {
     createInfos[1] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[2];
-    vk::CreateShadersEXT(m_device->handle(), 2u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 2u, createInfos, nullptr, shaders);
 
     for (uint32_t i = 0; i < 2; ++i) {
-        vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }
 
@@ -187,10 +187,10 @@ TEST_F(PositiveShaderObject, LinkedGraphicsShaders) {
     createInfos[4] = ShaderCreateInfoLink(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VkShaderEXT shaders[5];
-    vk::CreateShadersEXT(m_device->handle(), 5u, createInfos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 5u, createInfos, nullptr, shaders);
 
     for (uint32_t i = 0; i < 5; ++i) {
-        vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }
 
@@ -631,13 +631,13 @@ TEST_F(PositiveShaderObject, FailCreateShaders) {
     create_infos[fail_index].codeType = VK_SHADER_CODE_TYPE_BINARY_EXT;
     create_infos[fail_index].pCode = reinterpret_cast<const void *>(pCode);
 
-    VkResult res = vk::CreateShadersEXT(m_device->handle(), 20u, create_infos, nullptr, shaders);
+    VkResult res = vk::CreateShadersEXT(*m_device, 20u, create_infos, nullptr, shaders);
     ASSERT_EQ(res, VK_INCOMPATIBLE_SHADER_BINARY_EXT);
 
     for (uint32_t i = 0; i < shaders_count; ++i) {
         // We don't know which or if any shaders were actually created
         if (shaders[i] != VK_NULL_HANDLE) {
-            vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+            vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
         }
     }
 }
@@ -1625,7 +1625,7 @@ TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
     shader_create_infos[2] = ShaderCreateInfo(comp_spv, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderEXT shaders[3];
-    vk::CreateShadersEXT(m_device->handle(), 3, shader_create_infos, nullptr, shaders);
+    vk::CreateShadersEXT(*m_device, 3, shader_create_infos, nullptr, shaders);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.colorAttachmentCount = 0;
@@ -1642,6 +1642,6 @@ TEST_F(PositiveShaderObject, MultiCreateGraphicsCompute) {
     m_command_buffer.End();
 
     for (uint32_t i = 0; i < 3; ++i) {
-        vk::DestroyShaderEXT(m_device->handle(), shaders[i], nullptr);
+        vk::DestroyShaderEXT(*m_device, shaders[i], nullptr);
     }
 }

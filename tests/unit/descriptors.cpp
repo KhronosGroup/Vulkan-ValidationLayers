@@ -4505,7 +4505,7 @@ TEST_F(NegativeDescriptors, DISABLED_AllocatingVariableDescriptorSets) {
     ds_alloc_info.pSetLayouts = &ds_layout_handle;
 
     VkDescriptorSet ds;
-    VkResult err = vk::AllocateDescriptorSets(m_device->handle(), &ds_alloc_info, &ds);
+    VkResult err = vk::AllocateDescriptorSets(*m_device, &ds_alloc_info, &ds);
     ASSERT_EQ(VK_SUCCESS, err);
 }
 
@@ -4542,7 +4542,7 @@ TEST_F(NegativeDescriptors, DescriptorSetLayoutBinding) {
     VkDescriptorSetLayout setLayout;
     m_errorMonitor->SetDesiredError("VUID-VkDescriptorSetLayoutBinding-descriptorType-04605");
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkDescriptorSetLayoutCreateInfo-descriptorType-04594");
-    vk::CreateDescriptorSetLayout(m_device->handle(), &create_info, nullptr, &setLayout);
+    vk::CreateDescriptorSetLayout(*m_device, &create_info, nullptr, &setLayout);
     m_errorMonitor->VerifyFound();
 }
 

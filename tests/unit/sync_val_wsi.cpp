@@ -125,7 +125,7 @@ TEST_F(NegativeSyncValWsi, PresentAcquire) {
     m_errorMonitor->VerifyFound();
 
     // Finally we wait for the fence associated with the acquire
-    REQUIRE_SUCCESS(vk::WaitForFences(m_device->handle(), 1, &fence.handle(), VK_TRUE, kWaitTimeout), "WaitForFences");
+    REQUIRE_SUCCESS(vk::WaitForFences(*m_device, 1, &fence.handle(), VK_TRUE, kWaitTimeout), "WaitForFences");
     fence.Reset();
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();

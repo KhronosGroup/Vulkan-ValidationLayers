@@ -753,12 +753,11 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
         pipeline_ci.layout = test.variable_length ? pipeline_layout_variable : pipeline_layout;
 
         VkPipeline pipeline = VK_NULL_HANDLE;
-        ASSERT_EQ(VK_SUCCESS,
-                  vk::CreateRayTracingPipelinesNV(m_device->handle(), VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
+        ASSERT_EQ(VK_SUCCESS, vk::CreateRayTracingPipelinesNV(*m_device, VK_NULL_HANDLE, 1, &pipeline_ci, nullptr, &pipeline));
 
         std::vector<uint8_t> shader_binding_table_data;
         shader_binding_table_data.resize(static_cast<std::size_t>(shader_binding_table_buffer_size), 0);
-        ASSERT_EQ(VK_SUCCESS, vk::GetRayTracingShaderGroupHandlesNV(m_device->handle(), pipeline, 0, 4,
+        ASSERT_EQ(VK_SUCCESS, vk::GetRayTracingShaderGroupHandlesNV(*m_device, pipeline, 0, 4,
                                                                     static_cast<std::size_t>(shader_binding_table_buffer_size),
                                                                     shader_binding_table_data.data()));
 
@@ -985,7 +984,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
             ray_tracing_command_buffer.End();
         }
-        vk::DestroyPipeline(m_device->handle(), pipeline, nullptr);
+        vk::DestroyPipeline(*m_device, pipeline, nullptr);
     }
 }
 

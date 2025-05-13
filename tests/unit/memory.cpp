@@ -1365,18 +1365,18 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 
     // Bind with wrong buffer
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01508");
-    vk::BindBufferMemory(m_device->handle(), wrong_buffer.handle(), dedicated_buffer_memory.handle(), 0);
+    vk::BindBufferMemory(*m_device, wrong_buffer.handle(), dedicated_buffer_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset (same VUID)
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-01508");  // offset must be zero
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-None-10741");    // offset pushes us past size
     auto offset = buffer.MemoryRequirements().alignment;
-    vk::BindBufferMemory(m_device->handle(), buffer, dedicated_buffer_memory.handle(), offset);
+    vk::BindBufferMemory(*m_device, buffer, dedicated_buffer_memory.handle(), offset);
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    vk::BindBufferMemory(m_device->handle(), buffer, dedicated_buffer_memory.handle(), 0);
+    vk::BindBufferMemory(*m_device, buffer, dedicated_buffer_memory.handle(), 0);
 
     // And for images...
     auto image_info =
@@ -1393,18 +1393,18 @@ TEST_F(NegativeMemory, DedicatedAllocationBinding) {
 
     // Bind with wrong image
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02628");
-    vk::BindImageMemory(m_device->handle(), wrong_image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, wrong_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset (same VUID)
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02628");  // offset must be zero
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-None-10737");    // offset pushes us past size
     auto image_offset = image.MemoryRequirements().alignment;
-    vk::BindImageMemory(m_device->handle(), image, dedicated_image_memory.handle(), image_offset);
+    vk::BindImageMemory(*m_device, image, dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    vk::BindImageMemory(m_device->handle(), image, dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, image, dedicated_image_memory.handle(), 0);
 }
 
 TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
@@ -1430,14 +1430,14 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     dedicated_image_memory.init(*m_device, image_alloc_info);
 
     // Bind with different but identical image
-    vk::BindImageMemory(m_device->handle(), identical_image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, identical_image.handle(), dedicated_image_memory.handle(), 0);
 
     image_info =
         vkt::Image::ImageCreateInfo2D(resource_size - 1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image smaller_image(*m_device, image_info, vkt::no_mem);
 
     // Bind with a smaller image
-    vk::BindImageMemory(m_device->handle(), smaller_image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, smaller_image.handle(), dedicated_image_memory.handle(), 0);
 
     image_info =
         vkt::Image::ImageCreateInfo2D(resource_size + 1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -1448,21 +1448,21 @@ TEST_F(NegativeMemory, DedicatedAllocationImageAliasing) {
     if (larger_image.MemoryRequirements().size > image.MemoryRequirements().size) {
         m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-None-10737");
     }
-    vk::BindImageMemory(m_device->handle(), larger_image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, larger_image.handle(), dedicated_image_memory.handle(), 0);
     m_errorMonitor->VerifyFound();
 
     // Bind with non-zero offset
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-memory-02629");  // offset must be zero
     m_errorMonitor->SetDesiredError("VUID-vkBindImageMemory-None-10737");    // offset pushes us past size
     auto image_offset = image.MemoryRequirements().alignment;
-    vk::BindImageMemory(m_device->handle(), image, dedicated_image_memory.handle(), image_offset);
+    vk::BindImageMemory(*m_device, image, dedicated_image_memory.handle(), image_offset);
     m_errorMonitor->VerifyFound();
 
     // Bind correctly (depends on the "skip" above)
-    vk::BindImageMemory(m_device->handle(), image, dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, image, dedicated_image_memory.handle(), 0);
 
     image.destroy();  // destroy the original image
-    vk::BindImageMemory(m_device->handle(), post_delete_image.handle(), dedicated_image_memory.handle(), 0);
+    vk::BindImageMemory(*m_device, post_delete_image.handle(), dedicated_image_memory.handle(), 0);
 }
 
 TEST_F(NegativeMemory, BufferDeviceAddressEXT) {

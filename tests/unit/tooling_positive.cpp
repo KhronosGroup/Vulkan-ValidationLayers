@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
- * Copyright (c) 2015-2024 Google, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
+ * Copyright (c) 2015-2025 Google, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,19 +104,19 @@ TEST_F(PositiveTooling, PrivateDataExt) {
     VkPrivateDataSlot data_slot;
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     data_create_info.flags = 0;
-    vk::CreatePrivateDataSlotEXT(m_device->handle(), &data_create_info, nullptr, &data_slot);
+    vk::CreatePrivateDataSlotEXT(*m_device, &data_create_info, nullptr, &data_slot);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    vk::SetPrivateDataEXT(*m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
 
     uint64_t data;
-    vk::GetPrivateDataEXT(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    vk::GetPrivateDataEXT(*m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
-    vk::DestroyPrivateDataSlotEXT(m_device->handle(), data_slot, nullptr);
+    vk::DestroyPrivateDataSlotEXT(*m_device, data_slot, nullptr);
 }
 
 TEST_F(PositiveTooling, PrivateDataCore) {
@@ -132,19 +132,19 @@ TEST_F(PositiveTooling, PrivateDataCore) {
     VkPrivateDataSlot data_slot;
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
     data_create_info.flags = 0;
-    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, nullptr, &data_slot);
+    vk::CreatePrivateDataSlot(*m_device, &data_create_info, nullptr, &data_slot);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
+    vk::SetPrivateData(*m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, data_value);
 
     uint64_t data;
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
+    vk::GetPrivateData(*m_device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler.handle(), data_slot, &data);
     if (data != data_value) {
         m_errorMonitor->SetError("Got unexpected private data, %s.\n");
     }
-    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+    vk::DestroyPrivateDataSlot(*m_device, data_slot, nullptr);
 }
 
 TEST_F(PositiveTooling, PrivateDataDevice) {
@@ -155,12 +155,12 @@ TEST_F(PositiveTooling, PrivateDataDevice) {
 
     VkPrivateDataSlot data_slot;
     VkPrivateDataSlotCreateInfo data_create_info = vku::InitStructHelper();
-    vk::CreatePrivateDataSlot(m_device->handle(), &data_create_info, NULL, &data_slot);
+    vk::CreatePrivateDataSlot(*m_device, &data_create_info, NULL, &data_slot);
 
     static const uint64_t data_value = 0x70AD;
-    vk::SetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, data_value);
+    vk::SetPrivateData(*m_device, VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, data_value);
     uint64_t data;
-    vk::GetPrivateData(m_device->handle(), VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, &data);
+    vk::GetPrivateData(*m_device, VK_OBJECT_TYPE_DEVICE, (uint64_t)device(), data_slot, &data);
 
-    vk::DestroyPrivateDataSlot(m_device->handle(), data_slot, nullptr);
+    vk::DestroyPrivateDataSlot(*m_device, data_slot, nullptr);
 }

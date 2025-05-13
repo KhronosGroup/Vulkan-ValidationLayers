@@ -2314,7 +2314,7 @@ TEST_F(PositiveWsi, GetDeviceGroupSurfacePresentModes) {
     RETURN_IF_SKIP(InitSwapchain());
 
     VkDeviceGroupPresentModeFlagsKHR present_mode_flags;
-    vk::GetDeviceGroupSurfacePresentModesKHR(m_device->handle(), m_surface.Handle(), &present_mode_flags);
+    vk::GetDeviceGroupSurfacePresentModesKHR(*m_device, m_surface.Handle(), &present_mode_flags);
 }
 
 TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
