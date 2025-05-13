@@ -22,6 +22,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/math_utils.h"
+#include "utils/vk_layer_utils.h"
 
 namespace stateless {
 
@@ -64,11 +65,11 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     skip |= context.ValidateNotZero(pCreateInfo->arrayLayers == 0, "VUID-VkImageCreateInfo-arrayLayers-00948",
                                     create_info_loc.dot(Field::arrayLayers));
 
-    // InitialLayout must be PREINITIALIZED or UNDEFINED
-    if ((pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_UNDEFINED) &&
-        (pCreateInfo->initialLayout != VK_IMAGE_LAYOUT_PREINITIALIZED)) {
+    if (!IsValueIn(pCreateInfo->initialLayout,
+                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
         skip |= LogError("VUID-VkImageCreateInfo-initialLayout-00993", device, create_info_loc.dot(Field::initialLayout),
-                         "is %s, but must be UNDEFINED or PREINITIALIZED.", string_VkImageLayout(pCreateInfo->initialLayout));
+                         "is %s, but must be UNDEFINED or PREINITIALIZED or ZERO_INITIALIZED.",
+                         string_VkImageLayout(pCreateInfo->initialLayout));
     }
 
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_1D) && ((pCreateInfo->extent.height != 1) || (pCreateInfo->extent.depth != 1))) {
