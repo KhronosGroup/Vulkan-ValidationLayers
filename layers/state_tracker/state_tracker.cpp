@@ -4518,6 +4518,18 @@ void InstanceState::PostCallRecordGetPhysicalDeviceFeatures(VkPhysicalDevice phy
     pd_state->SetCallState(record_obj.location.function, true);
 }
 
+void InstanceState::PostCallRecordGetPhysicalDeviceFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 *pFeatures,
+                                                             const RecordObject &record_obj) {
+    auto pd_state = Get<PhysicalDevice>(physicalDevice);
+    pd_state->SetCallState(record_obj.location.function, true);
+}
+
+void InstanceState::PostCallRecordGetPhysicalDeviceFeatures2KHR(VkPhysicalDevice physicalDevice,
+                                                                VkPhysicalDeviceFeatures2 *pFeatures,
+                                                                const RecordObject &record_obj) {
+    PostCallRecordGetPhysicalDeviceFeatures2(physicalDevice, pFeatures, record_obj);
+}
+
 void InstanceState::RecordGetPhysicalDeviceDisplayPlanePropertiesState(VkPhysicalDevice physicalDevice, uint32_t *pPropertyCount,
                                                                        void *pProperties, const RecordObject &record_obj) {
     auto pd_state = Get<PhysicalDevice>(physicalDevice);
