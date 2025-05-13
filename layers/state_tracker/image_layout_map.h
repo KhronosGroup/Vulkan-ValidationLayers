@@ -93,47 +93,14 @@ class ImageLayoutRegistry {
     ~ImageLayoutRegistry() {}
     uint32_t GetImageId() const;
 
-    // This looks a bit ponderous but kAspectCount is a compile time constant
-    VkImageSubresource Decode(IndexType index) const {
-        const auto subres = encoder_.Decode(index);
-        return encoder_.MakeVkSubresource(subres);
-    }
+    VkImageSubresource Decode(IndexType index) const;
 
-    RangeGenerator RangeGen(const VkImageSubresourceRange& subres_range) const {
-        if (encoder_.InRange(subres_range)) {
-            return (RangeGenerator(encoder_, subres_range));
-        }
-        // Return empty range generator
-        return RangeGenerator();
-    }
-
-    bool AnyInRange(const VkImageSubresourceRange& normalized_range,
-                    std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
-        return AnyInRange(RangeGen(normalized_range), std::move(func));
-    }
-
-    bool AnyInRange(const RangeGenerator& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
-        return AnyInRange(RangeGenerator(gen), std::move(func));
-    }
-
-    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
-        for (; gen->non_empty(); ++gen) {
-            for (auto pos = layout_map_.lower_bound(*gen); (pos != layout_map_.end()) && (gen->intersects(pos->first)); ++pos) {
-                if (func(pos->first, pos->second)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-  protected:
-    bool InRange(const VkImageSubresource& subres) const { return encoder_.InRange(subres); }
-    bool InRange(const VkImageSubresourceRange& range) const { return encoder_.InRange(range); }
+    bool AnyInRange(const VkImageSubresourceRange& normalized_subresource_range,
+                    std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const;
+    bool AnyInRange(RangeGenerator&& gen, std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const;
 
   private:
     const vvl::Image& image_state_;
-    const Encoder& encoder_;
     LayoutMap layout_map_;
 };
 }  // namespace image_layout_map
