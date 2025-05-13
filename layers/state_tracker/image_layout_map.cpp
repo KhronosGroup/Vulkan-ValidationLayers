@@ -126,19 +126,9 @@ void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(VkImageLayout layout,
     }
 }
 
-// TODO: make sure this paranoia check is sufficient and not too much.
-uintptr_t ImageLayoutRegistry::CompatibilityKey() const {
-    return (reinterpret_cast<uintptr_t>(&image_state_) ^ image_state_.subresource_encoder.AspectMask());
-}
-
 uint32_t ImageLayoutRegistry::GetImageId() const { return image_state_.GetId(); }
 
 bool ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
-    // Must be from matching images for the reinterpret cast to be valid
-    assert(CompatibilityKey() == other.CompatibilityKey());
-    if (CompatibilityKey() != other.CompatibilityKey()) {
-        return false;
-    }
     return sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
 }
 

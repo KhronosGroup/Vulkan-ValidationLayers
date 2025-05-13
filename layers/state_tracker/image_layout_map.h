@@ -87,7 +87,6 @@ class ImageLayoutRegistry {
     void SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout);
     void SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state);
     bool UpdateFrom(const ImageLayoutRegistry& from);
-    uintptr_t CompatibilityKey() const;
     const LayoutMap& GetLayoutMap() const { return layout_map_; }
     ImageLayoutRegistry(const vvl::Image& image_state);
     ~ImageLayoutRegistry() {}
