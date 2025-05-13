@@ -168,22 +168,28 @@ bool bp_state::Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDe
         skip |= ValidateSpecialUseExtensions(error_obj.location, extension);
     }
 
-    const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice);
-    if (bp_pd_state && bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceFeatures) &&
-        (pCreateInfo->pEnabledFeatures != NULL)) {
-        skip |= LogWarning("BestPractices-vkCreateDevice-physical-device-features-not-retrieved", instance, error_obj.location,
-                           "called before getting physical device features from vkGetPhysicalDeviceFeatures().");
-    }
+    if (pCreateInfo->pEnabledFeatures) {
+        if (const auto bp_pd_state = Get<vvl::PhysicalDevice>(physicalDevice)) {
+            if (bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceFeatures) &&
+                bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceFeatures2) &&
+                bp_pd_state->WasUncalled(vvl::Func::vkGetPhysicalDeviceFeatures2KHR)) {
+                skip |=
+                    LogWarning("BestPractices-vkCreateDevice-physical-device-features-not-retrieved", instance, error_obj.location,
+                               "called before getting physical device features from vkGetPhysicalDeviceFeatures or "
+                               "vkGetPhysicalDeviceFeatures2.");
+            }
+        }
 
-    if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorIMG)) &&
-        (pCreateInfo->pEnabledFeatures != nullptr) && (pCreateInfo->pEnabledFeatures->robustBufferAccess == VK_TRUE)) {
-        skip |= LogPerformanceWarning(
-            "BestPractices-vkCreateDevice-RobustBufferAccess", instance, error_obj.location,
-            "%s %s %s: called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
-            "development. Enabling it causes loss in performance for accesses to uniform buffers and shader storage "
-            "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
-            "requires the additional level of reliability due to the use of unverified user-supplied draw parameters.",
-            VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorIMG));
+        if ((VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorAMD) || VendorCheckEnabled(kBPVendorIMG)) &&
+            pCreateInfo->pEnabledFeatures->robustBufferAccess) {
+            skip |= LogPerformanceWarning(
+                "BestPractices-vkCreateDevice-RobustBufferAccess", instance, error_obj.location,
+                "%s %s %s: called with enabled robustBufferAccess. Use robustBufferAccess as a debugging tool during "
+                "development. Enabling it causes loss in performance for accesses to uniform buffers and shader storage "
+                "buffers. Disable robustBufferAccess in release builds. Only leave it enabled if the application use-case "
+                "requires the additional level of reliability due to the use of unverified user-supplied draw parameters.",
+                VendorSpecificTag(kBPVendorArm), VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorIMG));
+        }
     }
 
     const bool enabled_pageable_device_local_memory = IsExtEnabled(extensions.vk_ext_pageable_device_local_memory);
