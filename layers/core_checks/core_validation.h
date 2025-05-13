@@ -1028,9 +1028,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool VerifyClearImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
 
-    template <typename RangeFactory>
     bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
-                                VkImageLayout explicit_layout, const RangeFactory& range_factory, const Location& image_loc,
+                                VkImageLayout explicit_layout, const image_layout_map::ImageLayoutRegistry& cb_layout_map,
+                                subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
                                 const char* mismatch_layout_vuid, bool* error) const;
 
     bool VerifyImageLayoutSubresource(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
@@ -1041,9 +1041,9 @@ class CoreChecks : public vvl::DeviceProxy {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
 
-    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const VkImageSubresourceRange& range,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                           bool* error) const;
+    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                           const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
+                           const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
 
     bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
                                            const VkExtent3D& granularity, const VkExtent3D& subresource_extent,

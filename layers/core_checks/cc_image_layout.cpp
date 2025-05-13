@@ -70,77 +70,93 @@ struct LayoutUseCheckAndMessage {
     }
 };
 
-template <typename RangeFactory>
 bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                         VkImageAspectFlags aspect_mask, VkImageLayout explicit_layout,
-                                        const RangeFactory &range_factory, const Location &loc, const char *mismatch_layout_vuid,
-                                        bool *error) const {
+                                        const ImageLayoutRegistry &cb_layout_map, subresource_adapter::RangeGenerator &&range_gen,
+                                        const Location &loc, const char *mismatch_layout_vuid, bool *error) const {
     bool skip = false;
-    const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_state.VkHandle());
-    if (!image_layout_registry) return skip;
-
     LayoutUseCheckAndMessage layout_check(explicit_layout, aspect_mask);
-    skip |= image_layout_registry->AnyInRange(
-        range_factory(*image_layout_registry),
-        [this, image_layout_registry, &cb_state, &image_state, &layout_check, mismatch_layout_vuid, loc, error](
-            const LayoutRange &range, const LayoutEntry &state) {
-            bool subres_skip = false;
+    skip |= cb_layout_map.AnyInRange(
+        std::move(range_gen), [this, &cb_layout_map, &cb_state, &image_state, &layout_check, mismatch_layout_vuid, loc, error](
+                                  const LayoutRange &range, const LayoutEntry &state) {
+            bool local_skip = false;
             if (!layout_check.Check(state)) {
-                *error = true;
-                auto subres = image_layout_registry->Decode(range.begin);
+                if (error) {
+                    *error = true;
+                }
+                const VkImageSubresource subres = cb_layout_map.Decode(range.begin);
                 const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
-                subres_skip |= LogError(mismatch_layout_vuid, objlist, loc,
-                                        "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
-                                        ") with specific layout %s that doesn't match the "
-                                        "%s layout %s.",
-                                        FormatHandle(image_state).c_str(), subres.arrayLayer, subres.mipLevel,
-                                        string_VkImageLayout(layout_check.expected_layout), layout_check.message,
-                                        string_VkImageLayout(layout_check.layout));
+                local_skip |= LogError(mismatch_layout_vuid, objlist, loc,
+                                       "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
+                                       ") with specific layout %s that doesn't match the "
+                                       "%s layout %s.",
+                                       FormatHandle(image_state).c_str(), subres.arrayLayer, subres.mipLevel,
+                                       string_VkImageLayout(layout_check.expected_layout), layout_check.message,
+                                       string_VkImageLayout(layout_check.layout));
             }
-            return subres_skip;
+            return local_skip;
         });
-
     return skip;
 }
 
 bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
                                               const VkImageSubresourceLayers &subresource_layers, VkImageLayout explicit_layout,
                                               const Location &loc, const char *vuid) const {
-    if (disabled[image_layout_validation]) return false;
-    bool skip = false;
+    if (disabled[image_layout_validation]) {
+        return false;
+    }
+    const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_state.VkHandle());
+    if (!image_layout_registry) {
+        return false;
+    }
 
-    const VkImageSubresourceRange range = RangeFromLayers(subresource_layers);
+    const VkImageSubresourceRange normalized_subresource_range =
+        image_state.NormalizeSubresourceRange(RangeFromLayers(subresource_layers));
 
-    VkImageSubresourceRange normalized_isr = image_state.NormalizeSubresourceRange(range);
-    auto range_factory = [&normalized_isr](const ImageLayoutRegistry &registry) { return registry.RangeGen(normalized_isr); };
-    bool unused_error = false;
-    skip |= VerifyImageLayoutRange(cb_state, image_state, normalized_isr.aspectMask, explicit_layout, range_factory, loc, vuid,
-                                   &unused_error);
-    return skip;
+    subresource_adapter::RangeGenerator range_gen =
+        image_state.subresource_encoder.InRange(normalized_subresource_range)
+            ? subresource_adapter::RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
+            : subresource_adapter::RangeGenerator{};
+
+    return VerifyImageLayoutRange(cb_state, image_state, normalized_subresource_range.aspectMask, explicit_layout,
+                                  *image_layout_registry, std::move(range_gen), loc, vuid, nullptr);
 }
 
 bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::ImageView &image_view_state,
                                    VkImageLayout explicit_layout, const Location &loc, const char *mismatch_layout_vuid,
                                    bool *error) const {
-    if (disabled[image_layout_validation]) return false;
-    assert(image_view_state.image_state);
-    auto range_factory = [&image_view_state](const ImageLayoutRegistry &registry) {
-        return image_layout_map::RangeGenerator(image_view_state.range_generator);
-    };
+    if (disabled[image_layout_validation]) {
+        return false;
+    }
+    const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_view_state.image_state->VkHandle());
+    if (!image_layout_registry) {
+        return false;
+    }
 
     return VerifyImageLayoutRange(cb_state, *image_view_state.image_state, image_view_state.create_info.subresourceRange.aspectMask,
-                                  explicit_layout, range_factory, loc, mismatch_layout_vuid, error);
+                                  explicit_layout, *image_layout_registry,
+                                  image_layout_map::RangeGenerator(image_view_state.range_generator), loc, mismatch_layout_vuid,
+                                  error);
 }
 
 bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
-                                   const VkImageSubresourceRange &range, VkImageLayout explicit_layout, const Location &loc,
-                                   const char *mismatch_layout_vuid, bool *error) const {
-    if (disabled[image_layout_validation]) return false;
+                                   const VkImageSubresourceRange &normalized_subresource_range, VkImageLayout explicit_layout,
+                                   const Location &loc, const char *mismatch_layout_vuid, bool *error) const {
+    if (disabled[image_layout_validation]) {
+        return false;
+    }
+    const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_state.VkHandle());
+    if (!image_layout_registry) {
+        return false;
+    }
 
-    auto range_factory = [&range](const ImageLayoutRegistry &registry) { return registry.RangeGen(range); };
+    subresource_adapter::RangeGenerator range_gen =
+        image_state.subresource_encoder.InRange(normalized_subresource_range)
+            ? subresource_adapter::RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
+            : subresource_adapter::RangeGenerator{};
 
-    return VerifyImageLayoutRange(cb_state, image_state, range.aspectMask, explicit_layout, range_factory, loc,
-                                  mismatch_layout_vuid, error);
+    return VerifyImageLayoutRange(cb_state, image_state, normalized_subresource_range.aspectMask, explicit_layout,
+                                  *image_layout_registry, std::move(range_gen), loc, mismatch_layout_vuid, error);
 }
 
 void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {
@@ -803,22 +819,22 @@ bool CoreChecks::VerifyClearImageLayout(const vvl::CommandBuffer &cb_state, cons
         auto normalized_isr = image_state.NormalizeSubresourceRange(range);
         // IncrementInterval skips over all the subresources that have the same state as we just checked, incrementing to
         // the next "constant value" range
-        skip |= image_layout_registry->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, loc,
-                                                                   image = image_state.Handle()](const LayoutRange &range,
-                                                                                                 const LayoutEntry &state) {
-            bool subres_skip = false;
-            if (!layout_check.Check(state)) {
-                const char *vuid = (loc.function == Func::vkCmdClearDepthStencilImage)
-                                       ? "VUID-vkCmdClearDepthStencilImage-imageLayout-00011"
-                                       : "VUID-vkCmdClearColorImage-imageLayout-00004";
-                LogObjectList objlist(cb_state.Handle(), image);
-                subres_skip |=
-                    LogError(vuid, objlist, loc, "Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
-                             string_VkImageLayout(layout_check.expected_layout), layout_check.message,
-                             string_VkImageLayout(layout_check.layout));
-            }
-            return subres_skip;
-        });
+        skip |=
+            image_layout_registry->AnyInRange(normalized_isr, [this, &cb_state, &layout_check, loc, image = image_state.Handle()](
+                                                                  const LayoutRange &range, const LayoutEntry &state) {
+                bool subres_skip = false;
+                if (!layout_check.Check(state)) {
+                    const char *vuid = (loc.function == Func::vkCmdClearDepthStencilImage)
+                                           ? "VUID-vkCmdClearDepthStencilImage-imageLayout-00011"
+                                           : "VUID-vkCmdClearColorImage-imageLayout-00004";
+                    LogObjectList objlist(cb_state.Handle(), image);
+                    subres_skip |=
+                        LogError(vuid, objlist, loc, "Cannot clear an image whose layout is %s and doesn't match the %s layout %s.",
+                                 string_VkImageLayout(layout_check.expected_layout), layout_check.message,
+                                 string_VkImageLayout(layout_check.layout));
+                }
+                return subres_skip;
+            });
     }
 
     return skip;
