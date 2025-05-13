@@ -3024,3 +3024,62 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     }
 }
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+TEST_F(NegativeExternalMemorySync, ZeroInitializeFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    AddRequiredExtensions(VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME);
+    // Required to pass in various memory flags without querying for corresponding extensions.
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+    IgnoreHandleTypeError(m_errorMonitor);
+
+    VkExternalMemoryBufferCreateInfo external_buffer_info = vku::InitStructHelper();
+    external_buffer_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    auto buffer_info = vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT, {}, &external_buffer_info);
+    if (!FindSupportedExternalMemoryHandleTypes(Gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT)) {
+        GTEST_SKIP() << "Unable to find exportable handle type";
+    }
+    if (!FindSupportedExternalMemoryHandleTypes(Gpu(), buffer_info, VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT)) {
+        GTEST_SKIP() << "Unable to find importable handle type";
+    }
+    const auto compatible_types = GetCompatibleHandleTypes(Gpu(), buffer_info, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT);
+    if ((VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT & compatible_types) == 0) {
+        GTEST_SKIP() << "Cannot find handle types that are supported but not compatible with each other";
+    }
+
+    vkt::Buffer buffer(*m_device, buffer_info, vkt::no_mem);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT;
+
+    VkMemoryDedicatedAllocateInfo dedicated_info = vku::InitStructHelper(&alloc_flags);
+    dedicated_info.image = VK_NULL_HANDLE;
+    dedicated_info.buffer = buffer;
+
+    VkExportMemoryAllocateInfo export_info = vku::InitStructHelper(&dedicated_info);
+    export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &export_info);
+
+    vkt::DeviceMemory memory_export;
+    memory_export.init(*m_device, alloc_info);
+
+    VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
+    mgfi.memory = memory_export.handle();
+    mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
+    int fd;
+    vk::GetMemoryFdKHR(device(), &mgfi, &fd);
+
+    VkImportMemoryFdInfoKHR import_info = vku::InitStructHelper(&dedicated_info);
+    import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+    import_info.fd = fd;
+
+    alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &import_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateFlagsInfo-flags-10760");
+    vkt::DeviceMemory memory_import(*m_device, alloc_info);
+    m_errorMonitor->VerifyFound();
+}

@@ -469,15 +469,24 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
     }
 
     auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(pAllocateInfo->pNext);
-    if (chained_flags_struct && chained_flags_struct->flags == VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
-        const LogObjectList objlist(device);
-        skip |=
-            ValidateDeviceMaskToPhysicalDeviceCount(chained_flags_struct->deviceMask, objlist,
-                                                    allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::deviceMask),
-                                                    "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
-        skip |= ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, objlist,
+    const VkMemoryAllocateFlags memory_allocate_flags = chained_flags_struct ? chained_flags_struct->flags : 0;
+
+    if (memory_allocate_flags & VK_MEMORY_ALLOCATE_DEVICE_MASK_BIT) {
+        skip |= ValidateDeviceMaskToPhysicalDeviceCount(
+            chained_flags_struct->deviceMask, device, allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::deviceMask),
+            "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00675");
+        skip |= ValidateDeviceMaskToZero(chained_flags_struct->deviceMask, device,
                                          allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::deviceMask),
                                          "VUID-VkMemoryAllocateFlagsInfo-deviceMask-00676");
+    }
+    if (memory_allocate_flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT) {
+        const auto import_handle_type = vvl::GetImportHandleType(*pAllocateInfo);
+        if (import_handle_type.has_value()) {
+            skip |= LogError("VUID-VkMemoryAllocateFlagsInfo-flags-10760", device,
+                             allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags),
+                             "contains VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT, but also trying to import memory from %s.",
+                             string_VkExternalMemoryHandleTypeFlagBits(*import_handle_type));
+        }
     }
 
     if (pAllocateInfo->memoryTypeIndex >= phys_dev_mem_props.memoryTypeCount) {
@@ -489,9 +498,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
         if (!IgnoreAllocationSize(*pAllocateInfo) &&
             pAllocateInfo->allocationSize > phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size) {
             skip |= LogError("VUID-vkAllocateMemory-pAllocateInfo-01713", device, allocate_info_loc.dot(Field::allocationSize),
-                             "is %" PRIu64 " bytes from heap %" PRIu32
-                             ","
-                             "but size of that heap is only %" PRIu64 " bytes.",
+                             "is %" PRIu64 " bytes from heap %" PRIu32 ",but size of that heap is only %" PRIu64 " bytes.",
                              pAllocateInfo->allocationSize, memory_type.heapIndex,
                              phys_dev_mem_props.memoryHeaps[memory_type.heapIndex].size);
         }
@@ -506,14 +513,22 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
                 pAllocateInfo->memoryTypeIndex);
         }
 
-        if ((enabled_features.protectedMemory == VK_FALSE) &&
-            ((memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0)) {
-            skip |=
-                LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-01872", device, allocate_info_loc.dot(Field::memoryTypeIndex),
-                         "%" PRIu32
-                         " includes the VK_MEMORY_PROPERTY_PROTECTED_BIT memory property, but the protectedMemory feature "
-                         "is not enabled.",
-                         pAllocateInfo->memoryTypeIndex);
+        if (memory_type.propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) {
+            if (!enabled_features.protectedMemory) {
+                skip |= LogError("VUID-VkMemoryAllocateInfo-memoryTypeIndex-01872", device,
+                                 allocate_info_loc.dot(Field::memoryTypeIndex),
+                                 "%" PRIu32
+                                 " includes the VK_MEMORY_PROPERTY_PROTECTED_BIT memory property, but the protectedMemory feature "
+                                 "is not enabled.",
+                                 pAllocateInfo->memoryTypeIndex);
+            }
+
+            if (memory_allocate_flags & VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT) {
+                skip |= LogError("VUID-VkMemoryAllocateFlagsInfo-flags-10761", device,
+                                 allocate_info_loc.pNext(Struct::VkMemoryAllocateFlagsInfo, Field::flags),
+                                 "contains VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT, but this memory type contains "
+                                 "VK_MEMORY_PROPERTY_PROTECTED_BIT and you can't zero initialize protected memory.");
+            }
         }
     }
 

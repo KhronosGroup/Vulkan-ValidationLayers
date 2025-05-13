@@ -2269,6 +2269,20 @@ TEST_F(NegativeImage, ImageMisc) {
     }
 }
 
+TEST_F(NegativeImage, ZeroInitializeFeature) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo info =
+        vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    info.initialLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-initialLayout-10765");
+    vkt::Image image(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImage, ImageMinLimits) {
     TEST_DESCRIPTION("Create invalid image with invalid parameters violation minimum limit, such as being zero.");
 

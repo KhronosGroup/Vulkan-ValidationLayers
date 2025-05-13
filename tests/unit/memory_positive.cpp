@@ -647,3 +647,24 @@ TEST_F(PositiveMemory, MapMemoryCoherentAtomSize) {
     vk::FlushMappedMemoryRanges(device(), 1, &mem_range);
     vk::UnmapMemory(device(), mem);
 }
+
+TEST_F(PositiveMemory, ZeroInitializeDeviceMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(4, 4, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0);
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT;
+    alloc_info.pNext = &alloc_flags;
+
+    vkt::DeviceMemory memory(*m_device, alloc_info);
+    vk::BindImageMemory(device(), image, memory, 0);
+}

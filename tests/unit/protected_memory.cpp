@@ -1330,3 +1330,36 @@ TEST_F(NegativeProtectedMemory, ResolveImageInProtectedCmdBuffer) {
 
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeProtectedMemory, ZeroInitializeDeviceMemory) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::protectedMemory);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
+    alloc_flags.flags = VK_MEMORY_ALLOCATE_ZERO_INITIALIZE_BIT_EXT;
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper(&alloc_flags);
+    alloc_info.allocationSize = 4096;
+
+    VkPhysicalDeviceMemoryProperties phys_mem_props;
+    vk::GetPhysicalDeviceMemoryProperties(Gpu(), &phys_mem_props);
+    alloc_info.memoryTypeIndex = phys_mem_props.memoryTypeCount + 1;
+    for (uint32_t i = 0; i < phys_mem_props.memoryTypeCount; i++) {
+        // Check just protected bit is in type at all
+        if ((phys_mem_props.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_PROTECTED_BIT) != 0) {
+            alloc_info.memoryTypeIndex = i;
+            break;
+        }
+    }
+    if (alloc_info.memoryTypeIndex >= phys_mem_props.memoryTypeCount) {
+        GTEST_SKIP() << "Protected bit not found";
+    }
+
+    VkDeviceMemory memory_protected = VK_NULL_HANDLE;
+    m_errorMonitor->SetDesiredError("VUID-VkMemoryAllocateFlagsInfo-flags-10761");
+    vk::AllocateMemory(device(), &alloc_info, NULL, &memory_protected);
+    m_errorMonitor->VerifyFound();
+}

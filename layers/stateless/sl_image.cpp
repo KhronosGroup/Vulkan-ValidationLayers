@@ -70,6 +70,11 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
         skip |= LogError("VUID-VkImageCreateInfo-initialLayout-00993", device, create_info_loc.dot(Field::initialLayout),
                          "is %s, but must be UNDEFINED or PREINITIALIZED or ZERO_INITIALIZED.",
                          string_VkImageLayout(pCreateInfo->initialLayout));
+    } else if (pCreateInfo->initialLayout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
+        if (!enabled_features.zeroInitializeDeviceMemory) {
+            skip |= LogError("VUID-VkImageCreateInfo-initialLayout-10765", device, create_info_loc.dot(Field::initialLayout),
+                             "is VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT but the zeroInitializeDeviceMemory feature was not enabled.");
+        }
     }
 
     if ((pCreateInfo->imageType == VK_IMAGE_TYPE_1D) && ((pCreateInfo->extent.height != 1) || (pCreateInfo->extent.depth != 1))) {
