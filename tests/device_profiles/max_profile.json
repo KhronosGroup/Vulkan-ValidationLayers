@@ -153,6 +153,9 @@
                 "VkPhysicalDeviceMultiDrawFeaturesEXT": {
                     "multiDraw": true
                 },
+                "VkPhysicalDeviceZeroInitializeDeviceMemoryFeaturesEXT": {
+                    "zeroInitializeDeviceMemory": true
+                },
                 "VkPhysicalDeviceHostImageCopyFeaturesEXT": {
                     "hostImageCopy": true
                 },
@@ -2178,6 +2181,7 @@
                 "VK_EXT_video_encode_h265": 1,
                 "VK_EXT_ycbcr_2plane_444_formats": 1,
                 "VK_EXT_ycbcr_image_arrays": 1,
+                "VK_EXT_zero_initialize_device_memory": 1,
                 "VK_FUCHSIA_buffer_collection": 1,
                 "VK_FUCHSIA_external_memory": 1,
                 "VK_FUCHSIA_external_semaphore": 1,

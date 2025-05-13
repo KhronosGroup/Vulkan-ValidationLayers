@@ -41,6 +41,7 @@
 #include "state_tracker/wsi_state.h"
 #include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
+#include "utils/vk_layer_utils.h"
 
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;
@@ -2332,12 +2333,12 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
     if (enabled_features.synchronization2) {
         is_ilt = old_layout != new_layout;
     } else {
-        if (old_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || old_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
+        if (IsValueIn(old_layout, {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL})) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadSync2OldLayout);
             skip |= LogError(vuid, objlist, barrier_loc.dot(Field::oldLayout),
                              "is %s, but the synchronization2 feature was not enabled.", string_VkImageLayout(old_layout));
         }
-        if (new_layout == VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL || new_layout == VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL) {
+        if (IsValueIn(new_layout, {VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL})) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadSync2NewLayout);
             skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout),
                              "is %s, but the synchronization2 feature was not enabled.", string_VkImageLayout(new_layout));
@@ -2345,7 +2346,8 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
     }
 
     if (is_ilt) {
-        if (new_layout == VK_IMAGE_LAYOUT_UNDEFINED || new_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+        if (IsValueIn(new_layout,
+                      {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
             const auto &vuid = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kBadLayout);
             skip |= LogError(vuid, objlist, barrier_loc.dot(Field::newLayout), "is %s.", string_VkImageLayout(new_layout));
         }

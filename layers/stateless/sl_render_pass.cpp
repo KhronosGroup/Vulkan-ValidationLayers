@@ -19,6 +19,7 @@
 #include "stateless/stateless_validation.h"
 #include "utils/convert_utils.h"
 #include "error_message/error_strings.h"
+#include "utils/vk_layer_utils.h"
 
 namespace stateless {
 
@@ -95,7 +96,8 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
                 skip |= LogError(vuid, device, attachment_loc.dot(Field::format), "is VK_FORMAT_UNDEFINED.");
             }
         }
-        if (final_layout == VK_IMAGE_LAYOUT_UNDEFINED || final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+        if (IsValueIn(final_layout,
+                      {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
             vuid = use_rp2 ? "VUID-VkAttachmentDescription2-finalLayout-00843" : "VUID-VkAttachmentDescription-finalLayout-00843";
             skip |= LogError(vuid, device, attachment_loc.dot(Field::finalLayout), "is %s.", string_VkImageLayout(final_layout));
         }
@@ -221,31 +223,31 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
         }
         if (attachment_description_stencil_layout) {
             const VkImageLayout stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
-            const VkImageLayout stencil_final_layout = attachment_description_stencil_layout->stencilFinalLayout;
-
-            if (stencil_initial_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-                stencil_initial_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+            if (IsValueIn(
+                    stencil_initial_layout,
+                    {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
                 skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilInitialLayout-03308", device,
                                  attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilInitialLayout),
                                  "is %s.", string_VkImageLayout(stencil_initial_layout));
             }
-            if (stencil_final_layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
-                stencil_final_layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL) {
+
+            const VkImageLayout stencil_final_layout = attachment_description_stencil_layout->stencilFinalLayout;
+            if (IsValueIn(
+                    stencil_final_layout,
+                    {VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
+                     VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL})) {
                 skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03309", device,
                                  attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout),
                                  "is %s.", string_VkImageLayout(stencil_final_layout));
             }
-            if (stencil_final_layout == VK_IMAGE_LAYOUT_UNDEFINED || stencil_final_layout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
+
+            if (IsValueIn(stencil_final_layout,
+                          {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
                 skip |= LogError("VUID-VkAttachmentDescriptionStencilLayout-stencilFinalLayout-03310", device,
                                  attachment_loc.pNext(Struct::VkAttachmentDescriptionStencilLayout, Field::stencilFinalLayout),
                                  "is %s.", string_VkImageLayout(stencil_final_layout));

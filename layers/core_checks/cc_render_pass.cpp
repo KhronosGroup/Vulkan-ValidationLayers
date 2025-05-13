@@ -1298,6 +1298,7 @@ bool CoreChecks::ValidateAttachmentReference(VkAttachmentReference2 reference, c
         case VK_IMAGE_LAYOUT_UNDEFINED:
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
         case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+        case VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT:
             vuid = (use_rp2) ? "VUID-VkAttachmentReference2-layout-03077" : "VUID-VkAttachmentReference-layout-03077";
             skip |= LogError(vuid, device, loc, "is %s.", string_VkImageLayout(reference.layout));
             break;
@@ -3036,10 +3037,11 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                          attachment_loc.dot(Field::imageView).Fields().c_str(), string_VkFormat(image_view_format));
         }
 
-        if (IsValueIn(attachment_info.resolveImageLayout,
-                      {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PREINITIALIZED})) {
+        if (IsValueIn(
+                attachment_info.resolveImageLayout,
+                {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
+                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
             skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06136", commandBuffer,
                              attachment_loc.dot(Field::resolveImageLayout), "is %s.",
                              string_VkImageLayout(attachment_info.resolveImageLayout));
@@ -3055,7 +3057,7 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
 
     if (IsValueIn(attachment_info.imageLayout,
                   {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PREINITIALIZED})) {
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
         skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-06135", commandBuffer, attachment_loc.dot(Field::imageLayout),
                          "is %s.", string_VkImageLayout(attachment_info.imageLayout));
     }

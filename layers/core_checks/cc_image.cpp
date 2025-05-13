@@ -36,6 +36,7 @@
 #include "state_tracker/wsi_state.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/math_utils.h"
+#include "utils/vk_layer_utils.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
@@ -2762,7 +2763,8 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
                                  string_VkImageLayout(transition.oldLayout));
             }
         }
-        if ((transition.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED) && (transition.oldLayout != VK_IMAGE_LAYOUT_PREINITIALIZED)) {
+        if (!IsValueIn(transition.oldLayout,
+                       {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
             skip |= ValidateHostCopyImageLayout(transition.image, phys_dev_props_core14.copySrcLayoutCount,
                                                 phys_dev_props_core14.pCopySrcLayouts, transition.oldLayout,
                                                 transition_loc.dot(Field::oldLayout), Field::pCopySrcLayouts,

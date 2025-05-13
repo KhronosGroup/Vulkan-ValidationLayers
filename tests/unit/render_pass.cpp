@@ -211,6 +211,36 @@ TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayout) {
     }
 }
 
+TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayoutZeroInitialized) {
+    AddRequiredExtensions(VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_ZERO_INITIALIZE_DEVICE_MEMORY_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::zeroInitializeDeviceMemory);
+    RETURN_IF_SKIP(Init());
+
+    VkAttachmentDescription attach_desc = {};
+    attach_desc.format = VK_FORMAT_R8G8B8A8_UNORM;
+    attach_desc.samples = VK_SAMPLE_COUNT_1_BIT;
+    attach_desc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attach_desc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attach_desc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attach_desc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attach_desc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attach_desc.finalLayout = VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT;
+    VkAttachmentReference attach_ref = {0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attach_ref;
+    VkRenderPassCreateInfo rpci = vku::InitStructHelper();
+    rpci.attachmentCount = 1;
+    rpci.pAttachments = &attach_desc;
+    rpci.subpassCount = 1;
+    rpci.pSubpasses = &subpass;
+
+    TestRenderPassCreate(m_errorMonitor, *m_device, rpci, true, "VUID-VkAttachmentDescription-finalLayout-00843",
+                         "VUID-VkAttachmentDescription2-finalLayout-00843");
+}
+
 TEST_F(NegativeRenderPass, AttachmentDescriptionFinalLayoutSeperateDS) {
     TEST_DESCRIPTION("VkAttachmentDescription's finalLayout must not be UNDEFINED or PREINITIALIZED");
 
