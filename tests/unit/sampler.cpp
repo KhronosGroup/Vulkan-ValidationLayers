@@ -731,7 +731,7 @@ TEST_F(NegativeSampler, FilterMinmax) {
     ycbcr_create_info.forceExplicitReconstruction = false;
 
     VkSamplerYcbcrConversion conversion;
-    vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+    vk::CreateSamplerYcbcrConversionKHR(*m_device, &ycbcr_create_info, nullptr, &conversion);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
     ycbcr_info.conversion = conversion;
@@ -750,7 +750,7 @@ TEST_F(NegativeSampler, FilterMinmax) {
     sampler_info.compareEnable = VK_TRUE;
     CreateSamplerTest(sampler_info, "VUID-VkSamplerCreateInfo-compareEnable-01423");
 
-    vk::DestroySamplerYcbcrConversionKHR(m_device->handle(), conversion, nullptr);
+    vk::DestroySamplerYcbcrConversionKHR(*m_device, conversion, nullptr);
 }
 
 TEST_F(NegativeSampler, CustomBorderColor) {

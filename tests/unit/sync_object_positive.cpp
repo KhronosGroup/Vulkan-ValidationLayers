@@ -920,10 +920,10 @@ TEST_F(PositiveSyncObject, ExternalTimelineSemaphore) {
 
     uint64_t import_value{0}, export_value{0};
 
-    vk::GetSemaphoreCounterValueKHR(m_device->handle(), export_semaphore, &export_value);
+    vk::GetSemaphoreCounterValueKHR(*m_device, export_semaphore, &export_value);
     ASSERT_EQ(export_value, signal_value);
 
-    vk::GetSemaphoreCounterValueKHR(m_device->handle(), import_semaphore, &import_value);
+    vk::GetSemaphoreCounterValueKHR(*m_device, import_semaphore, &import_value);
     ASSERT_EQ(import_value, signal_value);
 }
 
@@ -1400,7 +1400,7 @@ TEST_F(PositiveSyncObject, SubmitFenceButWaitIdle) {
     alloc_info.commandBufferCount = 1;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-    auto err = vk::AllocateCommandBuffers(m_device->handle(), &alloc_info, &command_buffer);
+    auto err = vk::AllocateCommandBuffers(*m_device, &alloc_info, &command_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_swapchain.AcquireNextImage(sem, kWaitTimeout, &err);

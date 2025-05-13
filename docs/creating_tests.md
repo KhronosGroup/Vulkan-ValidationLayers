@@ -219,7 +219,7 @@ VkImageSubresource subresource{};
 subresource.aspectMask = VK_IMAGE_ASPECT_MEMORY_PLANE_3_BIT_EXT;
 VkSubresourceLayout layout{};
 m_errorMonitor->SetDesiredError("VUID-vkGetImageSubresourceLayout-tiling-09433");
-vk::GetImageSubresourceLayout(m_device->handle(), image, &subresource, &layout);
+vk::GetImageSubresourceLayout(*m_device, image, &subresource, &layout);
 m_errorMonitor->VerifyFound();
 ```
 Here it is obvious that the `aspectMask` parameter is the cause of 02271.

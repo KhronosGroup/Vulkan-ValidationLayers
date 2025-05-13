@@ -1084,7 +1084,7 @@ TEST_F(NegativeProtectedMemory, RayTracingPipeline) {
     raytracing_pipeline_ci.layout = pipeline_layout;
 
     VkPipeline raytracing_pipeline = VK_NULL_HANDLE;
-    vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
+    vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &raytracing_pipeline_ci, nullptr,
                                      &raytracing_pipeline);
 
     m_command_buffer.Begin();

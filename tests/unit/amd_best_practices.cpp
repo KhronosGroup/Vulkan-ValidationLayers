@@ -67,7 +67,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     image_ci.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
@@ -75,7 +75,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     // create a depth attachment image with mutable bit set
     image_ci.format = VK_FORMAT_D32_SFLOAT;
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-AMD-vkImage-DontUseMutableRenderTargets");
@@ -83,7 +83,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UseMutableRT) {
     image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
     image_ci.usage = VK_IMAGE_USAGE_STORAGE_BIT;
 
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
@@ -107,7 +107,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     image_ci.queueFamilyIndexCount = (uint32_t)queueFamilies.size();
     image_ci.pQueueFamilyIndices = queueFamilies.data();
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
@@ -116,7 +116,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageConcurentRT) {
     image_ci.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
     test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
@@ -128,7 +128,7 @@ TEST_F(VkAmdBestPracticesLayerTest, UsageStorageRT) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(1, 1, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
                                                   VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
     VkImage test_image = VK_NULL_HANDLE;
-    vk::CreateImage(m_device->handle(), &image_ci, nullptr, &test_image);
+    vk::CreateImage(*m_device, &image_ci, nullptr, &test_image);
     m_errorMonitor->VerifyFound();
 }
 
@@ -210,7 +210,7 @@ TEST_F(VkAmdBestPracticesLayerTest, KeepLayoutSmall) {
     pipeline_layout_info.pPushConstantRanges = &push_range;
 
     VkPipelineLayout test_pipeline_layout = VK_NULL_HANDLE;
-    vk::CreatePipelineLayout(m_device->handle(), &pipeline_layout_info, nullptr, &test_pipeline_layout);
+    vk::CreatePipelineLayout(*m_device, &pipeline_layout_info, nullptr, &test_pipeline_layout);
 
     m_errorMonitor->VerifyFound();
 }
@@ -264,7 +264,7 @@ TEST_F(VkAmdBestPracticesLayerTest, CopyingDescriptors) {
     copy_info.dstBinding = 2;
     copy_info.dstArrayElement = 0;
 
-    vk::UpdateDescriptorSets(m_device->handle(), 0, nullptr, 1, &copy_info);
+    vk::UpdateDescriptorSets(*m_device, 0, nullptr, 1, &copy_info);
 
     m_errorMonitor->VerifyFound();
 }

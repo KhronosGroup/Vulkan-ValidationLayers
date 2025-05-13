@@ -380,7 +380,7 @@ TEST_F(NegativeDebugExtensions, SetDebugUtilsObjectSecondDevice) {
     }
 
     auto features = m_device->Physical().Features();
-    vkt::Device second_device(gpu_, m_device_extension_names, &features, nullptr);
+    vkt::Device second_device(gpu_, m_device_extension_names, &features);
 
     DebugUtilsLabelCheckData callback_data;
     auto empty_callback = [](const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, DebugUtilsLabelCheckData *data) {

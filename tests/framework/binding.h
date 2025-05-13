@@ -213,25 +213,20 @@ class QueueCreateInfoArray {
 
 class Device : public internal::Handle<VkDevice> {
   public:
-    explicit Device(VkPhysicalDevice phy) : physical_device_(phy) { init(); }
-    explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : physical_device_(phy) { init(info); }
+    explicit Device(VkPhysicalDevice phy, const VkDeviceCreateInfo &info) : physical_device_(phy) { Init(info); }
     explicit Device(VkPhysicalDevice phy, std::vector<const char *> &extension_names, VkPhysicalDeviceFeatures *features = nullptr,
                     void *create_device_pnext = nullptr, bool all_queue_count = false)
         : physical_device_(phy) {
-        init(extension_names, features, create_device_pnext, all_queue_count);
+        Init(extension_names, features, create_device_pnext, all_queue_count);
     }
 
     ~Device() noexcept;
-    void destroy() noexcept;
+    void Destroy() noexcept;
 
     // vkCreateDevice()
-    void init(const VkDeviceCreateInfo &info);
-    void init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features = nullptr,
+    void Init(const VkDeviceCreateInfo &info);
+    void Init(std::vector<const char *> &extensions, VkPhysicalDeviceFeatures *features = nullptr,
               void *create_device_pnext = nullptr, bool all_queue_count = false);  // all queues, all extensions, etc
-    void init() {
-        std::vector<const char *> extensions;
-        init(extensions);
-    };
 
     void SetName(const char *name) { Handle<VkDevice>::SetName(handle_, VK_OBJECT_TYPE_DEVICE, name); }
     const PhysicalDevice &Physical() const { return physical_device_; }

@@ -630,7 +630,7 @@ TEST_F(NegativeYcbcr, SamplerYcbcrConversionEnable) {
                                                             false};
 
     m_errorMonitor->SetDesiredError("VUID-vkCreateSamplerYcbcrConversion-None-01648");
-    vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversions);
+    vk::CreateSamplerYcbcrConversionKHR(*m_device, &ycbcr_create_info, nullptr, &conversions);
     m_errorMonitor->VerifyFound();
 }
 

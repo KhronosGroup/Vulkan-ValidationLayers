@@ -218,7 +218,7 @@ TEST_F(NegativeMultiview, UnboundResourcesAfterBeginRenderPassAndNextSubpass) {
     rp_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
     rp_info.pDependencies = dependencies.data();
 
-    vk::CreateRenderPass(m_device->handle(), &rp_info, nullptr, &m_renderPass);
+    vk::CreateRenderPass(*m_device, &rp_info, nullptr, &m_renderPass);
 
     VkImageCreateInfo image_create_info = vku::InitStructHelper();
     image_create_info.imageType = VK_IMAGE_TYPE_2D;

@@ -1083,7 +1083,7 @@ TEST_F(NegativeGraphicsLibrary, DescriptorBufferLibrary) {
     exe_pipe_ci.renderPass = RenderPass();
     VkPipeline pipeline;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineLibraryCreateInfoKHR-pLibraries-08096");
-    vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &exe_pipe_ci, nullptr, &pipeline);
+    vk::CreateGraphicsPipelines(*m_device, VK_NULL_HANDLE, 1, &exe_pipe_ci, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 }
 

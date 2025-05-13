@@ -513,7 +513,7 @@ TEST_F(VkLayerTest, InvalidAllocationCallbacks) {
 
     RETURN_IF_SKIP(Init());
 
-    const std::optional queueFamilyIndex = DeviceObj()->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
+    const std::optional queueFamilyIndex = m_device->QueueFamily(VK_QUEUE_GRAPHICS_BIT);
     if (!queueFamilyIndex) {
         GTEST_SKIP() << "Required queue families not present";
     }
@@ -837,7 +837,7 @@ TEST_F(VkLayerTest, ExtensionNotEnabledYCbCr) {
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
     VkSamplerYcbcrConversion conversion;
-    vk::CreateSamplerYcbcrConversionKHR(m_device->handle(), &ycbcr_create_info, nullptr, &conversion);
+    vk::CreateSamplerYcbcrConversionKHR(*m_device, &ycbcr_create_info, nullptr, &conversion);
     m_errorMonitor->VerifyFound();
 }
 

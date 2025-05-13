@@ -2846,12 +2846,12 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_command_queue_info.queue = m_default_queue->handle();
     export_metal_objects_info.pNext = &metal_device_info;
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06791");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     export_metal_objects_info.pNext = &metal_command_queue_info;
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06792");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     alloc_info.pNext = nullptr;
@@ -2861,7 +2861,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_buffer_info.memory = memory;
     export_metal_objects_info.pNext = &metal_buffer_info;
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06793");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
     vk::FreeMemory(device(), memory, nullptr);
 
@@ -2880,14 +2880,14 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
 
     // Only one of image, bufferView, imageView
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06794");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     // Image not created with struct in pNext
     metal_texture_info.bufferView = VK_NULL_HANDLE;
     metal_texture_info.image = image_obj;
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06795");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     metal_texture_info.image = VK_NULL_HANDLE;
@@ -2896,7 +2896,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_texture_info.imageView = image_view_no_struct.handle();
     // ImageView not created with struct in pNext
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06796");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     buff_view_ci.pNext = nullptr;
@@ -2906,7 +2906,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_texture_info.bufferView = buffer_view_no_struct.handle();
     // BufferView not created with struct in pNext
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06797");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     metal_texture_info.bufferView = VK_NULL_HANDLE;
@@ -2914,7 +2914,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_texture_info.plane = VK_IMAGE_ASPECT_COLOR_BIT;
     // metal_texture_info.plane not plane 0, 1 or 2
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06798");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     ici.format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -2923,7 +2923,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_texture_info.image = single_plane_export_image_obj.handle();
     // metal_texture_info.plane not plane_0 for single plane image
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06799");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     image_view_ci.pNext = &export_metal_object_create_info;
@@ -2933,7 +2933,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     metal_texture_info.imageView = single_plane_export_image_view.handle();
     // metal_texture_info.plane not plane_0 for single plane imageView
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06801");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     VkExportMetalIOSurfaceInfoEXT metal_iosurface_info = vku::InitStructHelper();
@@ -2941,14 +2941,14 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     export_metal_objects_info.pNext = &metal_iosurface_info;
     // metal_iosurface_info.image not created with struct in pNext
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06803");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     VkExportMetalSharedEventInfoEXT metal_shared_event_info = vku::InitStructHelper();
     export_metal_objects_info.pNext = &metal_shared_event_info;
     // metal_shared_event_info event and semaphore both VK_NULL_HANDLE
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06804");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     sem_info.pNext = nullptr;
@@ -2958,7 +2958,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
     export_metal_objects_info.pNext = &metal_shared_event_info;
     // Semaphore not created with struct in pNext
     m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06805");
-    vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+    vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
     m_errorMonitor->VerifyFound();
 
     if (portability_features.events) {
@@ -2968,7 +2968,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
         metal_shared_event_info.semaphore = VK_NULL_HANDLE;
         // Event not created with struct in pNext
         m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06806");
-        vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2988,7 +2988,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
         metal_texture_info.plane = VK_IMAGE_ASPECT_PLANE_2_BIT;
         export_metal_objects_info.pNext = &metal_texture_info;
         m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06800");
-        vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+        vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
         m_errorMonitor->VerifyFound();
 
         if (ycbcr_conversion_extension) {
@@ -3017,7 +3017,7 @@ TEST_F(NegativeExternalMemorySync, ExportMetalObjects) {
             metal_texture_info.image = VK_NULL_HANDLE;
             metal_texture_info.imageView = mp_image_view.handle();
             m_errorMonitor->SetDesiredError("VUID-VkExportMetalObjectsInfoEXT-pNext-06802");
-            vk::ExportMetalObjectsEXT(m_device->handle(), &export_metal_objects_info);
+            vk::ExportMetalObjectsEXT(*m_device, &export_metal_objects_info);
             m_errorMonitor->VerifyFound();
             vk::DestroySamplerYcbcrConversionKHR(device(), conversion, nullptr);
         }

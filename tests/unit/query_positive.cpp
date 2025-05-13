@@ -140,7 +140,7 @@ TEST_F(PositiveQuery, BasicQuery) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
     uint64_t samples_passed[4];
-    vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
+    vk::GetQueryPoolResults(*m_device, query_pool, 0, 2, sizeof(samples_passed), samples_passed, sizeof(uint64_t),
                             VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
     // Now reset query pool in a different command buffer than the BeginQuery
@@ -172,7 +172,7 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 
     VkQueryPoolCreateInfo query_pool_info = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_OCCLUSION, query_count);
     VkQueryPool query_pool;
-    vk::CreateQueryPool(m_device->handle(), &query_pool_info, nullptr, &query_pool);
+    vk::CreateQueryPool(*m_device, &query_pool_info, nullptr, &query_pool);
 
     CreatePipelineHelper pipe(*this);
     pipe.CreateGraphicsPipeline();
@@ -195,8 +195,8 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
 
     m_default_queue->Submit(m_command_buffer);
 
-    VkResult res = vk::GetQueryPoolResults(m_device->handle(), query_pool, 0, query_count, sizeof_samples_passed,
-                                           samples_passed.data(), sample_stride, query_flags);
+    VkResult res = vk::GetQueryPoolResults(*m_device, query_pool, 0, query_count, sizeof_samples_passed, samples_passed.data(),
+                                           sample_stride, query_flags);
 
     if (res == VK_SUCCESS) {
         // "Applications can verify that queryPool can be destroyed by checking that vkGetQueryPoolResults() without the
@@ -204,12 +204,12 @@ TEST_F(PositiveQuery, DestroyQueryPoolBasedOnQueryPoolResults) {
         // execution."
         //
         // i.e. You don't have to wait for an idle queue to destroy the query pool.
-        vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+        vk::DestroyQueryPool(*m_device, query_pool, nullptr);
         m_default_queue->Wait();
     } else {
         // some devices (pixel 7) will return VK_NOT_READY
         m_default_queue->Wait();
-        vk::DestroyQueryPool(m_device->handle(), query_pool, nullptr);
+        vk::DestroyQueryPool(*m_device, query_pool, nullptr);
     }
 }
 

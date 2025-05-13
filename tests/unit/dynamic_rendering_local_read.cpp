@@ -881,7 +881,7 @@ TEST_F(NegativeDynamicRenderingLocalRead, BeginWithinRenderPass) {
         vk::CreateRenderPass(device(), &rp_info, NULL, &m_renderPass);
 
         framebuffer = std::shared_ptr<vkt::Framebuffer>(new vkt::Framebuffer(
-            *DeviceObj(), m_renderPass, framebuffer_attachments.size(), framebuffer_attachments.data(), m_width, m_height));
+            *m_device, m_renderPass, framebuffer_attachments.size(), framebuffer_attachments.data(), m_width, m_height));
 
         m_renderPassBeginInfo.renderPass = m_renderPass;
         m_renderPassBeginInfo.framebuffer = framebuffer->handle();

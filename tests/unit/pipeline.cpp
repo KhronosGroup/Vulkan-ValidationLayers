@@ -667,10 +667,10 @@ TEST_F(NegativePipeline, RasterizerDiscardWithFragmentShader) {
 
     VkPipeline pipeline;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-pStages-06894");
-    vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    vk::CreateGraphicsPipelines(*m_device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+    vk::DestroyPipelineLayout(*m_device, pipeline_layout, nullptr);
 }
 
 TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
@@ -741,16 +741,16 @@ TEST_F(NegativePipeline, CreateGraphicsPipelineWithBadBasePointer) {
 
     VkPipeline pipeline;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-07984");
-    vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    vk::CreateGraphicsPipelines(*m_device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 
     graphics_pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
     graphics_pipeline_create_info.basePipelineIndex = 6;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-07985");
-    vk::CreateGraphicsPipelines(m_device->handle(), VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
+    vk::CreateGraphicsPipelines(*m_device, VK_NULL_HANDLE, 1, &graphics_pipeline_create_info, nullptr, &pipeline);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyPipelineLayout(m_device->handle(), pipeline_layout, nullptr);
+    vk::DestroyPipelineLayout(*m_device, pipeline_layout, nullptr);
 }
 
 TEST_F(NegativePipeline, PipelineCreationCacheControl) {

@@ -51,7 +51,7 @@ VkFramebuffer VkArmBestPracticesLayerTest::CreateFramebuffer(const uint32_t widt
     framebuffer_create_info.height = height;
     framebuffer_create_info.layers = 1;
 
-    VkResult result = vk::CreateFramebuffer(m_device->handle(), &framebuffer_create_info, nullptr, &framebuffer);
+    VkResult result = vk::CreateFramebuffer(*m_device, &framebuffer_create_info, nullptr, &framebuffer);
     assert(result == VK_SUCCESS);
     (void)result;
 
@@ -96,7 +96,7 @@ VkRenderPass VkArmBestPracticesLayerTest::CreateRenderPass(VkFormat format, VkAt
     rpinf.dependencyCount = 0;
     rpinf.pDependencies = nullptr;
 
-    VkResult result = vk::CreateRenderPass(m_device->handle(), &rpinf, nullptr, &renderpass);
+    VkResult result = vk::CreateRenderPass(*m_device, &rpinf, nullptr, &renderpass);
     assert(result == VK_SUCCESS);
     (void)result;
 
@@ -1304,7 +1304,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     descriptor_set_allocate_info.descriptorPool = pool;
     descriptor_set_allocate_info.descriptorSetCount = 1;
     descriptor_set_allocate_info.pSetLayouts = &graphics_pipeline.descriptor_set_->layout_.handle();
-    vk::AllocateDescriptorSets(m_device->handle(), &descriptor_set_allocate_info, &descriptor_set);
+    vk::AllocateDescriptorSets(*m_device, &descriptor_set_allocate_info, &descriptor_set);
 
     VkDescriptorImageInfo image_info = {};
     image_info.imageView = view1;
@@ -1318,7 +1318,7 @@ TEST_F(VkArmBestPracticesLayerTest, DescriptorTracking) {
     write.dstSet = descriptor_set;
     write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
     write.pImageInfo = &image_info;
-    vk::UpdateDescriptorSets(m_device->handle(), 1, &write, 0, nullptr);
+    vk::UpdateDescriptorSets(*m_device, 1, &write, 0, nullptr);
 
     VkClearValue clear_values[3];
     memset(clear_values, 0, sizeof(clear_values));

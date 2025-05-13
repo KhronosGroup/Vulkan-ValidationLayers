@@ -674,7 +674,7 @@ TEST_F(NegativeRayTracing, CmdCopyUnboundAccelerationStructure) {
     }
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, buffer, device_memory, 0);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetDeviceBuffer(std::move(buffer));
@@ -731,7 +731,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureNoHostMem) {
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, buffer, device_memory, 0);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, 4096);
     blas->Create();
@@ -824,7 +824,7 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructureKHR) {
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, non_host_visible_buffer, device_memory, 0);
 
     vkt::Buffer host_buffer(*m_device, 4096, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
@@ -883,7 +883,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructureMemory) {
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, non_host_visible_buffer, device_memory, 0);
 
     auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnHostBottomLevel(*m_device);
     blas.GetDstAS()->SetDeviceBuffer(std::move(non_host_visible_buffer));
@@ -948,7 +948,7 @@ TEST_F(NegativeRayTracing, CopyMemoryToAsBuffer) {
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), non_host_visible_buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, non_host_visible_buffer, device_memory, 0);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnHostBottomLevel(*m_device, buffer_ci.size);
     blas->SetDeviceBuffer(std::move(non_host_visible_buffer));
@@ -1194,7 +1194,7 @@ TEST_F(NegativeRayTracing, CmdTraceRaysKHR) {
         raytracing_pipeline_ci.groupCount = shader_groups.size();
         raytracing_pipeline_ci.layout = pipeline_layout;
 
-        const VkResult result = vk::CreateRayTracingPipelinesKHR(m_device->handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
+        const VkResult result = vk::CreateRayTracingPipelinesKHR(*m_device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1,
                                                                  &raytracing_pipeline_ci, nullptr, &raytracing_pipeline);
         ASSERT_EQ(VK_SUCCESS, result);
     }
@@ -2166,7 +2166,7 @@ TEST_F(NegativeRayTracing, ObjInUseCmdBuildAccelerationStructureKHR) {
     // to track the "correct" one: there is not a 1 to 1 mapping between a buffer and a device address.
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyAccelerationStructureKHR-accelerationStructure-02442");
-    vk::DestroyAccelerationStructureKHR(m_device->handle(), blas.GetDstAS()->handle(), nullptr);
+    vk::DestroyAccelerationStructureKHR(*m_device, blas.GetDstAS()->handle(), nullptr);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -2227,7 +2227,7 @@ TEST_F(NegativeRayTracing, CopyAccelerationStructureToMemoryKHR) {
                                                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
     vkt::DeviceMemory device_memory(*m_device, memory_alloc);
     ASSERT_TRUE(device_memory.initialized());
-    vk::BindBufferMemory(m_device->handle(), buffer, device_memory, 0);
+    vk::BindBufferMemory(*m_device, buffer, device_memory, 0);
 
     auto blas = vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096);
     blas->SetDeviceBuffer(std::move(buffer));
@@ -2419,22 +2419,22 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesHost) {
     uint8_t data[data_size];
     // Incorrect query type
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(), VK_QUERY_TYPE_OCCLUSION,
-                                                 data_size, data, stride);
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(), VK_QUERY_TYPE_OCCLUSION, data_size, data,
+                                                 stride);
     m_errorMonitor->VerifyFound();
 
     // query types not known without extension
     if (IsExtensionsEnabled(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME)) {
         // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, but stride is not a multiple of the size of VkDeviceSize
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                      VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, data_size, data, stride);
         m_errorMonitor->VerifyFound();
 
         // queryType is VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, but stride is not a
         // multiple of the size of VkDeviceSize
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                      VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR,
                                                      data_size, data, stride);
         m_errorMonitor->VerifyFound();
@@ -2560,8 +2560,8 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
 
         // Incorrect query type
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06742");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(), VK_QUERY_TYPE_OCCLUSION,
-                                                     data_size, data, stride);
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(), VK_QUERY_TYPE_OCCLUSION, data_size,
+                                                     data, stride);
         m_errorMonitor->VerifyFound();
     }
 
@@ -2577,7 +2577,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-accelerationStructures-03431");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                      VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
                                                      stride);
         m_errorMonitor->VerifyFound();
@@ -2594,12 +2594,12 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesMaintenance1Host
         m_command_buffer.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03448");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                      VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data, 1);
         m_errorMonitor->VerifyFound();
 
         m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03450");
-        vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+        vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                      VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, data_size, data,
                                                      1);
         m_errorMonitor->VerifyFound();
@@ -2665,7 +2665,7 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
     uint8_t data[data_size];
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-pAccelerationStructures-04964");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                  VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, data_size, data,
                                                  sizeof(VkDeviceSize));
     m_errorMonitor->VerifyFound();
@@ -2676,25 +2676,25 @@ TEST_F(NegativeRayTracing, WriteAccelerationStructuresPropertiesDataSizeTooSmall
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03448");
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03449");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                  VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR, 1, data, stride);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03450");
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-03451");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                  VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, 1, data, stride);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06731");
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06732");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                  VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SIZE_KHR, 1, data, stride);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06733");
     m_errorMonitor->SetDesiredError("VUID-vkWriteAccelerationStructuresPropertiesKHR-queryType-06734");
-    vk::WriteAccelerationStructuresPropertiesKHR(m_device->handle(), 1, &blas.GetDstAS()->handle(),
+    vk::WriteAccelerationStructuresPropertiesKHR(*m_device, 1, &blas.GetDstAS()->handle(),
                                                  VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_BOTTOM_LEVEL_POINTERS_KHR, 1,
                                                  data, stride);
     m_errorMonitor->VerifyFound();
