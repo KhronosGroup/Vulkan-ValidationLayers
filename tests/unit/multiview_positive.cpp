@@ -147,7 +147,7 @@ TEST_F(PositiveMultiview, PushDescriptor) {
     descriptor_write.dstSet = 0;  // Should not cause a validation error
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1, &descriptor_write);
     m_command_buffer.BeginRenderPass(render_pass, fb, 32, 32);
     m_command_buffer.NextSubpass();

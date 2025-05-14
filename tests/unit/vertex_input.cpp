@@ -590,18 +590,18 @@ TEST_F(NegativeVertexInput, ProvokingVertexModePerPipeline) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineBindPoint-04881");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe3);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -630,7 +630,7 @@ TEST_F(NegativeVertexInput, VertextBinding) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vtx_buf.handle(), &offset);
 
@@ -666,7 +666,7 @@ TEST_F(NegativeVertexInput, VertextBindingNonLinear) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
     // Forget to update binding 2
     vk::CmdBindVertexBuffers(m_command_buffer, 5, 1, &vtx_buf.handle(), &offset);
@@ -722,7 +722,7 @@ TEST_F(NegativeVertexInput, VertextBindingDynamicState) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 5, 1, &buffer.handle(), &offset);
     vk::CmdBindVertexBuffers(m_command_buffer, 3, 1, &buffer.handle(), &offset);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetVertexInputEXT(m_command_buffer, 3, bindings, 3, attributes);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-04007");
@@ -809,7 +809,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 
     // Test with invalid buffer offset
     VkDeviceSize offset = 1;
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vbo.handle(), &offset);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 0
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 1
@@ -819,7 +819,7 @@ TEST_F(NegativeVertexInput, AttributeAlignment) {
 
     // Test with invalid buffer stride
     offset = 0;
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vbo.handle(), &offset);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-02721");  // attribute 0
     // Attribute[1] is aligned properly even with a wrong stride
@@ -851,7 +851,7 @@ TEST_F(NegativeVertexInput, BindVertexOffset) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkDeviceSize offset = 3;
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vtx_buf.handle(), &offset);
@@ -883,7 +883,7 @@ TEST_F(NegativeVertexInput, VertexStride) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vtx_buf.handle(), &offset);
@@ -922,7 +922,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicInput) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer.handle(), &offset);
@@ -959,7 +959,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStride) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     const VkDeviceSize offset = 0;
     const VkDeviceSize bad_stride = 3;
@@ -996,7 +996,7 @@ TEST_F(NegativeVertexInput, VertexStrideDynamicStrideArray) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkDeviceSize offsets[2] = {0, 0};
     VkDeviceSize strides[2] = {4, 3};
@@ -1040,7 +1040,7 @@ TEST_F(NegativeVertexInput, VertexStrideDoubleDynamicStride) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
 
     const VkDeviceSize bad_stride = 3;
@@ -1360,7 +1360,7 @@ TEST_F(NegativeVertexInput, AttributeTypeMismatchDynamic) {
     VkDeviceSize offset = 0;
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &buffer.handle(), &offset);
     vk::CmdSetVertexInputEXT(m_command_buffer, 1, &binding, 1, &attribute);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1619,7 +1619,7 @@ TEST_F(NegativeVertexInput, UnsupportedDivisor) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 0u, 1u, &buffer.handle(), &offset);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pNext-09461");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 1u);
     m_errorMonitor->VerifyFound();
@@ -1665,7 +1665,7 @@ TEST_F(NegativeVertexInput, UnsupportedDynamicStateDivisor) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 0u, 1u, &buffer.handle(), &offset);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &vertex_input_binding_description, 0u, nullptr);
 
@@ -1717,7 +1717,7 @@ TEST_F(NegativeVertexInput, NoBoundVertexBuffer) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkDeviceSize offset = 0;
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -1743,7 +1743,7 @@ TEST_F(NegativeVertexInput, VertexBufferDestroyed) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &buffer.handle(), &offset);
     buffer.destroy();
@@ -1788,7 +1788,7 @@ TEST_F(NegativeVertexInput, ResetCmdSetVertexInput) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 0u, 1u, &vertex_buffer.handle(), &offset);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetVertexInputEXT(m_command_buffer, 1, &bindings, 1, &attributes);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 1);
 
@@ -1852,7 +1852,7 @@ TEST_F(NegativeVertexInput, VertexInputRebinding) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindVertexBuffers(m_command_buffer, 0, 2, buffers, offsets);
 
     vk::CmdSetVertexInputEXT(m_command_buffer, 2, bindings, 2, attributes);

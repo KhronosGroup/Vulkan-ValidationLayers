@@ -320,9 +320,9 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     const VkPipelineLayout layout_a = pipeline_helper_a.pipeline_layout_.handle();
     const VkPipelineLayout layout_b = pipeline_helper_b.pipeline_layout_.handle();
     const VkPipelineLayout layout_c = pipeline_helper_c.pipeline_layout_.handle();
-    const VkPipeline pipeline_a = pipeline_helper_a.Handle();
-    const VkPipeline pipeline_b = pipeline_helper_b.Handle();
-    const VkPipeline pipeline_c = pipeline_helper_c.Handle();
+    const VkPipeline pipeline_a = pipeline_helper_a;
+    const VkPipeline pipeline_b = pipeline_helper_b;
+    const VkPipeline pipeline_c = pipeline_helper_c;
 
     const float data[16] = {};  // dummy data to match shader size
 
@@ -455,7 +455,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -463,7 +463,7 @@ TEST_F(PositiveShaderPushConstants, StaticallyUnused) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_empty);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -688,7 +688,7 @@ TEST_F(PositiveShaderPushConstants, MultipleStructs) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdPushConstants(m_command_buffer, pipe.pipeline_layout_, VK_SHADER_STAGE_VERTEX_BIT, 32, 16, data);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();

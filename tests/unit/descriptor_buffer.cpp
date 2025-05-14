@@ -949,7 +949,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &dbbi);
 
@@ -1005,7 +1005,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     ASSERT_EQ(VK_SUCCESS, pipe.CreateComputePipeline());
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &ds->handle(), 0, nullptr);
 

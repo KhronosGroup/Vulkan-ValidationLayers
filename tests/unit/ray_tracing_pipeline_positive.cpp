@@ -194,7 +194,7 @@ TEST_F(PositiveRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     GetPhysicalDeviceProperties2(ray_tracing_properties);
     const size_t buffer_size = (3 * ray_tracing_properties.shaderGroupHandleCaptureReplaySize);
     void* out_buffer = malloc(buffer_size);
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe.Handle(), 0, 3, buffer_size, out_buffer);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe, 0, 3, buffer_size, out_buffer);
     free(out_buffer);
 }
 
@@ -231,6 +231,6 @@ TEST_F(PositiveRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
     rt_pipe.Build();
 
     const VkDeviceSize stack_size =
-        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe.Handle(), 1, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe, 1, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
     (void)stack_size;
 }

@@ -402,7 +402,7 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     m_command_buffer.BindCompShader(compShader);
     vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer.handle(), 0u);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
     vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer.handle(), 0u);
 
     m_command_buffer.End();

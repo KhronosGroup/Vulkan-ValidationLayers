@@ -895,7 +895,7 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     uint32_t fake_buffer;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-arraylength");
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe.Handle(), 1, 1, 0, &fake_buffer);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe, 1, 1, 0, &fake_buffer);
     m_errorMonitor->VerifyFound();
 
     // dataSize must be at least VkPhysicalDeviceRayTracingPropertiesKHR::shaderGroupHandleCaptureReplaySize
@@ -905,13 +905,13 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     if (ray_tracing_properties.shaderGroupHandleCaptureReplaySize > 0) {
         m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
         vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
-            *m_device, rt_pipe.Handle(), 1, 1, (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &fake_buffer);
+            *m_device, rt_pipe, 1, 1, (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &fake_buffer);
         m_errorMonitor->VerifyFound();
     }
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-dataSize-03484");
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-03483");
     // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe.Handle(), 2, rt_pipe.GetShaderGroupsCount(),
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe, 2, rt_pipe.GetShaderGroupsCount(),
                                                         (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
                                                         &fake_buffer);
     m_errorMonitor->VerifyFound();
@@ -919,9 +919,8 @@ TEST_F(NegativeRayTracingPipeline, GetCaptureReplayShaderGroupHandlesKHR) {
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-firstGroup-04051");
     // In nv::rt::CreateNVRayTracingPipelineHelper::InitKHRRayTracingPipelineInfo rp_ci_KHR_.groupCount = groups_KHR_.size();
     uint32_t invalid_firstgroup = rt_pipe.GetShaderGroupsCount() + 1;
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(*m_device, rt_pipe.Handle(), invalid_firstgroup, 0,
-                                                        (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1),
-                                                        &fake_buffer);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(
+        *m_device, rt_pipe, invalid_firstgroup, 0, (ray_tracing_properties.shaderGroupHandleCaptureReplaySize - 1), &fake_buffer);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1150,7 +1149,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupStackSize) {
     pipe.CreateComputePipeline();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-pipeline-04622");
-    vk::GetRayTracingShaderGroupStackSizeKHR(device(), pipe.Handle(), 0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    vk::GetRayTracingShaderGroupStackSizeKHR(device(), pipe, 0, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1176,11 +1175,11 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeUnusedGroup)
     pipeline.Build();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-group-03608");
-    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline.Handle(), 42, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline, 42, VK_SHADER_GROUP_SHADER_GENERAL_KHR);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609");
-    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline.Handle(), 0, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR);
+    vk::GetRayTracingShaderGroupStackSizeKHR(*m_device, pipeline, 0, VK_SHADER_GROUP_SHADER_ANY_HIT_KHR);
     m_errorMonitor->VerifyFound();
 
     m_device->Wait();
@@ -1198,7 +1197,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeGroupHandles) {
 
     int data = 0;
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupHandlesKHR-pipeline-04619");
-    vk::GetRayTracingShaderGroupHandlesKHR(device(), pipe.Handle(), 0, 0, 4, &data);
+    vk::GetRayTracingShaderGroupHandlesKHR(device(), pipe, 0, 0, 4, &data);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1215,7 +1214,7 @@ TEST_F(NegativeRayTracingPipeline, PipelineTypeCaptureReplay) {
 
     int data = 0;
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingCaptureReplayShaderGroupHandlesKHR-pipeline-04620");
-    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(device(), pipe.Handle(), 0, 0, 4, &data);
+    vk::GetRayTracingCaptureReplayShaderGroupHandlesKHR(device(), pipe, 0, 0, 4, &data);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1431,17 +1430,15 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupHandles) {
     const uint32_t shader_group_count = rt_pipe.GetShaderGroupsCount();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-04050");
-    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe.Handle(), shader_group_count, 0, sbt_size, sbt_host_storage.data());
+    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe, shader_group_count, 0, sbt_size, sbt_host_storage.data());
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupHandlesKHR-firstGroup-02419");
-    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe.Handle(), 0, shader_group_count + 1, sbt_size * 2u,
-                                           sbt_host_storage.data());
+    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe, 0, shader_group_count + 1, sbt_size * 2u, sbt_host_storage.data());
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkGetRayTracingShaderGroupHandlesKHR-dataSize-02420");
-    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe.Handle(), 0, shader_group_count, sbt_size - 1u,
-                                           sbt_host_storage.data());
+    vk::GetRayTracingShaderGroupHandlesKHR(device(), rt_pipe, 0, shader_group_count, sbt_size - 1u, sbt_host_storage.data());
     m_errorMonitor->VerifyFound();
 }
 
@@ -1481,7 +1478,7 @@ TEST_F(NegativeRayTracingPipeline, GetRayTracingShaderGroupStackSizeKHR) {
         "VUID-vkGetRayTracingShaderGroupStackSizeKHR-groupShader-03609",
         "is VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR but the corresponding shader in shader group 1 is VK_SHADER_UNUSED_KHR");
     const VkDeviceSize stack_size =
-        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe.Handle(), 1, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
+        vk::GetRayTracingShaderGroupStackSizeKHR(device(), rt_pipe, 1, VK_SHADER_GROUP_SHADER_CLOSEST_HIT_KHR);
     (void)stack_size;
     m_errorMonitor->VerifyFound();
 }

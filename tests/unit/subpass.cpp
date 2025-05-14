@@ -453,7 +453,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.NextSubpass();
     m_errorMonitor->SetDesiredError("built for subpass 0 but used in subpass 1");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -462,7 +462,7 @@ TEST_F(NegativeSubpass, DrawWithPipelineIncompatibleWithSubpass) {
     m_command_buffer.FullMemoryBarrier();
     // subtest 2: bind in correct subpass, then transition to next subpass
     m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.NextSubpass();
     m_errorMonitor->SetDesiredError("built for subpass 0 but used in subpass 1");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -631,7 +631,7 @@ TEST_F(NegativeSubpass, SubpassInputNotBoundDescriptorSet) {
         m_renderPassBeginInfo.framebuffer = fb;
 
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                                   &g_pipe.descriptor_set_->set_, 0, nullptr);
 
@@ -746,18 +746,18 @@ TEST_F(NegativeSubpass, PipelineSubpassIndex) {
     m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32, 32, 1, &clear_value);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-subpass-02685");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.NextSubpass();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-subpass-02685");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

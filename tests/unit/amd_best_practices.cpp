@@ -514,7 +514,7 @@ TEST_F(VkAmdBestPracticesLayerTest, SecondaryCmdBuffer) {
     // record a secondary command buffer
     secondary_cmd_buf.Begin(&binfo);
 
-    vk::CmdBindPipeline(secondary_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkDeviceSize offset = 0;
     vk::CmdBindVertexBuffers(secondary_cmd_buf, 0, 1, &vertex_buffer.handle(), &offset);
     vk::CmdDraw(secondary_cmd_buf, 1, 0, 0, 0);

@@ -418,10 +418,10 @@ SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *ver
     frag_out_lib_.CreateGraphicsPipeline(false);
 
     VkPipeline libraries[4] = {
-        vertex_input_lib_.Handle(),
-        pre_raster_lib_.Handle(),
-        frag_shader_lib_.Handle(),
-        frag_out_lib_.Handle(),
+        vertex_input_lib_,
+        pre_raster_lib_,
+        frag_shader_lib_,
+        frag_out_lib_,
     };
 
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();

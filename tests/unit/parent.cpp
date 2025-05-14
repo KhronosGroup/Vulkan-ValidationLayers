@@ -607,11 +607,11 @@ TEST_F(NegativeParent, PipelineExecutableInfo) {
     pipe.CreateGraphicsPipeline();
 
     VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();
-    pipeline_exe_info.pipeline = pipe.Handle();
+    pipeline_exe_info.pipeline = pipe;
     pipeline_exe_info.executableIndex = 0;
 
     VkPipelineInfoKHR pipeline_info = vku::InitStructHelper();
-    pipeline_info.pipeline = pipe.Handle();
+    pipeline_info.pipeline = pipe;
 
     uint32_t count;
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableStatisticsKHR-pipeline-03273");
@@ -646,7 +646,7 @@ TEST_F(NegativeParent, DISABLED_PipelineInfoEXT) {
 
     VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
     pipeline_info.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
-    pipeline_info.pipeline = pipe.Handle();
+    pipeline_info.pipeline = pipe;
 
     VkBaseOutStructure out_struct;
     out_struct.sType = VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT;
