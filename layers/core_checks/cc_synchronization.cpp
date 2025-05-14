@@ -1744,7 +1744,7 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc
 // Verify image barrier is compatible with the image it references.
 bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
                                                   const Location &barrier_loc, const vvl::Image &image_state,
-                                                  CommandBufferImageLayoutMap &layout_updates_state) const {
+                                                  CommandBufferImageLayoutRegistry &local_layout_registry) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
@@ -1851,7 +1851,7 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
         && !IsQueueFamilyExternal(barrier.srcQueueFamilyIndex);  // do not validate layouts of external resources
 
     if (validate_barrier_layouts) {
-        skip |= VerifyImageBarrierLayouts(cb_state, image_state, image_loc, barrier, layout_updates_state);
+        skip |= VerifyImageBarrierLayouts(cb_state, image_state, image_loc, barrier, local_layout_registry);
     }
 
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
@@ -2384,7 +2384,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
 }
 
 bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
-                                      const Location &barrier_loc, CommandBufferImageLayoutMap &layout_updates_state) const {
+                                      const Location &barrier_loc, CommandBufferImageLayoutRegistry &local_layout_registry) const {
     bool skip = false;
 
     const VkImageLayout old_layout = barrier.oldLayout;
@@ -2435,7 +2435,7 @@ bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::C
         const auto &vuid_no_memory = sync_vuid_maps::GetImageBarrierVUID(barrier_loc, sync_vuid_maps::ImageError::kNoMemory);
         skip |=
             ValidateMemoryIsBoundToImage(cb_state.Handle(), *image_state, barrier_loc.dot(Field::image), vuid_no_memory.c_str());
-        skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, layout_updates_state);
+        skip |= ValidateImageBarrierAgainstImage(cb_state, barrier, barrier_loc, *image_state, local_layout_registry);
 
         if (old_layout == VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT) {
             skip |= ValidateImageBarrierZeroInitializedSubresourceRange(cb_state, barrier, *image_state, barrier_loc);
@@ -2453,8 +2453,8 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
     LogObjectList objects(cb_state.Handle());
 
     // Tracks duplicate layout transition for image barriers.
-    // Keeps state between ValidateBarriersToImages calls.
-    CommandBufferImageLayoutMap layout_updates_state;
+    // Keeps state between ValidateImageBarrier calls.
+    CommandBufferImageLayoutRegistry local_layout_registry;
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
@@ -2466,7 +2466,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
         const ImageBarrier barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op);
-        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, layout_updates_state);
+        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, local_layout_registry);
     }
     for (uint32_t i = 0; i < bufferBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkBufferMemoryBarrier, Field::pBufferMemoryBarriers, i);
@@ -2483,8 +2483,8 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
     bool skip = false;
 
     // Tracks duplicate layout transition for image barriers.
-    // Keeps state between ValidateBarriersToImages calls.
-    CommandBufferImageLayoutMap layout_updates_state;
+    // Keeps state between ValidateImageBarrier calls.
+    CommandBufferImageLayoutRegistry local_layout_registry;
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
@@ -2496,7 +2496,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
         const ImageBarrier barrier(dep_info.pImageMemoryBarriers[i]);
         const OwnershipTransferOp transfer_op = barrier.TransferOp(cb_state.command_pool->queueFamilyIndex);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier, transfer_op, dep_info.dependencyFlags);
-        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, layout_updates_state);
+        skip |= ValidateImageBarrier(objects, cb_state, barrier, barrier_loc, local_layout_registry);
     }
     for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkBufferMemoryBarrier2, Field::pBufferMemoryBarriers, i);

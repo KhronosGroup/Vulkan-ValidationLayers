@@ -21,8 +21,8 @@
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/image_state.h"
 
-namespace image_layout_map {
-using LayoutEntry = ImageLayoutRegistry::LayoutEntry;
+using IndexRange = vvl::range<subresource_adapter::IndexType>;
+using RangeGenerator = subresource_adapter::RangeGenerator;
 
 template <typename LayoutsMap>
 static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, const LayoutEntry& new_entry) {
@@ -67,10 +67,11 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
     return updated_current;
 }
 
-ImageLayoutRegistry::ImageLayoutRegistry(const vvl::Image& image_state)
-    : image_state_(image_state), layout_map_(image_state.subresource_encoder.SubresourceCount()) {}
+CommandBufferImageLayoutMap::CommandBufferImageLayoutMap(const vvl::Image& image_state)
+    : subresource_adapter::BothRangeMap<LayoutEntry, 16>(image_state.subresource_encoder.SubresourceCount()),
+      image_state_(image_state) {}
 
-bool ImageLayoutRegistry::SetSubresourceRangeLayout(const VkImageSubresourceRange& range, VkImageLayout layout,
+bool CommandBufferImageLayoutMap::SetSubresourceRangeLayout(const VkImageSubresourceRange& range, VkImageLayout layout,
                                                     VkImageLayout expected_layout) {
     if (!image_state_.subresource_encoder.InRange(range)) {
         return false;  // Don't even try to track bogus subresources
@@ -79,13 +80,13 @@ bool ImageLayoutRegistry::SetSubresourceRangeLayout(const VkImageSubresourceRang
     RangeGenerator range_gen(image_state_.subresource_encoder, range);
     const LayoutEntry entry = LayoutEntry::ForCurrentLayout(layout, expected_layout);
     bool updated = false;
-    if (layout_map_.UsesSmallMap()) {
-        auto& layout_map = layout_map_.GetSmallMap();
+    if (UsesSmallMap()) {
+        auto& layout_map = GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = layout_map_.GetBigMap();
+        auto& layout_map = GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
@@ -93,47 +94,48 @@ bool ImageLayoutRegistry::SetSubresourceRangeLayout(const VkImageSubresourceRang
     return updated;
 }
 
-// Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
+void CommandBufferImageLayoutMap::SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
     if (!image_state_.subresource_encoder.InRange(range)) {
-        return;  // Don't even try to track bogus subreources
+        return;
     }
-
     RangeGenerator range_gen(image_state_.subresource_encoder, range);
+
     const LayoutEntry entry = LayoutEntry::ForExpectedLayout(layout);
-    if (layout_map_.UsesSmallMap()) {
-        auto& layout_map = layout_map_.GetSmallMap();
+    // Unwrap the BothMaps entry here as this is a performance hotspot
+    if (UsesSmallMap()) {
+        auto& layout_map = GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = layout_map_.GetBigMap();
+        auto& layout_map = GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     }
 }
 
-// Unwrap the BothMaps entry here as this is a performance hotspot.
-void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state) {
+void CommandBufferImageLayoutMap::SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state) {
     RangeGenerator range_gen(view_state.range_generator);
     const LayoutEntry entry = LayoutEntry::ForExpectedLayout(layout, view_state.normalized_subresource_range.aspectMask);
-    if (layout_map_.UsesSmallMap()) {
-        auto& layout_map = layout_map_.GetSmallMap();
+
+    // Unwrap the BothMaps entry here as this is a performance hotspot
+    if (UsesSmallMap()) {
+        auto& layout_map = GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = layout_map_.GetBigMap();
+        auto& layout_map = GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     }
 }
 
-uint32_t ImageLayoutRegistry::GetImageId() const { return image_state_.GetId(); }
+uint32_t CommandBufferImageLayoutMap::GetImageId() const { return image_state_.GetId(); }
 
-void ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
+void CommandBufferImageLayoutMap::UpdateFrom(const CommandBufferImageLayoutMap& other) {
     struct Updater {
         void update(LayoutEntry& dst, const LayoutEntry& src) const {
             if (dst.CurrentWillChange(src.current_layout)) {
@@ -142,15 +144,15 @@ void ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
         }
         std::optional<LayoutEntry> insert(const LayoutEntry& src) const { return std::optional<LayoutEntry>(vvl::in_place, src); }
     };
-    sparse_container::splice(layout_map_, other.layout_map_, Updater());
+    sparse_container::splice(*this, other, Updater());
 }
 
-VkImageSubresource ImageLayoutRegistry::Decode(IndexType index) const {
+VkImageSubresource CommandBufferImageLayoutMap::Decode(subresource_adapter::IndexType index) const {
     const auto subres = image_state_.subresource_encoder.Decode(index);
     return image_state_.subresource_encoder.MakeVkSubresource(subres);
 }
 
-bool ImageLayoutRegistry::AnyInRange(const VkImageSubresourceRange& normalized_subresource_range,
+bool CommandBufferImageLayoutMap::AnyInRange(const VkImageSubresourceRange& normalized_subresource_range,
                                      std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
     subresource_adapter::RangeGenerator range_gen =
         image_state_.subresource_encoder.InRange(normalized_subresource_range)
@@ -160,10 +162,10 @@ bool ImageLayoutRegistry::AnyInRange(const VkImageSubresourceRange& normalized_s
     return AnyInRange(std::move(range_gen), std::move(func));
 }
 
-bool ImageLayoutRegistry::AnyInRange(RangeGenerator&& gen,
+bool CommandBufferImageLayoutMap::AnyInRange(RangeGenerator&& gen,
                                      std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
     for (; gen->non_empty(); ++gen) {
-        for (auto pos = layout_map_.lower_bound(*gen); (pos != layout_map_.end()) && (gen->intersects(pos->first)); ++pos) {
+        for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
             if (func(pos->first, pos->second)) {
                 return true;
             }
@@ -189,13 +191,11 @@ LayoutEntry LayoutEntry::ForExpectedLayout(VkImageLayout expected_layout, VkImag
     return entry;
 }
 
-bool ImageLayoutRegistry::LayoutEntry::CurrentWillChange(VkImageLayout new_layout) const {
+bool LayoutEntry::CurrentWillChange(VkImageLayout new_layout) const {
     return new_layout != kInvalidLayout && current_layout != new_layout;
 }
 
-}  // namespace image_layout_map
-
-bool ImageLayoutRangeMap::AnyInRange(RangeGenerator& gen,
+bool ImageLayoutMap::AnyInRange(RangeGenerator& gen,
                                      std::function<bool(const key_type& range, const mapped_type& state)>&& func) const {
     for (; gen->non_empty(); ++gen) {
         for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
