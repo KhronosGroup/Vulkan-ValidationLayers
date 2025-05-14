@@ -69,15 +69,6 @@ class ImageLayoutRegistry {
         static LayoutEntry ForExpectedLayout(VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
 
         bool CurrentWillChange(VkImageLayout new_layout) const;
-        void Update(const LayoutEntry& src);
-
-        // updater for splice()
-        struct Updater {
-            void update(LayoutEntry& dst, const LayoutEntry& src) const { dst.Update(src); }
-            std::optional<LayoutEntry> insert(const LayoutEntry& src) const {
-                return std::optional<LayoutEntry>(vvl::in_place, src);
-            }
-        };
     };
     using LayoutMap = subresource_adapter::BothRangeMap<LayoutEntry, 16>;
     using RangeType = LayoutMap::key_type;

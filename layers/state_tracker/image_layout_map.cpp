@@ -45,9 +45,14 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
             auto intersected_range = pos->lower_bound->first & range;
             if (!intersected_range.empty() && pos->lower_bound->second.CurrentWillChange(new_entry.current_layout)) {
                 LayoutEntry orig_entry = pos->lower_bound->second;  // intentional copy
-                orig_entry.Update(new_entry);
+
+                // existing entry always has initial layout initialized (current layout might be unknown though)
+                assert(orig_entry.initial_layout != kInvalidLayout);
+
+                orig_entry.current_layout = new_entry.current_layout;
                 updated_current = true;
                 auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, orig_entry));
+
                 // If we didn't cover the whole range, we'll need to go around again
                 pos.invalidate(overwrite_result, intersected_range.begin);
                 pos.seek(intersected_range.end);
@@ -129,7 +134,15 @@ void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(VkImageLayout layout,
 uint32_t ImageLayoutRegistry::GetImageId() const { return image_state_.GetId(); }
 
 void ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
-    sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
+    struct Updater {
+        void update(LayoutEntry& dst, const LayoutEntry& src) const {
+            if (dst.CurrentWillChange(src.current_layout)) {
+                dst.current_layout = src.current_layout;
+            }
+        }
+        std::optional<LayoutEntry> insert(const LayoutEntry& src) const { return std::optional<LayoutEntry>(vvl::in_place, src); }
+    };
+    sparse_container::splice(layout_map_, other.layout_map_, Updater());
 }
 
 VkImageSubresource ImageLayoutRegistry::Decode(IndexType index) const {
@@ -178,12 +191,6 @@ LayoutEntry LayoutEntry::ForExpectedLayout(VkImageLayout expected_layout, VkImag
 
 bool ImageLayoutRegistry::LayoutEntry::CurrentWillChange(VkImageLayout new_layout) const {
     return new_layout != kInvalidLayout && current_layout != new_layout;
-}
-
-void ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
-    if (CurrentWillChange(src.current_layout)) {
-        current_layout = src.current_layout;
-    }
 }
 
 }  // namespace image_layout_map
