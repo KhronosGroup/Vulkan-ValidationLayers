@@ -355,13 +355,13 @@ VkImageSubresourceRange Image::MakeImageFullRange() {
 }
 
 void Image::SetInitialLayoutMap() {
-    if (layout_range_map) {
+    if (layout_map) {
         return;
     }
 
-    std::shared_ptr<ImageLayoutRangeMap> layout_map;
-    auto get_layout_map = [&layout_map](const Image &other_image) {
-        layout_map = other_image.layout_range_map;
+    std::shared_ptr<ImageLayoutMap> new_layout_map;
+    auto get_layout_map = [&new_layout_map](const Image &other_image) {
+        new_layout_map = other_image.layout_map;
         return true;
     };
 
@@ -374,27 +374,27 @@ void Image::SetInitialLayoutMap() {
         AnyAliasBindingOf(bind_swapchain->ObjectBindings(), get_layout_map);
     }
 
-    if (!layout_map) {
+    if (!new_layout_map) {
         // otherwise set up a new map.
         // set up the new map completely before making it available
-        layout_map = std::make_shared<ImageLayoutRangeMap>(subresource_encoder.SubresourceCount());
-        layout_map->lock = &layout_range_map_lock;
+        new_layout_map = std::make_shared<ImageLayoutMap>(subresource_encoder.SubresourceCount());
+        new_layout_map->lock = &layout_map_lock;
         auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
         for (; range_gen->non_empty(); ++range_gen) {
-            layout_map->insert(layout_map->end(), std::make_pair(*range_gen, create_info.initialLayout));
+            new_layout_map->insert(new_layout_map->end(), std::make_pair(*range_gen, create_info.initialLayout));
         }
     }
     // And store in the object
-    layout_range_map = std::move(layout_map);
+    layout_map = std::move(new_layout_map);
 }
 
 void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout) {
     using sparse_container::update_range_value;
     using sparse_container::value_precedence;
-    ImageLayoutRangeMap::RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
-    auto guard = layout_range_map->WriteLock();
+    ImageLayoutMap::RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
+    auto guard = layout_map->WriteLock();
     for (; range_gen->non_empty(); ++range_gen) {
-        update_range_value(*layout_range_map, *range_gen, layout, value_precedence::prefer_source);
+        update_range_value(*layout_map, *range_gen, layout, value_precedence::prefer_source);
     }
 }
 

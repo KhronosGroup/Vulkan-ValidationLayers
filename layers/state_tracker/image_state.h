@@ -106,18 +106,17 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const bool metal_io_surface_export;
 #endif  // VK_USE_PLATFORM_METAL
 
-    const image_layout_map::Encoder subresource_encoder;                             // Subresource resolution encoder
-    const VkDevice store_device_as_workaround;                                       // TODO REMOVE WHEN encoder can be const
+    const subresource_adapter::RangeEncoder subresource_encoder;  // Subresource resolution encoder
+    const VkDevice store_device_as_workaround;                    // TODO REMOVE WHEN encoder can be const
 
     // This map is used to validate/update image layouts during submit time processing.
-    // Record time validation can't use this, because global image layout is undefined
-    // at record time (depends on the previous submissions, which are unknown at record time).
-    std::shared_ptr<ImageLayoutRangeMap> layout_range_map;
+    // Record time validation can't use this, because global image layout is undefined at record time
+    std::shared_ptr<ImageLayoutMap> layout_map;
 
-    // If there is no aliasing this mutex protects this->layout_range_map.
+    // If there is no aliasing this mutex protects this->layout_map.
     // With aliasing one of the images shares a mutex with other aliases,
     // so for some aliased images this mutex can be unused.
-    mutable std::shared_mutex layout_range_map_lock;
+    mutable std::shared_mutex layout_map_lock;
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
@@ -288,7 +287,7 @@ class ImageView : public StateObject, public SubStateManager<ImageViewSubState> 
 
     const bool is_depth_sliced;
     const VkImageSubresourceRange normalized_subresource_range;
-    const image_layout_map::RangeGenerator range_generator;
+    const subresource_adapter::RangeGenerator range_generator;
     const VkSampleCountFlagBits samples;
     const VkSamplerYcbcrConversion samplerConversion;  // Handle of the ycbcr sampler conversion the image was created with, if any
     const VkFilterCubicImageViewImageFormatPropertiesEXT filter_cubic_props;

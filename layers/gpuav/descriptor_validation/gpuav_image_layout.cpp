@@ -26,8 +26,7 @@
 
 #include "state_tracker/render_pass_state.h"
 
-using LayoutRange = image_layout_map::ImageLayoutRegistry::RangeType;
-using LayoutEntry = image_layout_map::ImageLayoutRegistry::LayoutEntry;
+using LayoutRange = CommandBufferImageLayoutMap::RangeType;
 
 // Utility type for checking Image layouts
 struct LayoutUseCheckAndMessage {
@@ -63,17 +62,17 @@ struct LayoutUseCheckAndMessage {
 
 // Helper to update the Global or Overlay layout map
 struct GlobalLayoutUpdater {
-    bool update(VkImageLayout &dst, const image_layout_map::ImageLayoutRegistry::LayoutEntry &src) const {
-        if (src.current_layout != image_layout_map::kInvalidLayout && dst != src.current_layout) {
+    bool update(VkImageLayout &dst, const LayoutEntry &src) const {
+        if (src.current_layout != kInvalidLayout && dst != src.current_layout) {
             dst = src.current_layout;
             return true;
         }
         return false;
     }
 
-    std::optional<VkImageLayout> insert(const image_layout_map::ImageLayoutRegistry::LayoutEntry &src) const {
+    std::optional<VkImageLayout> insert(const LayoutEntry &src) const {
         std::optional<VkImageLayout> result;
-        if (src.current_layout != image_layout_map::kInvalidLayout) {
+        if (src.current_layout != kInvalidLayout) {
             result.emplace(src.current_layout);
         }
         return result;
@@ -158,8 +157,8 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
     bool skip = false;
     if (!gpuav.gpuav_settings.validate_image_layout) return skip;
 
-    const auto image_layout_registry = cb_state.GetImageLayoutRegistry(image_state.VkHandle());
-    if (!image_layout_registry) {
+    const auto image_layout_map = cb_state.GetImageLayoutMap(image_state.VkHandle());
+    if (!image_layout_map) {
         return skip;
     }
 
@@ -169,18 +168,18 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
         return skip;
     }
 
-    const auto &layout_map = image_layout_registry->GetLayoutMap();
-    const auto *global_range_map = image_state.layout_range_map.get();
-    ImageLayoutRangeMap empty_map(1);
-    assert(global_range_map);
-    auto global_range_map_guard = global_range_map->ReadLock();
+    const auto &cb_layout_map = *image_layout_map;
+    const auto *global_layout_map = image_state.layout_map.get();
+    ImageLayoutMap empty_map(1);
+    assert(global_layout_map);
+    auto global_layout_map_guard = global_layout_map->ReadLock();
 
-    auto pos = layout_map.begin();
-    const auto end = layout_map.end();
-    sparse_container::parallel_iterator<const ImageLayoutRangeMap> current_layout(empty_map, *global_range_map, pos->first.begin);
+    auto pos = cb_layout_map.begin();
+    const auto end = cb_layout_map.end();
+    sparse_container::parallel_iterator<const ImageLayoutMap> current_layout(empty_map, *global_layout_map, pos->first.begin);
     while (pos != end) {
         const VkImageLayout initial_layout = pos->second.initial_layout;
-        ASSERT_AND_CONTINUE(initial_layout != image_layout_map::kInvalidLayout);
+        ASSERT_AND_CONTINUE(initial_layout != kInvalidLayout);
 
         VkImageLayout image_layout = kInvalidLayout;
 
@@ -250,12 +249,14 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
 }
 
 void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
-    for (const auto &[image, image_layout_registry] : cb_state.image_layout_map) {
-        if (!image_layout_registry) continue;
+    for (const auto &[image, layout_map] : cb_state.image_layout_registry) {
+        if (!layout_map) {
+            continue;
+        }
         auto image_state = gpuav.Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == image_layout_registry->GetImageId()) {
-            auto guard = image_state->layout_range_map->WriteLock();
-            sparse_container::splice(*image_state->layout_range_map, image_layout_registry->GetLayoutMap(), GlobalLayoutUpdater());
+        if (image_state && image_state->GetId() == layout_map->GetImageId()) {
+            auto guard = image_state->layout_map->WriteLock();
+            sparse_container::splice(*image_state->layout_map, *layout_map, GlobalLayoutUpdater());
         }
     }
 }
@@ -330,8 +331,8 @@ bool Validator::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl:
     if (disabled[image_layout_validation]) return false;
     // Possible the image state was destroyed and we didn't see it waiting for the queue submit callback
     if (!image_view_state.image_state) return false;
-    auto range_factory = [&image_view_state](const ImageLayoutRegistry &registry) {
-        return image_layout_map::RangeGenerator(image_view_state.range_generator);
+    auto range_factory = [&image_view_state](const CommandBufferImageLayoutMap &registry) {
+        return subresource_adapter::RangeGenerator(image_view_state.range_generator);
     };
 
     return VerifyImageLayoutRange(*this, cb_state, *image_view_state.image_state,

@@ -41,10 +41,6 @@ class VideoSession;
 class VideoSessionParameters;
 }  // namespace vvl
 
-// Only CoreChecks uses this, but the state tracker stores it.
-constexpr static auto kInvalidLayout = image_layout_map::kInvalidLayout;
-using ImageLayoutRegistry = image_layout_map::ImageLayoutRegistry;
-
 enum class CbState {
     New,                // Newly created CB w/o any cmds
     Recording,          // BeginCB has been called on this CB
@@ -170,7 +166,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     using Func = vvl::Func;
 
   public:
-    using AliasedLayoutMap = vvl::unordered_map<const ImageLayoutRangeMap *, std::shared_ptr<ImageLayoutRegistry>>;
+    using AliasedLayoutMap = vvl::unordered_map<const ImageLayoutMap *, std::shared_ptr<CommandBufferImageLayoutMap>>;
 
     VkCommandBufferAllocateInfo allocate_info;
 
@@ -490,7 +486,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     vvl::unordered_set<QueryObject> started_queries;
     vvl::unordered_set<QueryObject> updated_queries;
     vvl::unordered_set<QueryObject> render_pass_queries;
-    CommandBufferImageLayoutMap image_layout_map;
+    CommandBufferImageLayoutRegistry image_layout_registry;
     AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
     vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
@@ -574,9 +570,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state);
 
-    std::shared_ptr<const ImageLayoutRegistry> GetImageLayoutRegistry(VkImage image) const;
-    std::shared_ptr<ImageLayoutRegistry> GetOrCreateImageLayoutRegistry(const vvl::Image &image_state);
-    const CommandBufferImageLayoutMap &GetImageLayoutMap() const;
+    std::shared_ptr<const CommandBufferImageLayoutMap> GetImageLayoutMap(VkImage image) const;
+    std::shared_ptr<CommandBufferImageLayoutMap> GetOrCreateImageLayoutMap(const vvl::Image &image_state);
 
     // Used to get error message objects, but overloads depending on what information is known
     LogObjectList GetObjectList(VkShaderStageFlagBits stage) const;
@@ -656,7 +651,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void SetImageViewLayout(const vvl::ImageView &view_state, VkImageLayout layout, VkImageLayout layoutStencil);
     void TrackImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout);
 
-    void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &image_subresource_range, VkImageLayout layout,
+    void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range, VkImageLayout layout,
                         VkImageLayout expected_layout = kInvalidLayout);
     // This tracks the first known layout of the subresource in the command buffer (that's why initial).
     void TrackImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range, VkImageLayout layout);

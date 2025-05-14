@@ -86,15 +86,15 @@ void CommandBufferSubState::SubmitTimeValidate() {
         if (!image_state) {
             continue;
         }
-        const auto global_layout_map = image_state->layout_range_map.get();
+        const auto global_layout_map = image_state->layout_map.get();
         ASSERT_AND_CONTINUE(global_layout_map);
         auto global_layout_map_guard = global_layout_map->ReadLock();
 
         for (const std::pair<VkImageSubresourceRange, vvl::LocationCapture>& entry : subresources) {
             const VkImageSubresourceRange& subresource = entry.first;
             const Location& barrier_loc = entry.second.Get();
-            ImageLayoutRangeMap::RangeGenerator range_gen(image_state->subresource_encoder, subresource);
-            global_layout_map->AnyInRange(range_gen, [this, &barrier_loc, &image_state](const ImageLayoutRangeMap::key_type& range,
+            ImageLayoutMap::RangeGenerator range_gen(image_state->subresource_encoder, subresource);
+            global_layout_map->AnyInRange(range_gen, [this, &barrier_loc, &image_state](const ImageLayoutMap::key_type& range,
                                                                                         const VkImageLayout& layout) {
                 if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
                     const auto& vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(

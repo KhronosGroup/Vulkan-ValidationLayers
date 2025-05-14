@@ -22,8 +22,6 @@
 #include "state_tracker/image_state.h"
 #include "containers/span.h"
 
-static const VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
-
 static VkSubpassDependency2 ImplicitDependencyFromExternal(uint32_t subpass) {
     VkSubpassDependency2 from_external = {VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
                                           nullptr,

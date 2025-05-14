@@ -337,7 +337,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                const BufferBarrier& barrier) const;
 
     bool ValidateImageBarrier(const LogObjectList& objlist, const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
-                              const Location& barrier_loc, CommandBufferImageLayoutMap& layout_updates_state) const;
+                              const Location& barrier_loc, CommandBufferImageLayoutRegistry& local_layout_registry) const;
 
     bool ValidateBarriers(const Location& loc, const vvl::CommandBuffer& cb_state, VkPipelineStageFlags src_stage_mask,
                           VkPipelineStageFlags dst_stage_mask, uint32_t memBarrierCount, const VkMemoryBarrier* pMemBarriers,
@@ -1029,7 +1029,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
 
     bool VerifyImageLayoutRange(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, VkImageAspectFlags aspect_mask,
-                                VkImageLayout explicit_layout, const image_layout_map::ImageLayoutRegistry& cb_layout_map,
+                                VkImageLayout explicit_layout, const CommandBufferImageLayoutMap& cb_layout_map,
                                 subresource_adapter::RangeGenerator&& range_gen, const Location& image_loc,
                                 const char* mismatch_layout_vuid, bool* error) const;
 
@@ -1087,7 +1087,8 @@ class CoreChecks : public vvl::DeviceProxy {
     void TransitionBeginRenderPassLayouts(vvl::CommandBuffer& cb_state, const vvl::RenderPass& render_pass_state);
 
     bool VerifyImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
-                                   const ImageBarrier& image_barrier, CommandBufferImageLayoutMap& local_layout_map) const;
+                                   const ImageBarrier& image_barrier,
+                                   CommandBufferImageLayoutRegistry& local_layout_registry) const;
 
     bool VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                                    const VkRenderingInfo& rendering_info, const Location& barrier_loc) const;
@@ -1097,7 +1098,7 @@ class CoreChecks : public vvl::DeviceProxy {
 
     bool ValidateImageBarrierAgainstImage(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                           const Location& barrier_loc, const vvl::Image& image_state,
-                                          CommandBufferImageLayoutMap& layout_updates_state) const;
+                                          CommandBufferImageLayoutRegistry& local_layout_registry) const;
     bool ValidateImageBarrierZeroInitializedSubresourceRange(const vvl::CommandBuffer& cb_state, const ImageBarrier& barrier,
                                                              const vvl::Image& image_state, const Location& barrier_loc) const;
 
@@ -1186,7 +1187,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                      const RecordObject& record_obj) override;
 
     bool ValidateCmdBufImageLayouts(const Location& loc, const vvl::CommandBuffer& cb_state,
-                                    SubmissionImageLayoutMap& submission_image_layout_map) const;
+                                    ImageLayoutRegistry& local_layout_registry) const;
 
     void UpdateCmdBufImageLayouts(const vvl::CommandBuffer& cb_state);
 

@@ -647,17 +647,16 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer &
     // Validate initial layout uses vs. the primary cmd buffer state
     // Novel Valid usage: "UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001"
     // initial layout usage of secondary command buffers resources must match parent command buffer
-    for (const auto &sub_layout_map_entry : secondary_cb_state.image_layout_map) {
+    for (const auto &sub_layout_map_entry : secondary_cb_state.image_layout_registry) {
         const VkImage image = sub_layout_map_entry.first;
 
-        const auto cb_image_layout_registry = cb_state.GetImageLayoutRegistry(image);
+        const auto cb_layout_map = cb_state.GetImageLayoutMap(image);
         // Const getter can be null in which case we have nothing to check against for this image...
-        if (!cb_image_layout_registry) continue;
+        if (!cb_layout_map) continue;
         if (!sub_layout_map_entry.second) continue;
 
-        const auto &sub_layout_map = sub_layout_map_entry.second->GetLayoutMap();
-        const auto &cb_layout_map = cb_image_layout_registry->GetLayoutMap();
-        for (sparse_container::parallel_iterator<const ImageLayoutRegistry::LayoutMap> iter(sub_layout_map, cb_layout_map, 0);
+        const auto &sub_layout_map = *sub_layout_map_entry.second;
+        for (sparse_container::parallel_iterator<const CommandBufferImageLayoutMap> iter(sub_layout_map, *cb_layout_map, 0);
              !iter->range.empty(); ++iter) {
             VkImageLayout cb_layout = kInvalidLayout, sub_layout = kInvalidLayout;
             const char *layout_type;
