@@ -45,7 +45,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
             auto intersected_range = pos->lower_bound->first & range;
             if (!intersected_range.empty() && pos->lower_bound->second.CurrentWillChange(new_entry.current_layout)) {
                 LayoutEntry orig_entry = pos->lower_bound->second;  // intentional copy
-                orig_entry.Update(new_entry);                       // this returns true because of CurrentWillChange check above
+                orig_entry.Update(new_entry);
                 updated_current = true;
                 auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, orig_entry));
                 // If we didn't cover the whole range, we'll need to go around again
@@ -128,8 +128,8 @@ void ImageLayoutRegistry::SetSubresourceRangeInitialLayout(VkImageLayout layout,
 
 uint32_t ImageLayoutRegistry::GetImageId() const { return image_state_.GetId(); }
 
-bool ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
-    return sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
+void ImageLayoutRegistry::UpdateFrom(const ImageLayoutRegistry& other) {
+    sparse_container::splice(layout_map_, other.layout_map_, LayoutEntry::Updater());
 }
 
 VkImageSubresource ImageLayoutRegistry::Decode(IndexType index) const {
@@ -180,13 +180,10 @@ bool ImageLayoutRegistry::LayoutEntry::CurrentWillChange(VkImageLayout new_layou
     return new_layout != kInvalidLayout && current_layout != new_layout;
 }
 
-bool ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
-    bool updated_current = false;
+void ImageLayoutRegistry::LayoutEntry::Update(const LayoutEntry& src) {
     if (CurrentWillChange(src.current_layout)) {
         current_layout = src.current_layout;
-        updated_current = true;
     }
-    return updated_current;
 }
 
 }  // namespace image_layout_map
