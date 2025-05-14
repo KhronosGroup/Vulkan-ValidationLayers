@@ -374,7 +374,7 @@ TEST_F(NegativeShaderPushConstants, DrawWithoutUpdate) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // vertex
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maintenance4-08602");  // fragment
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                               &g_pipe.descriptor_set_->set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);

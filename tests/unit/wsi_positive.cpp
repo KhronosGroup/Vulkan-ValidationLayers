@@ -965,7 +965,7 @@ TEST_F(PositiveWsi, SwapchainImageFormatProps) {
     cmdbuff.Begin();
     cmdbuff.BeginRenderPass(render_pass, framebuffer);
 
-    vk::CmdBindPipeline(cmdbuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(cmdbuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 }
 
 TEST_F(PositiveWsi, SwapchainExclusiveModeQueueFamilyPropertiesReferences) {
@@ -1179,7 +1179,7 @@ TEST_F(PositiveWsi, ProtectedSwapchainImageColorAttachment) {
     VkRenderPassBeginInfo render_pass_begin =
         vku::InitStruct<VkRenderPassBeginInfo>(nullptr, m_renderPass, fb.handle(), render_area, 0u, nullptr);
     vk::CmdBeginRenderPass(protectedCommandBuffer, &render_pass_begin, VK_SUBPASS_CONTENTS_INLINE);
-    vk::CmdBindPipeline(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     // This should be valid since the framebuffer color attachment is a protected swapchain image
     vk::CmdDraw(protectedCommandBuffer, 3, 1, 0, 0);
     vk::CmdEndRenderPass(protectedCommandBuffer);

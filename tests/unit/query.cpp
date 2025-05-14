@@ -1728,7 +1728,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedDiscardEnabled) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
@@ -1772,7 +1772,7 @@ TEST_F(NegativeQuery, PrimitivesGeneratedStreams) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     vk::CmdEndQuery(m_command_buffer, query_pool, 0);
 
@@ -2224,7 +2224,7 @@ TEST_F(NegativeQuery, InvalidMeshQueryAtDraw) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-stage-07073");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();

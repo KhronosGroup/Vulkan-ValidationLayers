@@ -49,7 +49,7 @@ TEST_F(NegativePipeline, WrongBindPointGraphics) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->VerifyFound();
 }
@@ -78,7 +78,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 }
@@ -95,7 +95,7 @@ TEST_F(NegativePipeline, WrongBindPointCompute) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     m_errorMonitor->VerifyFound();
 }
@@ -843,7 +843,7 @@ TEST_F(NegativePipeline, NumSamplesMismatch) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     // Render triangle (the error should trigger on the attempt to draw).
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -1773,7 +1773,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout.handle(), 0, 1,
                               &descriptor_set.set_, 0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
@@ -1810,7 +1810,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_2, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
@@ -1839,7 +1839,7 @@ TEST_F(NegativePipeline, DescriptorSetNotBound) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -1954,11 +1954,11 @@ TEST_F(NegativePipeline, PipelineExecutablePropertiesFeature) {
 
     uint32_t count;
     VkPipelineExecutableInfoKHR pipeline_exe_info = vku::InitStructHelper();
-    pipeline_exe_info.pipeline = pipe.Handle();
+    pipeline_exe_info.pipeline = pipe;
     pipeline_exe_info.executableIndex = 0;
 
     VkPipelineInfoKHR pipeline_info = vku::InitStructHelper();
-    pipeline_info.pipeline = pipe.Handle();
+    pipeline_info.pipeline = pipe;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipelineExecutableInfo-03276");
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelineExecutableInternalRepresentationsKHR-pipeline-03278");
@@ -2105,7 +2105,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
     // Unused is a valid version of the combined pipeline/descriptors
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
                               &combined_descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
@@ -2113,19 +2113,19 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     // Test magFilter
     {
         // Same descriptor set as combined test
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-magFilter-04553");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-magFilter-04553");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
                                   &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-magFilter-04553");
@@ -2148,19 +2148,19 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
                                   &combined_descriptor_set.set_, 0, nullptr);
 
         // Same descriptor set as combined test
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_function);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-mipmapMode-04770");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Draw with invalid combined image sampler
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_combined);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-mipmapMode-04770");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
         m_errorMonitor->VerifyFound();
 
         // Same error, but not with seperate descriptors
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
                                   &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-mipmapMode-04770");
@@ -2463,7 +2463,7 @@ TEST_F(NegativePipeline, GraphicsPipelineWithBadBasePointer) {
     {
         CreatePipelineHelper pipe(*this);
         pipe.gp_ci_.flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
-        pipe.gp_ci_.basePipelineHandle = base_pipe.Handle();
+        pipe.gp_ci_.basePipelineHandle = base_pipe;
         pipe.gp_ci_.basePipelineIndex = 2;
         m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-07986");
         pipe.CreateGraphicsPipeline();
@@ -2661,13 +2661,13 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     vk::CmdBeginRenderPass(m_command_buffer, &begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-variableSampleLocations-01525");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.NextSubpass();
     sample_location[0].x = 0.5f;
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-variableSampleLocations-01525");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();
@@ -2675,7 +2675,7 @@ TEST_F(NegativePipeline, VariableSampleLocations) {
     begin_info.pNext = nullptr;  // Invalid, missing VkRenderPassSampleLocationsBeginInfoEXT
     vk::CmdBeginRenderPass(m_command_buffer, &begin_info, VK_SUBPASS_CONTENTS_INLINE);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-variableSampleLocations-01525");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->VerifyFound();
     m_command_buffer.NextSubpass();
     m_command_buffer.EndRenderPass();
@@ -3273,7 +3273,7 @@ TEST_F(NegativePipeline, MismatchedRasterizationSamples) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pNext-07935");
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
@@ -3416,17 +3416,17 @@ TEST_F(NegativePipeline, MissingPipelineFormat) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, color_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, color_pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pColorAttachments-08963");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pDepthAttachment-08964");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, stencil_pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pStencilAttachment-08965");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
@@ -3640,7 +3640,7 @@ TEST_F(NegativePipeline, PipelineCreationFlags2LibraryLinkTime) {
     vertex_input_lib.CreateGraphicsPipeline(false);
 
     VkPipeline libraries[1] = {
-        vertex_input_lib.Handle(),
+        vertex_input_lib,
     };
 
     flags2.flags = VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_2_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT;
@@ -3752,7 +3752,7 @@ TEST_F(NegativePipeline, GetPipelinePropertiesEXT) {
     pipe.CreateGraphicsPipeline();
 
     VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
-    pipeline_info.pipeline = pipe.Handle();
+    pipeline_info.pipeline = pipe;
 
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelinePropertiesEXT-None-06766");
     m_errorMonitor->SetDesiredError("VUID-vkGetPipelinePropertiesEXT-pPipelineProperties-06739");
@@ -3771,7 +3771,7 @@ TEST_F(NegativePipeline, PipelinePropertiesIdentifierEXT) {
     pipe.CreateGraphicsPipeline();
 
     VkPipelineInfoEXT pipeline_info = vku::InitStructHelper();
-    pipeline_info.pipeline = pipe.Handle();
+    pipeline_info.pipeline = pipe;
     VkPipelinePropertiesIdentifierEXT pipeline_props = vku::InitStructHelper(&pipeline_info);
 
     m_errorMonitor->SetDesiredError("VUID-VkPipelinePropertiesIdentifierEXT-pNext-pNext");

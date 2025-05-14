@@ -463,7 +463,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07408");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->VerifyFound();
 
     CreatePipelineHelper protected_pipe(*this);
@@ -475,7 +475,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccess) {
     vkt::CommandBuffer unprotected_cmdbuf(*m_device, command_pool);
     unprotected_cmdbuf.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-pipelineProtectedAccess-07409");
-    vk::CmdBindPipeline(unprotected_cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe.Handle());
+    vk::CmdBindPipeline(unprotected_cmdbuf, VK_PIPELINE_BIND_POINT_GRAPHICS, protected_pipe);
     m_errorMonitor->VerifyFound();
 
     // Create device without protected access features
@@ -548,7 +548,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     ASSERT_EQ(VK_SUCCESS, pre_raster_lib.CreateGraphicsPipeline());
 
     VkPipeline libraries[1] = {
-        pre_raster_lib.Handle(),
+        pre_raster_lib,
     };
     VkPipelineLibraryCreateInfoKHR link_info = vku::InitStructHelper();
     link_info.libraryCount = size32(libraries);
@@ -572,7 +572,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     protected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
     protected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_PROTECTED_ACCESS_ONLY_BIT;
     ASSERT_EQ(VK_SUCCESS, protected_pre_raster_lib.CreateGraphicsPipeline());
-    libraries[0] = protected_pre_raster_lib.Handle();
+    libraries[0] = protected_pre_raster_lib;
     VkGraphicsPipelineCreateInfo protected_lib_ci = vku::InitStructHelper(&link_info);
     protected_lib_ci.renderPass = RenderPass();
     protected_lib_ci.layout = pre_raster_lib.gp_ci_.layout;
@@ -587,7 +587,7 @@ TEST_F(NegativeProtectedMemory, PipelineProtectedAccessGPL) {
     unprotected_pre_raster_lib.pipeline_layout_ci_.flags |= VK_PIPELINE_LAYOUT_CREATE_INDEPENDENT_SETS_BIT_EXT;
     unprotected_pre_raster_lib.gp_ci_.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR | VK_PIPELINE_CREATE_NO_PROTECTED_ACCESS_BIT;
     ASSERT_EQ(VK_SUCCESS, unprotected_pre_raster_lib.CreateGraphicsPipeline());
-    libraries[0] = unprotected_pre_raster_lib.Handle();
+    libraries[0] = unprotected_pre_raster_lib;
     VkGraphicsPipelineCreateInfo unprotected_lib_ci = vku::InitStructHelper(&link_info);
     unprotected_lib_ci.flags = VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;
     unprotected_lib_ci.renderPass = RenderPass();
@@ -626,7 +626,7 @@ TEST_F(NegativeProtectedMemory, UnprotectedCommands) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-commandBuffer-02711");
     vk::CmdDrawIndirect(m_command_buffer, indirect_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
@@ -920,7 +920,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdClearAttachments(m_command_buffer, 2, clear_attachments, 2, clear_rect);
         m_errorMonitor->VerifyFound();
 
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
         vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                                   &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
@@ -991,7 +991,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdClearAttachments(protectedCommandBuffer, 2, clear_attachments, 2, clear_rect);
         m_errorMonitor->VerifyFound();
 
-        vk::CmdBindPipeline(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+        vk::CmdBindPipeline(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
         vk::CmdBindDescriptorSets(protectedCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
                                   &g_pipe.descriptor_set_->set_, 0, nullptr);
         VkDeviceSize offset = 0;
@@ -1139,7 +1139,7 @@ TEST_F(NegativeProtectedMemory, RayQuery) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetUnexpectedError("VUID-vkCmdDraw-commandBuffer-02712");  // color attachment
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-04617");     // rayQuery
@@ -1203,7 +1203,7 @@ TEST_F(NegativeProtectedMemory, WriteToProtectedStorageBuffer) {
     pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBeginRenderPass(m_command_buffer, &m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
                               &pipe.descriptor_set_->set_, 0, nullptr);

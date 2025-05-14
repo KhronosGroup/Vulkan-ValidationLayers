@@ -133,7 +133,7 @@ TEST_F(NegativePipelineBinary, ReleaseCapturedData) {
 
     {
         VkReleaseCapturedPipelineDataInfoKHR data_info = vku::InitStructHelper();
-        data_info.pipeline = pipe.Handle();
+        data_info.pipeline = pipe;
 
         m_errorMonitor->SetDesiredFailureMsg(kErrorBit, "VUID-VkReleaseCapturedPipelineDataInfoKHR-pipeline-09613");
         vk::ReleaseCapturedPipelineDataKHR(device(), &data_info, nullptr);
@@ -185,7 +185,7 @@ TEST_F(NegativePipelineBinary, Destroy) {
     const VkAllocationCallbacks allocator = {nullptr, Alloc::alloc, Alloc::reallocFunc, Alloc::freeFunc, nullptr, nullptr};
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
 
     VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
     handles_info.pipelineBinaryCount = 1;
@@ -237,7 +237,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
         pipe.CreateComputePipeline(true, true);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-        binary_create_info.pipeline = pipe.Handle();
+        binary_create_info.pipeline = pipe;
 
         VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
         handles_info.pipelineBinaryCount = 1;
@@ -273,7 +273,7 @@ TEST_F(NegativePipelineBinary, ComputePipeline) {
         pipe.CreateComputePipeline(true, true);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-        binary_create_info.pipeline = pipe.Handle();
+        binary_create_info.pipeline = pipe;
 
         VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
         handles_info.pipelineBinaryCount = 1;
@@ -508,7 +508,7 @@ TEST_F(NegativePipelineBinary, Creation1) {
     pipe.CreateComputePipeline(true, true);
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
 
     VkPipelineBinaryKHR pipeline_binary;
     VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
@@ -536,13 +536,13 @@ TEST_F(NegativePipelineBinary, Creation2) {
     pipe.CreateComputePipeline(true, true);
 
     VkReleaseCapturedPipelineDataInfoKHR release_info = vku::InitStructHelper();
-    release_info.pipeline = pipe.Handle();
+    release_info.pipeline = pipe;
 
     VkResult err = vk::ReleaseCapturedPipelineDataKHR(device(), &release_info, nullptr);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
 
     VkPipelineBinaryKHR pipeline_binary;
     VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
@@ -629,7 +629,7 @@ TEST_F(NegativePipelineBinary, Creation4) {
     m_errorMonitor->VerifyFound();
 
     // test > 0
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
     binary_create_info.pPipelineCreateInfo = &pipeline_create_info;
 
     VkPhysicalDevicePipelineBinaryPropertiesKHR pipeline_binary_properties = vku::InitStructHelper();
@@ -665,7 +665,7 @@ TEST_F(NegativePipelineBinary, Creation5) {
     pipe.CreateComputePipeline(true, true);
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
 
     VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
 

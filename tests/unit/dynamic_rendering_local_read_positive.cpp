@@ -110,11 +110,11 @@ TEST_F(PositiveDynamicRenderingLocalRead, BasicUsage) {
                            nullptr, 0, nullptr, 2, &pre_barriers[0]);
 
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                            VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 2, &post_barriers[0]);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
 
     uint32_t locations[] = {1, 0};
     VkRenderingAttachmentLocationInfo location_info = vku::InitStructHelper();
@@ -152,7 +152,7 @@ TEST_F(PositiveDynamicRenderingLocalRead, CmdClearAttachments) {
     color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
     rendering_info.renderArea = {{0, 0}, {m_width, m_height}};

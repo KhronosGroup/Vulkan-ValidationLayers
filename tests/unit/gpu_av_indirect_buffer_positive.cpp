@@ -104,7 +104,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, BasicTraceRaysMultipleStages) {
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
@@ -166,7 +166,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, Mesh) {
     // Set x in third draw
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe);
 
     vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, draw_buffer, 0, 3, (sizeof(VkDrawMeshTasksIndirectCommandEXT) + 4));
     m_command_buffer.EndRenderPass();
@@ -227,7 +227,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, MeshSingleCommand) {
     // Set x in third draw
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mesh_pipe);
 
     vk::CmdDrawMeshTasksIndirectEXT(m_command_buffer, draw_buffer, 0, 1, 0);
     m_command_buffer.EndRenderPass();
@@ -259,7 +259,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, FirstInstanceSingleDrawIndirectCommand) {
     VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
     m_command_buffer.Begin(&begin_info);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     vk::CmdDrawIndirect(m_command_buffer, draw_params_buffer, 0, 1, 0);
 
@@ -294,7 +294,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndire
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer.handle(), 0u);
 
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &comp_shader.handle());
@@ -383,16 +383,16 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipeline_layout, 0, 1, &c_descriptor_set.set_, 0,
                               nullptr);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
     m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     m_command_buffer.BindCompShader(cs_shader_object);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_command_buffer.EndRendering();
@@ -402,9 +402,9 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     m_command_buffer.BindShaders(vs_shader_object, fs_shader_object);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, c_pipe);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
     vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -437,7 +437,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, BufferUsageFlags2) {
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

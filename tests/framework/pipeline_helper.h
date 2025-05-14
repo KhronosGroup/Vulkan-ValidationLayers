@@ -47,10 +47,12 @@ class CreatePipelineHelper {
     vkt::Device *device_;
     std::optional<VkGraphicsPipelineLibraryCreateInfoEXT> gpl_info;
     // advantage of taking a VkLayerTest over vkt::Device is we can get the default renderpass from InitRenderTarget
-    CreatePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
+    explicit CreatePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreatePipelineHelper();
 
     const VkPipeline &Handle() const { return pipeline_; }
+    operator VkPipeline() const { return pipeline_; }
+
     void InitShaderInfo();
     void ResetShaderInfo(const char *vertex_shader_text, const char *fragment_shader_text);
     void VertexShaderOnly();
@@ -140,10 +142,12 @@ class CreateComputePipelineHelper {
     bool override_skip_ = false;
     VkLayerTest &layer_test_;
     vkt::Device *device_;
-    CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
+    explicit CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
     ~CreateComputePipelineHelper();
 
     const VkPipeline &Handle() const { return pipeline_; }
+    operator VkPipeline() const { return pipeline_; }
+
     void InitShaderInfo();
     void Destroy();
 
@@ -206,6 +210,7 @@ class SimpleGPL {
               const char *fragment_shader = nullptr);
 
     const VkPipeline &Handle() const { return pipe_.handle(); }
+    operator VkPipeline() const { return pipe_; }
 
   private:
     CreatePipelineHelper vertex_input_lib_;

@@ -3324,7 +3324,7 @@ TEST_F(NegativeRayTracing, DynamicRayTracingPipelineStack) {
     pipeline.Build();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
     m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-None-09458");
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
@@ -3577,7 +3577,7 @@ TEST_F(NegativeRayTracing, PipelineNullMissShader) {
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
                               &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
     vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
     m_errorMonitor->SetDesiredError("VUID-vkCmdTraceRaysKHR-flags-03511");
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
@@ -3897,7 +3897,7 @@ TEST_F(NegativeRayTracing, StridedDeviceAddressRegion) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline);
 
     m_errorMonitor->SetDesiredError("UNASSIGNED-TraceRays-InvalidRayGenSBTAddress");
     sbt.ray_gen_sbt.deviceAddress = 0;
@@ -3985,7 +3985,7 @@ TEST_F(NegativeRayTracing, CmdTraceRays) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, rt_pipeline);
 
     {
         VkBufferCreateInfo sbt_buffer_info = vku::InitStructHelper();

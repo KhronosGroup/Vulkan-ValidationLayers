@@ -32,7 +32,7 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromPipeline) {
     pipe.CreateComputePipeline(true, true);
 
     VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-    binary_create_info.pipeline = pipe.Handle();
+    binary_create_info.pipeline = pipe;
 
     VkPipelineBinaryKHR pipeline_binary;
     VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
@@ -67,7 +67,7 @@ TEST_F(PositivePipelineBinary, CreateBinaryFromData) {
         pipe.CreateComputePipeline(true, true);
 
         VkPipelineBinaryCreateInfoKHR binary_create_info = vku::InitStructHelper();
-        binary_create_info.pipeline = pipe.Handle();
+        binary_create_info.pipeline = pipe;
 
         VkPipelineBinaryHandlesInfoKHR handles_info = vku::InitStructHelper();
         handles_info.pPipelineBinaries = nullptr;

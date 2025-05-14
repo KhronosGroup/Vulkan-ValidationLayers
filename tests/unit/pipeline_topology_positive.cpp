@@ -449,7 +449,7 @@ TEST_F(PositivePipelineTopology, Rasterizer) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(RenderPass(), Framebuffer(), 32, 32, m_renderPassClearValues.size(),
                                      m_renderPassClearValues.data());
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -483,7 +483,7 @@ TEST_F(PositivePipelineTopology, LineTopologyClasses) {
     cb.Begin();
     cb.BeginRenderPass(m_renderPassBeginInfo);
 
-    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindVertexBuffers(cb, 0, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdSetPrimitiveTopologyEXT(cb, VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
     vk::CmdDraw(cb, 1, 1, 0, 0);
@@ -519,7 +519,7 @@ TEST_F(PositivePipelineTopology, PointSizeDynamicAndUnrestricted) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -612,7 +612,7 @@ TEST_F(PositivePipelineTopology, PatchListTopology) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

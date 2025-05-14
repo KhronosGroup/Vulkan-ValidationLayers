@@ -112,7 +112,7 @@ TEST_F(NegativeDynamicRendering, CommandDraw) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07286");
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07287");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -182,7 +182,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetDepthWriteEnable(m_command_buffer, true);
     vk::CmdSetStencilWriteMask(m_command_buffer, VK_STENCIL_FACE_FRONT_BIT, 0xff);
     vk::CmdSetStencilWriteMask(m_command_buffer, VK_STENCIL_FACE_BACK_BIT, 0);
@@ -807,7 +807,7 @@ TEST_F(NegativeDynamicRendering, MismatchingViewMask) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewMask-06178");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -892,7 +892,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
 
     // Mismatching color attachment count
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-colorAttachmentCount-06179");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -902,7 +902,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08910");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -913,7 +913,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
     begin_rendering_info.pColorAttachments = nullptr;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08914");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -924,7 +924,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats) {
         begin_rendering_info.pDepthAttachment = nullptr;
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08917");
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -991,7 +991,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
         begin_rendering_info.pColorAttachments = &color_attachment;
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_color);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08912");
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -1005,7 +1005,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
         begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08913");
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -1019,7 +1019,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats2) {
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
         begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08916");
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -1063,7 +1063,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3Color) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08911");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1142,7 +1142,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
     begin_rendering_info.pColorAttachments = nullptr;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08915");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1153,7 +1153,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentFormats3DepthStencil) {
         begin_rendering_info.pDepthAttachment = nullptr;
         begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08918");
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -1195,7 +1195,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesColor) {
     begin_rendering_info.colorAttachmentCount = 1;
     begin_rendering_info.pColorAttachments = &color_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07285");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1250,7 +1250,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     begin_rendering_info.pColorAttachments = nullptr;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07286");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1260,7 +1260,7 @@ TEST_F(NegativeDynamicRendering, MismatchingAttachmentSamplesDepthStencil) {
     begin_rendering_info.pDepthAttachment = nullptr;
     begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07287");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1321,7 +1321,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesColor) {
     begin_rendering_info.pColorAttachments = &color_attachment;
     begin_rendering_info.layerCount = 1;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-colorAttachmentCount-06185");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1390,7 +1390,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     begin_rendering_info.pColorAttachments = nullptr;
     begin_rendering_info.pDepthAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pDepthAttachment-06186");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1400,7 +1400,7 @@ TEST_F(NegativeDynamicRendering, MismatchingMixedAttachmentSamplesDepthStencil) 
     begin_rendering_info.pDepthAttachment = nullptr;
     begin_rendering_info.pStencilAttachment = &depth_stencil_attachment;
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-pStencilAttachment-06187");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -1634,7 +1634,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
         vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRendering();
         m_command_buffer.End();
@@ -1667,7 +1667,7 @@ TEST_F(NegativeDynamicRendering, PipelineMissingFlags) {
 
         m_command_buffer.Begin();
         m_command_buffer.BeginRendering(begin_rendering_info);
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
         vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
         m_command_buffer.EndRendering();
         m_command_buffer.End();
@@ -2912,7 +2912,7 @@ TEST_F(NegativeDynamicRendering, LibrariesViewMask) {
     pipeline_rendering_info.viewMask = 0;
     VkPipelineLibraryCreateInfoKHR library_create_info = vku::InitStructHelper();
     library_create_info.libraryCount = 2;
-    VkPipeline libraries[2] = {lib1.Handle(), lib2.Handle()};
+    VkPipeline libraries[2] = {lib1, lib2};
     library_create_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo pipe_ci = vku::InitStructHelper(&library_create_info);
@@ -4225,7 +4225,7 @@ TEST_F(NegativeDynamicRendering, Pipeline) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderPass-06198");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -5309,7 +5309,7 @@ TEST_F(NegativeDynamicRendering, InSecondaryCommandBuffers) {
 
     vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary.Begin(&cbbi);
-    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(secondary, 3, 1, 0, 0);
     secondary.End();
 }
@@ -5726,7 +5726,7 @@ TEST_F(NegativeDynamicRendering, DynamicColorBlendAttchment) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     VkColorComponentFlags color_component_flags = VK_COLOR_COMPONENT_R_BIT;
     vk::CmdSetColorWriteMaskEXT(m_command_buffer, 1u, 1u, &color_component_flags);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07478");
@@ -5848,7 +5848,7 @@ TEST_F(NegativeDynamicRendering, MismatchingDepthAttachmentFormatInSecondaryCmdB
     secondary_cmd_buffer_begin_info.pInheritanceInfo = &secondary_cmd_buffer_inheritance_info;
 
     secondary_cmd_buf.Begin(&secondary_cmd_buffer_begin_info);
-    vk::CmdBindPipeline(secondary_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary_cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-dynamicRenderingUnusedAttachments-08914");
     vk::CmdDraw(secondary_cmd_buf, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
@@ -6316,7 +6316,7 @@ TEST_F(NegativeDynamicRendering, PipelineLegacyDithering) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09643");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -6349,7 +6349,7 @@ TEST_F(NegativeDynamicRendering, RenderPassLegacyDithering) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(begin_rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09642");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -6384,7 +6384,7 @@ TEST_F(NegativeDynamicRendering, DrawInPrimaryCmdBufferWithContentsSecondary) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRendering(rendering_info);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-flags-10582");
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
@@ -6422,7 +6422,7 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoViewMask) {
 
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_cb.Begin(&begin_info);
-    vk::CmdBindPipeline(secondary_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(secondary_cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(secondary_cb, 4u, 1u, 0u, 0u);
     secondary_cb.End();
 

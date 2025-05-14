@@ -615,15 +615,15 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipeline_SwitchTessGeometryMesh) {
     {
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh");
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.Handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe);
         m_errorMonitor->Finish();
     }
     {
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-Pipeline-SortAndBind");
         m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-NVIDIA-BindPipeline-SwitchTessGeometryMesh");
         for (int i = 0; i < 10; ++i) {
-            vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vgsPipe.Handle());
-            vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe.Handle());
+            vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vgsPipe);
+            vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vsPipe);
         }
         m_errorMonitor->VerifyFound();
     }
@@ -707,7 +707,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirection) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetDepthTestEnable(m_command_buffer, VK_TRUE);
 
     {
@@ -872,7 +872,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionDepth) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetDepthTestEnable(m_command_buffer, VK_TRUE);
 
     {
@@ -1056,7 +1056,7 @@ TEST_F(VkNvidiaBestPracticesLayerTest, BindPipelineZcullDirectionSubresource) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetDepthTestEnable(m_command_buffer, VK_TRUE);
 
     {
