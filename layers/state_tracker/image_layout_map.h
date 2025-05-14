@@ -69,11 +69,11 @@ class ImageLayoutRegistry {
         static LayoutEntry ForExpectedLayout(VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
 
         bool CurrentWillChange(VkImageLayout new_layout) const;
-        bool Update(const LayoutEntry& src);
+        void Update(const LayoutEntry& src);
 
         // updater for splice()
         struct Updater {
-            bool update(LayoutEntry& dst, const LayoutEntry& src) const { return dst.Update(src); }
+            void update(LayoutEntry& dst, const LayoutEntry& src) const { dst.Update(src); }
             std::optional<LayoutEntry> insert(const LayoutEntry& src) const {
                 return std::optional<LayoutEntry>(vvl::in_place, src);
             }
@@ -86,7 +86,7 @@ class ImageLayoutRegistry {
                                    VkImageLayout expected_layout = kInvalidLayout);
     void SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout);
     void SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state);
-    bool UpdateFrom(const ImageLayoutRegistry& from);
+    void UpdateFrom(const ImageLayoutRegistry& from);
     const LayoutMap& GetLayoutMap() const { return layout_map_; }
     ImageLayoutRegistry(const vvl::Image& image_state);
     ~ImageLayoutRegistry() {}

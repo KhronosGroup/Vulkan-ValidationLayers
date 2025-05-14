@@ -189,8 +189,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     CbState state;           // Track cmd buffer update state
     uint64_t command_count;  // Number of commands recorded. Currently only used with VK_KHR_performance_query
     uint64_t submit_count;   // Number of times CB has been submitted
-    typedef uint64_t ImageLayoutUpdateCount;
-    ImageLayoutUpdateCount image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
+    uint64_t image_layout_change_count;  // The sequence number for changes to image layout (for cached validation)
 
     // Track status of all vkCmdSet* calls, if 1, means it was set
     struct DynamicStateStatus {
