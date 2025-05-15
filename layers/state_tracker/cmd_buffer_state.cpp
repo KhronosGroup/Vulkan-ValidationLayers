@@ -27,6 +27,8 @@
 #include "state_tracker/queue_state.h"
 #include "utils/vk_layer_utils.h"
 
+using RangeGenerator = subresource_adapter::RangeGenerator;
+
 static ShaderObjectStage inline ConvertToShaderObjectStage(VkShaderStageFlagBits stage) {
     if (stage == VK_SHADER_STAGE_VERTEX_BIT) return ShaderObjectStage::VERTEX;
     if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) return ShaderObjectStage::TESSELLATION_CONTROL;
@@ -420,7 +422,7 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
         return nullptr;
     }
     auto iter = image_layout_registry.find(image_state.VkHandle());
-    if (iter != image_layout_registry.end() && iter->second && image_state.GetId() == iter->second->GetImageId()) {
+    if (iter != image_layout_registry.end() && iter->second && image_state.GetId() == iter->second->image_id) {
         return iter->second;
     }
     std::shared_ptr<CommandBufferImageLayoutMap> image_layout_map;
@@ -1111,11 +1113,21 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         for (const auto &[image, secondary_cb_layout_map] : secondary_cb_state->image_layout_registry) {
             const auto image_state = dev_data.Get<vvl::Image>(image);
             if (!image_state || image_state->Destroyed() || !secondary_cb_layout_map ||
-                image_state->GetId() != secondary_cb_layout_map->GetImageId()) {
+                image_state->GetId() != secondary_cb_layout_map->image_id) {
                 continue;
             }
             if (auto cb_layout_map = GetOrCreateImageLayoutMap(*image_state)) {
-                cb_layout_map->UpdateFrom(*secondary_cb_layout_map);
+                struct Updater {
+                    void update(LayoutEntry &dst, const LayoutEntry &src) const {
+                        if (src.current_layout != kInvalidLayout && src.current_layout != dst.current_layout) {
+                            dst.current_layout = src.current_layout;
+                        }
+                    }
+                    std::optional<LayoutEntry> insert(const LayoutEntry &src) const {
+                        return std::optional<LayoutEntry>(vvl::in_place, src);
+                    }
+                };
+                sparse_container::splice(*cb_layout_map, *secondary_cb_layout_map, Updater());
             }
         }
 
@@ -1441,12 +1453,16 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     }
 }
 
-// Set image layout for given VkImageSubresourceRange struct
+// Set image layout for given subresource range
 void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
                                    VkImageLayout layout, VkImageLayout expected_layout) {
-    auto image_layout_map = GetOrCreateImageLayoutMap(image_state);
-    if (image_layout_map && image_layout_map->SetSubresourceRangeLayout(subresource_range, layout, expected_layout)) {
-        image_layout_change_count++;  // Change the version of this data to force revalidation
+    if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
+        if (image_state.subresource_encoder.InRange(subresource_range)) {
+            RangeGenerator range_gen(image_state.subresource_encoder, subresource_range);
+            if (UpdateCurrentLayout(*image_layout_map, std::move(range_gen), layout, expected_layout)) {
+                image_layout_change_count++;  // Change the version of this data to force revalidation
+            }
+        }
     }
 }
 
@@ -1457,14 +1473,19 @@ void CommandBuffer::TrackImageViewInitialLayout(const vvl::ImageView &view_state
     vvl::Image *image_state = view_state.image_state.get();
     auto image_layout_map = (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutMap(*image_state) : nullptr;
     if (image_layout_map) {
-        image_layout_map->SetSubresourceRangeInitialLayout(layout, view_state);
+        RangeGenerator range_gen(view_state.range_generator);
+        TrackInitialLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask);
     }
 }
 
 void CommandBuffer::TrackImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
                                             VkImageLayout layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
-        image_layout_map->SetSubresourceRangeInitialLayout(image_state.NormalizeSubresourceRange(range), layout);
+        const VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(range);
+        if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
+            RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
+            TrackInitialLayout(*image_layout_map, std::move(range_gen), layout);
+        }
     }
 }
 
