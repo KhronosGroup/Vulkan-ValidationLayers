@@ -21,7 +21,7 @@
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/image_state.h"
 
-using IndexRange = vvl::range<subresource_adapter::IndexType>;
+using IndexRange = subresource_adapter::IndexRange;
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
 template <typename LayoutsMap>
@@ -42,20 +42,22 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
         }
         // Note that after the "fill" operation pos may have become valid so we check again
         if (pos->valid) {
+            LayoutEntry entry = pos->lower_bound->second;  // intentional copy
+            // existing entry always has initial layout initialized (current layout might be unknown though)
+            assert(entry.initial_layout != kInvalidLayout);
+
+            const bool update_current =
+                new_entry.current_layout != kInvalidLayout && new_entry.current_layout != entry.current_layout;
+
             auto intersected_range = pos->lower_bound->first & range;
-            if (!intersected_range.empty() && pos->lower_bound->second.CurrentWillChange(new_entry.current_layout)) {
-                LayoutEntry orig_entry = pos->lower_bound->second;  // intentional copy
 
-                // existing entry always has initial layout initialized (current layout might be unknown though)
-                assert(orig_entry.initial_layout != kInvalidLayout);
-
-                orig_entry.current_layout = new_entry.current_layout;
-                updated_current = true;
-                auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, orig_entry));
-
+            if (!intersected_range.empty() && update_current) {
+                entry.current_layout = new_entry.current_layout;
+                auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, entry));
                 // If we didn't cover the whole range, we'll need to go around again
                 pos.invalidate(overwrite_result, intersected_range.begin);
                 pos.seek(intersected_range.end);
+                updated_current = true;
             } else {
                 // Point just past the end of this section,  if it's within the given range, it will get filled next iteration
                 // ++pos could move us past the end of range (which would exit the loop) so we don't use it.
@@ -69,24 +71,25 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
 
 CommandBufferImageLayoutMap::CommandBufferImageLayoutMap(const vvl::Image& image_state)
     : subresource_adapter::BothRangeMap<LayoutEntry, 16>(image_state.subresource_encoder.SubresourceCount()),
-      image_state_(image_state) {}
+      image_id(image_state.GetId()) {}
 
-bool CommandBufferImageLayoutMap::SetSubresourceRangeLayout(const VkImageSubresourceRange& range, VkImageLayout layout,
-                                                    VkImageLayout expected_layout) {
-    if (!image_state_.subresource_encoder.InRange(range)) {
-        return false;  // Don't even try to track bogus subresources
-    }
+bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout layout,
+                         VkImageLayout expected_layout) {
+    assert(layout != kInvalidLayout);
+    LayoutEntry entry{};
+    entry.current_layout = layout;
+    entry.initial_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
 
-    RangeGenerator range_gen(image_state_.subresource_encoder, range);
-    const LayoutEntry entry = LayoutEntry::ForCurrentLayout(layout, expected_layout);
     bool updated = false;
-    if (UsesSmallMap()) {
-        auto& layout_map = GetSmallMap();
+
+    // Unwrap the BothMaps entry here as this is a performance hotspot
+    if (image_layout_map.UsesSmallMap()) {
+        auto& layout_map = image_layout_map.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = GetBigMap();
+        auto& layout_map = image_layout_map.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
             updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
@@ -94,105 +97,49 @@ bool CommandBufferImageLayoutMap::SetSubresourceRangeLayout(const VkImageSubreso
     return updated;
 }
 
-void CommandBufferImageLayoutMap::SetSubresourceRangeInitialLayout(const VkImageSubresourceRange& range, VkImageLayout layout) {
-    if (!image_state_.subresource_encoder.InRange(range)) {
-        return;
-    }
-    RangeGenerator range_gen(image_state_.subresource_encoder, range);
+void TrackInitialLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
+                        VkImageAspectFlags aspect_mask) {
+    assert(expected_layout != kInvalidLayout);
+    LayoutEntry entry{};
+    entry.current_layout = kInvalidLayout;
+    entry.initial_layout = expected_layout;
+    entry.aspect_mask = aspect_mask;
 
-    const LayoutEntry entry = LayoutEntry::ForExpectedLayout(layout);
     // Unwrap the BothMaps entry here as this is a performance hotspot
-    if (UsesSmallMap()) {
-        auto& layout_map = GetSmallMap();
+    if (image_layout_map.UsesSmallMap()) {
+        auto& layout_map = image_layout_map.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     } else {
-        auto& layout_map = GetBigMap();
+        auto& layout_map = image_layout_map.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
             UpdateLayoutStateImpl(layout_map, *range_gen, entry);
         }
     }
 }
 
-void CommandBufferImageLayoutMap::SetSubresourceRangeInitialLayout(VkImageLayout layout, const vvl::ImageView& view_state) {
-    RangeGenerator range_gen(view_state.range_generator);
-    const LayoutEntry entry = LayoutEntry::ForExpectedLayout(layout, view_state.normalized_subresource_range.aspectMask);
+bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, const vvl::Image& image_state,
+                const VkImageSubresourceRange& normalized_subresource_range,
+                std::function<bool(const IndexRange& range, const LayoutEntry& state)>&& func) {
+    RangeGenerator range_gen = image_state.subresource_encoder.InRange(normalized_subresource_range)
+                                   ? RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
+                                   : RangeGenerator{};
 
-    // Unwrap the BothMaps entry here as this is a performance hotspot
-    if (UsesSmallMap()) {
-        auto& layout_map = GetSmallMap();
-        for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, *range_gen, entry);
-        }
-    } else {
-        auto& layout_map = GetBigMap();
-        for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, *range_gen, entry);
-        }
-    }
+    return AnyInRange(image_layout_map, std::move(range_gen), std::move(func));
 }
 
-uint32_t CommandBufferImageLayoutMap::GetImageId() const { return image_state_.GetId(); }
-
-void CommandBufferImageLayoutMap::UpdateFrom(const CommandBufferImageLayoutMap& other) {
-    struct Updater {
-        void update(LayoutEntry& dst, const LayoutEntry& src) const {
-            if (dst.CurrentWillChange(src.current_layout)) {
-                dst.current_layout = src.current_layout;
-            }
-        }
-        std::optional<LayoutEntry> insert(const LayoutEntry& src) const { return std::optional<LayoutEntry>(vvl::in_place, src); }
-    };
-    sparse_container::splice(*this, other, Updater());
-}
-
-VkImageSubresource CommandBufferImageLayoutMap::Decode(subresource_adapter::IndexType index) const {
-    const auto subres = image_state_.subresource_encoder.Decode(index);
-    return image_state_.subresource_encoder.MakeVkSubresource(subres);
-}
-
-bool CommandBufferImageLayoutMap::AnyInRange(const VkImageSubresourceRange& normalized_subresource_range,
-                                     std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
-    subresource_adapter::RangeGenerator range_gen =
-        image_state_.subresource_encoder.InRange(normalized_subresource_range)
-            ? subresource_adapter::RangeGenerator(image_state_.subresource_encoder, normalized_subresource_range)
-            : subresource_adapter::RangeGenerator{};
-
-    return AnyInRange(std::move(range_gen), std::move(func));
-}
-
-bool CommandBufferImageLayoutMap::AnyInRange(RangeGenerator&& gen,
-                                     std::function<bool(const RangeType& range, const LayoutEntry& state)>&& func) const {
+bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& gen,
+                std::function<bool(const IndexRange& range, const LayoutEntry& state)>&& func) {
     for (; gen->non_empty(); ++gen) {
-        for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
+        for (auto pos = image_layout_map.lower_bound(*gen); (pos != image_layout_map.end()) && (gen->intersects(pos->first));
+             ++pos) {
             if (func(pos->first, pos->second)) {
                 return true;
             }
         }
     }
     return false;
-}
-
-LayoutEntry LayoutEntry::ForCurrentLayout(VkImageLayout current_layout, VkImageLayout expected_layout) {
-    assert(current_layout != kInvalidLayout);
-    LayoutEntry entry{};
-    entry.initial_layout = (expected_layout != kInvalidLayout) ? expected_layout : current_layout;
-    entry.current_layout = current_layout;
-    return entry;
-}
-
-LayoutEntry LayoutEntry::ForExpectedLayout(VkImageLayout expected_layout, VkImageAspectFlags aspect_mask) {
-    assert(expected_layout != kInvalidLayout);
-    LayoutEntry entry{};
-    entry.initial_layout = expected_layout;
-    entry.current_layout = kInvalidLayout;
-    entry.aspect_mask = aspect_mask;
-    return entry;
-}
-
-bool LayoutEntry::CurrentWillChange(VkImageLayout new_layout) const {
-    return new_layout != kInvalidLayout && current_layout != new_layout;
 }
 
 bool AnyInRange(const ImageLayoutMap& image_layout_map, RangeGenerator& gen,

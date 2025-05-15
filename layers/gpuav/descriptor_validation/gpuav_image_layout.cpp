@@ -26,7 +26,7 @@
 
 #include "state_tracker/render_pass_state.h"
 
-using LayoutRange = CommandBufferImageLayoutMap::RangeType;
+using LayoutRange = subresource_adapter::IndexRange;
 
 // Utility type for checking Image layouts
 struct LayoutUseCheckAndMessage {
@@ -60,7 +60,6 @@ struct LayoutUseCheckAndMessage {
     }
 };
 
-// Helper to update the Global or Overlay layout map
 struct GlobalLayoutUpdater {
     bool update(VkImageLayout &dst, const LayoutEntry &src) const {
         if (src.current_layout != kInvalidLayout && dst != src.current_layout) {
@@ -254,7 +253,7 @@ void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_sta
             continue;
         }
         auto image_state = gpuav.Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == cb_layout_map->GetImageId()) {
+        if (image_state && image_state->GetId() == cb_layout_map->image_id) {
             auto guard = image_state->LayoutMapWriteLock();
             sparse_container::splice(*image_state->layout_map, *cb_layout_map, GlobalLayoutUpdater());
         }
