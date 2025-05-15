@@ -1,7 +1,7 @@
-/* Copyright (c) 2019-2024 The Khronos Group Inc.
- * Copyright (c) 2019-2024 Valve Corporation
- * Copyright (c) 2019-2024 LunarG, Inc.
- * Copyright (C) 2019-2024 Google Inc.
+/* Copyright (c) 2019-2025 The Khronos Group Inc.
+ * Copyright (c) 2019-2025 Valve Corporation
+ * Copyright (c) 2019-2025 LunarG, Inc.
+ * Copyright (C) 2019-2025 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -269,6 +269,28 @@ RangeGenerator& RangeGenerator::operator++() {
     return *this;
 }
 
+static double FormatTexelSizeWithAspect(VkFormat format, VkImageAspectFlagBits aspectMask) {
+    uint32_t texel_block_size = 0;
+    if (aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
+        texel_block_size = vkuFormatStencilSize(format) / 8;
+    } else if (aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) {
+        texel_block_size = vkuFormatDepthSize(format) / 8;
+    } else if (vkuFormatIsMultiplane(format)) {
+        VkFormat compatible_format = vkuFindMultiplaneCompatibleFormat(format, aspectMask);
+        texel_block_size = vkuFormatTexelBlockSize(compatible_format);
+    } else {
+        texel_block_size = vkuFormatTexelBlockSize(format);
+    }
+
+    VkExtent3D block_extent = vkuFormatTexelBlockExtent(format);
+    const uint32_t texels_per_block = block_extent.width * block_extent.height * block_extent.depth;
+    if (texels_per_block > 1) {
+        return (double)(texel_block_size) / (double)(texels_per_block);
+    } else {
+        return (double)texel_block_size;
+    }
+}
+
 ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image)
     : ImageRangeEncoder(image, AspectParameters::Get(image.full_range.aspectMask)) {}
 
@@ -318,7 +340,7 @@ ImageRangeEncoder::ImageRangeEncoder(const vvl::Image& image, const AspectParame
         subres.aspectMask = static_cast<VkImageAspectFlags>(AspectBit(aspect_index));
         subres_layers.aspectMask = subres.aspectMask;
         texel_sizes_.push_back(
-            vkuFormatTexelSizeWithAspect(image.create_info.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
+            FormatTexelSizeWithAspect(image.create_info.format, static_cast<VkImageAspectFlagBits>(subres.aspectMask)));
         IndexType aspect_size = 0;
         for (uint32_t mip_index = 0; mip_index < limits_.mipLevel; ++mip_index) {
             subres_layers.mipLevel = mip_index;

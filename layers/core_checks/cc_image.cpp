@@ -721,15 +721,19 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                              format_limits.maxMipLevels, string_VkFormat(pCreateInfo->format));
         }
 
-        // Depth/Stencil formats size can't be accurately calculated
-        // MipLevel image are hard to calculate (because when it is a non-power of 2) so just ignore
-        if (!vkuFormatIsDepthAndStencil(pCreateInfo->format) && pCreateInfo->mipLevels == 1) {
-            const uint64_t texel_count =
-                static_cast<uint64_t>(pCreateInfo->extent.width) * static_cast<uint64_t>(pCreateInfo->extent.height) *
-                static_cast<uint64_t>(pCreateInfo->extent.depth) * static_cast<uint64_t>(pCreateInfo->arrayLayers) *
-                static_cast<uint64_t>(pCreateInfo->samples);
+        // This likely will only ever happen for 1D images, don't spend time checking things we can't properly calculate.
+        // Depth/Stencil formats size can't be accurately calculated.
+        // MipLevel image are hard to calculate (because when it is a non-power of 2) so just ignore.
+        // Multisampling size can't be calculated
+        if (pCreateInfo->imageType == VK_IMAGE_TYPE_1D && pCreateInfo->samples == VK_SAMPLE_COUNT_1_BIT &&
+            pCreateInfo->mipLevels == 1 && !vkuFormatIsDepthAndStencil(pCreateInfo->format) &&
+            !vkuFormatIsMultiplane(pCreateInfo->format)) {
+            const uint64_t texel_block_count =
+                (static_cast<uint64_t>(pCreateInfo->extent.width) * static_cast<uint64_t>(pCreateInfo->arrayLayers)) /
+                vkuFormatTexelBlockExtent(pCreateInfo->format).width;
+
             uint64_t total_size =
-                static_cast<uint64_t>(std::ceil(vkuFormatTexelSize(pCreateInfo->format) * static_cast<double>(texel_count)));
+                static_cast<uint64_t>(vkuFormatTexelBlockSize(pCreateInfo->format)) * static_cast<uint64_t>(texel_block_count);
 
             // Round up to imageGranularity boundary
             VkDeviceSize image_granularity = phys_dev_props.limits.bufferImageGranularity;
@@ -739,10 +743,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
             if (total_size > format_limits.maxResourceSize) {
                 skip |= LogWarning("WARNING-VkImageCreateInfo-maxResourceSize", device, error_obj.location,
                                    "will be %" PRIu64 " bytes and the VkImageFormatProperties::maxResourceSize is %" PRIu64
-                                   ".\nThe total was calulated from format %s having a texel size of %" PRIu32
-                                   " bytes with %" PRIu64 " texels and a bufferImageGranularity of %" PRIu64 ".",
+                                   ".\nThe total was calulated from format %s having a texel block size of %" PRIu32
+                                   " bytes with %" PRIu64 " texel blocks and a bufferImageGranularity of %" PRIu64 ".",
                                    total_size, format_limits.maxResourceSize, string_VkFormat(pCreateInfo->format),
-                                   (uint32_t)vkuFormatTexelSize(pCreateInfo->format), texel_count, image_granularity);
+                                   (uint32_t)vkuFormatTexelBlockSize(pCreateInfo->format), texel_block_count, image_granularity);
             }
         }
 
@@ -2765,15 +2769,12 @@ bool CoreChecks::PreCallValidateTransitionImageLayout(VkDevice device, uint32_t 
         }
         if (!IsValueIn(transition.oldLayout,
                        {VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PREINITIALIZED, VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT})) {
-            skip |= ValidateHostCopyImageLayout(transition.image, phys_dev_props_core14.copySrcLayoutCount,
-                                                phys_dev_props_core14.pCopySrcLayouts, transition.oldLayout,
-                                                transition_loc.dot(Field::oldLayout), Field::pCopySrcLayouts,
-                                                "VUID-VkHostImageLayoutTransitionInfo-oldLayout-09230");
+            skip |= ValidateHostCopyImageLayout(transition.image, transition.oldLayout, transition_loc.dot(Field::oldLayout),
+                                                Field::pCopySrcLayouts, "VUID-VkHostImageLayoutTransitionInfo-oldLayout-09230");
         }
 
-        skip |= ValidateHostCopyImageLayout(
-            transition.image, phys_dev_props_core14.copyDstLayoutCount, phys_dev_props_core14.pCopyDstLayouts, transition.newLayout,
-            transition_loc.dot(Field::newLayout), Field::pCopyDstLayouts, "VUID-VkHostImageLayoutTransitionInfo-newLayout-09057");
+        skip |= ValidateHostCopyImageLayout(transition.image, transition.newLayout, transition_loc.dot(Field::newLayout),
+                                            Field::pCopyDstLayouts, "VUID-VkHostImageLayoutTransitionInfo-newLayout-09057");
         if (transition.oldLayout != VK_IMAGE_LAYOUT_UNDEFINED) {
             skip |= ValidateHostCopyCurrentLayout(transition.oldLayout, transition.subresourceRange, *image_state,
                                                   transition_loc.dot(Field::oldLayout));

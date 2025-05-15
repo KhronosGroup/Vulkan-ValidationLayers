@@ -83,14 +83,18 @@ VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFl
     {
         const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
         const uint32_t min_size = 1 + corner;
-        const std::array dimensions = {&extent.width, &extent.height, &extent.depth};
-        for (uint32_t *dim : dimensions) {
-            // Don't allow mip adjustment to create 0 dim, but pass along a 0 if that's what subresource specified
-            if (*dim == 0) {
-                continue;
-            }
-            *dim >>= mip_level;
-            *dim = std::max(min_size, *dim);
+
+        if (extent.width != 0) {
+            extent.width >>= mip_level;
+            extent.width = std::max({min_size, extent.width});
+        }
+        if (extent.height != 0) {
+            extent.height >>= mip_level;
+            extent.height = std::max({min_size, extent.height});
+        }
+        if (extent.depth != 0) {
+            extent.depth >>= mip_level;
+            extent.depth = std::max({min_size, extent.depth});
         }
     }
 

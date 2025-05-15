@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
  */
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
+#include "generated/error_location_helper.h"
 #include "utils/vk_layer_utils.h"
 #include "state_tracker/pipeline_state.h"
 #include <map>

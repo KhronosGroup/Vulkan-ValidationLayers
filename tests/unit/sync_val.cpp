@@ -4005,7 +4005,6 @@ TEST_F(NegativeSyncVal, CopyToCompressedImage) {
     copy_regions[1].dstOffset = {4, 0, 0};
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_regions[1]);
     m_errorMonitor->VerifyFound();
-
     m_command_buffer.End();
 
     if (copy_commands_2) {

@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,6 +93,7 @@ enum class CopyError {
 const std::string &GetCopyBufferImageDeviceVUID(const Location &loc, CopyError error);
 // contains Host Image Copy
 const std::string &GetCopyBufferImageVUID(const Location &loc, CopyError error);
+// When copying between images
 const std::string &GetCopyImageVUID(const Location &loc, CopyError error);
 const std::string &GetImageMipLevelVUID(const Location &loc);
 const std::string &GetImageArrayLayerRangeVUID(const Location &loc);

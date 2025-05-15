@@ -493,7 +493,6 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     // Src offsets must be multiples of compressed block sizes
     copy_region.srcOffset = {3, 4, 0};  // source offset x
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-07278");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-01783");
     vk::CmdCopyImage(m_command_buffer, image_422, VK_IMAGE_LAYOUT_GENERAL, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.srcOffset = {0, 0, 0};
@@ -501,8 +500,6 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     // Dst offsets must be multiples of compressed block sizes
     copy_region.dstOffset = {1, 0, 0};
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-pRegions-07281");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-01784");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-dstOffset-00150");
     vk::CmdCopyImage(m_command_buffer, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
     copy_region.dstOffset = {0, 0, 0};
@@ -510,14 +507,61 @@ TEST_F(NegativeYcbcr, CopyImageSinglePlane422Alignment) {
     // Copy extent must be multiples of compressed block sizes if not full width/height
     copy_region.extent = {31, 60, 1};  // 422 source, extent.x
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcImage-01728");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-srcOffset-01783");
     vk::CmdCopyImage(m_command_buffer, image_422, VK_IMAGE_LAYOUT_GENERAL, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 
     // 422 dest
+    copy_region.extent.width = 30;
     vk::CmdCopyImage(m_command_buffer, image_ucmp, VK_IMAGE_LAYOUT_GENERAL, image_422, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    copy_region.dstOffset = {0, 0, 0};
+    m_command_buffer.End();
+}
 
+TEST_F(NegativeYcbcr, MultiplaneImageCopyBufferToImage) {
+    TEST_DESCRIPTION("Positive test of multiplane copy buffer to image");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    auto ci = vku::InitStruct<VkImageCreateInfo>();
+    ci.flags = 0;
+    ci.imageType = VK_IMAGE_TYPE_2D;
+    ci.format = VK_FORMAT_G8_B8_R8_3PLANE_444_UNORM;  // All planes of equal extent
+    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    ci.extent = {16, 16, 1};
+    ci.mipLevels = 1;
+    ci.arrayLayers = 1;
+    ci.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), ci, features)) {
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    vkt::Image image(*m_device, ci);
+
+    m_command_buffer.Reset();
+    m_command_buffer.Begin();
+    image.ImageMemoryBarrier(m_command_buffer, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    std::array<VkImageAspectFlagBits, 3> aspects = {
+        {VK_IMAGE_ASPECT_PLANE_0_BIT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_ASPECT_PLANE_2_BIT}};
+    std::array<vkt::Buffer, 3> buffers;
+
+    VkBufferImageCopy copy = {};
+    copy.imageSubresource.layerCount = 1;
+    copy.imageExtent = {16, 16, 1};
+    copy.bufferOffset = 16;  // pushes over
+
+    for (size_t i = 0; i < aspects.size(); ++i) {
+        buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        copy.imageSubresource.aspectMask = aspects[i];
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-pRegions-00171");
+        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i].handle(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        m_errorMonitor->VerifyFound();
+    }
     m_command_buffer.End();
 }
 
