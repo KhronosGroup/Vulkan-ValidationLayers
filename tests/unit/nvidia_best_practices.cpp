@@ -272,7 +272,6 @@ TEST_F(VkNvidiaBestPracticesLayerTest, AccelerationStructure_NotAsync) {
 
         // Those 3 are triggered when allocating memory for the destination acceleration structure buffer and the scratch buffer.
         // This is expected.
-        m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindBufferMemory-small-dedicated-allocation");
         m_errorMonitor->SetAllowedFailureMsg("BestPractices-NVIDIA-AllocateMemory-SetPriority");
 

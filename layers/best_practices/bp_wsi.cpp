@@ -170,8 +170,7 @@ void BestPractices::ManualPostCallRecordQueuePresentKHR(VkQueue queue, const VkP
                 record_obj.location.dot(Field::pPresentInfo, i),
                 "VK_SUBOPTIMAL_KHR was returned. VK_SUBOPTIMAL_KHR - Presentation will still succeed, "
                 "subject to the window resize behavior, but the swapchain (%s) is no longer configured optimally for the surface "
-                "it "
-                "targets. Applications should query updated surface information and recreate their swapchain at the next "
+                "it targets.\nApplications should query updated surface information and recreate their swapchain at the next "
                 "convenient opportunity.",
                 FormatHandle(pPresentInfo->pSwapchains[i]).c_str());
         }
@@ -193,10 +192,11 @@ bool bp_state::Instance::PreCallValidateGetPhysicalDeviceSurfaceFormatsKHR(VkPhy
     if (!bp_pd_state || !pSurfaceFormats) return skip;
 
     if (pSurfaceFormatCount && *pSurfaceFormatCount > bp_pd_state->surface_formats_count) {
-        skip |= LogWarning(
-            "BestPractices-GetPhysicalDeviceSurfaceFormatsKHR-CountMismatch", physicalDevice, error_obj.location.dot(Field::pSurfaceFormatCount),
-            "(%" PRIu32 ") is greater than the value that was returned when pSurfaceFormatCount was NULL (%" PRIu32 ").",
-            *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
+        skip |=
+            LogWarning("BestPractices-GetPhysicalDeviceSurfaceFormatsKHR-CountMismatch", physicalDevice,
+                       error_obj.location.dot(Field::pSurfaceFormatCount),
+                       "(%" PRIu32 ") is greater than the value (%" PRIu32 ") that was returned when pSurfaceFormatCount was NULL.",
+                       *pSurfaceFormatCount, bp_pd_state->surface_formats_count);
     }
     return skip;
 }

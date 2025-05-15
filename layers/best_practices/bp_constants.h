@@ -20,13 +20,8 @@
 #include <chrono>
 #include <vulkan/vulkan.h>
 
-static const uint32_t kMemoryObjectWarningLimit = 250;
-
 // Maximum number of instanced vertex buffers which should be used
 static const uint32_t kMaxInstancedVertexBuffers = 1;
-
-// Recommended allocation size for vkAllocateMemory
-static const VkDeviceSize kMinDeviceAllocationSize = 256 * 1024;
 
 // If a buffer or image is allocated and it consumes an entire VkDeviceMemory, it should at least be this large.
 // This is slightly different from minDeviceAllocationSize since the 256K buffer can still be sensibly

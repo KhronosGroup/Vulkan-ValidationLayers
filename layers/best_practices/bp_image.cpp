@@ -269,14 +269,12 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
                 Location loc(command);
-                LogWarning(
-                    "BestPractices-ConcurrentUsageOfExclusiveImage", image.Handle(), loc,
-                    "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32 ") of image is used on queue family index %" PRIu32
-                    " after being used on "
-                    "queue family index %" PRIu32
-                    ", "
-                    "but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer operation",
-                    array_layer, mip_level, queue_family, last_usage.queue_family_index);
+                LogWarning("BestPractices-ConcurrentUsageOfExclusiveImage", image.Handle(), loc,
+                           "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
+                           ") of image is used on queue family index %" PRIu32 " after being used on queue family index %" PRIu32
+                           ", but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer "
+                           "operation",
+                           array_layer, mip_level, queue_family, last_usage.queue_family_index);
             }
         }
     }

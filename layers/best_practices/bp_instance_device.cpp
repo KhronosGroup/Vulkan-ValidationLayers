@@ -317,14 +317,6 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
             skip |= CheckPipelineStageFlags(queue, submit_loc.dot(Field::pWaitDstStageMask, semaphore),
                                             pSubmits[submit].pWaitDstStageMask[semaphore]);
         }
-        if (pSubmits[submit].signalSemaphoreCount == 0 && pSubmits[submit].pSignalSemaphores != nullptr) {
-            LogInfo("BestPractices-SignalSemaphores-SemaphoreCount", queue, submit_loc.dot(Field::pSignalSemaphores),
-                    "is set, but pSubmits[%" PRIu32 "].signalSemaphoreCount is 0.", submit);
-        }
-        if (pSubmits[submit].waitSemaphoreCount == 0 && pSubmits[submit].pWaitSemaphores != nullptr) {
-            LogInfo("BestPractices-WaitSemaphores-SemaphoreCount", queue, submit_loc.dot(Field::pWaitSemaphores),
-                    "is set, but pSubmits[%" PRIu32 "].waitSemaphoreCount is 0.", submit);
-        }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
             if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
                 const Location cb_loc = submit_loc.dot(vvl::Field::pCommandBuffers, cb_index);

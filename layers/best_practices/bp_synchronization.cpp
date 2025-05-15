@@ -358,10 +358,8 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
             skip |= LogPerformanceWarning("BestPractices-AMD-CmdBuffer-highBarrierCount", commandBuffer, error_obj.location,
                                           "%s In this frame, %" PRIu32 " barriers were already submitted (%" PRIu32
                                           " if you include image and buffer barriers too). Barriers have a high cost and can "
-                                          "stall the GPU. "
-                                          "Total recommended max is %" PRIu32
-                                          ". "
-                                          "Consider consolidating and re-organizing the frame to use fewer barriers.",
+                                          "stall the GPU.\nTotal recommended max is %" PRIu32
+                                          ". Consider consolidating and re-organizing the frame to use fewer barriers.",
                                           VendorSpecificTag(kBPVendorAMD), num, total_barriers, kMaxRecommendedBarriersSizeAMD);
         }
     }
@@ -524,8 +522,7 @@ bool BestPractices::PreCallValidateCreateSemaphore(VkDevice device, const VkSema
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfSemaphores", device, error_obj.location,
                                           "%s %s High number of vkSemaphore objects created. "
                                           "%zu created, but recommended max is %" PRIu32
-                                          ". "
-                                          "Minimize the amount of queue synchronization that is used. "
+                                          ".\nMinimize the amount of queue synchronization that is used. "
                                           "Each semaphore has a CPU and GPU overhead cost with it.",
                                           VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
                                           kMaxRecommendedSemaphoreObjectsSizeAMD);
@@ -545,8 +542,7 @@ bool BestPractices::PreCallValidateCreateFence(VkDevice device, const VkFenceCre
             skip |= LogPerformanceWarning("BestPractices-SyncObjects-HighNumberOfFences", device, error_obj.location,
                                           "%s %s High number of VkFence objects created. "
                                           "%zu created, but recommended max is %" PRIu32
-                                          ". "
-                                          "Minimize the amount of CPU-GPU synchronization that is used. "
+                                          ".\nMinimize the amount of CPU-GPU synchronization that is used. "
                                           "Each fence has a CPU and GPU overhead cost with it.",
                                           VendorSpecificTag(kBPVendorAMD), VendorSpecificTag(kBPVendorNVIDIA), count,
                                           kMaxRecommendedFenceObjectsSizeAMD);

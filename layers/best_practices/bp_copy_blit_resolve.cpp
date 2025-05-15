@@ -295,10 +295,10 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                   error_obj.location,
                                                   "%s clear value for color attachment %" PRId32
                                                   " is not a fast clear value."
-                                                  "Consider changing to one of the following:"
-                                                  "RGBA(0, 0, 0, 0) "
-                                                  "RGBA(0, 0, 0, 1) "
-                                                  "RGBA(1, 1, 1, 0) "
+                                                  "Consider changing to one of the following:\n"
+                                                  "RGBA(0, 0, 0, 0)\n "
+                                                  "RGBA(0, 0, 0, 1)\n "
+                                                  "RGBA(1, 1, 1, 0)\n "
                                                   "RGBA(1, 1, 1, 1)",
                                                   VendorSpecificTag(kBPVendorAMD), attachment_idx);
                 }
@@ -311,8 +311,8 @@ bool BestPractices::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBu
                                                   "%s clear value for depth/stencil "
                                                   "attachment %" PRId32
                                                   " is not a fast clear value."
-                                                  "Consider changing to one of the following:"
-                                                  "D=0.0f, S=0"
+                                                  "Consider changing to one of the following:\n"
+                                                  "D=0.0f, S=0\n"
                                                   "D=1.0f, S=0",
                                                   VendorSpecificTag(kBPVendorAMD), attachment_idx);
                 }
@@ -329,16 +329,6 @@ bool BestPractices::ValidateCmdResolveImage(VkCommandBuffer command_buffer, VkIm
     auto src_image_state = Get<vvl::Image>(src_image);
     auto dst_image_state = Get<vvl::Image>(dst_image);
     ASSERT_AND_RETURN_SKIP(src_image_state && dst_image_state);
-
-    auto src_image_type = src_image_state->create_info.imageType;
-    auto dst_image_type = dst_image_state->create_info.imageType;
-
-    if (src_image_type != dst_image_type) {
-        const LogObjectList objlist(command_buffer, src_image, dst_image);
-        skip |= LogPerformanceWarning("BestPractices-vkCmdResolveImage-MismatchedImageType", objlist, loc,
-                                      "srcImage type (%s) and dstImage type (%s) are not the same.",
-                                      string_VkImageType(src_image_type), string_VkImageType(dst_image_type));
-    }
 
     if (VendorCheckEnabled(kBPVendorArm)) {
         const LogObjectList objlist(command_buffer, src_image, dst_image);

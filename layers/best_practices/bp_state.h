@@ -152,7 +152,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     RenderPassState render_pass_state;
     CommandBufferStateNV nv;
     uint64_t num_submits = 0;
-    bool uses_vertex_buffer = false;
     uint32_t small_indexed_draw_call_count = 0;
 
     // This function used to not be empty. It has been left empty because

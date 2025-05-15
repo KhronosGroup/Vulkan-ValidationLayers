@@ -210,15 +210,10 @@ class BestPractices : public vvl::DeviceProxy {
                                                   uint32_t bindSessionMemoryInfoCount,
                                                   const VkBindVideoSessionMemoryInfoKHR* pBindSessionMemoryInfos,
                                                   const ErrorObject& error_obj) const override;
-    bool PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                          const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                          const ErrorObject& error_obj) const override;
     bool PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const override;
     void PreCallRecordFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
                                  const RecordObject& record_obj) override;
-    bool PreCallValidateFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator,
-                                   const ErrorObject& error_obj) const override;
     bool ValidateMultisampledBlendingArm(const VkGraphicsPipelineCreateInfo& create_info, const Location& create_info_loc) const;
 
     bool ValidateCreateGraphicsPipeline(const VkGraphicsPipelineCreateInfo& create_info, const vvl::Pipeline& pipeline,
@@ -491,7 +486,6 @@ class BestPractices : public vvl::DeviceProxy {
                                    const RecordObject& record_obj) override;
     void PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                            const RecordObject& record_obj) override;
-    bool PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateBindAccelerationStructureMemoryNV(VkDevice device, uint32_t bindInfoCount,
                                                           const VkBindAccelerationStructureMemoryInfoNV* pBindInfos,
                                                           const ErrorObject& error_obj) const override;
