@@ -3199,13 +3199,12 @@ bool CoreChecks::ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer
                                  FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->image_state->Handle()).c_str(),
                                  string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(vs_state->Handle()).c_str());
             } else {
-                skip |=
-                    LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10310", objlist, loc.dot(Field::quantizationMap),
-                             "(%s created from %s, created with video profiles: %s) is not compatible with the video profile (%s) "
-                             "the bound video session %s was created with.",
-                             FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->image_state->Handle()).c_str(),
-                             string_SupportedVideoProfiles(iv_state->image_state->supported_video_profiles).c_str(),
-                             string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(vs_state->Handle()).c_str());
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10310", objlist, loc.dot(Field::quantizationMap),
+                                 "(%s created from %s) is not compatible with the video profile (%s) "
+                                 "the bound video session %s was created with.\nSupported video profiles for the image:\n%s",
+                                 FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->image_state->Handle()).c_str(),
+                                 string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(vs_state->Handle()).c_str(),
+                                 string_SupportedVideoProfiles(iv_state->image_state->supported_video_profiles).c_str());
             }
         }
     }
@@ -4633,13 +4632,12 @@ bool CoreChecks::PreCallValidateCmdBeginVideoCodingKHR(VkCommandBuffer commandBu
                         } else {
                             skip |= LogError(
                                 "VUID-VkVideoBeginCodingInfoKHR-pPictureResource-07240", objlist, reference_image_view_loc,
-                                "(%s created from %s, created with video profiles: %s) is not compatible with the video profile (%s) "
-                                "%s was created with.",
+                                "(%s created from %s) is not compatible with the video profile (%s) "
+                                "%s was created with.\nSupported video profiles for the image:\n%s",
                                 FormatHandle(reference_resource.image_view_state->Handle()).c_str(),
                                 FormatHandle(reference_resource.image_state->Handle()).c_str(),
-                                string_SupportedVideoProfiles(reference_resource.image_state->supported_video_profiles).c_str(),
-                                string_VideoProfileDesc(*vs_state->profile).c_str(),
-                                FormatHandle(pBeginInfo->videoSession).c_str());
+                                string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(pBeginInfo->videoSession).c_str(),
+                                string_SupportedVideoProfiles(reference_resource.image_state->supported_video_profiles).c_str());
                         }
                     }
 
@@ -5035,11 +5033,11 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         if (!IsBufferCompatibleWithVideoSession(*buffer_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
             skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07135", objlist, decode_info_loc.dot(Field::srcBuffer),
-                             "(%s, created with video profiles: %s) is not compatible "
-                             "with the video profile (%s) %s was created with.",
-                             FormatHandle(pDecodeInfo->srcBuffer).c_str(),
-                             string_SupportedVideoProfiles(buffer_state->supported_video_profiles).c_str(),
-                             string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str());
+                             "(%s) is not compatible "
+                             "with the video profile (%s) %s was created with.\nSupported video profiles for the buffer:\n%s",
+                             FormatHandle(pDecodeInfo->srcBuffer).c_str(), string_VideoProfileDesc(*vs_state->profile).c_str(),
+                             FormatHandle(*vs_state).c_str(),
+                             string_SupportedVideoProfiles(buffer_state->supported_video_profiles).c_str());
         }
 
         if (pDecodeInfo->srcBufferOffset >= buffer_state->create_info.size) {
@@ -5148,14 +5146,13 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                  string_VideoProfileDesc(*vs_state->profile).c_str(),
                                  FormatHandle(*vs_state).c_str());
             } else {
-                skip |=
-                    LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07142", objlist, dst_image_view_loc,
-                             "(%s created from %s, created with video profiles: %s) is not compatible with the video profile (%s) "
-                             "the bound video session %s was created with.",
-                             FormatHandle(pDecodeInfo->dstPictureResource.imageViewBinding).c_str(),
-                             FormatHandle(dst_resource.image_state->Handle()).c_str(),
-                             string_SupportedVideoProfiles(dst_resource.image_state->supported_video_profiles).c_str(),
-                             string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str());
+                skip |= LogError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07142", objlist, dst_image_view_loc,
+                                 "(%s created from %s) is not compatible with the video profile (%s) "
+                                 "the bound video session %s was created with.\nSupported video profiles for the image:\n%s",
+                                 FormatHandle(pDecodeInfo->dstPictureResource.imageViewBinding).c_str(),
+                                 FormatHandle(dst_resource.image_state->Handle()).c_str(),
+                                 string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str(),
+                                 string_SupportedVideoProfiles(dst_resource.image_state->supported_video_profiles).c_str());
             }
         }
 
@@ -5574,11 +5571,11 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         if (!IsBufferCompatibleWithVideoSession(*buffer_state, *vs_state)) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
             skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08201", objlist, encode_info_loc.dot(Field::dstBuffer),
-                             "(%s, created with video profiles: %s) is not compatible "
-                             "with the video profile (%s) %s was created with.",
-                             FormatHandle(pEncodeInfo->dstBuffer).c_str(),
-                             string_SupportedVideoProfiles(buffer_state->supported_video_profiles).c_str(),
-                             string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str());
+                             "(%s) is not compatible "
+                             "with the video profile (%s) %s was created with.\nSupported video profiles for the buffer:\n%s",
+                             FormatHandle(pEncodeInfo->dstBuffer).c_str(), string_VideoProfileDesc(*vs_state->profile).c_str(),
+                             FormatHandle(*vs_state).c_str(),
+                             string_SupportedVideoProfiles(buffer_state->supported_video_profiles).c_str());
         }
 
         if (pEncodeInfo->dstBufferOffset >= buffer_state->create_info.size) {
@@ -5685,14 +5682,13 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                  FormatHandle(src_resource.image_state->Handle()).c_str(),
                                  string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str());
             } else {
-                skip |=
-                    LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08206", objlist, src_image_view_loc,
-                             "(%s created from %s, created with video profiles %s) is not compatible with the video profile (%s) "
-                             "the bound video session %s was created with.",
-                             FormatHandle(pEncodeInfo->srcPictureResource.imageViewBinding).c_str(),
-                             FormatHandle(src_resource.image_state->Handle()).c_str(),
-                             string_SupportedVideoProfiles(src_resource.image_state->supported_video_profiles).c_str(),
-                             string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str());
+                skip |= LogError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08206", objlist, src_image_view_loc,
+                                 "(%s created from %s) is not compatible with the video profile (%s) "
+                                 "the bound video session %s was created with.\nSupported video profiles for the image:\n%s",
+                                 FormatHandle(pEncodeInfo->srcPictureResource.imageViewBinding).c_str(),
+                                 FormatHandle(src_resource.image_state->Handle()).c_str(),
+                                 string_VideoProfileDesc(*vs_state->profile).c_str(), FormatHandle(*vs_state).c_str(),
+                                 string_SupportedVideoProfiles(src_resource.image_state->supported_video_profiles).c_str());
             }
         }
 
