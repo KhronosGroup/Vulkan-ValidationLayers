@@ -2164,6 +2164,40 @@ TEST_F(PositiveWsi, CreateSwapchainWithOldSwapchain) {
     vkt::Swapchain swapchain2(*m_device, swapchain_ci);
 }
 
+TEST_F(PositiveWsi, OldSwapchainFromAnotherSurface) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112");
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    VkSurfaceCapabilitiesKHR surface_caps;
+    vk::GetPhysicalDeviceSurfaceCapabilitiesKHR(Gpu(), m_surface.Handle(), &surface_caps);
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = surface_caps.minImageCount;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = surface_caps.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1u;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = m_surface_non_shared_present_mode;
+    vkt::Swapchain swapchain1(*m_device, swapchain_ci);
+
+    vkt::Surface surface2{};
+    VkResult result = CreateSurface(m_surface_context, surface2);
+    if (result != VK_SUCCESS) {
+        GTEST_SKIP() << "Failed to create surface.";
+    }
+
+    swapchain_ci.oldSwapchain = swapchain1;
+    swapchain_ci.surface = surface2.Handle();
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+}
+
 TEST_F(PositiveWsi, UseAcquireFenceToDeletePresentSemaphore) {
     // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9587
     TEST_DESCRIPTION("Use acquire fence to safely delete present semaphore from previous present operations");

@@ -4098,7 +4098,9 @@ TEST_F(NegativeWsi, InitSwapchainInvalidImageCount) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativeWsi, InitSwapchainInvalidOldSwapchain) {
+// TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112
+// Need to alter test to actually use different native window objects
+TEST_F(NegativeWsi, DISABLED_InitSwapchainInvalidOldSwapchain) {
     TEST_DESCRIPTION("Initialize swapchain with invalid oldSwapchain");
 
     AddSurfaceExtension();

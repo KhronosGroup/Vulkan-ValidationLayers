@@ -310,6 +310,19 @@ bool CoreChecks::ValidateSwapchainPresentScalingCreateInfo(VkPresentModeKHR pres
     return skip;
 }
 
+bool CoreChecks::IsSameNativeWindow(const VkSurfaceKHR surface_a, const VkSurfaceKHR surface_b) const {
+    auto surface_state_a = instance_state->Get<vvl::Surface>(surface_a);
+    auto surface_state_b = instance_state->Get<vvl::Surface>(surface_b);
+    if (!surface_state_a || !surface_state_b) {
+        assert(false);
+        return true;
+    }
+
+    // TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112
+    // Need to handle all cases, for now, prevent false positives
+    return true;
+}
+
 bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_info, const vvl::Surface *surface_state,
                                          const vvl::Swapchain *old_swapchain_state, const Location &create_info_loc) const {
     bool skip = false;  // TODO: update this file to use conventional skipage (needs more testing, swapchain is fragile)
@@ -333,9 +346,16 @@ bool CoreChecks::ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR &create_
 
     if (old_swapchain_state) {
         if (old_swapchain_state->create_info.surface != create_info.surface) {
-            if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", create_info.oldSwapchain,
-                         create_info_loc.dot(Field::oldSwapchain), "surface is not pCreateInfo->surface")) {
-                return true;
+            // Even if the VkSurfaceKHR handle are different, we now need to check if the native window (what is found in like
+            // VkWin32SurfaceCreateInfoKHR) are actually different
+            if (!IsSameNativeWindow(old_swapchain_state->create_info.surface, create_info.surface)) {
+                if (LogError("VUID-VkSwapchainCreateInfoKHR-oldSwapchain-01933", create_info.oldSwapchain,
+                             create_info_loc.dot(Field::oldSwapchain),
+                             "was created with %s which is not related to pCreateInfo->surface (%s)",
+                             FormatHandle(old_swapchain_state->create_info.surface).c_str(),
+                             FormatHandle(create_info.surface).c_str())) {
+                    return true;
+                }
             }
         }
         if (old_swapchain_state->retired) {
