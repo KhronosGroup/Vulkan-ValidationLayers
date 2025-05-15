@@ -1179,19 +1179,14 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
 
 std::string string_SupportedVideoProfiles(const SupportedVideoProfiles &profiles) {
     std::stringstream ss;
-    ss << "[ ";
 
-    uint32_t count = 0;
-    for (const auto &profile : profiles) {
-        ss << string_VideoProfileDesc(*profile);
-
-        count++;
-        if (count != profiles.size()) {
-            ss << ", ";
+    if (profiles.size() != 0) {
+        for (const auto &profile : profiles) {
+            ss << "\t" << string_VideoProfileDesc(*profile) << "\n";
         }
+    } else {
+        ss << "\tNone\n";
     }
-
-    ss << " ]";
 
     return ss.str();
 }
