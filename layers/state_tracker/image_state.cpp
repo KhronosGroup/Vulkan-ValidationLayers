@@ -23,6 +23,8 @@
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
 
+using RangeGenerator = subresource_adapter::RangeGenerator;
+
 static VkExternalMemoryHandleTypeFlags GetExternalHandleTypes(const VkImageCreateInfo *pCreateInfo) {
     const auto *external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryImageCreateInfo>(pCreateInfo->pNext);
     return external_memory_info ? external_memory_info->handleTypes : 0;
@@ -360,8 +362,11 @@ void Image::SetInitialLayoutMap() {
     }
 
     std::shared_ptr<ImageLayoutMap> new_layout_map;
-    auto get_layout_map = [&new_layout_map](const Image &other_image) {
+    std::shared_ptr<std::shared_mutex> new_layout_map_lock;
+
+    auto get_layout_map = [&new_layout_map, &new_layout_map_lock](const Image &other_image) {
         new_layout_map = other_image.layout_map;
+        new_layout_map_lock = other_image.layout_map_lock;
         return true;
     };
 
@@ -374,25 +379,24 @@ void Image::SetInitialLayoutMap() {
         AnyAliasBindingOf(bind_swapchain->ObjectBindings(), get_layout_map);
     }
 
+    // Set layout of each subresource as VkImageCreateInfo::initialLayout
     if (!new_layout_map) {
-        // otherwise set up a new map.
-        // set up the new map completely before making it available
         new_layout_map = std::make_shared<ImageLayoutMap>(subresource_encoder.SubresourceCount());
-        new_layout_map->lock = &layout_map_lock;
-        auto range_gen = subresource_adapter::RangeGenerator(subresource_encoder);
-        for (; range_gen->non_empty(); ++range_gen) {
+        new_layout_map_lock = std::make_shared<std::shared_mutex>();
+
+        for (auto range_gen = RangeGenerator(subresource_encoder); range_gen->non_empty(); ++range_gen) {
             new_layout_map->insert(new_layout_map->end(), std::make_pair(*range_gen, create_info.initialLayout));
         }
     }
-    // And store in the object
     layout_map = std::move(new_layout_map);
+    layout_map_lock = std::move(new_layout_map_lock);
 }
 
 void Image::SetImageLayout(const VkImageSubresourceRange &range, VkImageLayout layout) {
     using sparse_container::update_range_value;
     using sparse_container::value_precedence;
-    ImageLayoutMap::RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
-    auto guard = layout_map->WriteLock();
+    RangeGenerator range_gen(subresource_encoder, NormalizeSubresourceRange(range));
+    auto guard = LayoutMapWriteLock();
     for (; range_gen->non_empty(); ++range_gen) {
         update_range_value(*layout_map, *range_gen, layout, value_precedence::prefer_source);
     }

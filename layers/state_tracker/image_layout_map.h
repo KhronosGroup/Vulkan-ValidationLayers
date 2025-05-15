@@ -85,20 +85,11 @@ class CommandBufferImageLayoutMap : public subresource_adapter::BothRangeMap<Lay
     const vvl::Image& image_state_;
 };
 
-class ImageLayoutMap : public subresource_adapter::BothRangeMap<VkImageLayout, 16> {
-  public:
-    using RangeGenerator = subresource_adapter::RangeGenerator;
-
-    ImageLayoutMap(index_type index) : BothRangeMap<VkImageLayout, 16>(index) {}
-    ReadLockGuard ReadLock() const { return ReadLockGuard(*lock); }
-    WriteLockGuard WriteLock() { return WriteLockGuard(*lock); }
-
-    bool AnyInRange(RangeGenerator& gen, std::function<bool(const key_type& range, const mapped_type& state)>&& func) const;
-
-    // Not null if this layout map is owned by the vvl::Image and points to vvl::Image::layout_range_map_lock.
-    // The layout maps that are not owned by the images do not use locking functionality.
-    std::shared_mutex* lock = nullptr;
-};
+using ImageLayoutMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
 
 using CommandBufferImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;
 using ImageLayoutRegistry = vvl::unordered_map<const vvl::Image*, std::optional<ImageLayoutMap>>;
+
+// TODO: document and rename me
+bool AnyInRange(const ImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator& gen,
+                std::function<bool(const ImageLayoutMap::key_type& range, VkImageLayout image_layout)>&& func);

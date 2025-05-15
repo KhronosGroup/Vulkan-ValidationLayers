@@ -172,7 +172,7 @@ static bool VerifyImageLayoutRange(const Validator &gpuav, const vvl::CommandBuf
     const auto *global_layout_map = image_state.layout_map.get();
     ImageLayoutMap empty_map(1);
     assert(global_layout_map);
-    auto global_layout_map_guard = global_layout_map->ReadLock();
+    auto global_layout_map_guard = image_state.LayoutMapReadLock();
 
     auto pos = cb_layout_map.begin();
     const auto end = cb_layout_map.end();
@@ -249,14 +249,14 @@ static void RecordCmdWaitEvents2(Validator &gpuav, VkCommandBuffer commandBuffer
 }
 
 void UpdateCmdBufImageLayouts(Validator &gpuav, const vvl::CommandBuffer &cb_state) {
-    for (const auto &[image, layout_map] : cb_state.image_layout_registry) {
-        if (!layout_map) {
+    for (const auto &[image, cb_layout_map] : cb_state.image_layout_registry) {
+        if (!cb_layout_map) {
             continue;
         }
         auto image_state = gpuav.Get<vvl::Image>(image);
-        if (image_state && image_state->GetId() == layout_map->GetImageId()) {
-            auto guard = image_state->layout_map->WriteLock();
-            sparse_container::splice(*image_state->layout_map, *layout_map, GlobalLayoutUpdater());
+        if (image_state && image_state->GetId() == cb_layout_map->GetImageId()) {
+            auto guard = image_state->LayoutMapWriteLock();
+            sparse_container::splice(*image_state->layout_map, *cb_layout_map, GlobalLayoutUpdater());
         }
     }
 }

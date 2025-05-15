@@ -88,27 +88,28 @@ void CommandBufferSubState::SubmitTimeValidate() {
         }
         const auto global_layout_map = image_state->layout_map.get();
         ASSERT_AND_CONTINUE(global_layout_map);
-        auto global_layout_map_guard = global_layout_map->ReadLock();
+        auto global_layout_map_guard = image_state->LayoutMapReadLock();
 
         for (const std::pair<VkImageSubresourceRange, vvl::LocationCapture>& entry : subresources) {
             const VkImageSubresourceRange& subresource = entry.first;
             const Location& barrier_loc = entry.second.Get();
-            ImageLayoutMap::RangeGenerator range_gen(image_state->subresource_encoder, subresource);
-            global_layout_map->AnyInRange(range_gen, [this, &barrier_loc, &image_state](const ImageLayoutMap::key_type& range,
-                                                                                        const VkImageLayout& layout) {
-                if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
-                    const auto& vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(
-                        barrier_loc, sync_vuid_maps::DynamicRenderingBarrierError::kImageLayout);
-                    const LogObjectList objlist(base.Handle(), image_state->Handle());
-                    const Location& image_loc = barrier_loc.dot(vvl::Field::image);
-                    const VkImageSubresource subresource =
-                        static_cast<VkImageSubresource>(image_state->subresource_encoder.Decode(range.begin));
-                    return validator.LogError(vuid, objlist, image_loc, "(%s, %s) has layout %s.",
-                                              validator.FormatHandle(image_state->Handle()).c_str(),
-                                              string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(layout));
-                }
-                return false;
-            });
+            subresource_adapter::RangeGenerator range_gen(image_state->subresource_encoder, subresource);
+            AnyInRange(*global_layout_map, range_gen,
+                       [this, &barrier_loc, &image_state](const ImageLayoutMap::key_type& range, const VkImageLayout& layout) {
+                           if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
+                               const auto& vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(
+                                   barrier_loc, sync_vuid_maps::DynamicRenderingBarrierError::kImageLayout);
+                               const LogObjectList objlist(base.Handle(), image_state->Handle());
+                               const Location& image_loc = barrier_loc.dot(vvl::Field::image);
+                               const VkImageSubresource subresource =
+                                   static_cast<VkImageSubresource>(image_state->subresource_encoder.Decode(range.begin));
+                               return validator.LogError(vuid, objlist, image_loc, "(%s, %s) has layout %s.",
+                                                         validator.FormatHandle(image_state->Handle()).c_str(),
+                                                         string_VkImageSubresource(subresource).c_str(),
+                                                         string_VkImageLayout(layout));
+                           }
+                           return false;
+                       });
         }
     }
 }

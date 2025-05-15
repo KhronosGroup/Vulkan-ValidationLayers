@@ -227,7 +227,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 
         const auto *global_layout_map = image_state->layout_map.get();
         ASSERT_AND_CONTINUE(global_layout_map);
-        auto global_layout_map_guard = global_layout_map->ReadLock();
+        auto global_layout_map_guard = image_state->LayoutMapReadLock();
 
         auto pos = cb_layout_map->begin();
         const auto end = cb_layout_map->end();
@@ -286,11 +286,11 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
 }
 
 void CoreChecks::UpdateCmdBufImageLayouts(const vvl::CommandBuffer &cb_state) {
-    for (const auto &[image, layout_map] : cb_state.image_layout_registry) {
+    for (const auto &[image, cb_layout_map] : cb_state.image_layout_registry) {
         const auto image_state = Get<vvl::Image>(image);
-        if (image_state && layout_map && image_state->GetId() == layout_map->GetImageId()) {
-            auto guard = image_state->layout_map->WriteLock();
-            sparse_container::splice(*image_state->layout_map, *layout_map, GlobalLayoutUpdater());
+        if (image_state && cb_layout_map && image_state->GetId() == cb_layout_map->GetImageId()) {
+            auto guard = image_state->LayoutMapWriteLock();
+            sparse_container::splice(*image_state->layout_map, *cb_layout_map, GlobalLayoutUpdater());
         }
     }
 }
@@ -953,7 +953,7 @@ bool CoreChecks::FindLayouts(const vvl::Image &image_state, std::vector<VkImageL
     }
     const auto &layout_map = *image_state.layout_map;
 
-    auto guard = layout_map.ReadLock();
+    auto guard = image_state.LayoutMapReadLock();
     // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
     //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
 
@@ -1097,7 +1097,7 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
     // RangeGenerator doesn't tolerate degenerate or invalid ranges. The error will be found and logged elsewhere
     if (!IsCompliantSubresourceRange(subres_range, image_state)) return false;
 
-    ImageLayoutMap::RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
+    RangeGenerator range_gen(image_state.subresource_encoder, subres_range);
 
     struct CheckState {
         const VkImageLayout expected_layout;
@@ -1113,17 +1113,17 @@ bool CoreChecks::ValidateHostCopyCurrentLayout(const VkImageLayout expected_layo
 
     CheckState check_state(expected_layout, subres_range.aspectMask);
 
-    auto guard = image_state.layout_map->ReadLock();
-    image_state.layout_map->AnyInRange(range_gen,
-                                       [&check_state](const ImageLayoutMap::key_type &range, const VkImageLayout &layout) {
-                                           bool mismatch = false;
-                                           if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
-                                               check_state.found_range = range;
-                                               check_state.found_layout = layout;
-                                               mismatch = true;
-                                           }
-                                           return mismatch;
-                                       });
+    auto guard = image_state.LayoutMapReadLock();
+    AnyInRange(*image_state.layout_map, range_gen,
+               [&check_state](const ImageLayoutMap::key_type &range, const VkImageLayout &layout) {
+                   bool mismatch = false;
+                   if (!ImageLayoutMatches(check_state.aspect_mask, layout, check_state.expected_layout)) {
+                       check_state.found_range = range;
+                       check_state.found_layout = layout;
+                       mismatch = true;
+                   }
+                   return mismatch;
+               });
 
     if (check_state.found_range.non_empty()) {
         const VkImageSubresource subres = image_state.subresource_encoder.IndexToVkSubresource(check_state.found_range.begin);
