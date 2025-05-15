@@ -195,10 +195,11 @@ bool LayoutEntry::CurrentWillChange(VkImageLayout new_layout) const {
     return new_layout != kInvalidLayout && current_layout != new_layout;
 }
 
-bool ImageLayoutMap::AnyInRange(RangeGenerator& gen,
-                                     std::function<bool(const key_type& range, const mapped_type& state)>&& func) const {
+bool AnyInRange(const ImageLayoutMap& image_layout_map, RangeGenerator& gen,
+                std::function<bool(const ImageLayoutMap::key_type& range, VkImageLayout image_layout)>&& func) {
     for (; gen->non_empty(); ++gen) {
-        for (auto pos = lower_bound(*gen); (pos != end()) && (gen->intersects(pos->first)); ++pos) {
+        for (auto pos = image_layout_map.lower_bound(*gen); (pos != image_layout_map.end()) && (gen->intersects(pos->first));
+             ++pos) {
             if (func(pos->first, pos->second)) {
                 return true;
             }

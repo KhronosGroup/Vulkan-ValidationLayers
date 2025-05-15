@@ -109,14 +109,13 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     const subresource_adapter::RangeEncoder subresource_encoder;  // Subresource resolution encoder
     const VkDevice store_device_as_workaround;                    // TODO REMOVE WHEN encoder can be const
 
-    // This map is used to validate/update image layouts during submit time processing.
-    // Record time validation can't use this, because global image layout is undefined at record time
+    // Tracks current layouts of image subresources. Can be used by multiple threads, so should be locked when in use.
+    // Record time validation can't use this map. Global image layout is known only during queue submit time.
+    // When image is aliased with another compatible image this map an its lock are shared between images.
     std::shared_ptr<ImageLayoutMap> layout_map;
-
-    // If there is no aliasing this mutex protects this->layout_map.
-    // With aliasing one of the images shares a mutex with other aliases,
-    // so for some aliased images this mutex can be unused.
-    mutable std::shared_mutex layout_map_lock;
+    std::shared_ptr<std::shared_mutex> layout_map_lock;
+    ReadLockGuard LayoutMapReadLock() const { return ReadLockGuard(*layout_map_lock); }
+    WriteLockGuard LayoutMapWriteLock() { return WriteLockGuard(*layout_map_lock); }
 
     vvl::unordered_set<std::shared_ptr<const vvl::VideoProfileDesc>> supported_video_profiles;
 
