@@ -522,14 +522,12 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[0] = {0, 0, 0};
     blit_region.dstOffsets[1] = {64, 64, 1};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00243");  // x
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
     vk::CmdBlitImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.srcOffsets[1] = {64, 65, 1};                                 // src y
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
     vk::CmdBlitImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -537,7 +535,6 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.srcOffsets[0] = {0, 0, 65};  // src z
     blit_region.srcOffsets[1] = {64, 64, 64};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00246");  // z
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // src region
     vk::CmdBlitImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -548,14 +545,12 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[0] = {96, 64, 32};  // dst x
     blit_region.dstOffsets[1] = {64, 0, 33};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00248");  // x
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
     vk::CmdBlitImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
 
     blit_region.dstOffsets[0] = {0, 65, 32};                                 // dst y
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");  // y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
     vk::CmdBlitImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -563,7 +558,6 @@ TEST_F(NegativeImage, BlitOffsets) {
     blit_region.dstOffsets[0] = {0, 64, 65};  // dst z
     blit_region.dstOffsets[1] = {64, 0, 64};
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00251");  // z
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // dst region
     vk::CmdBlitImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -672,9 +666,6 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcSubresource-01705");  // invalid srcSubresource.mipLevel
     // Redundant unavoidable errors
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00243");  // out-of-bounds srcOffset.x
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00244");  // out-of-bounds srcOffset.y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcOffset-00246");  // out-of-bounds srcOffset.z
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00215");   // region not contained within src image
     vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();
@@ -685,9 +676,6 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstSubresource-01706");  // invalid dstSubresource.mipLevel
     // Redundant unavoidable errors
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00248");  // out-of-bounds dstOffset.x
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00249");  // out-of-bounds dstOffset.y
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00251");  // out-of-bounds dstOffset.z
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-pRegions-00216");   // region not contained within dst image
     vk::CmdBlitImage(m_command_buffer, color_img, VK_IMAGE_LAYOUT_GENERAL, color_img, VK_IMAGE_LAYOUT_GENERAL, 1, &blitRegion,
                      VK_FILTER_NEAREST);
     m_errorMonitor->VerifyFound();

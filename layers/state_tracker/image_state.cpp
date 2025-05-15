@@ -18,6 +18,10 @@
  * limitations under the License.
  */
 #include "state_tracker/image_state.h"
+#include <vulkan/utility/vk_format_utils.h>
+#include <vulkan/vulkan_core.h>
+#include <cmath>
+#include <cstdint>
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/wsi_state.h"
@@ -212,24 +216,24 @@ VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
         return 0;
     }
 
-    VkDeviceSize unit_size = 0;
+    VkDeviceSize texel_block_size = 0;
     if (region.imageSubresource.aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT)) {
         // Spec in VkBufferImageCopy section list special cases for each format
         if (region.imageSubresource.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT) {
-            unit_size = 1;
+            texel_block_size = 1;
         } else {
             // VK_IMAGE_ASPECT_DEPTH_BIT
             switch (create_info.format) {
                 case VK_FORMAT_D16_UNORM:
                 case VK_FORMAT_D16_UNORM_S8_UINT:
-                    unit_size = 2;
+                    texel_block_size = 2;
                     break;
                 case VK_FORMAT_D32_SFLOAT:
                 case VK_FORMAT_D32_SFLOAT_S8_UINT:
                 // packed with the D24 value in the LSBs of the word, and undefined values in the eight MSBs
                 case VK_FORMAT_X8_D24_UNORM_PACK32:
                 case VK_FORMAT_D24_UNORM_S8_UINT:
-                    unit_size = 4;
+                    texel_block_size = 4;
                     break;
                 default:
                     // Any misuse of formats vs aspect mask should be caught before here
@@ -237,9 +241,12 @@ VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
             }
         }
     } else {
-        // size (bytes) of texel or block
-        unit_size = vkuFormatElementSizeWithAspect(create_info.format,
-                                                   static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask));
+        const VkFormat compatible_format =
+            vkuFormatIsMultiplane(create_info.format)
+                ? vkuFindMultiplaneCompatibleFormat(create_info.format,
+                                                    static_cast<VkImageAspectFlagBits>(region.imageSubresource.aspectMask))
+                : create_info.format;
+        texel_block_size = vkuFormatTexelBlockSize(compatible_format);
     }
 
     if (vkuFormatIsBlockedImage(create_info.format)) {
@@ -256,7 +263,7 @@ VkDeviceSize Image::GetBufferSizeFromCopyImage(const RegionType &region) const {
     // Calculate buffer offset of final copied byte, + 1.
     buffer_size = (z_copies - 1) * buffer_height * buffer_width;                   // offset to slice
     buffer_size += ((copy_extent.height - 1) * buffer_width) + copy_extent.width;  // add row,col
-    buffer_size *= unit_size;                                                      // convert to bytes
+    buffer_size *= texel_block_size;                                               // convert to bytes
     return buffer_size;
 }
 

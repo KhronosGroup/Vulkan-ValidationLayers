@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include <vulkan/vulkan_core.h>
 #include "../framework/layer_validation_tests.h"
 
 class PositiveCopyBufferImage : public VkLayerTest {};
@@ -24,29 +25,18 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    VkImageCreateInfo ci = vku::InitStructHelper();
-    ci.flags = 0;
-    ci.imageType = VK_IMAGE_TYPE_2D;
-    ci.format = VK_FORMAT_R8G8B8A8_UNORM;
-    ci.extent = {32, 32, 1};
-    ci.mipLevels = 1;
-    ci.arrayLayers = 8;
-    ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 8, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    // Copy from a to b
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    vkt::Image image_a(*m_device, ci);
-
-    ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    vkt::Image image_b(*m_device, ci);
+    vkt::Image image_a(*m_device, image_ci);
+    vkt::Image image_b(*m_device, image_ci);
 
     m_command_buffer.Begin();
     image_a.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
     image_b.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy copy_region{};
-    copy_region.extent = ci.extent;
+    copy_region.extent = image_ci.extent;
     copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     copy_region.srcSubresource.baseArrayLayer = 2;
     copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
@@ -59,6 +49,33 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     copy_region.dstSubresource.layerCount = 6;
     vk::CmdCopyImage(m_command_buffer, image_a, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image_b, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                      1, &copy_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, Image3DRemainingLayersMaintenance5) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer(*m_device, 2048, transfer_usage);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, VK_REMAINING_ARRAY_LAYERS};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {4, 4, 1};
+    region.bufferOffset = 0;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
     m_command_buffer.End();
 }
 
@@ -249,7 +266,6 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     TEST_DESCRIPTION("Image copies between compressed and uncompressed images");
     RETURN_IF_SKIP(Init());
 
-    // Verify format support
     // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
                                     VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
@@ -259,13 +275,13 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     }
 
     // Size = 10 * 10 * 64 = 6400
-    vkt::Image uncomp_10x10t_image(*m_device, 10, 10, VK_FORMAT_R16G16B16A16_UINT,
-                                   VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 10, 10, VK_FORMAT_R16G16B16A16_UINT,
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     // Size = 40 * 40 * 4  = 6400
-    vkt::Image comp_10x10b_40x40t_image(*m_device, 40, 40, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 40, 40, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
-    if (!uncomp_10x10t_image.initialized() || !comp_10x10b_40x40t_image.initialized()) {
+    if (!uncomp_image.initialized() || !comp_image.initialized()) {
         GTEST_SKIP() << "Unable to initialize surfaces";
     }
 
@@ -281,13 +297,103 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
 
     // Copy from uncompressed to compressed
     copy_region.extent = {10, 10, 1};  // Dimensions in (uncompressed) texels
-    vk::CmdCopyImage(m_command_buffer, uncomp_10x10t_image, VK_IMAGE_LAYOUT_GENERAL, comp_10x10b_40x40t_image,
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_command_buffer.FullMemoryBarrier();
     // And from compressed to uncompressed
     copy_region.extent = {40, 40, 1};  // Dimensions in (compressed) texels
-    vk::CmdCopyImage(m_command_buffer, comp_10x10b_40x40t_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_10x10t_image,
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, UncompressedToCompressedDstOffset) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image uncomp_image(*m_device, 8, 8, VK_FORMAT_R16G16B16A16_UINT,
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    // create a texel block of {5,1,1}
+    vkt::Image comp_image(*m_device, 20, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageCopy copy_region = {};
+    copy_region.extent = {1, 1, 1};  // copy single texel block
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    copy_region.dstOffset.x = 4;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 8;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 12;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 16;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent.width = 2;
+    copy_region.dstOffset.x = 4;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent.width = 3;
+    copy_region.dstOffset.x = 8;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CompressedToUncompressedDstOffset) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image uncomp_image(*m_device, 5, 1, VK_FORMAT_R16G16B16A16_UINT,
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    // create a {8,8,1} texel block
+    vkt::Image comp_image(*m_device, 32, 32, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageCopy copy_region = {};
+    copy_region.extent = {4, 4, 1};  // copy single texel block
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    copy_region.dstOffset.x = 1;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 2;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 3;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    copy_region.dstOffset.x = 4;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent.width = 8;
+    copy_region.dstOffset.x = 1;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent.width = 12;
+    copy_region.dstOffset.x = 2;
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
 
     m_command_buffer.End();
 }
@@ -327,7 +433,41 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
     m_command_buffer.End();
 }
 
-TEST_F(PositiveCopyBufferImage, Compressed) {
+TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    vkt::Image uncomp_image(*m_device, 4, 4, VK_FORMAT_R16G16B16A16_UINT,
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    // create a texel block of {2,1,1}
+    vkt::Image comp_image(*m_device, 6, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
+                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageCopy copy_region = {};
+    copy_region.extent = {1, 1, 1};  // copy single texel block
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {4, 0, 0};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.dstOffset.x = 0;
+    copy_region.extent.width = 2;
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
     if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
@@ -355,6 +495,206 @@ TEST_F(PositiveCopyBufferImage, Compressed) {
 
     m_command_buffer.Begin();
     vk::CmdCopyImage(m_command_buffer, image_bc2, VK_IMAGE_LAYOUT_GENERAL, image_bc3, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC3_SRGB_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_1(*m_device, image_ci, vkt::set_layout);
+    image_ci.extent = {62, 62, 1};  // slightly smaller and not divisible by block size
+    vkt::Image image_2(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {62, 60, 1};  // dst width
+
+    vk::CmdCopyImage(m_command_buffer, image_2, VK_IMAGE_LAYOUT_GENERAL, image_1, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent = {60, 62, 1};  // dst height
+    vk::CmdCopyImage(m_command_buffer, image_2, VK_IMAGE_LAYOUT_GENERAL, image_1, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.srcOffset = {8, 8, 0};
+    copy_region.dstOffset = {8, 8, 0};
+    copy_region.extent = {54, 52, 1};  // dst width
+    vk::CmdCopyImage(m_command_buffer, image_2, VK_IMAGE_LAYOUT_GENERAL, image_1, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+}
+
+TEST_F(PositiveCopyBufferImage, BufferCopyNonPowerOfTwo) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    // Mips are    0       1      2      3     4
+    //          [15,16], [7,8], [3,4], [1,2], [1,1]
+    auto image_ci = vkt::Image::ImageCreateInfo2D(15, 16, 5, 1, VK_FORMAT_BC3_SRGB_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    VkBufferImageCopy region = {};
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+
+    m_command_buffer.Begin();
+    // Offset + extent width = mip width - should succeed
+    region.imageOffset = {8, 8, 0};
+    region.imageExtent = {7, 8, 1};
+    region.imageSubresource.mipLevel = 0;
+
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    region.imageOffset = {4, 4, 0};
+    region.imageExtent = {3, 4, 1};
+    region.imageSubresource.mipLevel = 1;
+
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {3, 4, 1};
+    region.imageSubresource.mipLevel = 2;
+
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {1, 2, 1};
+    region.imageSubresource.mipLevel = 3;
+
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
+// Need to rewrite test to work everywhere
+TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9537");
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(4, 4, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.size = 8;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
+
+    VkMemoryAllocateInfo mem_alloc =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    mem_alloc.allocationSize = 1 << 16;
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
+
+    buffer.BindMemory(memory, 320);
+    image.BindMemory(memory, 256);
+
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 128;
+    region.bufferImageHeight = 4;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {4, 4, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.End();
+}
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10125
+// Need to rewrite test to work everywhere
+TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion2) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9276");
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(2, 2, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::no_mem);
+
+    VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
+    buffer_ci.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_ci.size = 512;
+    vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
+
+    VkMemoryRequirements image_mem_reqs;
+    vk::GetImageMemoryRequirements(*m_device, image, &image_mem_reqs);
+
+    VkMemoryAllocateInfo mem_alloc =
+        vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    mem_alloc.allocationSize = 1 << 14;
+    vkt::DeviceMemory memory(*m_device, mem_alloc);
+
+    buffer.BindMemory(memory, 800);
+    image.BindMemory(memory, 544);
+
+    VkBufferImageCopy region = {};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 64;
+    region.bufferImageHeight = 2;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {2, 2, 1};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+    vkt::Image image(*m_device, 7, 7, VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    m_command_buffer.Begin();
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkBufferImageCopy copy = {};
+    copy.imageSubresource = {1u, 0u, 0u, 1u};
+    copy.imageOffset = {0, 0, 0};
+    copy.imageExtent = {7u, 7u, 1u};
+
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
     m_command_buffer.End();
 }
 
@@ -434,9 +774,7 @@ TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
-// Being worked on if this is valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DImage) {
+TEST_F(PositiveCopyBufferImage, CopyCompressed1DImage) {
     TEST_DESCRIPTION("Copy a 1D image with compressed format");
     RETURN_IF_SKIP(Init());
 
@@ -478,9 +816,8 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DImage) {
     m_command_buffer.End();
 }
 
-// Being worked on if this is valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
+// TODO - Need WG agreement how this works still
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress1DTo2D) {
     TEST_DESCRIPTION("Copy a 1D compressed format to a 2D compressed format");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
@@ -505,7 +842,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.extent = {32u, 32u, 1u};
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -519,16 +856,14 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressed1DToCompressed2D) {
     image_copy.srcOffset = {0, 0, 0};
     image_copy.dstSubresource = {1u, 0u, 0u, 1u};
     image_copy.dstOffset = {0, 0, 0};
-    image_copy.extent = {32u, 4u, 1u};
+    image_copy.extent = {32u, 1u, 1u};
 
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
     m_command_buffer.End();
 }
 
-// Being worked on if this is valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
+TEST_F(PositiveCopyBufferImage, CopyBufferTo1DCompressedImage) {
     TEST_DESCRIPTION("Copy a buffer to 1D image with compressed format");
     RETURN_IF_SKIP(Init());
 
@@ -544,7 +879,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -555,16 +890,19 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyBufferTo1DCompressedImage) {
     buffer_image_copy.bufferImageHeight = 4u;
     buffer_image_copy.imageSubresource = {1u, 0u, 0u, 1u};
     buffer_image_copy.imageOffset = {0, 0, 0};
-    buffer_image_copy.imageExtent = {64u, 4u, 1u};
+    buffer_image_copy.imageExtent = {4u, 1u, 1u};
 
     m_command_buffer.Begin();
     dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     vk::CmdCopyBufferToImage(m_command_buffer, buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &buffer_image_copy);
+
+    buffer_image_copy.bufferRowLength = 4;
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &buffer_image_copy);
+
     m_command_buffer.End();
 }
 
-// Being worked on if this is valid or not
-// https://gitlab.khronos.org/vulkan/vulkan/-/issues/4159
+// TODO - Need WG agreement how this works still
 TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     TEST_DESCRIPTION("Copy a compressed 2D image to a compressed 1D image");
     SetTargetApiVersion(VK_API_VERSION_1_1);
@@ -583,7 +921,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image src_image(*m_device, image_ci);
@@ -591,7 +929,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
     image_ci.imageType = VK_IMAGE_TYPE_1D;
     image_ci.extent = {1024u, 1u, 1u};
     image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image dst_image(*m_device, image_ci);
@@ -609,6 +947,316 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompress2DTo1D) {
 
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyCompressLowestMip) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/1946");
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.flags = 0u;
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R16G16B16A16_UINT;
+    image_ci.extent = {8u, 8u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci);
+
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.mipLevels = 4u;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {1u, 2u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+    image_copy.extent = {1u, 1u, 1u};  // copy single texel
+
+    // 1 texel block
+    image_copy.dstSubresource.mipLevel = 1u;
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+
+    // sub texel block
+    image_copy.dstSubresource.mipLevel = 2u;
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+
+    image_copy.dstSubresource.mipLevel = 3u;
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CompressedImageMip) {
+    TEST_DESCRIPTION("Image/Buffer copies for higher mip levels");
+    RETURN_IF_SKIP(Init());
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 6, 1, VK_FORMAT_BC3_SRGB_BLOCK,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+
+    VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    vkt::Buffer buffer_1024(*m_device, 1024, transfer_usage);
+    vkt::Buffer buffer_64(*m_device, 64, transfer_usage);
+    vkt::Buffer buffer_16(*m_device, 16, transfer_usage);
+    vkt::Buffer buffer_8(*m_device, 8, transfer_usage);
+
+    VkBufferImageCopy region = {};
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    region.imageOffset = {0, 0, 0};
+    region.bufferOffset = 0;
+
+    m_command_buffer.Begin();
+    // Mip level copies that work - 5 levels
+
+    // Mip 0 should fit in 1k buffer - 1k texels @ 1b each
+    region.imageExtent = {32, 32, 1};
+    region.imageSubresource.mipLevel = 0;
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_1024, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_1024, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Mip 2 should fit in 64b buffer - 64 texels @ 1b each
+    region.imageExtent = {8, 8, 1};
+    region.imageSubresource.mipLevel = 2;
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_64, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_64, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Mip 3 should fit in 16b buffer - 16 texels @ 1b each
+    region.imageExtent = {4, 4, 1};
+    region.imageSubresource.mipLevel = 3;
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_16, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_16, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    // Mip 4&5 should fit in 16b buffer with no complaint - 4 & 1 texels @ 1b each
+    // When dealing with mips smaller than the block texel size, need to be full size
+    region.imageExtent = {2, 2, 1};
+    region.imageSubresource.mipLevel = 4;
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_16, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_16, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+
+    region.imageExtent = {1, 1, 1};
+    region.imageSubresource.mipLevel = 5;
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer_16, 1, &region);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_16, image, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+}
+
+// TODO - Need WG agreement how this works still
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressToCompress) {
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.mipLevels = 4u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.extent = {16, 16u, 1u};
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci,
+                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0u, 0u, 0u};
+    image_copy.dstSubresource = {1u, 3u, 0u, 1u};  // last mip
+    image_copy.dstOffset = {0u, 0u, 0u};
+    image_copy.extent = {2u, 2u, 1u};  // single texel
+
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyBufferToCompressedMipLevels) {
+    RETURN_IF_SKIP(Init());
+
+    // 1 texel block is 8 bytes
+    vkt::Buffer buffer(*m_device, 8u, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.extent = {8u, 8u, 1u};
+    image_ci.mipLevels = 4u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci);
+
+    VkBufferImageCopy buffer_image_copy;
+    buffer_image_copy.bufferOffset = 0u;
+    buffer_image_copy.bufferRowLength = 4u;
+    buffer_image_copy.bufferImageHeight = 4u;
+    buffer_image_copy.imageSubresource = {1u, 2u, 0u, 1u};
+    buffer_image_copy.imageOffset = {0, 0, 0};
+    buffer_image_copy.imageExtent = {2u, 2u, 1u};
+
+    m_command_buffer.Begin();
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, dst_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &buffer_image_copy);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyBufferSizePlanar) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.extent = {4, 4, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, features)) {
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+    vkt::Buffer buffer_0(*m_device, 48, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    vkt::Buffer buffer_1(*m_device, 12, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    m_command_buffer.Begin();
+    image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkBufferImageCopy copy = {};
+    copy.imageSubresource.layerCount = 1;
+    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+    copy.imageExtent = {4, 4, 1};
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_0, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+    copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+    copy.imageExtent = {2, 2, 1};
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer_1, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyImagePlanar) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredFeature(vkt::Feature::samplerYcbcrConversion);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.extent = {4, 4, 1};
+    image_ci.mipLevels = 1;
+    image_ci.arrayLayers = 1;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci,
+                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        // Assume there's low ROI on searching for different mp formats
+        GTEST_SKIP() << "Multiplane image format not supported";
+    }
+    vkt::Image image(*m_device, image_ci);
+
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.format = VK_FORMAT_R8_UNORM;
+    vkt::Image image_p0(*m_device, image_ci);
+    image_ci.format = VK_FORMAT_R8G8_UNORM;
+    vkt::Image image_p1(*m_device, image_ci);
+
+    VkImageCopy copy_region;
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_PLANE_0_BIT, 0, 0, 1};
+    copy_region.dstOffset = {0, 0, 0};
+    copy_region.extent = {4, 4, 1};
+
+    m_command_buffer.Begin();
+    // copy into multi-planar
+    {
+        copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        vk::CmdCopyImage(m_command_buffer, image_p0, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        copy_region.extent = {2, 2, 1};
+        vk::CmdCopyImage(m_command_buffer, image_p1, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        m_command_buffer.FullMemoryBarrier();
+    }
+    // offset only 1 texel
+    {
+        copy_region.srcOffset = {1, 1, 0};
+        copy_region.dstOffset = {3, 3, 0};
+        copy_region.extent = {1, 1, 1};
+        copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        vk::CmdCopyImage(m_command_buffer, image_p0, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        copy_region.dstOffset = {1, 1, 0};
+        vk::CmdCopyImage(m_command_buffer, image_p1, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        m_command_buffer.FullMemoryBarrier();
+    }
+
+    // copy from multi-planar
+    {
+        copy_region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        copy_region.srcOffset = {0, 0, 0};
+        copy_region.dstOffset = {0, 0, 0};
+        copy_region.extent = {4, 4, 1};
+
+        copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_0_BIT;
+        vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image_p0, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+
+        copy_region.extent = {2, 2, 1};
+        copy_region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_PLANE_1_BIT;
+        vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image_p1, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    }
     m_command_buffer.End();
 }
 
@@ -919,5 +1567,74 @@ TEST_F(PositiveCopyBufferImage, BlitDepth2DArray) {
     vk::CmdBlitImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &region, VK_FILTER_NEAREST);
 
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, Image2DArrayTo3D) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 4, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.arrayLayers = 1;
+    image_ci.extent.depth = 4;
+    vkt::Image image_3D(*m_device, image_ci, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.extent = {4, 4, 4};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 4};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 4};
+    vk::CmdCopyImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.srcSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    copy_region.dstSubresource.layerCount = VK_REMAINING_ARRAY_LAYERS;
+    vk::CmdCopyImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, Image2DArrayTo3DMiplevel) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    // mips from 8x8 to 1x1
+    auto image_ci = vkt::Image::ImageCreateInfo2D(8, 8, 4, 4, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.imageType = VK_IMAGE_TYPE_3D;
+    image_ci.arrayLayers = 1;
+    image_ci.extent.depth = 8;
+    vkt::Image image_3D(*m_device, image_ci, vkt::set_layout);
+
+    VkImageCopy copy_region;
+    copy_region.extent = {2, 2, 2};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 2, 2};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 0, 1};
+    copy_region.srcOffset = {0, 0, 0};
+    copy_region.dstOffset = {0, 0, 0};
+
+    m_command_buffer.Begin();
+    vk::CmdCopyImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+    m_command_buffer.FullMemoryBarrier();
+
+    copy_region.extent = {1, 1, 1};
+    copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 3, 0, 1};
+    copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 2, 3, 1};
+    vk::CmdCopyImage(m_command_buffer, image_3D, VK_IMAGE_LAYOUT_GENERAL, image_2D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_command_buffer.End();
 }

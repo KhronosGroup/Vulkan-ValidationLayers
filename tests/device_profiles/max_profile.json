@@ -1847,7 +1847,27 @@
                     "maxPushDescriptors": 4294967000,
                     "blockTexelViewCompatibleMultipleLayers": true,
                     "maxCombinedImageSamplerDescriptorCount": 1073741824,
-                    "identicalMemoryTypeRequirements": true
+                    "identicalMemoryTypeRequirements": true,
+                    "copySrcLayoutCount": 7,
+                    "pCopySrcLayouts": [
+                        "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_GENERAL",
+                        "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL"
+                    ],
+                    "copyDstLayoutCount": 7,
+                    "pCopyDstLayouts": [
+                        "VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_GENERAL",
+                        "VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL",
+                        "VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL"
+                    ]
                 },
                 "VkPhysicalDeviceCustomBorderColorPropertiesEXT": {
                     "maxCustomBorderColorSamplers": 4294967000

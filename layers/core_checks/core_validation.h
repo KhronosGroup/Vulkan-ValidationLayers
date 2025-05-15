@@ -64,6 +64,7 @@ struct DAGNode;
 struct SemaphoreSubmitState;
 struct LastBound;
 struct ShaderStageState;
+struct ImageCopyRegion;
 class ValidationCache;
 
 namespace core {
@@ -623,10 +624,7 @@ class CoreChecks : public vvl::DeviceProxy {
     template <typename HandleT>
     bool ValidateImageSampleCount(const HandleT handle, const vvl::Image& image_state, VkSampleCountFlagBits sample_count,
                                   const Location& loc, const std::string& vuid) const;
-    template <typename RegionType>
-    bool ValidateImageBufferCopyMemoryOverlap(const vvl::CommandBuffer& cb_state, const RegionType& region,
-                                              const vvl::Image& image_state, const vvl::Buffer& buffer_state,
-                                              const Location& region_loc) const;
+
     bool ValidateQueueFamilySupport(const vvl::CommandBuffer& cb_state, const vvl::PhysicalDevice& physical_device_state,
                                     VkImageAspectFlags aspectMask, const vvl::Image& image_state, const Location& aspect_mask_loc,
                                     const char* vuid) const;
@@ -949,9 +947,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const void* pipeline_ci_pnext, const Location& loc) const;
     bool ValidateImageWrite(const spirv::Module& module_state, const Location& loc) const;
 
-    template <typename RegionType>
-    bool ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& src_image_state,
-                                                          const vvl::Image& dst_image_state, const RegionType& region,
+    bool ValidateCopyImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const ImageCopyRegion& region,
                                                           const Location& region_loc) const;
     bool ValidateImageSubresourceRange(const uint32_t image_mip_count, const uint32_t image_layer_count,
                                        const VkImageSubresourceRange& subresourceRange, vvl::Field image_layer_count_var,
@@ -969,27 +965,27 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateHostCopyImageCreateInfos(const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
                                           const Location& loc) const;
     bool IsCompliantSubresourceRange(const VkImageSubresourceRange& subres_range, const vvl::Image& image_state) const;
-    template <typename HandleT, typename RegionType>
-    bool ValidateHeterogeneousCopyData(const HandleT handle, const RegionType& region, const vvl::Image& image_state,
+    template <typename RegionType>
+    bool ValidateHeterogeneousCopyData(const RegionType& region, const vvl::Image& image_state, const LogObjectList& objlist,
                                        const Location& region_loc) const;
+    template <typename RegionType>
+    bool ValidateHeterogeneousCopyImageless(const RegionType& region, const LogObjectList& objlist, const Location& region_loc,
+                                            bool is_memory) const;
     bool UsageHostTransferCheck(const vvl::Image& image_state, const VkImageAspectFlags aspect_mask, const char* vuid_09111,
                                 const char* vuid_09112, const char* vuid_09113, const Location& subresource_loc) const;
     template <typename InfoPointer>
     bool ValidateMemoryImageCopyCommon(InfoPointer iPointer, const Location& loc) const;
     template <typename RegionType>
     bool ValidateBufferImageCopyData(const vvl::CommandBuffer& cb_state, const RegionType& region, const vvl::Image& image_state,
-                                     const Location& region_loc) const;
-    bool ValidateHostCopyImageLayout(const VkImage image, const uint32_t layout_count, const VkImageLayout* supported_image_layouts,
-                                     const VkImageLayout image_layout, const Location& loc, vvl::Field supported_name,
-                                     const char* vuid) const;
-    bool ValidateMemcpyExtents(const VkImageCopy2& region, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
-                               const Location& region_loc) const;
+                                     const LogObjectList& objlist, const Location& region_loc) const;
+    bool ValidateHostCopyImageLayout(const VkImage image, const VkImageLayout image_layout, const Location& loc,
+                                     vvl::Field supported_name, const char* vuid) const;
+    bool ValidateMemcpyExtents(const ImageCopyRegion& region, const Location& region_loc) const;
     bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceLayers& subres_layers,
                                        const vvl::Image& image_state, const Location& loc) const;
     bool ValidateHostCopyCurrentLayout(VkImageLayout expected_layout, const VkImageSubresourceRange& subres_range,
                                        const vvl::Image& image_state, const Location& loc) const;
-    bool ValidateHostCopyMultiplane(const VkImageCopy2& region, const vvl::Image& src_image_state,
-                                    const vvl::Image& dst_image_state, const Location& region_loc) const;
+    bool ValidateHostCopyMultiplane(const ImageCopyRegion& region, const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;
     bool ValidateBufferViewBuffer(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
@@ -1022,10 +1018,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                        uint32_t render_pass_layer_count, uint32_t rect_count, const VkClearRect* clear_rects,
                                        const Location& loc) const;
 
-    template <typename HandleT, typename RegionType>
-    bool ValidateImageCopyData(const HandleT handle, const RegionType& region, const vvl::Image& src_image_state,
-                               const vvl::Image& dst_image_state, bool is_host, const Location& region_loc) const;
-
     bool VerifyClearImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                 const VkImageSubresourceRange& range, VkImageLayout dest_image_layout, const Location& loc) const;
 
@@ -1047,12 +1039,12 @@ class CoreChecks : public vvl::DeviceProxy {
                            const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
 
     bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
-                                           const VkExtent3D& granularity, const VkExtent3D& subresource_extent,
-                                           const VkImageType image_type, const Location& extent_loc, const char* vuid) const;
+                                           const VkExtent3D& granularity, VkExtent3D subresource_extent,
+                                           const vvl::Image& image_state, const Location& extent_loc, const char* vuid) const;
 
     bool ValidateTransferGranularityOffset(const LogObjectList& objlist, const VkOffset3D& offset, const VkExtent3D& granularity,
                                            const Location& offset_loc, const char* vuid) const;
-    VkExtent3D GetScaledItg(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state) const;
+    VkExtent3D GetImageTransferGranularity(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state) const;
 
     bool PreCallValidateCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
                                            const VkClearColorValue* pColor, uint32_t rangeCount,
@@ -1112,9 +1104,8 @@ class CoreChecks : public vvl::DeviceProxy {
 
     void TransitionFinalSubpassLayouts(vvl::CommandBuffer& cb_state);
 
-    template <typename HandleT, typename RegionType>
-    bool ValidateCopyImageRegionCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
-                                       const RegionType& region, const Location& region_loc) const;
+    template <typename HandleT>
+    bool ValidateCopyImageRegionCommon(HandleT handle, const ImageCopyRegion& region, const Location& region_loc) const;
 
     template <typename HandleT>
     bool ValidateCopyImageCommon(HandleT handle, const vvl::Image& src_image_state, const vvl::Image& dst_image_state,
@@ -1207,8 +1198,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                          const Location& image_loc, const char* vuid) const;
 
     template <typename HandleT>
-    bool ValidateImageSubresourceLayers(HandleT handle, const VkImageSubresourceLayers& subresource_layers,
-                                        const Location& subresource_loc) const;
+    bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,
+                                        const VkImageSubresourceLayers& subresource_layers, const Location& subresource_loc) const;
 
     bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkFlags desired, bool strict,
                                   const char* vuid, const Location& buffer_loc) const;
@@ -1250,25 +1241,18 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCmdCopyBufferBounds(VkCommandBuffer cb, const vvl::Buffer& src_buffer_state, const vvl::Buffer& dst_buffer_state,
                                      uint32_t regionCount, const RegionType* pRegions, const Location& loc) const;
 
-    template <typename HandleT, typename RegionType>
-    bool ValidateImageBounds(const HandleT handle, const vvl::Image& image_state, const RegionType& region,
-                             const Location& region_loc, const char* vuid, bool is_src) const;
+    template <typename HandleT>
+    bool ValidateImageBounds(const HandleT handle, const vvl::Image& image_state, VkExtent3D extent, VkOffset3D offset,
+                             VkImageSubresourceLayers subresource_layout, const Location& region_loc) const;
 
     template <typename RegionType>
-    bool ValidateBufferBounds(VkCommandBuffer cb, const vvl::Image& image_state, const vvl::Buffer& buffer_state,
+    bool ValidateBufferBounds(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const vvl::Buffer& buffer_state,
                               const RegionType& region, const Location& region_loc) const;
 
     template <typename RegionType>
     bool ValidateCopyBufferImageTransferGranularityRequirements(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                                                                const RegionType& region, const Location& region_loc) const;
-
-    template <typename HandleT>
-    bool ValidateImageMipLevel(const HandleT handle, const vvl::Image& image_state, uint32_t mip_level,
-                               const Location& subresource_loc) const;
-
-    template <typename HandleT>
-    bool ValidateImageArrayLayerRange(const HandleT handle, const vvl::Image& image_state, const uint32_t base_layer,
-                                      const uint32_t layer_count, const Location& subresource_loc) const;
+                                                                const RegionType& region, const LogObjectList& objlist,
+                                                                const Location& region_loc) const;
 
     void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
                                     VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
