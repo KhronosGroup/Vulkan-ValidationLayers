@@ -423,7 +423,7 @@
                                     "label": "Error messages",
                                     "description": "Options to configure synchronization validation error reporting",
                                     "type": "GROUP",
-                                    "expanded": false,
+                                    "expanded": true,
                                     "settings": [
                                         {
                                             "key": "syncval_message_extra_properties",
@@ -450,7 +450,7 @@
                             "default": "GPU_BASED_NONE",
                             "expanded": true,
                             "view": "HIDDEN",
-                            "status": "STABLE",
+                            "status": "DEPRECATED",
                             "platforms": [ "WINDOWS", "LINUX" ],
                             "flags": [
                                 {
@@ -483,6 +483,8 @@
                             "type": "BOOL",
                             "default": false,
                             "view": "HIDDEN",
+                            "status": "DEPRECATED",
+                            "deprecated_by_key": "printf_enable",
                             "platforms": [ "WINDOWS", "LINUX" ]
                         },
                         {
@@ -824,10 +826,11 @@
                                 {
                                     "key": "gpuav_image_layout",
                                     "label": "Image Layout",
-                                    "description": "(Warning - still known to have false positives) Use GPU-AV to detect which descriptors where accessed. Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer.",
+                                    "description": "(Alpha: still known to have false positives) Use GPU-AV to detect which descriptors where accessed. Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer.",
                                     "type": "BOOL",
                                     "default": false,
                                     "platforms": [ "WINDOWS", "LINUX" ],
+                                    "status": "ALPHA",
                                     "dependence": {
                                         "mode": "ALL",
                                         "settings": [
@@ -840,6 +843,7 @@
                                     "label": "Advanced Settings",
                                     "description": "GPU-AV advanced settings",
                                     "type": "GROUP",
+                                    "status": "DEPRECATED",
                                     "view": "ADVANCED",
                                     "platforms": [ "WINDOWS", "LINUX" ],
                                     "dependence": {
@@ -898,6 +902,7 @@
                                             "label": "Disable all of GPU-AV",
                                             "description": "Acts as a VkValidationFeatureDisableEXT to override the VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT passed by the user",
                                             "type": "BOOL",
+                                            "status": "DEPRECATED",
                                             "view": "HIDDEN",
                                             "default": false,
                                             "platforms": [ "WINDOWS", "LINUX" ],
@@ -1120,7 +1125,7 @@
                             "key": "debug",
                             "label": "Debug",
                             "description": "For layer development. Report messages for debugging layer behavior.",
-                            "view": "HIDDEN"
+                            "view": "ADVANCED"
                         }
                     ],
                     "default": [
@@ -1191,69 +1196,75 @@
                     "label": "Disables",
                     "description": "Specify areas of validation to be disabled",
                     "type": "FLAGS",
+                    "status": "DEPRECATED",
                     "view": "HIDDEN",
                     "env": "VK_LAYER_DISABLES",
                     "flags": [
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT",
                             "label": "Thread Safety",
-                            "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors."
+                            "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors.",
+                            "deprecated_by_key": "thread_safety"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT",
                             "label": "Stateless Parameter",
-                            "description": "Stateless parameter checks. This may not always be necessary late in a development cycle."
+                            "description": "Stateless parameter checks. This may not always be necessary late in a development cycle.",
+                            "deprecated_by_key": "stateless_param"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
                             "label": "Object Lifetime",
-                            "description": "Object tracking checks. This may not always be necessary late in a development cycle."
+                            "description": "Object tracking checks. This may not always be necessary late in a development cycle.",
+                            "deprecated_by_key": "object_lifetime"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT",
                             "label": "Core",
-                            "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors."
+                            "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors.",
+                            "deprecated_by_key": "validate_core"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_UNIQUE_HANDLES_EXT",
                             "label": "Handle Wrapping",
-                            "description": "Handle wrapping checks. Disable this feature if you are experiencing crashes when creating new extensions or developing new Vulkan objects/structures."
+                            "description": "Handle wrapping checks. Disable this feature if you are experiencing crashes when creating new extensions or developing new Vulkan objects/structures.",
+                            "deprecated_by_key": "unique_handles"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT",
                             "label": "Shader Validation",
                             "description": "Shader checks. These checks can be CPU intensive during application start up, especially if Shader Validation Caching is also disabled.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_shaders"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE",
                             "label": "Command Buffer State",
                             "description": "Check that all Vulkan objects used by a command buffer have not been destroyed. These checks can be CPU intensive for some applications.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_command_buffer"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_IMAGE_LAYOUT_VALIDATION",
                             "label": "Image Layout",
                             "description": "Check that the layout of each image subresource is correct whenever it is used by a command buffer. These checks are very CPU intensive for some applications.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_image_layout"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_QUERY_VALIDATION",
                             "label": "Query",
                             "description": "Checks for commands that use VkQueryPool objects.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_query"
                         },
                         {
                             "key": "VALIDATION_CHECK_DISABLE_OBJECT_IN_USE",
                             "label": "Object in Use",
                             "description": "Check that Vulkan objects are not in use by a command buffer when they are destroyed.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_object_in_use"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_DISABLE_SHADER_VALIDATION_CACHE_EXT",
                             "label": "Shader Validation Caching",
                             "description": "Disable caching of shader validation results.",
-                            "view": "ADVANCED"
+                            "deprecated_by_key": "check_shaders_caching"
                         }
                     ],
                     "default": [
@@ -1265,6 +1276,7 @@
                     "label": "Enables",
                     "description": "Setting an option here will enable specialized areas of validation",
                     "type": "FLAGS",
+                    "status": "DEPRECATED",
                     "view": "HIDDEN",
                     "env": "VK_LAYER_ENABLES",
                     "flags": [
@@ -1273,60 +1285,67 @@
                             "label": "Synchronization",
                             "description": "This feature reports resource access conflicts due to missing or incorrect synchronization operations between actions (Draw, Copy, Dispatch, Blit) reading or writing the same regions of memory.",
                             "url": "${LUNARG_SDK}/synchronization_usage.html",
-                            "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                            "deprecated_by_key": "validate_sync"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",
                             "label": "Debug Printf",
                             "description": "Enables processing of debug printf instructions in shaders and sending debug strings to the debug callback.",
                             "url": "${LUNARG_SDK}/debug_printf.html",
-                            "status": "STABLE",
-                            "platforms": [ "WINDOWS", "LINUX" ]
+                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "deprecated_by_key": "printf_enable"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT",
                             "label": "GPU-Assisted",
                             "description": "Check for API usage errors at shader execution time.",
                             "url": "${LUNARG_SDK}/gpu_validation.html",
-                            "platforms": [ "WINDOWS", "LINUX" ]
+                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "deprecated_by_key": "gpuav_enable"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_RESERVE_BINDING_SLOT_EXT",
                             "label": "Reserve Descriptor Set Binding Slot",
                             "description": "Specifies that the validation layers reserve a descriptor set binding slot for their own use. The layer reports a value for VkPhysicalDeviceLimits::maxBoundDescriptorSets that is one less than the value reported by the device. If the device supports the binding of only one descriptor set, the validation layer does not perform GPU-assisted validation.",
-                            "platforms": [ "WINDOWS", "LINUX" ]
+                            "platforms": [ "WINDOWS", "LINUX" ],
+                            "deprecated_by_key": "gpuav_reserve_binding_slot"
                         },
                         {
                             "key": "VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT",
                             "label": "Best Practices",
                             "description": "Activating this feature enables the output of warnings related to common misuse of the API, but which are not explicitly prohibited by the specification.",
                             "url": "${LUNARG_SDK}/best_practices.html",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                            "deprecated_by_key": "validate_best_practices"
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM",
                             "label": "ARM-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to ARM-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS", "ANDROID" ],
+                            "deprecated_by_key": "validate_best_practices_arm"
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_AMD",
                             "label": "AMD-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on AMD GPUs.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                            "deprecated_by_key": "validate_best_practices_amd"
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_IMG",
                             "label": "IMG-specific best practices",
                             "description": "Adds check for spec-conforming but non-ideal code on Imagination GPUs.",
-                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ]
+                            "platforms": [ "WINDOWS", "LINUX", "MACOS" ],
+                            "deprecated_by_key": "validate_best_practices_img"
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",
                             "label": "NVIDIA-specific best practices",
                             "description": "Activating this feature enables the output of warnings related to NVIDIA-specific misuse of the API, but which are not explicitly prohibited by the specification.",
-                            "platforms": [ "WINDOWS", "LINUX", "ANDROID" ]
+                            "platforms": [ "WINDOWS", "LINUX", "ANDROID" ],
+                            "deprecated_by_key": "validate_best_practices_nvidia"
                         },
                         {
                             "key": "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ALL",
