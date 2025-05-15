@@ -18,6 +18,8 @@
 #include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
+#include <cmath>
+
 class NegativeDynamicState : public DynamicStateTest {
     // helper functions for tests in this file
   public:
