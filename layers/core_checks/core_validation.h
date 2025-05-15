@@ -398,6 +398,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                    const vvl::Surface* surface_state) const;
     bool ValidateCreateSwapchain(const VkSwapchainCreateInfoKHR& create_info, const vvl::Surface* surface_state,
                                  const vvl::Swapchain* old_swapchain_state, const Location& create_info_loc) const;
+    bool IsSameNativeWindow(const VkSurfaceKHR surface_a, const VkSurfaceKHR surface_b) const;
     bool ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer& cb_state, const vvl::Pipeline& pipeline,
                                            const Location& loc) const;
     bool ValidatePipelineBindPoint(const vvl::CommandBuffer& cb_state, VkPipelineBindPoint bind_point, const Location& loc) const;
