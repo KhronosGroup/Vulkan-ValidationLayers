@@ -303,48 +303,6 @@ TEST_F(VkBestPracticesLayerTest, CmdClearAttachmentTestSecondary) {
     m_command_buffer.EndRenderPass();
 }
 
-TEST_F(VkBestPracticesLayerTest, CmdResolveImageTypeMismatch) {
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    VkImageCreateInfo image_create_info = vku::InitStructHelper();
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.format = VK_FORMAT_B8G8R8A8_UNORM;
-    image_create_info.extent = {32, 1, 1};
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.samples = VK_SAMPLE_COUNT_4_BIT;  // guarantee support from sampledImageColorSampleCounts
-    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    // Note: Some implementations expect color attachment usage for any
-    // multisample surface
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.flags = 0;
-    vkt::Image srcImage(*m_device, image_create_info, vkt::set_layout);
-
-    image_create_info.imageType = VK_IMAGE_TYPE_1D;
-    // Note: Some implementations expect color attachment usage for any
-    // multisample surface
-    image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    vkt::Image dstImage(*m_device, image_create_info, vkt::set_layout);
-
-    m_command_buffer.Begin();
-    // Need memory barrier to VK_IMAGE_LAYOUT_GENERAL for source and dest?
-    // VK_IMAGE_LAYOUT_UNDEFINED = 0,
-    // VK_IMAGE_LAYOUT_GENERAL = 1,
-    VkImageResolve resolveRegion;
-    resolveRegion.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    resolveRegion.srcOffset = {0, 0, 0};
-    resolveRegion.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
-    resolveRegion.dstOffset = {0, 0, 0};
-    resolveRegion.extent = {1, 1, 1};
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdResolveImage-MismatchedImageType");
-    vk::CmdResolveImage(m_command_buffer, srcImage, VK_IMAGE_LAYOUT_GENERAL, dstImage, VK_IMAGE_LAYOUT_GENERAL, 1, &resolveRegion);
-    m_errorMonitor->VerifyFound();
-    m_command_buffer.End();
-}
-
 TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
     TEST_DESCRIPTION("vkCmdBlitImage with a zero area region");
 
@@ -369,47 +327,6 @@ TEST_F(VkBestPracticesLayerTest, ZeroSizeBlitRegion) {
                      VK_FILTER_LINEAR);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
-}
-
-TEST_F(VkBestPracticesLayerTest, VtxBufferBadIndex) {
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    CreatePipelineHelper pipe(*this);
-    pipe.CreateGraphicsPipeline();
-
-    // Don't care about actual data, just need to get to draw to flag error
-    vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkEndCommandBuffer-VtxIndexOutOfBounds");
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    // VBO idx 1, but no VBO in PSO
-    vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
-    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
-    m_command_buffer.EndRenderPass();
-    vk::EndCommandBuffer(m_command_buffer);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkBestPracticesLayerTest, CommandBufferReset) {
-    TEST_DESCRIPTION("Test for validating usage of vkCreateCommandPool with COMMAND_BUFFER_RESET_BIT");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCreateCommandPool-command-buffer-reset");
-
-    VkCommandPool command_pool;
-    VkCommandPoolCreateInfo pool_create_info{};
-    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    pool_create_info.queueFamilyIndex = m_device->graphics_queue_node_index_;
-    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    vk::CreateCommandPool(device(), &pool_create_info, nullptr, &command_pool);
-
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
@@ -455,55 +372,6 @@ TEST_F(VkBestPracticesLayerTest, SecondaryCommandBuffer) {
     vk::FreeCommandBuffers(device(), command_pool, 1, &command_buffer);
 }
 
-TEST_F(VkBestPracticesLayerTest, SimultaneousUse) {
-    TEST_DESCRIPTION("Test for validating usage of vkBeginCommandBuffer with SIMULTANEOUS_USE");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkBeginCommandBuffer-simultaneous-use");
-
-    m_errorMonitor->SetAllowedFailureMsg("vkBeginCommandBuffer-one-time-submit");
-
-    VkCommandBufferBeginInfo cmd_begin_info{};
-    cmd_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmd_begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-    vk::BeginCommandBuffer(m_command_buffer, &cmd_begin_info);
-
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(VkBestPracticesLayerTest, SmallAllocation) {
-    TEST_DESCRIPTION("Test for small memory allocations");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkAllocateMemory-small-allocation");
-
-    // Find appropriate memory type for given reqs
-    VkMemoryPropertyFlags mem_props = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkPhysicalDeviceMemoryProperties dev_mem_props = m_device->Physical().memory_properties_;
-
-    uint32_t mem_type_index = 0;
-    for (mem_type_index = 0; mem_type_index < dev_mem_props.memoryTypeCount; ++mem_type_index) {
-        if (mem_props == (mem_props & dev_mem_props.memoryTypes[mem_type_index].propertyFlags)) break;
-    }
-    EXPECT_LT(mem_type_index, dev_mem_props.memoryTypeCount) << "Could not find a suitable memory type.";
-
-    const uint32_t kSmallAllocationSize = 1024;
-
-    VkMemoryAllocateInfo alloc_info{};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.allocationSize = kSmallAllocationSize;
-    alloc_info.memoryTypeIndex = mem_type_index;
-
-    VkDeviceMemory memory;
-    vk::AllocateMemory(device(), &alloc_info, nullptr, &memory);
-
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     TEST_DESCRIPTION("Test for small dedicated memory allocations");
 
@@ -511,8 +379,6 @@ TEST_F(VkBestPracticesLayerTest, SmallDedicatedAllocation) {
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkBindImageMemory-small-dedicated-allocation");
-
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
 
     VkImageCreateInfo image_info =
         vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -567,7 +433,6 @@ TEST_F(VkBestPracticesLayerTest, AttachmentShouldNotBeTransient) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit,
                                          "BestPractices-vkCreateFramebuffer-attachment-should-not-be-transient");
 
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-non-lazy-transient-image");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-AMD-vkImage-AvoidGeneral");
@@ -609,7 +474,6 @@ TEST_F(VkBestPracticesLayerTest, TooManyInstancedVertexBuffers) {
                                          "BestPractices-vkCreateGraphicsPipelines-too-many-instanced-vertex-buffers");
 
     // This test may also trigger the small allocation warnings
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
 
     // This test does not need for the shader to consume the vertex input
@@ -1042,30 +906,6 @@ TEST_F(VkBestPracticesLayerTest, MissingQueryDetails) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(VkBestPracticesLayerTest, DepthBiasNoAttachment) {
-    TEST_DESCRIPTION("Enable depthBias without a depth attachment");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-    InitRenderTarget();
-
-    CreatePipelineHelper pipe(*this);
-    pipe.rs_state_ci_.depthBiasEnable = VK_TRUE;
-    pipe.rs_state_ci_.depthBiasConstantFactor = 1.0f;
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-
-    m_errorMonitor->SetDesiredWarning("BestPractices-vkCmdDraw-DepthBiasNoAttachment");
-    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
-    m_errorMonitor->VerifyFound();
-
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-}
-
 TEST_F(VkBestPracticesLayerTest, CreatePipelineVsFsTypeMismatchArraySize) {
     TEST_DESCRIPTION("Test that an error is produced for mismatched array sizes across the vertex->fragment shader interface");
 
@@ -1234,37 +1074,6 @@ TEST_F(VkBestPracticesLayerTest, TransitionFromUndefinedToReadOnly) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
-}
-
-TEST_F(VkBestPracticesLayerTest, SemaphoreSetWhenCountIsZero) {
-    TEST_DESCRIPTION("Set semaphore in SubmitInfo but count is 0");
-
-    RETURN_IF_SKIP(InitBestPracticesFramework());
-    RETURN_IF_SKIP(InitState());
-
-    vkt::Semaphore semaphore(*m_device);
-    VkSemaphore semaphore_handle = semaphore;
-
-    VkSubmitInfo signal_submit_info = vku::InitStructHelper();
-    signal_submit_info.signalSemaphoreCount = 0;
-    signal_submit_info.pSignalSemaphores = &semaphore_handle;
-
-    m_errorMonitor->SetDesiredInfo("BestPractices-SignalSemaphores-SemaphoreCount");
-    vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
-
-    signal_submit_info.signalSemaphoreCount = 1;
-    vk::QueueSubmit(m_default_queue->handle(), 1, &signal_submit_info, VK_NULL_HANDLE);
-
-    VkSubmitInfo wait_submit_info = vku::InitStructHelper();
-    wait_submit_info.waitSemaphoreCount = 0;
-    wait_submit_info.pWaitSemaphores = &semaphore_handle;
-
-    m_errorMonitor->SetDesiredInfo("BestPractices-WaitSemaphores-SemaphoreCount");
-    vk::QueueSubmit(m_default_queue->handle(), 1, &wait_submit_info, VK_NULL_HANDLE);
-    m_errorMonitor->VerifyFound();
-
-    m_default_queue->Wait();
 }
 
 TEST_F(VkBestPracticesLayerTest, OverAllocateFromDescriptorPool) {

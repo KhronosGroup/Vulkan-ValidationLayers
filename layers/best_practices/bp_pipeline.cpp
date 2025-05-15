@@ -264,8 +264,7 @@ bool BestPractices::PreCallValidateCreateComputePipelines(VkDevice device, VkPip
         skip |=
             LogPerformanceWarning("BestPractices-vkCreateComputePipelines-multiple-pipelines-no-cache", device, error_obj.location,
                                   "creating multiple pipelines (createInfoCount is %" PRIu32
-                                  ") but is not using a "
-                                  "pipeline cache, which may help with performance",
+                                  ") but is not using a pipeline cache, which may help with performance",
                                   createInfoCount);
     }
 

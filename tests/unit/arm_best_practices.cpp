@@ -258,7 +258,6 @@ TEST_F(VkArmBestPracticesLayerTest, ManySmallIndexedDrawcalls) {
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdDrawIndexed-many-small-indexed-drawcalls");
 
     // This test may also trigger other warnings
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindBufferMemory-small-dedicated-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     InitRenderTarget();
@@ -1382,7 +1381,6 @@ TEST_F(VkArmBestPracticesLayerTest, BlitImageLoadOpLoad) {
     RETURN_IF_SKIP(InitState());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-RenderPass-blitimage-loadopload");
-    m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkAllocateMemory-small-allocation");
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkBindImageMemory-small-dedicated-allocation");
     // On tiled renderers, this can also trigger a warning about LOAD_OP_LOAD causing a readback
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");

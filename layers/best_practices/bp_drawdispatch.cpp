@@ -28,22 +28,6 @@
 bool BestPractices::ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const {
     bool skip = false;
     const auto cb_state = GetRead<vvl::CommandBuffer>(cmd_buffer);
-    if (const auto* pipe = cb_state->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        if (const auto rp_state = cb_state->active_render_pass.get()) {
-            for (uint32_t i = 0; i < rp_state->create_info.subpassCount; ++i) {
-                const auto& subpass = rp_state->create_info.pSubpasses[i];
-                const auto* ds_state = pipe->DepthStencilState();
-                const uint32_t depth_stencil_attachment =
-                    GetSubpassDepthStencilAttachmentIndex(ds_state, subpass.pDepthStencilAttachment);
-                const auto* raster_state = pipe->RasterizationState();
-                if ((depth_stencil_attachment == VK_ATTACHMENT_UNUSED) && raster_state &&
-                    raster_state->depthBiasEnable == VK_TRUE) {
-                    skip |= LogWarning("BestPractices-vkCmdDraw-DepthBiasNoAttachment", cb_state->Handle(), loc,
-                                       "depthBiasEnable == VK_TRUE without a depth-stencil attachment.");
-                }
-            }
-        }
-    }
     skip |= ValidatePushConstants(cmd_buffer, loc);
     return skip;
 }
@@ -104,17 +88,6 @@ void BestPractices::RecordCmdDrawType(bp_state::CommandBufferSubState& cb_state,
         }
         // No need to touch the same attachments over and over.
         cb_state.render_pass_state.drawTouchAttachments = false;
-    }
-
-    const auto* pipeline_state = cb_state.base.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (pipeline_state && !pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT)) {
-        if (pipeline_state->vertex_input_state && !pipeline_state->vertex_input_state->bindings.empty()) {
-            cb_state.uses_vertex_buffer = true;
-        }
-    } else {
-        if (!cb_state.base.dynamic_state_value.vertex_bindings.empty()) {
-            cb_state.uses_vertex_buffer = true;
-        }
     }
 }
 
@@ -733,18 +706,4 @@ void BestPractices::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuf
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
-}
-
-bool BestPractices::PreCallValidateEndCommandBuffer(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
-    bool skip = false;
-    const auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    const auto& sub_state = bp_state::SubState(*cb_state);
-
-    if (!cb_state->current_vertex_buffer_binding_info.empty() && !sub_state.uses_vertex_buffer) {
-        skip |=
-            LogPerformanceWarning("BestPractices-vkEndCommandBuffer-VtxIndexOutOfBounds", cb_state->Handle(), error_obj.location,
-                                  "Vertex buffers was bound to %s but no draws had a pipeline that used the vertex buffer.",
-                                  FormatHandle(cb_state->Handle()).c_str());
-    }
-    return skip;
 }

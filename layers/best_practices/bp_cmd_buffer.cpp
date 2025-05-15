@@ -25,21 +25,6 @@ void BestPractices::Created(vvl::CommandBuffer& cb_state) {
     cb_state.SetSubState(container_type, std::make_unique<bp_state::CommandBufferSubState>(cb_state));
 }
 
-bool BestPractices::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPoolCreateInfo* pCreateInfo,
-                                                     const VkAllocationCallbacks* pAllocator, VkCommandPool* pCommandPool,
-                                                     const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    if (pCreateInfo->flags & VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT) {
-        skip |= LogPerformanceWarning("BestPractices-vkCreateCommandPool-command-buffer-reset", device,
-                                      error_obj.location.dot(Field::pCreateInfo).dot(Field::flags),
-                                      "has VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT set. Consider resetting entire "
-                                      "pool instead.");
-    }
-
-    return skip;
-}
-
 bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkCommandBufferAllocateInfo* pAllocateInfo,
                                                           VkCommandBuffer* pCommandBuffers, const ErrorObject& error_obj) const {
     bool skip = false;
@@ -53,7 +38,7 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
     if (pAllocateInfo->level == VK_COMMAND_BUFFER_LEVEL_SECONDARY && (queue_flags & sec_cmd_buf_queue_flags) == 0) {
         skip |= LogWarning("BestPractices-vkAllocateCommandBuffers-unusable-secondary", device, error_obj.location,
                            "Allocating secondary level command buffer from command pool "
-                           "created against queue family #%u (queue flags: %s), but vkCmdExecuteCommands() is only "
+                           "created against queue family %" PRIu32 " (queue flags: %s), but vkCmdExecuteCommands() is only "
                            "supported on queue families supporting VK_QUEUE_GRAPHICS_BIT, VK_QUEUE_COMPUTE_BIT, or "
                            "VK_QUEUE_TRANSFER_BIT. The allocated command buffer will not be submittable.",
                            cp_state->queueFamilyIndex, string_VkQueueFlags(queue_flags).c_str());
@@ -68,20 +53,12 @@ void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffe
     auto& sub_state = bp_state::SubState(*cb_state);
     // reset
     sub_state.num_submits = 0;
-    sub_state.uses_vertex_buffer = false;
     sub_state.small_indexed_draw_call_count = 0;
 }
 
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;
-
-    if (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT) {
-        skip |= LogPerformanceWarning("BestPractices-vkBeginCommandBuffer-simultaneous-use", device,
-                                      error_obj.location.dot(Field::pBeginInfo).dot(Field::flags),
-                                      "(%s) has VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT.",
-                                      string_VkCommandBufferUsageFlags(pBeginInfo->flags).c_str());
-    }
 
     const bool is_one_time_submit = (pBeginInfo->flags & VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) != 0;
     if (VendorCheckEnabled(kBPVendorArm)) {
@@ -198,7 +175,7 @@ struct EventValidator {
     const Logger& log;
     vvl::unordered_map<VkEvent, bool> signaling_state;
 
-    EventValidator(const Logger& log_) : log(log_) {}
+    explicit EventValidator(const Logger& log_) : log(log_) {}
 
     bool ValidateSecondaryCbSignalingState(const bp_state::CommandBufferSubState& primary_cb,
                                            const bp_state::CommandBufferSubState& secondary_cb, const Location& secondary_cb_loc) {
