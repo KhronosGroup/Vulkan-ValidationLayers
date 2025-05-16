@@ -323,12 +323,8 @@ class RangeGenerator {
     bool operator!=(const RangeGenerator& rhs) { return (pos_ != rhs.pos_) || (&encoder_ != &rhs.encoder_); }
     explicit RangeGenerator(const RangeEncoder& encoder) : RangeGenerator(encoder, encoder.FullRange()) {}
     RangeGenerator(const RangeEncoder& encoder, const VkImageSubresourceRange& subres_range);
-    inline const IndexRange& operator*() const { return pos_; }
-    inline const IndexRange* operator->() const { return &pos_; }
-    // Returns a generator suitable for iterating within a range, is modified by operator ++ to bring
-    // it in line with sync.
-    SubresourceGenerator& GetSubresourceGenerator() { return isr_pos_; }
-    Subresource& GetSubresource() { return isr_pos_; }
+    const IndexRange& operator*() const { return pos_; }
+    const IndexRange* operator->() const { return &pos_; }
     RangeGenerator& operator++();
 
   private:
