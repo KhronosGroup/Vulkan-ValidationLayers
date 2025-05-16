@@ -664,17 +664,17 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer &
             if (!iter->pos_A->valid || !iter->pos_B->valid) continue;
 
             // pos_A denotes the sub CB map in the parallel iterator
-            sub_layout = iter->pos_A->lower_bound->second.initial_layout;
-            if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or initial
+            sub_layout = iter->pos_A->lower_bound->second.first_layout;
+            if (VK_IMAGE_LAYOUT_UNDEFINED == sub_layout) continue;  // secondary doesn't care about current or first
 
             // pos_B denotes the main CB map in the parallel iterator
             const auto &cb_layout_state = iter->pos_B->lower_bound->second;
             if (cb_layout_state.current_layout != kInvalidLayout) {
-                layout_type = "current";
+                layout_type = "current layout";
                 cb_layout = cb_layout_state.current_layout;
-            } else if (cb_layout_state.initial_layout != kInvalidLayout) {
-                layout_type = "initial";
-                cb_layout = cb_layout_state.initial_layout;
+            } else if (cb_layout_state.first_layout != kInvalidLayout) {
+                layout_type = "layout specified by the primary command buffer";
+                cb_layout = cb_layout_state.first_layout;
             } else {
                 continue;
             }
@@ -688,7 +688,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer &
                     // VU being worked on https://gitlab.khronos.org/vulkan/vulkan/-/issues/2456
                     skip |= LogError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001", objlist, cb_loc,
                                      "was executed using %s (subresource: aspectMask %s, array layer %" PRIu32
-                                     ", mip level %" PRIu32 ") which expects layout %s--instead, image %s layout is %s.",
+                                     ", mip level %" PRIu32 ") which expects layout %s--instead, image %s is %s.",
                                      FormatHandle(image).c_str(), string_VkImageAspectFlags(subresource.aspectMask).c_str(),
                                      subresource.arrayLayer, subresource.mipLevel, string_VkImageLayout(sub_layout), layout_type,
                                      string_VkImageLayout(cb_layout));

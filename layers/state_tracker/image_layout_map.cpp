@@ -43,8 +43,12 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
         // Note that after the "fill" operation pos may have become valid so we check again
         if (pos->valid) {
             LayoutEntry entry = pos->lower_bound->second;  // intentional copy
-            // existing entry always has initial layout initialized (current layout might be unknown though)
-            assert(entry.initial_layout != kInvalidLayout);
+            // existing entry always has first layout initialized (current layout might be unknown though)
+            // 
+            // TODO: does it make sense to initialize current layout together with the first layout (set current as first),
+            // assuming that submit time validation will detect mismatch between first layout and global layout?
+            // Are there contexts when this does not work?
+            assert(entry.first_layout != kInvalidLayout);
 
             const bool update_current =
                 new_entry.current_layout != kInvalidLayout && new_entry.current_layout != entry.current_layout;
@@ -78,7 +82,8 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGen
     assert(layout != kInvalidLayout);
     LayoutEntry entry{};
     entry.current_layout = layout;
-    entry.initial_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
+    // The first layout will be written in layout map only if it was not specified before
+    entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
 
     bool updated = false;
 
@@ -97,12 +102,12 @@ bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGen
     return updated;
 }
 
-void TrackInitialLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
-                        VkImageAspectFlags aspect_mask) {
+void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
+                      VkImageAspectFlags aspect_mask) {
     assert(expected_layout != kInvalidLayout);
     LayoutEntry entry{};
     entry.current_layout = kInvalidLayout;
-    entry.initial_layout = expected_layout;
+    entry.first_layout = expected_layout;
     entry.aspect_mask = aspect_mask;
 
     // Unwrap the BothMaps entry here as this is a performance hotspot

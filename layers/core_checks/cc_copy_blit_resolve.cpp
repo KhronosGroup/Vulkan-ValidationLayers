@@ -1945,8 +1945,8 @@ void CoreChecks::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkIma
     ASSERT_AND_RETURN(src_image_state && dst_image_state);
 
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
-        cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
+        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
     }
 }
 
@@ -1963,10 +1963,10 @@ void CoreChecks::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, cons
     ASSERT_AND_RETURN(src_image_state && dst_image_state);
 
     for (uint32_t i = 0; i < pCopyImageInfo->regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].srcSubresource),
-                                          pCopyImageInfo->srcImageLayout);
-        cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].dstSubresource),
-                                          pCopyImageInfo->dstImageLayout);
+        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].srcSubresource),
+                                        pCopyImageInfo->srcImageLayout);
+        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(pCopyImageInfo->pRegions[i].dstSubresource),
+                                        pCopyImageInfo->dstImageLayout);
     }
 }
 
@@ -2373,7 +2373,7 @@ void CoreChecks::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffe
     ASSERT_AND_RETURN(src_image_state);
 
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].imageSubresource), srcImageLayout);
+        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(pRegions[i].imageSubresource), srcImageLayout);
     }
 }
 
@@ -2391,8 +2391,8 @@ void CoreChecks::PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuff
     ASSERT_AND_RETURN(src_image_state);
 
     for (uint32_t i = 0; i < pCopyImageToBufferInfo->regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pCopyImageToBufferInfo->pRegions[i].imageSubresource),
-                                          pCopyImageToBufferInfo->srcImageLayout);
+        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(pCopyImageToBufferInfo->pRegions[i].imageSubresource),
+                                        pCopyImageToBufferInfo->srcImageLayout);
     }
 }
 
@@ -2525,7 +2525,7 @@ void CoreChecks::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffe
     ASSERT_AND_RETURN(dst_image_state);
 
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].imageSubresource), dstImageLayout);
+        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(pRegions[i].imageSubresource), dstImageLayout);
     }
 }
 
@@ -2543,8 +2543,8 @@ void CoreChecks::PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuff
     ASSERT_AND_RETURN(dst_image_state);
 
     for (uint32_t i = 0; i < pCopyBufferToImageInfo->regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pCopyBufferToImageInfo->pRegions[i].imageSubresource),
-                                          pCopyBufferToImageInfo->dstImageLayout);
+        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(pCopyBufferToImageInfo->pRegions[i].imageSubresource),
+                                        pCopyBufferToImageInfo->dstImageLayout);
     }
 }
 
@@ -3458,8 +3458,8 @@ void CoreChecks::RecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcIm
     ASSERT_AND_RETURN(src_image_state && dst_image_state);
 
     for (uint32_t i = 0; i < regionCount; ++i) {
-        cb_state->TrackImageInitialLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
-        cb_state->TrackImageInitialLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
+        cb_state->TrackImageFirstLayout(*src_image_state, RangeFromLayers(pRegions[i].srcSubresource), srcImageLayout);
+        cb_state->TrackImageFirstLayout(*dst_image_state, RangeFromLayers(pRegions[i].dstSubresource), dstImageLayout);
     }
 }
 

@@ -37,11 +37,11 @@ struct LayoutEntry {
     // This tracks current subresource layout as we progress through the command buffer
     VkImageLayout current_layout;
 
-    // This tracks the first known layout of the subresource in the command buffer (that's why initial).
+    // This tracks the first known layout of the subresource in the command buffer.
     // This value is tracked based on the expected layout parameters from various API functions.
     // For example, for vkCmdCopyImageToBuffer the expected layout is the srcImageLayout parameter,
     // and for image barrier it is the oldLayout.
-    VkImageLayout initial_layout;
+    VkImageLayout first_layout;
 
     // For relaxed matching rules
     VkImageAspectFlags aspect_mask;
@@ -58,15 +58,16 @@ using ImageLayoutMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
 using CommandBufferImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;
 using ImageLayoutRegistry = vvl::unordered_map<const vvl::Image*, std::optional<ImageLayoutMap>>;
 
-// Set current layout. If API also defines the expected layout it can be specified too.
+// Set current image layout in the command buffer.
+// If API defines the expected layout it can be specified too.
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
                          VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
 
-// Tracks image first layout in the command buffer. This is usually used by the APIs that do not perform
+// Tracks image's first layout in the command buffer. This function is usually called by the APIs that do not perform
 // layout transitions but just manifest the expected layout, e.g. srcImageLayout parameter in vkCmdCopyImageToBuffer.
 // The aspect mask is used if API additionally restricts subresource to specific aspect (descriptor image views).
-void TrackInitialLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                        VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
+void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
+                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
 
 // TODO: document and rename me
 bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, const vvl::Image& image_state,
