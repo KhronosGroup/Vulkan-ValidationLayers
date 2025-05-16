@@ -39,20 +39,20 @@ struct LayoutUseCheckAndMessage {
     LayoutUseCheckAndMessage() = delete;
     LayoutUseCheckAndMessage(VkImageLayout expected, const VkImageAspectFlags aspect_mask_ = 0)
         : expected_layout{expected}, aspect_mask{aspect_mask_}, message(nullptr), layout(kInvalidLayout) {}
-    bool Check(const LayoutEntry &layout_entry) {
+    bool Check(const ImageLayoutState &state) {
         message = nullptr;
         layout = kInvalidLayout;  // Success status
-        if (layout_entry.current_layout != kInvalidLayout) {
-            if (!ImageLayoutMatches(aspect_mask, expected_layout, layout_entry.current_layout)) {
+        if (state.current_layout != kInvalidLayout) {
+            if (!ImageLayoutMatches(aspect_mask, expected_layout, state.current_layout)) {
                 message = "previous known";
-                layout = layout_entry.current_layout;
+                layout = state.current_layout;
             }
-        } else if (layout_entry.first_layout != kInvalidLayout) {
-            if (!ImageLayoutMatches(aspect_mask, expected_layout, layout_entry.first_layout)) {
-                if (!((layout_entry.aspect_mask & kDepthOrStencil) &&
-                      ImageLayoutMatches(layout_entry.aspect_mask, expected_layout, layout_entry.first_layout))) {
+        } else if (state.first_layout != kInvalidLayout) {
+            if (!ImageLayoutMatches(aspect_mask, expected_layout, state.first_layout)) {
+                if (!((state.aspect_mask & kDepthOrStencil) &&
+                      ImageLayoutMatches(state.aspect_mask, expected_layout, state.first_layout))) {
                     message = "previously used";
-                    layout = layout_entry.first_layout;
+                    layout = state.first_layout;
                 }
             }
         }
@@ -61,7 +61,7 @@ struct LayoutUseCheckAndMessage {
 };
 
 struct GlobalLayoutUpdater {
-    bool update(VkImageLayout &dst, const LayoutEntry &src) const {
+    bool update(VkImageLayout &dst, const ImageLayoutState &src) const {
         if (src.current_layout != kInvalidLayout && dst != src.current_layout) {
             dst = src.current_layout;
             return true;
@@ -69,7 +69,7 @@ struct GlobalLayoutUpdater {
         return false;
     }
 
-    std::optional<VkImageLayout> insert(const LayoutEntry &src) const {
+    std::optional<VkImageLayout> insert(const ImageLayoutState &src) const {
         std::optional<VkImageLayout> result;
         if (src.current_layout != kInvalidLayout) {
             result.emplace(src.current_layout);

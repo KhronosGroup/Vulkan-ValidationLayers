@@ -44,9 +44,9 @@ struct CommandBufferSubmitState {
 
     // The "local" prefix is about tracking state accross command buffers of a *single* QueueSubmit command.
     // This does not accumulate state from the previous submissions.
-    ImageLayoutRegistry local_image_layout_registry;
     QueryMap local_query_to_state_map;
     EventMap local_event_signal_info;
+    vvl::unordered_map<const vvl::Image *, ImageLayoutMap> local_image_layout_state;
     vvl::unordered_map<VkVideoSessionKHR, vvl::VideoSessionDeviceState> local_video_session_state{};
 
     CommandBufferSubmitState(const CoreChecks &c, const vvl::Queue &q) : core(c), queue_state(q) {
@@ -59,7 +59,7 @@ struct CommandBufferSubmitState {
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, local_image_layout_registry);
+        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, local_image_layout_state);
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core.ValidatePrimaryCommandBufferState(

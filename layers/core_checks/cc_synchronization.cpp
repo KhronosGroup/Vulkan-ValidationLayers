@@ -1744,7 +1744,7 @@ bool CoreChecks::ValidateImageLayoutAgainstImageUsage(const Location &layout_loc
 // Verify image barrier is compatible with the image it references.
 bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
                                                   const Location &barrier_loc, const vvl::Image &image_state,
-                                                  CommandBufferImageLayoutRegistry &local_layout_registry) const {
+                                                  ImageLayoutRegistry &local_layout_registry) const {
     using sync_vuid_maps::GetImageBarrierVUID;
     using sync_vuid_maps::ImageError;
 
@@ -2384,7 +2384,7 @@ bool CoreChecks::ValidateBufferBarrier(const LogObjectList &objects, const Locat
 }
 
 bool CoreChecks::ValidateImageBarrier(const LogObjectList &objlist, const vvl::CommandBuffer &cb_state, const ImageBarrier &barrier,
-                                      const Location &barrier_loc, CommandBufferImageLayoutRegistry &local_layout_registry) const {
+                                      const Location &barrier_loc, ImageLayoutRegistry &local_layout_registry) const {
     bool skip = false;
 
     const VkImageLayout old_layout = barrier.oldLayout;
@@ -2454,7 +2454,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateImageBarrier calls.
-    CommandBufferImageLayoutRegistry local_layout_registry;
+    ImageLayoutRegistry local_layout_registry;
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
@@ -2484,7 +2484,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     // Tracks duplicate layout transition for image barriers.
     // Keeps state between ValidateImageBarrier calls.
-    CommandBufferImageLayoutRegistry local_layout_registry;
+    ImageLayoutRegistry local_layout_registry;
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);

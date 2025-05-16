@@ -25,30 +25,30 @@ using IndexRange = subresource_adapter::IndexRange;
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
 template <typename LayoutsMap>
-static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, const LayoutEntry& new_entry) {
+static bool UpdateLayoutMapRange(LayoutsMap& layout_map, const IndexRange& range, const ImageLayoutState& new_entry) {
     using CachedLowerBound = typename sparse_container::cached_lower_bound_impl<LayoutsMap>;
-    CachedLowerBound pos(layouts, range.begin);
+    CachedLowerBound pos(layout_map, range.begin);
     bool updated_current = false;
     while (range.includes(pos->index)) {
         if (!pos->valid) {
             // Fill in the leading space (or in the case of pos at end the trailing space
             const auto start = pos->index;
             auto it = pos->lower_bound;
-            const auto limit = (it != layouts.end()) ? std::min(it->first.begin, range.end) : range.end;
-            auto insert_result = layouts.insert(it, std::make_pair(IndexRange(start, limit), new_entry));
+            const auto limit = (it != layout_map.end()) ? std::min(it->first.begin, range.end) : range.end;
+            auto insert_result = layout_map.insert(it, std::make_pair(IndexRange(start, limit), new_entry));
             pos.invalidate(insert_result, start);
             pos.seek(limit);
             updated_current = true;
         }
         // Note that after the "fill" operation pos may have become valid so we check again
         if (pos->valid) {
-            LayoutEntry entry = pos->lower_bound->second;  // intentional copy
+            ImageLayoutState entry = pos->lower_bound->second;  // intentional copy
             // existing entry always has first layout initialized (current layout might be unknown though)
-            // 
+            assert(entry.first_layout != kInvalidLayout);
+
             // TODO: does it make sense to initialize current layout together with the first layout (set current as first),
             // assuming that submit time validation will detect mismatch between first layout and global layout?
             // Are there contexts when this does not work?
-            assert(entry.first_layout != kInvalidLayout);
 
             const bool update_current =
                 new_entry.current_layout != kInvalidLayout && new_entry.current_layout != entry.current_layout;
@@ -57,7 +57,7 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
 
             if (!intersected_range.empty() && update_current) {
                 entry.current_layout = new_entry.current_layout;
-                auto overwrite_result = layouts.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, entry));
+                auto overwrite_result = layout_map.overwrite_range(pos->lower_bound, std::make_pair(intersected_range, entry));
                 // If we didn't cover the whole range, we'll need to go around again
                 pos.invalidate(overwrite_result, intersected_range.begin);
                 pos.seek(intersected_range.end);
@@ -73,89 +73,65 @@ static bool UpdateLayoutStateImpl(LayoutsMap& layouts, const IndexRange& range, 
     return updated_current;
 }
 
-CommandBufferImageLayoutMap::CommandBufferImageLayoutMap(const vvl::Image& image_state)
-    : subresource_adapter::BothRangeMap<LayoutEntry, 16>(image_state.subresource_encoder.SubresourceCount()),
-      image_id(image_state.GetId()) {}
-
-bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout layout,
-                         VkImageLayout expected_layout) {
-    assert(layout != kInvalidLayout);
-    LayoutEntry entry{};
-    entry.current_layout = layout;
-    // The first layout will be written in layout map only if it was not specified before
-    entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
-
+template <typename LayoutMap>
+static bool UpdateLayoutMap(LayoutMap& image_layout_map, RangeGenerator&& range_gen, const ImageLayoutState& entry) {
     bool updated = false;
-
     // Unwrap the BothMaps entry here as this is a performance hotspot
     if (image_layout_map.UsesSmallMap()) {
         auto& layout_map = image_layout_map.GetSmallMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
+            updated |= UpdateLayoutMapRange(layout_map, *range_gen, entry);
         }
     } else {
         auto& layout_map = image_layout_map.GetBigMap();
         for (; range_gen->non_empty(); ++range_gen) {
-            updated |= UpdateLayoutStateImpl(layout_map, *range_gen, entry);
+            updated |= UpdateLayoutMapRange(layout_map, *range_gen, entry);
         }
     }
     return updated;
 }
 
+template <typename LayoutMap>
+static bool IterateLayoutMapRanges(
+    const LayoutMap& image_layout_map, RangeGenerator&& gen,
+    std::function<bool(const IndexRange& range, const typename LayoutMap::mapped_type& layout_state)>&& func) {
+    for (; gen->non_empty(); ++gen) {
+        for (auto pos = image_layout_map.lower_bound(*gen); pos != image_layout_map.end() && gen->intersects(pos->first); ++pos) {
+            // TODO: Usually func returns skip status. Often we accumulate skip and do not initiate immediate return.
+            // Investigate if this function should accumuate skip value instead of immediate return.
+            if (func(pos->first, pos->second)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout layout,
+                         VkImageLayout expected_layout) {
+    assert(layout != kInvalidLayout);
+    ImageLayoutState entry{};
+    entry.current_layout = layout;
+    entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
+    return UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
+}
+
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout expected_layout,
                       VkImageAspectFlags aspect_mask) {
     assert(expected_layout != kInvalidLayout);
-    LayoutEntry entry{};
+    ImageLayoutState entry{};
     entry.current_layout = kInvalidLayout;
     entry.first_layout = expected_layout;
     entry.aspect_mask = aspect_mask;
-
-    // Unwrap the BothMaps entry here as this is a performance hotspot
-    if (image_layout_map.UsesSmallMap()) {
-        auto& layout_map = image_layout_map.GetSmallMap();
-        for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, *range_gen, entry);
-        }
-    } else {
-        auto& layout_map = image_layout_map.GetBigMap();
-        for (; range_gen->non_empty(); ++range_gen) {
-            UpdateLayoutStateImpl(layout_map, *range_gen, entry);
-        }
-    }
+    UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 
-bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, const vvl::Image& image_state,
-                const VkImageSubresourceRange& normalized_subresource_range,
-                std::function<bool(const IndexRange& range, const LayoutEntry& state)>&& func) {
-    RangeGenerator range_gen = image_state.subresource_encoder.InRange(normalized_subresource_range)
-                                   ? RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
-                                   : RangeGenerator{};
-
-    return AnyInRange(image_layout_map, std::move(range_gen), std::move(func));
+bool ForEachMatchingLayoutMapRange(const CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& gen,
+                                   std::function<bool(const IndexRange& range, const ImageLayoutState& entry)>&& func) {
+    return IterateLayoutMapRanges(image_layout_map, std::move(gen), std::move(func));
 }
 
-bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& gen,
-                std::function<bool(const IndexRange& range, const LayoutEntry& state)>&& func) {
-    for (; gen->non_empty(); ++gen) {
-        for (auto pos = image_layout_map.lower_bound(*gen); (pos != image_layout_map.end()) && (gen->intersects(pos->first));
-             ++pos) {
-            if (func(pos->first, pos->second)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool AnyInRange(const ImageLayoutMap& image_layout_map, RangeGenerator& gen,
-                std::function<bool(const ImageLayoutMap::key_type& range, VkImageLayout image_layout)>&& func) {
-    for (; gen->non_empty(); ++gen) {
-        for (auto pos = image_layout_map.lower_bound(*gen); (pos != image_layout_map.end()) && (gen->intersects(pos->first));
-             ++pos) {
-            if (func(pos->first, pos->second)) {
-                return true;
-            }
-        }
-    }
-    return false;
+bool ForEachMatchingLayoutMapRange(const ImageLayoutMap& image_layout_map, RangeGenerator&& gen,
+                                   std::function<bool(const ImageLayoutMap::key_type& range, VkImageLayout image_layout)>&& func) {
+    return IterateLayoutMapRanges(image_layout_map, std::move(gen), std::move(func));
 }

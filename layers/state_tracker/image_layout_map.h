@@ -22,58 +22,57 @@
 
 #include <functional>
 
+#include "containers/custom_containers.h"
 #include "containers/subresource_adapter.h"
-#include "containers/container_utils.h"
-#include "utils/vk_layer_utils.h"
-#include "error_message/logging.h"
-
-namespace vvl {
-class Image;
-}  // namespace vvl
 
 constexpr VkImageLayout kInvalidLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 
-struct LayoutEntry {
-    // This tracks current subresource layout as we progress through the command buffer
+// Stores the image layout of each subresource of a single image.
+// It is used to track the actual current layout (as opposed to record time tracking)
+using ImageLayoutMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
+
+// Image layout state during command buffer recording
+struct ImageLayoutState {
     VkImageLayout current_layout;
 
-    // This tracks the first known layout of the subresource in the command buffer.
+    // Tracks the first known layout of the subresource in the command buffer.
     // This value is tracked based on the expected layout parameters from various API functions.
     // For example, for vkCmdCopyImageToBuffer the expected layout is the srcImageLayout parameter,
     // and for image barrier it is the oldLayout.
     VkImageLayout first_layout;
 
-    // For relaxed matching rules
+    // For relaxed matching rules (used with the first layout)
     VkImageAspectFlags aspect_mask;
 };
 
-class CommandBufferImageLayoutMap : public subresource_adapter::BothRangeMap<LayoutEntry, 16> {
+// Tracks image layout state of each subresource of a single image during record time.
+// Each command buffer has ImageLayoutRegistery that tracks all images.
+class CommandBufferImageLayoutMap : public subresource_adapter::BothRangeMap<ImageLayoutState, 16> {
   public:
-    CommandBufferImageLayoutMap(const vvl::Image& image_state);
+    CommandBufferImageLayoutMap(subresource_adapter::IndexType subresource_count, uint32_t image_id)
+        : subresource_adapter::BothRangeMap<ImageLayoutState, 16>(subresource_count), image_id(image_id) {}
     const uint32_t image_id;
 };
+using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;
 
-using ImageLayoutMap = subresource_adapter::BothRangeMap<VkImageLayout, 16>;
-
-using CommandBufferImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;
-using ImageLayoutRegistry = vvl::unordered_map<const vvl::Image*, std::optional<ImageLayoutMap>>;
-
-// Set current image layout in the command buffer.
+// Update image layout state during command buffer recording phase.
 // If API defines the expected layout it can be specified too.
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
                          VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
 
-// Tracks image's first layout in the command buffer. This function is usually called by the APIs that do not perform
-// layout transitions but just manifest the expected layout, e.g. srcImageLayout parameter in vkCmdCopyImageToBuffer.
-// The aspect mask is used if API additionally restricts subresource to specific aspect (descriptor image views).
+// Track image layout at the beginning of the command buffer.
+// Typically called by APIs that specify the expected layout but do not perform a layout transition.
+// The aspect mask is used when the API restricts the subresource to a specific aspect (descriptor image views).
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
                       VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
 
-// TODO: document and rename me
-bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, const vvl::Image& image_state,
-                const VkImageSubresourceRange& normalized_subresource_range,
-                std::function<bool(const subresource_adapter::IndexRange& range, const LayoutEntry& state)>&& func);
-bool AnyInRange(const CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& gen,
-                std::function<bool(const subresource_adapter::IndexRange& range, const LayoutEntry& state)>&& func);
-bool AnyInRange(const ImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator& gen,
-                std::function<bool(const subresource_adapter::IndexRange& range, VkImageLayout image_layout)>&& func);
+// Iterate over layout map subresource ranges that intersect with the ranges defined by RangeGenerator.
+// Runs the callback on each matching layout map range.
+// Returns skip status (check todo in the implementation)
+bool ForEachMatchingLayoutMapRange(
+    const CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& gen,
+    std::function<bool(const subresource_adapter::IndexRange& range, const ImageLayoutState& entry)>&& func);
+
+bool ForEachMatchingLayoutMapRange(
+    const ImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& gen,
+    std::function<bool(const subresource_adapter::IndexRange& range, VkImageLayout image_layout)>&& func);

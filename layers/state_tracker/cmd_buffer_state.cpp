@@ -436,14 +436,16 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
         if (alias_iter != aliased_image_layout_map.end()) {
             image_layout_map = alias_iter->second;
         } else {
-            image_layout_map = std::make_shared<CommandBufferImageLayoutMap>(image_state);
+            image_layout_map = std::make_shared<CommandBufferImageLayoutMap>(image_state.subresource_encoder.SubresourceCount(),
+                                                                             image_state.GetId());
             // Save the local layout map for the next aliased image.
             // The global layout map pointer is only used as a key into the local lookup
             // table so it doesn't need to be locked.
             aliased_image_layout_map.emplace(p_global_layout_map, image_layout_map);
         }
     } else {
-        image_layout_map = std::make_shared<CommandBufferImageLayoutMap>(image_state);
+        image_layout_map =
+            std::make_shared<CommandBufferImageLayoutMap>(image_state.subresource_encoder.SubresourceCount(), image_state.GetId());
     }
     if (iter != image_layout_registry.end()) {
         // overwrite the stale entry
@@ -1118,13 +1120,13 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             }
             if (auto cb_layout_map = GetOrCreateImageLayoutMap(*image_state)) {
                 struct Updater {
-                    void update(LayoutEntry &dst, const LayoutEntry &src) const {
+                    void update(ImageLayoutState &dst, const ImageLayoutState &src) const {
                         if (src.current_layout != kInvalidLayout && src.current_layout != dst.current_layout) {
                             dst.current_layout = src.current_layout;
                         }
                     }
-                    std::optional<LayoutEntry> insert(const LayoutEntry &src) const {
-                        return std::optional<LayoutEntry>(vvl::in_place, src);
+                    std::optional<ImageLayoutState> insert(const ImageLayoutState &src) const {
+                        return std::optional<ImageLayoutState>(vvl::in_place, src);
                     }
                 };
                 sparse_container::splice(*cb_layout_map, *secondary_cb_layout_map, Updater());

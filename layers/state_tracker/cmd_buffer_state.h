@@ -486,7 +486,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     vvl::unordered_set<QueryObject> started_queries;
     vvl::unordered_set<QueryObject> updated_queries;
     vvl::unordered_set<QueryObject> render_pass_queries;
-    CommandBufferImageLayoutRegistry image_layout_registry;
+    ImageLayoutRegistry image_layout_registry;
     AliasedLayoutMap aliased_image_layout_map;  // storage for potentially aliased images
 
     vvl::unordered_map<uint32_t, vvl::VertexBufferBinding> current_vertex_buffer_binding_info;
