@@ -33,10 +33,6 @@ class Swapchain;
 class VideoProfileDesc;
 }  // namespace vvl
 
-static inline bool operator==(const VkImageSubresource &lhs, const VkImageSubresource &rhs) {
-    return (lhs.aspectMask == rhs.aspectMask) && (lhs.mipLevel == rhs.mipLevel) && (lhs.arrayLayer == rhs.arrayLayer);
-}
-
 // Transfer VkImageSubresourceRange into VkImageSubresourceLayers struct
 static inline VkImageSubresourceLayers LayersFromRange(const VkImageSubresourceRange &subresource_range) {
     VkImageSubresourceLayers subresource_layers;

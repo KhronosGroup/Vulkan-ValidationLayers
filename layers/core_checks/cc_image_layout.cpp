@@ -57,12 +57,12 @@ struct LayoutUseCheckAndMessage {
                 message = "previous known";
                 layout = layout_entry.current_layout;
             }
-        } else if (layout_entry.initial_layout != kInvalidLayout) {
-            if (!ImageLayoutMatches(aspect_mask, expected_layout, layout_entry.initial_layout)) {
+        } else if (layout_entry.first_layout != kInvalidLayout) {
+            if (!ImageLayoutMatches(aspect_mask, expected_layout, layout_entry.first_layout)) {
                 if (!((layout_entry.aspect_mask & kDepthOrStencil) &&
-                      ImageLayoutMatches(layout_entry.aspect_mask, expected_layout, layout_entry.initial_layout))) {
+                      ImageLayoutMatches(layout_entry.aspect_mask, expected_layout, layout_entry.first_layout))) {
                     message = "previously used";
-                    layout = layout_entry.initial_layout;
+                    layout = layout_entry.first_layout;
                 }
             }
         }
@@ -197,7 +197,8 @@ struct GlobalLayoutUpdater {
     }
 };
 
-// This validates that the initial layout specified in the command buffer for the IMAGE is the same as the global IMAGE layout
+// This validates that the first layout specified in the command buffer for the image
+// is the same as this image's global (actual/current) layout
 bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::CommandBuffer &cb_state,
                                             ImageLayoutRegistry &local_layout_registry) const {
     if (disabled[image_layout_validation]) {
@@ -234,8 +235,8 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
         sparse_container::parallel_iterator<const ImageLayoutMap> current_layout(local_layout_map, *global_layout_map,
                                                                                  pos->first.begin);
         while (pos != end) {
-            VkImageLayout initial_layout = pos->second.initial_layout;
-            if (initial_layout == kInvalidLayout) {
+            VkImageLayout first_layout = pos->second.first_layout;
+            if (first_layout == kInvalidLayout) {
                 continue;
             }
 
@@ -248,11 +249,11 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                 image_layout = current_layout->pos_B->lower_bound->second;
             }
             const auto intersected_range = pos->first & current_layout->range;
-            if (initial_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
+            if (first_layout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 // TODO: Set memory invalid which is in mem_tracker currently
-            } else if (image_layout != initial_layout) {
+            } else if (image_layout != first_layout) {
                 const auto aspect_mask = image_state->subresource_encoder.Decode(intersected_range.begin).aspectMask;
-                const bool matches = ImageLayoutMatches(aspect_mask, image_layout, initial_layout);
+                const bool matches = ImageLayoutMatches(aspect_mask, image_layout, first_layout);
                 if (!matches) {
                     // We can report all the errors for the intersected range directly
                     for (auto index : vvl::range_view<decltype(intersected_range)>(intersected_range)) {
@@ -264,7 +265,7 @@ bool CoreChecks::ValidateCmdBufImageLayouts(const Location &loc, const vvl::Comm
                             vuid.image_layout_09600, objlist, loc,
                             "command buffer %s expects %s (subresource: %s) to be in layout %s--instead, current layout is %s.",
                             FormatHandle(cb_state).c_str(), FormatHandle(*image_state).c_str(),
-                            string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(initial_layout),
+                            string_VkImageSubresource(subresource).c_str(), string_VkImageLayout(first_layout),
                             string_VkImageLayout(image_layout));
                     }
                 }
@@ -768,9 +769,9 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
             const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
             VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
             sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            cb_state.TrackImageInitialLayout(*image_state, sub_range, initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, sub_range, initial_layout);
             sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-            cb_state.TrackImageInitialLayout(*image_state, sub_range, stencil_initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, sub_range, stencil_initial_layout);
         } else {
             // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
             // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
@@ -781,7 +782,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
                     subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 }
             }
-            cb_state.TrackImageInitialLayout(*image_state, subresource_range, initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, subresource_range, initial_layout);
         }
     }
     // Now transition for first subpass (index 0)
@@ -1044,14 +1045,14 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     auto image_state = Get<vvl::Image>(mem_barrier.image);
     ASSERT_AND_RETURN(image_state);
 
-    auto normalized_isr = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    auto normalized_subresource_range = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
-    VkImageLayout initial_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
+    VkImageLayout old_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
     VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
 
-    // Layout transitions in external instance are not tracked, so don't validate initial layout.
+    // Layout transitions in external instance are not tracked, so don't validate previous layout.
     if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
-        initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 
     // For ownership transfers, the barrier is specified twice; as a release
@@ -1064,9 +1065,9 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     //
     // However, we still need to record initial layout for the "initial layout" validation
     if (cb_state.IsReleaseOp(mem_barrier)) {
-        cb_state.TrackImageInitialLayout(*image_state, normalized_isr, initial_layout);
+        cb_state.TrackImageFirstLayout(*image_state, normalized_subresource_range, old_layout);
     } else {
-        cb_state.SetImageLayout(*image_state, normalized_isr, new_layout, initial_layout);
+        cb_state.SetImageLayout(*image_state, normalized_subresource_range, new_layout, old_layout);
     }
 }
 

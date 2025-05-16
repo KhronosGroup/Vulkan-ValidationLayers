@@ -1466,7 +1466,7 @@ void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageS
     }
 }
 
-void CommandBuffer::TrackImageViewInitialLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
+void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, VkImageLayout layout) {
     if (dev_data.disabled[image_layout_validation]) {
         return;
     }
@@ -1474,17 +1474,17 @@ void CommandBuffer::TrackImageViewInitialLayout(const vvl::ImageView &view_state
     auto image_layout_map = (image_state && !image_state->Destroyed()) ? GetOrCreateImageLayoutMap(*image_state) : nullptr;
     if (image_layout_map) {
         RangeGenerator range_gen(view_state.range_generator);
-        TrackInitialLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask);
+        TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, view_state.normalized_subresource_range.aspectMask);
     }
 }
 
-void CommandBuffer::TrackImageInitialLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
+void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
                                             VkImageLayout layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
         const VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(range);
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
-            TrackInitialLayout(*image_layout_map, std::move(range_gen), layout);
+            TrackFirstLayout(*image_layout_map, std::move(range_gen), layout);
         }
     }
 }
