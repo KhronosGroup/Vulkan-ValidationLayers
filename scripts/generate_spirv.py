@@ -236,10 +236,10 @@ def main():
     shader_type = ['vert', 'tesc', 'tese', 'geom', 'frag', 'comp', 'mesh', 'task', 'rgen', 'rint', 'rahit', 'rchit', 'rmiss', 'rcall']
     try:
         gpu_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders')
-        diagnostic_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/validation_cmd')
+        validation_cmd_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/validation_cmd')
         instrumentation_shaders_dir = common_ci.RepoRelative('layers/gpuav/shaders/instrumentation')
 
-        for dir_path in [diagnostic_shaders_dir, instrumentation_shaders_dir]:
+        for dir_path in [validation_cmd_shaders_dir, instrumentation_shaders_dir]:
              if not os.path.isdir(dir_path):
                  print(f"Warning: Shader directory not found: {dir_path}", file=sys.stderr)
                  continue

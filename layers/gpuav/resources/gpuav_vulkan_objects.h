@@ -25,7 +25,6 @@
 #include "containers/custom_containers.h"
 #include "containers/range.h"
 
-struct Location;
 namespace gpuav {
 class Validator;
 
@@ -90,6 +89,8 @@ struct BufferRange {
     VkDeviceSize offset = 0;
     VkDeviceSize size = 0;
     void *offset_mapped_ptr = nullptr;
+    VkDeviceAddress offset_address = 0;
+    VmaAllocation vma_alloc = VK_NULL_HANDLE;  // Todo: get rid of this once host cached allocation are removed
 };
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources
@@ -100,6 +101,10 @@ class GpuResourcesManager {
     VkDescriptorSet GetManagedDescriptorSet(VkDescriptorSetLayout desc_set_layout);
 
     vko::BufferRange GetHostVisibleBufferRange(VkDeviceSize size);
+    vko::BufferRange GetHostCachedBufferRange(VkDeviceSize size);
+    void FlushAllocation(const vko::BufferRange &buffer_range);
+    void InvalidateAllocation(const vko::BufferRange &buffer_range);
+    vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
 
     void ReturnResources();
@@ -146,6 +151,8 @@ class GpuResourcesManager {
 
     // One cache per buffer type: having them mixed in just one would worse cache lookups
     BufferCache host_visible_buffer_cache_;
+    BufferCache host_cached_buffer_cache_;
+    BufferCache device_local_buffer_cache_;
     BufferCache device_local_indirect_buffer_cache_;
 };
 
@@ -162,11 +169,26 @@ class SharedResourcesCache {
         T *t = reinterpret_cast<T *>(entry->second.first);
         return t;
     }
+    template <typename T>
+    const T *TryGet() const {
+        auto entry = shared_validation_resources_map_.find(typeid(T));
+        if (entry == shared_validation_resources_map_.cend()) {
+            return nullptr;
+        }
+        const T *t = reinterpret_cast<const T *>(entry->second.first);
+        return t;
+    }
 
     // Get an object, assuming it has been created
     template <typename T>
     T &Get() {
         T *t = TryGet<T>();
+        assert(t);
+        return *t;
+    }
+    template <typename T>
+    const T &Get() const {
+        const T *t = TryGet<T>();
         assert(t);
         return *t;
     }
@@ -201,6 +223,23 @@ class SharedResourcesCache {
 
     vvl::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
+};
+
+// Used to allocate and submit GPU-AV's own command buffers
+class CommandPool {
+  public:
+    CommandPool(Validator &gpuav, uint32_t queue_family_i);
+    ~CommandPool();
+    // Returned command buffer is ready to be used,
+    // corresponding fence has been waited upon.
+    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer();
+
+  private:
+    Validator &gpuav_;
+    VkCommandPool cmd_pool_ = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> cmd_buffers_{};
+    std::vector<VkFence> fences_{};
+    uint32_t cmd_buffer_ring_head_ = 0;
 };
 
 }  // namespace vko

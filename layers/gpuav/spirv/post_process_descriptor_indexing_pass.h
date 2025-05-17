@@ -17,7 +17,18 @@
 #include <stdint.h>
 #include "pass.h"
 
+#include "gpuav/resources/gpuav_vulkan_objects.h"
+
 namespace gpuav {
+class Validator;
+class CommandBufferSubState;
+
+struct PostProcessingCbState {
+    vko::BufferRange last_desc_set_binding_to_post_process_buffers_lut;
+};
+
+void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& cb);
+
 namespace spirv {
 
 struct Type;
