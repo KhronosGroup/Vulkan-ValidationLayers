@@ -238,6 +238,7 @@ void CommandBuffer::ResetCBState() {
 
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
+    dynamic_state_status.history.reset();
     dynamic_state_status.rtx_stack_size_cb = false;
     dynamic_state_status.rtx_stack_size_pipeline = false;
     CBDynamicFlags all;
@@ -1787,6 +1788,8 @@ void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderOb
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
 }
 
+// Only called for Graphics and during Multiview
+// "When multiview is enabled, at the beginning of each subpass all non-render pass state is undefined."
 void CommandBuffer::UnbindResources() {
     // Vertex and index buffers
     index_buffer_binding.reset();
@@ -1797,12 +1800,10 @@ void CommandBuffer::UnbindResources() {
     push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
     push_constant_ranges_layout.reset();
 
-    // Reset status of cb to force rebinding of all resources
-    // Index buffer included
+    // Reset status of graphics cb to force rebinding of all resources
     dynamic_state_status.cb.reset();
     dynamic_state_status.pipeline.reset();
-    dynamic_state_status.rtx_stack_size_cb = false;
-    dynamic_state_status.rtx_stack_size_pipeline = false;
+    dynamic_state_status.history.reset();
 
     // Pipeline and descriptor sets
     lastBound[BindPoint_Graphics].Reset();
