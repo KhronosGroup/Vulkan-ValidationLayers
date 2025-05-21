@@ -1749,6 +1749,11 @@ bool CoreChecks::ValidateShaderStage(const ShaderStageState &stage_state, const 
             if (entry_point) {
                 err << " (The only entry point found was \"" << entry_point->name << "\" for "
                     << string_VkShaderStageFlagBits(entry_point->stage) << ")";
+                if (entry_point->name == "main") {
+                    err << "\nSome shading languages will let you name the main function something else, but when "
+                           "compiled to SPIR-V, it will keep it as 'main' to match defaults found in other shading langauges such "
+                           "as GLSL. It is also valid in a single SPIR-V binary to have 'main' for two different stages.";
+                }
             }
         } else {
             err << " The following entry points were found in the SPIR-V module:\n";
