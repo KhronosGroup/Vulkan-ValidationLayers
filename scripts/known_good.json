@@ -117,19 +117,6 @@
             "optional": [
                 "tests"
             ]
-        },
-        {
-            "name": "Vulkan-Tools",
-            "api": "vulkan",
-            "url": "https://github.com/KhronosGroup/Vulkan-Tools.git",
-            "sub_dir": "Vulkan-Tools",
-            "build_dir": "Vulkan-Tools/build",
-            "install_dir": "Vulkan-Tools/build/install",
-            "commit": "v1.4.315",
-            "build_step": "skip",
-            "optional": [
-                "tests"
-            ]
         }
     ],
     "install_names": {

@@ -1,5 +1,5 @@
 # ~~~
-# Copyright (c) 2024 LunarG, Inc.
+# Copyright (c) 2024-2025 LunarG, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux|BSD|GNU")
     if(BUILD_WSI_WAYLAND_SUPPORT)
         add_definitions(-DVK_USE_PLATFORM_WAYLAND_KHR -DVK_USE_PLATFORM_WAYLAND_KHX)
     endif()
+elseif(VVL_MOCK_ANDROID)
+    add_definitions(-DVK_USE_PLATFORM_ANDROID_KHR)
 else()
     message(FATAL_ERROR "Unsupported Platform!")
 endif()
