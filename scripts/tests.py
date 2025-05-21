@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Copyright (c) 2020-2024 Valve Corporation
-# Copyright (c) 2020-2024 LunarG, Inc.
+# Copyright (c) 2020-2025 Valve Corporation
+# Copyright (c) 2020-2025 LunarG, Inc.
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -90,31 +90,6 @@ def BuildLoader():
     common_ci.RunShellCmd(install_cmd)
 
 #
-# Prepare Mock ICD for use with Layer Validation Tests
-def BuildMockICD(mockAndroid):
-    SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Tools'
-    BUILD_DIR = f'{SRC_DIR}/build'
-
-    if not os.path.exists(SRC_DIR):
-        print("Unable to find Vulkan-Tools")
-        sys.exit(1)
-
-    print("Configure Mock ICD")
-    cmake_cmd = f'cmake -S {SRC_DIR} -B {BUILD_DIR} -D CMAKE_BUILD_TYPE=Release '
-    cmake_cmd += '-DBUILD_CUBE=NO -DBUILD_VULKANINFO=NO -D INSTALL_ICD=ON -D UPDATE_DEPS=ON'
-    if mockAndroid:
-        cmake_cmd += ' -DBUILD_MOCK_ANDROID_SUPPORT=ON'
-    common_ci.RunShellCmd(cmake_cmd)
-
-    print("Build Mock ICD")
-    build_cmd = f'cmake --build {BUILD_DIR} --target VkICD_mock_icd'
-    common_ci.RunShellCmd(build_cmd)
-
-    print("Install Mock ICD")
-    install_cmd = f'cmake --install {BUILD_DIR} --prefix {CI_INSTALL_DIR}'
-    common_ci.RunShellCmd(install_cmd)
-
-#
 # Prepare Profile Layer for use with Layer Validation Tests
 def BuildProfileLayer(mockAndroid):
     SRC_DIR = f'{CI_EXTERNAL_DIR}/Vulkan-Profiles'
@@ -156,9 +131,6 @@ def Build(args):
         BuildVVL(config = config, cmake_args = args.cmake, build_tests = "ON", mock_android = args.mockAndroid)
         BuildLoader()
         BuildProfileLayer(args.mockAndroid)
-        if (args.mockAndroid):
-            # Currently use MockICD from Vulkan-Tools for Mock Android tests
-            BuildMockICD(args.mockAndroid)
 
     except subprocess.CalledProcessError as proc_error:
         print('Command "%s" failed with return code %s' % (' '.join(proc_error.cmd), proc_error.returncode))
@@ -184,11 +156,6 @@ def RunVVLTests(args):
     if common_ci.IsWindows():
         lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'bin')
         lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'bin\\VVL_Test_ICD.json')
-    elif args.mockAndroid:
-        lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
-        lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
-        lvt_env['VK_LAYER_PATH'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/explicit_layer.d')
-        lvt_env['VK_DRIVER_FILES'] = os.path.join(CI_INSTALL_DIR, 'share/vulkan/icd.d/VkICD_mock_icd.json')
     else:
         lvt_env['LD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
         lvt_env['DYLD_LIBRARY_PATH'] = os.path.join(CI_INSTALL_DIR, 'lib')
