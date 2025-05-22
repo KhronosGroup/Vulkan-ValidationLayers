@@ -593,6 +593,14 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpDepthAttachmentReadEXT";
         case spv::OpStencilAttachmentReadEXT:
             return "OpStencilAttachmentReadEXT";
+        case spv::OpTypeTensorARM:
+            return "OpTypeTensorARM";
+        case spv::OpTensorReadARM:
+            return "OpTensorReadARM";
+        case spv::OpTensorWriteARM:
+            return "OpTensorWriteARM";
+        case spv::OpTensorQuerySizeARM:
+            return "OpTensorQuerySizeARM";
         case spv::OpTerminateInvocation:
             return "OpTerminateInvocation";
         case spv::OpSubgroupBallotKHR:
@@ -2293,6 +2301,10 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpColorAttachmentReadEXT, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpDepthAttachmentReadEXT, {{OperandKind::Id}}},
         {spv::OpStencilAttachmentReadEXT, {{OperandKind::Id}}},
+        {spv::OpTypeTensorARM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpTensorReadARM, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpTensorWriteARM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
+        {spv::OpTensorQuerySizeARM, {{OperandKind::Id, OperandKind::Id}}},
         {spv::OpTerminateInvocation, {{}}},
         {spv::OpSubgroupBallotKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupFirstInvocationKHR, {{OperandKind::Id}}},

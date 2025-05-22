@@ -189,11 +189,11 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         # some instructions have both types of IdScope
                         # OpReadClockKHR has the wrong 'name' as 'Scope'
                         if kind == 'IdScope':
-                            if operand['name'] == '\'Execution\'' or operand['name'] == '\'Scope\'':
+                            if operand['name'] == 'Execution' or operand['name'] == 'Scope':
                                 self.executionScopePosition[index + 1].append(opname)
-                            elif operand['name'] == '\'Memory\'':
+                            elif operand['name'] == 'Memory':
                                 self.memoryScopePosition[index + 1].append(opname)
-                            elif operand['name'] == '\'Visibility\'':
+                            elif operand['name'] == 'Visibility':
                                 continue # ignore
                             else:
                                 print(f'Error: unknown operand {opname} with IdScope {operand["name"]} not handled correctly\n')
@@ -201,9 +201,9 @@ class SpirvGrammarHelperOutputGenerator(BaseGenerator):
                         if kind == 'ImageOperands':
                             self.imageOperandsPosition[index + 1].append(opname)
                         if kind == 'IdRef':
-                            if operand['name'] == '\'Image\'':
+                            if operand['name'] == 'Image':
                                 self.opcodes[opcode]['imageRefPosition'] = index + 1
-                            elif operand['name'] == '\'Sampled Image\'':
+                            elif operand['name'] == 'Sampled Image':
                                 self.opcodes[opcode]['sampledImageRefPosition'] = index + 1
 
                 if re.search("OpImage*", opname) is not None:
