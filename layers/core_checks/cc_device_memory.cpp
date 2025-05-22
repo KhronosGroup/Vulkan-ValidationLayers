@@ -1792,7 +1792,10 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                                 FormatHandle(bind_info.image).c_str(), bind_info.memoryOffset);
                         }
                     }
-                } else if (IsExtEnabled(extensions.vk_khr_dedicated_allocation)) {
+                } else if (IsExtEnabled(extensions.vk_khr_dedicated_allocation) &&
+                           (image_state->create_info.flags & VK_IMAGE_CREATE_DISJOINT_BIT) == 0) {
+                    // If using Disjoint (for Multi-Planar, we need to include a VkImagePlaneMemoryRequirementsInfo) but if
+                    // disjoint, it can't also have dedicated allocations
                     VkImageMemoryRequirementsInfo2 image_memory_requirements_info_2 = vku::InitStructHelper();
                     image_memory_requirements_info_2.image = bind_info.image;
                     VkMemoryDedicatedRequirements memory_dedicated_requirements = vku::InitStructHelper();

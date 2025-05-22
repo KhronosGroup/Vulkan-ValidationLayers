@@ -1458,7 +1458,7 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
     if (binding && possible_ycbcr) {
         if (variable.is_type_sampled_image) {
             // simple case if using combined image sampler
-            ValidateShaderYcbcrSamplerAccess(*binding, variable, nullptr, objlist, loc);
+            skip |= ValidateShaderYcbcrSamplerAccess(*binding, variable, nullptr, objlist, loc);
         } else if (pipeline_layout_state) {
             // otherwise we need to search for each sampler variable used with this image access
             for (uint32_t variable_id : variable.sampled_image_sampler_variable_ids) {
@@ -1467,7 +1467,7 @@ bool CoreChecks::ValidateShaderInterfaceVariablePipeline(const spirv::Module &mo
                 ASSERT_AND_CONTINUE(sampler_variable);
                 const VkDescriptorSetLayoutBinding *sampler_binding = pipeline_layout_state->FindBinding(*sampler_variable);
                 ASSERT_AND_CONTINUE(sampler_binding);
-                ValidateShaderYcbcrSamplerAccess(*sampler_binding, variable, sampler_variable, objlist, loc);
+                skip |= ValidateShaderYcbcrSamplerAccess(*sampler_binding, variable, sampler_variable, objlist, loc);
             }
         }
     }
