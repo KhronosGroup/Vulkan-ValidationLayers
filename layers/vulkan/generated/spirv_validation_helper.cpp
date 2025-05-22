@@ -532,6 +532,12 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "TileImageDepthReadAccessEXT";
         case spv::CapabilityTileImageStencilReadAccessEXT:
             return "TileImageStencilReadAccessEXT";
+        case spv::CapabilityTensorsARM:
+            return "TensorsARM";
+        case spv::CapabilityStorageTensorArrayDynamicIndexingARM:
+            return "StorageTensorArrayDynamicIndexingARM";
+        case spv::CapabilityStorageTensorArrayNonUniformIndexingARM:
+            return "StorageTensorArrayNonUniformIndexingARM";
         case spv::CapabilityCooperativeMatrixLayoutsARM:
             return "CooperativeMatrixLayoutsARM";
         case spv::CapabilityFragmentShadingRateKHR:
@@ -626,6 +632,10 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
 #endif
         case spv::CapabilityQuadControlKHR:
             return "QuadControlKHR";
+        case spv::CapabilityInt4TypeINTEL:
+            return "Int4TypeINTEL";
+        case spv::CapabilityInt4CooperativeMatrixINTEL:
+            return "Int4CooperativeMatrixINTEL";
         case spv::CapabilityBFloat16TypeKHR:
             return "BFloat16TypeKHR";
         case spv::CapabilityBFloat16DotProductKHR:
