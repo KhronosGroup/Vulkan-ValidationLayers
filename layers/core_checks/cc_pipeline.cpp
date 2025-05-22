@@ -399,8 +399,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
             skip |= ValidateGraphicsPipelineBindPoint(*cb_state, pipeline_state, error_obj.location);
 
             if (cb_state->active_render_pass) {
-                ValidateCmdBindPipelineRenderPassMultisample(*cb_state, pipeline_state, *cb_state->active_render_pass,
-                                                             error_obj.location);
+                skip |= ValidateCmdBindPipelineRenderPassMultisample(*cb_state, pipeline_state, *cb_state->active_render_pass,
+                                                                     error_obj.location);
             }
 
             if (cb_state->GetCurrentPipeline(pipelineBindPoint) &&
