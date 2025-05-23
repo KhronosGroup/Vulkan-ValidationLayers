@@ -322,6 +322,74 @@ find_package(GTest CONFIG)
 find_package(glslang CONFIG)
 find_package(SPIRV-Tools CONFIG)
 
+# Grabbing pre-built binaries is not ideal.
+#
+# We only grab release binaries. Tracking down issues in slang will be harder.
+#
+# Currently slang only publishes the dll/so versions of their library
+# When all of our other dependencies are static. Which complicates testing for android in particular.
+#
+# Also this will cause obtuse build errors on some linux machines due to the GLIBC version.
+# Example right now I cannot use the binaries due to the binaries requiring glibc 2.38 and I only have 2.35 locally
+#
+# I still think the correct approach is to use an actual package manager like vcpkg with binary caching.
+if(NOT APPLE AND NOT ANDROID AND CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(SLANG_VERSION "2025.9")
+
+    # Function to determine the correct binary URL based on platform
+    function(get_slang_binary_url RESULT_VAR)
+        if(WIN32 AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
+            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-aarch64.zip" PARENT_SCOPE)
+        elseif(WIN32)
+            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-windows-x86_64.zip" PARENT_SCOPE)
+        elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|aarch64linux|arm64|ARM64")
+            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-aarch64.zip" PARENT_SCOPE)
+        elseif(UNIX)
+            set(${RESULT_VAR} "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}-linux-x86_64.zip" PARENT_SCOPE)
+        else()
+            message(FATAL_ERROR "Unsupported platform for Slang prebuilt binaries")
+        endif()
+    endfunction()
+
+    get_slang_binary_url(SLANG_URL)
+
+    # Remove when min is 3.24
+    if (POLICY CMP0135)
+        cmake_policy(SET CMP0135 NEW)
+    endif()
+    
+    include(FetchContent)
+    FetchContent_Declare(
+        slang
+        URL ${SLANG_URL}
+    )
+    FetchContent_MakeAvailable(slang)
+
+    set(slang_ROOT "${slang_SOURCE_DIR}")
+    find_package(slang CONFIG REQUIRED)
+
+    if (NOT TARGET slang::slang)
+        message(FATAL_ERROR "???")
+    endif()
+
+    # TODO: https://github.com/shader-slang/slang/issues/7220
+    include_directories("${slang_SOURCE_DIR}/include")
+
+    # All other platforms have RPATH to deal with this.
+    if (WIN32)
+        add_custom_command(TARGET vk_layer_validation_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:vk_layer_validation_tests> $<TARGET_RUNTIME_DLLS:vk_layer_validation_tests>
+            COMMAND_EXPAND_LISTS
+        )
+    endif()
+
+    target_compile_definitions(vk_layer_validation_tests PRIVATE VVL_USE_SLANG)
+
+    # Should work to get slang binaries in correct location for testing.
+    install(DIRECTORY "${slang_SOURCE_DIR}/bin" DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY "${slang_SOURCE_DIR}/lib" DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 target_link_libraries(vk_layer_validation_tests PRIVATE
     VkLayer_utils
     glslang::SPIRV
@@ -333,6 +401,7 @@ target_link_libraries(vk_layer_validation_tests PRIVATE
     $<TARGET_NAME_IF_EXISTS:PkgConfig::XCB>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::X11>
     $<TARGET_NAME_IF_EXISTS:PkgConfig::WAYlAND_CLIENT>
+    $<TARGET_NAME_IF_EXISTS:slang::slang>
 )
 
 # setup framework/config.h using framework/config.h.in as a source
