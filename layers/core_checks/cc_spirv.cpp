@@ -825,7 +825,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
         uint32_t component_count;
         bool all_constant;
 
-        CoopVecType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state) {
+        CoopVecType(uint32_t id, const spirv::Module &module_state, const ShaderStageState &stage_state, bool is_signed) {
             const spirv::Instruction *insn = module_state.FindDef(id);
             const spirv::Instruction *component_type_insn = module_state.FindDef(insn->Word(2));
             const spirv::Instruction *component_count_insn = module_state.FindDef(insn->Word(3));
@@ -834,7 +834,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
             if (!stage_state.GetInt32ConstantValue(*component_count_insn, &component_count)) {
                 all_constant = false;
             }
-            component_type = GetComponentType(component_type_insn, false);
+            component_type = GetComponentType(component_type_insn, is_signed);
         }
 
         std::string Describe() {
@@ -868,23 +868,27 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
         const spirv::Instruction &insn = *cooperative_vector_inst;
         switch (insn.Opcode()) {
             case spv::OpTypeCooperativeVectorNV: {
-                CoopVecType m(insn.Word(1), module_state, stage_state);
+                // SPIR-V integer types are not strictly signed or unsigned. Allow this type to
+                // match against either signed or unsigned types in the device properties.
+                CoopVecType m_signed(insn.Word(1), module_state, stage_state, true);
+                CoopVecType m_unsigned(insn.Word(1), module_state, stage_state, false);
 
-                if (!m.all_constant) {
+                if (!m_signed.all_constant) {
                     break;
                 }
 
-                if (m.component_count > phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents) {
+                if (m_signed.component_count > phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents) {
                     skip |= LogError("VUID-RuntimeSpirv-maxCooperativeVectorComponents-10094", module_state.handle(), loc,
                                      "SPIR-V (%s) component count (%d) is greater than maxCooperativeVectorComponents (%d)",
-                                     string_VkShaderStageFlagBits(entrypoint.stage), m.component_count,
+                                     string_VkShaderStageFlagBits(entrypoint.stage), m_signed.component_count,
                                      phys_dev_ext_props.cooperative_vector_props_nv.maxCooperativeVectorComponents);
                 }
 
                 bool found = false;
                 for (uint32_t i = 0; i < device_state->cooperative_vector_properties_nv.size(); ++i) {
                     const auto &property = device_state->cooperative_vector_properties_nv[i];
-                    if (m.component_type == property.inputType || m.component_type == property.resultType) {
+                    if (m_signed.component_type == property.inputType || m_signed.component_type == property.resultType ||
+                        m_unsigned.component_type == property.inputType || m_unsigned.component_type == property.resultType) {
                         found = true;
                         break;
                     }
@@ -894,7 +898,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                     skip |= LogError("VUID-RuntimeSpirv-OpTypeCooperativeVector-10095", module_state.handle(), loc,
                                      "SPIR-V (%s) contains unsupported cooperative vector component type (%s)",
                                      string_VkShaderStageFlagBits(entrypoint.stage),
-                                     string_VkComponentTypeKHR((VkComponentTypeKHR)m.component_type));
+                                     string_VkComponentTypeKHR((VkComponentTypeKHR)m_signed.component_type));
                 }
 
                 break;
@@ -906,8 +910,21 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
             }
             case spv::OpCooperativeVectorMatrixMulNV:
             case spv::OpCooperativeVectorMatrixMulAddNV: {
-                CoopVecType result(id_to_type_id[insn.Word(2)], module_state, stage_state);
-                CoopVecType input(id_to_type_id[insn.Word(3)], module_state, stage_state);
+                uint32_t matrix_operands = 0;
+                if (insn.Opcode() == spv::OpCooperativeVectorMatrixMulAddNV) {
+                    if (insn.Length() > 16) {
+                        matrix_operands = insn.Word(16);
+                    }
+                } else {
+                    if (insn.Length() > 13) {
+                        matrix_operands = insn.Word(13);
+                    }
+                }
+                bool result_is_signed = matrix_operands & spv::CooperativeMatrixOperandsMatrixResultSignedComponentsKHRMask;
+                bool input_is_signed = matrix_operands & spv::CooperativeMatrixOperandsMatrixBSignedComponentsKHRMask;
+
+                CoopVecType result(id_to_type_id[insn.Word(2)], module_state, stage_state, result_is_signed);
+                CoopVecType input(id_to_type_id[insn.Word(3)], module_state, stage_state, input_is_signed);
 
                 uint32_t result_type = result.component_type;
                 uint32_t input_type = input.component_type;
@@ -985,7 +1002,7 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                 break;
             }
             case spv::OpCooperativeVectorReduceSumAccumulateNV: {
-                CoopVecType v(id_to_type_id[insn.Word(3)], module_state, stage_state);
+                CoopVecType v(id_to_type_id[insn.Word(3)], module_state, stage_state, false);
 
                 switch (v.component_type) {
                     case VK_COMPONENT_TYPE_FLOAT16_KHR:
@@ -1057,8 +1074,8 @@ bool CoreChecks::ValidateCooperativeVector(const spirv::Module &module_state, co
                     }
                 }
 
-                CoopVecType a(id_to_type_id[insn.Word(3)], module_state, stage_state);
-                CoopVecType b(id_to_type_id[insn.Word(4)], module_state, stage_state);
+                CoopVecType a(id_to_type_id[insn.Word(3)], module_state, stage_state, false);
+                CoopVecType b(id_to_type_id[insn.Word(4)], module_state, stage_state, false);
 
                 if (a.component_type != VK_COMPONENT_TYPE_FLOAT16_KHR) {
                     skip |= LogError("VUID-RuntimeSpirv-OpCooperativeVectorOuterProductAccumulateNV-10093", module_state.handle(),
