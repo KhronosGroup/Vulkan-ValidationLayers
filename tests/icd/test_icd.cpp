@@ -1636,7 +1636,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorProperti
                                                                                      uint32_t* pPropertyCount,
                                                                                      VkCooperativeVectorPropertiesNV* pProperties) {
     if (!pProperties) {
-        *pPropertyCount = 4;
+        *pPropertyCount = 5;
     } else {
         // arbitrary
         pProperties[0].inputType = VK_COMPONENT_TYPE_UINT32_KHR;
@@ -1666,6 +1666,13 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeVectorProperti
         pProperties[3].biasInterpretation = VK_COMPONENT_TYPE_FLOAT16_KHR;
         pProperties[3].resultType = VK_COMPONENT_TYPE_FLOAT16_KHR;
         pProperties[3].transpose = VK_FALSE;
+
+        pProperties[4].inputType = VK_COMPONENT_TYPE_SINT8_KHR;
+        pProperties[4].inputInterpretation = VK_COMPONENT_TYPE_SINT8_KHR;
+        pProperties[4].matrixInterpretation = VK_COMPONENT_TYPE_SINT8_KHR;
+        pProperties[4].biasInterpretation = VK_COMPONENT_TYPE_SINT32_KHR;
+        pProperties[4].resultType = VK_COMPONENT_TYPE_SINT32_KHR;
+        pProperties[4].transpose = VK_FALSE;
     }
     return VK_SUCCESS;
 }
