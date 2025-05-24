@@ -110,6 +110,10 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
             coopvecNV<float16_t, 32> R;
             coopVecMatMulNV(R, A, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
             coopVecMatMulAddNV(R, A, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, b.x, 0, gl_ComponentTypeFloat16NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
+
+            coopvecNV<int8_t, 16> A2;
+            coopvecNV<int32_t, 32> R2;
+            coopVecMatMulNV(R2, A2, gl_ComponentTypeSignedInt8NV, b.x, 0, gl_ComponentTypeSignedInt8NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
        }
     )glsl";
 

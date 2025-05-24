@@ -358,6 +358,17 @@ TEST_F(NegativeShaderCooperativeVector, SPIRVMatMulParams) {
         )");
 }
 
+TEST_F(NegativeShaderCooperativeVector, SPIRVMatMulParamsInt) {
+    TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
+
+    RunSPIRVTest("VUID-RuntimeSpirv-OpCooperativeVectorMatrixMulNV-10089",
+                 R"(
+            coopvecNV<int8_t, 16> A;
+            coopvecNV<uint32_t, 32> R;
+            coopVecMatMulNV(R, A, gl_ComponentTypeSignedInt8NV, b.x, 0, gl_ComponentTypeSignedInt8NV, 32, 16, gl_CooperativeVectorMatrixLayoutInferencingOptimalNV, false, 0);
+        )");
+}
+
 TEST_F(NegativeShaderCooperativeVector, SPIRVFP8Layout) {
     TEST_DESCRIPTION("Validate Cooperative Vector SPIR-V environment rules.");
 
