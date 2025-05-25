@@ -17,12 +17,13 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "error_message/error_strings.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/math_utils.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/image_utils.h"
 
 namespace stateless {
 

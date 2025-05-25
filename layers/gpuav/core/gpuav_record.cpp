@@ -28,6 +28,7 @@
 #include "gpuav/instrumentation/post_process_descriptor_indexing.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
+#include "utils/math_utils.h"
 
 namespace gpuav {
 

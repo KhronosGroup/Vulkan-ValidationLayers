@@ -62,6 +62,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/hash_util.h
     utils/hash_util.cpp
     utils/hash_vk_types.h
+    utils/image_utils.h
+    utils/image_utils.cpp
     utils/image_layout_utils.h
     utils/image_layout_utils.cpp
     utils/math_utils.h

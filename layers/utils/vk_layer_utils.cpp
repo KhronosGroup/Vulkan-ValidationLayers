@@ -19,10 +19,8 @@
 
 #include <string.h>
 #include <sys/stat.h>
-#include <sstream>
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "containers/range.h"
 #include "vulkan/vulkan_core.h"
 #include "vk_layer_config.h"
 
@@ -60,105 +58,4 @@ std::string GetTempFilePath() {
     if (!tmp_path.size()) tmp_path = GetEnvironment("TEMP");
     if (!tmp_path.size()) tmp_path = "/tmp";
     return tmp_path;
-}
-
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level) {
-    // Return zero extent if mip level doesn't exist
-    if (mip_level >= ci.mipLevels) {
-        return VkExtent3D{0, 0, 0};
-    }
-
-    VkExtent3D extent = ci.extent;
-
-    // If multi-plane, adjust per-plane extent
-    const VkFormat format = ci.format;
-    if (vkuFormatIsMultiplane(format)) {
-        VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, static_cast<VkImageAspectFlagBits>(aspect_mask));
-        extent.width /= divisors.width;
-        extent.height /= divisors.height;
-    }
-
-    // Mip Maps
-    {
-        const uint32_t corner = (ci.flags & VK_IMAGE_CREATE_CORNER_SAMPLED_BIT_NV) ? 1 : 0;
-        const uint32_t min_size = 1 + corner;
-
-        if (extent.width != 0) {
-            extent.width >>= mip_level;
-            extent.width = std::max({min_size, extent.width});
-        }
-        if (extent.height != 0) {
-            extent.height >>= mip_level;
-            extent.height = std::max({min_size, extent.height});
-        }
-        if (extent.depth != 0) {
-            extent.depth >>= mip_level;
-            extent.depth = std::max({min_size, extent.depth});
-        }
-    }
-
-    // Image arrays have an effective z extent that isn't diminished by mip level
-    if (VK_IMAGE_TYPE_3D != ci.imageType) {
-        extent.depth = ci.arrayLayers;
-    }
-
-    return extent;
-}
-
-// Returns true if [x, x + x_size) and [y, y + y_size) overlap
-bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size) {
-    auto intersection = GetRangeIntersection(x, x_size, y, y_size);
-    return intersection.non_empty();
-}
-
-// Implements the vkspec.html#formats-size-compatibility section of the spec
-bool AreFormatsSizeCompatible(VkFormat a, VkFormat b, VkImageAspectFlags aspect_mask) {
-    const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
-    const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
-    if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
-        return false;
-    }
-
-    const bool is_a_depth_stencil = vkuFormatIsDepthOrStencil(a);
-    const bool is_b_depth_stencil = vkuFormatIsDepthOrStencil(b);
-    if (is_a_depth_stencil && !is_b_depth_stencil) {
-        return vkuFormatIsDepthStencilWithColorSizeCompatible(b, a, aspect_mask);
-    } else if (!is_a_depth_stencil && is_b_depth_stencil) {
-        return vkuFormatIsDepthStencilWithColorSizeCompatible(a, b, aspect_mask);
-    } else if (is_a_depth_stencil && is_b_depth_stencil) {
-        return a == b;
-    }
-
-    // Color formats are considered compatible if their texel block size in bytes is the same
-    return vkuFormatTexelBlockSize(a) == vkuFormatTexelBlockSize(b);
-}
-
-std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b) {
-    std::stringstream ss;
-    const bool is_a_a8 = a == VK_FORMAT_A8_UNORM;
-    const bool is_b_a8 = b == VK_FORMAT_A8_UNORM;
-    if ((is_a_a8 && !is_b_a8) || (!is_a_a8 && is_b_a8)) {
-        ss << string_VkFormat(a) << " and " << string_VkFormat(b)
-           << " either both need to be VK_FORMAT_A8_UNORM or neither of them";
-        return ss.str();
-    }
-
-    const bool is_a_depth_stencil = vkuFormatIsDepthOrStencil(a);
-    const bool is_b_depth_stencil = vkuFormatIsDepthOrStencil(b);
-    if (is_a_depth_stencil && is_b_depth_stencil) {
-        ss << string_VkFormat(a) << " and " << string_VkFormat(b)
-           << " are both depth/stencil, therefor they must be the exact same format";
-    } else if (is_a_depth_stencil || is_b_depth_stencil) {
-        if (is_a_depth_stencil && !is_b_depth_stencil) {
-            ss << string_VkFormat(a) << " is a depth/stencil and " << string_VkFormat(b) << " is color";
-        } else if (!is_a_depth_stencil && is_b_depth_stencil) {
-            ss << string_VkFormat(a) << " is a color and " << string_VkFormat(b) << " is depth/stencil";
-        }
-        ss << " (this is only allowed with a certain set of formats during image copy with VK_KHR_maintenance8)";
-    } else {
-        ss << string_VkFormat(a) << " has a texel block size of " << vkuFormatTexelBlockSize(a) << " while " << string_VkFormat(b)
-           << " has a texel block size of " << vkuFormatTexelBlockSize(b);
-    }
-    return ss.str();
 }

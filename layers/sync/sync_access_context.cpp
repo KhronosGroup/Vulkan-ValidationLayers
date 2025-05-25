@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/video_session_state.h"
 #include "state_tracker/render_pass_state.h"

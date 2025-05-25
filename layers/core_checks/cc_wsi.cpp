@@ -33,6 +33,7 @@
 #include "state_tracker/device_state.h"
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/math_utils.h"
 
 static bool IsExtentInsideBounds(VkExtent2D extent, VkExtent2D min, VkExtent2D max) {
     if ((extent.width < min.width) || (extent.width > max.width) || (extent.height < min.height) || (extent.height > max.height)) {

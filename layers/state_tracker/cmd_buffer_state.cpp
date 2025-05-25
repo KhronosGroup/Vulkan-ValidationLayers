@@ -19,13 +19,13 @@
  */
 #include "state_tracker/cmd_buffer_state.h"
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/queue_state.h"
-#include "utils/vk_layer_utils.h"
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 

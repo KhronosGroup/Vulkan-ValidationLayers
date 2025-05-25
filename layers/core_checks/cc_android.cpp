@@ -25,6 +25,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
+#include <algorithm>
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
 // Android-specific validation that uses types defined only on Android and only for NDK versions
@@ -80,6 +81,11 @@ static inline const char *string_AHardwareBufferGpuUsage(uint64_t usage) {
     } else {
         return "Unknown AHARDWAREBUFFER_USAGE_GPU";
     }
+}
+
+static uint32_t FullMipChainLevels(VkExtent3D extent) {
+    // uint cast applies floor()
+    return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
 }
 
 //

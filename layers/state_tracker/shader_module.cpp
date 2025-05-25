@@ -19,6 +19,7 @@
 #include <string>
 #include <queue>
 
+#include <vulkan/utility/vk_format_utils.h>
 #include "utils/hash_util.h"
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"

@@ -19,6 +19,7 @@
 
 #include "state_tracker/render_pass_state.h"
 #include "utils/convert_utils.h"
+#include "utils/math_utils.h"
 #include "state_tracker/image_state.h"
 #include "containers/span.h"
 

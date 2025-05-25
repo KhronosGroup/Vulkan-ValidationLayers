@@ -11,6 +11,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/render_pass_helper.h"
+#include "utils/math_utils.h"
 
 class PositiveFragmentShadingRate : public VkLayerTest {};
 

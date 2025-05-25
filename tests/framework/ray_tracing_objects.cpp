@@ -12,6 +12,7 @@
 #include "ray_tracing_objects.h"
 
 #include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 // #define VVL_DEBUG_LOG_SBT
 #ifdef VVL_DEBUG_LOG_SBT

@@ -27,6 +27,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
+#include "utils/math_utils.h"
 
 static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
                                      uint32_t perfPass) {

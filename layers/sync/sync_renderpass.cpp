@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_renderpass.h"
 #include "sync/sync_validation.h"
 #include "sync/sync_op.h"

@@ -16,11 +16,13 @@
  * limitations under the License.
  */
 
+#include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "error_message/error_strings.h"
 #include "containers/span.h"
+#include "utils/image_utils.h"
 
 namespace stateless {
 bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const {

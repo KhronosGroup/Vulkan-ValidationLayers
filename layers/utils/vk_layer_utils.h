@@ -27,13 +27,10 @@
 #include <memory>
 #include <shared_mutex>
 #include <string>
-#include <vector>
 
-#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_concurrent_unordered_map.hpp>
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "vulkan/vk_layer.h"
-#include "utils/math_utils.h"
 
 #include "generated/vk_layer_dispatch_table.h"
 
@@ -110,96 +107,6 @@ void IterateFlags(Flags flags, Callback callback) {
     }
 }
 
-static inline uint32_t SampleCountSize(VkSampleCountFlagBits sample_count) {
-    uint32_t size = 0;
-    switch (sample_count) {
-        case VK_SAMPLE_COUNT_1_BIT:
-            size = 1;
-            break;
-        case VK_SAMPLE_COUNT_2_BIT:
-            size = 2;
-            break;
-        case VK_SAMPLE_COUNT_4_BIT:
-            size = 4;
-            break;
-        case VK_SAMPLE_COUNT_8_BIT:
-            size = 8;
-            break;
-        case VK_SAMPLE_COUNT_16_BIT:
-            size = 16;
-            break;
-        case VK_SAMPLE_COUNT_32_BIT:
-            size = 32;
-            break;
-        case VK_SAMPLE_COUNT_64_BIT:
-            size = 64;
-            break;
-        default:
-            size = 0;
-    }
-    return size;
-}
-
-static inline bool IsImageLayoutReadOnly(VkImageLayout layout) {
-    constexpr std::array read_only_layouts = {
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
-static inline bool IsImageLayoutDepthOnly(VkImageLayout layout) {
-    constexpr std::array depth_only_layouts = {VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL};
-    return std::any_of(depth_only_layouts.begin(), depth_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
-static inline bool IsImageLayoutDepthReadOnly(VkImageLayout layout) {
-    constexpr std::array read_only_layouts = {
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
-static inline bool IsImageLayoutStencilOnly(VkImageLayout layout) {
-    constexpr std::array depth_only_layouts = {VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
-                                               VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL};
-    return std::any_of(depth_only_layouts.begin(), depth_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
-static inline bool IsImageLayoutStencilReadOnly(VkImageLayout layout) {
-    constexpr std::array read_only_layouts = {
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
-        VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
-    };
-    return std::any_of(read_only_layouts.begin(), read_only_layouts.end(),
-                       [layout](const VkImageLayout read_only_layout) { return layout == read_only_layout; });
-}
-
-static inline bool IsIdentitySwizzle(VkComponentMapping components) {
-    // clang-format off
-    return (
-        ((components.r == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.r == VK_COMPONENT_SWIZZLE_R)) &&
-        ((components.g == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.g == VK_COMPONENT_SWIZZLE_G)) &&
-        ((components.b == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.b == VK_COMPONENT_SWIZZLE_B)) &&
-        ((components.a == VK_COMPONENT_SWIZZLE_IDENTITY) || (components.a == VK_COMPONENT_SWIZZLE_A))
-    );
-    // clang-format on
-}
-
 static inline uint32_t GetIndexAlignment(VkIndexType indexType) {
     switch (indexType) {
         case VK_INDEX_TYPE_UINT16:
@@ -232,57 +139,6 @@ inline constexpr uint32_t GetIndexBitsSize(VkIndexType indexType) {
     }
     return 0;
 }
-
-// vkspec.html#formats-planes-image-aspect
-static inline bool IsValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
-    const uint32_t planes = vkuFormatPlaneCount(format);
-    constexpr VkImageAspectFlags valid_planes =
-        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
-
-    if (((aspect_mask & valid_planes) == aspect_mask) && (aspect_mask != 0)) {
-        if ((planes == 3) || ((planes == 2) && ((aspect_mask & VK_IMAGE_ASPECT_PLANE_2_BIT) == 0))) {
-            return true;
-        }
-    }
-    return false;  // Expects calls to make sure it is a multi-planar format
-}
-
-static inline bool IsOnlyOneValidPlaneAspect(VkFormat format, VkImageAspectFlags aspect_mask) {
-    const bool multiple_bits = aspect_mask != 0 && !IsPowerOfTwo(aspect_mask);
-    return !multiple_bits && IsValidPlaneAspect(format, aspect_mask);
-}
-
-static inline bool IsMultiplePlaneAspect(VkImageAspectFlags aspect_mask) {
-    // If checking for multiple planes, there will already be another check if valid for plane count
-    constexpr VkImageAspectFlags valid_planes =
-        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
-    const VkImageAspectFlags planes = aspect_mask & valid_planes;
-    return planes != 0 && !IsPowerOfTwo(planes);
-}
-
-static inline bool IsAnyPlaneAspect(VkImageAspectFlags aspect_mask) {
-    constexpr VkImageAspectFlags valid_planes =
-        VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
-    return (aspect_mask & valid_planes) != 0;
-}
-
-static inline uint32_t GetVertexInputFormatSize(VkFormat format) {
-    // Vertex input attributes use VkFormat, but only to make use of how they define sizes, things such as
-    // depth/multi-plane/compressed will never be used here because they would mean nothing. So we can ensure these are "standard"
-    // color formats being used. This function is a wrapper to make it more clear of the intent.
-    return vkuFormatTexelBlockSize(format);
-}
-
-static inline uint32_t GetTexelBufferFormatSize(VkFormat format) {
-    // The spec says "If format is a block-compressed format, then bufferFeatures must not support any features for the format"
-    // For Texel Buffers, we can assume the texel blocks are a 1x1x1 extent
-    // See https://gitlab.khronos.org/vulkan/vulkan/-/issues/4155 for more details
-    return vkuFormatTexelBlockSize(format);
-}
-
-bool AreFormatsSizeCompatible(VkFormat a, VkFormat b,
-                              VkImageAspectFlags aspect_mask = VK_IMAGE_ASPECT_STENCIL_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
-std::string DescribeFormatsSizeCompatible(VkFormat a, VkFormat b);
 
 static const VkShaderStageFlags kShaderStageAllGraphics =
     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT | VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT |
@@ -369,29 +225,6 @@ static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divi
     return result;
 }
 
-static inline uint32_t FullMipChainLevels(VkExtent3D extent) {
-    // uint cast applies floor()
-    return 1u + static_cast<uint32_t>(log2(std::max({extent.height, extent.width, extent.depth})));
-}
-
-// Returns the effective extent of an image subresource, adjusted for mip level and array depth.
-VkExtent3D GetEffectiveExtent(const VkImageCreateInfo &ci, const VkImageAspectFlags aspect_mask, const uint32_t mip_level);
-
-// Used to get the VkExternalFormatANDROID without having to use ifdef in logic
-// Result of zero is same of not having pNext struct
-constexpr uint64_t GetExternalFormat(const void *pNext) {
-#if defined(VK_USE_PLATFORM_ANDROID_KHR)
-    if (pNext) {
-        const auto *external_format = vku::FindStructInPNextChain<VkExternalFormatANDROID>(pNext);
-        if (external_format) {
-            return external_format->externalFormat;
-        }
-    }
-#endif
-    (void)pNext;
-    return 0;
-}
-
 // Find whether or not an element is in list
 // Two definitions, to be able to do the following calls:
 // IsValueIn(1, {1, 2, 3});
@@ -454,8 +287,6 @@ static constexpr bool HasFramebufferStagePipelineStageFlags(VkPipelineStageFlags
 static constexpr bool HasNonShaderTileImageAccessFlags(VkAccessFlags2 in_flags) {
     return ((in_flags & ~kShaderTileImageAllowedAccessFlags) != 0);
 }
-
-bool RangesIntersect(int64_t x, uint64_t x_size, int64_t y, uint64_t y_size);
 
 namespace vvl {
 
