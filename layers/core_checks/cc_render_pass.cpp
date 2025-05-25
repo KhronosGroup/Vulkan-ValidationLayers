@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "error_message/error_location.h"
@@ -33,6 +34,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "utils/math_utils.h"
+#include "utils/image_utils.h"
 
 namespace vvl {
 template <typename T>

@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "generated/pnext_chain_extraction.h"
 #include "core_validation.h"
@@ -31,6 +32,8 @@
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
 #include "generated/dispatch_functions.h"
+#include "utils/image_utils.h"
+#include "utils/math_utils.h"
 
 // For given mem object, verify that it is not null or UNBOUND, if it is, report error. Return skip value.
 bool CoreChecks::VerifyBoundMemoryIsValid(const vvl::DeviceMemory *memory_state, const LogObjectList &objlist,

@@ -20,9 +20,9 @@
 #include <algorithm>
 #include <assert.h>
 #include <string>
-#include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "core_checks/cc_synchronization.h"
 #include "core_checks/cc_state_tracker.h"
@@ -43,7 +43,7 @@
 #include "state_tracker/wsi_state.h"
 #include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 using sync_utils::BufferBarrier;
 using sync_utils::ImageBarrier;

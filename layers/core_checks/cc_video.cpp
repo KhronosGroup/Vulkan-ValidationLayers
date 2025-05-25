@@ -27,6 +27,7 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/math_utils.h"
 
 // Flags validation error if the associated call is made inside a video coding block.
 // The apiName routine should ONLY be called outside a video coding block.

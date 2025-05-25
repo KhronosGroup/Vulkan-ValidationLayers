@@ -17,6 +17,8 @@
  */
 
 #include "stateless/stateless_validation.h"
+#include <vulkan/utility/vk_format_utils.h>
+#include "utils/image_utils.h"
 
 namespace stateless {
 

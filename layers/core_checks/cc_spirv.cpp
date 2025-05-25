@@ -26,6 +26,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "core_checks/cc_vuid_maps.h"
 #include "core_validation.h"

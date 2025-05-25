@@ -17,6 +17,7 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include <sstream>
 #include <valarray>
@@ -37,7 +38,6 @@
 #include "cc_buffer_address.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "drawdispatch/drawdispatch_vuids.h"
-#include "utils/vk_layer_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "error_message/error_strings.h"
 

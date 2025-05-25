@@ -363,6 +363,8 @@ vvl_sources = [
   "layers/utils/hash_util.cpp",
   "layers/utils/hash_util.h",
   "layers/utils/hash_vk_types.h",
+  "layers/utils/image_utils.cpp",
+  "layers/utils/image_utils.h",
   "layers/utils/image_layout_utils.cpp",
   "layers/utils/image_layout_utils.h",
   "layers/utils/math_utils.h",

@@ -19,6 +19,7 @@
 #pragma once
 #include "state_tracker/state_object.h"
 #include <vulkan/utility/vk_safe_struct.hpp>
+#include "utils/image_utils.h"
 
 // Note: some of the types in this header are needed by both the DescriptorSet and Pipeline
 // state objects. It is helpful to have a separate header to avoid circular #include madness.

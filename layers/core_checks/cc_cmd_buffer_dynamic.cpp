@@ -18,6 +18,7 @@
  */
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
@@ -30,6 +31,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/math_utils.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
                                            CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const {

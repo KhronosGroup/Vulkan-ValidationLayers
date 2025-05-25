@@ -16,7 +16,7 @@
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/descriptor_helper.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/image_utils.h"
 
 class NegativeImage : public ImageTest {};
 
@@ -725,6 +725,34 @@ TEST_F(NegativeImage, MiscBlitTests) {
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
+}
+
+TEST_F(NegativeImage, BlitMipLevels) {
+    RETURN_IF_SKIP(Init());
+    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+    if (!FormatFeaturesAreSupported(Gpu(), format, VK_IMAGE_TILING_OPTIMAL,
+                                    VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
+        GTEST_SKIP() << "No blit feature format support";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 5, 1, VK_FORMAT_R8G8B8A8_UNORM,
+                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, image_ci);
+
+    VkImageBlit blit_region = {};
+    blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 3, 0, 1};  // 2x2 mip
+    blit_region.srcOffsets[0] = {0, 0, 0};
+    blit_region.srcOffsets[1] = {2, 2, 1};
+    blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 4, 0, 1};  // 1x1 mip
+    blit_region.dstOffsets[0] = {0, 0, 0};
+    blit_region.dstOffsets[1] = {2, 2, 1};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstOffset-00248");
+    vk::CmdBlitImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_GENERAL, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
+                     VK_FILTER_NEAREST);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeImage, BlitRemainingArrayLayers) {

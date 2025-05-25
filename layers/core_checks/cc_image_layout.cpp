@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "core_checks/cc_state_tracker.h"
 #include "core_checks/cc_vuid_maps.h"
 #include "core_checks/core_validation.h"
@@ -28,6 +29,7 @@
 #include "generated/error_location_helper.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/image_layout_utils.h"
+#include "utils/image_utils.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"

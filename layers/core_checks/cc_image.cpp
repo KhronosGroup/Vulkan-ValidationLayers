@@ -36,7 +36,7 @@
 #include "state_tracker/wsi_state.h"
 #include "sync/sync_vuid_maps.h"
 #include "utils/math_utils.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/image_utils.h"
 
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;

@@ -19,6 +19,7 @@
 #include "sync/sync_image.h"
 #include "sync/sync_validation.h"
 #include "error_message/error_strings.h"
+#include "utils/math_utils.h"
 
 static const char *string_SyncHazard(SyncHazard hazard) {
     switch (hazard) {

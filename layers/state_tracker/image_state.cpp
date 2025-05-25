@@ -22,10 +22,14 @@
 #include <vulkan/vulkan_core.h>
 #include <cmath>
 #include <cstdint>
+#include <string>
+#include "error_message/error_strings.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/wsi_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/math_utils.h"
+#include "utils/image_utils.h"
 
 using RangeGenerator = subresource_adapter::RangeGenerator;
 
@@ -323,6 +327,46 @@ bool Image::IsCompatibleAliasing(const Image *other_image_state) const {
         return true;
     }
     return false;
+}
+
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
+    return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
+}
+
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
+    return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
+}
+
+VkExtent3D Image::GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
+    return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
+}
+
+std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const {
+    std::stringstream ss;
+    VkExtent3D subresource_extent = GetEffectiveSubresourceExtent(subresource);
+    const VkFormat format = create_info.format;
+    ss << "The " << string_VkImageType(create_info.imageType) << " VkImage was created with format " << string_VkFormat(format)
+       << " and an extent of [" << string_VkExtent3D(create_info.extent) << "]\n";
+    if (subresource.mipLevel != 0) {
+        ss << "mipLevel " << subresource.mipLevel << " is [" << string_VkExtent3D(subresource_extent) << "]\n";
+    }
+    if (vkuFormatIsCompressed(format)) {
+        const VkExtent3D block_extent = vkuFormatTexelBlockExtent(format);
+        const VkExtent3D texel_blocks = GetTexelBlocks(subresource_extent, block_extent);
+        ss << "The compressed format block extent (" << string_VkExtent3D(block_extent) << ") represents miplevel "
+           << subresource.mipLevel << " with a texel block extent [" << string_VkExtent3D(texel_blocks) << "]";
+    } else if (vkuFormatIsMultiplane(format)) {
+        assert(IsSingleBitSet(subresource.aspectMask));
+        VkImageAspectFlagBits aspect_flag = static_cast<VkImageAspectFlagBits>(subresource.aspectMask);
+        ss << "Plane " << vkuGetPlaneIndex(aspect_flag) << " (compatible format "
+           << string_VkFormat(vkuFindMultiplaneCompatibleFormat(format, aspect_flag)) << ")";
+        VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, aspect_flag);
+        if (divisors.width != 1 || divisors.height != 1) {
+            ss << " has [widthDivisor = " << divisors.width << ", heightDivisor = " << divisors.height
+               << "] which adjusts the extent to [" << string_VkExtent3D(subresource_extent) << "]";
+        }
+    }
+    return ss.str();
 }
 
 VkImageSubresourceRange Image::NormalizeSubresourceRange(const VkImageSubresourceRange &range) const {

@@ -17,6 +17,7 @@
 
 #include "descriptor_validator.h"
 #include <vulkan/vulkan_core.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include <sstream>
 #include "generated/spirv_grammar_helper.h"
 #include "generated/spirv_validation_helper.h"

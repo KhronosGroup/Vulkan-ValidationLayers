@@ -20,11 +20,14 @@
 #include <string>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include <vulkan/utility/vk_format_utils.h>
 #include "error_message/error_location.h"
 #include "core_validation.h"
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "generated/dispatch_functions.h"
+#include "utils/math_utils.h"
+#include "utils/image_utils.h"
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct

@@ -23,7 +23,6 @@
 
 #include "state_tracker/device_memory_state.h"
 #include "state_tracker/image_layout_map.h"
-#include "utils/vk_layer_utils.h"
 
 namespace vvl {
 class DeviceState;
@@ -189,19 +188,11 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
     void Destroy() override;
 
     // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
-    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const {
-        return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
-    }
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceLayers &sub) const;
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const;
+    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const;
 
-    // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
-    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresource &sub) const {
-        return GetEffectiveExtent(create_info, sub.aspectMask, sub.mipLevel);
-    }
-
-    // Returns the effective extent of the provided subresource, adjusted for mip level and array depth.
-    VkExtent3D GetEffectiveSubresourceExtent(const VkImageSubresourceRange &range) const {
-        return GetEffectiveExtent(create_info, range.aspectMask, range.baseMipLevel);
-    }
+    std::string DescribeSubresourceLayers(const VkImageSubresourceLayers &subresource) const;
 
     VkImageSubresourceRange NormalizeSubresourceRange(const VkImageSubresourceRange &range) const;
     uint32_t NormalizeLayerCount(const VkImageSubresourceLayers &resource) const;

@@ -22,7 +22,6 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include "generated/error_location_helper.h"
 #include "sync/sync_utils.h"
-#include "utils/vk_layer_utils.h"
 #include "chassis/validation_object.h"
 #include "generated/device_features.h"
 

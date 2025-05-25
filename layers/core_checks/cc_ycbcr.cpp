@@ -20,6 +20,8 @@
  */
 
 #include "core_validation.h"
+#include <vulkan/utility/vk_format_utils.h>
+#include "utils/image_utils.h"
 
 // There is a table in the Vulkan spec to list all formats that implicitly require YCbCr conversion,
 // but some features/extensions can explicitly turn that restriction off

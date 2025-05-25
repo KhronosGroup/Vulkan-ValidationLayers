@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+#include <vulkan/utility/vk_format_utils.h>
 #include "sync/sync_commandbuffer.h"
 #include "sync/sync_op.h"
 #include "sync/sync_reporting.h"
@@ -27,6 +28,7 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/pipeline_state.h"
+#include "utils/math_utils.h"
 #include "utils/text_utils.h"
 
 SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
