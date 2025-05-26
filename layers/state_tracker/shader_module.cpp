@@ -2276,10 +2276,24 @@ uint32_t Module::GetTypeBitsSize(const Instruction* insn) const {
         bit_size = vector_width * column_count;
     } else if (opcode == spv::OpTypeArray) {
         const Instruction* element_type = FindDef(insn->Word(2));
-        uint32_t element_width = GetTypeBitsSize(element_type);
+        const uint32_t element_width = GetTypeBitsSize(element_type);
         const Instruction* length_type = FindDef(insn->Word(3));
-        uint32_t length = length_type->GetConstantValue();
-        bit_size = element_width * length;
+        const uint32_t length = length_type->GetConstantValue();
+
+        // ArrayStride is only between element, not applied on the end of last element
+        // Things like Private variable don't have explicit layout and can use element size
+        uint32_t array_stride = element_width;
+        for (const spirv::Instruction* decoration_inst : static_data_.decoration_inst) {
+            if (decoration_inst->Word(1) == insn->ResultId()) {
+                if (decoration_inst->Word(2) == spv::DecorationArrayStride) {
+                    // Need to represent as bits here
+                    array_stride = decoration_inst->Word(3) * 8;
+                    break;
+                }
+            }
+        }
+
+        bit_size = ((length - 1) * array_stride) + element_width;
     } else if (opcode == spv::OpTypeStruct) {
         // Will not consider any possible Offset, gets size of a packed struct
         for (uint32_t i = 2; i < insn->Length(); ++i) {
