@@ -22,6 +22,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "containers/small_vector.h"
 #include "generated/dispatch_functions.h"
+#include "utils/dispatch_utils.h"
 
 #include <atomic>
 

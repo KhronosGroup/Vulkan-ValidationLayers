@@ -69,6 +69,13 @@ static const uint8_t kUtF8ThreeByteMask = 0xF8;
 static const uint8_t kUtF8DataByteCode = 0x80;
 static const uint8_t kUtF8DataByteMask = 0xC0;
 
+typedef enum VkStringErrorFlagBits {
+    VK_STRING_ERROR_NONE = 0x00000000,
+    VK_STRING_ERROR_LENGTH = 0x00000001,
+    VK_STRING_ERROR_BAD_DATA = 0x00000002,
+} VkStringErrorFlagBits;
+typedef VkFlags VkStringErrorFlags;
+
 static VkStringErrorFlags ValidateVkString(const int max_length, const char *utf8) {
     VkStringErrorFlags result = VK_STRING_ERROR_NONE;
     int num_char_bytes = 0;

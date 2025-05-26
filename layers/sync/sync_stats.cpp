@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2024-2025 The Khronos Group Inc.
+ * Copyright (c) 2024-2025 Valve Corporation
+ * Copyright (c) 2024-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,21 @@
 
 #if VVL_ENABLE_SYNCVAL_STATS != 0
 #include "sync_commandbuffer.h"
-#include "utils/vk_layer_utils.h"
 
 #include <iostream>
+
+namespace vvl {
+// Until C++ 26 std::atomic<T>::fetch_max arrives
+// https://en.cppreference.com/w/cpp/atomic/atomic/fetch_max
+// https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2024/p0493r5.pdf
+template <typename T>
+inline T atomic_fetch_max(std::atomic<T> &current_max, const T &value) noexcept {
+    T t = current_max.load();
+    while (!current_max.compare_exchange_weak(t, std::max(t, value)))
+        ;
+    return t;
+}
+}  // namespace vvl
 
 namespace syncval_stats {
 

@@ -19,6 +19,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "utils/image_utils.h"
+#include "utils/math_utils.h"
 #include <vulkan/utility/vk_format_utils.h>
 
 namespace stateless {

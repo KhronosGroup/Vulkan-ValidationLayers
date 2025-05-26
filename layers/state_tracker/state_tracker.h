@@ -29,6 +29,7 @@
 #include "containers/span.h"
 #include "containers/custom_containers.h"
 #include "utils/android_ndk_types.h"
+#include "utils/vk_api_utils.h"
 #include "containers/range_map.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <atomic>

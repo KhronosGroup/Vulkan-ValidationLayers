@@ -22,7 +22,9 @@
 #include "generated/enum_flag_bits.h"
 #include "error_message/error_strings.h"
 #include "containers/span.h"
+#include "containers/container_utils.h"
 #include "utils/image_utils.h"
+#include "utils/math_utils.h"
 
 namespace stateless {
 bool Device::ValidateCoarseSampleOrderCustomNV(const VkCoarseSampleOrderCustomNV &order, const Location &order_loc) const {

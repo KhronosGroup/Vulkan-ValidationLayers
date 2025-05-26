@@ -17,7 +17,6 @@
 
 #include "state_tracker/device_state.h"
 #include "generated/dispatch_functions.h"
-#include "utils/vk_layer_utils.h"
 
 namespace vvl {
 

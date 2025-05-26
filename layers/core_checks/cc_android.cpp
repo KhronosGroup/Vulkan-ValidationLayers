@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-#include "utils/vk_layer_utils.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
 #include "state_tracker/image_state.h"

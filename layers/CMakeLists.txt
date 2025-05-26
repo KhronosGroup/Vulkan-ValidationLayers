@@ -56,9 +56,14 @@ target_sources(VkLayer_utils PRIVATE
     ${API_TYPE}/generated/vk_extension_helper.h
     ${API_TYPE}/generated/vk_extension_helper.cpp
     utils/action_command_utils.h
+    utils/assert_utils.h
     utils/cast_utils.h
     utils/convert_utils.cpp
     utils/convert_utils.h
+    utils/dispatch_utils.cpp
+    utils/dispatch_utils.h
+    utils/file_system_utils.cpp
+    utils/file_system_utils.h
     utils/hash_util.h
     utils/hash_util.cpp
     utils/hash_vk_types.h
@@ -66,6 +71,7 @@ target_sources(VkLayer_utils PRIVATE
     utils/image_utils.cpp
     utils/image_layout_utils.h
     utils/image_layout_utils.cpp
+    utils/lock_utils.h
     utils/math_utils.h
     utils/vk_layer_extension_utils.cpp
     utils/vk_layer_extension_utils.h
@@ -75,10 +81,9 @@ target_sources(VkLayer_utils PRIVATE
     utils/ray_tracing_utils.h
     utils/text_utils.cpp
     utils/text_utils.h
-    utils/vk_layer_utils.cpp
-    utils/vk_layer_utils.h
     utils/vk_struct_compare.cpp
     utils/vk_struct_compare.h
+    utils/vk_api_utils.h
     vk_layer_config.h
     vk_layer_config.cpp
 )

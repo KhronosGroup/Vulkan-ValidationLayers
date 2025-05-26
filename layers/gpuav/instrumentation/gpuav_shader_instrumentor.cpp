@@ -23,7 +23,6 @@
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
 #include "chassis/chassis_modification_state.h"
-#include "utils/vk_layer_utils.h"
 #include "utils/shader_utils.h"
 #include "sync/sync_utils.h"
 

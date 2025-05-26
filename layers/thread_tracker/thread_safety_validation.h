@@ -24,7 +24,6 @@
 #include <string>
 #include <thread>
 #include "chassis/validation_object.h"
-#include "utils/vk_layer_utils.h"
 
 namespace threadsafety {
 

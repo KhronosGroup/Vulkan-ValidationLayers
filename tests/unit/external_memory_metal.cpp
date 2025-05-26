@@ -12,10 +12,10 @@
  */
 
 #ifdef VK_USE_PLATFORM_METAL_EXT
-#include "utils/vk_layer_utils.h"
 #include "utils/math_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/external_memory_sync.h"
+#include "containers/container_utils.h"
 
 // We need these instead of using FindSupportedExternalMemoryHandleTypes because otherwise we'll get
 // VUID-VkPhysicalDeviceExternalImageFormatInfo-handleType-parameter due to sending flags that are not supported due to extensions

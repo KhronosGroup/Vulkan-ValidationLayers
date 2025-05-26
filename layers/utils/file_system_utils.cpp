@@ -1,6 +1,6 @@
-/* Copyright (c) 2015-2016, 2020-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2016, 2020-2025 Valve Corporation
- * Copyright (c) 2015-2016, 2020-2025 LunarG, Inc.
+/* Copyright (c) 2020-2025 The Khronos Group Inc.
+ * Copyright (c) 2020-2025 Valve Corporation
+ * Copyright (c) 2020-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,32 +15,12 @@
  * limitations under the License.
  */
 
-#include "vk_layer_utils.h"
+#include "file_system_utils.h"
 
-#include <string.h>
 #include <sys/stat.h>
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "vulkan/vulkan_core.h"
 #include "vk_layer_config.h"
-
-VkLayerInstanceCreateInfo *GetChainInfo(const VkInstanceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerInstanceCreateInfo *chain_info = (VkLayerInstanceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerInstanceCreateInfo *)chain_info->pNext;
-    }
-    assert(chain_info != NULL);
-    return chain_info;
-}
-
-VkLayerDeviceCreateInfo *GetChainInfo(const VkDeviceCreateInfo *pCreateInfo, VkLayerFunction func) {
-    VkLayerDeviceCreateInfo *chain_info = (VkLayerDeviceCreateInfo *)pCreateInfo->pNext;
-    while (chain_info && !(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == func)) {
-        chain_info = (VkLayerDeviceCreateInfo *)chain_info->pNext;
-    }
-    assert(chain_info != NULL);
-    return chain_info;
-}
 
 std::string GetTempFilePath() {
     auto tmp_path = GetEnvironment("XDG_CACHE_HOME");

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
 
 #include <vulkan/utility/vk_struct_helper.hpp>
 #include <generated/enum_flag_bits.h>
-
-#include "utils/vk_layer_utils.h"
+#include "containers/container_utils.h"
 
 // We are trying to query unsupported handle types, which means we will likley trigger *-handleType-parameter VUs
 void IgnoreHandleTypeError(ErrorMonitor *monitor) {

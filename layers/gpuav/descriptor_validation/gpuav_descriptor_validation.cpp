@@ -27,7 +27,6 @@
 
 #include "profiling/profiling.h"
 #include "state_tracker/shader_object_state.h"
-#include "utils/vk_layer_utils.h"
 
 namespace gpuav {
 namespace descriptor {

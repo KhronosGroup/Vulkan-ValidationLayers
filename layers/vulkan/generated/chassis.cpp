@@ -51,7 +51,7 @@ static constexpr std::array<VkExtensionProperties, 3> kDeviceExtensions = {
 namespace vulkan_layer_chassis {
 static const VkLayerProperties global_layer = {
     OBJECT_LAYER_NAME,
-    VK_LAYER_API_VERSION,
+    VK_HEADER_VERSION_COMPLETE,
     1,
     "LunarG validation Layer",
 };

@@ -31,6 +31,10 @@
 #include "core_checks/core_validation.h"
 #include "profiling/profiling.h"
 #include "containers/small_vector.h"
+#include "utils/dispatch_utils.h"
+
+#define STRINGIFY(s) STRINGIFY_HELPER(s)
+#define STRINGIFY_HELPER(s) #s
 
 namespace vulkan_layer_chassis {
 

@@ -20,8 +20,6 @@
 
 #pragma once
 
-#include "utils/vk_layer_utils.h"
-
 #include "error_message/logging.h"
 #include "error_message/error_location.h"
 #include "error_message/record_object.h"

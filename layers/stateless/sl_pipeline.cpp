@@ -23,6 +23,7 @@
 #include "generated/dispatch_functions.h"
 #include "stateless/sl_vuid_maps.h"
 #include "containers/container_utils.h"
+#include "utils/math_utils.h"
 
 namespace stateless {
 

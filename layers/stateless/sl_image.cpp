@@ -22,6 +22,7 @@
 #include "error_message/error_strings.h"
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "containers/container_utils.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 

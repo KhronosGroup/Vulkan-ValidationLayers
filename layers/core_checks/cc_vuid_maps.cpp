@@ -17,7 +17,6 @@
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "generated/error_location_helper.h"
-#include "utils/vk_layer_utils.h"
 #include "state_tracker/pipeline_state.h"
 #include <map>
 

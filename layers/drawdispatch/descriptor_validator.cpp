@@ -33,7 +33,6 @@
 #include "state_tracker/shader_module.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "utils/action_command_utils.h"
-#include "utils/vk_layer_utils.h"
 
 namespace vvl {
 

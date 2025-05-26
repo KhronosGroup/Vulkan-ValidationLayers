@@ -26,6 +26,7 @@
 #include "core_validation.h"
 #include "cc_buffer_address.h"
 #include "utils/ray_tracing_utils.h"
+#include "utils/math_utils.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"

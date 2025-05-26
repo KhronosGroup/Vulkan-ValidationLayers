@@ -10,8 +10,8 @@
  */
 
 #include "ray_tracing_objects.h"
+#include "containers/container_utils.h"
 
-#include "utils/vk_layer_utils.h"
 #include "utils/math_utils.h"
 
 // #define VVL_DEBUG_LOG_SBT
