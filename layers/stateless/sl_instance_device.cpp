@@ -486,8 +486,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             if (IsValueIn(current->sType, illegal_feature_structs_with_11)) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02829", physicalDevice, error_obj.location,
                                  "If the pNext chain includes a VkPhysicalDeviceVulkan11Features structure, then "
-                                 "it must not include a %s structure.\n%s",
-                                 string_VkStructureType(current->sType),
+                                 "it must not include a %s structure. The features in %s were promoted in Vulkan 1.1 and is also "
+                                 "found in VkPhysicalDeviceVulkan11Features. To prevent one feature setting something to VK_TRUE "
+                                 "and the other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
+                                 string_VkStructureName(current->sType), string_VkStructureName(current->sType),
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
@@ -524,8 +526,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             if (IsValueIn(current->sType, illegal_feature_structs_with_12)) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-02830", physicalDevice, create_info_loc.dot(Field::pNext),
                                  "chain includes a VkPhysicalDeviceVulkan12Features structure, then it must not "
-                                 "include a %s structure\n%s",
-                                 string_VkStructureType(current->sType),
+                                 "include a %s structure. The features in %s were promoted in Vulkan 1.2 and is also found in "
+                                 "VkPhysicalDeviceVulkan12Features. To prevent one feature setting something to VK_TRUE and the "
+                                 "other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
+                                 string_VkStructureName(current->sType), string_VkStructureName(current->sType),
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
@@ -601,8 +605,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             if (IsValueIn(current->sType, illegal_feature_structs_with_13)) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-06532", physicalDevice, create_info_loc.dot(Field::pNext),
                                  "chain includes a VkPhysicalDeviceVulkan13Features structure, then it must not "
-                                 "include a %s structure\n%s",
-                                 string_VkStructureType(current->sType),
+                                 "include a %s structure. The features in %s were promoted in Vulkan 1.3 and is also found in "
+                                 "VkPhysicalDeviceVulkan13Features. To prevent one feature setting something to VK_TRUE and the "
+                                 "other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
+                                 string_VkStructureName(current->sType), string_VkStructureName(current->sType),
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
@@ -632,8 +638,10 @@ bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevic
             if (IsValueIn(current->sType, illegal_feature_structs_with_14)) {
                 skip |= LogError("VUID-VkDeviceCreateInfo-pNext-10360", physicalDevice, create_info_loc.dot(Field::pNext),
                                  "chain includes a VkPhysicalDeviceVulkan14Features structure, then it must not "
-                                 "include a %s structure\n%s",
-                                 string_VkStructureType(current->sType),
+                                 "include a %s structure. The features in %s were promoted in Vulkan 1.4 and is also found in "
+                                 "VkPhysicalDeviceVulkan14Features. To prevent one feature setting something to VK_TRUE and the "
+                                 "other to VK_FALSE, only one struct containing the feature is allowed.\n%s",
+                                 string_VkStructureName(current->sType), string_VkStructureName(current->sType),
                                  PrintPNextChain(Struct::VkDeviceCreateInfo, pCreateInfo->pNext).c_str());
                 break;
             }
