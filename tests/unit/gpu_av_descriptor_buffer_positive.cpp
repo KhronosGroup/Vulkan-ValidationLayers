@@ -98,9 +98,7 @@ TEST_F(PositiveGpuAVDescriptorBuffer, Basic) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 
-    if (!IsPlatformMockICD()) {
-        ASSERT_TRUE(data[0] == 8);
-        ASSERT_TRUE(data[1] == 12);
-        ASSERT_TRUE(data[2] == 20);
-    }
+    ASSERT_TRUE(data[0] == 8);
+    ASSERT_TRUE(data[1] == 12);
+    ASSERT_TRUE(data[2] == 20);
 }
