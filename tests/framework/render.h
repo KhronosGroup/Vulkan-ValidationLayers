@@ -199,15 +199,10 @@ class VkRenderFramework : public VkTestFramework {
     VkInstance instance_;
     VkPhysicalDevice gpu_ = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties physDevProps_;
-    // This set of required features is used for the features query.
-    // If any required feature is not available, test will fail
-    vkt::FeatureRequirements required_features_;
-    // This is the set of features that will be enabled.
-    // The same features added to required_features_ are added here.
-    // But when querying features, required_features_ will be filled with all
-    // available features. Hence, if used to create a device, the required_features_ set
-    // would *also* enable available features, when we just want to enable required features.
-    vkt::FeatureRequirements features_to_enable_;
+    // This set of required and optional features is used for the features query.
+    // If any required feature is not available, test will fail.
+    // Then all required features and supported optional features are used for device creation.
+    vkt::FeatureRequirements requested_features_;
     bool all_queue_count_ = false;
 
     uint32_t m_gpu_index;
