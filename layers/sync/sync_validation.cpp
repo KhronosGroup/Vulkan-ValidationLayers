@@ -3730,6 +3730,7 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
     auto &context = *cb_context.GetCurrentAccessContext();
 
     for (const auto [i, info] : vvl::enumerate(pInfos, infoCount)) {
+        const Location info_loc = error_obj.location.dot(Field::pInfos, i);
         // Validate scratch buffer
         if (const vvl::Buffer *p_scratch_buffer = GetSingleBufferFromDeviceAddress(*device_state, info.scratchData.deviceAddress)) {
             const vvl::Buffer &scratch_buffer = *p_scratch_buffer;
@@ -3752,17 +3753,11 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
             auto hazard = context.DetectHazard(*src_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ, range);
             if (hazard.IsHazard()) {
-                const LogObjectList objlist(commandBuffer, src_accel->buffer_state->Handle());
-                std::stringstream ss;
-                ss << FormatHandle(src_accel->buffer_state->VkHandle());
-                ss << " (" << Location(vvl::Func::Empty, vvl::Field::srcAccelerationStructure).Fields() << ")";
-                const std::string resource_description = ss.str();
-
-                AdditionalMessageInfo additional_info;
-                additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.srcAccelerationStructure) + ". ";
-
-                const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, range, additional_info);
+                const LogObjectList objlist(commandBuffer, src_accel->buffer_state->Handle(), src_accel->Handle());
+                const std::string resource_description = FormatHandle(src_accel->buffer_state->VkHandle());
+                const std::string error = error_messages_.AccelerationStructureError(
+                    hazard, cb_context, error_obj.location.function, resource_description, range, info.srcAccelerationStructure,
+                    info_loc.dot(Field::srcAccelerationStructure));
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -3772,17 +3767,11 @@ bool SyncValidator::PreCallValidateCmdBuildAccelerationStructuresKHR(
             auto hazard = context.DetectHazard(*dst_accel->buffer_state,
                                                SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE, dst_range);
             if (hazard.IsHazard()) {
-                const LogObjectList objlist(commandBuffer, dst_accel->buffer_state->Handle());
-                std::stringstream ss;
-                ss << FormatHandle(dst_accel->buffer_state->VkHandle());
-                ss << " (" << Location(vvl::Func::Empty, vvl::Field::dstAccelerationStructure).Fields() << ")";
-                const std::string resource_description = ss.str();
-
-                AdditionalMessageInfo additional_info;
-                additional_info.pre_synchronization_text = "The buffer backs " + FormatHandle(info.dstAccelerationStructure) + ". ";
-
-                const auto error = error_messages_.BufferError(hazard, cb_context, error_obj.location.function,
-                                                               resource_description, dst_range, additional_info);
+                const LogObjectList objlist(commandBuffer, dst_accel->buffer_state->Handle(), dst_accel->Handle());
+                const std::string resource_description = FormatHandle(dst_accel->buffer_state->VkHandle());
+                const std::string error = error_messages_.AccelerationStructureError(
+                    hazard, cb_context, error_obj.location.function, resource_description, dst_range, info.dstAccelerationStructure,
+                    info_loc.dot(Field::dstAccelerationStructure));
                 skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
             }
         }
@@ -3920,5 +3909,67 @@ void SyncValidator::PostCallRecordCmdBuildAccelerationStructuresKHR(
                                           SyncOrdering::kNonAttachment, geometry_info->instance_range, instance_tag_ex);
             }
         }
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                   const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
+        const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        auto hazard =
+            context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist(cb_state->Handle(), src_accel->buffer_state->Handle(), src_accel->Handle());
+            const std::string resource_description = FormatHandle(src_accel->buffer_state->VkHandle());
+            const std::string error = error_messages_.AccelerationStructureError(
+                hazard, cb_context, error_obj.location.function, resource_description, range, pInfo->src, info_loc.dot(Field::src));
+            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        }
+    }
+    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
+        const ResourceAccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        auto hazard =
+            context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist(cb_state->Handle(), dst_accel->buffer_state->Handle(), dst_accel->Handle());
+            const std::string resource_description = FormatHandle(dst_accel->buffer_state->VkHandle());
+            const std::string error = error_messages_.AccelerationStructureError(
+                hazard, cb_context, error_obj.location.function, resource_description, range, pInfo->dst, info_loc.dot(Field::dst));
+            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        }
+    }
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                  const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                                  const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
+        const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
+        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
+                                  SyncOrdering::kNonAttachment, range, tag_ex);
+    }
+    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
+        const ResourceAccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
+        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
+                                  SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }

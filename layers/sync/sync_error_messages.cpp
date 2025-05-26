@@ -76,6 +76,28 @@ std::string ErrorMessages::BufferCopyError(const HazardResult& hazard, const Com
     return Error(hazard, cb_context, command, resource_description, "BufferCopyError", additional_info);
 }
 
+std::string ErrorMessages::AccelerationStructureError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
+                                                      const vvl::Func command, const std::string& resource_description,
+                                                      const ResourceAccessRange range, VkAccelerationStructureKHR as,
+                                                      const Location& as_location) const {
+    AdditionalMessageInfo additional_info;
+
+    std::stringstream ss;
+    ss << "The buffer backs ";
+    ss << as_location.Fields();
+    ss << " (" << validator_.FormatHandle(as) << "). ";
+    additional_info.pre_synchronization_text = ss.str();
+
+    std::stringstream ss2;
+    ss2 << "\nBuffer access region: {\n";
+    ss2 << "  offset = " << range.begin << "\n";
+    ss2 << "  size = " << range.end - range.begin << "\n";
+    ss2 << "}\n";
+    additional_info.message_end_text += ss2.str();
+
+    return Error(hazard, cb_context, command, resource_description, "AccelerationStructureError", additional_info);
+}
+
 std::string ErrorMessages::ImageCopyResolveBlitError(const HazardResult& hazard, const CommandBufferAccessContext& cb_context,
                                                      vvl::Func command, const std::string& resource_description,
                                                      uint32_t region_index, const VkOffset3D& offset, const VkExtent3D& extent,

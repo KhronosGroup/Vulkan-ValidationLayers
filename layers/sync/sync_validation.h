@@ -638,4 +638,10 @@ class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
                                                          const VkAccelerationStructureBuildGeometryInfoKHR *pInfos,
                                                          const VkAccelerationStructureBuildRangeInfoKHR *const *ppBuildRangeInfos,
                                                          const RecordObject &record_obj) override;
+    bool PreCallValidateCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                        const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                        const ErrorObject &error_obj) const override;
+    void PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                       const VkCopyAccelerationStructureInfoKHR *pInfo,
+                                                       const RecordObject &record_obj) override;
 };
