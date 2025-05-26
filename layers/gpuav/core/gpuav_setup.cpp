@@ -362,6 +362,13 @@ void Validator::InitSettings(const Location &loc) {
         // Because of VUs like VUID-VkPipelineLayoutCreateInfo-pSetLayouts-08008 we currently would need to rework the entire shader
         // instrumentation logic
         gpuav_settings.DisableShaderInstrumentationAndOptions();
+
+        if (gpuav_settings.debug_printf_enabled) {
+            InternalWarning(device, loc,
+                            "VK_EXT_descriptor_buffer is enabled, but DebugPrintf uses a normal descriptor and currently can't "
+                            "exist with descriptor buffers. [Disabling debug_printf]");
+            gpuav_settings.debug_printf_enabled = false;
+        }
     }
 
     // If we have turned off all the possible things to instrument, turn off everything fully
