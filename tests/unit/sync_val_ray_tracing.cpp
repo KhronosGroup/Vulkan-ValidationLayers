@@ -437,3 +437,89 @@ TEST_F(NegativeSyncValRayTracing, CopyAfterRayQuery) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRayTracing, ASCopySourceHazard) {
+    TEST_DESCRIPTION("Hazard when accessing AS copy source");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_src.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             // going to write into source blas buffer to cause hazard
+                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_src.SetupBuild(true);
+
+    m_command_buffer.Begin();
+    blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vkt::as::BuildGeometryInfoKHR blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_dst.SetupBuild(true);
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_src.GetDstAS()->handle();
+    copy_info.dst = blas_dst.GetDstAS()->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    const vkt::Buffer& blas_src_buffer = blas_src.GetDstAS()->GetBuffer();
+    vkt::Buffer buffer(*m_device, blas_src_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    // Test validation
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer, blas_src_buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test update
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    m_command_buffer.Copy(buffer, blas_src_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, ASCopyDestinationHazard) {
+    TEST_DESCRIPTION("Hazard when accessing AS copy destination");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_src.SetupBuild(true);
+
+    m_command_buffer.Begin();
+    blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vkt::as::BuildGeometryInfoKHR blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_dst.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_dst.SetupBuild(true);
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_src.GetDstAS()->handle();
+    copy_info.dst = blas_dst.GetDstAS()->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    const vkt::Buffer& blas_dst_buffer = blas_dst.GetDstAS()->GetBuffer();
+    vkt::Buffer buffer(*m_device, blas_dst_buffer.CreateInfo().size,
+                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+    // Test validation
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(blas_dst_buffer, buffer);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test update
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    m_command_buffer.Copy(buffer, blas_dst_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
