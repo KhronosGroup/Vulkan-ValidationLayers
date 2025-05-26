@@ -20,25 +20,41 @@ namespace vkt {
 
 class FeatureRequirements {
   public:
+    FeatureRequirements();
     ~FeatureRequirements();
     // Add a feature required for the test to be executed
     void AddRequiredFeature(APIVersion api_version, vkt::Feature feature);
     // Add an optional feature that will be enabled when available for the test to be executed
     void AddOptionalFeature(APIVersion api_version, vkt::Feature feature);
 
-    bool HasFeatures2() const { return feature_chain_ != nullptr; }
-    VkPhysicalDeviceFeatures* GetFeatures() { return &phys_dev_features_.features; };
-    VkPhysicalDeviceFeatures2* GetFeatures2();
+    bool HasFeatures2() const { return queried_phys_dev_features_.pNext != nullptr; }
+    VkPhysicalDeviceFeatures* GetQueriedFeatures() { return &queried_phys_dev_features_.features; }
+    VkPhysicalDeviceFeatures2* GetQueriedFeatures2() { return &queried_phys_dev_features_; }
+    VkPhysicalDeviceFeatures* GetEnabledFeatures() {
+        UpdateEnabledFeatures();
+        return &enabled_phys_dev_features_.features;
+    }
+    VkPhysicalDeviceFeatures2* GetEnabledFeatures2() {
+        UpdateEnabledFeatures();
+        return &enabled_phys_dev_features_;
+    }
     // Return nullptr if all required feature are enabled, else return the name of the first disabled feature
     const char* AnyRequiredFeatureDisabled() const;
-    void EnforceRequiredFeatures();
 
   private:
-    FeatureAndName SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value);
+    FeatureAndName AddFeature(VkPhysicalDeviceFeatures2& phys_dev_features, APIVersion api_version, vkt::Feature feature);
+    void UpdateEnabledFeatures();
 
-    void* feature_chain_ = nullptr;
-    VkPhysicalDeviceFeatures2 phys_dev_features_{};
-    std::vector<FeatureAndName> required_features_{};
+    struct FeatureInfo {
+        FeatureAndName queried_feature;
+        FeatureAndName enabled_feature;
+    };
+
+    VkPhysicalDeviceFeatures2 queried_phys_dev_features_{};
+    VkPhysicalDeviceFeatures2 enabled_phys_dev_features_{};
+
+    std::vector<FeatureInfo> required_features_{};
+    std::vector<FeatureInfo> optional_features_{};
 };
 
 }  // namespace vkt

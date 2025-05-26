@@ -17,350 +17,299 @@
 
 namespace vkt {
 
+FeatureRequirements::FeatureRequirements() {
+    queried_phys_dev_features_ = vku::InitStructHelper();
+    enabled_phys_dev_features_ = vku::InitStructHelper();
+}
+
 FeatureRequirements::~FeatureRequirements() {
-    vvl::PnextChainFree(feature_chain_);
-    feature_chain_ = nullptr;
+    vvl::PnextChainFree(queried_phys_dev_features_.pNext);
+    queried_phys_dev_features_.pNext = nullptr;
+
+    vvl::PnextChainFree(enabled_phys_dev_features_.pNext);
+    enabled_phys_dev_features_.pNext = nullptr;
 }
 
 void FeatureRequirements::AddRequiredFeature(APIVersion api_version, vkt::Feature feature) {
-    FeatureAndName f = SetFeature(api_version, feature, VK_TRUE);
-    *f.feature = VK_TRUE;
-    required_features_.emplace_back(f);
+    required_features_.emplace_back(FeatureInfo{AddFeature(queried_phys_dev_features_, api_version, feature),
+                                                AddFeature(enabled_phys_dev_features_, api_version, feature)});
 }
 
 void FeatureRequirements::AddOptionalFeature(APIVersion api_version, vkt::Feature feature) {
-    // By setting the feature here it will be queried and passed pack to device creation
-    // with the resulting values, so this in effect allows enabling the feature when available
-    FeatureAndName f = SetFeature(api_version, feature, VK_TRUE);
-    *f.feature = VK_TRUE;
+    optional_features_.emplace_back(FeatureInfo{AddFeature(queried_phys_dev_features_, api_version, feature),
+                                                AddFeature(enabled_phys_dev_features_, api_version, feature)});
 }
 
-vkt::FeatureAndName FeatureRequirements::SetFeature(APIVersion api_version, vkt::Feature feature, VkBool32 value) {
+vkt::FeatureAndName FeatureRequirements::AddFeature(VkPhysicalDeviceFeatures2& phys_dev_features, APIVersion api_version,
+                                                    vkt::Feature feature) {
     switch (feature) {
         case vkt::Feature::robustBufferAccess: {
-            phys_dev_features_.features.robustBufferAccess = value;
-            FeatureAndName f{&phys_dev_features_.features.robustBufferAccess, "VkPhysicalDeviceFeatures::robustBufferAccess"};
+            FeatureAndName f{&phys_dev_features.features.robustBufferAccess, "VkPhysicalDeviceFeatures::robustBufferAccess"};
             return f;
         }
         case vkt::Feature::fullDrawIndexUint32: {
-            phys_dev_features_.features.fullDrawIndexUint32 = value;
-            FeatureAndName f{&phys_dev_features_.features.fullDrawIndexUint32, "VkPhysicalDeviceFeatures::fullDrawIndexUint32"};
+            FeatureAndName f{&phys_dev_features.features.fullDrawIndexUint32, "VkPhysicalDeviceFeatures::fullDrawIndexUint32"};
             return f;
         }
         case vkt::Feature::imageCubeArray: {
-            phys_dev_features_.features.imageCubeArray = value;
-            FeatureAndName f{&phys_dev_features_.features.imageCubeArray, "VkPhysicalDeviceFeatures::imageCubeArray"};
+            FeatureAndName f{&phys_dev_features.features.imageCubeArray, "VkPhysicalDeviceFeatures::imageCubeArray"};
             return f;
         }
         case vkt::Feature::independentBlend: {
-            phys_dev_features_.features.independentBlend = value;
-            FeatureAndName f{&phys_dev_features_.features.independentBlend, "VkPhysicalDeviceFeatures::independentBlend"};
+            FeatureAndName f{&phys_dev_features.features.independentBlend, "VkPhysicalDeviceFeatures::independentBlend"};
             return f;
         }
         case vkt::Feature::geometryShader: {
-            phys_dev_features_.features.geometryShader = value;
-            FeatureAndName f{&phys_dev_features_.features.geometryShader, "VkPhysicalDeviceFeatures::geometryShader"};
+            FeatureAndName f{&phys_dev_features.features.geometryShader, "VkPhysicalDeviceFeatures::geometryShader"};
             return f;
         }
         case vkt::Feature::tessellationShader: {
-            phys_dev_features_.features.tessellationShader = value;
-            FeatureAndName f{&phys_dev_features_.features.tessellationShader, "VkPhysicalDeviceFeatures::tessellationShader"};
+            FeatureAndName f{&phys_dev_features.features.tessellationShader, "VkPhysicalDeviceFeatures::tessellationShader"};
             return f;
         }
         case vkt::Feature::sampleRateShading: {
-            phys_dev_features_.features.sampleRateShading = value;
-            FeatureAndName f{&phys_dev_features_.features.sampleRateShading, "VkPhysicalDeviceFeatures::sampleRateShading"};
+            FeatureAndName f{&phys_dev_features.features.sampleRateShading, "VkPhysicalDeviceFeatures::sampleRateShading"};
             return f;
         }
         case vkt::Feature::dualSrcBlend: {
-            phys_dev_features_.features.dualSrcBlend = value;
-            FeatureAndName f{&phys_dev_features_.features.dualSrcBlend, "VkPhysicalDeviceFeatures::dualSrcBlend"};
+            FeatureAndName f{&phys_dev_features.features.dualSrcBlend, "VkPhysicalDeviceFeatures::dualSrcBlend"};
             return f;
         }
         case vkt::Feature::logicOp: {
-            phys_dev_features_.features.logicOp = value;
-            FeatureAndName f{&phys_dev_features_.features.logicOp, "VkPhysicalDeviceFeatures::logicOp"};
+            FeatureAndName f{&phys_dev_features.features.logicOp, "VkPhysicalDeviceFeatures::logicOp"};
             return f;
         }
         case vkt::Feature::multiDrawIndirect: {
-            phys_dev_features_.features.multiDrawIndirect = value;
-            FeatureAndName f{&phys_dev_features_.features.multiDrawIndirect, "VkPhysicalDeviceFeatures::multiDrawIndirect"};
+            FeatureAndName f{&phys_dev_features.features.multiDrawIndirect, "VkPhysicalDeviceFeatures::multiDrawIndirect"};
             return f;
         }
         case vkt::Feature::drawIndirectFirstInstance: {
-            phys_dev_features_.features.drawIndirectFirstInstance = value;
-            FeatureAndName f{&phys_dev_features_.features.drawIndirectFirstInstance,
+            FeatureAndName f{&phys_dev_features.features.drawIndirectFirstInstance,
                              "VkPhysicalDeviceFeatures::drawIndirectFirstInstance"};
             return f;
         }
         case vkt::Feature::depthClamp: {
-            phys_dev_features_.features.depthClamp = value;
-            FeatureAndName f{&phys_dev_features_.features.depthClamp, "VkPhysicalDeviceFeatures::depthClamp"};
+            FeatureAndName f{&phys_dev_features.features.depthClamp, "VkPhysicalDeviceFeatures::depthClamp"};
             return f;
         }
         case vkt::Feature::depthBiasClamp: {
-            phys_dev_features_.features.depthBiasClamp = value;
-            FeatureAndName f{&phys_dev_features_.features.depthBiasClamp, "VkPhysicalDeviceFeatures::depthBiasClamp"};
+            FeatureAndName f{&phys_dev_features.features.depthBiasClamp, "VkPhysicalDeviceFeatures::depthBiasClamp"};
             return f;
         }
         case vkt::Feature::fillModeNonSolid: {
-            phys_dev_features_.features.fillModeNonSolid = value;
-            FeatureAndName f{&phys_dev_features_.features.fillModeNonSolid, "VkPhysicalDeviceFeatures::fillModeNonSolid"};
+            FeatureAndName f{&phys_dev_features.features.fillModeNonSolid, "VkPhysicalDeviceFeatures::fillModeNonSolid"};
             return f;
         }
         case vkt::Feature::depthBounds: {
-            phys_dev_features_.features.depthBounds = value;
-            FeatureAndName f{&phys_dev_features_.features.depthBounds, "VkPhysicalDeviceFeatures::depthBounds"};
+            FeatureAndName f{&phys_dev_features.features.depthBounds, "VkPhysicalDeviceFeatures::depthBounds"};
             return f;
         }
         case vkt::Feature::wideLines: {
-            phys_dev_features_.features.wideLines = value;
-            FeatureAndName f{&phys_dev_features_.features.wideLines, "VkPhysicalDeviceFeatures::wideLines"};
+            FeatureAndName f{&phys_dev_features.features.wideLines, "VkPhysicalDeviceFeatures::wideLines"};
             return f;
         }
         case vkt::Feature::largePoints: {
-            phys_dev_features_.features.largePoints = value;
-            FeatureAndName f{&phys_dev_features_.features.largePoints, "VkPhysicalDeviceFeatures::largePoints"};
+            FeatureAndName f{&phys_dev_features.features.largePoints, "VkPhysicalDeviceFeatures::largePoints"};
             return f;
         }
         case vkt::Feature::alphaToOne: {
-            phys_dev_features_.features.alphaToOne = value;
-            FeatureAndName f{&phys_dev_features_.features.alphaToOne, "VkPhysicalDeviceFeatures::alphaToOne"};
+            FeatureAndName f{&phys_dev_features.features.alphaToOne, "VkPhysicalDeviceFeatures::alphaToOne"};
             return f;
         }
         case vkt::Feature::multiViewport: {
-            phys_dev_features_.features.multiViewport = value;
-            FeatureAndName f{&phys_dev_features_.features.multiViewport, "VkPhysicalDeviceFeatures::multiViewport"};
+            FeatureAndName f{&phys_dev_features.features.multiViewport, "VkPhysicalDeviceFeatures::multiViewport"};
             return f;
         }
         case vkt::Feature::samplerAnisotropy: {
-            phys_dev_features_.features.samplerAnisotropy = value;
-            FeatureAndName f{&phys_dev_features_.features.samplerAnisotropy, "VkPhysicalDeviceFeatures::samplerAnisotropy"};
+            FeatureAndName f{&phys_dev_features.features.samplerAnisotropy, "VkPhysicalDeviceFeatures::samplerAnisotropy"};
             return f;
         }
         case vkt::Feature::textureCompressionETC2: {
-            phys_dev_features_.features.textureCompressionETC2 = value;
-            FeatureAndName f{&phys_dev_features_.features.textureCompressionETC2,
+            FeatureAndName f{&phys_dev_features.features.textureCompressionETC2,
                              "VkPhysicalDeviceFeatures::textureCompressionETC2"};
             return f;
         }
         case vkt::Feature::textureCompressionASTC_LDR: {
-            phys_dev_features_.features.textureCompressionASTC_LDR = value;
-            FeatureAndName f{&phys_dev_features_.features.textureCompressionASTC_LDR,
+            FeatureAndName f{&phys_dev_features.features.textureCompressionASTC_LDR,
                              "VkPhysicalDeviceFeatures::textureCompressionASTC_LDR"};
             return f;
         }
         case vkt::Feature::textureCompressionBC: {
-            phys_dev_features_.features.textureCompressionBC = value;
-            FeatureAndName f{&phys_dev_features_.features.textureCompressionBC, "VkPhysicalDeviceFeatures::textureCompressionBC"};
+            FeatureAndName f{&phys_dev_features.features.textureCompressionBC, "VkPhysicalDeviceFeatures::textureCompressionBC"};
             return f;
         }
         case vkt::Feature::occlusionQueryPrecise: {
-            phys_dev_features_.features.occlusionQueryPrecise = value;
-            FeatureAndName f{&phys_dev_features_.features.occlusionQueryPrecise, "VkPhysicalDeviceFeatures::occlusionQueryPrecise"};
+            FeatureAndName f{&phys_dev_features.features.occlusionQueryPrecise, "VkPhysicalDeviceFeatures::occlusionQueryPrecise"};
             return f;
         }
         case vkt::Feature::pipelineStatisticsQuery: {
-            phys_dev_features_.features.pipelineStatisticsQuery = value;
-            FeatureAndName f{&phys_dev_features_.features.pipelineStatisticsQuery,
+            FeatureAndName f{&phys_dev_features.features.pipelineStatisticsQuery,
                              "VkPhysicalDeviceFeatures::pipelineStatisticsQuery"};
             return f;
         }
         case vkt::Feature::vertexPipelineStoresAndAtomics: {
-            phys_dev_features_.features.vertexPipelineStoresAndAtomics = value;
-            FeatureAndName f{&phys_dev_features_.features.vertexPipelineStoresAndAtomics,
+            FeatureAndName f{&phys_dev_features.features.vertexPipelineStoresAndAtomics,
                              "VkPhysicalDeviceFeatures::vertexPipelineStoresAndAtomics"};
             return f;
         }
         case vkt::Feature::fragmentStoresAndAtomics: {
-            phys_dev_features_.features.fragmentStoresAndAtomics = value;
-            FeatureAndName f{&phys_dev_features_.features.fragmentStoresAndAtomics,
+            FeatureAndName f{&phys_dev_features.features.fragmentStoresAndAtomics,
                              "VkPhysicalDeviceFeatures::fragmentStoresAndAtomics"};
             return f;
         }
         case vkt::Feature::shaderTessellationAndGeometryPointSize: {
-            phys_dev_features_.features.shaderTessellationAndGeometryPointSize = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderTessellationAndGeometryPointSize,
+            FeatureAndName f{&phys_dev_features.features.shaderTessellationAndGeometryPointSize,
                              "VkPhysicalDeviceFeatures::shaderTessellationAndGeometryPointSize"};
             return f;
         }
         case vkt::Feature::shaderImageGatherExtended: {
-            phys_dev_features_.features.shaderImageGatherExtended = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderImageGatherExtended,
+            FeatureAndName f{&phys_dev_features.features.shaderImageGatherExtended,
                              "VkPhysicalDeviceFeatures::shaderImageGatherExtended"};
             return f;
         }
         case vkt::Feature::shaderStorageImageExtendedFormats: {
-            phys_dev_features_.features.shaderStorageImageExtendedFormats = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageImageExtendedFormats,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageImageExtendedFormats,
                              "VkPhysicalDeviceFeatures::shaderStorageImageExtendedFormats"};
             return f;
         }
         case vkt::Feature::shaderStorageImageMultisample: {
-            phys_dev_features_.features.shaderStorageImageMultisample = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageImageMultisample,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageImageMultisample,
                              "VkPhysicalDeviceFeatures::shaderStorageImageMultisample"};
             return f;
         }
         case vkt::Feature::shaderStorageImageReadWithoutFormat: {
-            phys_dev_features_.features.shaderStorageImageReadWithoutFormat = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageImageReadWithoutFormat,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageImageReadWithoutFormat,
                              "VkPhysicalDeviceFeatures::shaderStorageImageReadWithoutFormat"};
             return f;
         }
         case vkt::Feature::shaderStorageImageWriteWithoutFormat: {
-            phys_dev_features_.features.shaderStorageImageWriteWithoutFormat = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageImageWriteWithoutFormat,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageImageWriteWithoutFormat,
                              "VkPhysicalDeviceFeatures::shaderStorageImageWriteWithoutFormat"};
             return f;
         }
         case vkt::Feature::shaderUniformBufferArrayDynamicIndexing: {
-            phys_dev_features_.features.shaderUniformBufferArrayDynamicIndexing = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderUniformBufferArrayDynamicIndexing,
+            FeatureAndName f{&phys_dev_features.features.shaderUniformBufferArrayDynamicIndexing,
                              "VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing"};
             return f;
         }
         case vkt::Feature::shaderSampledImageArrayDynamicIndexing: {
-            phys_dev_features_.features.shaderSampledImageArrayDynamicIndexing = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderSampledImageArrayDynamicIndexing,
+            FeatureAndName f{&phys_dev_features.features.shaderSampledImageArrayDynamicIndexing,
                              "VkPhysicalDeviceFeatures::shaderSampledImageArrayDynamicIndexing"};
             return f;
         }
         case vkt::Feature::shaderStorageBufferArrayDynamicIndexing: {
-            phys_dev_features_.features.shaderStorageBufferArrayDynamicIndexing = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageBufferArrayDynamicIndexing,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageBufferArrayDynamicIndexing,
                              "VkPhysicalDeviceFeatures::shaderStorageBufferArrayDynamicIndexing"};
             return f;
         }
         case vkt::Feature::shaderStorageImageArrayDynamicIndexing: {
-            phys_dev_features_.features.shaderStorageImageArrayDynamicIndexing = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderStorageImageArrayDynamicIndexing,
+            FeatureAndName f{&phys_dev_features.features.shaderStorageImageArrayDynamicIndexing,
                              "VkPhysicalDeviceFeatures::shaderStorageImageArrayDynamicIndexing"};
             return f;
         }
         case vkt::Feature::shaderClipDistance: {
-            phys_dev_features_.features.shaderClipDistance = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderClipDistance, "VkPhysicalDeviceFeatures::shaderClipDistance"};
+            FeatureAndName f{&phys_dev_features.features.shaderClipDistance, "VkPhysicalDeviceFeatures::shaderClipDistance"};
             return f;
         }
         case vkt::Feature::shaderCullDistance: {
-            phys_dev_features_.features.shaderCullDistance = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderCullDistance, "VkPhysicalDeviceFeatures::shaderCullDistance"};
+            FeatureAndName f{&phys_dev_features.features.shaderCullDistance, "VkPhysicalDeviceFeatures::shaderCullDistance"};
             return f;
         }
         case vkt::Feature::shaderFloat64: {
-            phys_dev_features_.features.shaderFloat64 = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderFloat64, "VkPhysicalDeviceFeatures::shaderFloat64"};
+            FeatureAndName f{&phys_dev_features.features.shaderFloat64, "VkPhysicalDeviceFeatures::shaderFloat64"};
             return f;
         }
         case vkt::Feature::shaderInt64: {
-            phys_dev_features_.features.shaderInt64 = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderInt64, "VkPhysicalDeviceFeatures::shaderInt64"};
+            FeatureAndName f{&phys_dev_features.features.shaderInt64, "VkPhysicalDeviceFeatures::shaderInt64"};
             return f;
         }
         case vkt::Feature::shaderInt16: {
-            phys_dev_features_.features.shaderInt16 = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderInt16, "VkPhysicalDeviceFeatures::shaderInt16"};
+            FeatureAndName f{&phys_dev_features.features.shaderInt16, "VkPhysicalDeviceFeatures::shaderInt16"};
             return f;
         }
         case vkt::Feature::shaderResourceResidency: {
-            phys_dev_features_.features.shaderResourceResidency = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderResourceResidency,
+            FeatureAndName f{&phys_dev_features.features.shaderResourceResidency,
                              "VkPhysicalDeviceFeatures::shaderResourceResidency"};
             return f;
         }
         case vkt::Feature::shaderResourceMinLod: {
-            phys_dev_features_.features.shaderResourceMinLod = value;
-            FeatureAndName f{&phys_dev_features_.features.shaderResourceMinLod, "VkPhysicalDeviceFeatures::shaderResourceMinLod"};
+            FeatureAndName f{&phys_dev_features.features.shaderResourceMinLod, "VkPhysicalDeviceFeatures::shaderResourceMinLod"};
             return f;
         }
         case vkt::Feature::sparseBinding: {
-            phys_dev_features_.features.sparseBinding = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseBinding, "VkPhysicalDeviceFeatures::sparseBinding"};
+            FeatureAndName f{&phys_dev_features.features.sparseBinding, "VkPhysicalDeviceFeatures::sparseBinding"};
             return f;
         }
         case vkt::Feature::sparseResidencyBuffer: {
-            phys_dev_features_.features.sparseResidencyBuffer = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidencyBuffer, "VkPhysicalDeviceFeatures::sparseResidencyBuffer"};
+            FeatureAndName f{&phys_dev_features.features.sparseResidencyBuffer, "VkPhysicalDeviceFeatures::sparseResidencyBuffer"};
             return f;
         }
         case vkt::Feature::sparseResidencyImage2D: {
-            phys_dev_features_.features.sparseResidencyImage2D = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidencyImage2D,
+            FeatureAndName f{&phys_dev_features.features.sparseResidencyImage2D,
                              "VkPhysicalDeviceFeatures::sparseResidencyImage2D"};
             return f;
         }
         case vkt::Feature::sparseResidencyImage3D: {
-            phys_dev_features_.features.sparseResidencyImage3D = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidencyImage3D,
+            FeatureAndName f{&phys_dev_features.features.sparseResidencyImage3D,
                              "VkPhysicalDeviceFeatures::sparseResidencyImage3D"};
             return f;
         }
         case vkt::Feature::sparseResidency2Samples: {
-            phys_dev_features_.features.sparseResidency2Samples = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidency2Samples,
+            FeatureAndName f{&phys_dev_features.features.sparseResidency2Samples,
                              "VkPhysicalDeviceFeatures::sparseResidency2Samples"};
             return f;
         }
         case vkt::Feature::sparseResidency4Samples: {
-            phys_dev_features_.features.sparseResidency4Samples = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidency4Samples,
+            FeatureAndName f{&phys_dev_features.features.sparseResidency4Samples,
                              "VkPhysicalDeviceFeatures::sparseResidency4Samples"};
             return f;
         }
         case vkt::Feature::sparseResidency8Samples: {
-            phys_dev_features_.features.sparseResidency8Samples = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidency8Samples,
+            FeatureAndName f{&phys_dev_features.features.sparseResidency8Samples,
                              "VkPhysicalDeviceFeatures::sparseResidency8Samples"};
             return f;
         }
         case vkt::Feature::sparseResidency16Samples: {
-            phys_dev_features_.features.sparseResidency16Samples = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidency16Samples,
+            FeatureAndName f{&phys_dev_features.features.sparseResidency16Samples,
                              "VkPhysicalDeviceFeatures::sparseResidency16Samples"};
             return f;
         }
         case vkt::Feature::sparseResidencyAliased: {
-            phys_dev_features_.features.sparseResidencyAliased = value;
-            FeatureAndName f{&phys_dev_features_.features.sparseResidencyAliased,
+            FeatureAndName f{&phys_dev_features.features.sparseResidencyAliased,
                              "VkPhysicalDeviceFeatures::sparseResidencyAliased"};
             return f;
         }
         case vkt::Feature::variableMultisampleRate: {
-            phys_dev_features_.features.variableMultisampleRate = value;
-            FeatureAndName f{&phys_dev_features_.features.variableMultisampleRate,
+            FeatureAndName f{&phys_dev_features.features.variableMultisampleRate,
                              "VkPhysicalDeviceFeatures::variableMultisampleRate"};
             return f;
         }
         case vkt::Feature::inheritedQueries: {
-            phys_dev_features_.features.inheritedQueries = value;
-            FeatureAndName f{&phys_dev_features_.features.inheritedQueries, "VkPhysicalDeviceFeatures::inheritedQueries"};
+            FeatureAndName f{&phys_dev_features.features.inheritedQueries, "VkPhysicalDeviceFeatures::inheritedQueries"};
             return f;
         }
         default:
-            FeatureAndName f = vkt::AddFeature(api_version, feature, &feature_chain_);
+            FeatureAndName f = vkt::AddFeature(api_version, feature, &phys_dev_features.pNext);
             return f;
     }
 }
 
-VkPhysicalDeviceFeatures2* FeatureRequirements::GetFeatures2() {
-    phys_dev_features_.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    phys_dev_features_.pNext = feature_chain_;
-    return &phys_dev_features_;
-}
-
 const char* FeatureRequirements::AnyRequiredFeatureDisabled() const {
-    for (const auto [feature, name] : required_features_) {
-        if (*feature == VK_FALSE) {
-            return name;
+    for (const auto& info : required_features_) {
+        if (*info.queried_feature.feature == VK_FALSE) {
+            return info.queried_feature.name;
         }
     }
     return nullptr;
 }
 
-void FeatureRequirements::EnforceRequiredFeatures() {
-    for (const auto [feature, name] : required_features_) {
-        *feature = VK_TRUE;
+void FeatureRequirements::UpdateEnabledFeatures() {
+    for (const auto& info : required_features_) {
+        *info.enabled_feature.feature = VK_TRUE;
+    }
+
+    for (const auto& info : optional_features_) {
+        *info.enabled_feature.feature = *info.queried_feature.feature;
     }
 }
 

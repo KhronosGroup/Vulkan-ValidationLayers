@@ -373,12 +373,11 @@ std::string VkRenderFramework::RequiredExtensionsNotSupported() const {
 }
 
 void VkRenderFramework::AddRequiredFeature(vkt::Feature feature) {
-    required_features_.AddRequiredFeature(m_target_api_version, feature);
-    features_to_enable_.AddRequiredFeature(m_target_api_version, feature);
+    requested_features_.AddRequiredFeature(m_target_api_version, feature);
 }
 
 void VkRenderFramework::AddOptionalFeature(vkt::Feature feature) {
-    features_to_enable_.AddOptionalFeature(m_target_api_version, feature);
+    requested_features_.AddOptionalFeature(m_target_api_version, feature);
 }
 
 bool VkRenderFramework::AddRequestedInstanceExtensions(const char *ext_name) {
@@ -636,35 +635,33 @@ void VkRenderFramework::InitState(VkPhysicalDeviceFeatures *features, void *crea
 
     // Apply required features after we are done with handling promoted extensions
     if (!features) {
-        if (required_features_.HasFeatures2()) {
+        if (requested_features_.HasFeatures2()) {
             if (vk::GetPhysicalDeviceFeatures2KHR) {
-                vk::GetPhysicalDeviceFeatures2KHR(Gpu(), required_features_.GetFeatures2());
+                vk::GetPhysicalDeviceFeatures2KHR(Gpu(), requested_features_.GetQueriedFeatures2());
             } else {
-                vk::GetPhysicalDeviceFeatures2(Gpu(), required_features_.GetFeatures2());
+                vk::GetPhysicalDeviceFeatures2(Gpu(), requested_features_.GetQueriedFeatures2());
             }
         } else {
-            GetPhysicalDeviceFeatures(required_features_.GetFeatures());
+            GetPhysicalDeviceFeatures(requested_features_.GetQueriedFeatures());
         }
 
-        if (const char *f = required_features_.AnyRequiredFeatureDisabled()) {
+        if (const char *f = requested_features_.AnyRequiredFeatureDisabled()) {
             GTEST_SKIP() << "Required feature " << f << " is not available on device, skipping test";
         }
 
-        features_to_enable_.EnforceRequiredFeatures();
-
-        if (features_to_enable_.HasFeatures2()) {
+        if (requested_features_.HasFeatures2()) {
             if (create_device_pnext) {
                 // Chain to the end of the list
                 VkBaseOutStructure *p = reinterpret_cast<VkBaseOutStructure *>(create_device_pnext);
                 while (p->pNext != nullptr) {
                     p = p->pNext;
                 }
-                p->pNext = reinterpret_cast<VkBaseOutStructure *>(features_to_enable_.GetFeatures2());
+                p->pNext = reinterpret_cast<VkBaseOutStructure *>(requested_features_.GetEnabledFeatures2());
             } else {
-                create_device_pnext = features_to_enable_.GetFeatures2();
+                create_device_pnext = requested_features_.GetEnabledFeatures2();
             }
         } else {
-            features = features_to_enable_.GetFeatures();
+            features = requested_features_.GetEnabledFeatures();
         }
     }
 
