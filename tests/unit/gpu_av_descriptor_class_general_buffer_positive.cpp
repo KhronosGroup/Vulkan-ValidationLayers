@@ -866,6 +866,48 @@ TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopySlang) {
     ComputeStorageBufferTest(cs_source, false, 32);
 }
 
+TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayStrideEnd) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4121");
+    // layout(set = 0, binding = 0) buffer foo {
+    //     uint x[4]; // arrayStride is 16, not 4
+    // };
+    // void main() {
+    //     x[3] = 0;
+    // }
+    char const *cs_source = R"(
+               OpCapability Shader
+               OpMemoryModel Logical GLSL450
+               OpEntryPoint GLCompute %main "main" %_
+               OpExecutionMode %main LocalSize 1 1 1
+               OpDecorate %_arr_uint_uint_4 ArrayStride 16
+               OpDecorate %foo Block
+               OpMemberDecorate %foo 0 Offset 0
+               OpDecorate %_ Binding 0
+               OpDecorate %_ DescriptorSet 0
+       %void = OpTypeVoid
+          %4 = OpTypeFunction %void
+       %uint = OpTypeInt 32 0
+     %uint_4 = OpConstant %uint 4
+%_arr_uint_uint_4 = OpTypeArray %uint %uint_4
+        %foo = OpTypeStruct %_arr_uint_uint_4
+%_ptr_StorageBuffer_foo = OpTypePointer StorageBuffer %foo
+          %_ = OpVariable %_ptr_StorageBuffer_foo StorageBuffer
+        %int = OpTypeInt 32 1
+      %int_0 = OpConstant %int 0
+      %int_3 = OpConstant %int 3
+     %uint_0 = OpConstant %uint 0
+%_ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+       %main = OpFunction %void None %4
+          %6 = OpLabel
+         %18 = OpAccessChain %_ptr_StorageBuffer_uint %_ %int_0 %int_3
+               OpStore %18 %uint_0
+               OpReturn
+               OpFunctionEnd
+    )";
+
+    ComputeStorageBufferTest(cs_source, false, 52);
+}
+
 TEST_F(PositiveGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitGpuAvFramework());
