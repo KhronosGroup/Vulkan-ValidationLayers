@@ -250,13 +250,12 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
 
             while (current != nullptr) {
                 if ((loc.function != Func::vkCreateInstance || (current->sType != VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO)) &&
-                        (loc.function != Func::vkCreateDevice || (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
-                    std::string type_name = string_VkStructureType(current->sType);
+                    (loc.function != Func::vkCreateDevice || (current->sType != VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO))) {
                     if (unique_stype_check.find(current->sType) != unique_stype_check.end() && !IsDuplicatePnext(current->sType)) {
                         // stype_vuid will only be null if there are no listed pNext and will hit disclaimer check
-                        skip |=
-                            log.LogError(stype_vuid, error_obj.handle, pNext_loc,
-                                    "chain contains duplicate structure types: %s appears multiple times.", type_name.c_str());
+                        skip |= log.LogError(stype_vuid, error_obj.handle, pNext_loc,
+                                             "chain contains duplicate structure types: %s appears multiple times.\n%s",
+                                             string_VkStructureName(current->sType), PrintPNextChain(loc.structure, next).c_str());
                     } else {
                         unique_stype_check.insert(current->sType);
                     }
@@ -271,7 +270,7 @@ bool Context::ValidateStructPnext(const Location &loc, const void *next, size_t 
                     }
                     if (!custom) {
                         if (std::find(start, end, current->sType) == end) {
-                            // String returned by string_VkStructureType for an unrecognized type.
+                            const std::string type_name = string_VkStructureType(current->sType);
                             if (type_name.compare("Unhandled VkStructureType") == 0) {
                                 std::string message =
                                     "chain includes a structure with unknown VkStructureType (%" PRIu32 ").\n%s\n";
