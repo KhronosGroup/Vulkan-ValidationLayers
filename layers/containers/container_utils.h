@@ -109,3 +109,33 @@ typename std::vector<T>::size_type erase_if(std::vector<T> &c, Pred pred) {
 }
 
 }  // namespace vvl
+
+// Find whether or not an element is in list
+// Two definitions, to be able to do the following calls:
+// IsValueIn(1, {1, 2, 3});
+// std::array arr {1, 2, 3};
+// IsValueIn(1, arr);
+template <typename T, typename RANGE>
+bool IsValueIn(const T &v, const RANGE &range) {
+    return std::find(std::begin(range), std::end(range), v) != std::end(range);
+}
+
+template <typename T>
+bool IsValueIn(const T &v, const std::initializer_list<T> &list) {
+    return IsValueIn<T, decltype(list)>(v, list);
+}
+
+// Iterates over all set bits and calls the callback with a bit mask corresponding to each flag.
+// FlagBits and Flags follow Vulkan naming convensions for flag types.
+// An example of a more efficient implementation: https://lemire.me/blog/2018/02/21/iterating-over-set-bits-quickly/
+template <typename FlagBits, typename Flags, typename Callback>
+void IterateFlags(Flags flags, Callback callback) {
+    uint32_t bit_shift = 0;
+    while (flags) {
+        if (flags & 1) {
+            callback(static_cast<FlagBits>(1ull << bit_shift));
+        }
+        flags >>= 1;
+        ++bit_shift;
+    }
+}

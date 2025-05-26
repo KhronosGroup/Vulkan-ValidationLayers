@@ -15,11 +15,11 @@
 
 #include "log_error_pass.h"
 #include "module.h"
+#include "containers/container_utils.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
 
 #include "generated/gpuav_offline_spirv.h"
-#include "utils/vk_layer_utils.h"
 
 namespace gpuav {
 namespace spirv {

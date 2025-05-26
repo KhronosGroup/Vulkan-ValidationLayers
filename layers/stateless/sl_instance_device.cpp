@@ -20,6 +20,7 @@
 #include "stateless/stateless_validation.h"
 #include "generated/enum_flag_bits.h"
 #include "generated/dispatch_functions.h"
+#include "containers/container_utils.h"
 
 namespace stateless {
 // Traits objects to allow string_join to operate on collections of const char *

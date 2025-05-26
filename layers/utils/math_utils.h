@@ -32,6 +32,8 @@
 #include <strings.h>  // For ffs()
 #endif
 
+#include <vulkan/vulkan_core.h>
+
 template <typename T>
 constexpr bool IsPowerOfTwo(T x) {
     static_assert(std::is_integral_v<T> && std::is_unsigned_v<T>, "Unsigned integer required");
@@ -103,4 +105,45 @@ FlagBits LeastSignificantFlag(Flags flags) {
     const int bit_shift = LeastSignificantBit(flags);
     assert(bit_shift != -1);
     return static_cast<FlagBits>(1ull << bit_shift);
+}
+
+// Check if size is in range
+static inline bool IsBetweenInclusive(VkDeviceSize value, VkDeviceSize min, VkDeviceSize max) {
+    return (value >= min) && (value <= max);
+}
+
+static inline bool IsBetweenInclusive(const VkExtent2D &value, const VkExtent2D &min, const VkExtent2D &max) {
+    return IsBetweenInclusive(value.width, min.width, max.width) && IsBetweenInclusive(value.height, min.height, max.height);
+}
+
+static inline bool IsBetweenInclusive(float value, float min, float max) { return (value >= min) && (value <= max); }
+
+// Check if value is integer multiple of granularity
+static inline bool IsIntegerMultipleOf(VkDeviceSize value, VkDeviceSize granularity) {
+    if (granularity == 0) {
+        return value == 0;
+    } else {
+        return (value % granularity) == 0;
+    }
+}
+
+static inline bool IsIntegerMultipleOf(const VkOffset2D &value, const VkOffset2D &granularity) {
+    return IsIntegerMultipleOf(value.x, granularity.x) && IsIntegerMultipleOf(value.y, granularity.y);
+}
+
+// Perform a zero-tolerant modulo operation
+static inline VkDeviceSize SafeModulo(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend % divisor;
+    }
+    return result;
+}
+
+static inline VkDeviceSize SafeDivision(VkDeviceSize dividend, VkDeviceSize divisor) {
+    VkDeviceSize result = 0;
+    if (divisor != 0) {
+        result = dividend / divisor;
+    }
+    return result;
 }

@@ -252,7 +252,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         out.append('''
             static const VkLayerProperties global_layer = {
                 OBJECT_LAYER_NAME,
-                VK_LAYER_API_VERSION,
+                VK_HEADER_VERSION_COMPLETE,
                 1,
                 "LunarG validation Layer",
             };

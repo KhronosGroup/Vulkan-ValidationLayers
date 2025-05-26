@@ -28,7 +28,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
-#include "utils/vk_layer_utils.h"
+#include "utils/math_utils.h"
 
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;

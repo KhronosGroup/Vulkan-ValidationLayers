@@ -20,10 +20,11 @@
 
 #include "vulkan/vulkan.h"
 #include "containers/small_vector.h"
-#include "utils/vk_layer_utils.h"
 #include "generated/vk_object_types.h"
 #include "error_message/logging.h"
 #include "chassis/layer_object_id.h"
+#include "utils/assert_utils.h"
+#include "utils/lock_utils.h"
 
 #include <atomic>
 #include <map>

@@ -19,6 +19,7 @@
 #pragma once
 
 #include "state_tracker/pipeline_layout_state.h"
+#include "utils/vk_api_utils.h"
 #include "utils/shader_utils.h"
 #include "generated/dynamic_state_helper.h"
 #include "generated/error_location_helper.h"

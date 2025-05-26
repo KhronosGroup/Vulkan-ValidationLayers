@@ -22,6 +22,7 @@
 #include "interface.h"
 #include "function_basic_block.h"
 #include "type_manager.h"
+#include "utils/assert_utils.h"
 
 class DebugReport;
 struct DeviceFeatures;

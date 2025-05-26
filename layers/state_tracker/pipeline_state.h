@@ -25,7 +25,6 @@
 #include "generated/dynamic_state_helper.h"
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/shader_stage_state.h"
-#include "utils/vk_layer_utils.h"
 
 // Fwd declarations -- including descriptor_set.h creates an ugly include loop
 namespace vvl {

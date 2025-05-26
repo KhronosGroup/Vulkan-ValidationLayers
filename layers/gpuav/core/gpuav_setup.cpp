@@ -28,6 +28,8 @@
 #include "chassis/dispatch_object.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
+#include "utils/dispatch_utils.h"
+
 namespace gpuav {
 
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON

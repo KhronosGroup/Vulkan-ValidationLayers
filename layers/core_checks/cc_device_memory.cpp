@@ -31,6 +31,7 @@
 #include "state_tracker/wsi_state.h"
 #include "error_message/error_strings.h"
 #include "containers/limits.h"
+#include "containers/container_utils.h"
 #include "generated/dispatch_functions.h"
 #include "utils/image_utils.h"
 #include "utils/math_utils.h"

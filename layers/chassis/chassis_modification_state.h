@@ -21,6 +21,7 @@
 #pragma once
 #include <vector>
 #include "state_tracker/shader_module.h"
+#include "utils/vk_api_utils.h"
 
 namespace vvl {
 class Pipeline;

@@ -26,6 +26,7 @@
 
 #include "generated/spirv_tools_commit_id.h"
 
+#include <cstring>
 #include <fstream>
 
 // Profiled that having filesystem included in shader_utils.h adds significant compile time to all files

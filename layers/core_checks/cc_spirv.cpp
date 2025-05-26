@@ -44,7 +44,6 @@
 #include "spirv-tools/optimizer.hpp"
 #include "containers/limits.h"
 #include "utils/math_utils.h"
-#include "utils/vk_layer_utils.h"
 
 // Validate use of input attachments against subpass structure
 bool CoreChecks::ValidateShaderInputAttachment(const spirv::Module &module_state, const vvl::Pipeline &pipeline,

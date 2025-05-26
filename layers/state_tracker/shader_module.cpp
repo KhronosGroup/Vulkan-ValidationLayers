@@ -28,7 +28,6 @@
 #include <spirv/1.2/GLSL.std.450.h>
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
 #include "error_message/spirv_logging.h"
-#include "utils/vk_layer_utils.h"
 
 namespace spirv {
 

@@ -16,6 +16,7 @@
 
 #include "stateless/stateless_validation.h"
 #include <spirv/unified1/spirv.hpp>
+#include "utils/math_utils.h"
 
 namespace stateless {
 

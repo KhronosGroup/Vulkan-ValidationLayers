@@ -16,7 +16,6 @@
 #include "../framework/render_pass_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/queue_submit_context.h"
-#include <utils/vk_layer_utils.h>
 
 class NegativeSyncVal : public VkSyncValTest {};
 
@@ -2561,6 +2560,18 @@ TEST_F(NegativeSyncVal, RenderPassWithWrongDepthStencilInitialLayout) {
     m_errorMonitor->VerifyFound();
 }
 
+// The standard does not specify the value of data() for zero-sized contatiners as being null or non-null,
+// only that it is not dereferenceable.
+//
+// Vulkan VUID's OTOH frequently require NULLs for zero-sized entries, or for option entries with non-zero counts
+template <typename T>
+const typename T::value_type* DataOrNull(const T& container) {
+    if (!container.empty()) {
+        return container.data();
+    }
+    return nullptr;
+}
+
 struct CreateRenderPassHelper {
     class SubpassDescriptionStore {
       public:
@@ -2577,13 +2588,13 @@ struct CreateRenderPassHelper {
             VkSubpassDescription desc = {0u,
                                          VK_PIPELINE_BIND_POINT_GRAPHICS,
                                          static_cast<uint32_t>(input_store.size()),
-                                         vvl::DataOrNull(input_store),
+                                         DataOrNull(input_store),
                                          static_cast<uint32_t>(color_store.size()),
-                                         vvl::DataOrNull(color_store),
-                                         vvl::DataOrNull(resolve_store),
-                                         vvl::DataOrNull(ds_store),
+                                         DataOrNull(color_store),
+                                         DataOrNull(resolve_store),
+                                         DataOrNull(ds_store),
                                          static_cast<uint32_t>(preserve_store.size()),
-                                         vvl::DataOrNull(preserve_store)};
+                                         DataOrNull(preserve_store)};
             return desc;
         }
 

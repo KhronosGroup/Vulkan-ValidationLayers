@@ -27,6 +27,7 @@
 #include "core_checks/cc_synchronization.h"
 #include "core_checks/cc_state_tracker.h"
 #include "core_checks/core_validation.h"
+#include "containers/container_utils.h"
 #include "error_message/logging.h"
 #include "sync/sync_utils.h"
 #include "sync/sync_vuid_maps.h"

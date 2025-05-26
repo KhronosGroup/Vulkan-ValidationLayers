@@ -22,6 +22,8 @@
 #include "generated/enum_flag_bits.h"
 
 #include "utils/ray_tracing_utils.h"
+#include "utils/vk_api_utils.h"
+#include "utils/math_utils.h"
 
 namespace stateless {
 bool Device::ValidateGeometryTrianglesNV(const VkGeometryTrianglesNV &triangles, VkAccelerationStructureNV object_handle,

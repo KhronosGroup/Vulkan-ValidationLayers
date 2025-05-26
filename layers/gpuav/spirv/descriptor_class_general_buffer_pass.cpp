@@ -15,8 +15,8 @@
 
 #include "descriptor_class_general_buffer_pass.h"
 #include "generated/spirv_grammar_helper.h"
+#include "containers/container_utils.h"
 #include "state_tracker/shader_instruction.h"
-#include "utils/vk_layer_utils.h"
 #include "module.h"
 #include <spirv/unified1/spirv.hpp>
 #include <iostream>
