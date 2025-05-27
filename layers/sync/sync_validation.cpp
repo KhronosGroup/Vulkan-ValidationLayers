@@ -3973,3 +3973,103 @@ void SyncValidator::PostCallRecordCmdCopyAccelerationStructureKHR(VkCommandBuffe
                                   SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
+
+bool SyncValidator::PreCallValidateCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                                           const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+                                                                           const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
+        const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        auto hazard =
+            context.DetectHazard(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ, range);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist(cb_state->Handle(), src_accel->buffer_state->Handle(), src_accel->Handle());
+            const std::string resource_description = FormatHandle(src_accel->buffer_state->VkHandle());
+            const std::string error = error_messages_.AccelerationStructureError(
+                hazard, cb_context, error_obj.location.function, resource_description, range, pInfo->src, info_loc.dot(Field::src));
+            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        }
+    }
+
+    // NOTE: do not validate src_buffer. This requires recording query and then waiting for it after submit.
+    // Currently syncval does not support this but even if support is available this affects application:
+    // it flushes entire GPU frame and it also affects app scheduling behavior (CPU and GPU frames do not overlap
+    // anymore, and this can hide resource scheduling issues). Such submit-wait-validation can be an optional feature.
+
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdCopyAccelerationStructureToMemoryKHR(VkCommandBuffer commandBuffer,
+                                                                          const VkCopyAccelerationStructureToMemoryInfoKHR *pInfo,
+                                                                          const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    if (const auto src_accel = Get<vvl::AccelerationStructureKHR>(pInfo->src)) {
+        const ResourceAccessRange range = MakeRange(src_accel->create_info.offset, src_accel->create_info.size);
+        const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, src_accel->buffer_state->Handle());
+        context.UpdateAccessState(*src_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ,
+                                  SyncOrdering::kNonAttachment, range, tag_ex);
+    }
+}
+
+bool SyncValidator::PreCallValidateCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                           const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                                           const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const Location info_loc = error_obj.location.dot(Field::pInfo);
+
+    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
+        const ResourceAccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        auto hazard =
+            context.DetectHazard(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE, range);
+        if (hazard.IsHazard()) {
+            const LogObjectList objlist(cb_state->Handle(), dst_accel->buffer_state->Handle(), dst_accel->Handle());
+            const std::string resource_description = FormatHandle(dst_accel->buffer_state->VkHandle());
+            const std::string error = error_messages_.AccelerationStructureError(
+                hazard, cb_context, error_obj.location.function, resource_description, range, pInfo->dst, info_loc.dot(Field::dst));
+            skip |= SyncError(hazard.Hazard(), objlist, error_obj.location, error);
+        }
+    }
+
+    // NOTE: do not validate src_buffer. This requires recording query and then waiting for it after submit.
+    // Currently syncval does not support this but even if support is available this affects application:
+    // it flushes entire GPU frame and it also affects app scheduling behavior (CPU and GPU frames do not overlap
+    // anymore, and this can hide resource scheduling issues). Such submit-wait-validation can be an optional feature.
+
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkCommandBuffer commandBuffer,
+                                                                          const VkCopyMemoryToAccelerationStructureInfoKHR *pInfo,
+                                                                          const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+    auto &context = *cb_context.GetCurrentAccessContext();
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    if (const auto dst_accel = Get<vvl::AccelerationStructureKHR>(pInfo->dst)) {
+        const ResourceAccessRange range = MakeRange(dst_accel->create_info.offset, dst_accel->create_info.size);
+        const ResourceUsageTagEx tag_ex = cb_context.AddCommandHandle(tag, dst_accel->buffer_state->Handle());
+        context.UpdateAccessState(*dst_accel->buffer_state, SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE,
+                                  SyncOrdering::kNonAttachment, range, tag_ex);
+    }
+}
