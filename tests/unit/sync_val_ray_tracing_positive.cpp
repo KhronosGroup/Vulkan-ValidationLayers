@@ -21,6 +21,21 @@
 
 struct PositiveSyncValRayTracing : public VkSyncValTest {};
 
+vkt::Buffer VkSyncValTest::GetSerializationDeserializationBuffer(const vkt::as::AccelerationStructureKHR& as) {
+    vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, 1);
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+    vk::CmdWriteAccelerationStructuresPropertiesKHR(m_command_buffer, 1, &as.handle(),
+                                                    VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR, query_pool, 0);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    uint32_t serialization_size = 0;
+    query_pool.Results(0, 1, sizeof(uint32_t), &serialization_size, 0);
+    return vkt::Buffer(*m_device, serialization_size,
+                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                       vkt::device_address);
+}
+
 TEST_F(PositiveSyncValRayTracing, BuildAccelerationStructure) {
     TEST_DESCRIPTION("Just build it");
     RETURN_IF_SKIP(InitRayTracing());
@@ -487,5 +502,97 @@ TEST_F(PositiveSyncValRayTracing, CopyASWithBarrier) {
     m_command_buffer.Copy(buffer, blas_src_buffer);
     m_command_buffer.Barrier(barrier);  // Prevent READ-AFTER-WRITE
     vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, SerializeDeserializeAS) {
+    TEST_DESCRIPTION("Serialize AS to a buffer. Then deserialize the buffer into another AS object");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by TestICD: serialization size query";
+    }
+
+    // The source blas for serialization
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // Deserialize into blas2
+    vkt::as::BuildGeometryInfoKHR blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas2.SetupBuild(true);
+
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory_info = vku::InitStructHelper();
+    copy_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_to_memory_info.dst = VkDeviceOrHostAddressKHR{serialization_buffer.Address()};
+    copy_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_to_memory_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_from_memory_info = vku::InitStructHelper();
+    copy_from_memory_info.src = VkDeviceOrHostAddressConstKHR{serialization_buffer.Address()};
+    copy_from_memory_info.dst = blas2.GetDstAS()->handle();
+    copy_from_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_from_memory_info);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+}
+
+TEST_F(PositiveSyncValRayTracing, SerializeDeserializeASWithBarrier) {
+    TEST_DESCRIPTION("Use barrier to protect accesses to serialize/deserialize buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by TestICD: serialization size query";
+    }
+
+    // The source blas for serialization
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // Deserialize into blas2
+    vkt::as::BuildGeometryInfoKHR blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas2.SetupBuild(true);
+
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+
+    VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.buffer = serialization_buffer;
+    barrier.size = serialization_buffer.CreateInfo().size;
+
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory_info = vku::InitStructHelper();
+    copy_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_to_memory_info.dst = VkDeviceOrHostAddressKHR{serialization_buffer.Address()};
+    copy_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_from_memory_info = vku::InitStructHelper();
+    copy_from_memory_info.src = VkDeviceOrHostAddressConstKHR{serialization_buffer.Address()};
+    copy_from_memory_info.dst = blas2.GetDstAS()->handle();
+    copy_from_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_to_memory_info);
+    m_command_buffer.Barrier(barrier);
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_from_memory_info);
     m_command_buffer.End();
 }

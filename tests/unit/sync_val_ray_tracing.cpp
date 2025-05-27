@@ -523,3 +523,91 @@ TEST_F(NegativeSyncValRayTracing, ASCopyDestinationHazard) {
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeSyncValRayTracing, SerializeASHazard) {
+    TEST_DESCRIPTION("Test read accesses when acceleration structure is serialized to a buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by TestICD: serialization size query";
+    }
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas.SetupBuild(true);
+    const vkt::Buffer& blas_buffer = blas.GetDstAS()->GetBuffer();
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+
+    VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory_info = vku::InitStructHelper();
+    copy_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_to_memory_info.dst = VkDeviceOrHostAddressKHR{serialization_buffer.Address()};
+    copy_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
+
+    // Test Validation
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, blas_buffer, 0, sizeof(uint32_t), 0x314159);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_to_memory_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test update
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureToMemoryKHR(m_command_buffer, &copy_to_memory_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, blas_buffer, 0, sizeof(uint32_t), 0x314159);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, DeserializeASHazard) {
+    TEST_DESCRIPTION("Test write accesses when acceleration structure is deserialized from a buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Test not supported by TestICD: serialization size query";
+    }
+
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    vkt::as::BuildGeometryInfoKHR blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas2.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                          VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas2.SetupBuild(true);
+    const vkt::Buffer& blas2_buffer = blas2.GetDstAS()->GetBuffer();
+
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+
+    VkCopyMemoryToAccelerationStructureInfoKHR copy_from_memory_info = vku::InitStructHelper();
+    copy_from_memory_info.src = VkDeviceOrHostAddressConstKHR{serialization_buffer.Address()};
+    copy_from_memory_info.dst = blas2.GetDstAS()->handle();
+    copy_from_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_DESERIALIZE_KHR;
+
+    // Test Validation
+    m_command_buffer.Begin();
+    vk::CmdFillBuffer(m_command_buffer, blas2_buffer, 0, sizeof(uint32_t), 0x314159);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_from_memory_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+
+    // Test update
+    m_command_buffer.Begin();
+    vk::CmdCopyMemoryToAccelerationStructureKHR(m_command_buffer, &copy_from_memory_info);
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
+    vk::CmdFillBuffer(m_command_buffer, blas2_buffer, 0, sizeof(uint32_t), 0x314159);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
