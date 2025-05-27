@@ -85,7 +85,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             expressionMap = defaultdict(list)
             for flag in [x for x in bitmask.flags if len(x.extensions) > 0]:
                 # Ignore the base extensions needed to use the flag, only focus on the flag specific extensions
-                extensions = [x.name for x in flag.extensions if x not in bitmask.extensions]
+                extensions = [self.vk.extensions[x].name for x in flag.extensions if x not in bitmask.extensions]
                 if (len(extensions) == 0):
                     continue
                 expression = ",".join(extensions)
@@ -133,7 +133,7 @@ class ValidFlagValuesOutputGenerator(BaseGenerator):
             expressionMap = defaultdict(list)
             for flag in [x for x in bitmask.flags if len(x.extensions) > 0]:
                 # Ignore the base extensions needed to use the flag, only focus on the flag specific extensions
-                extensions = [x.name for x in flag.extensions if x not in bitmask.extensions]
+                extensions = [self.vk.extensions[x].name for x in flag.extensions if x not in bitmask.extensions]
                 if (len(extensions) == 0):
                     continue
                 expression = ",".join(extensions)
