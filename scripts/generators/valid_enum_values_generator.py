@@ -108,7 +108,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
                 expression = []
                 # Ignore the base extensions needed to use the enum, only focus on the field specific extensions
                 for extension in [x for x in field.extensions if x not in enum.extensions]:
-                    expression.append(f'IsExtEnabled(extensions.{extension.name.lower()})')
+                    expression.append(f'IsExtEnabled(extensions.{extension.lower()})')
                 if (len(expression) == 0):
                     continue
                 expression = " || ".join(expression)
@@ -144,7 +144,7 @@ class ValidEnumValuesOutputGenerator(BaseGenerator):
             for field in [x for x in enum.fields if len(x.extensions) > 0]:
                 expression = []
                 for extension in [x for x in field.extensions if x not in enum.extensions]:
-                    expression.append(f'vvl::Extension::_{extension.name}')
+                    expression.append(f'vvl::Extension::_{extension}')
                 if (len(expression) == 0):
                     continue
                 expression = ", ".join(expression)
