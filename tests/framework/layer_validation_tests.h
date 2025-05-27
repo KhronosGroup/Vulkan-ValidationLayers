@@ -264,6 +264,12 @@ class DebugPrintfTests : public VkLayerTest {
     void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);
 };
 
+namespace vkt {
+namespace as {
+class AccelerationStructureKHR;
+}  // namespace as
+}  // namespace vkt
+
 struct SyncValSettings;
 class VkSyncValTest : public VkLayerTest {
   public:
@@ -271,6 +277,8 @@ class VkSyncValTest : public VkLayerTest {
     void InitSyncVal(const SyncValSettings *p_sync_settings = nullptr);
     void InitTimelineSemaphore();
     void InitRayTracing();
+
+    vkt::Buffer GetSerializationDeserializationBuffer(const vkt::as::AccelerationStructureKHR &as);
 };
 
 class AndroidExternalResolveTest : public VkLayerTest {
