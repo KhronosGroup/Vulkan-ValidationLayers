@@ -4686,6 +4686,68 @@ TEST_F(NegativeDebugPrintf, StorageBufferLengthUpdateAfterBind) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDebugPrintf, PushDescriptor) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitDebugPrintfFramework());
+    RETURN_IF_SKIP(InitState());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) uniform Push {
+            uint a;
+        };
+        layout(set = 1, binding = 0) uniform Normal {
+            uint b;
+        };
+        void main() {
+            uint c = a + b;
+            debugPrintfEXT("%u + %u == %u", a, b, c);
+        }
+    )glsl";
+
+    vkt::Buffer buffer_a(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto buffer_a_ptr = (uint32_t *)buffer_a.Memory().Map();
+    buffer_a_ptr[0] = 5;
+    vkt::Buffer buffer_b(*m_device, 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, kHostVisibleMemProps);
+    auto buffer_b_ptr = (uint32_t *)buffer_b.Memory().Map();
+    buffer_b_ptr[0] = 7;
+
+    VkDescriptorSetLayoutBinding bindning = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    OneOffDescriptorSet descriptor_set_0(m_device, {bindning}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    OneOffDescriptorSet descriptor_set_1(m_device, {bindning});
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set_0.layout_, &descriptor_set_1.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    VkDescriptorBufferInfo buffer_info = {buffer_a, 0, VK_WHOLE_SIZE};
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set_0.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = &buffer_info;
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_write);
+
+    descriptor_set_1.WriteDescriptorBufferInfo(0, buffer_b, 0, VK_WHOLE_SIZE);
+    descriptor_set_1.UpdateDescriptorSets();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 1, 1, &descriptor_set_1.set_, 0,
+                              nullptr);
+
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredInfo("5 + 7 == 12");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDebugPrintf, DuplicateMessageLimit) {
     TEST_DESCRIPTION("Default settings have a limit of 10, which we want to ignore");
     RETURN_IF_SKIP(InitDebugPrintfFramework());
