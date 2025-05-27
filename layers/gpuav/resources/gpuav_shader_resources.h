@@ -32,10 +32,9 @@ namespace glsl {
 
 // Every descriptor set has various BDA pointers to data from the CPU
 // Shared among all Descriptor Indexing GPU-AV checks (so we only have to create a single buffer)
-struct DescriptorStateSSBO {
+struct BoundDescriptorSetsStateSSBO {
     // Used to know if descriptors are initialized or not
-    VkDeviceAddress initialized_status;
-    // The type information will change with UpdateAfterBind so will need to update this before submitting the to the queue
+    VkDeviceAddress descriptor_init_status;
     VkDeviceAddress descriptor_set_types[kDebugInputBindlessMaxDescSets];
 };
 

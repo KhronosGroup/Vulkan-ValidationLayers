@@ -25,6 +25,7 @@
 #include "gpuav/descriptor_validation/gpuav_image_layout.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
+#include "gpuav/instrumentation/descriptor_checks.h"
 #include "gpuav/instrumentation/post_process_descriptor_indexing.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
@@ -74,6 +75,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     }
 
     CommandBufferSubState &gpuav_cb_state = SubState(*cb_state);
+    RegisterDescriptorChecksValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
 }
 

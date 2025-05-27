@@ -34,8 +34,8 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
     uint data[];
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
-    InitializedStatus initialized_status;
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer BoundDescriptorSetsStateSSBO {
+    InitializedStatus descriptor_init_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
 } gpuav;
 
@@ -79,7 +79,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_
             // check that the resource is still valid (and not using nullDescriptor)
             uint desc_index = desc_id / 32;
             uint desc_bit = 1 << (desc_id & 31);
-            if ((gpuav.initialized_status.data[desc_index] & desc_bit) == 0) {
+            if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                 error = kErrorSubCodeDescriptorIndexingDestroyed;
             }
         }
@@ -119,7 +119,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
             // check that the resource is still valid (and not using nullDescriptor)
             uint desc_index = desc_id / 32;
             uint desc_bit = 1 << (desc_id & 31);
-            if ((gpuav.initialized_status.data[desc_index] & desc_bit) == 0) {
+            if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                 error = kErrorSubCodeDescriptorIndexingDestroyed;
             }
         }
@@ -135,7 +135,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
                 // check that the resource is still valid
                 uint desc_index = desc_id / 32;
                 uint desc_bit = 1 << (desc_id & 31);
-                if ((gpuav.initialized_status.data[desc_index] & desc_bit) == 0) {
+                if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                     error = kErrorSubCodeDescriptorIndexingDestroyed;
                 }
             }

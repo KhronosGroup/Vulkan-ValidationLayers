@@ -332,22 +332,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         desc_writes.emplace_back(wds);
     }
 
-    // Descriptor Indexing input buffer
-    VkDescriptorBufferInfo di_input_desc_buffer_info = {};
-    if (cb_state.descriptor_indexing_buffer != VK_NULL_HANDLE) {
-        di_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        di_input_desc_buffer_info.buffer = cb_state.descriptor_indexing_buffer;
-        di_input_desc_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstDescriptorIndexingOOB;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &di_input_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
     // BDA snapshot buffer
     VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
     if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {

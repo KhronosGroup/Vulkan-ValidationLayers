@@ -31,7 +31,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSe
 
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer UnusedInitializedStatus;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer DescriptorStateSSBO {
+layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer BoundDescriptorSetsStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
 } gpuav;
