@@ -462,7 +462,7 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             }
             return {};
         case vvl::FlagBitmask::VkPipelineCreateFlagBits:
-            if (value & (VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT)) {
+            if (value & (VK_PIPELINE_CREATE_VIEW_INDEX_FROM_DEVICE_INDEX_BIT | VK_PIPELINE_CREATE_DISPATCH_BASE_BIT)) {
                 if (!IsExtEnabled(extensions.vk_khr_device_group)) {
                     return {vvl::Extension::_VK_KHR_device_group};
                 }

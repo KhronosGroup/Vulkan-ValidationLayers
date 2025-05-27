@@ -40,12 +40,6 @@ class APISpecific:
             case 'vulkan':
                 return None
 
-def isDeviceStruct(struct: Struct):
-    for extension in struct.extensions:
-        if not extension.device:
-            return False
-    return True
-
 class StatelessValidationHelperOutputGenerator(BaseGenerator):
     def __init__(self,
                  valid_usage_file):
@@ -542,12 +536,12 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
 
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
-            if command.extensions and command.name not in self.layerExtensionFunctions and (not any(x.device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
+            if command.extensions and command.name not in self.layerExtensionFunctions and (not any(self.vk.extensions[x].device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
                 cExpression =  []
                 outExpression =  []
                 for extension in command.extensions:
-                    outExpression.append(f'vvl::Extension::_{extension.name}')
-                    cExpression.append(f'IsExtEnabled(extensions.{extension.name.lower()})')
+                    outExpression.append(f'vvl::Extension::_{extension}')
+                    cExpression.append(f'IsExtEnabled(extensions.{extension.lower()})')
 
                 cExpression = " || ".join(cExpression)
                 if len(outExpression) > 1:
