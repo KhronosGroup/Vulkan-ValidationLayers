@@ -282,8 +282,6 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     }
     per_command_error_loggers.clear();
 
-    descriptor_indexing_buffer = VK_NULL_HANDLE;
-
     if (should_destroy) {
         error_output_buffer_range_ = {};
         cmd_errors_counts_buffer_.Destroy();
@@ -378,12 +376,7 @@ bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc)
         }
     }
 
-    bool succeeded = descriptor::UpdateDescriptorStateSSBO(gpuav_, *this, loc);
-    if (!succeeded) {
-        return false;
-    }
-
-    succeeded = UpdateBdaRangesBuffer(loc);
+    const bool succeeded = UpdateBdaRangesBuffer(loc);
     if (!succeeded) {
         return false;
     }
@@ -469,12 +462,6 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
 
     if (success) {
         UpdateCmdBufImageLayouts(gpuav_, base);
-    }
-}
-
-DescriptorSetBindings::~DescriptorSetBindings() {
-    for (DescriptorSetBindingCommand &descriptor_binding_cmd : descriptor_set_binding_commands) {
-        descriptor_binding_cmd.descritpor_state_ssbo_buffer.Destroy();
     }
 }
 

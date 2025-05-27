@@ -235,6 +235,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
     }
 
+    // #ARNO_TODO also need to refacto this descriptor_checks specific part
     if (gpuav_settings.shader_instrumentation.descriptor_checks) {
         VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
         VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);

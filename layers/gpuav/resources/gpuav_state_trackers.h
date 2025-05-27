@@ -68,11 +68,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     vko::SharedResourcesCache shared_resources_cache;
 
-    // Buffer to be bound every draw/dispatch/action
-    // #ARNO_TODO update at every descriptor binding cmd, only used
-    // to temporarily store descriptor_binding_cmd.descritpor_state_ssbo_buffer
-    VkBuffer descriptor_indexing_buffer = VK_NULL_HANDLE;
-
     // Used to track which spot in the command buffer the error came from
     bool max_actions_cmd_validation_reached_ = false;
     uint32_t draw_index = 0;
@@ -169,29 +164,26 @@ static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
     return *static_cast<CommandBufferSubState *>(cb.SubState(LayerObjectTypeGpuAssisted));
 }
 
-// #ARNO_TODO: Once `UpdateBoundDescriptorsDescriptorChecks` is redone a la post processing style,
-// move DescriptorSetBindingCommand inside DescriptorSetBindings
-struct DescriptorSetBindingCommand {
-    // A GPU stored LUT where each bound descriptor set is given a spot to store a post processing buffer address.
-    // Those spots are updated at command buffer submission time.
-    vko::BufferRange desc_set_binding_to_post_process_buffers_lut;
-
-    vko::Buffer descritpor_state_ssbo_buffer;  // type DescriptorStateSSBO
-
-    // Note: The index here is from vkCmdBindDescriptorSets::firstSet
-    // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
-    std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
-
-    DescriptorSetBindingCommand(Validator &gpuav) : descritpor_state_ssbo_buffer(gpuav) {}
-};
-
 // Track descriptor sets bound in a command buffer
 class DescriptorSetBindings {
   public:
-    using OnDescriptorSetBindingFunc = stdext::inplace_function<void(CommandBufferSubState &cb, DescriptorSetBindingCommand &)>;
+    struct BindingCommand {
+        // A GPU stored LUT where each bound descriptor set is given a spot to store a post processing buffer address.
+        // Those spots are updated at command buffer submission time.
+        vko::BufferRange desc_set_binding_to_post_process_buffers_lut{};
+
+        vko::BufferRange descritpor_state_ssbo{};  // type BoundDescriptorSetsStateSSBO
+
+        // #ARNO_TODO "The index"? what index? The start of bound_descriptor_sets?
+        // Note: The index here is from vkCmdBindDescriptorSets::firstSet
+        // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
+        std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
+    };
+
+    using OnDescriptorSetBindingFunc =
+        stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, BindingCommand &)>;
     std::vector<OnDescriptorSetBindingFunc> on_update_bound_descriptor_sets;
-    std::vector<DescriptorSetBindingCommand> descriptor_set_binding_commands;
-    ~DescriptorSetBindings();
+    std::vector<BindingCommand> descriptor_set_binding_commands;
 };
 
 class QueueSubState : public vvl::QueueSubState {
