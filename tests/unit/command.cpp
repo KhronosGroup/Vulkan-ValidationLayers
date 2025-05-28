@@ -751,6 +751,24 @@ TEST_F(NegativeCommand, DrawOutsideRenderPass) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCommand, DispatchInsideRenderPass) {
+    TEST_DESCRIPTION("Only allowed with VK_QCOM_tile_shading");
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.CreateComputePipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10672");
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCommand, MultiDrawDrawOutsideRenderPass) {
     AddRequiredExtensions(VK_EXT_MULTI_DRAW_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::multiDraw);

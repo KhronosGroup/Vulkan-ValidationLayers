@@ -1295,6 +1295,8 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         }
 
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
+        skip |= InsideRenderPass(cb_state, loc, vuid.compute_inside_rp_10672);
+
         if (!pipeline && !last_bound_state.IsValidShaderBound(ShaderObjectStage::COMPUTE)) {
             const bool is_null_bound = last_bound_state.IsValidShaderOrNullBound(ShaderObjectStage::COMPUTE);
             return LogError(
