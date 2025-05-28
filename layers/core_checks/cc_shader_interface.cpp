@@ -228,6 +228,9 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
             has_tess = true;
             if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
                 topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+                // Point Mode found will set the tessellation topology
+                // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9821
+                break;
             } else {
                 topology = stage_state.entrypoint->execution_mode.primitive_topology;
             }
