@@ -17,7 +17,7 @@
 
 #include "gpuav/resources/gpuav_state_trackers.h"
 
-#include "gpuav/resources/gpuav_shader_resources.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"

@@ -17,16 +17,11 @@
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 
-#include "containers/custom_containers.h"
 #include "drawdispatch/descriptor_validator.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
-#include "gpuav/resources/gpuav_shader_resources.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "state_tracker/pipeline_state.h"
-#include "state_tracker/shader_module.h"
-
-#include "profiling/profiling.h"
-#include "state_tracker/shader_object_state.h"
 
 namespace gpuav {
 namespace descriptor {

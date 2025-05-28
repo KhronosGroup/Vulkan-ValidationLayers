@@ -23,7 +23,6 @@
 #include "state_tracker/descriptor_sets.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/spirv/interface.h"
-#include "containers/custom_containers.h"
 #include "containers/limits.h"
 
 namespace gpuav {
