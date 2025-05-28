@@ -668,4 +668,20 @@ class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
                                        const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
                                        const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable, uint32_t width,
                                        uint32_t height, uint32_t depth, const RecordObject &record_obj) override;
+    bool PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                                const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                VkDeviceAddress indirectDeviceAddress, const ErrorObject &error_obj) const override;
+    void PostCallRecordCmdTraceRaysIndirectKHR(VkCommandBuffer commandBuffer,
+                                               const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                               const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                               VkDeviceAddress indirectDeviceAddress, const RecordObject &record_obj) override;
+    bool PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                 const ErrorObject &error_obj) const override;
+    void PostCallRecordCmdTraceRaysIndirect2KHR(VkCommandBuffer commandBuffer, VkDeviceAddress indirectDeviceAddress,
+                                                const RecordObject &record_obj) override;
 };
