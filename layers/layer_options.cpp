@@ -168,7 +168,7 @@ const char *VK_LAYER_CUSTOM_STYPE_LIST = "custom_stype_list";
 const char *VK_LAYER_ENABLE_MESSAGE_LIMIT = "enable_message_limit";
 const char *VK_LAYER_DUPLICATE_MESSAGE_LIMIT = "duplicate_message_limit";
 
-// GloablSettings
+// Global settings
 // ---
 const char *VK_LAYER_FINE_GRAINED_LOCKING = "fine_grained_locking";
 // Debug settings used for internal development
@@ -193,8 +193,6 @@ const char *VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
 const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
 const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
-// Post Process are designed to allow the user to "assume" the access is valid and want to know after the GPU executes what
-// happened. These are much lighter checks and can be used while the rest of GPU-AV is turned off
 const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char *VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB = "gpuav_vertex_attribute_fetch_oob";
 const char *VK_LAYER_GPUAV_SELECT_INSTRUMENTED_SHADERS = "gpuav_select_instrumented_shaders";

@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "external/inplace_function.h"
-#include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
+#include "gpuav/instrumentation/descriptor_checks.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 
 // We pull in most the core state tracking files
@@ -206,23 +206,6 @@ class QueueSubState : public vvl::QueueSubState {
     VkSemaphore barrier_sem_{VK_NULL_HANDLE};
     std::deque<std::vector<vvl::CommandBufferSubmission>> retiring_;
     const bool timeline_khr_;
-};
-
-// Descriptor Ids are used on the GPU to identify if a given descriptor is valid.
-// In some applications there are very large bindless descriptor arrays where it isn't feasible to track validity
-// via the StateObject::parent_nodes_ map as usual. Instead, these ids are stored in a giant GPU accessible bitmap
-// so that the instrumentation can decide if a descriptor is actually valid when it is used in a shader.
-class DescriptorIdTracker {
-  public:
-    DescriptorIdTracker(DescriptorHeap &heap_, VulkanTypedHandle handle) : heap(heap_), id(heap_.NextId(handle)) {}
-
-    DescriptorIdTracker(const DescriptorIdTracker &) = delete;
-    DescriptorIdTracker &operator=(const DescriptorIdTracker &) = delete;
-
-    ~DescriptorIdTracker() { heap.DeleteId(id); }
-
-    DescriptorHeap &heap;
-    const DescriptorId id{};
 };
 
 class ImageSubState : public vvl::ImageSubState {

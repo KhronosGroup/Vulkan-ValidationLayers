@@ -139,8 +139,6 @@ void Instance::PostCallRecordGetPhysicalDeviceProperties2(VkPhysicalDevice physi
 // Clean up device-related resources
 void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
                                            const RecordObject &record_obj) {
-    desc_heap_.reset();
-
     shared_resources_manager.Clear();
 
     indices_buffer_.Destroy();

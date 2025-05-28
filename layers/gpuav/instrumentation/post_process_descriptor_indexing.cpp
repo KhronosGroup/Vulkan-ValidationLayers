@@ -174,6 +174,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
             // We build once here, but will update the set_index and shader_handle when found
             vvl::DescriptorValidator context(gpuav, cb.base, *desc_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
 
+            // We create a map with the |unique_shader_id| as the key so we can only do the state object lookup once per
+            // pipeline/shaderModule/shaderObject
+
+            using DescriptorAccessMap = vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>>;
             DescriptorAccessMap descriptor_access_map;
             {
                 VVL_ZoneScoped;

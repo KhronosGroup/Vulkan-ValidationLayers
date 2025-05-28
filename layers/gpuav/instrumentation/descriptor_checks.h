@@ -14,10 +14,60 @@
  */
 #pragma once
 
+#include <atomic>
+#include <mutex>
+#include <vector>
+
+#include "containers/custom_containers.h"
+#include "error_message/error_location.h"
+#include "gpuav/resources/gpuav_vulkan_objects.h"
+
 namespace gpuav {
 class Validator;
 class CommandBufferSubState;
 
+using DescriptorId = uint32_t;
+class DescriptorHeap {
+  public:
+    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
+    ~DescriptorHeap();
+
+    DescriptorId NextId(const VulkanTypedHandle &handle);
+    void DeleteId(DescriptorId id);
+
+    VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
+
+  private:
+    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
+
+    mutable std::mutex lock_;
+
+    const uint32_t max_descriptors_;
+    DescriptorId next_id_{1};
+    vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
+
+    vko::Buffer buffer_;
+    uint32_t *gpu_heap_state_{nullptr};
+};
+
+// Descriptor Ids are used on the GPU to identify if a given descriptor is valid.
+// In some applications there are very large bindless descriptor arrays where it isn't feasible to track validity
+// via the StateObject::parent_nodes_ map as usual. Instead, these ids are stored in a giant GPU accessible bitmap
+// so that the instrumentation can decide if a descriptor is actually valid when it is used in a shader.
+class DescriptorIdTracker {
+  public:
+    DescriptorIdTracker(DescriptorHeap &heap_, VulkanTypedHandle handle) : heap(heap_), id(heap_.NextId(handle)) {}
+
+    DescriptorIdTracker(const DescriptorIdTracker &) = delete;
+    DescriptorIdTracker &operator=(const DescriptorIdTracker &) = delete;
+
+    ~DescriptorIdTracker() { heap.DeleteId(id); }
+
+    DescriptorHeap &heap;
+    const DescriptorId id{};
+};
+
+void DescriptorChecksOnFinishDeviceSetup(Validator &gpuav);
 void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState& cb);
 
 }  // namespace gpuav
