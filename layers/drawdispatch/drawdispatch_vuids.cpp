@@ -1657,6 +1657,7 @@ struct DispatchVuidsCmdDispatch : DrawDispatchVuid {
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatch-commandBuffer-02707";
         protected_command_buffer_02712           = "VUID-vkCmdDispatch-commandBuffer-02712";
         compute_not_bound_10743                  = "VUID-vkCmdDispatch-None-10743";
+        compute_inside_rp_10672                  = "VUID-vkCmdDispatch-None-10672";
         ray_query_04617                          = "VUID-vkCmdDispatch-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatch-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatch-filterCubic-02694";
@@ -1706,6 +1707,7 @@ struct DispatchVuidsCmdDispatchIndirect : DrawDispatchVuid {
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatchIndirect-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchIndirect-commandBuffer-02707";
         compute_not_bound_10743                  = "VUID-vkCmdDispatchIndirect-None-10743";
+        compute_inside_rp_10672                  = "VUID-vkCmdDispatchIndirect-None-10672";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatchIndirect-None-02693";
         filter_cubic_02694                       = "VUID-vkCmdDispatchIndirect-filterCubic-02694";
         filter_cubic_min_max_02695               = "VUID-vkCmdDispatchIndirect-filterCubicMinmax-02695";
@@ -4274,6 +4276,7 @@ struct DispatchVuidsCmdDispatchBase: DrawDispatchVuid {
         dynamic_state_setting_commands_08608     = "VUID-vkCmdDispatchBase-None-08608";
         unprotected_command_buffer_02707         = "VUID-vkCmdDispatchBase-commandBuffer-02707";
         compute_not_bound_10743                  = "VUID-vkCmdDispatchBase-None-10743";
+        compute_inside_rp_10672                  = "VUID-vkCmdDispatchBase-None-10672";
         protected_command_buffer_02712           = "VUID-vkCmdDispatchBase-commandBuffer-02712";
         ray_query_04617                          = "VUID-vkCmdDispatchBase-commandBuffer-04617";
         img_filter_cubic_02693                   = "VUID-vkCmdDispatchBase-None-02693";

@@ -74,6 +74,7 @@ struct DrawDispatchVuid {
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
     const char* compute_not_bound_10743 = kVUIDUndefined;
+    const char* compute_inside_rp_10672 = kVUIDUndefined;
     const char* ray_query_protected_cb_03635 = kVUIDUndefined;
     const char* ray_query_04617 = kVUIDUndefined;
     // TODO: Some instance values are in VkBuffer. The validation in those Cmds is skipped.
