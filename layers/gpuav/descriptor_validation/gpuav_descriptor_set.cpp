@@ -30,12 +30,6 @@ using vvl::DescriptorClass;
 
 namespace gpuav {
 
-// Returns the number of bytes to hold 32 bit aligned array of bits.
-static uint32_t BitBufferSize(uint32_t num_bits) {
-    static constexpr uint32_t kBitsPerWord = 32;
-    return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(uint32_t);
-}
-
 DescriptorSetSubState::DescriptorSetSubState(const vvl::DescriptorSet &set, Validator &state_data)
     : vvl::DescriptorSetSubState(set), input_buffer_(state_data) {
     BuildBindingLayouts();
@@ -238,67 +232,5 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Lo
 }
 
 void DescriptorSetSubState::NotifyUpdate() { current_version_++; }
-
-DescriptorHeap::DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc)
-    : max_descriptors_(max_descriptors), buffer_(gpuav) {
-    // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
-    // support calls into this class as no-ops if this happens.
-    if (max_descriptors_ == 0) {
-        return;
-    }
-
-    VkBufferCreateInfo buffer_info = vku::InitStruct<VkBufferCreateInfo>();
-    buffer_info.size = BitBufferSize(max_descriptors_ + 1);  // add extra entry since 0 is the invalid id.
-    buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-    VmaAllocationCreateInfo alloc_info{};
-    alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    const bool success = buffer_.Create(&buffer_info, &alloc_info);
-    if (!success) {
-        return;
-    }
-
-    gpu_heap_state_ = (uint32_t *)buffer_.GetMappedPtr();
-    memset(gpu_heap_state_, 0, static_cast<size_t>(buffer_info.size));
-}
-
-DescriptorHeap::~DescriptorHeap() {
-    if (max_descriptors_ > 0) {
-        buffer_.Destroy();
-        gpu_heap_state_ = nullptr;
-    }
-}
-
-DescriptorId DescriptorHeap::NextId(const VulkanTypedHandle &handle) {
-    if (max_descriptors_ == 0) {
-        return 0;
-    }
-    DescriptorId result;
-
-    // NOTE: valid ids are in the range [1, max_descriptors_] (inclusive)
-    // 0 is the invalid id.
-    auto guard = Lock();
-    if (alloc_map_.size() >= max_descriptors_) {
-        return 0;
-    }
-    do {
-        result = next_id_++;
-        if (next_id_ > max_descriptors_) {
-            next_id_ = 1;
-        }
-    } while (alloc_map_.count(result) > 0);
-    alloc_map_[result] = handle;
-    gpu_heap_state_[result / 32] |= 1u << (result & 31);
-    return result;
-}
-
-void DescriptorHeap::DeleteId(DescriptorId id) {
-    if (max_descriptors_ > 0) {
-        auto guard = Lock();
-        // Note: We don't mess with next_id_ here because ids should be assigned in LRU order.
-        gpu_heap_state_[id / 32] &= ~(1u << (id & 31));
-        alloc_map_.erase(id);
-    }
-}
 
 }  // namespace gpuav

@@ -22,10 +22,11 @@
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__GNU__)
 #include <unistd.h>
 #endif
-#include "gpuav/core/gpuav_constants.h"
-#include "gpuav/core/gpuav.h"
-#include "gpuav/resources/gpuav_state_trackers.h"
 #include "chassis/dispatch_object.h"
+#include "gpuav/core/gpuav.h"
+#include "gpuav/core/gpuav_constants.h"
+#include "gpuav/instrumentation/descriptor_checks.h"
+#include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "utils/dispatch_utils.h"
@@ -45,20 +46,33 @@ void Validator::Created(vvl::CommandBuffer &cb_state) {
 
 void Validator::Created(vvl::Queue &queue) { queue.SetSubState(container_type, std::make_unique<QueueSubState>(*this, queue)); }
 
-void Validator::Created(vvl::Image &obj) { obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::Image &obj) {
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<ImageSubState>(obj, desc_heap));
+}
 void Validator::Created(vvl::ImageView &obj) {
-    obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, *desc_heap_));
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<ImageViewSubState>(obj, desc_heap));
 }
-void Validator::Created(vvl::Buffer &obj) { obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::Buffer &obj) {
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<BufferSubState>(obj, desc_heap));
+}
 void Validator::Created(vvl::BufferView &obj) {
-    obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, *desc_heap_));
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<BufferViewSubState>(obj, desc_heap));
 }
-void Validator::Created(vvl::Sampler &obj) { obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, *desc_heap_)); }
+void Validator::Created(vvl::Sampler &obj) {
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<SamplerSubState>(obj, desc_heap));
+}
 void Validator::Created(vvl::AccelerationStructureNV &obj) {
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, *desc_heap_));
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureNVSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::AccelerationStructureKHR &obj) {
-    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, *desc_heap_));
+    DescriptorHeap &desc_heap = shared_resources_manager.Get<DescriptorHeap>();
+    obj.SetSubState(container_type, std::make_unique<AccelerationStructureKHRSubState>(obj, desc_heap));
 }
 void Validator::Created(vvl::ShaderObject &obj) { obj.SetSubState(container_type, std::make_unique<ShaderObjectSubState>(obj)); }
 
@@ -188,9 +202,6 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         return;
     }
 
-    // Set up a stub implementation of the descriptor heap in case we abort.
-    desc_heap_.emplace(*this, 0, loc);
-
     instrumentation_bindings_ = {
         // DebugPrintf Output buffer
         {glsl::kBindingInstDebugPrintf, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -216,7 +227,9 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
     // better divide what belongs where as it is easy to mess)
     BaseClass::FinishDeviceSetup(pCreateInfo, loc);
     // We might fail in parent class device creation if global requirements are not met
-    if (aborted_) return;
+    if (aborted_) {
+        return;
+    }
 
     // Need the device to be created before we can query features for settings
     InitSettings(loc);
@@ -237,19 +250,7 @@ void Validator::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const L
         vk_set_device_loader_data_ = chain_info->u.pfnSetDeviceLoaderData;
     }
 
-    // #ARNO_TODO also need to refacto this descriptor_checks specific part
-    if (gpuav_settings.shader_instrumentation.descriptor_checks) {
-        VkPhysicalDeviceDescriptorIndexingProperties desc_indexing_props = vku::InitStructHelper();
-        VkPhysicalDeviceProperties2 props2 = vku::InitStructHelper(&desc_indexing_props);
-        DispatchGetPhysicalDeviceProperties2Helper(api_version, physical_device, &props2);
-
-        uint32_t num_descs = desc_indexing_props.maxUpdateAfterBindDescriptorsInAllPools;
-        if (num_descs == 0 || num_descs > glsl::kDebugInputBindlessMaxDescriptors) {
-            num_descs = glsl::kDebugInputBindlessMaxDescriptors;
-        }
-
-        desc_heap_.emplace(*this, num_descs, loc);
-    }
+    DescriptorChecksOnFinishDeviceSetup(*this);
 
     // Create error logging buffer allocation pool
     {

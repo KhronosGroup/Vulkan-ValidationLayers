@@ -27,7 +27,6 @@
 #include "containers/limits.h"
 
 namespace gpuav {
-class DescriptorHeap;
 class Validator;
 
 // Information about how each descriptor was accessed
@@ -37,10 +36,6 @@ struct DescriptorAccess {
     uint32_t variable_id = vvl::kU32Max;   // OpVariableID
     uint32_t action_index = vvl::kU32Max;  // Index of action command access occured
 };
-
-// We create a map with the |unique_shader_id| as the key so we can only do the state object lookup once per
-// pipeline/shaderModule/shaderObject
-using DescriptorAccessMap = vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>>;
 
 class DescriptorSetSubState : public vvl::DescriptorSetSubState {
   public:
@@ -72,29 +67,5 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
 static inline DescriptorSetSubState &SubState(vvl::DescriptorSet &set) {
     return static_cast<DescriptorSetSubState &>(*set.SubState(LayerObjectTypeGpuAssisted));
 }
-
-typedef uint32_t DescriptorId;
-class DescriptorHeap {
-  public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
-    ~DescriptorHeap();
-
-    DescriptorId NextId(const VulkanTypedHandle &handle);
-    void DeleteId(DescriptorId id);
-
-    VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
-
-  private:
-    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
-
-    mutable std::mutex lock_;
-
-    const uint32_t max_descriptors_;
-    DescriptorId next_id_{1};
-    vvl::unordered_map<DescriptorId, VulkanTypedHandle> alloc_map_;
-
-    vko::Buffer buffer_;
-    uint32_t *gpu_heap_state_{nullptr};
-};
 
 }  // namespace gpuav

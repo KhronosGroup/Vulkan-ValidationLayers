@@ -432,8 +432,6 @@ class Validator : public GpuShaderInstrumentor {
     void DebugCapture() final;
 
   public:
-    std::optional<DescriptorHeap> desc_heap_{};  // optional only to defer construction
-
     // We find ourselves constantly needing to create some resource for the "lifetime of GPU-AV"
     // We don't want a messy global space to managae it and use this to allow each check to manage the resource where it is used.
     // The goal is the first time we need the resource, we create it then, and afterwards, its cached and we can regain
