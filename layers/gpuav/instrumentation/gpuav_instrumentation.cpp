@@ -21,7 +21,7 @@
 #include "containers/small_vector.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/error_message/gpuav_vuids.h"
-#include "gpuav/resources/gpuav_shader_resources.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/debug_printf/debug_printf.h"

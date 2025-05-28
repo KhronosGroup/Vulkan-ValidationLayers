@@ -20,17 +20,13 @@
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
-#include "gpuav/error_message/gpuav_vuids.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
-#include "gpuav/shaders/gpuav_shaders_constants.h"
 
-#include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
 #include "gpuav/shaders/gpuav_error_header.h"
-#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
 

@@ -4541,3 +4541,79 @@ TEST_F(NegativeGpuAVDescriptorIndexing, DescriptorTemplates) {
     m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeGpuAVDescriptorIndexing, PushDescriptorTemplates) {
+    AddRequiredExtensions(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitGpuVUDescriptorIndexing());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        #extension GL_EXT_debug_printf : enable
+        layout(set = 0, binding = 0) buffer UBO {
+            uint index;
+        } ubo[2];
+        layout(set = 0, binding = 1) buffer SSBO {
+            uint x;
+        } ssbo[2];
+
+        void main() {
+            uint i = ubo[1].index;
+            ssbo[i].x = 5;
+        }
+    )glsl";
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
+    auto buffer_ptr = (uint32_t *)buffer.Memory().Map();
+    buffer_ptr[0] = 4;
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                        {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}},
+                                       VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT);
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cp_ci_.layout = pipeline_layout;
+    pipe.CreateComputePipeline();
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buffer_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry[2];
+    update_template_entry[0].dstBinding = 0;
+    update_template_entry[0].dstArrayElement = 0;
+    update_template_entry[0].descriptorCount = 2;
+    update_template_entry[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    update_template_entry[0].offset = 0;
+    update_template_entry[0].stride = sizeof(SimpleTemplateData);
+
+    update_template_entry[1] = update_template_entry[0];
+    update_template_entry[1].dstBinding = 1;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 2;
+    update_template_ci.pDescriptorUpdateEntries = update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_PUSH_DESCRIPTORS;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    update_template_ci.pipelineBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+    update_template_ci.pipelineLayout = pipeline_layout;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    SimpleTemplateData update_template_data[4];
+    update_template_data[0].buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    update_template_data[1].buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    update_template_data[2].buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+    update_template_data[3].buffer_info = {buffer, 0, VK_WHOLE_SIZE};
+
+    m_command_buffer.Begin();
+    vk::CmdPushDescriptorSetWithTemplateKHR(m_command_buffer, update_template, pipeline_layout, 0, &update_template_data);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+    vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10068");
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+}

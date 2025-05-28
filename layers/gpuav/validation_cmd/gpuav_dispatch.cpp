@@ -20,7 +20,6 @@
 #include "gpuav/validation_cmd/gpuav_validation_cmd_common.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/shaders/gpuav_error_header.h"
-#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/validation_cmd/push_data.h"
 #include "generated/gpuav_offline_spirv.h"
 

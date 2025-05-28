@@ -29,6 +29,7 @@
 #include "gpuav/instrumentation/post_process_descriptor_indexing.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "chassis/chassis_modification_state.h"
+#include "utils/assert_utils.h"
 #include "utils/math_utils.h"
 
 namespace gpuav {
@@ -303,6 +304,40 @@ void Validator::PreCallRecordCmdPushDescriptorSet2KHR(VkCommandBuffer commandBuf
                                                       const VkPushDescriptorSetInfoKHR *pPushDescriptorSetInfo,
                                                       const RecordObject &record_obj) {
     PreCallRecordCmdPushDescriptorSet2(commandBuffer, pPushDescriptorSetInfo, record_obj);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSetWithTemplate2(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(pPushDescriptorSetWithTemplateInfo->descriptorUpdateTemplate);
+    ASSERT_AND_RETURN(template_state);
+    descriptor::UpdateBoundDescriptors(*this, SubState(*cb_state), template_state->create_info.pipelineBindPoint,
+                                       record_obj.location);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
+    VkCommandBuffer commandBuffer, const VkPushDescriptorSetWithTemplateInfoKHR *pPushDescriptorSetWithTemplateInfo,
+    const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSetWithTemplate2(commandBuffer, pPushDescriptorSetWithTemplateInfo, record_obj);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer commandBuffer,
+                                                              VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                              VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                              const RecordObject &record_obj) {
+    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto template_state = Get<vvl::DescriptorUpdateTemplate>(descriptorUpdateTemplate);
+    ASSERT_AND_RETURN(template_state);
+    descriptor::UpdateBoundDescriptors(*this, SubState(*cb_state), template_state->create_info.pipelineBindPoint,
+                                       record_obj.location);
+}
+
+void Validator::PreCallRecordCmdPushDescriptorSetWithTemplateKHR(VkCommandBuffer commandBuffer,
+                                                                 VkDescriptorUpdateTemplate descriptorUpdateTemplate,
+                                                                 VkPipelineLayout layout, uint32_t set, const void *pData,
+                                                                 const RecordObject &record_obj) {
+    PreCallRecordCmdPushDescriptorSetWithTemplate(commandBuffer, descriptorUpdateTemplate, layout, set, pData, record_obj);
 }
 
 void Validator::PreCallRecordCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,

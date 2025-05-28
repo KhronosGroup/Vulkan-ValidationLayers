@@ -19,11 +19,8 @@
 
 #pragma once
 
-#include <vector>
-
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
-#include "gpuav/resources/gpuav_vulkan_objects.h"
 
 namespace gpuav {
 
