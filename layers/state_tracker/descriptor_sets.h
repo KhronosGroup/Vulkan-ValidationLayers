@@ -944,20 +944,14 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
         DescriptorIterator &operator=(const DescriptorIterator &rhs) = default;
 
         DescriptorIterator(DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
-            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {
-            if (!AtEnd()) {
-                assert(index_ < (*iter_)->count);
-            }
-        }
+            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {}
 
         DescriptorIterator(const DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
-            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {
-            if (!AtEnd()) {
-                assert(index_ < (*iter_)->count);
-            }
-        }
+            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {}
 
         bool AtEnd() const { return iter_ == end_; }
+
+        bool IsValid() const { return *iter_ && index_ < (*iter_)->count; }
 
         bool operator==(const DescriptorIterator &rhs) { return (iter_ == rhs.iter_) && (index_ == rhs.index_); }
 

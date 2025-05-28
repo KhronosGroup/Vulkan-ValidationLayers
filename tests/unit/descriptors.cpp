@@ -640,6 +640,32 @@ TEST_F(NegativeDescriptors, WriteImmutableSampler) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, WriteImmutableSampler2) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, &sampler.handle()},
+                                       });
+
+    VkDescriptorImageInfo image_info[2] = {{sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL},
+                                           {sampler, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL}};
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorCount = 2;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    descriptor_write.pImageInfo = image_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00318");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, WriteDescriptorSetIdentitySwizzle) {
     TEST_DESCRIPTION("Test descriptors that need to have identity swizzle set");
     RETURN_IF_SKIP(Init());
@@ -2552,6 +2578,51 @@ TEST_F(NegativeDescriptors, DSUpdateOutOfBounds) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler) {
+    RETURN_IF_SKIP(Init());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    descriptor_set.WriteDescriptorImageInfo(1, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_GENERAL, 2);
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, DSUpdateOutOfBoundsCombinedSampler2) {
+    RETURN_IF_SKIP(Init());
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    VkDescriptorImageInfo image_info[3] = {{sampler, image_view, VK_IMAGE_LAYOUT_GENERAL},
+                                           {sampler, image_view, VK_IMAGE_LAYOUT_GENERAL},
+                                           {sampler, image_view, VK_IMAGE_LAYOUT_GENERAL}};
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 1;
+    descriptor_write.descriptorCount = 3;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.pImageInfo = image_info;
+
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, DSUpdateIndex) {
     // Create layout w/ count of 1 and attempt update to that layout w/ binding index 2
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstBinding-00315");
@@ -2776,6 +2847,38 @@ TEST_F(NegativeDescriptors, CopyDescriptorUpdate) {
     copy_ds_update.dstBinding = 0;
     copy_ds_update.descriptorCount = 1;
     vk::UpdateDescriptorSets(device(), 0, NULL, 1, &copy_ds_update);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, CopyDescriptorUpdate2) {
+    RETURN_IF_SKIP(Init());
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+    OneOffDescriptorSet descriptor_set_2(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    descriptor_set.WriteDescriptorImageInfo(0, VK_NULL_HANDLE, sampler, VK_DESCRIPTOR_TYPE_SAMPLER);
+    descriptor_set.UpdateDescriptorSets();
+
+    VkCopyDescriptorSet copy_ds_update = vku::InitStructHelper();
+    copy_ds_update.srcSet = descriptor_set.set_;
+    copy_ds_update.dstSet = descriptor_set_2.set_;
+    copy_ds_update.srcBinding = 0;
+    copy_ds_update.dstBinding = 0;
+    copy_ds_update.descriptorCount = 1;
+    copy_ds_update.srcArrayElement = 1;
+    copy_ds_update.dstArrayElement = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcArrayElement-00346");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstArrayElement-00348");
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_ds_update);
+    m_errorMonitor->VerifyFound();
+
+    copy_ds_update.descriptorCount = 2;
+    copy_ds_update.srcArrayElement = 0;
+    copy_ds_update.dstArrayElement = 0;
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-srcArrayElement-00346");
+    m_errorMonitor->SetDesiredError("VUID-VkCopyDescriptorSet-dstArrayElement-00348");
+    vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_ds_update);
     m_errorMonitor->VerifyFound();
 }
 

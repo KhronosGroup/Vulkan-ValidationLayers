@@ -28,6 +28,7 @@
 #include "state_tracker/shader_module.h"
 #include "state_tracker/state_tracker.h"
 #include "containers/limits.h"
+#include "utils/assert_utils.h"
 
 static vvl::DescriptorPool::TypeCountMap GetMaxTypeCounts(const VkDescriptorPoolCreateInfo *create_info) {
     vvl::DescriptorPool::TypeCountMap counts;
@@ -650,7 +651,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
     // Perform update on a per-binding basis as consecutive updates roll over to next binding
     auto descriptors_remaining = update.descriptorCount;
     auto iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
-    ASSERT_AND_RETURN(!iter.AtEnd());
+    ASSERT_AND_RETURN(!iter.AtEnd() && iter.IsValid());
     auto &orig_binding = iter.CurrentBinding();
 
     // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
@@ -675,6 +676,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
 void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, const DescriptorSet &src_set) {
     auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
     auto dst_iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
+    ASSERT_AND_RETURN(src_iter.IsValid() && dst_iter.IsValid());
     // Update parameters all look good so perform update
     for (uint32_t i = 0; i < update.descriptorCount; ++i, ++src_iter, ++dst_iter) {
         auto &src = *src_iter;

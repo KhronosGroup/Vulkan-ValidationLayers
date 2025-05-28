@@ -1131,17 +1131,19 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
         }
     } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
-        for (uint32_t i = 0; i < update.descriptorCount; i++, ++src_iter) {
-            const auto &mutable_src = static_cast<const vvl::MutableDescriptor &>(*src_iter);
-            if (mutable_src.ActiveType() != dst_type) {
-                const LogObjectList objlist(update.srcSet, update.dstSet, src_layout.Handle(), dst_layout.Handle());
-                skip |= LogError("VUID-VkCopyDescriptorSet-srcSet-04613", objlist, copy_loc.dot(Field::srcBinding),
-                                 "(%" PRIu32
-                                 ") descriptor type is VK_DESCRIPTOR_TYPE_MUTABLE_EXT and is being updated as descriptor type "
-                                 "(%s), but it doesn't "
-                                 "match the dstBinding (%" PRIu32 ") descriptor type %s.",
-                                 update.srcBinding, string_VkDescriptorType(mutable_src.ActiveType()), update.dstBinding,
-                                 string_VkDescriptorType(dst_type));
+        if (src_iter.IsValid()) {
+            for (uint32_t i = 0; i < update.descriptorCount && !src_iter.AtEnd(); i++, ++src_iter) {
+                const auto &mutable_src = static_cast<const vvl::MutableDescriptor &>(*src_iter);
+                if (mutable_src.ActiveType() != dst_type) {
+                    const LogObjectList objlist(update.srcSet, update.dstSet, src_layout.Handle(), dst_layout.Handle());
+                    skip |= LogError("VUID-VkCopyDescriptorSet-srcSet-04613", objlist, copy_loc.dot(Field::srcBinding),
+                                     "(%" PRIu32
+                                     ") descriptor type is VK_DESCRIPTOR_TYPE_MUTABLE_EXT and is being updated as descriptor type "
+                                     "(%s), but it doesn't "
+                                     "match the dstBinding (%" PRIu32 ") descriptor type %s.",
+                                     update.srcBinding, string_VkDescriptorType(mutable_src.ActiveType()), update.dstBinding,
+                                     string_VkDescriptorType(dst_type));
+                }
             }
         }
     }
@@ -1168,14 +1170,17 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
     }
     if (dst_type == VK_DESCRIPTOR_TYPE_SAMPLER) {
         auto dst_iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
-        for (uint32_t di = 0; di < update.descriptorCount; ++di, ++dst_iter) {
-            if (dst_iter.updated() && dst_iter->IsImmutableSampler()) {
-                const LogObjectList objlist(update.srcSet, update.dstSet);
-                skip |=
-                    LogError("VUID-VkCopyDescriptorSet-dstBinding-02753", objlist, copy_loc.dot(Field::dstBinding),
-                             "(%" PRIu32
-                             ") is type VK_DESCRIPTOR_TYPE_SAMPLER, but the dstSet was created with a non-null pImmutableSamplers.",
-                             update.dstBinding);
+        if (dst_iter.IsValid()) {
+            // if we go over via descriptorCount, AtEnd() will catch it
+            for (uint32_t di = 0; di < update.descriptorCount && !dst_iter.AtEnd(); ++di, ++dst_iter) {
+                if (dst_iter.updated() && dst_iter->IsImmutableSampler()) {
+                    const LogObjectList objlist(update.srcSet, update.dstSet);
+                    skip |= LogError(
+                        "VUID-VkCopyDescriptorSet-dstBinding-02753", objlist, copy_loc.dot(Field::dstBinding),
+                        "(%" PRIu32
+                        ") is type VK_DESCRIPTOR_TYPE_SAMPLER, but the dstSet was created with a non-null pImmutableSamplers.",
+                        update.dstBinding);
+                }
             }
         }
     }
@@ -2027,9 +2032,18 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
 
     switch (update.descriptorType) {
         case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER: {
-            if (!update.pImageInfo) break;
+            if (!update.pImageInfo) {
+                break;
+            }
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
+            if (!iter.IsValid()) {
+                break;  // if dstArrayElement is over, will have error already
+            }
+            // if we go over via descriptorCount, AtEnd() will catch it
             for (uint32_t di = 0; di < update.descriptorCount && !iter.AtEnd(); ++di, ++iter) {
+                if (iter->GetClass() == vvl::DescriptorClass::Mutable) {
+                    continue;  // undefined to cast to ImageSamplerDescriptor
+                }
                 const vvl::ImageSamplerDescriptor &desc = (const vvl::ImageSamplerDescriptor &)*iter;
                 const Location image_info_loc = write_loc.dot(Field::pImageInfo, di);
                 // Validate image
@@ -2105,11 +2119,15 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
         }
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
             auto iter = dst_set.FindDescriptor(update.dstBinding, update.dstArrayElement);
-            const vvl::SamplerDescriptor *desc = dynamic_cast<const vvl::SamplerDescriptor *>(&(*iter));
-            if (desc == nullptr) {
-                break;
+            if (!iter.IsValid()) {
+                break;  // if dstArrayElement is over, will have error already
+            } else if (iter->GetClass() == vvl::DescriptorClass::Mutable) {
+                break;  // Mutable don't do immutable samplers (and undefined to cast to SamplerDescriptor)
             }
-            if (desc->IsImmutableSampler() && !is_push_descriptor) {
+            // only need to check the first descriptor, VU like VUID-VkWriteDescriptorSet-descriptorCount-00318 force all
+            // Consecutive Binding Updates to be immutable or non-immutable
+            const vvl::SamplerDescriptor &desc = (const vvl::SamplerDescriptor &)*iter;
+            if (desc.IsImmutableSampler() && !is_push_descriptor) {
                 skip |=
                     LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, write_loc.dot(Field::descriptorType),
                              "is VK_DESCRIPTOR_TYPE_SAMPLER but can't update the immutable sampler from %s.",
