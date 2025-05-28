@@ -204,7 +204,9 @@ const char *VK_LAYER_GPUAV_INDIRECT_DISPATCHES_BUFFERS = "gpuav_indirect_dispatc
 const char *VK_LAYER_GPUAV_INDIRECT_TRACE_RAYS_BUFFERS = "gpuav_indirect_trace_rays_buffers";
 const char *VK_LAYER_GPUAV_BUFFER_COPIES = "gpuav_buffer_copies";
 const char *VK_LAYER_GPUAV_INDEX_BUFFERS = "gpuav_index_buffers";
-const char *VK_LAYER_GPUAV_IMAGE_LAYOUT = "gpuav_image_layout";
+
+// Keep removed warning until October 2025 SDK is released
+const char *REMOVED_GPUAV_IMAGE_LAYOUT = "gpuav_image_layout";
 
 const char *VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS = "gpuav_force_on_robustness";
 const char *VK_LAYER_GPUAV_RESERVE_BINDING_SLOT = "gpuav_reserve_binding_slot";
@@ -616,8 +618,6 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
         } else if (strcmp(VK_LAYER_GPUAV_BUFFER_COPIES, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_INDEX_BUFFERS, setting.pSettingName) == 0) {
-            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
-        } else if (strcmp(VK_LAYER_GPUAV_IMAGE_LAYOUT, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_RESERVE_BINDING_SLOT, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
@@ -1122,8 +1122,8 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         }
     }
 
-    if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_IMAGE_LAYOUT)) {
-        vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_IMAGE_LAYOUT, gpuav_settings.validate_image_layout);
+    if (vkuHasLayerSetting(layer_setting_set, REMOVED_GPUAV_IMAGE_LAYOUT)) {
+        setting_warnings.emplace_back("Deprecated " + std::string(REMOVED_GPUAV_IMAGE_LAYOUT) + " setting was removed.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS)) {

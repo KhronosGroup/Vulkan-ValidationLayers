@@ -254,11 +254,6 @@ class GpuAVRayQueryTest : public GpuAVTest {
     void InitGpuAVRayQuery(std::vector<VkLayerSettingEXT> layer_settings = {});
 };
 
-class GpuAVImageLayout : public GpuAVTest {
-  public:
-    void InitGpuAVImageLayout();
-};
-
 class DebugPrintfTests : public VkLayerTest {
   public:
     void InitDebugPrintfFramework(void *p_next = nullptr, bool reserve_slot = false);

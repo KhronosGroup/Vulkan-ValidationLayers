@@ -85,13 +85,6 @@ class Validator : public GpuShaderInstrumentor {
                                    VkBuffer* pBuffer, const RecordObject& record_obj, chassis::CreateBuffer& chassis_state) final;
     void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                          const RecordObject& record_obj) final;
-    void RecordCmdNextSubpassLayouts(vvl::CommandBuffer& cb_state, VkSubpassContents contents);
-    void PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                      const RecordObject& record_obj) final;
-    void PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                          const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) final;
-    void PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo* pSubpassBeginInfo,
-                                       const VkSubpassEndInfo* pSubpassEndInfo, const RecordObject& record_obj) final;
 
     void PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) final;
     void PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
@@ -305,105 +298,6 @@ class Validator : public GpuShaderInstrumentor {
     void PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
                                             const RecordObject&) final;
 
-    // gpuav_image_layout.cpp
-    // --------------------
-
-    void PostCallRecordCreateImage(VkDevice device, const VkImageCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator,
-                                   VkImage* pImage, const RecordObject& record_obj) final;
-
-    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                          const VkClearColorValue* pColor, uint32_t rangeCount,
-                                          const VkImageSubresourceRange* pRanges, const RecordObject&) final;
-    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange* pRanges, const RecordObject&) final;
-    void PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer, uint32_t attachmentCount,
-                                           const VkClearAttachment* pAttachments, uint32_t rectCount, const VkClearRect* pRects,
-                                           const RecordObject&) final;
-    void PostCallRecordTransitionImageLayout(VkDevice device, uint32_t transitionCount,
-                                             const VkHostImageLayoutTransitionInfo* pTransitions,
-                                             const RecordObject& record_obj) final;
-    void PostCallRecordTransitionImageLayoutEXT(VkDevice device, uint32_t transitionCount,
-                                                const VkHostImageLayoutTransitionInfoEXT* pTransitions,
-                                                const RecordObject& record_obj) final;
-    void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
-                                    const RecordObject&) final;
-    void PostCallRecordCmdCopyImage2KHR(VkCommandBuffer commandBuffer, const VkCopyImageInfo2KHR* pCopyImageInfo,
-                                        const RecordObject&) final;
-    void PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, const VkCopyImageInfo2* pCopyImageInfo,
-                                     const RecordObject&) final;
-
-    void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject&) final;
-    void PostCallRecordCmdCopyImageToBuffer2KHR(VkCommandBuffer commandBuffer,
-                                                const VkCopyImageToBufferInfo2KHR* pCopyImageToBufferInfo,
-                                                const RecordObject&) final;
-    void PostCallRecordCmdCopyImageToBuffer2(VkCommandBuffer commandBuffer, const VkCopyImageToBufferInfo2* pCopyImageToBufferInfo,
-                                             const RecordObject&) final;
-
-    void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject&) final;
-    void PostCallRecordCmdCopyBufferToImage2KHR(VkCommandBuffer commandBuffer,
-                                                const VkCopyBufferToImageInfo2KHR* pCopyBufferToImageInfo2KHR,
-                                                const RecordObject&) final;
-    void PostCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer, const VkCopyBufferToImageInfo2* pCopyBufferToImageInfo,
-                                             const RecordObject&) final;
-
-    void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
-                                    VkFilter filter, const RecordObject&) final;
-    void PostCallRecordCmdBlitImage2KHR(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                        const RecordObject&) final;
-    void PostCallRecordCmdBlitImage2(VkCommandBuffer commandBuffer, const VkBlitImageInfo2KHR* pBlitImageInfo,
-                                     const RecordObject&) final;
-
-    void PostCallRecordBindImageMemory(VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset,
-                                       const RecordObject& record_obj) final;
-    void PostCallRecordBindImageMemory2(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
-                                        const RecordObject& record_obj) final;
-    void PostCallRecordBindImageMemory2KHR(VkDevice device, uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
-                                           const RecordObject& record_obj) final;
-
-    void PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                     VkPipelineStageFlags sourceStageMask, VkPipelineStageFlags dstStageMask,
-                                     uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                     uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                     const RecordObject&) final;
-    void PostCallRecordCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                         const VkDependencyInfoKHR* pDependencyInfos, const RecordObject&) final;
-    void PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                      const VkDependencyInfo* pDependencyInfos, const RecordObject&) final;
-
-    void RecordCmdBeginRenderPassLayouts(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                         const VkSubpassContents contents);
-    void PostCallRecordCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                          VkSubpassContents contents, const RecordObject&) final;
-    void PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                              const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) final;
-    void PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
-                                           const VkSubpassBeginInfo* pSubpassBeginInfo, const RecordObject&) final;
-
-    void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) final;
-    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                        const RecordObject& record_obj) final;
-    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                           const RecordObject& record_obj) final;
-
-    void PostCallRecordCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
-                                          VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
-                                          uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                          uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                          uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                          const RecordObject&) final;
-
-    void PostCallRecordCmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDependencyInfoKHR* pDependencyInfo,
-                                              const RecordObject&) final;
-    void PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependencyInfo* pDependencyInfo,
-                                           const RecordObject&) final;
     bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
                                 const char* vuid, const char* more_message = "") const final;
     bool ValidateUnprotectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state, const Location& image_loc,
@@ -412,10 +306,6 @@ class Validator : public GpuShaderInstrumentor {
                                  const char* vuid, const char* more_message = "") const final;
     bool ValidateUnprotectedBuffer(const vvl::CommandBuffer& cb_state, const vvl::Buffer& buffer_state, const Location& buffer_loc,
                                    const char* vuid, const char* more_message = "") const final;
-
-    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
-                           VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
-                           bool* error) const final;
 
     void Created(vvl::DescriptorSet& set) final;
     void Created(vvl::CommandBuffer& cb_state) final;
