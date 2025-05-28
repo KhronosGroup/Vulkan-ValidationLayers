@@ -22,7 +22,6 @@
 #include "gpuav/validation_cmd/gpuav_trace_rays.h"
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
-#include "gpuav/descriptor_validation/gpuav_image_layout.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/descriptor_checks.h"
@@ -188,36 +187,6 @@ void Validator::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, con
 
 void Validator::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     PostCallRecordCmdEndRendering(commandBuffer, record_obj);
-}
-
-void Validator::RecordCmdNextSubpassLayouts(vvl::CommandBuffer &cb_state, VkSubpassContents contents) {
-    ASSERT_AND_RETURN(cb_state.active_render_pass);
-    TransitionSubpassLayouts(cb_state, *cb_state.active_render_pass, cb_state.GetActiveSubpass());
-}
-
-void Validator::PostCallRecordCmdNextSubpass(VkCommandBuffer commandBuffer, VkSubpassContents contents,
-                                             const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    RecordCmdNextSubpassLayouts(*cb_state, contents);
-}
-
-void Validator::PostCallRecordCmdNextSubpass2KHR(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                                 const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    PostCallRecordCmdNextSubpass2(commandBuffer, pSubpassBeginInfo, pSubpassEndInfo, record_obj);
-}
-
-void Validator::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, const VkSubpassBeginInfo *pSubpassBeginInfo,
-                                              const VkSubpassEndInfo *pSubpassEndInfo, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    RecordCmdNextSubpassLayouts(*cb_state, pSubpassBeginInfo->contents);
 }
 
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
@@ -1046,6 +1015,62 @@ void Validator::PreCallRecordCmdCopyBufferToImage2(VkCommandBuffer commandBuffer
                                                    const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     valcmd::CopyBufferToImage(*this, record_obj.location, SubState(*cb_state), pCopyBufferToImageInfo);
+}
+
+// Validates the buffer is allowed to be protected
+bool Validator::ValidateProtectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
+                                        const Location &buffer_loc, const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (buffer_state.unprotected == false)) {
+        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is a protected buffer, but command buffer (%s) is unprotected.%s",
+                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the buffer is allowed to be unprotected
+bool Validator::ValidateUnprotectedBuffer(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
+                                          const Location &buffer_loc, const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (buffer_state.unprotected == true)) {
+        const LogObjectList objlist(cb_state.Handle(), buffer_state.Handle());
+        skip |= LogError(vuid, objlist, buffer_loc, "(%s) is an unprotected buffer, but command buffer (%s) is protected.%s",
+                         FormatHandle(buffer_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the image is allowed to be protected
+bool Validator::ValidateProtectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
+                                       const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == true) && (image_state.unprotected == false)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, loc, "(%s) is a protected image, but command buffer (%s) is unprotected.%s",
+                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
+}
+
+// Validates the image is allowed to be unprotected
+bool Validator::ValidateUnprotectedImage(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state, const Location &loc,
+                                         const char *vuid, const char *more_message) const {
+    bool skip = false;
+
+    // if driver supports protectedNoFault the operation is valid, just has undefined values
+    if ((!phys_dev_props_core11.protectedNoFault) && (cb_state.unprotected == false) && (image_state.unprotected == true)) {
+        const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+        skip |= LogError(vuid, objlist, loc, "(%s) is an unprotected image, but command buffer (%s) is protected.%s",
+                         FormatHandle(image_state).c_str(), FormatHandle(cb_state).c_str(), more_message);
+    }
+    return skip;
 }
 
 }  // namespace gpuav

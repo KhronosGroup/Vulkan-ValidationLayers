@@ -147,13 +147,6 @@ khronos_validation.enables =
 # Use VMA linear memory allocations for GPU-AV output buffers
 #khronos_validation.gpuav_vma_linear_output = true
 
-# Use GPU-AV to do Image Layout checks
-# =====================
-# (Warning - still known to have false positives)
-# Use GPU-AV to detect which descriptors were accessed.
-# Then using post processing, check that the layout of each image subresource is correct whenever it is used by a command buffer
-#khronos_validation.gpuav_image_layout = true
-
 # Fine Grained Locking
 # =====================
 # Enable fine grained locking for Core Validation, which should improve

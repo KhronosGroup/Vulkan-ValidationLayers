@@ -307,8 +307,6 @@ target_sources(vvl PRIVATE
     gpuav/descriptor_validation/gpuav_descriptor_validation.cpp
     gpuav/descriptor_validation/gpuav_descriptor_set.cpp
     gpuav/descriptor_validation/gpuav_descriptor_set.h
-    gpuav/descriptor_validation/gpuav_image_layout.h
-    gpuav/descriptor_validation/gpuav_image_layout.cpp
     gpuav/debug_printf/debug_printf.cpp
     gpuav/debug_printf/debug_printf.h
     gpuav/error_message/gpuav_vuids.cpp

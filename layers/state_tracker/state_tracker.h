@@ -2109,6 +2109,7 @@ class DeviceProxy : public vvl::base::Device {
     virtual void Created(vvl::ShaderObject& state) {}
 
     // callbacks for image layout validation, which is implemented in both core validation and gpu-av
+    // TODO - It would be nice to have a way to not need a duplicate copy in both CoreChecks and GPU-AV code
     virtual bool ValidateProtectedImage(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
                                         const Location& image_loc, const char* vuid, const char* more_message = "") const {
         return false;
@@ -2125,6 +2126,8 @@ class DeviceProxy : public vvl::base::Device {
                                            const Location& buffer_loc, const char* vuid, const char* more_message = "") const {
         return false;
     }
+
+    // Currently no GPU-AV check
     virtual bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::ImageView& image_view_state,
                                    VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                                    bool* error) const {

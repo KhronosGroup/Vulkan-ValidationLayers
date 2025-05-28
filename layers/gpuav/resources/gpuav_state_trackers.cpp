@@ -20,7 +20,6 @@
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
-#include "gpuav/descriptor_validation/gpuav_image_layout.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/debug_printf/debug_printf.h"
@@ -458,10 +457,6 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
         if (!success) {
             break;
         }
-    }
-
-    if (success) {
-        UpdateCmdBufImageLayouts(gpuav_, base);
     }
 }
 
