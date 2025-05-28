@@ -270,8 +270,7 @@ TEST_F(NegativeSyncValRayTracing, WriteInstanceDataDuringBuild) {
     m_command_buffer.End();
 }
 
-// TODO: enable after CmdTraceRays support is added. This should generate READ after WRITE error.
-TEST_F(NegativeSyncValRayTracing, DISABLED_TraceAfterBuild) {
+TEST_F(NegativeSyncValRayTracing, TraceAfterBuild) {
     TEST_DESCRIPTION("Trace rays against TLAS without waiting for TLAS build completion");
     RETURN_IF_SKIP(InitRayTracing());
 
@@ -291,10 +290,8 @@ TEST_F(NegativeSyncValRayTracing, DISABLED_TraceAfterBuild) {
     const char* ray_gen = R"glsl(
         #version 460
         #extension GL_EXT_ray_tracing : require
-
         layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
         layout(location = 0) rayPayloadEXT vec3 hit;
-
         void main() {
             traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
         }
@@ -317,8 +314,68 @@ TEST_F(NegativeSyncValRayTracing, DISABLED_TraceAfterBuild) {
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
 
     // Start tracing ways without synchronization with TLAS build command
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-READ-AFTER-WRITE");
     vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
                         &trace_rays_sbt.callable_sbt, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeSyncValRayTracing, WriteTLASDuringTrace) {
+    TEST_DESCRIPTION("Write to TLAS buffer while AS is being used by CmdTraceRays");
+    RETURN_IF_SKIP(InitRayTracing());
+
+    // Build BLAS
+    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device);
+    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry)));
+    blas->SetupBuild(true);
+    m_command_buffer.Begin();
+    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    // Build TLAS
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    tlas.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    tlas.SetupBuild(true);
+    m_command_buffer.Begin();
+    tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    const vkt::Buffer& tlas_buffer = tlas.GetDstAS()->GetBuffer();
+
+    // Create RT pipeline
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(location = 0) rayPayloadEXT vec3 hit;
+        void main() {
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
+    vkt::rt::Pipeline pipeline(*this, m_device);
+    pipeline.SetGlslRayGenShader(ray_gen);
+    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline.CreateDescriptorSet();
+    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.GetDescriptorSet().UpdateDescriptorSets();
+    pipeline.Build();
+    const vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+
+    m_command_buffer.Begin();
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
+                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+    vk::CmdTraceRaysKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
+                        &trace_rays_sbt.callable_sbt, 1, 1, 1);
+
+    m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
+    vk::CmdFillBuffer(m_command_buffer, tlas_buffer, 0, sizeof(uint32_t), 0x42);
+    m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
 
