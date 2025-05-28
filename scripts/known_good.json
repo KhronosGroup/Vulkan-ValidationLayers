@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "736e415ebaa4290d21e42e370db5e933b9dff06d"
+            "commit": "da48bb20bdfc8a214d5bffdacca2d1d2ae849009"
         },
         {
             "name": "mimalloc",
