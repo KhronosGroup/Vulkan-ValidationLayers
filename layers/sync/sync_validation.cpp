@@ -4073,3 +4073,34 @@ void SyncValidator::PostCallRecordCmdCopyMemoryToAccelerationStructureKHR(VkComm
                                   SyncOrdering::kNonAttachment, range, tag_ex);
     }
 }
+
+bool SyncValidator::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                   const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                   const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                   uint32_t width, uint32_t height, uint32_t depth,
+                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN_SKIP(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+
+    skip |= cb_context.ValidateDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    return skip;
+}
+
+void SyncValidator::PostCallRecordCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
+                                                  const VkStridedDeviceAddressRegionKHR *pRaygenShaderBindingTable,
+                                                  const VkStridedDeviceAddressRegionKHR *pMissShaderBindingTable,
+                                                  const VkStridedDeviceAddressRegionKHR *pHitShaderBindingTable,
+                                                  const VkStridedDeviceAddressRegionKHR *pCallableShaderBindingTable,
+                                                  uint32_t width, uint32_t height, uint32_t depth, const RecordObject &record_obj) {
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    ASSERT_AND_RETURN(cb_state);
+    auto &cb_context = *syncval_state::AccessContext(*cb_state);
+
+    const ResourceUsageTag tag = cb_context.NextCommandTag(record_obj.location.function);
+
+    cb_context.RecordDispatchDrawDescriptorSet(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, tag);
+}
