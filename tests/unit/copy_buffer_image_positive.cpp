@@ -1073,7 +1073,7 @@ TEST_F(PositiveCopyBufferImage, CompressedImageMip) {
 }
 
 // TODO - Need WG agreement how this works still
-TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressToCompress) {
+TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressToCompressSubTexelBlock) {
     RETURN_IF_SKIP(Init());
 
     VkImageCreateInfo image_ci = vku::InitStructHelper();
@@ -1100,9 +1100,46 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressToCompress) {
     VkImageCopy image_copy;
     image_copy.srcSubresource = {1u, 0u, 0u, 1u};
     image_copy.srcOffset = {0u, 0u, 0u};
-    image_copy.dstSubresource = {1u, 3u, 0u, 1u};  // last mip
+    image_copy.dstSubresource = {1u, 3u, 0u, 1u};  // last mip (2x2)
     image_copy.dstOffset = {0u, 0u, 0u};
     image_copy.extent = {2u, 2u, 1u};  // single texel
+
+    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, CopyCompressToCompress) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-Docs/issues/1005");
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.mipLevels = 4u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_ci.extent = {60u, 60u, 1u};
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci,
+                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image dst_image(*m_device, image_ci);
+
+    m_command_buffer.Begin();
+    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0u, 0u, 0u};
+    image_copy.dstSubresource = {1u, 1u, 0u, 1u};  // 30x30 mip
+    image_copy.dstOffset = {0u, 0u, 0u};
+    image_copy.extent = {16u, 16u, 1u};  // single texel
 
     vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
