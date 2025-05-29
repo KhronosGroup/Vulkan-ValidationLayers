@@ -48,6 +48,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     framework/external_memory_sync.cpp
     framework/sync_helper.h
     framework/sync_helper.cpp
+    framework/sync_val_tests.h
     framework/descriptor_helper.h
     framework/descriptor_helper.cpp
     framework/thread_helper.h

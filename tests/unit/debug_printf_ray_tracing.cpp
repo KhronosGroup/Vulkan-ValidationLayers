@@ -926,19 +926,18 @@ TEST_F(NegativeDebugPrintfRayTracing, RaygenOneMissShaderOneClosestHitShader) {
 
     // #ARNO_TODO: For clarity, here geometry should be set explicitly, as of now the ray hitting or not
     // implicitly depends on the default triangle position.
-    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle));
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     // Build Bottom Level Acceleration Structure
     m_command_buffer.Begin();
-    blas->BuildCmdBuffer(m_command_buffer);
+    blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Build Top Level Acceleration Structure
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
     m_command_buffer.Begin();
     tlas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
@@ -1107,19 +1106,18 @@ TEST_F(NegativeDebugPrintfRayTracing, DISABLED_OneMultiEntryPointsShader) {
 
     // #ARNO_TODO: For clarity, here geometry should be set explicitly, as of now the ray hitting or not
     // implicitly depends on the default triangle position.
-    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device, vkt::as::GeometryKHR::Type::Triangle));
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     // Build Bottom Level Acceleration Structure
     m_command_buffer.Begin();
-    blas->BuildCmdBuffer(m_command_buffer);
+    blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
     // Build Top Level Acceleration Structure
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
     m_command_buffer.Begin();
     tlas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();

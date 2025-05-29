@@ -1290,8 +1290,8 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device 
 }
 
 vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt::Device &device,
-                                                                      std::shared_ptr<BuildGeometryInfoKHR> on_device_blas) {
-    assert(on_device_blas->GetDstAS()->IsBuilt());
+                                                                      const vkt::as::AccelerationStructureKHR &on_device_blas) {
+    assert(on_device_blas.IsBuilt());
 
     BuildGeometryInfoKHR out_build_info(&device);
 
@@ -1301,7 +1301,7 @@ vkt::as::BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt:
 
     // Set geometry to one instance pointing to bottom level acceleration structure
     std::vector<GeometryKHR> geometries;
-    geometries.emplace_back(GeometrySimpleDeviceInstance(device, on_device_blas->GetDstAS()->handle()));
+    geometries.emplace_back(GeometrySimpleDeviceInstance(device, on_device_blas.handle()));
     out_build_info.SetGeometries(std::move(geometries));
     out_build_info.SetBuildRanges(out_build_info.GetBuildRangeInfosFromGeometries());
 
@@ -1355,9 +1355,8 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     // Create acceleration structure
     cmd_buffer.Begin();
     // Build Bottom Level Acceleration Structure
-    auto bot_level_accel_struct =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(device));
-    bot_level_accel_struct->BuildCmdBuffer(cmd_buffer);
+    vkt::as::BuildGeometryInfoKHR bot_level_accel_struct = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(device);
+    bot_level_accel_struct.BuildCmdBuffer(cmd_buffer);
     cmd_buffer.End();
 
     queue.Submit(cmd_buffer);
@@ -1366,7 +1365,7 @@ BuildGeometryInfoKHR BuildOnDeviceTopLevel(const vkt::Device &device, vkt::Queue
     cmd_buffer.Begin();
     // Build Top Level Acceleration Structure
     vkt::as::BuildGeometryInfoKHR top_level_accel_struct =
-        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(device, bot_level_accel_struct);
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(device, *bot_level_accel_struct.GetDstAS());
     top_level_accel_struct.BuildCmdBuffer(cmd_buffer);
     cmd_buffer.End();
 
