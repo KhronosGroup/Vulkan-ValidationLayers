@@ -3006,6 +3006,77 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetNotAllocated) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOver) {
+    RETURN_IF_SKIP(Init());
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                     {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_infos[5] = {{buffer, 0, VK_WHOLE_SIZE},
+                                              {buffer, 0, VK_WHOLE_SIZE},
+                                              {buffer, 0, VK_WHOLE_SIZE},
+                                              {buffer, 0, VK_WHOLE_SIZE},
+                                              {buffer, 0, VK_WHOLE_SIZE}};
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;  // start a 0, but never update one in it
+    descriptor_write.dstArrayElement = 2;
+    descriptor_write.descriptorCount = 5;  // go over by 1
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = buffer_infos;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstArrayElement = 5;  // jump to binding 2
+    descriptor_write.descriptorCount = 2;  // go over by 1
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstArrayElement = 6;  // OOB
+    descriptor_write.descriptorCount = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 2;
+    descriptor_write.dstArrayElement = 2;  // OOB
+    descriptor_write.descriptorCount = 1;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-dstArrayElement-00321");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOverInConsistent) {
+    RETURN_IF_SKIP(Init());
+    // binding 0 is different
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+    vkt::Buffer buffer(*m_device, 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+
+    VkDescriptorBufferInfo buffer_infos[2] = {{buffer, 0, VK_WHOLE_SIZE}, {buffer, 0, VK_WHOLE_SIZE}};
+
+    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
+    descriptor_write.dstSet = descriptor_set.set_;
+    descriptor_write.dstBinding = 0;       // start a 0, but never update one in it
+    descriptor_write.dstArrayElement = 2;  // try to jump to binding 1, but still different than binding 0
+    descriptor_write.descriptorCount = 2;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptor_write.pBufferInfo = buffer_infos;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDescriptors, CreateDescriptorPool) {
     TEST_DESCRIPTION("Attempt to create descriptor pool with invalid parameters");
 
