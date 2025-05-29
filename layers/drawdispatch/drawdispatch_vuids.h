@@ -161,8 +161,6 @@ struct DrawDispatchVuid {
     const char* dynamic_sample_locations_enable_07634 = kVUIDUndefined;
     const char* dynamic_color_blend_advanced_07479 = kVUIDUndefined;
     const char* dynamic_provoking_vertex_mode_07636 = kVUIDUndefined;
-    const char* dynamic_line_rasterization_mode_07637 = kVUIDUndefined;
-    const char* dynamic_line_stipple_enable_07638 = kVUIDUndefined;
     const char* dynamic_depth_clip_negative_one_to_one_07639 = kVUIDUndefined;
     const char* dynamic_viewport_w_scaling_enable_07640 = kVUIDUndefined;
     const char* dynamic_viewport_swizzle_07641 = kVUIDUndefined;

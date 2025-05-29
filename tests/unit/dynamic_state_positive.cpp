@@ -1528,3 +1528,44 @@ TEST_F(PositiveDynamicState, LineRasterization) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicState, DrawNotSetLineRasterizationMode) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineRasterizationMode);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Valid because the topology is triangle here
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveDynamicState, DrawNotSetLineStippleEnable) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3LineStippleEnable);
+    AddRequiredFeature(vkt::Feature::stippledRectangularLines);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    // Valid because the topology is triangle here
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
