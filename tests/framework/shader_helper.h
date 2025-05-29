@@ -45,6 +45,8 @@ bool ASMtoSPV(const spv_target_env target_env, const uint32_t options, const cha
 class VkShaderObj : public vkt::ShaderModule {
   public:
     VkShaderObj() = default;
+    VkShaderObj(VkShaderObj &&rhs) noexcept = default;
+    VkShaderObj &operator=(VkShaderObj &&rhs) noexcept = default;
 
     // optional arguments listed order of most likely to be changed manually by a test
     VkShaderObj(vkt::Device &device, const char *source, VkShaderStageFlagBits stage, const spv_target_env env = SPV_ENV_VULKAN_1_0,

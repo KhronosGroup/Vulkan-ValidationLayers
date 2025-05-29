@@ -1144,13 +1144,13 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, StorageBuffer) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1604,8 +1604,8 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
     pipe.CreateComputePipeline();
 
     vkt::Buffer ssbo_buffer(*m_device, 8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, ssbo_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     VkGeneratedCommandsPipelineInfoEXT pipeline_info = vku::InitStructHelper();
     pipeline_info.pipeline = pipe;
@@ -1650,7 +1650,7 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DeviceGeneratedCommandsCompute
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdExecuteGeneratedCommandsEXT(m_command_buffer, false, &generated_commands_info);
     m_command_buffer.End();
 
@@ -1690,13 +1690,13 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, SpecConstant) {
 
     vkt::Buffer in_buffer(*m_device, 20, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1882,14 +1882,14 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsGLSL) {
 
     vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
     // not enough bound for either
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, 32, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1999,14 +1999,14 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, ArrayCopyTwoBindingsSlang) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(1, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(1, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2307,14 +2307,14 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, AtomicsDescriptorIndex) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 128, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, 64, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 64, 16, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2397,14 +2397,14 @@ TEST_F(NegativeGpuAVDescriptorClassGeneralBuffer, DescriptorIndexSlang) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer in_buffer(*m_device, 96, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, 80, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0);
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, 80, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 

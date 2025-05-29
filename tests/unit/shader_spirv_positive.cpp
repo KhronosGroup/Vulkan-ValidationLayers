@@ -570,12 +570,12 @@ TEST_F(PositiveShaderSpirv, SpecializationWordBoundryOffset) {
     bci.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     bci.size = 1024;
     vkt::Buffer buffer(*m_device, bci, kHostVisibleMemProps);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();

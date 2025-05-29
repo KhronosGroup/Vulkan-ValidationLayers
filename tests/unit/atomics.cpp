@@ -386,14 +386,14 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime64) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R32_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04471");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -427,14 +427,14 @@ TEST_F(NegativeAtomic, ImageInt64Drawtime32) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     vkt::ImageView view = image.CreateView();
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04470");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -472,20 +472,20 @@ TEST_F(NegativeAtomic, ImageInt64DrawtimeSparse) {
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, buffer, 0, 1024, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R64_UINT, VK_IMAGE_USAGE_STORAGE_BIT);
     image_ci.flags = VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
     vkt::ImageView image_view = image.CreateView();
-    pipe.descriptor_set_->WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    pipe.descriptor_set_.WriteDescriptorImageInfo(1, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-sparseImageInt64Atomics-04474");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1542,13 +1542,13 @@ TEST_F(NegativeAtomic, BufferViewInt64Drawtime32) {
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     vkt::BufferView view(*m_device, buffer, format);
 
-    pipe.descriptor_set_->WriteDescriptorBufferView(0, view);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferView(0, view);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04472");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -1590,13 +1590,13 @@ TEST_F(NegativeAtomic, BufferViewInt64Drawtime64) {
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
     vkt::BufferView view(*m_device, buffer, format);
 
-    pipe.descriptor_set_->WriteDescriptorBufferView(0, view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferView(0, view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-SampledType-04473");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);

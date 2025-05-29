@@ -317,13 +317,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, UVec3Array) {
     memcpy(in_buffer_ptr, &block_ptr, sizeof(VkDeviceAddress));
     memcpy(in_buffer_ptr + sizeof(VkDeviceAddress), &n_reads, sizeof(uint32_t));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -779,13 +779,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayout) {
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
 
-    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -870,13 +870,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreRelaxedBlockLayoutFront) {
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
 
-    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -930,13 +930,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayout) {
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
 
-    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -992,13 +992,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreScalarBlockLayoutFront) {
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
 
-    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1056,13 +1056,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreStd430LinkedList) {
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
 
-    pipeline.descriptor_set_->WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorBufferInfo(0, uniform_buffer, 0, VK_WHOLE_SIZE);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1141,13 +1141,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1198,13 +1198,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoad2) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1367,13 +1367,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadUint64) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1426,13 +1426,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, ProxyStructLoadBadAddress) {
     uint8_t *in_buffer_ptr = (uint8_t *)in_buffer.Memory().Map();
     memcpy(in_buffer_ptr, &buffer_ptr, sizeof(VkDeviceAddress));
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1472,13 +1472,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, StoreAlignment) {
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_ptr + 4;
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1520,13 +1520,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, LoadAlignment) {
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_ptr + 4;
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1590,13 +1590,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, NonStructPointer) {
     auto in_buffer_ptr = static_cast<VkDeviceAddress *>(in_buffer.Memory().Map());
     in_buffer_ptr[0] = block_buffer.Address();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1829,13 +1829,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand) {
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1893,13 +1893,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, MemoryModelOperand2) {
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1941,13 +1941,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicLoad) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -1988,13 +1988,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicStore) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2036,13 +2036,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchange) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2086,13 +2086,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddValueOperand) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2135,13 +2135,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicAddPointerOperand) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2186,13 +2186,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicsMaxMin) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2378,13 +2378,13 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, AtomicExchangeSlang) {
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.CreateComputePipeline();
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2557,8 +2557,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = ssbo_b_buffer.Address();
@@ -2569,7 +2569,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainLastInvalid) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2611,8 +2611,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
@@ -2623,7 +2623,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalid) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 
@@ -2667,8 +2667,8 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
-    pipe.descriptor_set_->WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.WriteDescriptorBufferInfo(0, in_buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     auto buffer_ptr = (VkDeviceAddress *)in_buffer.Memory().Map();
     buffer_ptr[0] = 0xffffffffffffff00;  // bad pointer
@@ -2679,7 +2679,7 @@ TEST_F(NegativeGpuAVBufferDeviceAddress, PointerChainFirstInvalidAtomic) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();
 

@@ -132,7 +132,7 @@ class CreatePipelineHelper {
 class CreateComputePipelineHelper {
   public:
     std::vector<VkDescriptorSetLayoutBinding> dsl_bindings_;
-    std::unique_ptr<OneOffDescriptorSet> descriptor_set_;
+    OneOffDescriptorSet descriptor_set_;
     VkPipelineLayoutCreateInfo pipeline_layout_ci_ = {};
     vkt::PipelineLayout pipeline_layout_;
     VkComputePipelineCreateInfo cp_ci_ = {};
@@ -142,12 +142,15 @@ class CreateComputePipelineHelper {
     bool override_skip_ = false;
     vkt::Device *device_ = nullptr;
 
+    CreateComputePipelineHelper() noexcept = default;
     explicit CreateComputePipelineHelper(vkt::Device &device, void *pNext = nullptr);
 
     // DEPRECATED
     explicit CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
 
-    ~CreateComputePipelineHelper();
+    CreateComputePipelineHelper(CreateComputePipelineHelper &&) noexcept;
+    CreateComputePipelineHelper &operator=(CreateComputePipelineHelper &&) noexcept;
+    ~CreateComputePipelineHelper() noexcept;
 
     const VkPipeline &Handle() const { return pipeline_; }
     operator VkPipeline() const { return pipeline_; }

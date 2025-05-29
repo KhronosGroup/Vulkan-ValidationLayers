@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,9 +87,30 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     }
 }
 
+OneOffDescriptorSet::OneOffDescriptorSet(OneOffDescriptorSet &&rhs) noexcept { *this = std::move(rhs); }
+
+OneOffDescriptorSet &OneOffDescriptorSet::operator=(OneOffDescriptorSet &&rhs) noexcept {
+    device_ = rhs.device_;
+    rhs.device_ = nullptr;
+
+    pool_ = rhs.pool_;
+    rhs.pool_ = VK_NULL_HANDLE;
+
+    layout_ = std::move(rhs.layout_);
+
+    set_ = rhs.set_;
+    rhs.set_ = VK_NULL_HANDLE;
+
+    resource_infos = std::move(rhs.resource_infos);
+    descriptor_writes = std::move(rhs.descriptor_writes);
+    return *this;
+}
+
 OneOffDescriptorSet::~OneOffDescriptorSet() {
-    // No need to destroy set-- it's going away with the pool.
-    vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
+    if (pool_ != VK_NULL_HANDLE) {
+        // No need to destroy set-- it's going away with the pool.
+        vk::DestroyDescriptorPool(device_->handle(), pool_, nullptr);
+    }
 }
 
 bool OneOffDescriptorSet::Initialized() { return pool_ != VK_NULL_HANDLE && layout_.initialized() && set_ != VK_NULL_HANDLE; }

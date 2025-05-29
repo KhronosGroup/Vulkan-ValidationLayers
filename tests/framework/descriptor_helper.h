@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 class OneOffDescriptorSet {
   public:
-    vkt::Device *device_;
-    VkDescriptorPool pool_{};
+    vkt::Device *device_ = nullptr;
+    VkDescriptorPool pool_{VK_NULL_HANDLE};
     vkt::DescriptorSetLayout layout_;
     VkDescriptorSet set_{VK_NULL_HANDLE};
 
@@ -34,11 +34,14 @@ class OneOffDescriptorSet {
     std::vector<ResourceInfo> resource_infos;
     std::vector<VkWriteDescriptorSet> descriptor_writes;
 
+    OneOffDescriptorSet() = default;
     OneOffDescriptorSet(vkt::Device *device, const std::vector<VkDescriptorSetLayoutBinding> &bindings,
                         VkDescriptorSetLayoutCreateFlags layout_flags = 0, void *layout_pnext = nullptr,
                         VkDescriptorPoolCreateFlags pool_flags = 0, void *allocate_pnext = nullptr,
                         void *create_pool_pnext = nullptr);
-    OneOffDescriptorSet(){};
+
+    OneOffDescriptorSet(OneOffDescriptorSet &&rhs) noexcept;
+    OneOffDescriptorSet &operator=(OneOffDescriptorSet &&) noexcept;
     ~OneOffDescriptorSet();
     bool Initialized();
     void Clear();
