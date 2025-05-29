@@ -3246,17 +3246,16 @@ TEST_F(NegativeRayTracing, InstanceBufferBadAddress) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    auto blas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     m_command_buffer.Begin();
-    blas->BuildCmdBuffer(m_command_buffer);
+    blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
 
     m_command_buffer.Begin();
     tlas.SetupBuild(*m_device, true);
@@ -3280,17 +3279,16 @@ TEST_F(NegativeRayTracing, InstanceBufferBadMemory) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    auto blas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     m_command_buffer.Begin();
-    blas->BuildCmdBuffer(m_command_buffer);
+    blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
 
     m_command_buffer.Begin();
     tlas.SetupBuild(*m_device, true);
@@ -3532,17 +3530,16 @@ TEST_F(NegativeRayTracing, TooManyInstances) {
     RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    auto blas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
 
     m_command_buffer.Begin();
-    blas->BuildCmdBuffer(m_command_buffer);
+    blas.BuildCmdBuffer(m_command_buffer);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
     m_device->Wait();
 
-    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    auto tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas.GetDstAS());
     tlas.GetGeometries()[0].SetPrimitiveCount(std::numeric_limits<uint32_t>::max());
     m_errorMonitor->SetDesiredError("VUID-vkGetAccelerationStructureBuildSizesKHR-pBuildInfo-03785");
     tlas.GetSizeInfo();

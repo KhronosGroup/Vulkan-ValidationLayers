@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../framework/layer_validation_tests.h"
+#include "../framework/sync_val_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/ray_tracing_objects.h"
 
@@ -34,6 +34,73 @@ vkt::Buffer VkSyncValTest::GetSerializationDeserializationBuffer(const vkt::as::
     return vkt::Buffer(*m_device, serialization_size,
                        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                        vkt::device_address);
+}
+
+CreateComputePipelineHelper VkSyncValTest::GetRayQueryComputePipeline(VkAccelerationStructureKHR as) {
+    char const* cs_source = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_query : require
+        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
+        void main() {
+            rayQueryEXT query;
+            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 0.1, vec3(0,0,1), 1000.0);
+            rayQueryProceedEXT(query);
+        }
+    )glsl";
+    CreateComputePipelineHelper pipeline(*this);
+    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+    pipeline.CreateComputePipeline();
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &as);
+    pipeline.descriptor_set_.UpdateDescriptorSets();
+    return pipeline;
+}
+
+std::unique_ptr<vkt::rt::Pipeline> VkSyncValTest::GetTraceRaysPipeline(VkAccelerationStructureKHR as) {
+    const char* ray_gen = R"glsl(
+        #version 460
+        #extension GL_EXT_ray_tracing : require
+        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
+        layout(location = 0) rayPayloadEXT vec3 hit;
+        void main() {
+            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
+        }
+    )glsl";
+    auto pipeline = std::make_unique<vkt::rt::Pipeline>(*this, m_device);
+    pipeline->SetGlslRayGenShader(ray_gen);
+    pipeline->AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
+    pipeline->CreateDescriptorSet();
+    pipeline->GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &as);
+    pipeline->GetDescriptorSet().UpdateDescriptorSets();
+    pipeline->Build();
+    return pipeline;
+}
+
+std::unique_ptr<vkt::as::BuildGeometryInfoKHR> VkSyncValTest::BuildBLAS() {
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                                     VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    auto blas =
+        std::make_unique<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
+    blas->GetDstAS()->SetBufferUsageFlags(usage);
+    blas->SetupBuild(true);
+    m_command_buffer.Begin();
+    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    return blas;
+}
+
+std::unique_ptr<vkt::as::BuildGeometryInfoKHR> VkSyncValTest::BuildTLAS(const vkt::as::AccelerationStructureKHR& blas) {
+    const VkBufferUsageFlags usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    auto tlas = std::make_unique<vkt::as::BuildGeometryInfoKHR>(
+        vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas));
+    tlas->GetDstAS()->SetBufferUsageFlags(usage);
+    tlas->SetupBuild(true);
+    m_command_buffer.Begin();
+    tlas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    return tlas;
 }
 
 TEST_F(PositiveSyncValRayTracing, BuildAccelerationStructure) {
@@ -275,16 +342,8 @@ TEST_F(PositiveSyncValRayTracing, ReadInstanceDataDuringBuild) {
     TEST_DESCRIPTION("Use instance data as a copy source while it is used by the AS build operation");
     RETURN_IF_SKIP(InitRayTracing());
 
-    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device);
-    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry)));
-    blas->SetupBuild(true);
-    m_command_buffer.Begin();
-    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas->GetDstAS());
     const auto& instance = tlas.GetGeometries()[0].GetInstance();
     tlas.SetupBuild(true);
     vkt::Buffer dst_buffer(*m_device, instance.buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -302,35 +361,12 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuild) {
     RETURN_IF_SKIP(InitRayTracing());
 
     // Create TLAS (but not build it yet)
-    auto geometry = vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device);
-    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(
-        vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(*m_device, std::move(geometry)));
-    blas->SetupBuild(true);
-    m_command_buffer.Begin();
-    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas->GetDstAS());
     tlas.SetupBuild(true);
 
-    // Create RT pipeline
-    const char* ray_gen = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : require
-        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-        layout(location = 0) rayPayloadEXT vec3 hit;
-        void main() {
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-        }
-    )glsl";
-    vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.SetGlslRayGenShader(ray_gen);
-    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
-    pipeline.CreateDescriptorSet();
-    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.GetDescriptorSet().UpdateDescriptorSets();
-    pipeline.Build();
-    const vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    std::unique_ptr<vkt::rt::Pipeline> pipeline = GetTraceRaysPipeline(tlas.GetDstAS()->handle());
+    const vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline->GetTraceRaysSbt();
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -339,9 +375,9 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuild) {
     barrier.dstAccessMask = VK_ACCESS_2_ACCELERATION_STRUCTURE_READ_BIT_KHR;
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetPipelineLayout(), 0, 1,
+                              &pipeline->GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline);
 
     // Build TLAS
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
@@ -361,34 +397,12 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuildIndirect) {
     RETURN_IF_SKIP(InitRayTracing());
 
     // Create TLAS (but not build it yet)
-    auto blas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
-    blas->SetupBuild(true);
-    m_command_buffer.Begin();
-    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas->GetDstAS());
     tlas.SetupBuild(true);
 
-    // Create RT pipeline
-    const char* ray_gen = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : require
-        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-        layout(location = 0) rayPayloadEXT vec3 hit;
-        void main() {
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-        }
-    )glsl";
-    vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.SetGlslRayGenShader(ray_gen);
-    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
-    pipeline.CreateDescriptorSet();
-    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.GetDescriptorSet().UpdateDescriptorSets();
-    pipeline.Build();
-    const vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline.GetTraceRaysSbt();
+    std::unique_ptr<vkt::rt::Pipeline> pipeline = GetTraceRaysPipeline(tlas.GetDstAS()->handle());
+    const vkt::rt::TraceRaysSbt trace_rays_sbt = pipeline->GetTraceRaysSbt();
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -399,9 +413,9 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuildIndirect) {
     vkt::Buffer indirect_buffer(*m_device, 3 * sizeof(uint32_t), VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetPipelineLayout(), 0, 1,
+                              &pipeline->GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline);
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.Barrier(barrier);
     vk::CmdTraceRaysIndirectKHR(m_command_buffer, &trace_rays_sbt.ray_gen_sbt, &trace_rays_sbt.miss_sbt, &trace_rays_sbt.hit_sbt,
@@ -418,33 +432,11 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuildIndirect2) {
     RETURN_IF_SKIP(InitRayTracing());
 
     // Create TLAS (but not build it yet)
-    auto blas =
-        std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device));
-    blas->SetupBuild(true);
-    m_command_buffer.Begin();
-    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas->GetDstAS());
     tlas.SetupBuild(true);
 
-    // Create RT pipeline
-    const char* ray_gen = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_tracing : require
-        layout(binding = 0, set = 0) uniform accelerationStructureEXT tlas;
-        layout(location = 0) rayPayloadEXT vec3 hit;
-        void main() {
-            traceRayEXT(tlas, gl_RayFlagsOpaqueEXT, 0xff, 0, 0, 0, vec3(0,0,1), 0.1, vec3(0,0,1), 1000.0, 0);
-        }
-    )glsl";
-    vkt::rt::Pipeline pipeline(*this, m_device);
-    pipeline.SetGlslRayGenShader(ray_gen);
-    pipeline.AddBinding(VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 0);
-    pipeline.CreateDescriptorSet();
-    pipeline.GetDescriptorSet().WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.GetDescriptorSet().UpdateDescriptorSets();
-    pipeline.Build();
+    std::unique_ptr<vkt::rt::Pipeline> pipeline = GetTraceRaysPipeline(tlas.GetDstAS()->handle());
 
     VkMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -455,9 +447,9 @@ TEST_F(PositiveSyncValRayTracing, TraceAfterBuildIndirect2) {
     vkt::Buffer indirect_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, vkt::device_address);
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline.GetPipelineLayout(), 0, 1,
-                              &pipeline.GetDescriptorSet().set_, 0, nullptr);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline->GetPipelineLayout(), 0, 1,
+                              &pipeline->GetDescriptorSet().set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, *pipeline);
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.Barrier(barrier);
     vk::CmdTraceRaysIndirect2KHR(m_command_buffer, indirect_buffer.Address());
@@ -472,38 +464,12 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     AddRequiredFeature(vkt::Feature::rayQuery);
     RETURN_IF_SKIP(InitRayTracing());
 
-    // Build BLAS
-    auto blas = std::make_shared<vkt::as::BuildGeometryInfoKHR>(vkt::as::blueprint::BuildGeometryInfoOnDeviceBottomLevel(
-        *m_device, vkt::as::blueprint::GeometrySimpleOnDeviceTriangleInfo(*m_device)));
-    blas->SetupBuild(true);
-    m_command_buffer.Begin();
-    blas->VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
-
     // Create TLAS (but not build it yet)
-    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, blas);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
+    vkt::as::BuildGeometryInfoKHR tlas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceTopLevel(*m_device, *blas->GetDstAS());
     tlas.SetupBuild(true);
 
-    // Create compute pipeline
-    char const* cs_source = R"glsl(
-        #version 460
-        #extension GL_EXT_ray_query : require
-
-        layout(set = 0, binding = 0) uniform accelerationStructureEXT tlas;
-
-        void main() {
-            rayQueryEXT query;
-            rayQueryInitializeEXT(query, tlas, gl_RayFlagsTerminateOnFirstHitEXT, 0xff, vec3(0), 0.1, vec3(0,0,1), 1000.0);
-            rayQueryProceedEXT(query);
-        }
-    )glsl";
-    CreateComputePipelineHelper pipeline(*this);
-    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
-    pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
-    pipeline.CreateComputePipeline();
-    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.descriptor_set_.UpdateDescriptorSets();
+    CreateComputePipelineHelper pipeline = GetRayQueryComputePipeline(tlas.GetDstAS()->handle());
 
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -518,12 +484,11 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
                               &pipeline.descriptor_set_.set_, 0, nullptr);
-    // Build
+
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    // Wait
     m_command_buffer.Barrier(barrier);
-    // Trace
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
     m_command_buffer.End();
 }
 
@@ -587,18 +552,13 @@ TEST_F(PositiveSyncValRayTracing, CopyAS) {
     TEST_DESCRIPTION("Clone acceleration structure");
     RETURN_IF_SKIP(InitRayTracing());
 
-    vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    blas_src.SetupBuild(true);
-    m_command_buffer.Begin();
-    blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas_src = BuildBLAS();
 
     vkt::as::BuildGeometryInfoKHR blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas_dst.SetupBuild(true);
 
     VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
-    copy_info.src = blas_src.GetDstAS()->handle();
+    copy_info.src = blas_src->GetDstAS()->handle();
     copy_info.dst = blas_dst.GetDstAS()->handle();
     copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
 
@@ -614,7 +574,6 @@ TEST_F(PositiveSyncValRayTracing, CompactAS) {
     vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas_src.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR);
     blas_src.SetupBuild(true);
-
     m_command_buffer.Begin();
     blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     m_command_buffer.End();
@@ -683,21 +642,16 @@ TEST_F(PositiveSyncValRayTracing, SerializeDeserializeAS) {
     }
 
     // The source blas for serialization
-    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    blas.SetupBuild(true);
-    m_command_buffer.Begin();
-    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
 
     // Deserialize into blas2
     vkt::as::BuildGeometryInfoKHR blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas2.SetupBuild(true);
 
-    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas->GetDstAS());
 
     VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory_info = vku::InitStructHelper();
-    copy_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_to_memory_info.src = blas->GetDstAS()->handle();
     copy_to_memory_info.dst = VkDeviceOrHostAddressKHR{serialization_buffer.Address()};
     copy_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
     m_command_buffer.Begin();
@@ -728,18 +682,13 @@ TEST_F(PositiveSyncValRayTracing, SerializeDeserializeASWithBarrier) {
     }
 
     // The source blas for serialization
-    vkt::as::BuildGeometryInfoKHR blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
-    blas.SetupBuild(true);
-    m_command_buffer.Begin();
-    blas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
-    m_command_buffer.End();
-    m_default_queue->SubmitAndWait(m_command_buffer);
+    std::unique_ptr<vkt::as::BuildGeometryInfoKHR> blas = BuildBLAS();
 
     // Deserialize into blas2
     vkt::as::BuildGeometryInfoKHR blas2 = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
     blas2.SetupBuild(true);
 
-    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas.GetDstAS());
+    vkt::Buffer serialization_buffer = GetSerializationDeserializationBuffer(*blas->GetDstAS());
 
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR;
@@ -750,7 +699,7 @@ TEST_F(PositiveSyncValRayTracing, SerializeDeserializeASWithBarrier) {
     barrier.size = serialization_buffer.CreateInfo().size;
 
     VkCopyAccelerationStructureToMemoryInfoKHR copy_to_memory_info = vku::InitStructHelper();
-    copy_to_memory_info.src = blas.GetDstAS()->handle();
+    copy_to_memory_info.src = blas->GetDstAS()->handle();
     copy_to_memory_info.dst = VkDeviceOrHostAddressKHR{serialization_buffer.Address()};
     copy_to_memory_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_SERIALIZE_KHR;
 

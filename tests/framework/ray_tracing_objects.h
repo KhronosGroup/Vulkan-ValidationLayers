@@ -285,7 +285,7 @@ BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostBottomLevel(const vkt::Device&
 // Create an on device TLAS pointing to one BLAS
 // on_device_bottom_level_geometry must have been built previously, and on the device
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnDeviceTopLevel(const vkt::Device& device,
-                                                             std::shared_ptr<BuildGeometryInfoKHR> on_device_blas);
+                                                             const vkt::as::AccelerationStructureKHR& on_device_blas);
 // Create an on host TLAS pointing to one BLAS
 // on_host_bottom_level_geometry must have been built previously, and on the host
 BuildGeometryInfoKHR BuildGeometryInfoSimpleOnHostTopLevel(const vkt::Device& device,

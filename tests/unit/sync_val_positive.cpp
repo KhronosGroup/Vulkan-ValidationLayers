@@ -13,7 +13,7 @@
 
 #include <thread>
 #include <algorithm>
-#include "../framework/layer_validation_tests.h"
+#include "../framework/sync_val_tests.h"
 #include "../framework/pipeline_helper.h"
 #include "../framework/descriptor_helper.h"
 #include "../framework/render_pass_helper.h"

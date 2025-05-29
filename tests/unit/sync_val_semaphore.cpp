@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "../framework/layer_validation_tests.h"
+#include "../framework/sync_val_tests.h"
 
 struct NegativeSyncValTimelineSemaphore : public VkSyncValTest {};
 
