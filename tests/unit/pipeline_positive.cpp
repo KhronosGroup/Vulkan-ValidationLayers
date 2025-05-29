@@ -66,7 +66,7 @@ TEST_F(PositivePipeline, MissingDescriptorUnused) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -89,7 +89,7 @@ TEST_F(PositivePipeline, FragmentShadingRate) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -115,7 +115,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsSampler) {
         {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -141,7 +141,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsImage) {
         {1, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -167,7 +167,7 @@ TEST_F(PositivePipeline, CombinedImageSamplerConsumedAsBoth) {
         {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
     };
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 }
 
@@ -923,7 +923,7 @@ TEST_F(PositivePipeline, ShaderTileImageColor) {
     ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
 
     CreatePipelineHelper ms_pipeline(*this, &pipeline_rendering_info);
-    ms_pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    ms_pipeline.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     ms_pipeline.gp_ci_.renderPass = VK_NULL_HANDLE;
     ms_pipeline.gp_ci_.pDepthStencilState = &ds_ci;
     ms_pipeline.gp_ci_.pMultisampleState = &ms_ci;
@@ -954,7 +954,7 @@ TEST_F(PositivePipeline, ShaderTileImageDepth) {
 
     ds_ci.depthWriteEnable = false;
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.CreateGraphicsPipeline();
@@ -995,7 +995,7 @@ TEST_F(PositivePipeline, ShaderTileImageStencil) {
     ds_ci.back = stencil_state;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pDepthStencilState = &ds_ci;
     pipe.CreateGraphicsPipeline();
@@ -1142,8 +1142,7 @@ TEST_F(PositivePipeline, MutableStorageImageFormatWriteForFormat) {
                                      });
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.cs_ =
-        std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
+    cs_pipeline.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&ds.layout_});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;  // override with wrong value

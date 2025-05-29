@@ -370,7 +370,7 @@ TEST_F(NegativeShaderLimits, OffsetMaxComputeSharedMemorySize) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
+    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
                                              SPV_SOURCE_ASM);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");
@@ -420,7 +420,7 @@ TEST_F(NegativeShaderLimits, MaxComputeSharedMemorySizeArrayStride) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
+    pipe.cs_ = VkShaderObj(this, csSource.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2,
                                              SPV_SOURCE_ASM);
 
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-Workgroup-06530");

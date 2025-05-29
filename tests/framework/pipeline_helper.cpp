@@ -293,9 +293,9 @@ VkResult CreatePipelineHelper::CreateGraphicsPipeline(bool do_late_bind, bool no
                                        &pipeline_);
 }
 
-CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext) : layer_test_(test) {
+CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, void *pNext) {
     // default VkDevice, can be overwritten if multi-device tests
-    device_ = layer_test_.DeviceObj();
+    device_ = &device;
 
     cp_ci_ = vku::InitStructHelper();
     cp_ci_.pNext = pNext;
@@ -314,18 +314,16 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void
     pc_ci_.initialDataSize = 0;
     pc_ci_.pInitialData = nullptr;
 
-    InitShaderInfo();
+    cs_ = VkShaderObj(device, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     cp_ci_.flags = 0;
     cp_ci_.layout = VK_NULL_HANDLE;
 }
 
-CreateComputePipelineHelper::~CreateComputePipelineHelper() { Destroy(); }
+CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext)
+    : CreateComputePipelineHelper(*test.DeviceObj(), pNext) {}
 
-void CreateComputePipelineHelper::InitShaderInfo() {
-    cs_ = std::make_unique<VkShaderObj>(&layer_test_, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
-    // We shouldn't need a fragment shader but add it to be able to run on more devices
-}
+CreateComputePipelineHelper::~CreateComputePipelineHelper() { Destroy(); }
 
 void CreateComputePipelineHelper::InitPipelineCache() {
     if (pipeline_cache_ != VK_NULL_HANDLE) {
@@ -365,7 +363,7 @@ void CreateComputePipelineHelper::LateBindPipelineInfo() {
 
         cp_ci_.layout = pipeline_layout_.handle();
     }
-    cp_ci_.stage = cs_.get()->GetStageCreateInfo();
+    cp_ci_.stage = cs_.GetStageCreateInfo();
 }
 
 VkResult CreateComputePipelineHelper::CreateComputePipeline(bool do_late_bind, bool no_cache) {

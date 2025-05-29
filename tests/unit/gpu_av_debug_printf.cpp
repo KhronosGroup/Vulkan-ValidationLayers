@@ -98,7 +98,7 @@ void NegativeGpuAVDebugPrintf::BasicComputeTest() {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();

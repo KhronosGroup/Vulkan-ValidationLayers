@@ -352,7 +352,7 @@ TEST_F(PositiveGpuAVIndirectBuffer, RestoreStress) {
     g_descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper c_pipe(*this);
-    c_pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    c_pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     c_pipe.cp_ci_.layout = c_pipeline_layout;
     c_pipe.CreateComputePipeline();
 

@@ -83,7 +83,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, Basic) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -202,7 +202,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSL) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -320,7 +320,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BasicHLSLRuntimeArray) {
     )asm";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_ASM);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -915,7 +915,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -980,7 +980,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_Stress2) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -1037,7 +1037,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, StressDescriptroIndexPushConstantAccess)
     cs_source << "\n}";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 }
@@ -1081,7 +1081,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGpuLoop) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -1141,7 +1141,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, DISABLED_StressGeneralBufferOOB) {
     descriptor_set.UpdateDescriptorSets();
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source.str().c_str(), VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -1198,12 +1198,12 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetCompute) {
     )glsl";
 
     CreateComputePipelineHelper pipe1(*this);
-    pipe1.cs_ = std::make_unique<VkShaderObj>(this, source_1, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe1.cs_ = VkShaderObj(this, source_1, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe1.cp_ci_.layout = pipeline_layout_1;
     pipe1.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe2(*this);
-    pipe2.cs_ = std::make_unique<VkShaderObj>(this, source_2, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe2.cs_ = VkShaderObj(this, source_2, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe2.cp_ci_.layout = pipeline_layout_2;
     pipe2.CreateComputePipeline();
 
@@ -1777,7 +1777,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
     )glsl";
 
     CreateComputePipelineHelper pipe_1(*this);
-    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.cs_ = VkShaderObj(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_1.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}};
     pipe_1.CreateComputePipeline();
@@ -1805,7 +1805,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsSameSet) {
     )glsl";
 
     CreateComputePipelineHelper pipe_2(*this);
-    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.cs_ = VkShaderObj(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_2.dsl_bindings_ = {{1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                             {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
     pipe_2.CreateComputePipeline();
@@ -1850,7 +1850,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
     )glsl";
 
     CreateComputePipelineHelper pipe_1(*this);
-    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.cs_ = VkShaderObj(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_1.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, VK_SHADER_STAGE_ALL, nullptr}};
     pipe_1.CreateComputePipeline();
@@ -1884,7 +1884,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsDifferentSet) {
     const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set_2.layout_, &descriptor_set_2.layout_});
 
     CreateComputePipelineHelper pipe_2(*this);
-    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.cs_ = VkShaderObj(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_2.cp_ci_.layout = pipeline_layout_2;
     pipe_2.CreateComputePipeline();
     descriptor_set_2.WriteDescriptorBufferInfo(1, input_buffer, 0, VK_WHOLE_SIZE);
@@ -1940,7 +1940,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
     const vkt::PipelineLayout pipeline_layout_1(*m_device, {&descriptor_set_1.layout_});
 
     CreateComputePipelineHelper pipe_1(*this);
-    pipe_1.cs_ = std::make_unique<VkShaderObj>(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_1.cs_ = VkShaderObj(this, cs_source_1, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_1.cp_ci_.layout = pipeline_layout_1;
     pipe_1.CreateComputePipeline();
 
@@ -1963,7 +1963,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleBoundDescriptorsUpdateAfterBind)
     const vkt::PipelineLayout pipeline_layout_2(*m_device, {&descriptor_set_2.layout_});
 
     CreateComputePipelineHelper pipe_2(*this);
-    pipe_2.cs_ = std::make_unique<VkShaderObj>(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe_2.cs_ = VkShaderObj(this, cs_source_2, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe_2.cp_ci_.layout = pipeline_layout_2;
     pipe_2.CreateComputePipeline();
 
@@ -2031,7 +2031,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleUnusedBoundDescriptorsUpdateAfte
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2131,7 +2131,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitialized) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2194,7 +2194,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, MultipleSetSomeUninitializedUpdateAfterB
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2266,7 +2266,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, ReSubmitCommandBuffer) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2344,7 +2344,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, VariableDescriptorCountAllocateAfterPipe
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2432,7 +2432,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptor) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
                                              &spec_info);
     pipe.CreateComputePipeline();
 
@@ -2484,7 +2484,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SpecConstantNullDescriptorBindless) {
     VkSpecializationInfo spec_info = {1, &entry, sizeof(uint32_t), &value};
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2, SPV_SOURCE_GLSL,
                                              &spec_info);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
@@ -2548,7 +2548,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, TexelFetch) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -2598,7 +2598,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, AtomicImage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -2636,7 +2636,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, AtomicBuffer) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -2680,7 +2680,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, StorageImage) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -2927,7 +2927,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, BranchConditonalPostDominate) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2, VK_SHADER_STAGE_ALL, nullptr}};
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 64, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);

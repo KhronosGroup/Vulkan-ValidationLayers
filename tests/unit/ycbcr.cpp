@@ -2083,7 +2083,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexCombinedSampledImage) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
@@ -2127,7 +2127,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexNonCombinedSampledImage) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
@@ -2172,7 +2172,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexNonCombinedSampledImage2) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
@@ -2215,7 +2215,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexNonCombinedSampledImage3) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
@@ -2259,7 +2259,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexNonCombinedSampledImage4) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();
@@ -2312,7 +2312,7 @@ TEST_F(NegativeYcbcr, DISABLED_DescriptorIndexNonCombinedSampledImageMix) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10715");
     pipe.CreateComputePipeline();

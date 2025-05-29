@@ -1585,6 +1585,12 @@ Buffer AccelerationStructureNV::CreateScratchBuffer(const Device &device, VkBuff
 
 NON_DISPATCHABLE_HANDLE_DTOR(ShaderModule, vk::DestroyShaderModule)
 
+ShaderModule &ShaderModule::operator=(ShaderModule &&rhs) noexcept {
+    destroy();
+    NonDispHandle<VkShaderModule>::operator=(std::move(rhs));
+    return *this;
+}
+
 void ShaderModule::init(const Device &dev, const VkShaderModuleCreateInfo &info) {
     NON_DISPATCHABLE_HANDLE_INIT(vk::CreateShaderModule, dev, &info);
 }

@@ -1103,7 +1103,7 @@ TEST_F(NegativeDescriptors, OpArrayLengthStaticallyUsed) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.layout = pipeline_layout;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -1967,7 +1967,7 @@ TEST_F(NegativeDescriptors, DISABLED_MutableBufferUpdate) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -2218,7 +2218,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityCompute) {
     )glsl";
 
     CreateComputePipelineHelper pipeline(*this);
-    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipeline.cp_ci_.layout = pipeline_layout_a;
     pipeline.CreateComputePipeline();
 
@@ -2276,7 +2276,7 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     )glsl";
 
     CreateComputePipelineHelper pipeline(*this);
-    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipeline.cp_ci_.layout = pipeline_layout_0;
     pipeline.CreateComputePipeline();
 
@@ -5034,7 +5034,7 @@ TEST_F(NegativeDescriptors, DispatchWithUnboundSet) {
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&combined_image_set.layout_, &storage_image_set.layout_});
     cs_pipeline.CreateComputePipeline();
 

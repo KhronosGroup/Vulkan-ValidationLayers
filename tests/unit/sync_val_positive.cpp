@@ -608,7 +608,7 @@ TEST_F(PositiveSyncVal, ImageArrayDynamicIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
@@ -672,7 +672,7 @@ TEST_F(PositiveSyncVal, ImageArrayConstantIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
@@ -737,7 +737,7 @@ TEST_F(PositiveSyncVal, TexelBufferArrayConstantIndexing) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
@@ -813,7 +813,7 @@ TEST_F(PositiveSyncVal, QSTransitionWithSrcNoneStage) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
@@ -931,7 +931,7 @@ TEST_F(PositiveSyncVal, QSTransitionAndRead) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 
@@ -1566,7 +1566,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedUniformBufferRegions) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1621,7 +1621,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1681,7 +1681,7 @@ TEST_F(PositiveSyncVal, WriteAndReadNonOverlappedDynamicUniformBufferRegions2) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1725,7 +1725,7 @@ TEST_F(PositiveSyncVal, ImageUsedInShaderWithoutAccess) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1774,7 +1774,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1806,7 +1806,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1850,7 +1850,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoDispatches2) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -1887,7 +1887,7 @@ TEST_F(PositiveSyncVal, AtomicAccessFromTwoSubmits2) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -2254,7 +2254,7 @@ TEST_F(PositiveSyncVal, CmdDispatchBase) {
     )glsl";
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.flags = VK_PIPELINE_CREATE_DISPATCH_BASE_BIT;
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     pipe.CreateComputePipeline();
 
@@ -2411,7 +2411,7 @@ TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
         }
     )glsl";
     CreateComputePipelineHelper cs_pipe(*this);
-    cs_pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
     cs_pipe.CreateComputePipeline();
 

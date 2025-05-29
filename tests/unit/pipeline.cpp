@@ -67,7 +67,7 @@ TEST_F(NegativePipeline, BasicCompute) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -366,7 +366,7 @@ TEST_F(NegativePipeline, ShaderStageBit) {
     )glsl";
 
     CreateComputePipelineHelper cs_pipeline(*this);
-    cs_pipeline.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipeline.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     cs_pipeline.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     cs_pipeline.LateBindPipelineInfo();
     cs_pipeline.cp_ci_.stage.stage = VK_SHADER_STAGE_VERTEX_BIT;  // override with wrong value
@@ -985,8 +985,8 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
     // Compute
     {
         const auto set_info = [&](CreateComputePipelineHelper &helper) {
-            helper.cs_ = std::make_unique<VkShaderObj>(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
-                                                       SPV_SOURCE_GLSL, nullptr, "foo");
+            helper.cs_ = VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL,
+                                     nullptr, "foo");
         };
         CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkPipelineShaderStageCreateInfo-pName-00707");
     }
@@ -996,8 +996,8 @@ TEST_F(NegativePipeline, MissingEntrypoint) {
         CreateComputePipelineHelper pipe_0(*this);  // valid
         pipe_0.LateBindPipelineInfo();
         CreateComputePipelineHelper pipe_1(*this);  // invalid
-        pipe_1.cs_ = std::make_unique<VkShaderObj>(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0,
-                                                   SPV_SOURCE_GLSL, nullptr, "foo");
+        pipe_1.cs_ =
+            VkShaderObj(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_GLSL, nullptr, "foo");
         pipe_1.LateBindPipelineInfo();
 
         VkComputePipelineCreateInfo create_infos[3] = {pipe_0.cp_ci_, pipe_1.cp_ci_, pipe_0.cp_ci_};
@@ -1037,7 +1037,7 @@ TEST_F(NegativePipeline, MissingEntrypoint2) {
 )";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM,
                                              nullptr, "main");
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-pName-00707");
     pipe.CreateComputePipeline();
@@ -1768,7 +1768,7 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -1805,7 +1805,7 @@ TEST_F(NegativePipeline, NotCompatibleForSetIndependent) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout_1;
     pipe.CreateComputePipeline();
 
@@ -1834,7 +1834,7 @@ TEST_F(NegativePipeline, DescriptorSetNotBound) {
     const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
     pipe.CreateComputePipeline();
 
@@ -3049,7 +3049,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             ds_ci.depthWriteEnable = true;
 
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pDepthStencilState = &ds_ci;
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
             helper.gp_ci_.pNext = &pipeline_rendering_info;
@@ -3075,7 +3075,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         ds_ci.back = stencil_state;
 
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pDepthStencilState = &ds_ci;
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
             helper.gp_ci_.pNext = &pipeline_rendering_info;
@@ -3095,7 +3095,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
 
         // Check if the colorAttachmentRead capability enable, renderpass should be null
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.renderPass = rp.Handle();
         };
 
@@ -3112,7 +3112,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         pipeline_rendering_info.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
         auto pipeline_createinfo_with_ms = [&](CreatePipelineHelper &helper) {
-            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs->GetStageCreateInfo()};
+            helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.gp_ci_.pMultisampleState = &ms_ci;
             helper.gp_ci_.renderPass = VK_NULL_HANDLE;
             helper.gp_ci_.pNext = &pipeline_rendering_info;

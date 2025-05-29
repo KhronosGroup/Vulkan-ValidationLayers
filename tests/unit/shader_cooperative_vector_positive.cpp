@@ -124,7 +124,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorSPIRV) {
     const vkt::PipelineLayout pl(*m_device, {&dsl});
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.CreateComputePipeline();
 }
@@ -167,7 +167,7 @@ TEST_F(PositiveShaderCooperativeVector, CooperativeVectorTraingingSPIRV) {
         }
     )glsl";
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
+    pipe.cs_ = VkShaderObj(this, vt_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_3);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&dsl});
     pipe.CreateComputePipeline();
 }

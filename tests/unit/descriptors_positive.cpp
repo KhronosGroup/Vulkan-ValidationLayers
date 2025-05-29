@@ -505,7 +505,7 @@ TEST_F(PositiveDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
     )glsl";
 
     CreateComputePipelineHelper pipeline(*this);
-    pipeline.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipeline.cp_ci_.layout = pipeline_layout_0;
     pipeline.CreateComputePipeline();
 

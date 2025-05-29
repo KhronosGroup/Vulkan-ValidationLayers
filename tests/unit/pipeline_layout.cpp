@@ -811,7 +811,7 @@ TEST_F(NegativePipelineLayout, DescriptorTypeMismatchCompute) {
     )glsl";
 
     const auto set_info = [&](CreateComputePipelineHelper &helper) {
-        helper.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+        helper.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
         helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     };
     CreateComputePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-VkComputePipelineCreateInfo-layout-07990");
@@ -946,7 +946,7 @@ TEST_F(NegativePipelineLayout, MissingDescriptor) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, csSource, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {});
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-layout-07988");
     pipe.CreateComputePipeline();
@@ -1049,7 +1049,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArray) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-10391");
@@ -1086,7 +1086,7 @@ TEST_F(NegativePipelineLayout, InlineUniformBlockArrayOf1) {
     )glsl";
 
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.cp_ci_.layout = pipeline_layout;
 
     m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-None-10391");

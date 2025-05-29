@@ -645,7 +645,7 @@ void main(){
     m_errorMonitor->SetDesiredError(
         "6:     imageStore(storageImage,\n7:         ivec2(1, 1),\n8:         uvec3(1, 1, 1)\n9:     );");
     CreateComputePipelineHelper pipe(*this);
-    pipe.cs_ = std::make_unique<VkShaderObj>(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
+    pipe.cs_ = VkShaderObj(this, source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1, SPV_SOURCE_ASM);
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipe.CreateComputePipeline();
     m_errorMonitor->VerifyFound();

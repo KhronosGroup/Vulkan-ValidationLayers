@@ -150,7 +150,7 @@ TEST_F(NegativeDynamicRendering, CommandDrawWithShaderTileImageRead) {
     ms_ci.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
     CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs->GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
     pipe.gp_ci_.pMultisampleState = &ms_ci;
     pipe.gp_ci_.pDepthStencilState = &ds_state;
