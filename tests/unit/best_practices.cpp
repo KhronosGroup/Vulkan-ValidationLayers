@@ -1501,9 +1501,9 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
                                                    VK_IMAGE_LAYOUT_GENERAL);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    pipe.descriptor_set_.UpdateDescriptorSets();
 
     vkt::CommandPool compute_pool(*m_device, compute_queue->family_index);
 
@@ -1529,7 +1529,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     vk::CmdBindPipeline(compute_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vk::CmdBindDescriptorSets(compute_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     vk::CmdDispatch(compute_buffer, w, h, 1);
 
@@ -1582,7 +1582,7 @@ TEST_F(VkBestPracticesLayerTest, ExclusiveImageMultiQueueUsage) {
     vk::CmdBindPipeline(compute_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
     vk::CmdBindDescriptorSets(compute_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
+                              &pipe.descriptor_set_.set_, 0, nullptr);
 
     vk::CmdDispatch(compute_buffer, w, h, 1);
 

@@ -502,8 +502,8 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     pipeline.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
     pipeline.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
     pipeline.CreateComputePipeline();
-    pipeline.descriptor_set_->WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
-    pipeline.descriptor_set_->UpdateDescriptorSets();
+    pipeline.descriptor_set_.WriteDescriptorAccelStruct(0, 1, &tlas.GetDstAS()->handle());
+    pipeline.descriptor_set_.UpdateDescriptorSets();
 
     VkBufferMemoryBarrier2 barrier = vku::InitStructHelper();
     barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
@@ -517,7 +517,7 @@ TEST_F(PositiveSyncValRayTracing, RayQueryAfterBuild) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.pipeline_layout_, 0, 1,
-                              &pipeline.descriptor_set_->set_, 0, nullptr);
+                              &pipeline.descriptor_set_.set_, 0, nullptr);
     // Build
     tlas.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
     // Wait

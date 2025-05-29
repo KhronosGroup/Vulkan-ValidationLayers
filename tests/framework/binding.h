@@ -959,7 +959,7 @@ class Sampler : public internal::NonDispHandle<VkSampler> {
 
 class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout> {
   public:
-    DescriptorSetLayout() noexcept : NonDispHandle(){};
+    DescriptorSetLayout() = default;
     DescriptorSetLayout(const Device &dev, const VkDescriptorSetLayoutCreateInfo &info) { init(dev, info); }
     DescriptorSetLayout(const Device &dev, const std::vector<VkDescriptorSetLayoutBinding> &descriptor_set_bindings = {},
                         VkDescriptorSetLayoutCreateFlags flags = 0, void *pNext = nullptr) {
@@ -977,15 +977,13 @@ class DescriptorSetLayout : public internal::NonDispHandle<VkDescriptorSetLayout
         info.pBindings = &descriptor_set_binding;
         init(dev, info);
     }
-
     ~DescriptorSetLayout() noexcept;
     void destroy() noexcept;
 
-    // Move constructor for Visual Studio 2013
     DescriptorSetLayout(DescriptorSetLayout &&src) noexcept : NonDispHandle(std::move(src)){};
 
     DescriptorSetLayout &operator=(DescriptorSetLayout &&src) noexcept {
-        this->~DescriptorSetLayout();
+        destroy();
         this->NonDispHandle::operator=(std::move(src));
         return *this;
     }

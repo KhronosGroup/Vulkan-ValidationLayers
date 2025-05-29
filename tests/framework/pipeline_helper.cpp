@@ -323,7 +323,40 @@ CreateComputePipelineHelper::CreateComputePipelineHelper(vkt::Device& device, vo
 CreateComputePipelineHelper::CreateComputePipelineHelper(VkLayerTest &test, void *pNext)
     : CreateComputePipelineHelper(*test.DeviceObj(), pNext) {}
 
-CreateComputePipelineHelper::~CreateComputePipelineHelper() { Destroy(); }
+CreateComputePipelineHelper::CreateComputePipelineHelper(CreateComputePipelineHelper &&rhs) noexcept { *this = std::move(rhs); }
+
+CreateComputePipelineHelper &CreateComputePipelineHelper::operator=(CreateComputePipelineHelper &&rhs) noexcept {
+    dsl_bindings_ = std::move(rhs.dsl_bindings_);
+    descriptor_set_ = std::move(rhs.descriptor_set_);
+
+    pipeline_layout_ci_ = rhs.pipeline_layout_ci_;
+    rhs.pipeline_layout_ci_ = {};
+
+    pipeline_layout_ = std::move(rhs.pipeline_layout_);
+
+    cp_ci_ = rhs.cp_ci_;
+    rhs.cp_ci_ = {};
+
+    pc_ci_ = rhs.pc_ci_;
+    rhs.pc_ci_ = {};
+
+    pipeline_cache_ = rhs.pipeline_cache_;
+    rhs.pipeline_cache_ = VK_NULL_HANDLE;
+
+    cs_ = std::move(rhs.cs_);
+
+    override_skip_ = rhs.override_skip_;
+    rhs.override_skip_ = false;
+
+    device_ = rhs.device_;
+    rhs.device_ = nullptr;
+
+    pipeline_ = rhs.pipeline_;
+    rhs.pipeline_ = VK_NULL_HANDLE;
+    return *this;
+}
+
+CreateComputePipelineHelper::~CreateComputePipelineHelper() noexcept { Destroy(); }
 
 void CreateComputePipelineHelper::InitPipelineCache() {
     if (pipeline_cache_ != VK_NULL_HANDLE) {
@@ -349,16 +382,16 @@ void CreateComputePipelineHelper::LateBindPipelineInfo() {
     if (cp_ci_.layout == VK_NULL_HANDLE) {
         // Create a default descriptor and pipeline layout
         if (pipeline_layout_.handle() == VK_NULL_HANDLE) {
-            if (!descriptor_set_) {
+            if (!descriptor_set_.Initialized()) {
                 // User can pass in own bindings
-                descriptor_set_.reset(new OneOffDescriptorSet(device_, dsl_bindings_));
-                ASSERT_TRUE(descriptor_set_->Initialized());
+                descriptor_set_ = OneOffDescriptorSet(device_, dsl_bindings_);
+                ASSERT_TRUE(descriptor_set_.Initialized());
             }
 
             const std::vector<VkPushConstantRange> push_ranges(
                 pipeline_layout_ci_.pPushConstantRanges,
                 pipeline_layout_ci_.pPushConstantRanges + pipeline_layout_ci_.pushConstantRangeCount);
-            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_->layout_}, push_ranges, pipeline_layout_ci_.flags);
+            pipeline_layout_ = vkt::PipelineLayout(*device_, {&descriptor_set_.layout_}, push_ranges, pipeline_layout_ci_.flags);
         }
 
         cp_ci_.layout = pipeline_layout_.handle();
