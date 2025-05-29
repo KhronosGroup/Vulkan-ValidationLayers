@@ -651,7 +651,7 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
     // Perform update on a per-binding basis as consecutive updates roll over to next binding
     auto descriptors_remaining = update.descriptorCount;
     auto iter = FindDescriptor(update.dstBinding, update.dstArrayElement);
-    ASSERT_AND_RETURN(!iter.AtEnd() && iter.IsValid());
+    ASSERT_AND_RETURN(iter.IsValid());
     auto &orig_binding = iter.CurrentBinding();
 
     // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
@@ -1431,12 +1431,12 @@ bool vvl::MutableDescriptor::Invalid() const {
 
 std::string vvl::DslErrorSource::PrintMessage(const Logger &error_logger) const {
     std::stringstream msg;
-    msg << " (The VkDescriptorSetLayout was used to ";
+    msg << "The VkDescriptorSetLayout was used to ";
     if (pipeline_layout_handle_ == VK_NULL_HANDLE) {
         msg << "allocate " << error_logger.FormatHandle(ds_handle_);
     } else {
         msg << "create " << error_logger.FormatHandle(pipeline_layout_handle_) << " at pSetLayouts[" << set_ << "]";
     }
-    msg << ")";
+    msg << "";
     return msg.str();
 }

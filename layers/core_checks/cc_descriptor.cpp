@@ -19,6 +19,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 #include <sstream>
 #include <valarray>
 
@@ -863,78 +864,61 @@ bool CoreChecks::ValidateDrawState(const vvl::DescriptorSet &descriptor_set, uin
     return result;
 }
 
-// Starting at offset descriptor of given binding, parse over update_count
-//  descriptor updates and verify that for any binding boundaries that are crossed, the next binding(s) are all consistent
-//  Consistency means that their type, stage flags, and whether or not they use immutable samplers matches
-bool CoreChecks::VerifyUpdateConsistency(const vvl::DescriptorSet &set, uint32_t binding, uint32_t offset, uint32_t update_count,
-                                         bool is_copy, const Location &set_loc) const {
+// Make sure that dstArrayElement + descriptorCount does go OOB
+// While the type, stage flags & immutable sampler must match, that error is caught
+bool CoreChecks::VerifyUpdateDescriptorRange(const vvl::DescriptorSet &set, const uint32_t binding, const uint32_t array_element,
+                                             const uint32_t descriptor_count, bool is_copy, const Location &binding_loc,
+                                             const vvl::Field array_element_name) const {
     bool skip = false;
     auto current_iter = set.FindBinding(binding);
-    // Verify consecutive bindings match (if needed)
-    auto &orig_binding = **current_iter;
-    while (!skip && update_count) {
-        // First, it's legal to offset beyond your own binding so handle that case
-        if (offset > 0) {
-            // index_range.start + offset is which descriptor is needed to update. If it > index_range.end, it means the descriptor
-            // isn't in this binding, maybe in next binding.
-            if (offset > (*current_iter)->count) {
-                // Advance to next binding, decrement offset by binding size
-                offset -= (*current_iter)->count;
-                ++current_iter;
-                // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
-                if (current_iter == set.end() || !orig_binding.IsConsistent(**current_iter)) {
-                    skip = true;
-                }
-                continue;
-            }
-        }
+    auto &orig_binding = **current_iter;  // save for error message
+    const char *vuid = is_copy ? "VUID-VkCopyDescriptorSet-srcSet-00349" : "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
 
-        update_count -= std::min(update_count, (*current_iter)->count - offset);
-        if (update_count) {
-            // Starting offset is beyond the current binding. Check consistency, update counters and advance to the next binding,
-            // looking for the start point. All bindings (even those skipped) must be consistent with the update and with the
-            // original binding.
-            offset = 0;
-            ++current_iter;
-            // Verify next consecutive binding matches type, stage flags & immutable sampler use and if AtEnd
-            if (current_iter == set.end() || !orig_binding.IsConsistent(**current_iter)) {
-                skip = true;
-            }
+    // check if srcArrayElement/dstArrayElement is so large it is skipping the the srcBinding/dstBinding
+    // If it, find the first binding being updated
+    uint32_t offset = array_element;
+    while (offset >= (*current_iter)->count) {
+        offset -= (*current_iter)->count;
+        ++current_iter;
+        if (current_iter == set.end()) {
+            auto last_binding = --current_iter;
+            return LogError(vuid, set.Handle(), binding_loc,
+                            "(%" PRIu32 ") with %s (%" PRIu32 ") went pass binding %" PRIu32
+                            " (which has a descriptorCount of %" PRIu32 ") which was the last binding in the descriptor set.",
+                            binding, String(array_element_name), array_element, (*last_binding)->binding, (*last_binding)->count);
+        } else if (!orig_binding.IsConsistent(**current_iter)) {
+            // Other VUs prior will give details which thing made it inconsistent
+            return LogError(vuid, set.Handle(), binding_loc,
+                            "(%" PRIu32 ") only has a descriptorCount of %" PRIu32 ", but the %s offset %" PRIu32
+                            " into binding %" PRIu32 " which is not consistent for consecutive binding updates.",
+                            binding, orig_binding.count, String(array_element_name), array_element, (*current_iter)->binding);
         }
     }
 
-    if (skip) {
-        std::stringstream error_str;
-        if (set.IsPushDescriptor()) {
-            error_str << "(push descriptors)";
-        } else {
-            error_str << FormatHandle(set);
-        }
-        error_str << " binding #" << orig_binding.binding << " with #" << update_count
-                  << " descriptors being updated but this update oversteps the bounds of this binding and the next binding is "
-                     "not consistent with current binding";
+    // Now that the arrayElement was applied, make sure each consecutive binding can handle the rest of descriptorCount
+    uint32_t updated_count = 0;
+    while (updated_count < descriptor_count) {
         if (current_iter == set.end()) {
-            error_str << " (update past the end of the descriptor set)";
-        } else {
-            auto current_binding = current_iter->get();
-            // Get what was not consistent in IsConsistent() as a more detailed error message
-            if (current_binding->type != orig_binding.type) {
-                error_str << " (" << string_VkDescriptorType(current_binding->type)
-                          << " != " << string_VkDescriptorType(orig_binding.type) << ")";
-            } else if (current_binding->stage_flags != orig_binding.stage_flags) {
-                error_str << " (" << string_VkShaderStageFlags(current_binding->stage_flags)
-                          << " != " << string_VkShaderStageFlags(orig_binding.stage_flags) << ")";
-            } else if (current_binding->has_immutable_samplers != orig_binding.has_immutable_samplers) {
-                error_str << " (pImmutableSamplers don't match)";
-            } else if (current_binding->binding_flags != orig_binding.binding_flags) {
-                error_str << " (" << string_VkDescriptorBindingFlags(current_binding->binding_flags)
-                          << " != " << string_VkDescriptorBindingFlags(orig_binding.binding_flags) << ")";
-            }
+            auto last_binding = --current_iter;
+            return LogError(vuid, set.Handle(), binding_loc,
+                            "(%" PRIu32 ") starting at %s (%" PRIu32 ") with descriptorCount %" PRIu32
+                            " only got to updating %" PRIu32 " but then went pass binding %" PRIu32
+                            " (which has a descriptorCount of %" PRIu32 ") which was the last binding in the descriptor set.",
+                            binding, String(array_element_name), array_element, orig_binding.count, updated_count,
+                            (*last_binding)->binding, (*last_binding)->count);
+        } else if (!orig_binding.IsConsistent(**current_iter)) {
+            // Other VUs prior will give details which thing made it inconsistent
+            return LogError(
+                vuid, set.Handle(), binding_loc,
+                "(%" PRIu32 ") starting at %s (%" PRIu32 ") with descriptorCount %" PRIu32 " only got to updating %" PRIu32
+                " but the next binding is %" PRIu32 " which is not consistent for consecutive binding updates.",
+                binding, String(array_element_name), array_element, orig_binding.count, updated_count, (*current_iter)->binding);
         }
 
-        error_str << " so this update is invalid";
-        const char *vuid = is_copy ? "VUID-VkCopyDescriptorSet-srcSet-00349" : "VUID-VkWriteDescriptorSet-dstArrayElement-00321";
-        skip |= LogError(vuid, set.Handle(), set_loc, "%s", error_str.str().c_str());
+        // offset should always be zero, except the first time, we might be mid binding
+        updated_count += (*current_iter)->count - offset;
+        offset = 0;
+        ++current_iter;
     }
     return skip;
 }
@@ -1006,10 +990,10 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     }
 
     // Verify consistency of src & dst bindings if update crosses binding boundaries
-    skip |= VerifyUpdateConsistency(*src_set, update.srcBinding, update.srcArrayElement, update.descriptorCount, true,
-                                    copy_loc.dot(Field::dstSet));
-    skip |= VerifyUpdateConsistency(*dst_set, update.dstBinding, update.dstArrayElement, update.descriptorCount, true,
-                                    copy_loc.dot(Field::srcSet));
+    skip |= VerifyUpdateDescriptorRange(*src_set, update.srcBinding, update.srcArrayElement, update.descriptorCount, true,
+                                        copy_loc.dot(Field::srcBinding), Field::srcArrayElement);
+    skip |= VerifyUpdateDescriptorRange(*dst_set, update.dstBinding, update.dstArrayElement, update.descriptorCount, true,
+                                        copy_loc.dot(Field::dstBinding), Field::dstArrayElement);
 
     return skip;
 }
@@ -1132,7 +1116,7 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
     } else if (src_type == VK_DESCRIPTOR_TYPE_MUTABLE_EXT) {
         auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
         if (src_iter.IsValid()) {
-            for (uint32_t i = 0; i < update.descriptorCount && !src_iter.AtEnd(); i++, ++src_iter) {
+            for (uint32_t di = 0; di < update.descriptorCount && !src_iter.AtEnd(); di++, ++src_iter) {
                 const auto &mutable_src = static_cast<const vvl::MutableDescriptor &>(*src_iter);
                 if (mutable_src.ActiveType() != dst_type) {
                     const LogObjectList objlist(update.srcSet, update.dstSet, src_layout.Handle(), dst_layout.Handle());
@@ -1140,9 +1124,10 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
                                      "(%" PRIu32
                                      ") descriptor type is VK_DESCRIPTOR_TYPE_MUTABLE_EXT and is being updated as descriptor type "
                                      "(%s), but it doesn't "
-                                     "match the dstBinding (%" PRIu32 ") descriptor type %s.",
+                                     "match the dstBinding (%" PRIu32 ") descriptor type %s.\nAt descriptor (%" PRIu32
+                                     ") of descriptorCount (%" PRIu32 "), starting at srcArrayElement (%" PRIu32 ")",
                                      update.srcBinding, string_VkDescriptorType(mutable_src.ActiveType()), update.dstBinding,
-                                     string_VkDescriptorType(dst_type));
+                                     string_VkDescriptorType(dst_type), di, update.descriptorCount, update.srcArrayElement);
                 }
             }
         }
@@ -1175,11 +1160,12 @@ bool CoreChecks::ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet &up
             for (uint32_t di = 0; di < update.descriptorCount && !dst_iter.AtEnd(); ++di, ++dst_iter) {
                 if (dst_iter.updated() && dst_iter->IsImmutableSampler()) {
                     const LogObjectList objlist(update.srcSet, update.dstSet);
-                    skip |= LogError(
-                        "VUID-VkCopyDescriptorSet-dstBinding-02753", objlist, copy_loc.dot(Field::dstBinding),
-                        "(%" PRIu32
-                        ") is type VK_DESCRIPTOR_TYPE_SAMPLER, but the dstSet was created with a non-null pImmutableSamplers.",
-                        update.dstBinding);
+                    skip |= LogError("VUID-VkCopyDescriptorSet-dstBinding-02753", objlist, copy_loc.dot(Field::dstBinding),
+                                     "(%" PRIu32
+                                     ") is type VK_DESCRIPTOR_TYPE_SAMPLER, but the dstSet was created with a non-null "
+                                     "pImmutableSamplers.\nAt descriptor (%" PRIu32 ") of descriptorCount (%" PRIu32
+                                     "), starting at srcArrayElement (%" PRIu32 ")",
+                                     update.dstBinding, di, update.descriptorCount, update.dstArrayElement);
                 }
             }
         }
@@ -1684,18 +1670,18 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
     // Verify dst layout still valid (ObjectLifetimes only checks if null, we check if valid dstSet here)
     if (dst_layout->Destroyed()) {
         return LogError("VUID-VkWriteDescriptorSet-dstSet-00320", dst_layout->Handle(), dsl_error_source.ds_loc_,
-                        "%s has been destroyed.%s", FormatHandle(dst_layout->Handle()).c_str(),
+                        "%s has been destroyed.\n%s", FormatHandle(dst_layout->Handle()).c_str(),
                         dsl_error_source.PrintMessage(*this).c_str());
     }
 
     const Location dst_binding_loc = write_loc.dot(Field::dstBinding);
     if (dst_layout->GetBindingCount() == 0) {
         return LogError("VUID-VkWriteDescriptorSet-dstBinding-10009", dst_layout->Handle(), dsl_error_source.ds_loc_,
-                        "%s was created with bindingCount of zero.%s", FormatHandle(dst_layout->Handle()).c_str(),
+                        "%s was created with bindingCount of zero.\n%s", FormatHandle(dst_layout->Handle()).c_str(),
                         dsl_error_source.PrintMessage(*this).c_str());
     } else if (update.dstBinding > dst_layout->GetMaxBinding()) {
         return LogError("VUID-VkWriteDescriptorSet-dstBinding-00315", dst_layout->Handle(), dst_binding_loc,
-                        "(%" PRIu32 ") is larger than bindingCount (%" PRIu32 ") used to create %s.%s", update.dstBinding,
+                        "(%" PRIu32 ") is larger than bindingCount (%" PRIu32 ") used to create %s.\n%s", update.dstBinding,
                         dst_layout->GetBindingCount(), FormatHandle(dst_layout->Handle()).c_str(),
                         dsl_error_source.PrintMessage(*this).c_str());
     }
@@ -1708,12 +1694,12 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
             LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", dst_layout->Handle(), dst_binding_loc,
                      "(%" PRIu32
                      ") was never set in any VkDescriptorSetLayoutBinding::binding for %s, therefore the descriptorCount value "
-                     "is considered zero.%s",
+                     "is considered zero.\n%s",
                      update.dstBinding, FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
         return skip;  // the rest of checks assume a valid DescriptorBinding state
     } else if (dst_binding->count == 0) {
         skip |= LogError("VUID-VkWriteDescriptorSet-dstBinding-00316", dst_layout->Handle(), dst_binding_loc,
-                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.%s", update.dstBinding,
+                         "(%" PRIu32 ") has VkDescriptorSetLayoutBinding::descriptorCount of zero in %s.\n%s", update.dstBinding,
                          FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
     }
 
@@ -1721,8 +1707,10 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
         if (const auto *used_handle = dst_set.InUse()) {
             const LogObjectList objlist(update.dstSet, dst_layout->Handle());
             skip |= LogError("VUID-vkUpdateDescriptorSets-None-03047", objlist, dst_binding_loc,
-                             "(%" PRIu32 ") was created with %s, but %s is in use by %s.", update.dstBinding,
-                             string_VkDescriptorBindingFlags(dst_binding->binding_flags).c_str(),
+                             "(%" PRIu32
+                             ") was created with %s, but %s is in use by %s. This is only possible with flags found in "
+                             "VK_EXT_descriptor_indexing.",
+                             update.dstBinding, string_VkDescriptorBindingFlags(dst_binding->binding_flags).c_str(),
                              FormatHandle(update.dstSet).c_str(), FormatHandle(*used_handle).c_str());
         }
     }
@@ -1734,14 +1722,14 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                 LogError("VUID-VkWriteDescriptorSet-dstSet-04611", dst_layout->Handle(), write_loc.dot(Field::dstBinding),
                          "(%" PRIu32
                          ") is of type VK_DESCRIPTOR_TYPE_MUTABLE_EXT, but the new descriptorType (%s) was not in "
-                         "VkMutableDescriptorTypeListEXT::pDescriptorTypes (%s).%s",
+                         "VkMutableDescriptorTypeListEXT::pDescriptorTypes (%s).\n%s",
                          update.dstBinding, string_VkDescriptorType(update.descriptorType),
                          dst_layout->PrintMutableTypes(update.dstBinding).c_str(), dsl_error_source.PrintMessage(*this).c_str());
         }
     } else if (dst_binding->type != update.descriptorType) {
         skip |=
             LogError("VUID-VkWriteDescriptorSet-descriptorType-00319", dst_layout->Handle(), write_loc.dot(Field::descriptorType),
-                     "(%s) is different from pBindings[%" PRIu32 "].descriptorType (%s) of %s.%s",
+                     "(%s) is different from pBindings[%" PRIu32 "].descriptorType (%s) of %s.\n%s",
                      string_VkDescriptorType(update.descriptorType), update.dstBinding, string_VkDescriptorType(dst_binding->type),
                      FormatHandle(dst_layout->Handle()).c_str(), dsl_error_source.PrintMessage(*this).c_str());
     }
@@ -1757,6 +1745,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
         auto current_iter = dst_set.FindBinding(update.dstBinding);
         VkShaderStageFlags stage_flags = (*current_iter)->stage_flags;
         VkDescriptorType descriptor_type = (*current_iter)->type;
+        VkDescriptorBindingFlags binding_flags = (*current_iter)->binding_flags;
         const bool immutable_samplers = (*current_iter)->has_immutable_samplers;
         uint32_t dst_array_element = update.dstArrayElement;
 
@@ -1769,35 +1758,58 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
             // All consecutive bindings updated, except those with a descriptorCount of zero, must have identical descType and
             // stageFlags
             if (current_binding->count > 0) {
-                // Check for consistent stageFlags and descriptorType
-                if ((current_binding->stage_flags != stage_flags) || (current_binding->type != descriptor_type)) {
+                if (current_binding->type != descriptor_type) {
                     std::stringstream extra;
                     // If using inline, easy to go outside of its range and not realize you are in the next descriptor
                     if (descriptor_type == VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK) {
-                        extra << " For inline uniforms blocks, you might have your VkWriteDescriptorSet::dstArrayElement ("
+                        extra << "\nFor inline uniforms blocks, you might have your VkWriteDescriptorSet::dstArrayElement ("
                               << update.dstArrayElement << ") + VkWriteDescriptorSet::descriptorCount (" << update.descriptorCount
                               << ") larger than your VkDescriptorSetLayoutBinding::descriptorCount so this is trying to update the "
                                  "next binding.";
                     }
 
                     const LogObjectList objlist(update.dstSet, dst_layout->Handle());
-                    skip |= LogError(
-                        "VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc,
-                        "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
-                        " descriptors offset) has stageFlags of %s and descriptorType of %s, but previous binding was %s and %s.%s",
-                        current_binding->binding, update.dstBinding, i,
-                        string_VkShaderStageFlags(current_binding->stage_flags).c_str(),
-                        string_VkDescriptorType(current_binding->type), string_VkShaderStageFlags(stage_flags).c_str(),
-                        string_VkDescriptorType(descriptor_type), extra.str().c_str());
-                }
-                // Check if all immutableSamplers or not
-                if (current_binding->has_immutable_samplers != immutable_samplers) {
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc.dot(Field::dstBinding),
+                                     "(%" PRIu32
+                                     ") was created with %s\n"
+                                     "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
+                                     " which was created with %s.\n"
+                                     "When doing consecutive binding updates, the descriptorType must match for each binding.%s",
+                                     update.dstBinding, string_VkDescriptorType(descriptor_type), update.descriptorCount, i,
+                                     current_binding->binding, string_VkDescriptorType(current_binding->type), extra.str().c_str());
+                } else if (current_binding->stage_flags != stage_flags) {
                     const LogObjectList objlist(update.dstSet, dst_layout->Handle());
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00318", objlist, write_loc,
-                                     "binding #%" PRIu32 " (started on dstBinding [%" PRIu32 "] + %" PRIu32
-                                     " descriptors offset) %s Immutable Samplers, which is different from the previous binding.",
-                                     current_binding->binding, update.dstBinding, i,
-                                     current_binding->has_immutable_samplers ? "has" : "doesn't have");
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc.dot(Field::dstBinding),
+                                     "(%" PRIu32
+                                     ") was created with %s\n"
+                                     "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
+                                     " which was created with %s.\n"
+                                     "When doing consecutive binding updates, the stageFlags must match for each binding.",
+                                     update.dstBinding, string_VkShaderStageFlags(stage_flags).c_str(), update.descriptorCount, i,
+                                     current_binding->binding, string_VkShaderStageFlags(current_binding->stage_flags).c_str());
+                } else if (current_binding->has_immutable_samplers != immutable_samplers) {
+                    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00318", objlist, write_loc.dot(Field::dstBinding),
+                                     "(%" PRIu32
+                                     ") was created with a %s pImmutableSamplers\n"
+                                     "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
+                                     " which was created with a %s pImmutableSamplers.\n"
+                                     "When doing consecutive binding updates, the pImmutableSamplers must all be null or non-null "
+                                     "for each binding.",
+                                     update.dstBinding, immutable_samplers ? "non-null" : "null", update.descriptorCount, i,
+                                     current_binding->binding, current_binding->has_immutable_samplers ? "non-null" : "null");
+                } else if (current_binding->binding_flags != binding_flags) {
+                    const LogObjectList objlist(update.dstSet, dst_layout->Handle());
+                    // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7371
+                    skip |= LogError("UNASSIGEND-VkWriteDescriptorSet-bindingFlags", objlist, write_loc.dot(Field::dstBinding),
+                                     "(%" PRIu32
+                                     ") was created with %s\n"
+                                     "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
+                                     " which was created with %s.\n"
+                                     "When doing consecutive binding updates, the stageFlags must match for each binding.",
+                                     update.dstBinding, string_VkDescriptorBindingFlags(binding_flags).c_str(),
+                                     update.descriptorCount, i, current_binding->binding,
+                                     string_VkDescriptorBindingFlags(current_binding->binding_flags).c_str());
                 }
             }
 
@@ -1823,14 +1835,12 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                              update.dstBinding, FormatHandle(dst_set.Handle()).c_str(), FormatHandle(dst_layout->Handle()).c_str());
         }
     } else {
-        skip |= VerifyUpdateConsistency(dst_set, update.dstBinding, update.dstArrayElement, update.descriptorCount, false,
-                                        dsl_error_source.ds_loc_);
+        skip |= VerifyUpdateDescriptorRange(dst_set, update.dstBinding, update.dstArrayElement, update.descriptorCount, false,
+                                            write_loc.dot(Field::dstBinding), Field::dstArrayElement);
     }
 
-    // The pipeline_layout is there for PushDescriptors as the proxy VkDescriptorSet comes from there and not update.dstSet
-    const bool is_push_descriptor = dsl_error_source.pipeline_layout_handle_ != VK_NULL_HANDLE;
     // Update is within bounds and consistent so last step is to validate update contents
-    skip |= VerifyWriteUpdateContents(dst_set, update, write_loc, is_push_descriptor);
+    skip |= VerifyWriteUpdateContents(dst_set, update, write_loc);
 
     return skip;
 }
@@ -2027,7 +2037,7 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescrip
 
 // Verify that the contents of the update are ok, but don't perform actual update
 bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, const VkWriteDescriptorSet &update,
-                                           const Location &write_loc, bool is_push_descriptor) const {
+                                           const Location &write_loc) const {
     bool skip = false;
 
     switch (update.descriptorType) {
@@ -2127,7 +2137,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
             // only need to check the first descriptor, VU like VUID-VkWriteDescriptorSet-descriptorCount-00318 force all
             // Consecutive Binding Updates to be immutable or non-immutable
             const vvl::SamplerDescriptor &desc = (const vvl::SamplerDescriptor &)*iter;
-            if (desc.IsImmutableSampler() && !is_push_descriptor) {
+            if (desc.IsImmutableSampler() && !dst_set.IsPushDescriptor()) {
                 skip |=
                     LogError("VUID-VkWriteDescriptorSet-descriptorType-02752", update.dstSet, write_loc.dot(Field::descriptorType),
                              "is VK_DESCRIPTOR_TYPE_SAMPLER but can't update the immutable sampler from %s.",

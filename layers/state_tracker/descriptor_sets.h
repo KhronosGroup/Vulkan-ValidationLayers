@@ -944,14 +944,52 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
         DescriptorIterator &operator=(const DescriptorIterator &rhs) = default;
 
         DescriptorIterator(DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
-            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {}
+            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(0) {
+            if (index < (*iter_)->count) {
+                index_ = index;
+            } else {
+                // This is a consecutive binding updates and need to find first used binding
+                // This is the "rare" case where people set `dstArrayElement` to skip to next binding after `dstBinding`
+                for (uint32_t i = 0; i < index; i++) {
+                    if (AtEnd()) {
+                        break;  // caller will handle invalid case
+                    }
+                    index_++;
+                    if (index_ >= (*iter_)->count) {
+                        index_ = 0;
+                        do {
+                            ++iter_;
+                        } while (!AtEnd() && (*iter_)->count == 0);
+                    }
+                }
+            }
+        }
 
         DescriptorIterator(const DescriptorSet &descriptor_set, uint32_t binding, uint32_t index = 0)
-            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(index) {}
+            : iter_(descriptor_set.FindBinding(binding)), end_(descriptor_set.end()), index_(0) {
+            if (index < (*iter_)->count) {
+                index_ = index;
+            } else {
+                // This is a consecutive binding updates and need to find first used binding
+                // This is the "rare" case where people set `dstArrayElement` to skip to next binding after `dstBinding`
+                for (uint32_t i = 0; i < index; i++) {
+                    if (AtEnd()) {
+                        break;  // caller will handle invalid case
+                    }
+                    index_++;
+                    if (index_ >= (*iter_)->count) {
+                        index_ = 0;
+                        do {
+                            ++iter_;
+                        } while (!AtEnd() && (*iter_)->count == 0);
+                    }
+                }
+            }
+        }
 
         bool AtEnd() const { return iter_ == end_; }
 
-        bool IsValid() const { return *iter_ && index_ < (*iter_)->count; }
+        bool IsValid() const { return !AtEnd() && *iter_ && index_ < (*iter_)->count; }
 
         bool operator==(const DescriptorIterator &rhs) { return (iter_ == rhs.iter_) && (index_ == rhs.index_); }
 

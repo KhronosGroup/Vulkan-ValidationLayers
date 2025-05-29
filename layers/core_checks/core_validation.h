@@ -764,8 +764,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateCopyUpdateDescriptorTypes(const VkCopyDescriptorSet& update, const vvl::DescriptorSet& src_set,
                                            const vvl::DescriptorSet& dst_set, const vvl::DescriptorSetLayout& src_layout,
                                            const vvl::DescriptorSetLayout& dst_layout, const Location& copy_loc) const;
-    bool VerifyUpdateConsistency(const vvl::DescriptorSet& set, uint32_t binding, uint32_t offset, uint32_t update_count,
-                                 bool is_copy, const Location& set_loc) const;
+    bool VerifyUpdateDescriptorRange(const vvl::DescriptorSet& set, const uint32_t binding, const uint32_t array_element,
+                                     const uint32_t update_count, bool is_copy, const Location& binding_loc,
+                                     const vvl::Field array_element_name) const;
     // Validate contents of a WriteUpdate
     bool ValidateWriteUpdate(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const Location& write_loc,
                              const vvl::DslErrorSource& dsl_error_source) const;
@@ -774,8 +775,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateWriteUpdateInlineUniformBlock(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescriptorSet& update, const Location& write_loc) const;
     bool ValidateWriteUpdateAccelerationStructureNV(const VkWriteDescriptorSet& update, const Location& write_loc) const;
-    bool VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update, const Location& write_loc,
-                                   bool is_push_descriptor) const;
+    bool VerifyWriteUpdateContents(const vvl::DescriptorSet& dst_set, const VkWriteDescriptorSet& update,
+                                   const Location& write_loc) const;
     // Shared helper functions - These are useful because the shared sampler image descriptor type
     //  performs common functions with both sampler and image descriptors so they can share their common functions
     bool ValidateImageUpdate(const vvl::ImageView& view_state, VkImageLayout image_layout, VkDescriptorType type,
