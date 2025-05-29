@@ -834,6 +834,8 @@ class ShaderModule : public internal::NonDispHandle<VkShaderModule> {
   public:
     ShaderModule() = default;
     ShaderModule(const Device &dev, const VkShaderModuleCreateInfo &info) { init(dev, info); }
+    ShaderModule(ShaderModule &&rhs) noexcept : NonDispHandle(std::move(rhs)) {}
+    ShaderModule &operator=(ShaderModule &&rhs) noexcept;
     ~ShaderModule() noexcept;
     void destroy() noexcept;
 

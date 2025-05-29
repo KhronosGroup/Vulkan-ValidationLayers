@@ -138,17 +138,20 @@ class CreateComputePipelineHelper {
     VkComputePipelineCreateInfo cp_ci_ = {};
     VkPipelineCacheCreateInfo pc_ci_ = {};
     VkPipelineCache pipeline_cache_ = VK_NULL_HANDLE;
-    std::unique_ptr<VkShaderObj> cs_;
+    VkShaderObj cs_;
     bool override_skip_ = false;
-    VkLayerTest &layer_test_;
-    vkt::Device *device_;
+    vkt::Device *device_ = nullptr;
+
+    explicit CreateComputePipelineHelper(vkt::Device &device, void *pNext = nullptr);
+
+    // DEPRECATED
     explicit CreateComputePipelineHelper(VkLayerTest &test, void *pNext = nullptr);
+
     ~CreateComputePipelineHelper();
 
     const VkPipeline &Handle() const { return pipeline_; }
     operator VkPipeline() const { return pipeline_; }
 
-    void InitShaderInfo();
     void Destroy();
 
     void LateBindPipelineInfo();

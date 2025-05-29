@@ -297,7 +297,7 @@ TEST_F(PositivePipelineTopology, PointSizeStructMemberWritten) {
     };
 
     CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs->GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
     pipe.pipeline_layout_ci_ = pipeline_layout_info;
     pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
     pipe.vi_ci_.pVertexBindingDescriptions = input_binding;
