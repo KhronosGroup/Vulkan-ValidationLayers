@@ -128,9 +128,12 @@ struct LocationVuidAdapter {
 
 struct LocationCapture {
     LocationCapture(const Location& loc);
-    LocationCapture(const LocationCapture &other);
-    LocationCapture(LocationCapture &&other);
-    LocationCapture& operator=(const LocationCapture& other);
+    LocationCapture(const LocationCapture& other);
+    LocationCapture(LocationCapture&& other);
+    LocationCapture& operator=(LocationCapture&& other);
+
+    // Currently not needed, implement if required (compiler generated default is not valid)
+    LocationCapture& operator=(const LocationCapture& other) = delete;
 
     const Location& Get() const { return capture.back(); }
 

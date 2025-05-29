@@ -127,7 +127,8 @@ LocationCapture::LocationCapture(LocationCapture&& other)
     }
 }
 
-LocationCapture& LocationCapture::operator=(const LocationCapture& other) {
+LocationCapture& LocationCapture::operator=(LocationCapture&& other) {
+    capture.clear();
     capture.PushBackFrom(other.capture);
     if (capture.empty()) {
         return *this;
