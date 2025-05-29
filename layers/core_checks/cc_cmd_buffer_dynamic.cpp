@@ -22,6 +22,7 @@
 #include <vulkan/vulkan_core.h>
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "generated/dynamic_state_helper.h"
 #include "generated/error_location_helper.h"
 #include "generated/vk_extension_helper.h"
 #include "generated/dispatch_functions.h"
@@ -34,7 +35,8 @@
 #include "utils/math_utils.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
-                                           CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const {
+                                           CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid,
+                                           const char* explicit_vuid) const {
     if (!state_status_cb[dynamic_state]) {
         LogObjectList objlist(last_bound_state.cb_state.Handle());
         const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
@@ -220,6 +222,11 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
                 break;
             case CB_DYNAMIC_STATE_LINE_STIPPLE:
                 vuid_str = vuid.dynamic_line_stipple_ext_07849;
+                break;
+            case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
+            case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
+                // These have 3 different VUs depending on shader stages
+                vuid_str = explicit_vuid;
                 break;
             default:
                 assert(false);
@@ -429,6 +436,40 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
+        const bool stippled_lines = enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
+                                    enabled_features.stippledSmoothLines;
+        if (stippled_lines) {
+            if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                                  vuid, vuid.set_line_rasterization_mode_08666);
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, vuid,
+                                                  vuid.set_line_stipple_enable_08669);
+            }
+
+            if (vertex_shader_bound) {
+                const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
+                if (IsLineTopology(topology)) {
+                    skip |=
+                        ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                                  vuid, vuid.set_line_rasterization_mode_08667);
+                    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                                      vuid, vuid.set_line_stipple_enable_08670);
+                }
+            }
+
+            const bool tess_shader_line_topology =
+                tese_shader_bound &&
+                IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
+            const bool geom_shader_line_topology =
+                geom_shader_bound && IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
+            if (tess_shader_line_topology || geom_shader_line_topology) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+                                                  vuid, vuid.set_line_rasterization_mode_08668);
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, vuid,
+                                                  vuid.set_line_stipple_enable_08671);
+            }
+        }
+
         if (vertex_shader_bound) {
             if (IsExtEnabled(extensions.vk_ext_provoking_vertex)) {
                 skip |=
@@ -573,10 +614,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.color_write_mask_07629);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_advanced_07635);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_line_rasterization_mode_07637);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_line_stipple_enable_07638);
     }
 
     // VK_EXT_vertex_input_dynamic_state
@@ -1550,36 +1587,10 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
 
-        const bool stippled_lines = enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
-                                    enabled_features.stippledSmoothLines;
-        if (stippled_lines && !cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_line_rasterization_mode_08666);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_line_stipple_enable_08669);
-            }
-        }
         if (vertex_shader_bound) {
             if (IsLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
-                if (stippled_lines) {
-                    skip |=
-                        ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_line_rasterization_mode_08667);
-                    skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                      cb_state, objlist, loc, vuid.set_line_stipple_enable_08670);
-                }
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist,
                                                   loc, vuid.set_line_width_08618);
-            }
-        }
-
-        if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
-            if (stippled_lines) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_line_rasterization_mode_08668);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_line_stipple_enable_08671);
             }
         }
     }
@@ -1589,7 +1600,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                           vuid.set_line_width_08617);
     }
 
-    if ((tessev_shader_bound && tess_shader_line_topology) || (geom_shader_bound && geom_shader_line_topology)) {
+    if (tess_shader_line_topology || geom_shader_line_topology) {
         skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
                                           vuid.set_line_width_08619);
     }

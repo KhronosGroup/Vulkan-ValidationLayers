@@ -2060,17 +2060,19 @@ TEST_F(NegativeDynamicState, DrawNotSetLineRasterizationMode) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3LineRasterizationMode);
+    AddRequiredFeature(vkt::Feature::stippledRectangularLines);
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
     m_command_buffer.Begin();
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07637");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08667");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");
@@ -2099,11 +2101,12 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnable) {
     m_command_buffer.Begin();
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
+    pipe.ia_ci_.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07638");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08670");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
