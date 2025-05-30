@@ -796,6 +796,16 @@ void ReadState::Set(VkPipelineStageFlags2 stage, SyncAccessIndex access_index, R
 // that have bee applied (via semaphore) to those accesses can be chained off of.
 bool ReadState::ReadInQueueScopeOrChain(QueueId scope_queue, VkPipelineStageFlags2 exec_scope) const {
     VkPipelineStageFlags2 effective_stages = barriers | ((scope_queue == queue) ? stage : VK_PIPELINE_STAGE_2_NONE);
+
+    // Special case. AS copy operations (e.g., vkCmdCopyAccelerationStructureKHR) can be synchronized using
+    // the ACCELERATION_STRUCTURE_COPY stage, but it's also valid to use ACCELERATION_STRUCTURE_BUILD stage.
+    // Internally, AS copy accesses are represented via ACCELERATION_STRUCTURE_COPY stage. The logic below
+    // ensures that ACCELERATION_STRUCTURE_COPY accesses can be protected by the barrier that specifies the
+    // ACCELERATION_STRUCTURE_BUILD state.
+    if (access_index == SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ) {
+        effective_stages |= VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    }
+
     return (exec_scope & effective_stages) != 0;
 }
 

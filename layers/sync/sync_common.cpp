@@ -57,13 +57,23 @@ SyncAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2 accesses) {
     return sync_accesses;
 }
 
-// Getting from stage mask and access mask to stage/access masks is something we need to be good at...
-SyncAccessFlags SyncStageAccess::AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 accesses) {
-    // The access scope is the intersection of all stage/access types possible for the enabled stages and the enables
-    // accesses (after doing a couple factoring of common terms the union of stage/access intersections is the intersections
-    // of the union of all stage/access types for all the stages and the same unions for the access mask...
-    return AccessScopeByStage(stages) & AccessScopeByAccess(accesses);
+SyncAccessFlags SyncStageAccess::AccessScope(const SyncAccessFlags& stage_scope, VkAccessFlags2 accesses) {
+    SyncAccessFlags access_scope = stage_scope & AccessScopeByAccess(accesses);
+
+    // Special case. AS copy operations (e.g., vkCmdCopyAccelerationStructureKHR) can be synchronized using
+    // the ACCELERATION_STRUCTURE_COPY stage, but it's also valid to use ACCELERATION_STRUCTURE_BUILD stage.
+    // Internally, AS copy accesses are represented via ACCELERATION_STRUCTURE_COPY stage. The logic below
+    // ensures that a barrier using ACCELERATION_STRUCTURE_BUILD stage can also protect accesses on
+    // ACCELERATION_STRUCTURE_COPY stage.
+    if (access_scope[SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_READ]) {
+        access_scope.set(SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_READ);
+    }
+    if (access_scope[SYNC_ACCELERATION_STRUCTURE_BUILD_ACCELERATION_STRUCTURE_WRITE]) {
+        access_scope.set(SYNC_ACCELERATION_STRUCTURE_COPY_ACCELERATION_STRUCTURE_WRITE);
+    }
+    return access_scope;
 }
+
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, (start + size)); }
 
 ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
