@@ -2754,7 +2754,7 @@ TEST_F(NegativeShaderSpirv, ShaderRelaxedExtendedInstruction) {
                OpFunctionEnd
         )";
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-RuntimeSpirv-shaderRelaxedExtendedInstruction");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-shaderRelaxedExtendedInstruction-10773");
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }

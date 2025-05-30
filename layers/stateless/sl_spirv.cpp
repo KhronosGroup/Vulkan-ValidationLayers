@@ -661,8 +661,7 @@ bool SpirvValidator::ValidateRelaxedExtendedInstruction(const spirv::Module &mod
                                                         const spirv::StatelessData &stateless_data, const Location &loc) const {
     bool skip = false;
     if (!enabled_features.shaderRelaxedExtendedInstruction && stateless_data.has_ext_inst_with_forward_refs) {
-        // VUID being added in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7336
-        skip |= LogError("UNASSIGNED-RuntimeSpirv-shaderRelaxedExtendedInstruction", module_state.handle(), loc,
+        skip |= LogError("VUID-RuntimeSpirv-shaderRelaxedExtendedInstruction-10773", module_state.handle(), loc,
                          "SPIR-V uses OpExtInstWithForwardRefsKHR but shaderRelaxedExtendedInstruction was not enabled.\nWhen "
                          "using VK_KHR_shader_non_semantic_info (how you can map SPIR-V back to your source language) this "
                          "instruction is required when dealing with forward reference to a pointer.");
