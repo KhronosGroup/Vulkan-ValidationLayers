@@ -633,6 +633,130 @@ TEST_F(PositiveSyncValRayTracing, CopyASWithBarrier) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveSyncValRayTracing, CopyAndBuildStageEquivalence) {
+    TEST_DESCRIPTION("Test that both COPY and BUILD stages can be used to sync AS copy");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_src.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_src.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    const vkt::Buffer& blas_src_buffer = blas_src.GetDstAS()->GetBuffer();
+
+    vkt::as::BuildGeometryInfoKHR blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_dst.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_dst.SetupBuild(true);
+    const vkt::Buffer& blas_dst_buffer = blas_dst.GetDstAS()->GetBuffer();
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_src.GetDstAS()->handle();
+    copy_info.dst = blas_dst.GetDstAS()->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    vkt::Buffer buffer(*m_device, blas_src_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    // Use ACCELERATION_STRUCTURE_BUILD as barrier stage mask.
+    // The spec allows to synchronize AS copy accesses using either ACCELERATION_STRUCTURE_COPY or
+    // ACCELERATION_STRUCTURE_BUILD stages. The test checks that syncval recognizes that
+    // ACCELERATION_STRUCTURE_BUILD barrier can protect ACCELERATION_STRUCTURE_COPY.
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+
+    VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier2.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+
+    // Barrier protects read accesses on AS source buffer
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer, blas_src_buffer);
+    m_command_buffer.Barrier(barrier);  // Prevent READ-AFTER-WRITE
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+
+    // Barrier protects write accesses on AS destination buffer
+    m_command_buffer.Begin();
+    m_command_buffer.Copy(buffer, blas_dst_buffer);
+    m_command_buffer.Barrier(barrier2);  // Prevent WRITE-AFTER-WRITE
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncValRayTracing, CopyAndBuildStageEquivalence2) {
+    TEST_DESCRIPTION("Test that both COPY and BUILD stages can be used to sync AS copy");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_RAY_TRACING_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::rayTracingMaintenance1);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitRayTracing());
+
+    vkt::as::BuildGeometryInfoKHR blas_src = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_src.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_src.SetupBuild(true);
+    m_command_buffer.Begin();
+    blas_src.VkCmdBuildAccelerationStructuresKHR(m_command_buffer);
+    m_command_buffer.End();
+    m_default_queue->SubmitAndWait(m_command_buffer);
+    const vkt::Buffer& blas_src_buffer = blas_src.GetDstAS()->GetBuffer();
+
+    vkt::as::BuildGeometryInfoKHR blas_dst = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas_dst.GetDstAS()->SetBufferUsageFlags(VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                                             VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    blas_dst.SetupBuild(true);
+    const vkt::Buffer& blas_dst_buffer = blas_dst.GetDstAS()->GetBuffer();
+
+    VkCopyAccelerationStructureInfoKHR copy_info = vku::InitStructHelper();
+    copy_info.src = blas_src.GetDstAS()->handle();
+    copy_info.dst = blas_dst.GetDstAS()->handle();
+    copy_info.mode = VK_COPY_ACCELERATION_STRUCTURE_MODE_CLONE_KHR;
+
+    vkt::Buffer buffer(*m_device, blas_src_buffer.CreateInfo().size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+
+    // Use ACCELERATION_STRUCTURE_BUILD as barrier stage mask.
+    // The spec allows to synchronize AS copy accesses using either ACCELERATION_STRUCTURE_COPY or
+    // ACCELERATION_STRUCTURE_BUILD stages. The test checks that syncval recognizes that
+    // ACCELERATION_STRUCTURE_BUILD barrier can protect ACCELERATION_STRUCTURE_COPY.
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+    VkMemoryBarrier2 barrier2 = vku::InitStructHelper();
+    barrier2.srcStageMask = VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR;
+    barrier2.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;
+    barrier2.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+    barrier2.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+    // Barrier protects read accesses on AS source buffer
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_command_buffer.Barrier(barrier);  // Prevent WRITE-AFTER-READ
+    m_command_buffer.Copy(buffer, blas_src_buffer);
+    m_command_buffer.End();
+
+    // Barrier protects write accesses on AS destination buffer
+    m_command_buffer.Begin();
+    vk::CmdCopyAccelerationStructureKHR(m_command_buffer, &copy_info);
+    m_command_buffer.Barrier(barrier2);  // Prevent WRITE-AFTER-WRITE
+    m_command_buffer.Copy(buffer, blas_dst_buffer);
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveSyncValRayTracing, SerializeDeserializeAS) {
     TEST_DESCRIPTION("Serialize AS to a buffer. Then deserialize the buffer into another AS object");
     RETURN_IF_SKIP(InitRayTracing());
