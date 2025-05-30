@@ -1362,6 +1362,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceFeatures", 25},
     {"VkPhysicalDeviceFeatures2", 26},
     {"VkPhysicalDeviceFloatControlsProperties", 40},
+    {"VkPhysicalDeviceFormatPackFeaturesARM", 38},
     {"VkPhysicalDeviceFragmentDensityMap2FeaturesEXT", 47},
     {"VkPhysicalDeviceFragmentDensityMap2PropertiesEXT", 49},
     {"VkPhysicalDeviceFragmentDensityMapFeaturesEXT", 46},
@@ -2606,6 +2607,7 @@ const char* String(Field field) {
     {"formatA4R4G4B4", 15},
     {"formatConstraintsCount", 23},
     {"formatFeatures", 15},
+    {"formatPack", 11},
     {"formatProperties", 17},
     {"formatRgba10x6WithoutYCbCrSampler", 34},
     {"fragmentDensityInvocations", 27},
@@ -3567,6 +3569,7 @@ const char* String(Field field) {
     {"pDisabledValidationChecks", 26},
     {"pDisabledValidationFeatures", 28},
     {"pDiscardRectangles", 19},
+    {"pDispatchTileInfo", 18},
     {"pDisplay", 9},
     {"pDisplayCount", 14},
     {"pDisplayEventInfo", 18},
@@ -5263,6 +5266,7 @@ const char* String(Extension extension) {
     {"VK_AMD_texture_gather_bias_lod", 31},
     {"VK_ANDROID_external_format_resolve", 35},
     {"VK_ANDROID_external_memory_android_hardware_buffer", 51},
+    {"VK_ARM_format_pack", 19},
     {"VK_ARM_pipeline_opacity_micromap", 33},
     {"VK_ARM_rasterization_order_attachment_access", 45},
     {"VK_ARM_render_pass_striped", 27},
@@ -5794,6 +5798,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDisabledValidationChecks:
     case Field::pDisabledValidationFeatures:
     case Field::pDiscardRectangles:
+    case Field::pDispatchTileInfo:
     case Field::pDisplay:
     case Field::pDisplayCount:
     case Field::pDisplayEventInfo:
@@ -8206,6 +8211,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkMemoryGetMetalHandleInfoEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT:
        return Struct::VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceFormatPackFeaturesARM;
     case VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV:
        return Struct::VkSetPresentConfigNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV:

@@ -4308,9 +4308,14 @@ virtual void PreCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, c
 virtual void PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                                  const RecordObject& record_obj) {}
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-virtual bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const { return false; }
-virtual void PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
-virtual void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                               const RecordObject& record_obj) {}
 virtual bool PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,
                                                          const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
                                                          const ErrorObject& error_obj) const {

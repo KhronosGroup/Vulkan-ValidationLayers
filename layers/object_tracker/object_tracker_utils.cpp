@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan.h>
 #include "generated/vk_object_types.h"
 #include "object_lifetime_validation.h"
 #include "chassis/dispatch_object.h"

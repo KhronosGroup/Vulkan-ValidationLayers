@@ -450,6 +450,21 @@ ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const {
             return IsExtEnabled(extensions.vk_img_format_pvrtc) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return IsExtEnabled(extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_FORMAT_R10X6_UINT_PACK16_ARM:
+        case VK_FORMAT_R10X6G10X6_UINT_2PACK16_ARM:
+        case VK_FORMAT_R10X6G10X6B10X6A10X6_UINT_4PACK16_ARM:
+        case VK_FORMAT_R12X4_UINT_PACK16_ARM:
+        case VK_FORMAT_R12X4G12X4_UINT_2PACK16_ARM:
+        case VK_FORMAT_R12X4G12X4B12X4A12X4_UINT_4PACK16_ARM:
+        case VK_FORMAT_R14X2_UINT_PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2_UINT_2PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2B14X2A14X2_UINT_4PACK16_ARM:
+        case VK_FORMAT_R14X2_UNORM_PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2_UNORM_2PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2B14X2A14X2_UNORM_4PACK16_ARM:
+        case VK_FORMAT_G14X2_B14X2R14X2_2PLANE_420_UNORM_3PACK16_ARM:
+        case VK_FORMAT_G14X2_B14X2R14X2_2PLANE_422_UNORM_3PACK16_ARM:
+            return IsExtEnabled(extensions.vk_arm_format_pack) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2426,6 +2441,21 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkFormat value) const {
             return {vvl::Extension::_VK_IMG_format_pvrtc};
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
+        case VK_FORMAT_R10X6_UINT_PACK16_ARM:
+        case VK_FORMAT_R10X6G10X6_UINT_2PACK16_ARM:
+        case VK_FORMAT_R10X6G10X6B10X6A10X6_UINT_4PACK16_ARM:
+        case VK_FORMAT_R12X4_UINT_PACK16_ARM:
+        case VK_FORMAT_R12X4G12X4_UINT_2PACK16_ARM:
+        case VK_FORMAT_R12X4G12X4B12X4A12X4_UINT_4PACK16_ARM:
+        case VK_FORMAT_R14X2_UINT_PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2_UINT_2PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2B14X2A14X2_UINT_4PACK16_ARM:
+        case VK_FORMAT_R14X2_UNORM_PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2_UNORM_2PACK16_ARM:
+        case VK_FORMAT_R14X2G14X2B14X2A14X2_UNORM_4PACK16_ARM:
+        case VK_FORMAT_G14X2_B14X2R14X2_2PLANE_420_UNORM_3PACK16_ARM:
+        case VK_FORMAT_G14X2_B14X2R14X2_2PLANE_422_UNORM_3PACK16_ARM:
+            return {vvl::Extension::_VK_ARM_format_pack};
         default:
             return {};
     };

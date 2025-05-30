@@ -1143,7 +1143,8 @@ bool PreCallValidateDestroyCudaFunctionNV(VkDevice device, VkCudaFunctionNV func
 bool PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLaunchInfoNV* pLaunchInfo,
                                           const ErrorObject& error_obj) const override;
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                        const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
                                                  const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdEndPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileEndInfoQCOM* pPerTileEndInfo,
