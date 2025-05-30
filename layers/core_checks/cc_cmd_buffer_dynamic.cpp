@@ -223,6 +223,9 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_LINE_STIPPLE:
                 vuid_str = vuid.dynamic_line_stipple_ext_07849;
                 break;
+            case CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:
+                vuid_str = vuid.vertex_input_binding_stride_04913;
+                break;
             case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
             case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
                 // These have 3 different VUs depending on shader stages
@@ -354,15 +357,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             if (last_bound_state.IsShadingRateImageEnable()) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                                   CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV, vuid);
-
-                if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV) &&
-                    cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
-                    skip |= LogError(
-                        vuid.shading_rate_palette_08637, cb_state.Handle(), vuid.loc(),
-                        "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                        " and viewportCount set with vkCmdSetViewportShadingRatePaletteNV() was %" PRIu32 ".",
-                        cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
-                }
             }
         }
 
@@ -393,39 +387,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             if (last_bound_state.IsDiscardRectangleEnable()) {
                 skip |=
                     ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_DISCARD_RECTANGLE_MODE_EXT, vuid);
-
-                if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
-                    // For pipelines with VkPipelineDiscardRectangleStateCreateInfoEXT, we compare against discardRectangleCount,
-                    // but for Shader Objects we compare against maxDiscardRectangles (details in
-                    // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3400)
-                    uint32_t rect_limit = phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles;
-                    bool use_max_limit = true;
-                    if (has_pipeline) {
-                        if (const auto* discard_rectangle_state =
-                                vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(
-                                    last_bound_state.pipeline_state->GetCreateInfoPNext())) {
-                            rect_limit = discard_rectangle_state->discardRectangleCount;
-                            use_max_limit = false;
-                        }
-                    }
-
-                    // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
-                    for (uint32_t i = 0; i < rect_limit; i++) {
-                        if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
-                            const vvl::Field limit_name =
-                                use_max_limit ? vvl::Field::maxDiscardRectangles : vvl::Field::discardRectangleCount;
-                            const char* vuid2 =
-                                use_max_limit ? vuid.set_discard_rectangle_09236 : vuid.dynamic_discard_rectangle_07751;
-                            skip |= LogError(vuid2, cb_state.Handle(), vuid.loc(),
-                                             "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
-                                             " for this command buffer. It needs to be set once for each rectangle in %s (%" PRIu32
-                                             ").%s",
-                                             i, String(limit_name), rect_limit,
-                                             cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT).c_str());
-                            break;
-                        }
-                    }
-                }
             }
         }
 
@@ -499,15 +460,6 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT, vuid);
     }
-    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
-        last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
-        if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
-            skip |= LogError(vuid.viewport_and_scissor_with_count_03419, cb_state.Handle(), vuid.loc(),
-                             "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                             " and scissorCount set with vkCmdSetScissorWithCount() was %" PRIu32 ".",
-                             cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
-        }
-    }
 
     if (vertex_shader_bound) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY, vuid);
@@ -546,23 +498,23 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
 
     if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_ENABLE_NV, vuid);
-
         if (last_bound_state.IsViewportWScalingEnable() && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) &&
             last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
             skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV, vuid);
-
-            if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
-                skip |=
-                    LogError(vuid.viewport_w_scaling_08636, cb_state.Handle(), vuid.loc(),
-                             "Graphics stages are bound, but viewportCount set with vkCmdSetViewportWithCount() was %" PRIu32
-                             " and viewportCount set with vkCmdSetViewportWScalingNV() was %" PRIu32 ".",
-                             cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
-            }
         }
     }
 
     if (IsExtEnabled(extensions.vk_nv_viewport_swizzle)) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV, vuid);
+    }
+
+    // VK_EXT_vertex_input_dynamic_state was never supported in shader object, so this check only happens for pipelines
+    if (has_pipeline) {
+        if (!last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
+            skip |=
+                ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, vuid);
+        }
     }
 
     return skip;
@@ -614,15 +566,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                                           vuid.color_write_mask_07629);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_advanced_07635);
-    }
-
-    // VK_EXT_vertex_input_dynamic_state
-    {
-        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
-            pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE, cb_state, objlist, loc,
-                                              vuid.vertex_input_binding_stride_04913);
-        }
     }
 
     // VK_EXT_color_write_enable
@@ -1358,11 +1301,71 @@ bool CoreChecks::ValidateDrawDynamicStateFragment(const LastBound& last_bound_st
     return skip;
 }
 
+// Here we assume the dynamic state was set. These are draw time checks that things that normally checked at static pipeline
+// creation time
 bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state, const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
 
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
     const auto pipeline_state = last_bound_state.pipeline_state;
+    const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
+    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+
+    if (!last_bound_state.IsRasterizationDisabled()) {
+        if (IsExtEnabled(extensions.vk_ext_discard_rectangles) && last_bound_state.IsDiscardRectangleEnable() &&
+            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT)) {
+            // For pipelines with VkPipelineDiscardRectangleStateCreateInfoEXT, we compare against discardRectangleCount,
+            // but for Shader Objects we compare against maxDiscardRectangles (details in
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/3400)
+            uint32_t rect_limit = phys_dev_ext_props.discard_rectangle_props.maxDiscardRectangles;
+            bool use_max_limit = true;
+            if (has_pipeline) {
+                if (const auto* discard_rectangle_state = vku::FindStructInPNextChain<VkPipelineDiscardRectangleStateCreateInfoEXT>(
+                        last_bound_state.pipeline_state->GetCreateInfoPNext())) {
+                    rect_limit = discard_rectangle_state->discardRectangleCount;
+                    use_max_limit = false;
+                }
+            }
+
+            // vkCmdSetDiscardRectangleEXT needs to be set on each rectangle
+            for (uint32_t i = 0; i < rect_limit; i++) {
+                if (!cb_state.dynamic_state_value.discard_rectangles.test(i)) {
+                    const vvl::Field limit_name =
+                        use_max_limit ? vvl::Field::maxDiscardRectangles : vvl::Field::discardRectangleCount;
+                    const char* vuid2 = use_max_limit ? vuid.set_discard_rectangle_09236 : vuid.dynamic_discard_rectangle_07751;
+                    skip |= LogError(vuid2, cb_state.Handle(), vuid.loc(),
+                                     "vkCmdSetDiscardRectangleEXT was not set for discard rectangle index %" PRIu32
+                                     " for this command buffer. It needs to be set once for each rectangle in %s (%" PRIu32 ").%s",
+                                     i, String(limit_name), rect_limit,
+                                     cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_DISCARD_RECTANGLE_EXT).c_str());
+                    break;
+                }
+            }
+        }
+
+        if (fragment_shader_bound) {
+            if (IsExtEnabled(extensions.vk_nv_fragment_coverage_to_color) &&
+                last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV) &&
+                last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
+                if (cb_state.dynamic_state_value.coverage_to_color_enable) {
+                    VkFormat format = VK_FORMAT_UNDEFINED;
+                    if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments.size()) {
+                        format = cb_state.active_attachments[cb_state.dynamic_state_value.coverage_to_color_location]
+                                     .image_view->create_info.format;
+                    }
+                    if (!IsValueIn(format, {VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT,
+                                            VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT})) {
+                        const char* vuid_string =
+                            has_pipeline ? vuid.set_coverage_to_color_location_07490 : vuid.set_coverage_to_color_location_09420;
+                        skip |= LogError(vuid_string, cb_state.Handle(), vuid.loc(),
+                                         "coverageToColorLocation (%" PRIu32
+                                         ") set by vkCmdSetCoverageToColorLocationNV points to a color attachment with format %s.",
+                                         cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format));
+                    }
+                }
+            }
+        }
+    }
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
         for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
@@ -1398,6 +1401,73 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                                  alpha_to_coverage_enable ? "VK_TRUE" : "VK_FALSE", alpha_to_one_enable ? "VK_TRUE" : "VK_FALSE",
                                  sample_shading_enable ? "VK_TRUE" : "VK_FALSE");
             }
+        }
+    }
+
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
+        if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
+            if (cb_state.dynamic_state_value.viewport_count != cb_state.dynamic_state_value.scissor_count) {
+                skip |=
+                    LogError(vuid.viewport_and_scissor_with_count_03419, cb_state.Handle(), vuid.loc(),
+                             "viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount is not equal to scissorCount (%" PRIu32
+                             ") set with vkCmdSetScissorWithCount",
+                             cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.scissor_count);
+            }
+        }
+
+        if (!last_bound_state.IsRasterizationDisabled()) {
+            if (enabled_features.shadingRateImage && last_bound_state.IsShadingRateImageEnable() &&
+                last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SHADING_RATE_PALETTE_NV)) {
+                if (cb_state.dynamic_state_value.shading_rate_palette_count < cb_state.dynamic_state_value.viewport_count) {
+                    skip |= LogError(
+                        vuid.shading_rate_palette_08637, cb_state.Handle(), vuid.loc(),
+                        "viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32
+                        ") set with vkCmdSetViewportShadingRatePaletteNV",
+                        cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.shading_rate_palette_count);
+                }
+            }
+        }
+
+        if (IsExtEnabled(extensions.vk_nv_viewport_swizzle) && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+            const uint32_t viewport_swizzle_count = last_bound_state.GetViewportSwizzleCount();
+            if (viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
+                const char* vuid_string = has_pipeline ? vuid.set_viewport_swizzle_07493 : vuid.set_viewport_swizzle_09421;
+                skip |= LogError(vuid_string, cb_state.Handle(), vuid.loc(),
+                                 "viewportCount (%" PRIu32
+                                 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32 ") set with %s",
+                                 cb_state.dynamic_state_value.viewport_count, viewport_swizzle_count,
+                                 has_pipeline ? "VkPipelineViewportSwizzleStateCreateInfoNV" : "vkCmdSetViewportSwizzleNV");
+            }
+        }
+
+        if (IsExtEnabled(extensions.vk_nv_clip_space_w_scaling) && last_bound_state.IsViewportWScalingEnable() &&
+            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_W_SCALING_NV)) {
+            // There is no pipeline equivalent of vkCmdSetViewportWScalingNV
+            if (cb_state.dynamic_state_value.viewport_w_scaling_count < cb_state.dynamic_state_value.viewport_count) {
+                skip |= LogError(
+                    vuid.viewport_w_scaling_08636, cb_state.Handle(), vuid.loc(),
+                    "viewportCount (%" PRIu32 ") set with vkCmdSetViewportWithCount is greater than viewportCount (%" PRIu32
+                    ") set with vkCmdSetViewportWScalingNV",
+                    cb_state.dynamic_state_value.viewport_count, cb_state.dynamic_state_value.viewport_w_scaling_count);
+            }
+        }
+    }
+
+    if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
+        cb_state.dynamic_state_value.alpha_to_coverage_enable) {
+        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
+        if (fragment_entry_point && !fragment_entry_point->has_alpha_to_coverage_variable) {
+            LogObjectList objlist(cb_state.Handle());
+            if (has_pipeline) {
+                objlist.add(pipeline_state->Handle());
+            } else {
+                objlist.add(last_bound_state.GetShader(ShaderObjectStage::FRAGMENT));
+            }
+            const char* vuid_string =
+                has_pipeline ? vuid.dynamic_alpha_to_coverage_component_08919 : vuid.alpha_component_word_08920;
+            skip |= LogError(vuid_string, objlist, vuid.loc(),
+                             "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound "
+                             "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
         }
     }
 
@@ -1661,24 +1731,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      DynamicStateToString(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT));
                 }
             }
-            if (IsExtEnabled(extensions.vk_nv_fragment_coverage_to_color)) {
-                if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_ENABLE_NV) &&
-                    cb_state.dynamic_state_value.coverage_to_color_enable) {
-                    if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COVERAGE_TO_COLOR_LOCATION_NV)) {
-                        VkFormat format = VK_FORMAT_UNDEFINED;
-                        if (cb_state.dynamic_state_value.coverage_to_color_location < cb_state.active_attachments.size()) {
-                            format = cb_state.active_attachments[cb_state.dynamic_state_value.coverage_to_color_location]
-                                         .image_view->create_info.format;
-                        }
-                        if (!IsValueIn(format, {VK_FORMAT_R8_UINT, VK_FORMAT_R8_SINT, VK_FORMAT_R16_UINT, VK_FORMAT_R16_SINT,
-                                                VK_FORMAT_R32_UINT, VK_FORMAT_R32_SINT})) {
-                            skip |= LogError(vuid.set_coverage_to_color_location_09420, cb_state.Handle(), loc,
-                                             "Color attachment format selected by coverageToColorLocation (%" PRIu32 ") is %s.",
-                                             cb_state.dynamic_state_value.coverage_to_color_location, string_VkFormat(format));
-                        }
-                    }
-                }
-            }
             if (enabled_features.colorWriteEnable) {
                 if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
                     if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
@@ -1697,50 +1749,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                      cb_state.GetDynamicRenderingColorAttachmentCount());
                 }
             }
-        }
-    }
-
-    if (IsExtEnabled(extensions.vk_nv_viewport_swizzle)) {
-        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
-            if (cb_state.dynamic_state_value.viewport_swizzle_count < cb_state.dynamic_state_value.viewport_count) {
-                skip |=
-                    LogError(vuid.set_viewport_swizzle_09421, cb_state.Handle(), loc,
-                             "viewportCount (%" PRIu32 ") set with vkCmdSetViewportSwizzleNV() is less than viewportCount (%" PRIu32
-                             ") set with vkCmdSetViewportWithCount()",
-                             cb_state.dynamic_state_value.viewport_swizzle_count, cb_state.dynamic_state_value.viewport_count);
-            }
-        }
-    }
-
-    if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
-        for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
-            const auto shader_object = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));
-            if (shader_object && shader_object->entrypoint &&
-                shader_object->entrypoint->written_builtin_primitive_shading_rate_khr) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, cb_state,
-                                                  objlist, loc, vuid.set_viewport_with_count_08642);
-                if (cb_state.dynamic_state_value.viewport_count != 1) {
-                    skip |=
-                        LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), loc,
-                                 "primitiveFragmentShadingRateWithMultipleViewports is not supported and shader stage %s uses "
-                                 "PrimitiveShadingRateKHR, but viewportCount set with vkCmdSetViewportWithCount was %" PRIu32 ".",
-                                 string_VkShaderStageFlagBits(shader_object->create_info.stage),
-                                 cb_state.dynamic_state_value.viewport_count);
-                }
-                break;
-            }
-        }
-    }
-
-    if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
-        cb_state.dynamic_state_value.alpha_to_coverage_enable) {
-        const auto fragment_shader_stage = last_bound_state.GetShaderState(ShaderObjectStage::FRAGMENT);
-        if (fragment_shader_stage && fragment_shader_stage->entrypoint &&
-            !fragment_shader_stage->entrypoint->has_alpha_to_coverage_variable) {
-            const LogObjectList frag_objlist(cb_state.Handle(), fragment_shader_stage->Handle());
-            skip |= LogError(vuid.alpha_component_word_08920, frag_objlist, loc,
-                             "alphaToCoverageEnable is set, but fragment shader doesn't declare a variable that covers "
-                             "Location 0, Component 3 (alpha channel).");
         }
     }
 

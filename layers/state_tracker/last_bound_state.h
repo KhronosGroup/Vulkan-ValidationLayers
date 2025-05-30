@@ -118,6 +118,7 @@ struct LastBound {
     bool IsAlphaToCoverageEnable() const;
     bool IsAlphaToOneEnable() const;
     VkCoverageModulationModeNV GetCoverageModulationMode() const;
+    uint32_t GetViewportSwizzleCount() const;
 
     bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
     VkShaderEXT GetShader(ShaderObjectStage stage) const;

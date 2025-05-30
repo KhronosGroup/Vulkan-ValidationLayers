@@ -3285,31 +3285,6 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
     return skip;
 }
 
-bool CoreChecks::ValidateDrawPipelineFragmentShadingRate(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
-                                                         const vvl::DrawDispatchVuid &vuid) const {
-    bool skip = false;
-    if (!enabled_features.primitiveFragmentShadingRate) return skip;
-
-    for (auto &stage_state : pipeline.stage_states) {
-        const VkShaderStageFlagBits stage = stage_state.GetStage();
-        if (!IsValueIn(stage, {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_MESH_BIT_EXT})) {
-            continue;
-        }
-        if (!phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports &&
-            pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
-            if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
-                skip |= LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
-                                 "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
-                                 "but multiple viewports are set by the last call to vkCmdSetViewportWithCountEXT,"
-                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
-                                 string_VkShaderStageFlagBits(stage));
-            }
-        }
-    }
-
-    return skip;
-}
-
 // Validate draw-time state related to the PSO
 bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const vvl::Pipeline &pipeline,
                                       const vvl::DrawDispatchVuid &vuid) const {
@@ -3327,7 +3302,6 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 
     skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
     skip |= ValidateDrawPipelineVertexBinding(cb_state, pipeline, vuid);
-    skip |= ValidateDrawPipelineFragmentShadingRate(cb_state, pipeline, vuid);
     skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid);
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state->UsesDynamicRendering()) {
@@ -3341,17 +3315,6 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
                              "the rasterizationSamples (%" PRIu32 ") is not equal to rasterizationSamples (%" PRIu32
                              ") of the the currently bound pipeline.",
                              msrtss_info->rasterizationSamples, pipeline.MultisampleState()->rasterizationSamples);
-        }
-    }
-
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT) &&
-        cb_state.dynamic_state_value.alpha_to_coverage_enable) {
-        auto fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
-        if (fragment_entry_point && !fragment_entry_point->has_alpha_to_coverage_variable) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
-            skip |= LogError(vuid.dynamic_alpha_to_coverage_component_08919, objlist, vuid.loc(),
-                             "vkCmdSetAlphaToCoverageEnableEXT set alphaToCoverageEnable to true but the bound pipeline "
-                             "fragment shader doesn't declare a variable that covers Location 0, Component 3 (alpha channel).");
         }
     }
 
