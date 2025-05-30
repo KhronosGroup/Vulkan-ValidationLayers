@@ -1771,6 +1771,13 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
             }
         }
     }
+
+    if (rp_state && rp_state->has_multiview_enabled) {
+        const LogObjectList rp_objlist(cb_state.Handle(), rp_state->Handle());
+        skip |= LogError(vuid.shader_object_multiview_10772, rp_objlist, loc,
+                         "render pass instance has multiview enabled, which is not allowed when using shader objects.");
+    }
+
     return skip;
 }
 

@@ -5507,17 +5507,13 @@ TEST_F(NegativeShaderObject, MissingImageFilterLinearBit) {
     m_command_buffer.End();
 }
 
-TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
-    TEST_DESCRIPTION("Draw with a read only depth stencil attachment and invalid stencil op.");
-
+TEST_F(NegativeShaderObject, Multiview) {
+    TEST_DESCRIPTION("https://gitlab.khronos.org/vulkan/vulkan/-/issues/4269");
     SetTargetApiVersion(VK_API_VERSION_1_2);
     AddRequiredFeature(vkt::Feature::multiview);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
-
-    VkPhysicalDeviceMultiviewProperties multiview_properties = vku::InitStructHelper();
-    GetPhysicalDeviceProperties2(multiview_properties);
 
     vkt::Image img(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = img.CreateView();
@@ -5540,8 +5536,8 @@ TEST_F(NegativeShaderObject, MaxMultiviewInstanceIndex) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-maxMultiviewInstanceIndex-02688");
-    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, multiview_properties.maxMultiviewInstanceIndex);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-10772");
+    vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRendering();
