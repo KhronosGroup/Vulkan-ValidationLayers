@@ -212,6 +212,7 @@ struct DrawDispatchVuid {
     const char* viewport_and_scissor_with_count_03419 = kVUIDUndefined;
     const char* viewport_w_scaling_08636 = kVUIDUndefined;
     const char* shading_rate_palette_08637 = kVUIDUndefined;
+    const char* shader_object_multiview_10772 = kVUIDUndefined;
     const char* external_format_resolve_09362 = kVUIDUndefined;
     const char* external_format_resolve_09363 = kVUIDUndefined;
     const char* external_format_resolve_09364 = kVUIDUndefined;
