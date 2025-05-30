@@ -425,7 +425,6 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     TEST_DESCRIPTION("Call CmdExecuteCommandBuffers when transform feedback is active");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(InitBasicTransformFeedback());
-
     InitRenderTarget();
 
     // A pool we can reset in.
@@ -453,6 +452,15 @@ TEST_F(NegativeTransformFeedback, ExecuteSecondaryCommandBuffers) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
+    vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-renderpass");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-None-04128");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-firstCounterBuffer-09630");
     vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -1049,25 +1057,6 @@ TEST_F(NegativeTransformFeedback, CmdNextSubpass) {
     vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, nullptr, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdNextSubpass-None-02349");
     m_command_buffer.NextSubpass();
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeTransformFeedback, CmdBeginTransformFeedbackOutsideRenderPass) {
-    TEST_DESCRIPTION("call vkCmdBeginTransformFeedbackEXT without renderpass");
-    RETURN_IF_SKIP(InitBasicTransformFeedback());
-    InitRenderTarget();
-
-    CreatePipelineHelper pipe(*this);
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-
-    vkt::Buffer const buffer_obj(*m_device, 4, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT);
-    VkDeviceSize const offsets[1]{1};
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginTransformFeedbackEXT-renderpass");
-    vk::CmdBeginTransformFeedbackEXT(m_command_buffer, 0, 1, &buffer_obj.handle(), offsets);
     m_errorMonitor->VerifyFound();
 }
 

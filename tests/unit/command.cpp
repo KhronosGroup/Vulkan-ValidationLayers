@@ -12,6 +12,7 @@
  *     http://www.apache.org/licenses/LICENSE-2.0
  */
 
+#include "generated/vk_function_pointers.h"
 #include "utils/cast_utils.h"
 #include "../framework/layer_validation_tests.h"
 #include "../framework/pipeline_helper.h"
@@ -78,6 +79,7 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     index_buffer.destroy();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-07312");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
@@ -3732,4 +3734,237 @@ TEST_F(NegativeCommand, QueryControlInvalidFlags) {
     m_errorMonitor->SetDesiredError("VUID-VkCommandBufferInheritanceInfo-queryFlags-00057");
     vk::BeginCommandBuffer(secondary_cb, &begin_info);
     m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeCommand, CommandBufferRecording) {
+    TEST_DESCRIPTION("Test core functions for commandBuffer-recording VUs.");
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitRenderTarget());
+
+    {
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewport-commandBuffer-recording");
+        const VkViewport viewport = {0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f};
+        vk::CmdSetViewport(m_command_buffer, 0, 1, &viewport);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissor-commandBuffer-recording");
+        const VkRect2D scissor = {{0, 0}, {0, 0}};
+        vk::CmdSetScissor(m_command_buffer, 0, 1, &scissor);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetLineWidth-commandBuffer-recording");
+        vk::CmdSetLineWidth(m_command_buffer, 1.0f);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBias-commandBuffer-recording");
+        vk::CmdSetDepthBias(m_command_buffer, 0.0f, 0.0f, 0.0f);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetBlendConstants-commandBuffer-recording");
+        float blends[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+        vk::CmdSetBlendConstants(m_command_buffer, blends);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetDepthBounds-commandBuffer-recording");
+        vk::CmdSetDepthBounds(m_command_buffer, 1.0f, 1.0f);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilCompareMask-commandBuffer-recording");
+        vk::CmdSetStencilCompareMask(m_command_buffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilWriteMask-commandBuffer-recording");
+        vk::CmdSetStencilWriteMask(m_command_buffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetStencilReference-commandBuffer-recording");
+        vk::CmdSetStencilReference(m_command_buffer, VK_STENCIL_FACE_FRONT_AND_BACK, 0xFFFFFFFF);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        CreatePipelineHelper pipe(*this);
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commandBuffer-recording");
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-commandBuffer-recording");
+        m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Buffer indirect_buffer(*m_device, 32, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-renderpass");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08606");
+        vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-renderpass");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-07312");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-08606");
+        vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-renderpass");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirect-None-08606");
+        vk::CmdDrawIndirect(m_command_buffer, indirect_buffer, 0, 1, 32);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-renderpass");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-None-07312");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirect-None-08606");
+        vk::CmdDrawIndexedIndirect(m_command_buffer, indirect_buffer, 0, 1, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08606");
+        vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchIndirect-None-08606");
+        vk::CmdDispatchIndirect(m_command_buffer, indirect_buffer, 0);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Image image(*m_device, 16, 16, VK_FORMAT_R8G8B8A8_UINT,
+                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+
+        VkImageCopy copy_region;
+        copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copy_region.srcOffset = {0, 0, 0};
+        copy_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        copy_region.dstOffset = {1, 1, 0};
+        copy_region.extent = {1, 1, 1};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-recording");
+        vk::CmdCopyImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
+        m_errorMonitor->VerifyFound();
+
+        VkBufferImageCopy buffer_region = {};
+        buffer_region.bufferRowLength = 0;
+        buffer_region.bufferImageHeight = 0;
+        buffer_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+        buffer_region.imageOffset = {0, 0, 0};
+        buffer_region.imageExtent = {1, 1, 1};
+        buffer_region.bufferOffset = 0;
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-recording");
+        vk::CmdCopyBufferToImage(m_command_buffer, buffer, image, VK_IMAGE_LAYOUT_GENERAL, 1, &buffer_region);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-recording");
+        vk::CmdCopyImageToBuffer(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &buffer_region);
+        m_errorMonitor->VerifyFound();
+
+        VkBufferCopy buffer_copy = {0, 64, 64};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBuffer-commandBuffer-recording");
+        vk::CmdCopyBuffer(m_command_buffer, buffer, buffer, 1, &buffer_copy);
+        m_errorMonitor->VerifyFound();
+
+        VkImageBlit blit_region;
+        blit_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+        blit_region.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0u, 0u, 1u};
+        blit_region.srcOffsets[0] = {0, 0, 0};
+        blit_region.srcOffsets[1] = {1, 1, 1};
+        blit_region.dstOffsets[0] = {1, 1, 0};
+        blit_region.dstOffsets[1] = {2, 2, 1};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-commandBuffer-recording");
+        vk::CmdBlitImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, image, VK_IMAGE_LAYOUT_GENERAL, 1u, &blit_region,
+                         VK_FILTER_NEAREST);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdFillBuffer-commandBuffer-recording");
+        vk::CmdFillBuffer(m_command_buffer, buffer, 0, 4, 0);
+        m_errorMonitor->VerifyFound();
+
+        uint32_t data = 0;
+        m_errorMonitor->SetDesiredError("VUID-vkCmdUpdateBuffer-commandBuffer-recording");
+        vk::CmdUpdateBuffer(m_command_buffer, buffer, 0, 4, &data);
+        m_errorMonitor->VerifyFound();
+
+        VkImageSubresourceRange range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+        VkClearColorValue clear_color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearColorImage-commandBuffer-recording");
+        vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &range);
+        m_errorMonitor->VerifyFound();
+
+        VkClearAttachment clear_attachment;
+        clear_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        clear_attachment.colorAttachment = 0;
+        VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-renderpass");
+        vk::CmdClearAttachments(m_command_buffer, 1, &clear_attachment, 1, &clear_rect);
+        m_errorMonitor->VerifyFound();
+
+        VkImageMemoryBarrier image_barrier = image.ImageMemoryBarrier(0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
+                                                                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, range);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-commandBuffer-recording");
+        vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0,
+                               nullptr, 0, nullptr, 1, &image_barrier);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Buffer index_buffer(*m_device, 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindIndexBuffer-commandBuffer-recording");
+        vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        m_errorMonitor->VerifyFound();
+        VkDeviceSize offsets = 0;
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers-commandBuffer-recording");
+        vk::CmdBindVertexBuffers(m_command_buffer, 0, 1, &vertex_buffer.handle(), &offsets);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::Event event(*m_device);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdSetEvent-commandBuffer-recording");
+        vk::CmdSetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-commandBuffer-recording");
+        vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                          VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, nullptr, 0, nullptr, 0, nullptr);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetEvent-commandBuffer-recording");
+        vk::CmdResetEvent(m_command_buffer, event, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_TIMESTAMP, 1);
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-commandBuffer-recording");
+        vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 1);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQuery-queryType-02804");
+        vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+        m_errorMonitor->VerifyFound();
+        m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-commandBuffer-recording");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-None-01923");
+        vk::CmdEndQuery(m_command_buffer, query_pool, 0);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-commandBuffer-recording");
+        vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, query_pool, 0);
+        m_errorMonitor->VerifyFound();
+
+        vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-commandBuffer-recording");
+        vk::CmdCopyQueryPoolResults(m_command_buffer, query_pool, 0, 1, buffer, 0, 4, VK_QUERY_RESULT_WAIT_BIT);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+        VkPushConstantRange pc_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 4};
+        vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_}, {pc_range});
+        m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorSets-commandBuffer-recording");
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
+        m_errorMonitor->VerifyFound();
+
+        m_errorMonitor->SetDesiredError("VUID-vkCmdPushConstants-commandBuffer-recording");
+        uint32_t data = 0;
+        vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 4, &data);
+        m_errorMonitor->VerifyFound();
+    }
 }
