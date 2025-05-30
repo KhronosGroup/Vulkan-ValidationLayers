@@ -1283,6 +1283,7 @@ bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const V
         skip |= ValidateDrawPrimitivesGeneratedQuery(last_bound_state, vuid);
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawDualSourceBlend(last_bound_state, vuid);
+        skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, pipeline, *cb_state.active_render_pass, loc);
@@ -1796,6 +1797,56 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
                     i, max_fragment_location, phys_dev_props.limits.maxFragmentDualSrcAttachments,
                     string_VkBlendFactor(attachment.srcColorBlendFactor), string_VkBlendFactor(attachment.dstColorBlendFactor),
                     string_VkBlendFactor(attachment.srcAlphaBlendFactor), string_VkBlendFactor(attachment.dstAlphaBlendFactor));
+                break;
+            }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    const auto *pipeline = last_bound_state.pipeline_state;
+
+    if (!enabled_features.primitiveFragmentShadingRate ||
+        phys_dev_ext_props.fragment_shading_rate_props.primitiveFragmentShadingRateWithMultipleViewports) {
+        return skip;
+    }
+
+    if (pipeline) {
+        for (auto &stage_state : pipeline->stage_states) {
+            const VkShaderStageFlagBits stage = stage_state.GetStage();
+            if (!IsValueIn(stage, {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_GEOMETRY_BIT, VK_SHADER_STAGE_MESH_BIT_EXT})) {
+                continue;
+            }
+            if (pipeline->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) && cb_state.dynamic_state_value.viewport_count != 1) {
+                if (stage_state.entrypoint && stage_state.entrypoint->written_builtin_primitive_shading_rate_khr) {
+                    skip |=
+                        LogError(vuid.viewport_count_primitive_shading_rate_04552, stage_state.module_state->Handle(), vuid.loc(),
+                                 "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
+                                 "but multiple viewports (%" PRIu32
+                                 ") are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                 "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                 string_VkShaderStageFlagBits(stage), cb_state.dynamic_state_value.viewport_count);
+                }
+            }
+        }
+    } else {
+        for (uint32_t stage = 0; stage < kShaderObjectStageCount; ++stage) {
+            const auto shader_object = last_bound_state.GetShaderState(static_cast<ShaderObjectStage>(stage));
+            if (shader_object && shader_object->entrypoint &&
+                shader_object->entrypoint->written_builtin_primitive_shading_rate_khr) {
+                if (cb_state.dynamic_state_value.viewport_count != 1) {
+                    skip |= LogError(vuid.set_viewport_with_count_08642, cb_state.Handle(), vuid.loc(),
+                                     "%s shader of currently bound pipeline statically writes to PrimitiveShadingRateKHR built-in, "
+                                     "but multiple viewports (%" PRIu32
+                                     ") are set by the last call to vkCmdSetViewportWithCountEXT,"
+                                     "and the primitiveFragmentShadingRateWithMultipleViewports limit is not supported.",
+                                     string_VkShaderStageFlagBits(shader_object->create_info.stage),
+                                     cb_state.dynamic_state_value.viewport_count);
+                }
                 break;
             }
         }

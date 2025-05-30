@@ -265,7 +265,9 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDraw-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDraw-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDraw-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDraw-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDraw-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDraw-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDraw-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDraw-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDraw-samples-07473";
@@ -533,7 +535,9 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMultiEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMultiEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMultiEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMultiEXT-samples-07473";
@@ -802,7 +806,9 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexed-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndexed-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexed-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndexed-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexed-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexed-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexed-samples-07473";
@@ -1071,7 +1077,9 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMultiIndexedEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMultiIndexedEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMultiIndexedEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMultiIndexedEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMultiIndexedEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMultiIndexedEXT-samples-07473";
@@ -1340,7 +1348,9 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirect-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndirect-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirect-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndirect-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirect-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirect-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirect-samples-07473";
@@ -1608,7 +1618,9 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirect-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndexedIndirect-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirect-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndexedIndirect-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirect-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirect-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirect-samples-07473";
@@ -1975,7 +1987,9 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectCount-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndirectCount-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectCount-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndirectCount-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectCount-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirectCount-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirectCount-samples-07473";
@@ -2246,7 +2260,9 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndexedIndirectCount-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndexedIndirectCount-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndexedIndirectCount-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndexedIndirectCount-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndexedIndirectCount-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndexedIndirectCount-samples-07473";
@@ -2682,7 +2698,9 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksNV-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksNV-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksNV-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksNV-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksNV-samples-07473";
@@ -2935,7 +2953,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectNV-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksIndirectNV-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksIndirectNV-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectNV-samples-07473";
@@ -3191,7 +3211,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksIndirectCountNV-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountNV-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountNV-samples-07473";
@@ -3441,7 +3463,9 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksEXT-samples-07473";
@@ -3694,7 +3718,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksIndirectEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksIndirectEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectEXT-samples-07473";
@@ -3950,7 +3976,9 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-samples-07473";
@@ -4219,7 +4247,9 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_blend_equation_09418                 = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09418";
         set_color_write_09419                    = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09419";
         set_coverage_to_color_location_09420     = "VUID-vkCmdDrawIndirectByteCountEXT-rasterizerDiscardEnable-09420";
+        set_coverage_to_color_location_07490     = "VUID-vkCmdDrawIndirectByteCountEXT-coverageToColorEnable-07490";
         set_viewport_swizzle_09421               = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-09421";
+        set_viewport_swizzle_07493               = "VUID-vkCmdDrawIndirectByteCountEXT-viewportCount-07493";
         convervative_rasterization_07499         = "VUID-vkCmdDrawIndirectByteCountEXT-conservativePointAndLineRasterization-07499";
         sample_mask_07472                        = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07472";
         sample_mask_07473                       = "VUID-vkCmdDrawIndirectByteCountEXT-samples-07473";

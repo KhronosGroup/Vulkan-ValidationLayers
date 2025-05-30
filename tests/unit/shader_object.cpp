@@ -1174,9 +1174,7 @@ TEST_F(NegativeShaderObject, NotSettingViewportAndScissor) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    // not setting the viewport count also registers as a zero
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03417");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-viewportCount-03419");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4788,9 +4786,9 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
 
 TEST_F(NegativeShaderObject, InvalidViewportCount) {
     TEST_DESCRIPTION("Draw with a shader that uses PrimitiveShadingRateKHR with invalid viewport count.");
-
     AddRequiredExtensions(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::pipelineFragmentShadingRate);
+    AddRequiredFeature(vkt::Feature::primitiveFragmentShadingRate);
     AddRequiredFeature(vkt::Feature::multiViewport);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();

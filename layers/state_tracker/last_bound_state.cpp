@@ -450,6 +450,22 @@ VkCoverageModulationModeNV LastBound::GetCoverageModulationMode() const {
     return VK_COVERAGE_MODULATION_MODE_NONE_NV;
 }
 
+uint32_t LastBound::GetViewportSwizzleCount() const {
+    if (IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_VIEWPORT_SWIZZLE_NV)) {
+            return cb_state.dynamic_state_value.viewport_swizzle_count;
+        }
+    } else {
+        if (auto viewport_state = pipeline_state->ViewportState()) {
+            if (const auto *viewport_swizzle_state =
+                    vku::FindStructInPNextChain<VkPipelineViewportSwizzleStateCreateInfoNV>(viewport_state->pNext)) {
+                return viewport_swizzle_state->viewportCount;
+            }
+        }
+    }
+    return 0;
+}
+
 VkShaderEXT LastBound::GetShader(ShaderObjectStage stage) const {
     if (!IsValidShaderBound(stage) || GetShaderState(stage) == nullptr) return VK_NULL_HANDLE;
     return shader_object_states[static_cast<uint32_t>(stage)]->VkHandle();
