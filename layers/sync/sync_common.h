@@ -77,22 +77,12 @@ constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
 struct SyncStageAccess {
     static const SyncAccessInfo &AccessInfo(SyncAccessIndex access_index) { return GetSyncAccessInfos()[access_index]; }
-    static SyncAccessFlags FlagBit(SyncAccessIndex stage_access) { return GetSyncAccessInfos()[stage_access].access_bit; }
+    static bool IsRead(const SyncAccessInfo &info) { return syncAccessReadMask[info.access_index]; }
+    static bool IsWrite(const SyncAccessInfo &info) { return syncAccessWriteMask[info.access_index]; }
 
-    static bool IsRead(SyncAccessIndex access_index) { return syncAccessReadMask[access_index]; }
-    static bool IsRead(const SyncAccessInfo &info) { return IsRead(info.access_index); }
-    static bool IsWrite(SyncAccessIndex access_index) { return syncAccessWriteMask[access_index]; }
-    static bool IsWrite(const SyncAccessInfo &info) { return IsWrite(info.access_index); }
-
-    static VkPipelineStageFlags2 PipelineStageBit(SyncAccessIndex access_index) {
-        return GetSyncAccessInfos()[access_index].stage_mask;
-    }
     static SyncAccessFlags AccessScopeByStage(VkPipelineStageFlags2 stages);
     static SyncAccessFlags AccessScopeByAccess(VkAccessFlags2 access);
-    static SyncAccessFlags AccessScope(VkPipelineStageFlags2 stages, VkAccessFlags2 access);
-    static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessFlags2 accesses) {
-        return stage_scope & AccessScopeByAccess(accesses);
-    }
+    static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessFlags2 accesses);
 };
 
 // Notes:
