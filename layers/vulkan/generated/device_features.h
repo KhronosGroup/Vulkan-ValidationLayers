@@ -434,6 +434,8 @@ struct DeviceFeatures {
     bool vertexPipelineStoresAndAtomics;
     // VkPhysicalDeviceFeatures
     bool wideLines;
+    // VkPhysicalDeviceFormatPackFeaturesARM
+    bool formatPack;
     // VkPhysicalDeviceFragmentDensityMap2FeaturesEXT
     bool fragmentDensityMapDeferred;
     // VkPhysicalDeviceFragmentDensityMapFeaturesEXT

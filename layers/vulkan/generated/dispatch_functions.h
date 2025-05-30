@@ -3398,9 +3398,9 @@ static inline void DispatchCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-static inline void DispatchCmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
+static inline void DispatchCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
-    dispatch->CmdDispatchTileQCOM(commandBuffer);
+    dispatch->CmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo);
 }
 
 static inline void DispatchCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer,

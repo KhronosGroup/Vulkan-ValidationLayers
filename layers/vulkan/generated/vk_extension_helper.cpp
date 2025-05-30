@@ -425,6 +425,7 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_ARM_pipeline_opacity_micromap", vvl::Extension::_VK_ARM_pipeline_opacity_micromap},
         {"VK_EXT_external_memory_metal", vvl::Extension::_VK_EXT_external_memory_metal},
         {"VK_EXT_vertex_attribute_robustness", vvl::Extension::_VK_EXT_vertex_attribute_robustness},
+        {"VK_ARM_format_pack", vvl::Extension::_VK_ARM_format_pack},
         {"VK_NV_present_metering", vvl::Extension::_VK_NV_present_metering},
         {"VK_EXT_fragment_density_map_offset", vvl::Extension::_VK_EXT_fragment_density_map_offset},
         {"VK_EXT_zero_initialize_device_memory", vvl::Extension::_VK_EXT_zero_initialize_device_memory},
@@ -1899,6 +1900,7 @@ static const DeviceExtensionsInfoMap& GetDeviceInfoMap() {
         {vvl::Extension::_VK_EXT_vertex_attribute_robustness,
          Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
+        {vvl::Extension::_VK_ARM_format_pack, Info(&DeviceExtensions::vk_arm_format_pack, {})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {vvl::Extension::_VK_NV_present_metering, Info(&DeviceExtensions::vk_nv_present_metering, {})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS

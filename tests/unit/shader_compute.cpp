@@ -707,9 +707,8 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     TEST_DESCRIPTION("Compute dispatch with dimensions that exceed device limits");
 
     AddRequiredExtensions(VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME);
-    AddOptionalExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
-    const bool device_group_creation = IsExtensionsEnabled(VK_KHR_DEVICE_GROUP_EXTENSION_NAME);
 
     uint32_t x_count_limit = m_device->Physical().limits_.maxComputeWorkGroupCount[0];
     uint32_t y_count_limit = m_device->Physical().limits_.maxComputeWorkGroupCount[1];
@@ -787,7 +786,7 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
     vk::CmdDispatch(m_command_buffer, x_count_limit, y_count_limit, z_count_limit + 1);
     m_errorMonitor->VerifyFound();
 
-    if (device_group_creation) {
+    {
         // Base equals or exceeds limit
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-baseGroupX-00421");
         vk::CmdDispatchBaseKHR(m_command_buffer, x_count_limit, y_count_limit - 1, z_count_limit - 1, 0, 0, 0);
@@ -820,8 +819,6 @@ TEST_F(NegativeShaderCompute, CmdDispatchExceedLimits) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatchBase-groupCountZ-00426");
         vk::CmdDispatchBaseKHR(m_command_buffer, x_base, y_base, z_base, x_count_limit, y_count_limit, z_count_limit + 1);
         m_errorMonitor->VerifyFound();
-    } else {
-        printf("KHR_DEVICE_GROUP_* extensions not supported, skipping CmdDispatchBaseKHR() tests.\n");
     }
 }
 

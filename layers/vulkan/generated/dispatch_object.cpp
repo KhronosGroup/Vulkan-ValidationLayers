@@ -6845,7 +6845,9 @@ void Device::CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const VkCudaLa
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-void Device::CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) { device_dispatch_table.CmdDispatchTileQCOM(commandBuffer); }
+void Device::CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
+    device_dispatch_table.CmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo);
+}
 
 void Device::CmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo) {
     device_dispatch_table.CmdBeginPerTileExecutionQCOM(commandBuffer, pPerTileBeginInfo);

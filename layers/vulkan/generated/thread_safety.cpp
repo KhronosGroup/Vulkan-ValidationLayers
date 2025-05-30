@@ -6329,11 +6329,13 @@ void Device::PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-void Device::PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+void Device::PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                              const RecordObject& record_obj) {
     StartReadObject(commandBuffer, record_obj.location);
 }
 
-void Device::PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
+void Device::PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                               const RecordObject& record_obj) {
     FinishReadObject(commandBuffer, record_obj.location);
 }
 

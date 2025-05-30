@@ -2990,6 +2990,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::vertexAttributeRobustness), structure->vertexAttributeRobustness);
             }
         } break;
+
+        // Validation code for VkPhysicalDeviceFormatPackFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM: {  // Covers
+                                                                            // VUID-VkPhysicalDeviceFormatPackFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceFormatPackFeaturesARM);
+                VkPhysicalDeviceFormatPackFeaturesARM* structure = (VkPhysicalDeviceFormatPackFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::formatPack), structure->formatPack);
+            }
+        } break;
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
@@ -7291,6 +7301,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_SCREEN_BUFFER_FEATURES_QNX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FAULT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT,
@@ -21376,12 +21387,21 @@ bool Device::PreCallValidateCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer,
 }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 
-bool Device::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const {
+bool Device::PreCallValidateCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                                const ErrorObject& error_obj) const {
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_qcom_tile_shading)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_QCOM_tile_shading});
-    // No xml-driven validation
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pDispatchTileInfo), pDispatchTileInfo, VK_STRUCTURE_TYPE_DISPATCH_TILE_INFO_QCOM, true,
+        "VUID-vkCmdDispatchTileQCOM-pDispatchTileInfo-parameter", "VUID-VkDispatchTileInfoQCOM-sType-sType");
+    if (pDispatchTileInfo != nullptr) {
+        [[maybe_unused]] const Location pDispatchTileInfo_loc = loc.dot(Field::pDispatchTileInfo);
+        skip |=
+            context.ValidateStructPnext(pDispatchTileInfo_loc, pDispatchTileInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                        "VUID-VkDispatchTileInfoQCOM-pNext-pNext", kVUIDUndefined, true);
+    }
     return skip;
 }
 

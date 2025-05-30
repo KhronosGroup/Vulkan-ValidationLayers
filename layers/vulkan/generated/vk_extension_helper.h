@@ -507,6 +507,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_arm_pipeline_opacity_micromap{kNotEnabled};
     ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
+    ExtEnabled vk_arm_format_pack{kNotEnabled};
     ExtEnabled vk_nv_present_metering{kNotEnabled};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotEnabled};
@@ -949,6 +950,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_ARM_pipeline_opacity_micromap:
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
+        case vvl::Extension::_VK_ARM_format_pack:
         case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:

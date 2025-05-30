@@ -3228,9 +3228,11 @@ void PostCallRecordCmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, const Vk
                                          const RecordObject& record_obj) override;
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-void PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+void PreCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                      const RecordObject& record_obj) override;
 
-void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
+void PostCallRecordCmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo,
+                                       const RecordObject& record_obj) override;
 
 void PreCallRecordCmdBeginPerTileExecutionQCOM(VkCommandBuffer commandBuffer, const VkPerTileBeginInfoQCOM* pPerTileBeginInfo,
                                                const RecordObject& record_obj) override;

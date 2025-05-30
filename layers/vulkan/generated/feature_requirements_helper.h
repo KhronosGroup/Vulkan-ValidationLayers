@@ -424,6 +424,8 @@ enum class Feature {
     vertexPipelineStoresAndAtomics,
     // VkPhysicalDeviceFeatures
     wideLines,
+    // VkPhysicalDeviceFormatPackFeaturesARM
+    formatPack,
     // VkPhysicalDeviceFragmentDensityMap2FeaturesEXT
     fragmentDensityMapDeferred,
     // VkPhysicalDeviceFragmentDensityMapFeaturesEXT

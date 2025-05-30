@@ -1023,7 +1023,7 @@ static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaModuleNV(VkDevice, VkCudaModule
 static VKAPI_ATTR void VKAPI_CALL StubDestroyCudaFunctionNV(VkDevice, VkCudaFunctionNV, const VkAllocationCallbacks*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdCudaLaunchKernelNV(VkCommandBuffer, const VkCudaLaunchInfoNV*) {}
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchTileQCOM(VkCommandBuffer) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchTileQCOM(VkCommandBuffer, const VkDispatchTileInfoQCOM*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdBeginPerTileExecutionQCOM(VkCommandBuffer, const VkPerTileBeginInfoQCOM*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdEndPerTileExecutionQCOM(VkCommandBuffer, const VkPerTileEndInfoQCOM*) {}
 #ifdef VK_USE_PLATFORM_METAL_EXT

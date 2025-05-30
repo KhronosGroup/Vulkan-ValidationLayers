@@ -25277,7 +25277,7 @@ VKAPI_ATTR void VKAPI_CALL CmdCudaLaunchKernelNV(VkCommandBuffer commandBuffer, 
 }
 
 #endif  // VK_ENABLE_BETA_EXTENSIONS
-VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
+VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer, const VkDispatchTileInfoQCOM* pDispatchTileInfo) {
     VVL_ZoneScoped;
 
     auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
@@ -25290,7 +25290,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
                 continue;
             }
             auto lock = vo->ReadLock();
-            skip |= vo->PreCallValidateCmdDispatchTileQCOM(commandBuffer, error_obj);
+            skip |= vo->PreCallValidateCmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo, error_obj);
             if (skip) return;
         }
     }
@@ -25302,12 +25302,12 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
                 continue;
             }
             auto lock = vo->WriteLock();
-            vo->PreCallRecordCmdDispatchTileQCOM(commandBuffer, record_obj);
+            vo->PreCallRecordCmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo, record_obj);
         }
     }
     {
         VVL_ZoneScopedN("Dispatch_vkCmdDispatchTileQCOM");
-        device_dispatch->CmdDispatchTileQCOM(commandBuffer);
+        device_dispatch->CmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo);
     }
     {
         VVL_ZoneScopedN("PostCallRecord_vkCmdDispatchTileQCOM");
@@ -25316,7 +25316,7 @@ VKAPI_ATTR void VKAPI_CALL CmdDispatchTileQCOM(VkCommandBuffer commandBuffer) {
                 continue;
             }
             auto lock = vo->WriteLock();
-            vo->PostCallRecordCmdDispatchTileQCOM(commandBuffer, record_obj);
+            vo->PostCallRecordCmdDispatchTileQCOM(commandBuffer, pDispatchTileInfo, record_obj);
         }
     }
 }

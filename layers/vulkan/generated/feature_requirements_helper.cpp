@@ -2719,6 +2719,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->deviceFaultVendorBinary, "VkPhysicalDeviceFaultFeaturesEXT::deviceFaultVendorBinary"};
         }
 
+        case Feature::formatPack: {
+            auto vk_struct = const_cast<VkPhysicalDeviceFormatPackFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceFormatPackFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceFormatPackFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->formatPack, "VkPhysicalDeviceFormatPackFeaturesARM::formatPack"};
+        }
+
         case Feature::fragmentDensityMapDeferred: {
             auto vk_struct = const_cast<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceFragmentDensityMap2FeaturesEXT>(*inout_pnext_chain));
@@ -4453,21 +4468,21 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
-        case Feature::constantAlphaColorBlendFactors: {
-            auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
-                vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
-            if (!vk_struct) {
-                vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
-                *vk_struct = vku::InitStructHelper();
-                if (*inout_pnext_chain) {
-                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
-                } else {
-                    *inout_pnext_chain = vk_struct;
+                case Feature::constantAlphaColorBlendFactors : {
+                auto vk_struct = const_cast<VkPhysicalDevicePortabilitySubsetFeaturesKHR *>(
+                    vku::FindStructInPNextChain<VkPhysicalDevicePortabilitySubsetFeaturesKHR>(*inout_pnext_chain));
+                if (!vk_struct) {
+                    vk_struct = new VkPhysicalDevicePortabilitySubsetFeaturesKHR;
+                    *vk_struct = vku::InitStructHelper();
+                    if (*inout_pnext_chain) {
+                        vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                    } else {
+                        *inout_pnext_chain = vk_struct;
+                    }
                 }
+                return {&vk_struct->constantAlphaColorBlendFactors,
+                        "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors"};
             }
-            return {&vk_struct->constantAlphaColorBlendFactors,
-                    "VkPhysicalDevicePortabilitySubsetFeaturesKHR::constantAlphaColorBlendFactors"};
-        }
 #endif  // VK_ENABLE_BETA_EXTENSIONS
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 

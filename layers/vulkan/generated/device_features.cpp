@@ -1719,6 +1719,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->vertexAttributeRobustness |= enabled->vertexAttributeRobustness == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM: {
+                const VkPhysicalDeviceFormatPackFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceFormatPackFeaturesARM *>(pNext);
+                features->formatPack |= enabled->formatPack == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {
                 const VkPhysicalDevicePresentMeteringFeaturesNV *enabled =
