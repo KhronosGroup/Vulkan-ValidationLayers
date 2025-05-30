@@ -1135,10 +1135,11 @@ bool CoreChecks::PreCallValidateCmdClearAttachments(VkCommandBuffer commandBuffe
     const vvl::CommandBuffer &cb_state = *cb_state_ptr;
 
     skip |= ValidateCmd(cb_state, error_obj.location);
-    if (skip) return skip;  // basic validation failed, might have null pointers
 
     const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-    ASSERT_AND_RETURN_SKIP(rp_state);
+    if (!rp_state) {
+        return skip;
+    }
 
     // Validate that attachments are in reference list of active subpass
 

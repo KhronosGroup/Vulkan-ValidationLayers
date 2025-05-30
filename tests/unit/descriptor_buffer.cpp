@@ -1741,3 +1741,40 @@ TEST_F(NegativeDescriptorBuffer, MaxResourceDescriptorBufferBindings) {
 
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDescriptorBuffer, CommandBufferRecording) {
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(InitBasicDescriptorBuffer());
+    InitRenderTarget();
+
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT, vkt::device_address);
+
+    VkDescriptorBufferBindingInfoEXT buffer_binding_info = vku::InitStructHelper();
+    buffer_binding_info.address = buffer.Address();
+    buffer_binding_info.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+
+    const VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr};
+    const vkt::DescriptorSetLayout set_layout(*m_device, {binding}, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
+    const vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout});
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+    pipe.gp_ci_.layout = pipeline_layout;
+    pipe.CreateGraphicsPipeline();
+
+    const uint32_t index = 0;
+    const VkDeviceSize offset = 0;
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBuffersEXT-commandBuffer-recording");
+    vk::CmdBindDescriptorBuffersEXT(m_command_buffer, 1, &buffer_binding_info);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindDescriptorBufferEmbeddedSamplersEXT-set-08070");
+    vk::CmdBindDescriptorBufferEmbeddedSamplersEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-commandBuffer-recording");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdSetDescriptorBufferOffsetsEXT-pBufferIndices-08065");
+    vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &index, &offset);
+    m_errorMonitor->VerifyFound();
+}

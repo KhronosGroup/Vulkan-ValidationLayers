@@ -663,3 +663,42 @@ TEST_F(NegativeDebugExtensions, SetDeviceHandle) {
     vk::DestroyBuffer(device(), buffer, nullptr);
     vk::DestroyDevice(second_device, nullptr);
 }
+
+TEST_F(NegativeDebugExtensions, DebugMarkerRecording) {
+    AddRequiredExtensions(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDebugMarkerMarkerInfoEXT marker_info = vku::InitStructHelper();
+    marker_info.pMarkerName = "test";
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDebugMarkerBeginEXT-commandBuffer-recording");
+    vk::CmdDebugMarkerBeginEXT(m_command_buffer, &marker_info);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDebugMarkerEndEXT-commandBuffer-recording");
+    vk::CmdDebugMarkerEndEXT(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDebugMarkerInsertEXT-commandBuffer-recording");
+    vk::CmdDebugMarkerInsertEXT(m_command_buffer, &marker_info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDebugExtensions, DebugUtilsRecording) {
+    AddRequiredExtensions(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    RETURN_IF_SKIP(Init());
+
+    VkDebugUtilsLabelEXT label = vku::InitStructHelper();
+    label.pLabelName = "test";
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginDebugUtilsLabelEXT-commandBuffer-recording");
+    vk::CmdBeginDebugUtilsLabelEXT(m_command_buffer, &label);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording");
+    vk::CmdEndDebugUtilsLabelEXT(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdInsertDebugUtilsLabelEXT-commandBuffer-recording");
+    vk::CmdInsertDebugUtilsLabelEXT(m_command_buffer, &label);
+    m_errorMonitor->VerifyFound();
+}
