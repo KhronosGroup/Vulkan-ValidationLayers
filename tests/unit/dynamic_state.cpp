@@ -161,7 +161,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_0);
 
-    m_errorMonitor->SetDesiredError("No Dynamic");      // VUID-vkCmdDraw-None-07638
+    m_errorMonitor->SetDesiredError("No Dynamic");  // VUID-vkCmdDraw-None-08670
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
