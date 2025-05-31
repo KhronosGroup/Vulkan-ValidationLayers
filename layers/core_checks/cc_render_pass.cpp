@@ -4010,8 +4010,9 @@ bool CoreChecks::ValidateCmdEndRendering(const vvl::CommandBuffer& cb_state, con
     bool skip = false;
 
     skip |= ValidateCmd(cb_state, error_obj.location);
-    if (skip) return skip;  // basic validation failed, might have null pointers
-    ASSERT_AND_RETURN_SKIP(cb_state.active_render_pass);
+    if (!cb_state.active_render_pass) {
+        return skip;
+    }
 
     const bool is_ext = error_obj.location.function == Func::vkCmdEndRendering2EXT;
 
@@ -4054,40 +4055,41 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
     skip |= ValidateCmdEndRendering(cb_state, error_obj);
 
     const auto *rp_state_ptr = cb_state.active_render_pass.get();
-    if (rp_state_ptr && pRenderingEndInfo) {
-        if (const auto *fdm_offset_end_info =
-                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext)) {
-            if (fdm_offset_end_info->fragmentDensityOffsetCount != 0) {
-                skip |= ValidateFragmentDensityMapOffsetEnd(
-                    cb_state, *rp_state_ptr, *fdm_offset_end_info,
-                    error_obj.location.dot(Field::pRenderingEndInfo).pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT));
-            }
+    if (!rp_state_ptr || !pRenderingEndInfo) {
+        return skip;
+    }
 
-            const auto &cb_sub_state = core::SubState(cb_state);
-            const uint32_t previous_count = static_cast<uint32_t>(cb_sub_state.fragment_density_offsets.size());
-            if (previous_count > 0) {
-                if (fdm_offset_end_info->fragmentDensityOffsetCount != previous_count) {
-                    skip |= LogError(
-                        "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
-                        error_obj.location.dot(Field::pRenderingEndInfo)
-                            .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::fragmentDensityOffsetCount),
-                        "%" PRIu32 " does not match previous fragmentDensityOffsetCount (%" PRIu32 ") used in the render pass",
-                        fdm_offset_end_info->fragmentDensityOffsetCount, previous_count);
-                } else {
-                    for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
-                        if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != cb_sub_state.fragment_density_offsets[i].x ||
-                            fdm_offset_end_info->pFragmentDensityOffsets[i].y != cb_sub_state.fragment_density_offsets[i].y) {
-                            skip |= LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730",
-                                             commandBuffer,
-                                             error_obj.location.dot(Field::pRenderingEndInfo)
-                                                 .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT,
-                                                        Field::pFragmentDensityOffsets, i),
-                                             "is (%s) which does not match previous fragmentDensityOffsetCount[%" PRIu32
-                                             "] used in the render pass (%s)",
-                                             string_VkOffset2D(fdm_offset_end_info->pFragmentDensityOffsets[i]).c_str(), i,
-                                             string_VkOffset2D(cb_sub_state.fragment_density_offsets[i]).c_str());
-                            break;
-                        }
+    if (const auto *fdm_offset_end_info =
+            vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext)) {
+        if (fdm_offset_end_info->fragmentDensityOffsetCount != 0) {
+            skip |= ValidateFragmentDensityMapOffsetEnd(
+                cb_state, *rp_state_ptr, *fdm_offset_end_info,
+                error_obj.location.dot(Field::pRenderingEndInfo).pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT));
+        }
+
+        const auto &cb_sub_state = core::SubState(cb_state);
+        const uint32_t previous_count = static_cast<uint32_t>(cb_sub_state.fragment_density_offsets.size());
+        if (previous_count > 0) {
+            if (fdm_offset_end_info->fragmentDensityOffsetCount != previous_count) {
+                skip |=
+                    LogError("VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
+                             error_obj.location.dot(Field::pRenderingEndInfo)
+                                 .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::fragmentDensityOffsetCount),
+                             "%" PRIu32 " does not match previous fragmentDensityOffsetCount (%" PRIu32 ") used in the render pass",
+                             fdm_offset_end_info->fragmentDensityOffsetCount, previous_count);
+            } else {
+                for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
+                    if (fdm_offset_end_info->pFragmentDensityOffsets[i].x != cb_sub_state.fragment_density_offsets[i].x ||
+                        fdm_offset_end_info->pFragmentDensityOffsets[i].y != cb_sub_state.fragment_density_offsets[i].y) {
+                        skip |= LogError(
+                            "VUID-VkRenderPassFragmentDensityMapOffsetEndInfoEXT-pFragmentDensityOffsets-10730", commandBuffer,
+                            error_obj.location.dot(Field::pRenderingEndInfo)
+                                .pNext(Struct::VkRenderPassFragmentDensityMapOffsetEndInfoEXT, Field::pFragmentDensityOffsets, i),
+                            "is (%s) which does not match previous fragmentDensityOffsetCount[%" PRIu32
+                            "] used in the render pass (%s)",
+                            string_VkOffset2D(fdm_offset_end_info->pFragmentDensityOffsets[i]).c_str(), i,
+                            string_VkOffset2D(cb_sub_state.fragment_density_offsets[i]).c_str());
+                        break;
                     }
                 }
             }
@@ -4197,8 +4199,9 @@ bool CoreChecks::ValidateCmdNextSubpass(VkCommandBuffer commandBuffer, const Err
     const char *vuid;
 
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (skip) return skip;  // basic validation failed, might have null pointers
-    ASSERT_AND_RETURN_SKIP(cb_state->active_render_pass);
+    if (!cb_state->active_render_pass) {
+        return skip;
+    }
 
     auto subpass_count = cb_state->active_render_pass->create_info.subpassCount;
     if (cb_state->GetActiveSubpass() == subpass_count - 1) {

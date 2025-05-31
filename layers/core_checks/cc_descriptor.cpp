@@ -2232,6 +2232,8 @@ bool CoreChecks::ValidateCmdSetDescriptorBufferOffsets(const vvl::CommandBuffer 
                                                        uint32_t firstSet, uint32_t setCount, const uint32_t *pBufferIndices,
                                                        const VkDeviceSize *pOffsets, const Location &loc) const {
     bool skip = false;
+    skip |= ValidateCmd(cb_state, loc);
+
     auto pipeline_layout = Get<vvl::PipelineLayout>(layout);
     if (!pipeline_layout) return skip;  // dynamicPipelineLayout
 
@@ -2416,6 +2418,7 @@ bool CoreChecks::PreCallValidateCmdSetDescriptorBufferOffsets2EXT(
 bool CoreChecks::ValidateCmdBindDescriptorBufferEmbeddedSamplers(const vvl::CommandBuffer &cb_state, VkPipelineLayout layout,
                                                                  uint32_t set, const Location &loc) const {
     bool skip = false;
+    skip |= ValidateCmd(cb_state, loc);
     const bool is_2 = loc.function != Func::vkCmdBindDescriptorBufferEmbeddedSamplersEXT;
 
     if (!enabled_features.descriptorBuffer) {
@@ -2486,9 +2489,9 @@ bool CoreChecks::PreCallValidateCmdBindDescriptorBufferEmbeddedSamplers2EXT(
 bool CoreChecks::PreCallValidateCmdBindDescriptorBuffersEXT(VkCommandBuffer commandBuffer, uint32_t bufferCount,
                                                             const VkDescriptorBufferBindingInfoEXT *pBindingInfos,
                                                             const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-
     bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     // A "descriptor buffer" binding is seperate from a "VkBuffer" so you can have the same address to the same VkBuffer and it will
     // count as 2, not 1, towards the limit. (more info at https://gitlab.khronos.org/vulkan/vulkan/-/issues/4086)
@@ -4668,9 +4671,6 @@ bool CoreChecks::ValidateCmdPushConstants(VkCommandBuffer commandBuffer, VkPipel
 
     // Check if pipeline_layout VkPushConstantRange(s) overlapping offset, size have stageFlags set for each stage in the command
     // stageFlags argument, *and* that the command stageFlags argument has bits set for the stageFlags in each overlapping range.
-    if (skip) {
-        return skip;
-    }
     auto layout_state = Get<vvl::PipelineLayout>(layout);
     if (!layout_state) return skip;  // dynamicPipelineLayout feature
 

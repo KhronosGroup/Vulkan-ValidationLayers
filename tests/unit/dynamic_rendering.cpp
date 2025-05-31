@@ -6442,3 +6442,11 @@ TEST_F(NegativeDynamicRendering, InheritanceRenderingInfoViewMask) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeDynamicRendering, CommandBufferRecording) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitDynamicRenderTarget();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRendering-commandBuffer-recording");
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    m_errorMonitor->VerifyFound();
+}

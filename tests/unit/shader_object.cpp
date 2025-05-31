@@ -532,6 +532,7 @@ TEST_F(NegativeShaderObject, ComputeShaderNotSupportedByCommandPool) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08476");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
     vk::CmdBindShadersEXT(command_buffer, 1u, &create_info.stage, &shader.handle());
     m_errorMonitor->VerifyFound();
 
@@ -558,6 +559,7 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08477");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
     vk::CmdBindShadersEXT(command_buffer, 1u, &create_info.stage, &shader.handle());
     m_errorMonitor->VerifyFound();
 
@@ -584,6 +586,7 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08478");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
     vk::CmdBindShadersEXT(command_buffer, 1u, &create_info.stage, &shader.handle());
     m_errorMonitor->VerifyFound();
 
@@ -7191,5 +7194,14 @@ TEST_F(NegativeShaderObject, UnbindCompute) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-10743");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeShaderObject, CommandBufferRecording) {
+    RETURN_IF_SKIP(InitBasicShaderObject());
+    VkShaderStageFlagBits stage = VK_SHADER_STAGE_VERTEX_BIT;
+    const vkt::Shader vert_shader(*m_device, stage, kVertexMinimalGlsl);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-recording");
+    vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &vert_shader.handle());
     m_errorMonitor->VerifyFound();
 }

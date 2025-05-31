@@ -55,15 +55,6 @@ TEST_F(NegativeCopyBufferImage, ImageBufferCopy) {
     region.imageExtent = {64, 64, 1};
     region.bufferOffset = 0;
 
-    // attempt copies before putting command buffer in recording state
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-commandBuffer-recording");
-    vk::CmdCopyBufferToImage(m_command_buffer, buffer_64k, image_64k, VK_IMAGE_LAYOUT_GENERAL, 1, &region);
-    m_errorMonitor->VerifyFound();
-
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImageToBuffer-commandBuffer-recording");
-    vk::CmdCopyImageToBuffer(m_command_buffer, image_64k, VK_IMAGE_LAYOUT_GENERAL, buffer_64k, 1, &region);
-    m_errorMonitor->VerifyFound();
-
     m_command_buffer.Begin();
 
     // successful copies
@@ -2198,11 +2189,6 @@ TEST_F(NegativeCopyBufferImage, ImageAspectMismatch) {
     copy_region.dstSubresource = {VK_IMAGE_ASPECT_DEPTH_BIT, 0, 0, 1};
     copy_region.dstOffset = {64, 0, 0};
     copy_region.extent = {64, 128, 1};
-
-    // Submitting command before command buffer is in recording state
-    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyImage-commandBuffer-recording");
-    vk::CmdCopyImage(m_command_buffer, depth_image, VK_IMAGE_LAYOUT_GENERAL, depth_image, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
-    m_errorMonitor->VerifyFound();
 
     m_command_buffer.Begin();
 

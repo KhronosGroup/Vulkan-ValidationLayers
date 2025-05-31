@@ -1498,6 +1498,41 @@ bool CoreChecks::PreCallValidateCmdDebugMarkerEndEXT(VkCommandBuffer commandBuff
     return ValidateCmd(*cb_state, error_obj.location);
 }
 
+bool CoreChecks::PreCallValidateCmdDebugMarkerInsertEXT(VkCommandBuffer commandBuffer,
+                                                        const VkDebugMarkerMarkerInfoEXT *pMarkerInfo,
+                                                        const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    return ValidateCmd(*cb_state, error_obj.location);
+}
+
+bool CoreChecks::PreCallValidateCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo,
+                                                           const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    return ValidateCmd(*cb_state, error_obj.location);
+}
+
+bool CoreChecks::PreCallValidateCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT *pLabelInfo,
+                                                            const ErrorObject &error_obj) const {
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    return ValidateCmd(*cb_state, error_obj.location);
+}
+
+bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
+    bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->IsPrimary() || enabled_features.nestedCommandBuffer) {
+        return skip;
+    }
+
+    if (cb_state->GetLabelStackDepth() < 1) {
+        skip |= LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913", commandBuffer, error_obj.location,
+                         "called without a corresponding vkCmdBeginDebugUtilsLabelEXT first");
+    }
+    return skip;
+}
+
 bool CoreChecks::ValidateCmdDrawStrideWithStruct(const vvl::CommandBuffer &cb_state, const std::string &vuid, const uint32_t stride,
                                                  Struct struct_name, const uint32_t struct_size, const Location &loc) const {
     bool skip = false;
@@ -1590,7 +1625,6 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
-    if (skip) return skip;  // basic validation failed, might have null pointers
 
     const auto *pipe = cb_state->lastBound[VK_PIPELINE_BIND_POINT_GRAPHICS].pipeline_state;
     if (!pipe && !enabled_features.shaderObject) {
@@ -1678,6 +1712,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
     if (!cb_state->transform_feedback_active) {
         skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-None-02375", commandBuffer, error_obj.location,
                          "transform feedback is not active.");
@@ -1770,7 +1805,9 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
     bool skip = false;
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    if (cb_state && cb_state->conditional_rendering_active) {
+    skip |= ValidateCmd(*cb_state, error_obj.location);
+
+    if (cb_state->conditional_rendering_active) {
         skip |= LogError("VUID-vkCmdBeginConditionalRenderingEXT-None-01980", commandBuffer, error_obj.location,
                          "Conditional rendering is already active.");
     }
@@ -1806,9 +1843,7 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
     bool skip = false;
 
     auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        return skip;
-    }
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     if (!cb_state->conditional_rendering_active) {
         skip |= LogError("VUID-vkCmdEndConditionalRenderingEXT-None-01985", commandBuffer, error_obj.location,
@@ -1832,9 +1867,8 @@ bool CoreChecks::PreCallValidateCmdEndConditionalRenderingEXT(VkCommandBuffer co
 
 bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer commandBuffer, VkImageView imageView,
                                                           VkImageLayout imageLayout, const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     bool skip = false;
-
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateCmd(*cb_state, error_obj.location);
 
     if (!enabled_features.shadingRateImage) {
@@ -1899,21 +1933,6 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
     return skip;
 }
 
-bool CoreChecks::PreCallValidateCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
-    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
-    bool skip = false;
-
-    if (cb_state->IsPrimary() || enabled_features.nestedCommandBuffer) {
-        return skip;
-    }
-
-    if (cb_state->GetLabelStackDepth() < 1) {
-        skip |= LogError("VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-01913", commandBuffer, error_obj.location,
-                         "called without a corresponding vkCmdBeginDebugUtilsLabelEXT first");
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateVkConvertCooperativeVectorMatrixInfoNV(const LogObjectList &objlist,
                                                                 const VkConvertCooperativeVectorMatrixInfoNV &info,
                                                                 const Location &info_loc) const {
@@ -1961,6 +1980,8 @@ bool CoreChecks::PreCallValidateCmdConvertCooperativeVectorMatrixNV(VkCommandBuf
                                                                     const VkConvertCooperativeVectorMatrixInfoNV *pInfos,
                                                                     const ErrorObject &error_obj) const {
     bool skip = false;
+    auto cb_state = GetRead<vvl::CommandBuffer>(commandBuffer);
+    skip |= ValidateCmd(*cb_state, error_obj.location);
 
     for (uint32_t i = 0; i < infoCount; ++i) {
         auto const &info = pInfos[i];
