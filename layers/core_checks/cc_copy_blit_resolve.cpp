@@ -522,9 +522,9 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              "(%" PRIu32
                              ") must be a multiple of the image format (%s) texel block width "
                              "(%" PRIu32 "), or when added to imageOffset.x (%" PRId32
-                             ") must equal the image subresource width (%" PRIu32 ").",
+                             ") must equal the image subresource width (%" PRIu32 ").\n%s",
                              region.imageExtent.width, string_VkFormat(image_format), block_extent.width, region.imageOffset.x,
-                             effective_image_extent.width);
+                             effective_image_extent.width, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         } else if ((SafeModulo(region.imageExtent.height, block_extent.height) != 0) &&
                    (region.imageExtent.height + region.imageOffset.y != effective_image_extent.height)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentHeight_00208), objlist,
@@ -532,9 +532,9 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              "(%" PRIu32
                              ") must be a multiple of the image format (%s) texel block height "
                              "(%" PRIu32 "), or when added to imageOffset.y (%" PRId32
-                             ") must equal the image subresource height (%" PRIu32 ").",
+                             ") must equal the image subresource height (%" PRIu32 ").\n%s",
                              region.imageExtent.height, string_VkFormat(image_format), block_extent.height, region.imageOffset.y,
-                             effective_image_extent.height);
+                             effective_image_extent.height, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         } else if ((SafeModulo(region.imageExtent.depth, block_extent.depth) != 0) &&
                    (region.imageExtent.depth + region.imageOffset.z != effective_image_extent.depth)) {
             skip |= LogError(GetCopyBufferImageVUID(region_loc, vvl::CopyError::TexelBlockExtentDepth_00209), objlist,
@@ -542,9 +542,9 @@ bool CoreChecks::ValidateHeterogeneousCopyData(const RegionType &region, const v
                              "(%" PRIu32
                              ") must be a multiple of the image format (%s) texel block depth "
                              "(%" PRIu32 "), or when added to imageOffset.z (%" PRId32
-                             ") must equal the image subresource depth (%" PRIu32 ").",
+                             ") must equal the image subresource depth (%" PRIu32 ").\n%s",
                              region.imageExtent.depth, string_VkFormat(image_format), block_extent.depth, region.imageOffset.z,
-                             effective_image_extent.depth);
+                             effective_image_extent.depth, image_state.DescribeSubresourceLayers(region.imageSubresource).c_str());
         }
 
         if (SafeModulo(region.imageOffset.x, block_extent.width) != 0) {

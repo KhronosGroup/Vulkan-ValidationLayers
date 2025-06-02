@@ -4271,3 +4271,37 @@ TEST_F(NegativeCopyBufferImage, Image2dTo3dArrayLayer) {
     vk::CmdCopyImage(m_command_buffer, image_2D, VK_IMAGE_LAYOUT_GENERAL, image_3D, VK_IMAGE_LAYOUT_GENERAL, 1, &copy_region);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeCopyBufferImage, CopyBufferToCompressedNonFullTexelBlock) {
+    RETURN_IF_SKIP(Init());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
+    image_ci.extent = {24u, 24u, 1u};
+    image_ci.mipLevels = 3u;
+    image_ci.arrayLayers = 3u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+        GTEST_SKIP() << "image format not supported";
+    }
+    vkt::Image dst_image(*m_device, image_ci);
+    vkt::Buffer buffer(*m_device, 4096, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+    VkBufferImageCopy buffer_image_copy;
+    buffer_image_copy.bufferOffset = 0u;
+    buffer_image_copy.bufferRowLength = 24u;
+    buffer_image_copy.bufferImageHeight = 24u;
+    buffer_image_copy.imageSubresource = {1u, 0u, 0u, 1u};
+    buffer_image_copy.imageOffset = {0, 0, 0};
+    buffer_image_copy.imageExtent = {22u, 22u, 1u};
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-dstImage-00207");
+    vk::CmdCopyBufferToImage(m_command_buffer, buffer, dst_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &buffer_image_copy);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
