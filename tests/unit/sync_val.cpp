@@ -2846,84 +2846,60 @@ struct CreateRenderPassHelper {
     }
 };
 
-struct SyncTestPipeline {
-    VkLayerTest& test;
-    VkRenderPass rp;
-    CreatePipelineHelper g_pipe;
-    VkShaderObj vs;
-    VkShaderObj fs;
-    VkSamplerCreateInfo sampler_info;
-    vkt::Sampler sampler;
-    VkImageView view_input = VK_NULL_HANDLE;
-    SyncTestPipeline(VkLayerTest& test_, VkRenderPass rp_)
-        : test(test_),
-          rp(rp_),
-          g_pipe(test),
-          vs(&test, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT),
-          fs(&test, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT),
-          sampler_info(SafeSaneSamplerCreateInfo()),
-          sampler() {
-        sampler.init(*test.DeviceObj(), sampler_info);
-        g_pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-        g_pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-        g_pipe.gp_ci_.renderPass = rp;
-    }
-    void Init() {
-        ASSERT_EQ(VK_SUCCESS, g_pipe.CreateGraphicsPipeline());
-        g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-        g_pipe.descriptor_set_->UpdateDescriptorSets();
-    }
-};
-
 TEST_F(NegativeSyncVal, LayoutTransition) {
-    RETURN_IF_SKIP(InitSyncValFramework());
-    RETURN_IF_SKIP(InitState());
+    RETURN_IF_SKIP(InitSyncVal());
 
     CreateRenderPassHelper rp_helper(m_device);
     rp_helper.Init();
-    const VkImage image_input_handle = rp_helper.image_input->handle();
-    const VkRenderPass rp = rp_helper.render_pass->handle();
 
-    SyncTestPipeline st_pipe(*this, rp);
-    st_pipe.view_input = rp_helper.view_input;
-    st_pipe.Init();
-    const auto& g_pipe = st_pipe.g_pipe;
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.gp_ci_.renderPass = *rp_helper.render_pass;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper.view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    pipe.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    auto cb = m_command_buffer.handle();
+
     VkClearColorValue ccv = {};
     VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    const VkImageMemoryBarrier preClearBarrier = {
-        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,   0, 0, image_input_handle,           full_subresource_range,
-    };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                           &preClearBarrier);
+    VkImageMemoryBarrier pre_clear_barrier = vku::InitStructHelper();
+    pre_clear_barrier.srcAccessMask = 0;
+    pre_clear_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    pre_clear_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    pre_clear_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    pre_clear_barrier.image = *rp_helper.image_input;
+    pre_clear_barrier.subresourceRange = full_subresource_range;
 
-    vk::CmdClearColorImage(m_command_buffer, image_input_handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ccv, 1,
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &pre_clear_barrier);
+
+    vk::CmdClearColorImage(m_command_buffer, *rp_helper.image_input, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ccv, 1,
                            &full_subresource_range);
 
-    const VkImageMemoryBarrier postClearBarrier = {
-        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        0,
-        VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        0,
-        0,
-        image_input_handle,
-        full_subresource_range,
-    };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    VkImageMemoryBarrier post_clear_barrier = vku::InitStructHelper();
+    post_clear_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    post_clear_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    post_clear_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    post_clear_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    post_clear_barrier.image = *rp_helper.image_input;
+    post_clear_barrier.subresourceRange = full_subresource_range;
+
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                            VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &postClearBarrier);
+                           0u, nullptr, 1u, &post_clear_barrier);
 
     m_command_buffer.BeginRenderPass(rp_helper.render_pass_begin);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_pipe.pipeline_layout_, 0, 1,
-                              &g_pipe.descriptor_set_->set_, 0, nullptr);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
 
     // Positive test for ordering rules between load and input attachment usage
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
@@ -2933,29 +2909,26 @@ TEST_F(NegativeSyncVal, LayoutTransition) {
 
     // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdClearColorImage(m_command_buffer, image_input_handle, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(m_command_buffer, *rp_helper.image_input, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
     m_errorMonitor->VerifyFound();
 
     // There should be no hazard for ILT after ILT
     m_command_buffer.End();
     vk::ResetCommandPool(device(), m_command_pool, 0);
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u, nullptr, 1u,
-                           &preClearBarrier);
-    const VkImageMemoryBarrier wawBarrier = {
-        VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        0,
-        VK_ACCESS_SHADER_READ_BIT,
-        VK_ACCESS_SHADER_READ_BIT,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        0,
-        0,
-        image_input_handle,
-        full_subresource_range,
-    };
-    vk::CmdPipelineBarrier(cb, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &wawBarrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &pre_clear_barrier);
+
+    VkImageMemoryBarrier waw_barrier = vku::InitStructHelper();
+    waw_barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    waw_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    waw_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    waw_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    waw_barrier.image = *rp_helper.image_input;
+    waw_barrier.subresourceRange = full_subresource_range;
+
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
+                           nullptr, 0u, nullptr, 1u, &waw_barrier);
     m_command_buffer.End();
 }
 
