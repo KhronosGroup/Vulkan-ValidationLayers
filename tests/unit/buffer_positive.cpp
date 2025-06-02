@@ -196,8 +196,6 @@ TEST_F(PositiveBuffer, IndexBufferNull) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
-
     vk::CmdBindIndexBuffer(m_command_buffer, VK_NULL_HANDLE, 0, VK_INDEX_TYPE_UINT32);
     vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
     m_command_buffer.EndRenderPass();

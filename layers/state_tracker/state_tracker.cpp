@@ -2861,10 +2861,13 @@ void DeviceState::PostCallRecordCmdPushConstants2KHR(VkCommandBuffer commandBuff
 
 void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                    VkIndexType indexType, const RecordObject &record_obj) {
-    if (buffer == VK_NULL_HANDLE) {
-        return;  // allowed in maintenance6
-    }
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (buffer == VK_NULL_HANDLE) {
+        if (enabled_features.maintenance6) {
+            cb_state->index_buffer_binding.bound = true;
+        }
+        return;
+    }
 
     auto buffer_state = Get<Buffer>(buffer);
     // Being able to set the size was added in VK_KHR_maintenance5 via vkCmdBindIndexBuffer2KHR
@@ -2880,10 +2883,13 @@ void DeviceState::PostCallRecordCmdBindIndexBuffer(VkCommandBuffer commandBuffer
 
 void DeviceState::PostCallRecordCmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                     VkDeviceSize size, VkIndexType indexType, const RecordObject &record_obj) {
-    if (buffer == VK_NULL_HANDLE) {
-        return;  // allowed in maintenance6
-    }
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
+    if (buffer == VK_NULL_HANDLE) {
+        if (enabled_features.maintenance6) {
+            cb_state->index_buffer_binding.bound = true;
+        }
+        return;
+    }
 
     auto buffer_state = Get<Buffer>(buffer);
     VkDeviceSize buffer_size = Buffer::GetRegionSize(buffer_state, offset, size);

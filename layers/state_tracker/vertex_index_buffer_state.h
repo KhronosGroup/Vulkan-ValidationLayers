@@ -42,14 +42,17 @@ struct VertexBufferBinding {
 };
 
 struct IndexBufferBinding {
-    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using nullDescriptor
+    // buffer might be VK_NULL_HANDLE because it was set or by default, we need to actually know if the command buffer binds or not
+    bool bound;
+
+    VkBuffer buffer;  // VK_NULL_HANDLE is valid if using maintenance6
     VkDeviceSize size;
     VkDeviceSize offset;
     VkIndexType index_type;
 
-    IndexBufferBinding() : buffer(VK_NULL_HANDLE), size(0), offset(0), index_type(static_cast<VkIndexType>(0)) {}
+    IndexBufferBinding() : bound(false), buffer(VK_NULL_HANDLE), size(0), offset(0), index_type(static_cast<VkIndexType>(0)) {}
     IndexBufferBinding(VkBuffer buffer_, VkDeviceSize size_, VkDeviceSize offset_, VkIndexType index_type_)
-        : buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
+        : bound(true), buffer(buffer_), size(size_), offset(offset_), index_type(index_type_) {}
 
     void reset() { *this = IndexBufferBinding(); }
 };
