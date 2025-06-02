@@ -16,11 +16,11 @@ correctly use the API.
 
 ## Configuring the Validation Layer
 
-There are 4 ways to configure the settings: `vkconfig`, `application defined`, `vk_layer_settings.txt`, `environment variables`
+There are 4 ways to configure the settings: *Vulkan Configurator*, `application defined`, `vk_layer_settings.txt`, `environment variables` as described in the [layers configuration](https://vulkan.lunarg.com/doc/view/latest/windows/layer_configuration.html) documentation and described in the [Configuring Vulkan Layers](https://www.lunarg.com/wp-content/uploads/2024/04/Configuring-Vulkan-Layers-LunarG-Christophe-Riccio-04-11-2024.pdf) whitepaper.
 
-## VkConfig
+## *Vulkan Configurator*
 
-We suggest people to use [VkConfig](https://www.lunarg.com/introducing-the-new-vulkan-configurator-vkconfig/).
+We suggest people to use [*Vulkan Configurator*](https://www.lunarg.com/introducing-the-new-vulkan-configurator-vkconfig/).
 
 The GUI comes with the SDK, and takes the `VkLayer_khronos_validation.json` file and does **everything** for you!
 
@@ -71,8 +71,8 @@ export VK_LAYER_MESSAGE_ID_FILTER=VUID-VkInstanceCreateInfo-pNext-pNext
 adb setprop debug.vulkan.khronos_validation.message_id_filter=VUID-VkInstanceCreateInfo-pNext-pNext
 ```
 
-## Layer Options
+## Layer Settings
 
-> We suggest using `VkConfig` to discover the options, but the following is generated per SDK version
+> We suggest using *Vulkan Configurator* to discover the layer settings, but the following is generated per SDK version
 
-The options for this layer are specified in VkLayer_khronos_validation.json. The option details are in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html).
+The settings for this layer are specified in `VkLayer_khronos_validation.json`. The settings details are in [khronos_validation_layer.html](https://vulkan.lunarg.com/doc/sdk/latest/windows/khronos_validation_layer.html).

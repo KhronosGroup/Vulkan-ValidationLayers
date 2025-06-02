@@ -58,8 +58,9 @@ We will be strict to enforce any new VUs added have a good, well written error m
 
 ## Testing Your Changes
 
-- [How to setup tests to run](./tests)
+- [How to setup tests to run](./tests).
 - [Overview for creating tests](docs/creating_tests.md).
+- When updating the [layer settings](./layers/VkLayer_khronos_validation.json.in), the [layer settings schema](https://github.com/LunarG/VulkanTools/blob/main/vkconfig_core/layers/layers_schema.json) can be used to validate the changes.
 
 > Tip - If you make a fork and push to it, it will run CI there before your make a PR!
 
