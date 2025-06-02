@@ -403,27 +403,28 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
     const char *vuid = kVUIDUndefined;
 
     // Check for layouts that mismatch image usages in the framebuffer
+    bool invalid = false;
     if (layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03094" : "VUID-vkCmdBeginRenderPass-initialLayout-00895";
-        skip = true;
+        invalid = true;
     } else if (layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL &&
                !(image_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03097" : "VUID-vkCmdBeginRenderPass-initialLayout-00897";
-        skip = true;
+        invalid = true;
     } else if (layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03098" : "VUID-vkCmdBeginRenderPass-initialLayout-00898";
-        skip = true;
+        invalid = true;
     } else if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && !(image_usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03099" : "VUID-vkCmdBeginRenderPass-initialLayout-00899";
-        skip = true;
+        invalid = true;
     } else if (layout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
         if (((image_usage & (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0) ||
             ((image_usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07002" : "VUID-vkCmdBeginRenderPass-initialLayout-07000";
-            skip = true;
+            invalid = true;
         } else if (!(image_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT)) {
             vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-07003" : "VUID-vkCmdBeginRenderPass-initialLayout-07001";
-            skip = true;
+            invalid = true;
         }
     } else if ((layout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL ||
                 layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL ||
@@ -431,28 +432,28 @@ bool CoreChecks::ValidateRenderPassLayoutAgainstFramebufferImageUsage(VkImageLay
                 layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL) &&
                !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-03096" : "VUID-vkCmdBeginRenderPass-initialLayout-01758";
-        skip = true;
+        invalid = true;
     } else if (layout == VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && !IsDynamicRenderingImageUsageValid(image_usage)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-09538" : "VUID-vkCmdBeginRenderPass-initialLayout-09537";
-        skip = true;
+        invalid = true;
     } else if ((IsImageLayoutDepthOnly(layout) || IsImageLayoutStencilOnly(layout)) &&
                !(image_usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) {
         vuid = use_rp2 ? "VUID-vkCmdBeginRenderPass2-initialLayout-02844" : "VUID-vkCmdBeginRenderPass-initialLayout-02842";
-        skip = true;
+        invalid = true;
     }
 
-    if (skip) {
+    if (invalid) {
         std::stringstream stencil_usage_message;
         if (stencil_usage_info) {
             stencil_usage_message << " (which includes " << string_VkImageUsageFlags(stencil_usage_info->stencilUsage)
                                   << "from VkImageStencilUsageCreateInfo)";
         }
         const LogObjectList objlist(image, renderpass, framebuffer, image_view);
-        return LogError(vuid, objlist, rp_loc,
-                        "(%s) was created with %s = %s, but %s pAttachments[%" PRIu32 "] (%s) usage is %s%s.",
-                        FormatHandle(renderpass).c_str(), attachment_reference_loc.Fields().c_str(), string_VkImageLayout(layout),
-                        FormatHandle(framebuffer).c_str(), attachment_index, FormatHandle(image_view).c_str(),
-                        string_VkImageUsageFlags(image_usage).c_str(), stencil_usage_message.str().c_str());
+        skip |=
+            LogError(vuid, objlist, rp_loc, "(%s) was created with %s = %s, but %s pAttachments[%" PRIu32 "] (%s) usage is %s%s.",
+                     FormatHandle(renderpass).c_str(), attachment_reference_loc.Fields().c_str(), string_VkImageLayout(layout),
+                     FormatHandle(framebuffer).c_str(), attachment_index, FormatHandle(image_view).c_str(),
+                     string_VkImageUsageFlags(image_usage).c_str(), stencil_usage_message.str().c_str());
     }
 
     return skip;

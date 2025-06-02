@@ -301,9 +301,12 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
         slot.input_width = interface_slot.bit_width;
     }
 
+    bool logged = false;
     for (const auto &[location, components] : slot_map) {
         // Found that sometimes there is a big mismatch and printing out EVERY slot adds a lot of noise
-        if (skip) break;
+        if (logged) {
+            break;
+        }
 
         for (uint32_t component = 0; component < 4; component++) {
             const auto &component_info = components[component];
@@ -326,6 +329,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                      producer.DescribeType(output_var->type_id).c_str(),
                                      string_VkShaderStageFlagBits(consumer_stage), consumer.DescribeVariable(input_var->id).c_str(),
                                      consumer.DescribeType(input_var->type_id).c_str());
+                    logged = true;
                     break;  // Only need to report for the first component found
                 }
 
@@ -361,6 +365,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                          "between input and output vectors.",
                                          location, component, string_VkShaderStageFlagBits(producer_stage), output_vec_size,
                                          string_VkShaderStageFlagBits(consumer_stage), input_vec_size);
+                        logged = true;
                         break;  // Only need to report for the first component found
                     }
                 }
@@ -376,6 +381,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                                   " but is not an Input declared by %s.",
                                                   string_VkShaderStageFlagBits(producer_stage), location, component,
                                                   string_VkShaderStageFlagBits(consumer_stage));
+                    logged = true;
                 }
             } else if ((input_var != nullptr) && (output_var == nullptr)) {
                 // Missing output slot
@@ -390,6 +396,7 @@ bool CoreChecks::ValidateInterfaceBetweenStages(const spirv::Module &producer, c
                                  " %sbut it is not an Output declared in %s",
                                  string_VkShaderStageFlagBits(consumer_stage), location, component,
                                  input_var->is_patch ? "(Tessellation Patch) " : "", string_VkShaderStageFlagBits(producer_stage));
+                logged = true;
                 break;  // Only need to report for the first component found
             }
         }
