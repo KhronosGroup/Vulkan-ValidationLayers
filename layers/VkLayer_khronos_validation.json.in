@@ -241,6 +241,7 @@
                             "env": "VK_LAYER_FINE_GRAINED_LOCKING",
                             "label": "Fine Grained Locking",
                             "description": "Enable fine grained locking for Core Validation, which should improve performance in multithreaded applications. This setting allows the optimization to be disabled for debugging.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/fine_grained_locking_usage.md",
                             "type": "BOOL",
                             "default": true
                         },
@@ -248,6 +249,7 @@
                             "key": "validate_core",
                             "label": "Core",
                             "description": "The main, heavy-duty validation checks. This may be valuable early in the development cycle to reduce validation output while correcting parameter/object usage errors.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/core_checks.md",
                             "type": "BOOL",
                             "default": true,
                             "settings": [
@@ -377,6 +379,7 @@
                             "key": "unique_handles",
                             "label": "Handle Wrapping",
                             "description": "Handle wrapping checks. Disable this feature if you are experiencing crashes when creating new extensions or developing new Vulkan objects/structures.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/handle_wrapping.md",
                             "type": "BOOL",
                             "default": true
                         },
@@ -384,6 +387,7 @@
                             "key": "object_lifetime",
                             "label": "Object Lifetime",
                             "description": "Object tracking checks. This may not always be necessary late in a development cycle.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/object_lifetimes.md",
                             "type": "BOOL",
                             "default": true
                         },
@@ -391,6 +395,7 @@
                             "key": "stateless_param",
                             "label": "Stateless Parameter",
                             "description": "Stateless parameter checks. This may not always be necessary late in a development cycle.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/stateless_validation.md",
                             "type": "BOOL",
                             "default": true
                         },
@@ -398,6 +403,7 @@
                             "key": "thread_safety",
                             "label": "Thread Safety",
                             "description": "Thread checks. In order to not degrade performance, it might be best to run your program with thread-checking disabled most of the time, enabling it occasionally for a quick sanity check or when debugging difficult application behaviors.",
+                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/thread_safety.md",
                             "type": "BOOL",
                             "default": true
                         },
@@ -606,6 +612,7 @@
                             "key": "gpuav_enable",
                             "label": "GPU Assisted Validation",
                             "description": "Enable validation that cannot be done the CPU and needs hooks into the GPU execution",
+                            "url": "${LUNARG_SDK}/gpu_validation.html",
                             "type": "BOOL",
                             "default": false,
                             "expanded": true,
@@ -641,6 +648,7 @@
                                     "key": "gpuav_shader_instrumentation",
                                     "label": "Shader instrumentation",
                                     "description": "Instrument shaders to validate descriptors, descriptor indexing, buffer device addresses and ray queries. Warning: will considerably slow down shader executions.",
+                                    "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_shader_instrumentation.md",
                                     "type": "BOOL",
                                     "expanded": true,
                                     "default": true,
@@ -655,6 +663,7 @@
                                             "key": "gpuav_select_instrumented_shaders",
                                             "label": "Enable instrumenting shaders selectively",
                                             "description": "Select which shaders to instrument by passing a VkValidationFeaturesEXT struct with GPU-AV enabled in the VkShaderModuleCreateInfo pNext or using a regex matching a shader/pipeline debug name. Because this only validates the selected shaders, it will allow GPU-AV to run much faster.",
+                                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_selective_shader.md",
                                             "type": "BOOL",
                                             "default": false,
                                             "dependence": {
@@ -686,6 +695,7 @@
                                             "key": "gpuav_descriptor_checks",
                                             "label": "Descriptors indexing",
                                             "description": "Enable descriptors and buffer out of bounds validation when using descriptor indexing",
+                                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_descriptor_indexing.md",
                                             "type": "BOOL",
                                             "expanded": true,
                                             "default": true,
@@ -701,6 +711,7 @@
                                             "key": "gpuav_post_process_descriptor_indexing",
                                             "label": "Post process descriptor indexing",
                                             "description": "Track which descriptor indexes were used in shader to run normal validation afterwards",
+                                            "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_post_process.md",
                                             "type": "BOOL",
                                             "default": true,
                                             "dependence": {
