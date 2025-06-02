@@ -125,7 +125,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     using ErrorLoggerFunc =
         stdext::inplace_function<bool(const uint32_t *error_record, const LogObjectList &objlist,
                                       const std::vector<std::string> &initial_label_stack),
-                                 280 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
+                                 288 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
     vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
 

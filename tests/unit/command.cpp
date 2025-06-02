@@ -64,6 +64,30 @@ TEST_F(NegativeCommand, IndexBufferNotBound) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeCommand, IndexBufferNotBoundMaintenance6) {
+    TEST_DESCRIPTION("Just setting feature is not enough, need to set to null");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_ROBUSTNESS_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_6_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance6);
+    AddRequiredFeature(vkt::Feature::nullDescriptor);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-07312");
+    vk::CmdDrawIndexed(m_command_buffer, 0, 1, 0, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeCommand, IndexBufferDestroyed) {
     TEST_DESCRIPTION("Run an indexed draw call without an index buffer bound.");
     RETURN_IF_SKIP(Init());
@@ -79,7 +103,6 @@ TEST_F(NegativeCommand, IndexBufferDestroyed) {
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
     index_buffer.destroy();
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-commandBuffer-recording");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexed-None-07312");
     // Use DrawIndexed w/o an index buffer bound
     vk::CmdDrawIndexed(m_command_buffer, 3, 1, 0, 0, 0);
     m_errorMonitor->VerifyFound();
