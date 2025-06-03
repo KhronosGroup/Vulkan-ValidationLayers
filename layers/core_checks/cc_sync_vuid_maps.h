@@ -25,7 +25,7 @@ struct DeviceExtensions;
 struct SubresourceRangeErrorCodes;
 struct DeviceExtensions;
 
-namespace sync_vuid_maps {
+namespace vvl {
 
 const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap();
 
@@ -129,4 +129,4 @@ const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRe
 
 const std::string &GetAccessMaskRayQueryVUIDSelector(const Location &loc, const DeviceExtensions &device_extensions);
 
-}  // namespace sync_vuid_maps
+}  // namespace vvl

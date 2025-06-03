@@ -1,6 +1,6 @@
-/* Copyright (c) 2024 The Khronos Group Inc.
- * Copyright (c) 2024 Valve Corporation
- * Copyright (c) 2024 LunarG, Inc.
+/* Copyright (c) 2025 The Khronos Group Inc.
+ * Copyright (c) 2025 Valve Corporation
+ * Copyright (c) 2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
  */
 
 #include "cc_submit.h"
+#include "core_checks/cc_sync_vuid_maps.h"
 #include "state_tracker/queue_state.h"
-#include "sync/sync_vuid_maps.h"
 #include "chassis/validation_object.h"
 
 static Location GetSignaledSemaphoreLocation(const Location& submit_loc, uint32_t index) {
@@ -38,7 +38,7 @@ void QueueSubmissionValidator::Validate(const vvl::QueueSubmission& submission) 
         const uint64_t current_payload = signal.semaphore->CurrentPayload();
         if (signal.payload < current_payload) {
             const Location signal_semaphore_loc = GetSignaledSemaphoreLocation(submission.loc.Get(), i);
-            const auto& vuid = GetQueueSubmitVUID(signal_semaphore_loc, sync_vuid_maps::SubmitError::kTimelineSemSmallValue);
+            const auto& vuid = GetQueueSubmitVUID(signal_semaphore_loc, vvl::SubmitError::kTimelineSemSmallValue);
             error_logger.LogError(vuid, signal.semaphore->Handle(), signal_semaphore_loc,
                                   "(%s) signaled with value %" PRIu64 " which is smaller than the current value %" PRIu64,
                                   error_logger.FormatHandle(signal.semaphore->VkHandle()).c_str(), signal.payload, current_payload);

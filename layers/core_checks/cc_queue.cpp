@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <vulkan/vk_enum_string_helper.h>
+#include "cc_sync_vuid_maps.h"
 #include "cc_synchronization.h"
 #include "core_validation.h"
 #include "state_tracker/queue_state.h"
@@ -29,7 +30,6 @@
 #include "state_tracker/buffer_state.h"
 #include "state_tracker/event_map.h"
 #include "state_tracker/cmd_buffer_state.h"
-#include "sync/sync_vuid_maps.h"
 
 // Holds common information between all command buffers being submitted
 struct CommandBufferSubmitState {
@@ -477,15 +477,13 @@ bool CoreChecks::ValidImageBufferQueue(const vvl::CommandBuffer &cb_state, const
 // Secondary command buffers were previously validated in vkCmdExecuteCommands().
 bool CoreChecks::ValidateQueueFamilyIndices(const Location &loc, const vvl::CommandBuffer &cb_state,
                                             const vvl::Queue &queue_state) const {
-    using sync_vuid_maps::GetQueueSubmitVUID;
-    using sync_vuid_maps::SubmitError;
     bool skip = false;
     auto pool = cb_state.command_pool;
     ASSERT_AND_RETURN_SKIP(pool);
 
     if (pool->queueFamilyIndex != queue_state.queue_family_index) {
         const LogObjectList objlist(cb_state.Handle(), queue_state.Handle());
-        const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kCmdWrongQueueFamily);
+        const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdWrongQueueFamily);
         skip |= LogError(vuid, objlist, loc,
                          "Primary command buffer %s created in queue family %d is being submitted on %s "
                          "from queue family %d.",
@@ -563,13 +561,10 @@ bool CoreChecks::ValidateCommandBufferState(const vvl::CommandBuffer &cb_state, 
 
 bool CoreChecks::ValidateCommandBufferSimultaneousUse(const Location &loc, const vvl::CommandBuffer &cb_state,
                                                       int current_submit_count) const {
-    using sync_vuid_maps::GetQueueSubmitVUID;
-    using sync_vuid_maps::SubmitError;
-
     bool skip = false;
     if ((cb_state.InUse() || current_submit_count > 1) &&
         !(cb_state.begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-        const auto &vuid = sync_vuid_maps::GetQueueSubmitVUID(loc, SubmitError::kCmdNotSimultaneous);
+        const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kCmdNotSimultaneous);
 
         skip |= LogError(vuid, device, loc, "%s is already in use and is not marked for simultaneous use.",
                          FormatHandle(cb_state).c_str());
@@ -581,14 +576,12 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
     const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t current_submit_count,
     QFOTransferCBScoreboards<QFOImageTransferBarrier> *qfo_image_scoreboards,
     QFOTransferCBScoreboards<QFOBufferTransferBarrier> *qfo_buffer_scoreboards) const {
-    using sync_vuid_maps::GetQueueSubmitVUID;
-    using sync_vuid_maps::SubmitError;
 
     // Track in-use for resources off of primary and any secondary CBs
     bool skip = false;
 
     if (cb_state.IsSecondary()) {
-        const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdInSubmit);
+        const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kSecondaryCmdInSubmit);
         skip |= LogError(vuid, cb_state.Handle(), loc, "Command buffer %s must be allocated with VK_COMMAND_BUFFER_LEVEL_PRIMARY.",
                          FormatHandle(cb_state).c_str());
     } else {
@@ -597,7 +590,7 @@ bool CoreChecks::ValidatePrimaryCommandBufferState(
             // TODO: replace with InvalidateCommandBuffers() at recording.
             if ((sub_cb->primary_command_buffer != cb_state.VkHandle()) &&
                 !(sub_cb->begin_info_flags & VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT)) {
-                const auto &vuid = GetQueueSubmitVUID(loc, SubmitError::kSecondaryCmdNotSimultaneous);
+                const auto &vuid = GetQueueSubmitVUID(loc, vvl::SubmitError::kSecondaryCmdNotSimultaneous);
                 const LogObjectList objlist(device, cb_state.Handle(), sub_cb->Handle(), sub_cb->primary_command_buffer);
                 skip |= LogError(vuid, objlist, loc,
                                  "%s was submitted with secondary %s but that buffer has subsequently been bound to "
