@@ -50,8 +50,8 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
         });
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkDescriptorBufferInfo& out_buffer_info,
-                                                  uint32_t& out_dst_binding) mutable {
+        [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
+                                                  VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
             PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
             if (pp_cb_state) {
                 out_buffer_info.buffer = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.buffer;

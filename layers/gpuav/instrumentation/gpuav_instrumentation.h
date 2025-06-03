@@ -41,8 +41,9 @@ class CommandBufferSubState;
 class Queue;
 struct InstrumentationErrorBlob;
 
-void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  const Location& loc, InstrumentationErrorBlob& out_instrumentation_error_blob);
+void UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+                                  VkDescriptorSet instrumentation_desc_set, const Location& loc,
+                                  InstrumentationErrorBlob& out_instrumentation_error_blob);
 
 void PreCallSetupShaderInstrumentationResources(Validator& gpuav, CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
                                                 const Location& loc);

@@ -38,16 +38,6 @@ namespace gpuav {
 class Validator;
 class QueueSubState;
 
-struct DebugPrintfBufferInfo {
-    vko::Buffer output_mem_buffer;
-    VkPipelineBindPoint pipeline_bind_point;
-    uint32_t action_command_index;
-    DebugPrintfBufferInfo(vko::Buffer output_mem_buffer, VkPipelineBindPoint pipeline_bind_point, uint32_t action_command_index)
-        : output_mem_buffer(output_mem_buffer),
-          pipeline_bind_point(pipeline_bind_point),
-          action_command_index(action_command_index){};
-};
-
 class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     struct LabelLogging {
@@ -55,8 +45,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         const vvl::unordered_map<uint32_t, uint32_t> &action_cmd_i_to_label_cmd_i_map;
     };
 
-    using OnInstrumentionDescSetUpdate = stdext::inplace_function<
-        void(CommandBufferSubState &cb, VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding), 48>;
+    using OnInstrumentionDescSetUpdate =
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
+                                      VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding),
+                                 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
@@ -126,8 +118,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                                  288 /*lambda storage size (bytes), large enough to store biggest error lambda*/>;
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
     vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
-
-    std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
 
   private:
     void AllocateResources(const Location &loc);

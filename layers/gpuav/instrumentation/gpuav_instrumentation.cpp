@@ -269,127 +269,133 @@ static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexA
     return {vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate};
 }
 
-void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  const Location &loc, InstrumentationErrorBlob &out_instrumentation_error_blob) {
+void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
+                                  VkDescriptorSet instrumentation_desc_set, const Location &loc,
+                                  InstrumentationErrorBlob &out_instrumentation_error_blob) {
     small_vector<VkWriteDescriptorSet, 8> desc_writes = {};
-
-    // Error output buffer
+    
     VkDescriptorBufferInfo error_output_desc_buffer_info = {};
-    {
-        error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBufferRange().buffer;
-        error_output_desc_buffer_info.offset = cb_state.GetErrorOutputBufferRange().offset;
-        error_output_desc_buffer_info.range = cb_state.GetErrorOutputBufferRange().size;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstErrorBuffer;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &error_output_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
-    // Buffer holding action command index in command buffer
-    VkDescriptorBufferInfo indices_desc_buffer_info = {};
-    {
-        indices_desc_buffer_info.range = sizeof(uint32_t);
-        indices_desc_buffer_info.buffer = gpuav.indices_buffer_.VkHandle();
-        indices_desc_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstActionIndex;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-        wds.pBufferInfo = &indices_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
-    // Buffer holding a resource index from the per command buffer command resources list
-    {
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstCmdResourceIndex;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-        wds.pBufferInfo = &indices_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
-    // Errors count buffer
-    VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
-    {
-        cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
-        cmd_errors_counts_desc_buffer_info.buffer = cb_state.GetCmdErrorsCountsBuffer();
-        cmd_errors_counts_desc_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstCmdErrorsCount;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &cmd_errors_counts_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
-    // Vertex attribute fetching
-    // Only need to update if a draw (that is not mesh) is coming as we instrument all vertex entry points
     VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};
-    if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob && vvl::IsCommandDrawVertex(loc.function)) {
-        // This check is only for indexed draws
-        if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
-            vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
-                cb_state.gpu_resources_manager.GetHostVisibleBufferRange(4 * sizeof(uint32_t));
-            if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
-                return;
-            }
+    VkDescriptorBufferInfo indices_desc_buffer_info = {};
+    VkDescriptorBufferInfo cmd_errors_counts_desc_buffer_info = {};
+    if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
+        // Error output buffer
 
-            auto vertex_attribute_fetch_limits_buffer_ptr =
-                (uint32_t *)vertex_attribute_fetch_limits_buffer_range.offset_mapped_ptr;
+        {
+            error_output_desc_buffer_info.buffer = cb_state.GetErrorOutputBufferRange().buffer;
+            error_output_desc_buffer_info.offset = cb_state.GetErrorOutputBufferRange().offset;
+            error_output_desc_buffer_info.range = cb_state.GetErrorOutputBufferRange().size;
 
-            const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
-                GetVertexAttributeFetchLimits(cb_state.base);
-            if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
-                vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
-                vertex_attribute_fetch_limits_buffer_ptr[1] =
-                    (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
-            } else {
-                vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
-            }
-
-            if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
-                vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
-                vertex_attribute_fetch_limits_buffer_ptr[3] =
-                    (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
-            } else {
-                vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
-            }
-
-            out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
-                vertex_attribute_fetch_limit_vertex_input_rate;
-            out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =
-                vertex_attribute_fetch_limit_instance_input_rate;
-            out_instrumentation_error_blob.index_buffer_binding = cb_state.base.index_buffer_binding;
-
-            vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer_range.buffer;
-            vertex_attribute_fetch_limits_buffer_bi.offset = vertex_attribute_fetch_limits_buffer_range.offset;
-            vertex_attribute_fetch_limits_buffer_bi.range = vertex_attribute_fetch_limits_buffer_range.size;
-        } else {
-            // Point all non-indexed draws to our global buffer that will bypass the check in shader
-            VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.GetOrCreate<VertexAttributeFetchOff>(gpuav);
-            if (!resource.valid) return;
-            vertex_attribute_fetch_limits_buffer_bi.buffer = resource.buffer.VkHandle();
-            vertex_attribute_fetch_limits_buffer_bi.offset = 0;
-            vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
+            VkWriteDescriptorSet wds = vku::InitStructHelper();
+            wds.dstBinding = glsl::kBindingInstErrorBuffer;
+            wds.descriptorCount = 1;
+            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            wds.pBufferInfo = &error_output_desc_buffer_info;
+            wds.dstSet = instrumentation_desc_set;
+            desc_writes.emplace_back(wds);
         }
 
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstSet = instrumentation_desc_set;
-        wds.dstBinding = glsl::kBindingInstVertexAttributeFetchLimits;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &vertex_attribute_fetch_limits_buffer_bi;
-        desc_writes.emplace_back(wds);
+        // Buffer holding action command index in command buffer
+
+        {
+            indices_desc_buffer_info.range = sizeof(uint32_t);
+            indices_desc_buffer_info.buffer = gpuav.indices_buffer_.VkHandle();
+            indices_desc_buffer_info.offset = 0;
+
+            VkWriteDescriptorSet wds = vku::InitStructHelper();
+            wds.dstBinding = glsl::kBindingInstActionIndex;
+            wds.descriptorCount = 1;
+            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+            wds.pBufferInfo = &indices_desc_buffer_info;
+            wds.dstSet = instrumentation_desc_set;
+            desc_writes.emplace_back(wds);
+        }
+
+        // Buffer holding a resource index from the per command buffer command resources list
+        {
+            VkWriteDescriptorSet wds = vku::InitStructHelper();
+            wds.dstBinding = glsl::kBindingInstCmdResourceIndex;
+            wds.descriptorCount = 1;
+            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+            wds.pBufferInfo = &indices_desc_buffer_info;
+            wds.dstSet = instrumentation_desc_set;
+            desc_writes.emplace_back(wds);
+        }
+
+        // Errors count buffer
+        {
+            cmd_errors_counts_desc_buffer_info.range = VK_WHOLE_SIZE;
+            cmd_errors_counts_desc_buffer_info.buffer = cb_state.GetCmdErrorsCountsBuffer();
+            cmd_errors_counts_desc_buffer_info.offset = 0;
+
+            VkWriteDescriptorSet wds = vku::InitStructHelper();
+            wds.dstBinding = glsl::kBindingInstCmdErrorsCount;
+            wds.descriptorCount = 1;
+            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            wds.pBufferInfo = &cmd_errors_counts_desc_buffer_info;
+            wds.dstSet = instrumentation_desc_set;
+            desc_writes.emplace_back(wds);
+        }
+
+        // Vertex attribute fetching
+        // Only need to update if a draw (that is not mesh) is coming as we instrument all vertex entry points
+
+        if (gpuav.gpuav_settings.shader_instrumentation.vertex_attribute_fetch_oob && vvl::IsCommandDrawVertex(loc.function)) {
+            // This check is only for indexed draws
+            if (vvl::IsCommandDrawVertexIndexed(loc.function)) {
+                vko::BufferRange vertex_attribute_fetch_limits_buffer_range =
+                    cb_state.gpu_resources_manager.GetHostVisibleBufferRange(4 * sizeof(uint32_t));
+                if (vertex_attribute_fetch_limits_buffer_range.buffer == VK_NULL_HANDLE) {
+                    return;
+                }
+
+                auto vertex_attribute_fetch_limits_buffer_ptr =
+                    (uint32_t *)vertex_attribute_fetch_limits_buffer_range.offset_mapped_ptr;
+
+                const auto [vertex_attribute_fetch_limit_vertex_input_rate, vertex_attribute_fetch_limit_instance_input_rate] =
+                    GetVertexAttributeFetchLimits(cb_state.base);
+                if (vertex_attribute_fetch_limit_vertex_input_rate.has_value()) {
+                    vertex_attribute_fetch_limits_buffer_ptr[0] = 1u;
+                    vertex_attribute_fetch_limits_buffer_ptr[1] =
+                        (uint32_t)vertex_attribute_fetch_limit_vertex_input_rate->max_vertex_attributes_count;
+                } else {
+                    vertex_attribute_fetch_limits_buffer_ptr[0] = 0u;
+                }
+
+                if (vertex_attribute_fetch_limit_instance_input_rate.has_value()) {
+                    vertex_attribute_fetch_limits_buffer_ptr[2] = 1u;
+                    vertex_attribute_fetch_limits_buffer_ptr[3] =
+                        (uint32_t)vertex_attribute_fetch_limit_instance_input_rate->max_vertex_attributes_count;
+                } else {
+                    vertex_attribute_fetch_limits_buffer_ptr[2] = 0u;
+                }
+
+                out_instrumentation_error_blob.vertex_attribute_fetch_limit_vertex_input_rate =
+                    vertex_attribute_fetch_limit_vertex_input_rate;
+                out_instrumentation_error_blob.vertex_attribute_fetch_limit_instance_input_rate =
+                    vertex_attribute_fetch_limit_instance_input_rate;
+                out_instrumentation_error_blob.index_buffer_binding = cb_state.base.index_buffer_binding;
+
+                vertex_attribute_fetch_limits_buffer_bi.buffer = vertex_attribute_fetch_limits_buffer_range.buffer;
+                vertex_attribute_fetch_limits_buffer_bi.offset = vertex_attribute_fetch_limits_buffer_range.offset;
+                vertex_attribute_fetch_limits_buffer_bi.range = vertex_attribute_fetch_limits_buffer_range.size;
+            } else {
+                // Point all non-indexed draws to our global buffer that will bypass the check in shader
+                VertexAttributeFetchOff &resource = gpuav.shared_resources_manager.GetOrCreate<VertexAttributeFetchOff>(gpuav);
+                if (!resource.valid) return;
+                vertex_attribute_fetch_limits_buffer_bi.buffer = resource.buffer.VkHandle();
+                vertex_attribute_fetch_limits_buffer_bi.offset = 0;
+                vertex_attribute_fetch_limits_buffer_bi.range = VK_WHOLE_SIZE;
+            }
+
+            VkWriteDescriptorSet wds = vku::InitStructHelper();
+            wds.dstSet = instrumentation_desc_set;
+            wds.dstBinding = glsl::kBindingInstVertexAttributeFetchLimits;
+            wds.descriptorCount = 1;
+            wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            wds.pBufferInfo = &vertex_attribute_fetch_limits_buffer_bi;
+            desc_writes.emplace_back(wds);
+        }
     }
 
     std::vector<VkDescriptorBufferInfo> buffer_infos(cb_state.on_instrumentation_desc_set_update_functions.size());
@@ -401,7 +407,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         wds.pBufferInfo = &buffer_infos[func_i];
 
-        cb_state.on_instrumentation_desc_set_update_functions[func_i](cb_state, buffer_infos[func_i], wds.dstBinding);
+        cb_state.on_instrumentation_desc_set_update_functions[func_i](cb_state, bind_point, buffer_infos[func_i], wds.dstBinding);
 
         assert(buffer_infos[func_i].buffer != VK_NULL_HANDLE);
         assert(wds.dstBinding != vvl::kU32Max);
@@ -468,17 +474,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     // bindings of the instrumentation descriptor set
     assert(gpuav.instrumentation_bindings_.size() == 9);
 
-    if (gpuav.gpuav_settings.debug_printf_enabled) {
-        if (!debug_printf::UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, bind_point)) {
-            // TODO - need cleaner way to indicate if we want to return because of an error or because we want to save from doing
-            // unnecessary work
-            return;
-        }
-    }
     InstrumentationErrorBlob instrumentation_error_blob;
-    if (gpuav.gpuav_settings.IsShaderInstrumentationEnabled()) {
-        UpdateInstrumentationDescSet(gpuav, cb_state, instrumentation_desc_set, loc, instrumentation_error_blob);
-    }
+    UpdateInstrumentationDescSet(gpuav, cb_state, bind_point, instrumentation_desc_set, loc, instrumentation_error_blob);
 
     instrumentation_error_blob.operation_index = (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS)  ? cb_state.draw_index
                                                  : (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) ? cb_state.compute_index

@@ -36,7 +36,7 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
     }
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [](CommandBufferSubState& cb, VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) {
+        [](CommandBufferSubState& cb, VkPipelineBindPoint, VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) {
             BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
             out_buffer_info.buffer = bda_cb_state.bda_ranges_snapshot_ptr.buffer;
             out_buffer_info.offset = bda_cb_state.bda_ranges_snapshot_ptr.offset;
