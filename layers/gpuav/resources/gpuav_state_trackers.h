@@ -127,10 +127,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
     vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
 
-    using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb_state), 192>;
-
-    std::vector<ValidationCommandFunc> per_render_pass_validation_commands;
-
     std::vector<DebugPrintfBufferInfo> debug_printf_buffer_infos;
 
   private:
