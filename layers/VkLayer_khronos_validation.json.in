@@ -697,6 +697,7 @@
                                             "description": "Enable descriptors and buffer out of bounds validation when using descriptor indexing",
                                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_descriptor_indexing.md",
                                             "type": "BOOL",
+                                            "view": "ADVANCED",
                                             "expanded": true,
                                             "default": true,
                                             "dependence": {
@@ -713,6 +714,7 @@
                                             "description": "Track which descriptor indexes were used in shader to run normal validation afterwards",
                                             "url": "https://github.com/KhronosGroup/Vulkan-ValidationLayers/blob/main/docs/gpu_av_post_process.md",
                                             "type": "BOOL",
+                                            "view": "ADVANCED",
                                             "default": true,
                                             "dependence": {
                                                 "mode": "ALL",
@@ -726,6 +728,7 @@
                                             "key": "gpuav_buffer_address_oob",
                                             "label": "Out of bounds buffer device addresses",
                                             "type": "BOOL",
+                                            "view": "ADVANCED",
                                             "default": true,
                                             "expanded": true,
                                             "description": "Check for invalid access using buffer device address",
@@ -763,6 +766,7 @@
                                             "label": "RayQuery SPIR-V instructions",
                                             "description": "Enable shader instrumentation on OpRayQueryInitializeKHR",
                                             "type": "BOOL",
+                                            "view": "ADVANCED",
                                             "default": true,
                                             "dependence": {
                                                 "mode": "ALL",
@@ -777,6 +781,7 @@
                                             "label": "Out of bounds vertex attribute fetching",
                                             "description": "Validate that no vertex attribute fetching is out of bonds",
                                             "type": "BOOL",
+                                            "view": "ADVANCED",
                                             "default": true,
                                             "dependence": {
                                                 "mode": "ALL",
@@ -793,6 +798,7 @@
                                     "label": "Buffer content validation",
                                     "description": "Validate buffers containing parameters used in indirect Vulkan commands, or used in copy commands",
                                     "type": "BOOL",
+                                    "view": "ADVANCED",
                                     "default": true,
                                     "dependence": {
                                         "mode": "ALL",
