@@ -187,11 +187,6 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
 
     max_actions_cmd_validation_reached_ = false;
 
-    for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
-        printf_buffer_info.output_mem_buffer.Destroy();
-    }
-    debug_printf_buffer_infos.clear();
-
     on_instrumentation_desc_set_update_functions.clear();
     on_cb_completion_functions.clear();
     on_pre_cb_submission_functions.clear();
@@ -304,12 +299,6 @@ bool CommandBufferSubState::NeedsPostProcess() { return error_output_buffer_rang
 // For the given command buffer, map its debug data buffers and read their contents for analysis.
 void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::string> &initial_label_stack, const Location &loc) {
     VVL_ZoneScoped;
-
-    // For the given command buffer, map its debug data buffers and read their contents for analysis.
-    for (DebugPrintfBufferInfo &printf_buffer_info : debug_printf_buffer_infos) {
-        auto printf_output_ptr = (char *)printf_buffer_info.output_mem_buffer.GetMappedPtr();
-        debug_printf::AnalyzeAndGenerateMessage(gpuav_, VkHandle(), queue, printf_buffer_info, (uint32_t *)printf_output_ptr, loc);
-    }
 
     // CommandBuffer::Destroy can happen on an other thread,
     // so when getting here after acquiring command buffer's lock,

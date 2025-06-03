@@ -17,19 +17,12 @@
 
 #pragma once
 
-#include <vulkan/vulkan_core.h>
-
-struct Location;
 namespace gpuav {
-struct DebugPrintfBufferInfo;
 class CommandBufferSubState;
 class Validator;
 
 namespace debug_printf {
-bool UpdateInstrumentationDescSet(Validator& gpuav, CommandBufferSubState& cb_state, VkDescriptorSet instrumentation_desc_set,
-                                  VkPipelineBindPoint bind_point);
-void AnalyzeAndGenerateMessage(Validator& gpuav, VkCommandBuffer command_buffer, VkQueue queue, DebugPrintfBufferInfo& buffer_info,
-                               uint32_t* const debug_output_buffer, const Location& loc);
+void RegisterDebugPrintf(Validator& gpuav, CommandBufferSubState& cb_state);
 }  // namespace debug_printf
 
 }  // namespace gpuav
