@@ -25,7 +25,6 @@ struct GpuAVSettings {
     bool safe_mode = false;
 
     bool force_on_robustness = false;
-    uint32_t max_bda_in_use = 10'000;
     bool select_instrumented_shaders = false;
     std::vector<std::string> shader_selection_regexes{};
 

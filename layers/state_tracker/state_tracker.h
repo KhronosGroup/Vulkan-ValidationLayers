@@ -690,17 +690,14 @@ class DeviceState : public vvl::base::Device {
 
     // Return a count pair, {written addresses count, total address ranges count}
     using BufferAddressRange = vvl::range<VkDeviceAddress>;
-    [[nodiscard]] std::pair<size_t, size_t> GetBufferAddressRanges(BufferAddressRange* ranges, size_t ranges_size) const {
+    [[nodiscard]] size_t GetBufferAddressRangesCount() { return buffer_address_map_.size(); }
+    void GetBufferAddressRanges(BufferAddressRange* ranges) const {
         ReadLockGuard guard(buffer_address_lock_);
 
         size_t written_count = 0;
         for (const auto& [address_range, buffers] : buffer_address_map_) {
-            if (written_count == ranges_size) {
-                break;
-            }
             ranges[written_count++] = address_range;
         }
-        return {written_count, buffer_address_map_.size()};
     }
 
     VkDeviceSize AllocFakeMemory(VkDeviceSize size) { return fake_memory.Alloc(size); }

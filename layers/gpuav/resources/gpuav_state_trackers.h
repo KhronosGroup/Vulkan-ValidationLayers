@@ -111,8 +111,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         return cmd_errors_counts_buffer_.VkHandle();
     }
 
-    const vko::Buffer &GetBdaRangesSnapshot() const { return bda_ranges_snapshot_; }
-
     void IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc);
 
     std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
@@ -140,9 +138,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void ResetCBState(bool should_destroy);
     bool NeedsPostProcess();
 
-    VkDeviceSize GetBdaRangesBufferByteSize() const;
-    [[nodiscard]] bool UpdateBdaRangesBuffer(const Location &loc);
-
     Validator &gpuav_;
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
 
@@ -155,9 +150,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // Buffer storing an error count per validated commands.
     // Used to limit the number of errors a single command can emit.
     vko::Buffer cmd_errors_counts_buffer_;
-    // Buffer storing a snapshot of buffer device address ranges
-    vko::Buffer bda_ranges_snapshot_;
-    uint32_t bda_ranges_snapshot_version_ = 0;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

@@ -332,22 +332,6 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
         desc_writes.emplace_back(wds);
     }
 
-    // BDA snapshot buffer
-    VkDescriptorBufferInfo bda_input_desc_buffer_info = {};
-    if (gpuav.gpuav_settings.shader_instrumentation.buffer_device_address) {
-        bda_input_desc_buffer_info.range = VK_WHOLE_SIZE;
-        bda_input_desc_buffer_info.buffer = cb_state.GetBdaRangesSnapshot().VkHandle();
-        bda_input_desc_buffer_info.offset = 0;
-
-        VkWriteDescriptorSet wds = vku::InitStructHelper();
-        wds.dstBinding = glsl::kBindingInstBufferDeviceAddress;
-        wds.descriptorCount = 1;
-        wds.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        wds.pBufferInfo = &bda_input_desc_buffer_info;
-        wds.dstSet = instrumentation_desc_set;
-        desc_writes.emplace_back(wds);
-    }
-
     // Vertex attribute fetching
     // Only need to update if a draw (that is not mesh) is coming as we instrument all vertex entry points
     VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};

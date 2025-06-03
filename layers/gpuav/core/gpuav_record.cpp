@@ -23,6 +23,7 @@
 #include "gpuav/validation_cmd/gpuav_copy_buffer_to_image.h"
 #include "gpuav/descriptor_validation/gpuav_descriptor_validation.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/instrumentation/buffer_device_address.h"
 #include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/instrumentation/descriptor_checks.h"
 #include "gpuav/instrumentation/post_process_descriptor_indexing.h"
@@ -77,6 +78,7 @@ void Validator::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, c
     CommandBufferSubState &gpuav_cb_state = SubState(*cb_state);
     RegisterDescriptorChecksValidation(*this, gpuav_cb_state);
     RegisterPostProcessingValidation(*this, gpuav_cb_state);
+    RegisterBufferDeviceAddressValidation(*this, gpuav_cb_state);
 }
 
 void Instance::InternalWarning(LogObjectList objlist, const Location &loc, const char *const specific_message) const {

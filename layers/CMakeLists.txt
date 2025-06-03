@@ -315,6 +315,8 @@ target_sources(vvl PRIVATE
     gpuav/instrumentation/gpuav_shader_instrumentor.h
     gpuav/instrumentation/gpuav_instrumentation.h
     gpuav/instrumentation/gpuav_instrumentation.cpp
+    gpuav/instrumentation/buffer_device_address.h
+    gpuav/instrumentation/buffer_device_address.cpp
     gpuav/instrumentation/descriptor_checks.h
     gpuav/instrumentation/descriptor_checks.cpp
     gpuav/instrumentation/post_process_descriptor_indexing.h

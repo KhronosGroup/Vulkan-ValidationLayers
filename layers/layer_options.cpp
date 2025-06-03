@@ -191,7 +191,6 @@ const char *VK_LAYER_GPUAV_SAFE_MODE = "gpuav_safe_mode";
 const char *VK_LAYER_GPUAV_SHADER_INSTRUMENTATION = "gpuav_shader_instrumentation";
 const char *VK_LAYER_GPUAV_DESCRIPTOR_CHECKS = "gpuav_descriptor_checks";
 const char *VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB = "gpuav_buffer_address_oob";
-const char *VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
 const char *VK_LAYER_GPUAV_VALIDATE_RAY_QUERY = "gpuav_validate_ray_query";
 const char *VK_LAYER_GPUAV_POST_PROCESS_DESCRIPTOR_INDEXING = "gpuav_post_process_descriptor_indexing";
 const char *VK_LAYER_GPUAV_VERTEX_ATTRIBUTE_FETCH_OOB = "gpuav_vertex_attribute_fetch_oob";
@@ -213,6 +212,7 @@ const char *VK_LAYER_GPUAV_FORCE_ON_ROBUSTNESS = "gpuav_force_on_robustness";
 // Plan to remove after deprecated for July 2025 SDK
 const char *DEPRECATED_VK_LAYER_GPUAV_RESERVE_BINDING_SLOT = "gpuav_reserve_binding_slot";
 const char *DEPRECATED_VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT = "gpuav_vma_linear_output";
+const char *DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES = "gpuav_max_buffer_device_addresses";
 
 const char *VK_LAYER_GPUAV_DEBUG_DISABLE_ALL = "gpuav_debug_disable_all";
 const char *VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS = "gpuav_debug_validate_instrumented_shaders";
@@ -599,7 +599,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
-        } else if (strcmp(VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, setting.pSettingName) == 0) {
+        } else if (strcmp(DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_UINT32_EXT;
         } else if (strcmp(VK_LAYER_GPUAV_VALIDATE_RAY_QUERY, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
@@ -1052,16 +1052,6 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_BUFFER_ADDRESS_OOB,
                                     gpuav_settings.shader_instrumentation.buffer_device_address);
         }
-        if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES)) {
-            const uint32_t default_max_bda_in_use = gpuav_settings.max_bda_in_use;
-            vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES, gpuav_settings.max_bda_in_use);
-            if (gpuav_settings.max_bda_in_use == 0) {
-                gpuav_settings.max_bda_in_use = default_max_bda_in_use;
-                setting_warnings.emplace_back(std::string(VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES) +
-                                              " was set to zero, which is invalid, setting to the default of " +
-                                              std::to_string(default_max_bda_in_use));
-            }
-        }
 
         if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY)) {
             vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_GPUAV_VALIDATE_RAY_QUERY,
@@ -1148,9 +1138,16 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
         setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_GPUAV_VMA_LINEAR_OUTPUT) +
                                       " setting was set, this setting will be remove after the July 2025 SDK is published.");
-    } else if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT)) {
+    }
+    if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT)) {
         vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT, gpuav_settings.vma_linear_output);
         setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_GPUAV_VMA_LINEAR_OUTPUT) +
+                                      " setting was set, this setting will be remove after the July 2025 SDK is published.");
+    }
+    if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES)) {
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES,
+                                gpuav_settings.vma_linear_output);
+        setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES) +
                                       " setting was set, this setting will be remove after the July 2025 SDK is published.");
     }
 
