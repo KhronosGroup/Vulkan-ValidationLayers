@@ -1712,6 +1712,22 @@ TEST_F(NegativeShaderInterface, PackingInsideArray2) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeShaderInterface, PackingInsideArray3) {
+    TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
+    RETURN_IF_SKIP(Init());
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0, component = 0) out float x;
+        layout(location = 0, component = 1) out float[2] y;
+        void main() {}
+    )glsl";
+
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-OpEntryPoint-08722");
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+    m_errorMonitor->VerifyFound();
+}
+
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
 TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
     TEST_DESCRIPTION(
