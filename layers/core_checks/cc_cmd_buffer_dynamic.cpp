@@ -418,16 +418,35 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                 }
             }
 
-            const bool tess_shader_line_topology =
-                tese_shader_bound &&
-                IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
-            const bool geom_shader_line_topology =
-                geom_shader_bound && IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
-            if (tess_shader_line_topology || geom_shader_line_topology) {
-                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
+            if (tese_shader_bound || geom_shader_bound) {
+                bool has_geom_tess_line_topology = false;
+                if (has_pipeline) {
+                    for (const ShaderStageState& shader_stage_state : last_bound_state.pipeline_state->stage_states) {
+                        if (shader_stage_state.GetStage() == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT ||
+                            shader_stage_state.GetStage() == VK_SHADER_STAGE_GEOMETRY_BIT) {
+                            if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                                if (auto topology = shader_stage_state.spirv_state->GetTopology(*shader_stage_state.entrypoint)) {
+                                    has_geom_tess_line_topology |= IsLineTopology(*topology);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    has_geom_tess_line_topology |=
+                        tese_shader_bound &&
+                        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
+                    has_geom_tess_line_topology |=
+                        geom_shader_bound &&
+                        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
+                }
+
+                if (has_geom_tess_line_topology) {
+                    skip |=
+                        ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
                                                   vuid, vuid.set_line_rasterization_mode_08668);
-                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, vuid,
-                                                  vuid.set_line_stipple_enable_08671);
+                    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
+                                                      vuid, vuid.set_line_stipple_enable_08671);
+                }
             }
         }
 
