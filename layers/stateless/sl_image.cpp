@@ -211,35 +211,50 @@ bool Device::manual_PreCallValidateCreateImage(VkDevice device, const VkImageCre
     }
 
     // If multi-sample, validate type, usage, tiling and mip levels.
-    if ((pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) &&
-        ((pCreateInfo->imageType != VK_IMAGE_TYPE_2D) || (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) ||
-         (pCreateInfo->mipLevels != 1) || image_create_maybe_linear)) {
-        skip |= LogError("VUID-VkImageCreateInfo-samples-02257", device, create_info_loc,
-                         "image created with\n"
-                         "samples = %s\n"
-                         "imageType = %s\n"
-                         "flags = %s (contains VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)\n"
-                         "mipLevels = %" PRIu32
-                         "\n"
-                         "which is not valid.",
-                         string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkImageType(pCreateInfo->imageType),
-                         string_VkImageCreateFlags(image_flags).c_str(), pCreateInfo->mipLevels);
+    if (pCreateInfo->samples != VK_SAMPLE_COUNT_1_BIT) {
+        if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+            skip |= LogError("VUID-VkImageCreateInfo-samples-02257", device, create_info_loc.dot(Field::samples),
+                             "is %s and imageType is %s, but when not VK_SAMPLE_COUNT_1_BIT the imageType must be VK_IMAGE_TYPE_2D",
+                             string_VkSampleCountFlagBits(pCreateInfo->samples), string_VkImageType(pCreateInfo->imageType));
+        } else if (image_flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) {
+            skip |=
+                LogError("VUID-VkImageCreateInfo-samples-02257", device, create_info_loc.dot(Field::samples),
+                         "is %s, but when not VK_SAMPLE_COUNT_1_BIT the flags must not contain VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT",
+                         string_VkSampleCountFlagBits(pCreateInfo->samples));
+        } else if (pCreateInfo->mipLevels != 1) {
+            skip |= LogError("VUID-VkImageCreateInfo-samples-02257", device, create_info_loc.dot(Field::samples),
+                             "is %s and mipLevels is %" PRIu32 ", but when not VK_SAMPLE_COUNT_1_BIT the mipLevels must be 1",
+                             string_VkSampleCountFlagBits(pCreateInfo->samples), pCreateInfo->mipLevels);
+        } else if (image_create_maybe_linear) {
+            skip |=
+                LogError("VUID-VkImageCreateInfo-samples-02257", device, create_info_loc.dot(Field::samples),
+                         "is %s, but when not VK_SAMPLE_COUNT_1_BIT the tiling must not be %s",
+                         string_VkSampleCountFlagBits(pCreateInfo->samples),
+                         (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) ? "VK_IMAGE_TILING_LINEAR"
+                                                                         : "linear from VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
+        }
     }
 
-    if ((image_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) &&
-        ((pCreateInfo->mipLevels != 1) || (pCreateInfo->arrayLayers != 1) || (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) ||
-         image_create_maybe_linear)) {
-        skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc,
-                         "image created with\n"
-                         "imageType = %s\n"
-                         "flags = %s (contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT)\n"
-                         "arrayLayers = %" PRIu32
-                         "\n"
-                         "mipLevels = %" PRIu32
-                         "\n"
-                         "which is not valid.",
-                         string_VkImageType(pCreateInfo->imageType), string_VkImageCreateFlags(image_flags).c_str(),
-                         pCreateInfo->arrayLayers, pCreateInfo->mipLevels);
+    if (image_flags & VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT) {
+        if (pCreateInfo->mipLevels != 1) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+                             "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but mipLevels (%" PRIu32 ") is not 1",
+                             pCreateInfo->mipLevels);
+        } else if (pCreateInfo->arrayLayers != 1) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+                             "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but arrayLayers (%" PRIu32 ") is not 1",
+                             pCreateInfo->arrayLayers);
+        } else if (pCreateInfo->imageType != VK_IMAGE_TYPE_2D) {
+            skip |= LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+                             "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but imageType (%s) is not VK_IMAGE_TYPE_2D",
+                             string_VkImageType(pCreateInfo->imageType));
+        } else if (image_create_maybe_linear) {
+            skip |=
+                LogError("VUID-VkImageCreateInfo-flags-02259", device, create_info_loc.dot(Field::flags),
+                         "contains VK_IMAGE_CREATE_SPLIT_INSTANCE_BIND_REGIONS_BIT but tiling must not be %s",
+                         (pCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) ? "VK_IMAGE_TILING_LINEAR"
+                                                                         : "linear from VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
+        }
     }
 
     if (pCreateInfo->usage & VK_IMAGE_USAGE_FRAGMENT_DENSITY_MAP_BIT_EXT) {
