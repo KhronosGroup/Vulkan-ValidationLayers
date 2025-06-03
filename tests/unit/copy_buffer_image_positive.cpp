@@ -17,6 +17,9 @@
 
 class PositiveCopyBufferImage : public VkLayerTest {};
 
+constexpr VkImageUsageFlags kSrcDstUsage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+constexpr VkFormatFeatureFlags kSrcDstFeature = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+
 TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     TEST_DESCRIPTION(
         "Test copying an image with VkImageSubresourceLayers.layerCount = VK_REMAINING_ARRAY_LAYERS using VK_KHR_maintenance5");
@@ -25,8 +28,7 @@ TEST_F(PositiveCopyBufferImage, ImageRemainingLayersMaintenance5) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 8, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 8, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
 
     vkt::Image image_a(*m_device, image_ci);
     vkt::Image image_b(*m_device, image_ci);
@@ -58,8 +60,7 @@ TEST_F(PositiveCopyBufferImage, Image3DRemainingLayersMaintenance5) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     image_ci.imageType = VK_IMAGE_TYPE_3D;
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
@@ -86,8 +87,7 @@ TEST_F(PositiveCopyBufferImage, ImageTypeExtentMismatchMaintenance5) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
 
     image_ci.imageType = VK_IMAGE_TYPE_1D;
@@ -114,8 +114,7 @@ TEST_F(PositiveCopyBufferImage, ImageLayerCount) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
-                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     m_command_buffer.Begin();
 
     VkImageCopy copyRegion;
@@ -171,9 +170,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemory) {
                                       VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_TILING_LINEAR);
 
     VkDeviceSize buff_size = 32 * 32 * 4;
-    vkt::Buffer buffer(*m_device,
-                       vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
-                       vkt::no_mem);
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(buff_size, kSrcDstUsage), vkt::no_mem);
     auto buffer_memory_requirements = buffer.MemoryRequirements();
 
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
@@ -233,9 +230,7 @@ TEST_F(PositiveCopyBufferImage, ImageOverlappingMemoryCompressed) {
 
     // 1 byte per texel
     VkDeviceSize buff_size = 32 * 32 * 1;
-    vkt::Buffer buffer(*m_device,
-                       vkt::Buffer::CreateInfo(buff_size, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT),
-                       vkt::no_mem);
+    vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(buff_size, kSrcDstUsage), vkt::no_mem);
     auto buffer_memory_requirements = buffer.MemoryRequirements();
 
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
@@ -267,19 +262,15 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
     RETURN_IF_SKIP(Init());
 
     // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Size = 10 * 10 * 64 = 6400
-    vkt::Image uncomp_image(*m_device, 10, 10, VK_FORMAT_R16G16B16A16_UINT,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 10, 10, VK_FORMAT_R16G16B16A16_UINT, kSrcDstUsage);
     // Size = 40 * 40 * 4  = 6400
-    vkt::Image comp_image(*m_device, 40, 40, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 40, 40, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, kSrcDstUsage);
 
     if (!uncomp_image.initialized() || !comp_image.initialized()) {
         GTEST_SKIP() << "Unable to initialize surfaces";
@@ -309,18 +300,14 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage) {
 TEST_F(PositiveCopyBufferImage, UncompressedToCompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::Image uncomp_image(*m_device, 8, 8, VK_FORMAT_R16G16B16A16_UINT,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 8, 8, VK_FORMAT_R16G16B16A16_UINT, kSrcDstUsage);
     // create a texel block of {5,1,1}
-    vkt::Image comp_image(*m_device, 20, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 20, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, kSrcDstUsage);
 
     VkImageCopy copy_region = {};
     copy_region.extent = {1, 1, 1};  // copy single texel block
@@ -355,18 +342,14 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedDstOffset) {
 TEST_F(PositiveCopyBufferImage, CompressedToUncompressedDstOffset) {
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::Image uncomp_image(*m_device, 5, 1, VK_FORMAT_R16G16B16A16_UINT,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 5, 1, VK_FORMAT_R16G16B16A16_UINT, kSrcDstUsage);
     // create a {8,8,1} texel block
-    vkt::Image comp_image(*m_device, 32, 32, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 32, 32, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, kSrcDstUsage);
 
     VkImageCopy copy_region = {};
     copy_region.extent = {4, 4, 1};  // copy single texel block
@@ -403,19 +386,15 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
     RETURN_IF_SKIP(Init());
 
     // Size-compatible (64-bit) formats. Uncompressed is 64 bits per texel, compressed is 64 bits per 4x4 block (or 4bpt).
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Size = 3 * 3 * 64 = 576
-    vkt::Image uncomp_image(*m_device, 3, 3, VK_FORMAT_R16G16B16A16_UINT,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 3, 3, VK_FORMAT_R16G16B16A16_UINT, kSrcDstUsage);
     // Size = 12 * 12 * 4  = 576
-    vkt::Image comp_image(*m_device, 12, 12, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 12, 12, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, kSrcDstUsage);
 
     if (!uncomp_image.initialized() || !comp_image.initialized()) {
         GTEST_SKIP() << "Unable to initialize surfaces";
@@ -436,18 +415,14 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedImage2) {
 TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_SRGB_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::Image uncomp_image(*m_device, 4, 4, VK_FORMAT_R16G16B16A16_UINT,
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image uncomp_image(*m_device, 4, 4, VK_FORMAT_R16G16B16A16_UINT, kSrcDstUsage);
     // create a texel block of {2,1,1}
-    vkt::Image comp_image(*m_device, 6, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK,
-                          VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image comp_image(*m_device, 6, 4, VK_FORMAT_BC1_RGBA_SRGB_BLOCK, kSrcDstUsage);
 
     VkImageCopy copy_region = {};
     copy_region.extent = {1, 1, 1};  // copy single texel block
@@ -470,17 +445,13 @@ TEST_F(PositiveCopyBufferImage, UncompressedToCompressedNonPowerOfTwo) {
 TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT) ||
-        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    vkt::Image image_bc2(*m_device, 60, 60, VK_FORMAT_BC2_UNORM_BLOCK,
-                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image image_bc3(*m_device, 60, 60, VK_FORMAT_BC3_UNORM_BLOCK,
-                         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image_bc2(*m_device, 60, 60, VK_FORMAT_BC2_UNORM_BLOCK, kSrcDstUsage);
+    vkt::Image image_bc3(*m_device, 60, 60, VK_FORMAT_BC3_UNORM_BLOCK, kSrcDstUsage);
 
     if (!image_bc2.initialized() || !image_bc3.initialized()) {
         GTEST_SKIP() << "Unable to initialize surfaces";
@@ -502,13 +473,11 @@ TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo2) {
     SetTargetApiVersion(VK_API_VERSION_1_1);
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC3_SRGB_BLOCK,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC3_SRGB_BLOCK, kSrcDstUsage);
     vkt::Image image_1(*m_device, image_ci, vkt::set_layout);
     image_ci.extent = {62, 62, 1};  // slightly smaller and not divisible by block size
     vkt::Image image_2(*m_device, image_ci, vkt::set_layout);
@@ -538,15 +507,13 @@ TEST_F(PositiveCopyBufferImage, CompressedNonPowerOfTwo2) {
 TEST_F(PositiveCopyBufferImage, BufferCopyNonPowerOfTwo) {
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
     // Mips are    0       1      2      3     4
     //          [15,16], [7,8], [3,4], [1,2], [1,1]
-    auto image_ci = vkt::Image::ImageCreateInfo2D(15, 16, 5, 1, VK_FORMAT_BC3_SRGB_BLOCK,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(15, 16, 5, 1, VK_FORMAT_BC3_SRGB_BLOCK, kSrcDstUsage);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -598,13 +565,11 @@ TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9537");
     RETURN_IF_SKIP(Init());
 
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(4, 4, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(4, 4, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, kSrcDstUsage);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -642,8 +607,7 @@ TEST_F(PositiveCopyBufferImage, DISABLED_OverlappingRegion2) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9276");
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(2, 2, 1, 1, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(2, 2, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
@@ -682,7 +646,7 @@ TEST_F(PositiveCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
                                     VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
-    vkt::Image image(*m_device, 7, 7, VK_FORMAT_BC2_UNORM_BLOCK, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image image(*m_device, 7, 7, VK_FORMAT_BC2_UNORM_BLOCK, kSrcDstUsage);
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 
     m_command_buffer.Begin();
@@ -701,8 +665,7 @@ TEST_F(PositiveCopyBufferImage, BufferToCompressedNonPowerOfTwo) {
 TEST_F(PositiveCopyBufferImage, ImageSubresource) {
     RETURN_IF_SKIP(Init());
 
-    VkImageUsageFlags usage =
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    VkImageUsageFlags usage = kSrcDstUsage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 2, 5, format, usage);
     vkt::Image image(*m_device, image_ci);
@@ -787,32 +750,70 @@ TEST_F(PositiveCopyBufferImage, CopyCompressed1DImage) {
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    image_ci.usage = kSrcDstUsage;
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image src_image(*m_device, image_ci);
+    vkt::Image uncomp_image(*m_device, image_ci);
 
     image_ci.format = VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.usage = kSrcDstUsage;
     if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
         GTEST_SKIP() << "image format not supported";
     }
-    vkt::Image dst_image(*m_device, image_ci);
+    vkt::Image comp_image(*m_device, image_ci);
 
     m_command_buffer.Begin();
-    src_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    dst_image.SetLayout(m_command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     VkImageCopy image_copy;
     image_copy.srcSubresource = {1u, 0u, 0u, 1u};
     image_copy.srcOffset = {0, 0, 0};
     image_copy.dstSubresource = {1u, 0u, 0u, 1u};
     image_copy.dstOffset = {0, 0, 0};
-    image_copy.extent = {16u, 1u, 1u};
+    image_copy.extent = {4u, 1u, 1u};
 
-    vk::CmdCopyImage(m_command_buffer, src_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst_image,
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1u, &image_copy);
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &image_copy);
+    m_command_buffer.FullMemoryBarrier();
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &image_copy);
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveCopyBufferImage, Compressed2DToUncompressed1D) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R16G16B16A16_UNORM, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature) ||
+        !FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC1_RGBA_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
+        GTEST_SKIP() << "Required formats/features not supported";
+    }
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_BC1_RGBA_UNORM_BLOCK, kSrcDstUsage);
+    vkt::Image comp_image(*m_device, image_ci, vkt::set_layout);
+
+    image_ci.format = VK_FORMAT_R16G16B16A16_UNORM;
+    image_ci.imageType = VK_IMAGE_TYPE_1D;
+    image_ci.extent = {256, 1, 1};
+    vkt::Image uncomp_image(*m_device, image_ci, vkt::set_layout);
+
+    m_command_buffer.Begin();
+
+    VkImageCopy image_copy;
+    image_copy.srcSubresource = {1u, 0u, 0u, 1u};
+    image_copy.srcOffset = {0, 0, 0};
+    image_copy.dstSubresource = {1u, 0u, 0u, 1u};
+    image_copy.dstOffset = {0, 0, 0};
+
+    // 2D to 1D
+    image_copy.extent = {16u, 4u, 1u};
+    vk::CmdCopyImage(m_command_buffer, comp_image, VK_IMAGE_LAYOUT_GENERAL, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &image_copy);
+
+    m_command_buffer.FullMemoryBarrier();
+
+    // 1D to 2D
+    image_copy.extent = {16u, 1u, 1u};
+    vk::CmdCopyImage(m_command_buffer, uncomp_image, VK_IMAGE_LAYOUT_GENERAL, comp_image, VK_IMAGE_LAYOUT_GENERAL, 1u, &image_copy);
     m_command_buffer.End();
 }
 
@@ -1009,13 +1010,11 @@ TEST_F(PositiveCopyBufferImage, CopyCompressLowestMip) {
 TEST_F(PositiveCopyBufferImage, CompressedImageMip) {
     TEST_DESCRIPTION("Image/Buffer copies for higher mip levels");
     RETURN_IF_SKIP(Init());
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_BC3_UNORM_BLOCK, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required formats/features not supported";
     }
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 6, 1, VK_FORMAT_BC3_SRGB_BLOCK,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 6, 1, VK_FORMAT_BC3_SRGB_BLOCK, kSrcDstUsage);
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
 
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
@@ -1085,9 +1084,8 @@ TEST_F(PositiveCopyBufferImage, DISABLED_CopyCompressToCompress) {
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_ci.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     image_ci.extent = {16, 16u, 1u};
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci,
-                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    image_ci.usage = kSrcDstUsage;
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
         GTEST_SKIP() << "image format not supported";
     }
     vkt::Image src_image(*m_device, image_ci);
@@ -1186,14 +1184,13 @@ TEST_F(PositiveCopyBufferImage, CopyBufferSizePlanar) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.usage = kSrcDstUsage | VK_IMAGE_USAGE_SAMPLED_BIT;
     image_ci.extent = {4, 4, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    VkFormatFeatureFlags features = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, features)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
@@ -1227,19 +1224,18 @@ TEST_F(PositiveCopyBufferImage, CopyImagePlanar) {
     image_ci.imageType = VK_IMAGE_TYPE_2D;
     image_ci.format = VK_FORMAT_G8_B8R8_2PLANE_420_UNORM;
     image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_ci.usage = kSrcDstUsage | VK_IMAGE_USAGE_SAMPLED_BIT;
     image_ci.extent = {4, 4, 1};
     image_ci.mipLevels = 1;
     image_ci.arrayLayers = 1;
     image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
-    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci,
-                                VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!ImageFormatIsSupported(instance(), Gpu(), image_ci, kSrcDstFeature)) {
         // Assume there's low ROI on searching for different mp formats
         GTEST_SKIP() << "Multiplane image format not supported";
     }
     vkt::Image image(*m_device, image_ci);
 
-    image_ci.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    image_ci.usage = kSrcDstUsage;
     image_ci.format = VK_FORMAT_R8_UNORM;
     vkt::Image image_p0(*m_device, image_ci);
     image_ci.format = VK_FORMAT_R8G8_UNORM;
@@ -1351,18 +1347,14 @@ TEST_F(PositiveCopyBufferImage, CopyColorToDepthMaintenanc8) {
     RETURN_IF_SKIP(Init());
 
     // Add Transfer support for all used formats
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required VK_FORMAT_R32_SFLOAT features not supported";
-    } else if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL,
-                                           VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    } else if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required VK_FORMAT_D32_SFLOAT features not supported";
     }
 
-    vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_R32_SFLOAT,
-                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image depth_image(*m_device, 128, 128, VK_FORMAT_D32_SFLOAT,
-                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_R32_SFLOAT, kSrcDstUsage);
+    vkt::Image depth_image(*m_device, 128, 128, VK_FORMAT_D32_SFLOAT, kSrcDstUsage);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1384,18 +1376,14 @@ TEST_F(PositiveCopyBufferImage, CopyColorToStencilMaintenanc8Compatible) {
     RETURN_IF_SKIP(Init());
 
     // Add Transfer support for all used formats
-    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                    VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_R8_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required VK_FORMAT_R8_UINT features not supported";
-    } else if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL,
-                                           VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT)) {
+    } else if (!FormatFeaturesAreSupported(Gpu(), VK_FORMAT_D32_SFLOAT_S8_UINT, VK_IMAGE_TILING_OPTIMAL, kSrcDstFeature)) {
         GTEST_SKIP() << "Required VK_FORMAT_D32_SFLOAT_S8_UINT features not supported";
     }
 
-    vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_R8_UINT,
-                           VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
-    vkt::Image ds_image(*m_device, 128, 128, VK_FORMAT_D32_SFLOAT_S8_UINT,
-                        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Image color_image(*m_device, 128, 128, VK_FORMAT_R8_UINT, kSrcDstUsage);
+    vkt::Image ds_image(*m_device, 128, 128, VK_FORMAT_D32_SFLOAT_S8_UINT, kSrcDstUsage);
 
     VkImageCopy copy_region;
     copy_region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1442,24 +1430,18 @@ TEST_F(PositiveCopyBufferImage, ImageBufferCopyDepthStencil) {
     }
 
     // 256^2 texels, 512kb (256k depth, 64k stencil, 192k pack)
-    vkt::Image ds_image_4D_1S(
-        *m_device, 256, 256, VK_FORMAT_D32_SFLOAT_S8_UINT,
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image_4D_1S(*m_device, 256, 256, VK_FORMAT_D32_SFLOAT_S8_UINT,
+                              kSrcDstUsage | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     // 256^2 texels, 256kb (192k depth, 64k stencil)
-    vkt::Image ds_image_3D_1S(
-        *m_device, 256, 256, VK_FORMAT_D24_UNORM_S8_UINT,
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image_3D_1S(*m_device, 256, 256, VK_FORMAT_D24_UNORM_S8_UINT,
+                              kSrcDstUsage | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     // 256^2 texels, 128k (128k depth)
-    vkt::Image ds_image_2D(
-        *m_device, 256, 256, VK_FORMAT_D16_UNORM,
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image_2D(*m_device, 256, 256, VK_FORMAT_D16_UNORM, kSrcDstUsage | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     // 256^2 texels, 64k (64k stencil)
-    vkt::Image ds_image_1S(
-        *m_device, 256, 256, VK_FORMAT_S8_UINT,
-        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    vkt::Image ds_image_1S(*m_device, 256, 256, VK_FORMAT_S8_UINT, kSrcDstUsage | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     vkt::Buffer buffer_256k(*m_device, 262144, transfer_usage);  // 256k
@@ -1536,8 +1518,7 @@ TEST_F(PositiveCopyBufferImage, BlitDepth) {
     AddRequiredFeature(vkt::Feature::maintenance8);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 2u, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 2u, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image src_image(*m_device, image_ci);
     vkt::Image dst_image(*m_device, image_ci);
 
@@ -1581,8 +1562,7 @@ TEST_F(PositiveCopyBufferImage, BlitDepth2DArray) {
     AddRequiredFeature(vkt::Feature::maintenance8);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 4u, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32u, 32u, 1u, 4u, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image src_image(*m_device, image_ci);
     vkt::Image dst_image(*m_device, image_ci);
 
@@ -1608,8 +1588,7 @@ TEST_F(PositiveCopyBufferImage, Image2DArrayTo3D) {
     AddRequiredFeature(vkt::Feature::maintenance5);
     RETURN_IF_SKIP(Init());
 
-    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 4, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(16, 16, 1, 4, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
@@ -1644,8 +1623,7 @@ TEST_F(PositiveCopyBufferImage, Image2DArrayTo3DMiplevel) {
     RETURN_IF_SKIP(Init());
 
     // mips from 8x8 to 1x1
-    auto image_ci = vkt::Image::ImageCreateInfo2D(8, 8, 4, 4, VK_FORMAT_R8G8B8A8_UNORM,
-                                                  VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    auto image_ci = vkt::Image::ImageCreateInfo2D(8, 8, 4, 4, VK_FORMAT_R8G8B8A8_UNORM, kSrcDstUsage);
     vkt::Image image_2D(*m_device, image_ci, vkt::set_layout);
 
     image_ci.imageType = VK_IMAGE_TYPE_3D;
