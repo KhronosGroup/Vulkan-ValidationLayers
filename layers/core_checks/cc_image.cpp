@@ -26,6 +26,7 @@
 
 #include "core_validation.h"
 #include "cc_vuid_maps.h"
+#include "error_message/error_location.h"
 #include "generated/pnext_chain_extraction.h"
 #include "generated/dispatch_functions.h"
 #include "error_message/error_strings.h"
@@ -664,11 +665,10 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
                 Func command = IsExtEnabled(extensions.vk_khr_get_physical_device_properties2)
                                    ? Func::vkGetPhysicalDeviceImageFormatProperties2
                                    : Func::vkGetPhysicalDeviceImageFormatProperties;
-                skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
-                                 "The following VkImageCreateInfo\n%s"
-                                 "returned (%s) when calling %s.",
-                                 string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(), string_VkResult(result),
-                                 String(command));
+                skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, error_obj.location,
+                                 "The following VkImageCreateInfo returned %s when calling %s\n%s%s", string_VkResult(result),
+                                 String(command), string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(),
+                                 PrintPNextChain(Struct::VkImageCreateInfo, pCreateInfo->pNext).c_str());
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
             }
 #endif  // VK_USE_PLATFORM_ANDROID_KHR
@@ -702,13 +702,12 @@ bool CoreChecks::PreCallValidateCreateImage(VkDevice device, const VkImageCreate
         if (result != VK_SUCCESS) {
             // Will not have to worry about VkExternalFormatANDROID if using DRM format modifier
             std::string drm_source = modifier_list ? "pDrmFormatModifiers[]" : "VkImageDrmFormatModifierExplicitCreateInfoEXT";
-            skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, create_info_loc,
-                             "The following VkImageCreateInfo\n%s"
-                             "drmFormatModifier (%" PRIu64
-                             ") from %s\n"
-                             "returned (%s) when calling VkGetPhysicalDeviceImageFormatProperties2.",
+            skip |= LogError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251", device, error_obj.location,
+                             "The following VkImageCreateInfo returned %s when calling "
+                             "VkGetPhysicalDeviceImageFormatProperties2\ndrmFormatModifier (%" PRIu64 ") from %s\n%s%s",
+                             string_VkResult(result), drm_format_modifier.drmFormatModifier, drm_source.c_str(),
                              string_VkPhysicalDeviceImageFormatInfo2(image_format_info).c_str(),
-                             drm_format_modifier.drmFormatModifier, drm_source.c_str(), string_VkResult(result));
+                             PrintPNextChain(Struct::VkImageCreateInfo, pCreateInfo->pNext).c_str());
         }
     }
 

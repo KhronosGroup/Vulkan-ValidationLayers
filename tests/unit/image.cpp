@@ -4578,6 +4578,49 @@ TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeImage, GetPhysicalDeviceImageFormatProperties2) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat formats[2] = {VK_FORMAT_R64G64B64A64_SINT, VK_FORMAT_R64G64B64A64_UINT};
+    VkImageFormatListCreateInfo format_list = vku::InitStructHelper();
+    format_list.viewFormatCount = 2;
+    format_list.pViewFormats = formats;
+
+    // Try and create something that no one really should support
+    VkImageCreateInfo create_info = vku::InitStructHelper(&format_list);
+    create_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT | VK_IMAGE_CREATE_EXTENDED_USAGE_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_3D;
+    create_info.format = VK_FORMAT_R64G64B64A64_SINT;
+    create_info.extent = {32u, 32u, 32u};
+    create_info.mipLevels = 1u;
+    create_info.arrayLayers = 1u;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_LINEAR;
+    create_info.usage = VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+                        VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkPhysicalDeviceImageFormatInfo2 image_info = vku::InitStructHelper();
+    image_info.format = create_info.format;
+    image_info.type = create_info.imageType;
+    image_info.tiling = create_info.tiling;
+    image_info.usage = create_info.usage;
+    image_info.flags = create_info.flags;
+    VkImageFormatProperties2 image_properties = vku::InitStructHelper();
+    VkResult result = vk::GetPhysicalDeviceImageFormatProperties2(Gpu(), &image_info, &image_properties);
+    if (result == VK_SUCCESS) {
+        GTEST_SKIP() << "Driver supports image creation";
+    }
+
+    m_errorMonitor->SetDesiredError("VUID-VkImageCreateInfo-imageCreateMaxMipLevels-02251");
+    VkImage image;
+    vk::CreateImage(*m_device, &create_info, nullptr, &image);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeImage, BlitColorToDepth) {
     TEST_DESCRIPTION("Blit a color image to a depth image");
     RETURN_IF_SKIP(Init());
