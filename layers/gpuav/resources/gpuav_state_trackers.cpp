@@ -30,11 +30,7 @@
 namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
-    : vvl::CommandBufferSubState(cb),
-      gpu_resources_manager(gpuav),
-      gpuav_(gpuav),
-      cmd_errors_counts_buffer_(gpuav),
-      bda_ranges_snapshot_(gpuav) {
+    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav), gpuav_(gpuav), cmd_errors_counts_buffer_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
@@ -89,23 +85,6 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 
         cmd_errors_counts_buffer_.Clear();
         if (gpuav_.aborted_) return;
-    }
-
-    // BDA snapshot
-    if (gpuav_.gpuav_settings.shader_instrumentation.buffer_device_address) {
-        if (bda_ranges_snapshot_.IsDestroyed()) {
-            VkBufferCreateInfo buffer_info = vku::InitStructHelper();
-            buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            VmaAllocationCreateInfo alloc_info = {};
-            buffer_info.size = GetBdaRangesBufferByteSize();
-            // This buffer could be very large if an application uses many buffers. Allocating it as HOST_CACHED
-            // and manually flushing it at the end of the state updates is faster than using HOST_COHERENT.
-            alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-            bool success = bda_ranges_snapshot_.Create(&buffer_info, &alloc_info);
-            if (!success) {
-                return;
-            }
-        }
     }
 
     // Update validation commands common descriptor set
@@ -193,62 +172,6 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
     }
 }
 
-bool CommandBufferSubState::UpdateBdaRangesBuffer(const Location &loc) {
-    // By supplying a "date"
-    if (!gpuav_.gpuav_settings.shader_instrumentation.buffer_device_address ||
-        bda_ranges_snapshot_version_ == gpuav_.device_state->buffer_device_address_ranges_version) {
-        return true;
-    }
-
-    // Update buffer device address table
-    // ---
-    auto bda_table_ptr = (uint32_t *)bda_ranges_snapshot_.GetMappedPtr();
-
-    // Buffer device address table layout
-    // Ranges are sorted from low to high, and do not overlap
-    // QWord 0 | split up into two dwords
-    //     DWord 0 | Number of *ranges* (1 range occupies 2 QWords)
-    //     DWord 1 | unused
-    // QWord 1 | Range 1 begin
-    // QWord 2 | Range 1 end
-    // QWord 3 | Range 2 begin
-    // QWord 4 | Range 2 end
-    // QWord 5 | ...
-
-    const size_t max_recordable_ranges =
-        static_cast<size_t>((GetBdaRangesBufferByteSize() - sizeof(uint64_t)) / (2 * sizeof(VkDeviceAddress)));
-    auto bda_ranges = reinterpret_cast<vvl::DeviceState::BufferAddressRange *>(bda_table_ptr + 2);
-    const auto [ranges_to_update_count, total_address_ranges_count] =
-        gpuav_.device_state->GetBufferAddressRanges(bda_ranges, max_recordable_ranges);
-    // Cast here instead of having to cast inside the shader
-    bda_table_ptr[0] = static_cast<uint32_t>(ranges_to_update_count);
-
-    if (total_address_ranges_count > size_t(gpuav_.gpuav_settings.max_bda_in_use)) {
-        std::ostringstream problem_string;
-        problem_string << "Number of buffer device addresses ranges in use (" << total_address_ranges_count
-                       << ") is greater than khronos_validation.gpuav_max_buffer_device_addresses ("
-                       << gpuav_.gpuav_settings.max_bda_in_use
-                       << "). Truncating buffer device address table could result in invalid validation.";
-        gpuav_.InternalError(gpuav_.device, loc, problem_string.str().c_str());
-        return false;
-    }
-
-    // Post update cleanups
-    // ---
-    // Flush the BDA buffer before un-mapping so that the new state is visible to the GPU
-    bda_ranges_snapshot_.FlushAllocation();
-    bda_ranges_snapshot_version_ = gpuav_.device_state->buffer_device_address_ranges_version;
-
-    return true;
-}
-
-VkDeviceSize CommandBufferSubState::GetBdaRangesBufferByteSize() const {
-    return (1                                           // 2 QWORD for the number of address ranges
-            + 2 * gpuav_.gpuav_settings.max_bda_in_use  // 2 QWORDS per address range
-            ) *
-           8;
-}
-
 void CommandBufferSubState::Destroy() { ResetCBState(true); }
 
 void CommandBufferSubState::Reset(const Location &loc) {
@@ -284,8 +207,6 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     if (should_destroy) {
         error_output_buffer_range_ = {};
         cmd_errors_counts_buffer_.Destroy();
-        bda_ranges_snapshot_.Destroy();
-        bda_ranges_snapshot_version_ = 0;
     }
 
     if (should_destroy && validation_cmd_desc_pool_ != VK_NULL_HANDLE && error_logging_desc_set_ != VK_NULL_HANDLE) {
@@ -373,11 +294,6 @@ bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc)
         if (result != VK_SUCCESS) {
             gpuav_.InternalError(queue.Handle(), loc, "Failed to submit per submission command buffer");
         }
-    }
-
-    const bool succeeded = UpdateBdaRangesBuffer(loc);
-    if (!succeeded) {
-        return false;
     }
 
     return true;
