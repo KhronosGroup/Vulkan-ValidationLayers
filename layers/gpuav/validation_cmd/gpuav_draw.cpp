@@ -35,7 +35,6 @@
 namespace gpuav {
 namespace valcmd {
 
-using ValidationCommandFunc = CommandBufferSubState::ValidationCommandFunc;
 using ErrorLoggerFunc = CommandBufferSubState::ErrorLoggerFunc;
 
 struct SharedDrawValidationResources {
@@ -60,13 +59,23 @@ struct SharedDrawValidationResources {
     ~SharedDrawValidationResources() { dummy_buffer.Destroy(); }
 };
 
+using ValidationCommandFunc = stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb_state), 192>;
+struct ValidationCmdCbState {
+    std::vector<ValidationCommandFunc> per_render_pass_validation_commands;
+};
+
 void FlushValidationCmds(Validator &gpuav, CommandBufferSubState &cb_state) {
+    ValidationCmdCbState *val_cmd_cb_state = cb_state.shared_resources_cache.TryGet<ValidationCmdCbState>();
+    if (!val_cmd_cb_state) {
+        return;
+    }
+
     valpipe::RestorablePipelineState restorable_state(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-    for (auto &validation_cmd : cb_state.per_render_pass_validation_commands) {
+    for (auto &validation_cmd : val_cmd_cb_state->per_render_pass_validation_commands) {
         validation_cmd(gpuav, cb_state);
     }
-    cb_state.per_render_pass_validation_commands.clear();
+    val_cmd_cb_state->per_render_pass_validation_commands.clear();
 }
 
 struct FirstInstanceValidationShader {
@@ -224,7 +233,8 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
         }
     };
 
-    cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
+    ValidationCmdCbState &val_cmd_cb_state = cb_state.shared_resources_cache.GetOrCreate<ValidationCmdCbState>();
+    val_cmd_cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
     // Register error logger. Happens per command GPU-AV intercepts
     // ---
@@ -380,7 +390,8 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         }
     };
 
-    cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
+    ValidationCmdCbState &val_cmd_cb_state = cb_state.shared_resources_cache.GetOrCreate<ValidationCmdCbState>();
+    val_cmd_cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
     // Register error logger
     // ---
@@ -590,7 +601,9 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                                            buffer_memory_barriers.data(), 0, nullptr);
             }
         };
-    cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
+
+    ValidationCmdCbState &val_cmd_cb_state = cb_state.shared_resources_cache.GetOrCreate<ValidationCmdCbState>();
+    val_cmd_cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
     // Register error logger
     // ---
@@ -951,7 +964,9 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
                                        buffer_memory_barriers.data(), 0, nullptr);
         }
     };
-    cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
+
+    ValidationCmdCbState &val_cmd_cb_state = cb_state.shared_resources_cache.GetOrCreate<ValidationCmdCbState>();
+    val_cmd_cb_state.per_render_pass_validation_commands.emplace_back(std::move(validation_cmd));
 
     const uint32_t label_command_i =
         !cb_state.base.GetLabelCommands().empty() ? uint32_t(cb_state.base.GetLabelCommands().size() - 1) : vvl::kU32Max;
