@@ -348,23 +348,24 @@ std::string Image::DescribeSubresourceLayers(const VkImageSubresourceLayers &sub
     ss << "The " << string_VkImageType(create_info.imageType) << " VkImage was created with format " << string_VkFormat(format)
        << " and an extent of [" << string_VkExtent3D(create_info.extent) << "]\n";
     if (subresource.mipLevel != 0) {
-        ss << "mipLevel " << subresource.mipLevel << " is [" << string_VkExtent3D(subresource_extent) << "]\n";
+        ss << "\tmipLevel " << subresource.mipLevel << " is [" << string_VkExtent3D(subresource_extent) << "]\n";
     }
     if (vkuFormatIsCompressed(format)) {
         const VkExtent3D block_extent = vkuFormatTexelBlockExtent(format);
         const VkExtent3D texel_blocks = GetTexelBlocks(subresource_extent, block_extent);
-        ss << "The compressed format block extent (" << string_VkExtent3D(block_extent) << ") represents miplevel "
-           << subresource.mipLevel << " with a texel block extent [" << string_VkExtent3D(texel_blocks) << "]";
+        ss << "\tThe compressed format block extent (" << string_VkExtent3D(block_extent) << ") represents miplevel "
+           << subresource.mipLevel << " with a texel block extent [" << string_VkExtent3D(texel_blocks) << "]\n";
     } else if (vkuFormatIsMultiplane(format)) {
         assert(IsSingleBitSet(subresource.aspectMask));
         VkImageAspectFlagBits aspect_flag = static_cast<VkImageAspectFlagBits>(subresource.aspectMask);
-        ss << "Plane " << vkuGetPlaneIndex(aspect_flag) << " (compatible format "
+        ss << "\tPlane " << vkuGetPlaneIndex(aspect_flag) << " (compatible format "
            << string_VkFormat(vkuFindMultiplaneCompatibleFormat(format, aspect_flag)) << ")";
         VkExtent2D divisors = vkuFindMultiplaneExtentDivisors(format, aspect_flag);
         if (divisors.width != 1 || divisors.height != 1) {
             ss << " has [widthDivisor = " << divisors.width << ", heightDivisor = " << divisors.height
                << "] which adjusts the extent to [" << string_VkExtent3D(subresource_extent) << "]";
         }
+        ss << "\n";
     }
     return ss.str();
 }
