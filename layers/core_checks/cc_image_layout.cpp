@@ -23,11 +23,11 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include "core_checks/cc_state_tracker.h"
+#include "core_checks/cc_sync_vuid_maps.h"
 #include "core_checks/cc_vuid_maps.h"
 #include "core_checks/core_validation.h"
 #include "error_message/error_strings.h"
 #include "generated/error_location_helper.h"
-#include "sync/sync_vuid_maps.h"
 #include "utils/image_layout_utils.h"
 #include "utils/image_utils.h"
 #include "state_tracker/image_state.h"
@@ -892,7 +892,7 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
                                                                                            const ImageLayoutState &state) {
                     bool subres_skip = false;
                     if (!layout_check.Check(state)) {
-                        const auto &vuid = GetImageBarrierVUID(image_loc, sync_vuid_maps::ImageError::kConflictingLayout);
+                        const auto &vuid = GetImageBarrierVUID(image_loc, vvl::ImageError::kConflictingLayout);
                         const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
                         const VkImageSubresource vk_subresource = image_state.subresource_encoder.MakeVkSubresource(subresource);
                         const LogObjectList objlist(cb_state.Handle(), image_barrier.image);
@@ -957,8 +957,8 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
                         bool local_skip = false;
                         if (state.current_layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ &&
                             state.current_layout != VK_IMAGE_LAYOUT_GENERAL) {
-                            const auto &vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(
-                                barrier_loc, sync_vuid_maps::DynamicRenderingBarrierError::kImageLayout);
+                            const auto &vuid =
+                                GetDynamicRenderingBarrierVUID(barrier_loc, vvl::DynamicRenderingBarrierError::kImageLayout);
                             local_skip |= LogError(vuid, image_state.VkHandle(), barrier_loc, "image layout is %s.",
                                                    string_VkImageLayout(state.current_layout));
                         }

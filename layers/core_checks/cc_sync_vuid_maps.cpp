@@ -16,18 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "sync/sync_vuid_maps.h"
+#include "cc_sync_vuid_maps.h"
 #include "error_message/error_location.h"
 
 #include <cassert>
 
-namespace sync_vuid_maps {
-using vvl::Entry;
-using vvl::Field;
-using vvl::FindVUID;
-using vvl::Func;
-using vvl::Key;
-using vvl::Struct;
+namespace vvl {
 
 // IMPORTANT: this map should be in sync with features enumerated in DisabledPipelineStages()
 const vvl::unordered_map<VkPipelineStageFlags2, std::string> &GetFeatureNameMap() {
@@ -1496,4 +1490,4 @@ const std::string &GetDynamicRenderingBarrierVUID(const Location &loc, DynamicRe
     return result;
 }
 
-}  // namespace sync_vuid_maps
+}  // namespace vvl

@@ -20,10 +20,10 @@
 
 #include "cc_state_tracker.h"
 #include "core_validation.h"
+#include "cc_sync_vuid_maps.h"
 #include "error_message/error_strings.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/event_map.h"
-#include "sync/sync_vuid_maps.h"
 
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
 void CoreChecks::DebugCapture() {}
@@ -98,8 +98,8 @@ void CommandBufferSubState::SubmitTimeValidate() {
                 *global_layout_map, std::move(range_gen),
                 [this, &barrier_loc, &image_state](const ImageLayoutMap::key_type& range, const VkImageLayout& layout) {
                     if (layout != VK_IMAGE_LAYOUT_RENDERING_LOCAL_READ && layout != VK_IMAGE_LAYOUT_GENERAL) {
-                        const auto& vuid = sync_vuid_maps::GetDynamicRenderingBarrierVUID(
-                            barrier_loc, sync_vuid_maps::DynamicRenderingBarrierError::kImageLayout);
+                        const auto& vuid =
+                            GetDynamicRenderingBarrierVUID(barrier_loc, vvl::DynamicRenderingBarrierError::kImageLayout);
                         const LogObjectList objlist(base.Handle(), image_state->Handle());
                         const Location& image_loc = barrier_loc.dot(vvl::Field::image);
                         const VkImageSubresource subresource =

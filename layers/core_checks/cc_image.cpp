@@ -25,6 +25,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "core_validation.h"
+#include "cc_sync_vuid_maps.h"
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "generated/pnext_chain_extraction.h"
@@ -35,7 +36,6 @@
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/wsi_state.h"
-#include "sync/sync_vuid_maps.h"
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 

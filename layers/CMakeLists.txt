@@ -229,6 +229,8 @@ target_sources(vvl PRIVATE
     core_checks/cc_state_tracker.cpp
     core_checks/cc_submit.h
     core_checks/cc_submit.cpp
+    core_checks/cc_sync_vuid_maps.h
+    core_checks/cc_sync_vuid_maps.cpp
     core_checks/cc_synchronization.h
     core_checks/cc_synchronization.cpp
     core_checks/cc_video.cpp
@@ -434,8 +436,6 @@ target_sources(vvl PRIVATE
     sync/sync_utils.h
     sync/sync_validation.cpp
     sync/sync_validation.h
-    sync/sync_vuid_maps.cpp
-    sync/sync_vuid_maps.h
     thread_tracker/thread_safety_validation.cpp
     thread_tracker/thread_safety_validation.h
     utils/shader_utils.cpp
