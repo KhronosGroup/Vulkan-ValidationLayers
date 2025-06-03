@@ -236,6 +236,110 @@ TEST_F(PositiveSyncVal, CmdClearAttachmentLayer) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
 
+TEST_F(PositiveSyncVal, StoreOpImplicitOrdering) {
+    TEST_DESCRIPTION("StoreOp happens-after (including memory effects) any recorded render pass operation");
+    RETURN_IF_SKIP(InitSyncVal());
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+    rp.AddInputAttachment(0);
+    rp.CreateRenderPass();
+
+    vkt::Image input_image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
+    vkt::ImageView input_image_view = input_image.CreateView();
+
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &input_image_view.handle(), 64, 64);
+
+    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
+    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.CreateGraphicsPipeline();
+    pipe.descriptor_set_->WriteDescriptorImageInfo(0, input_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
+    pipe.descriptor_set_->UpdateDescriptorSets();
+
+    m_command_buffer.Begin();
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
+                              &pipe.descriptor_set_->set_, 0, nullptr);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 64, 64);
+
+    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
+
+    // Test ordering rules between input attachment READ and store op WRITE (DONT_CARE).
+    // Implicit ordering ensures there is no WAR hazard.
+    m_command_buffer.EndRenderPass();
+}
+
+TEST_F(PositiveSyncVal, LayoutTransition) {
+    TEST_DESCRIPTION("Sandwitch image clear between two layout transitions");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    const VkClearValue clear_value{};
+    VkImageSubresourceRange subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 transition1 = vku::InitStructHelper();
+    transition1.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    transition1.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transition1.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition1.image = image;
+    transition1.subresourceRange = subresource_range;
+
+    VkImageMemoryBarrier2 transition2 = vku::InitStructHelper();
+    transition2.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    transition2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    transition2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition2.image = image;
+    transition2.subresourceRange = subresource_range;
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(transition1);  // transition to layout required by clear
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clear_value.color, 1,
+                           &subresource_range);
+    m_command_buffer.Barrier(transition2);  // transtion to final layout
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveSyncVal, LayoutTransitionAfterLayoutTransition) {
+    // TODO: check results of this dicussion https://gitlab.khronos.org/vulkan/vulkan/-/issues/4302
+    // NOTE: artem can't believe this does not cause race conditions
+    TEST_DESCRIPTION("There should be no hazard for ILT after ILT");
+
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(InitSyncVal());
+
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+    VkImageMemoryBarrier2 transition1 = vku::InitStructHelper();
+    transition1.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    transition1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition1.image = image;
+    transition1.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 transition2 = vku::InitStructHelper();
+    transition2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    transition2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    transition2.image = image;
+    transition2.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(transition1);
+    m_command_buffer.Barrier(transition2);
+    m_command_buffer.End();
+}
+
 // Image transition ensures that image data is made visible and available when necessary.
 // The user's responsibility is only to properly define the barrier. This test checks that
 // writing to the image immediately after the transition  does not produce WAW hazard against

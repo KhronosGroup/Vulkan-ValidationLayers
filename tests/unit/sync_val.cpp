@@ -2846,90 +2846,31 @@ struct CreateRenderPassHelper {
     }
 };
 
-TEST_F(NegativeSyncVal, LayoutTransition) {
+TEST_F(NegativeSyncVal, FinalLayoutTransitionHazard) {
+    TEST_DESCRIPTION("Final layout transition conflicts with image clear command");
     RETURN_IF_SKIP(InitSyncVal());
 
-    CreateRenderPassHelper rp_helper(m_device);
-    rp_helper.Init();
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
+                                VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
-    VkShaderObj fs(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle(), 64, 64);
 
-    CreatePipelineHelper pipe(*this);
-    pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe.gp_ci_.renderPass = *rp_helper.render_pass;
-    pipe.CreateGraphicsPipeline();
-
-    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    pipe.descriptor_set_->WriteDescriptorImageInfo(0, rp_helper.view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
-    pipe.descriptor_set_->UpdateDescriptorSets();
+    const VkClearColorValue clear_value{};
+    VkImageSubresourceRange subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
-
-    VkClearColorValue ccv = {};
-    VkImageSubresourceRange full_subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
-    VkImageMemoryBarrier pre_clear_barrier = vku::InitStructHelper();
-    pre_clear_barrier.srcAccessMask = 0;
-    pre_clear_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    pre_clear_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    pre_clear_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    pre_clear_barrier.image = *rp_helper.image_input;
-    pre_clear_barrier.subresourceRange = full_subresource_range;
-
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &pre_clear_barrier);
-
-    vk::CmdClearColorImage(m_command_buffer, *rp_helper.image_input, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &ccv, 1,
-                           &full_subresource_range);
-
-    VkImageMemoryBarrier post_clear_barrier = vku::InitStructHelper();
-    post_clear_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    post_clear_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    post_clear_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    post_clear_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    post_clear_barrier.image = *rp_helper.image_input;
-    post_clear_barrier.subresourceRange = full_subresource_range;
-
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                           VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u, 0u, nullptr,
-                           0u, nullptr, 1u, &post_clear_barrier);
-
-    m_command_buffer.BeginRenderPass(rp_helper.render_pass_begin);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.pipeline_layout_, 0, 1,
-                              &pipe.descriptor_set_->set_, 0, nullptr);
-
-    // Positive test for ordering rules between load and input attachment usage
-    vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
-
-    // Positive test for store ordering vs. input attachment and dependency *to* external for layout transition
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 64, 64);
     m_command_buffer.EndRenderPass();
-
-    // Catch a conflict with the input attachment final layout transition
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    vk::CmdClearColorImage(m_command_buffer, *rp_helper.image_input, VK_IMAGE_LAYOUT_GENERAL, &ccv, 1, &full_subresource_range);
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &subresource_range);
     m_errorMonitor->VerifyFound();
-
-    // There should be no hazard for ILT after ILT
-    m_command_buffer.End();
-    vk::ResetCommandPool(device(), m_command_pool, 0);
-    m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
-                           nullptr, 1u, &pre_clear_barrier);
-
-    VkImageMemoryBarrier waw_barrier = vku::InitStructHelper();
-    waw_barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    waw_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    waw_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    waw_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    waw_barrier.image = *rp_helper.image_input;
-    waw_barrier.subresourceRange = full_subresource_range;
-
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &waw_barrier);
-    m_command_buffer.End();
 }
 
 TEST_F(NegativeSyncVal, SubpassMultiDep) {
