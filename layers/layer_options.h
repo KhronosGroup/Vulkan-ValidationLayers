@@ -71,6 +71,7 @@ enum EnableFlags {
     vendor_specific_nvidia,
     debug_printf_validation,
     sync_validation,
+    deprecation_checks,
     // Insert new enables above this line
     kMaxEnableFlags,
 };

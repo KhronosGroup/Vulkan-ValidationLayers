@@ -119,6 +119,7 @@ const std::vector<std::string> &GetEnableFlagNameHelper() {
         "VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_NVIDIA",                      // vendor_specific_nvidia,
         "VK_VALIDATION_FEATURE_ENABLE_DEBUG_PRINTF_EXT",                       // debug_printf,
         "VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT",         // sync_validation,
+        "VK_VALIDATION_DEPRECATION_CHECKS",                                    // deprecation_checks,
     };
     return enable_flag_name_helper;
 }
@@ -149,6 +150,7 @@ const char *VK_LAYER_DISABLES = "disables";
 const char *VK_LAYER_CHECK_SHADERS = "check_shaders";
 const char *VK_LAYER_THREAD_SAFETY = "thread_safety";
 const char *VK_LAYER_STATELESS_PARAM = "stateless_param";
+const char *VK_LAYER_DEPRECATION = "deprecation";
 const char *VK_LAYER_OBJECT_LIFETIME = "object_lifetime";
 const char *VK_LAYER_VALIDATE_CORE = "validate_core";
 const char *VK_LAYER_UNIQUE_HANDLES = "unique_handles";
@@ -548,6 +550,8 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
         } else if (strcmp(VK_LAYER_THREAD_SAFETY, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_STATELESS_PARAM, setting.pSettingName) == 0) {
+            required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
+        } else if (strcmp(VK_LAYER_DEPRECATION, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
         } else if (strcmp(VK_LAYER_OBJECT_LIFETIME, setting.pSettingName) == 0) {
             required_type = VK_LAYER_SETTING_TYPE_BOOL32_EXT;
@@ -1251,6 +1255,7 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
                              VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
         SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
+        SetValidationSetting(layer_setting_set, settings_data->enables, deprecation_checks, VK_LAYER_DEPRECATION);
 
         // These were deprecated after the 1.3.296 SDK release
         // Before GPU-AV and DebugPrintf were merged, we used this enum to set GPU-AV and DebugPrintf in vkconfig.

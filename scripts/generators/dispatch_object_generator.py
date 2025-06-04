@@ -53,6 +53,13 @@ class APISpecific:
                         'enabled': '!settings.disabled[stateless_checks]'
                     },
                     {
+                        'include': 'generated/deprecation.h',
+                        'device': 'deprecation::Device',
+                        'instance': 'deprecation::Instance',
+                        'type': 'LayerObjectTypeDeprecation',
+                        'enabled': 'settings.enabled[deprecation_checks]'
+                    },
+                    {
                         'include': 'object_tracker/object_lifetime_validation.h',
                         'device': 'object_lifetimes::Device',
                         'instance': 'object_lifetimes::Instance',

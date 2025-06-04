@@ -70,6 +70,7 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
     from generators.dispatch_vector_generator import DispatchVectorGenerator
     from generators.function_pointers_generator import FunctionPointersOutputGenerator
     from generators.best_practices_generator import BestPracticesOutputGenerator
+    from generators.deprecation_generator import DeprecationGenerator
     from generators.spirv_validation_generator import SpirvValidationHelperOutputGenerator
     from generators.spirv_grammar_generator import SpirvGrammarHelperOutputGenerator
     from generators.command_validation_generator import CommandValidationOutputGenerator
@@ -254,6 +255,14 @@ def RunGenerators(api: str, registry: str, grammar: str, directory: str, styleFi
         },
         'best_practices.cpp' : {
             'generator' : BestPracticesOutputGenerator,
+            'genCombined': True,
+        },
+        'deprecation.cpp' : {
+            'generator' : DeprecationGenerator,
+            'genCombined': True,
+        },
+        'deprecation.h' : {
+            'generator' : DeprecationGenerator,
             'genCombined': True,
         },
         'sync_validation_types.h' : {
