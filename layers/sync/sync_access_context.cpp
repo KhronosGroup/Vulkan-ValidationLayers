@@ -40,17 +40,19 @@ class HazardDetector {
 class HazardDetectorWithOrdering {
     const SyncAccessInfo &access_info_;
     const SyncOrdering ordering_rule_;
+    const SyncFlags flags_;
 
   public:
     HazardResult Detect(const ResourceAccessRangeMap::const_iterator &pos) const {
-        return pos->second.DetectHazard(access_info_, ordering_rule_, kQueueIdInvalid);
+        const OrderingBarrier &ordering = ResourceAccessState::GetOrderingRules(ordering_rule_);
+        return pos->second.DetectHazard(access_info_, ordering, flags_, kQueueIdInvalid);
     }
     HazardResult DetectAsync(const ResourceAccessRangeMap::const_iterator &pos, ResourceUsageTag start_tag,
                              QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
-    HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering)
-        : access_info_(SyncStageAccess::AccessInfo(access_index)), ordering_rule_(ordering) {}
+    HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, SyncFlags flags = 0)
+        : access_info_(SyncStageAccess::AccessInfo(access_index)), ordering_rule_(ordering), flags_(flags) {}
 };
 
 class HazardDetectFirstUse {
@@ -222,11 +224,12 @@ void AccessContext::UpdateAccessState(const vvl::ImageView &image_view, SyncAcce
 }
 
 void AccessContext::UpdateAccessState(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                      SyncAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag) {
+                                      SyncAccessIndex current_usage, SyncOrdering ordering_rule, const ResourceUsageTag tag,
+                                      SyncFlags flags) {
     const std::optional<ImageRangeGen> &attachment_gen = view_gen.GetRangeGen(gen_type);
     if (attachment_gen) {
         // Value of const optional is const, and will be copied in callee
-        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag});
+        UpdateAccessState(*attachment_gen, current_usage, ordering_rule, ResourceUsageTagEx{tag}, flags);
     }
 }
 
@@ -241,19 +244,19 @@ void AccessContext::UpdateAccessState(const vvl::VideoSession &vs_state, const v
 }
 
 void AccessContext::UpdateAccessState(ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTagEx tag_ex) {
+                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
     if (current_usage == SYNC_ACCESS_INDEX_NONE) {
         return;
     }
-    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex);
+    UpdateMemoryAccessStateFunctor action(*this, current_usage, ordering_rule, tag_ex, flags);
     UpdateMemoryAccessState(action, range_gen);
 }
 
 void AccessContext::UpdateAccessState(const ImageRangeGen &range_gen, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
-                                      ResourceUsageTagEx tag_ex) {
+                                      ResourceUsageTagEx tag_ex, SyncFlags flags) {
     // range_gen is non-temporary to avoid infinite call recursion
     ImageRangeGen mutable_range_gen(range_gen);
-    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag_ex);
+    UpdateAccessState(mutable_range_gen, current_usage, ordering_rule, tag_ex, flags);
 }
 
 void AccessContext::ResolveChildContexts(const std::vector<AccessContext> &contexts) {
@@ -347,13 +350,13 @@ HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, SyncA
 }
 
 HazardResult AccessContext::DetectHazard(const ImageRangeGen &ref_range_gen, SyncAccessIndex current_usage,
-                                         const SyncOrdering ordering_rule) const {
+                                         const SyncOrdering ordering_rule, SyncFlags flags) const {
     if (ordering_rule == SyncOrdering::kOrderingNone) {
         HazardDetector detector(current_usage);
         return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
     }
 
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags);
     return DetectHazardGeneratedRanges(detector, ref_range_gen, DetectOptions::kDetectAll);
 }
 
@@ -366,8 +369,8 @@ HazardResult AccessContext::DetectHazard(const vvl::ImageView &image_view, const
 }
 
 HazardResult AccessContext::DetectHazard(const AttachmentViewGen &view_gen, AttachmentViewGen::Gen gen_type,
-                                         SyncAccessIndex current_usage, SyncOrdering ordering_rule) const {
-    HazardDetectorWithOrdering detector(current_usage, ordering_rule);
+                                         SyncAccessIndex current_usage, SyncOrdering ordering_rule, SyncFlags flags) const {
+    HazardDetectorWithOrdering detector(current_usage, ordering_rule, flags);
     return DetectHazard(detector, view_gen, gen_type, DetectOptions::kDetectAll);
 }
 
@@ -534,7 +537,7 @@ ResourceAccessRangeMap::iterator AccessContext::UpdateMemoryAccessStateFunctor::
 }
 void AccessContext::UpdateMemoryAccessStateFunctor::operator()(const ResourceAccessRangeMap::iterator &pos) const {
     auto &access_state = pos->second;
-    access_state.Update(usage_info, ordering_rule, tag_ex);
+    access_state.Update(usage_info, ordering_rule, tag_ex, flags);
 }
 
 // This is called with the *recorded* command buffers access context, with the *active* access context pass in, againsts which

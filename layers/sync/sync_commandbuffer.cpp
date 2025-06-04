@@ -273,7 +273,8 @@ bool CommandBufferAccessContext::ValidateEndRendering(const ErrorObject &error_o
 
         const SyncAccessIndex store_access = attachment.GetStoreUsage();
         if (store_access != SYNC_ACCESS_INDEX_NONE) {
-            HazardResult hazard = current_context_->DetectHazard(attachment.view_gen, store_access, kStoreOrder);
+            HazardResult hazard =
+                current_context_->DetectHazard(attachment.view_gen, store_access, kStoreOrder, SyncFlag::kStoreOp);
             if (hazard.IsHazard()) {
                 LogObjectList objlist(cb_state_->Handle(), attachment.view->Handle());
 

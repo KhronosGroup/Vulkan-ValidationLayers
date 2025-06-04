@@ -74,13 +74,7 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info)
     return {};
 }
 
-HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info, const SyncOrdering ordering_rule,
-                                               QueueId queue_id) const {
-    const auto &ordering = GetOrderingRules(ordering_rule);
-    return DetectHazard(usage_info, ordering, queue_id);
-}
-
-HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering,
+HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info, const OrderingBarrier &ordering, SyncFlags flags,
                                                QueueId queue_id) const {
     // The ordering guarantees act as barriers to the last accesses, independent of synchronization operations
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
@@ -98,9 +92,16 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info,
             const bool usage_is_ordered =
                 (input_attachment_ordering && usage_is_input_attachment) || (0 != (usage_stage & ordering.exec_scope));
             if (usage_is_ordered) {
-                // Now see of the most recent write (or a subsequent read) are ordered
-                const bool most_recent_is_ordered =
-                    last_write->IsOrdered(ordering, queue_id) || (0 != GetOrderedStages(queue_id, ordering));
+                // Check if the most recent write is ordered.
+                // Input attachment is ordered against load op but not against regular draws (requires subpass barrier).
+                bool most_recent_is_ordered =
+                    last_write->IsOrdered(ordering, queue_id) && (!usage_is_input_attachment || last_write->IsLoadOp());
+
+                // If most recent write is not ordered then check if subsequent read is ordered
+                if (!most_recent_is_ordered) {
+                    most_recent_is_ordered = (GetOrderedStages(queue_id, ordering, flags) != 0);
+                }
+
                 is_raw_hazard = !most_recent_is_ordered;
             }
         }
@@ -118,7 +119,7 @@ HazardResult ResourceAccessState::DetectHazard(const SyncAccessInfo &usage_info,
             VkPipelineStageFlags2 ordered_stages = VK_PIPELINE_STAGE_2_NONE;
             if (usage_write_is_ordered) {
                 // If the usage is ordered, we can ignore all ordered read stages w.r.t. WAR)
-                ordered_stages = GetOrderedStages(queue_id, ordering);
+                ordered_stages = GetOrderedStages(queue_id, ordering, flags);
             }
             // If we're tracking any reads that aren't ordered against the current write, got to check 'em all.
             if ((ordered_stages & last_read_stages) != last_read_stages) {
@@ -167,7 +168,8 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                 break;
             }
 
-            hazard = DetectHazard(*first.usage_info, first.ordering_rule, queue_id);
+            const auto &first_ordering = GetOrderingRules(first.ordering_rule);
+            hazard = DetectHazard(*first.usage_info, first_ordering, 0, queue_id);
             if (hazard.IsHazard()) {
                 hazard.AddRecordedAccess(first);
                 break;
@@ -196,7 +198,7 @@ HazardResult ResourceAccessState::DetectHazard(const ResourceAccessState &record
                     // if there are any first use reads, we suppress WAW by injecting the active context write in the ordering rule
                     barrier.access_scope |= last_access.usage_info->access_bit;
                 }
-                hazard = DetectHazard(*last_access.usage_info, barrier, queue_id);
+                hazard = DetectHazard(*last_access.usage_info, barrier, 0, queue_id);
                 if (hazard.IsHazard()) {
                     hazard.AddRecordedAccess(last_access);
                 }
@@ -442,7 +444,8 @@ void ResourceAccessState::Resolve(const ResourceAccessState &other) {
     }
 }
 
-void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex) {
+void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering ordering_rule, ResourceUsageTagEx tag_ex,
+                                 SyncFlags flags) {
     const VkPipelineStageFlagBits2 usage_stage = usage_info.stage_mask;
     if (IsRead(usage_info)) {
         // Mulitple outstanding reads may be of interest and do dependency chains independently
@@ -484,7 +487,7 @@ void ResourceAccessState::Update(const SyncAccessInfo &usage_info, SyncOrdering 
     } else {
         // Assume write
         // TODO determine what to do with READ-WRITE operations if any
-        SetWrite(usage_info, tag_ex);
+        SetWrite(usage_info, tag_ex, flags);
     }
     UpdateFirst(tag_ex, usage_info, ordering_rule);
 }
@@ -519,12 +522,12 @@ bool HazardResult::IsWAWHazard() const {
 // We can overwrite them as *this* write is now after them.
 //
 // Note: intentionally ignore pending barriers and chains (i.e. don't apply or clear them), let ApplyPendingBarriers handle them.
-void ResourceAccessState::SetWrite(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex) {
+void ResourceAccessState::SetWrite(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags) {
     ClearRead();
     if (last_write.has_value()) {
-        last_write->Set(usage_info, tag_ex);
+        last_write->Set(usage_info, tag_ex, flags);
     } else {
-        last_write.emplace(usage_info, tag_ex);
+        last_write.emplace(usage_info, tag_ex, flags);
     }
 }
 
@@ -723,7 +726,7 @@ bool ResourceAccessState::IsRAWHazard(const SyncAccessInfo &usage_info) const {
            last_write->IsWriteHazard(usage_info);
 }
 
-VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering) const {
+VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, const OrderingBarrier &ordering, SyncFlags flags) const {
     // At apply queue submission order limits on the effect of ordering
     VkPipelineStageFlags2 non_qso_stages = VK_PIPELINE_STAGE_2_NONE;
     if (queue_id != kQueueIdInvalid) {
@@ -738,7 +741,7 @@ VkPipelineStageFlags2 ResourceAccessState::GetOrderedStages(QueueId queue_id, co
     VkPipelineStageFlags2 ordered_stages = read_stages_in_qso & ordering.exec_scope;
     // Special input attachment handling as always (not encoded in exec_scop)
     const bool input_attachment_ordering = ordering.access_scope[SYNC_FRAGMENT_SHADER_INPUT_ATTACHMENT_READ];
-    if (input_attachment_ordering && input_attachment_read) {
+    if (input_attachment_ordering && input_attachment_read && (flags & SyncFlag::kStoreOp) != 0) {
         // If we have an input attachment in last_reads and input attachments are ordered we all that stage
         ordered_stages |= VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
     }
@@ -815,12 +818,13 @@ VkPipelineStageFlags2 ReadState::ApplyPendingBarriers() {
     return barriers;
 }
 
-WriteState::WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex)
+WriteState::WriteState(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags)
     : access_(&usage_info),
       barriers_(),
       tag_(tag_ex.tag),
       handle_index_(tag_ex.handle_index),
       queue_(kQueueIdInvalid),
+      flags_(flags),
       dependency_chain_(VK_PIPELINE_STAGE_2_NONE),
       pending_layout_ordering_(),
       pending_dep_chain_(VK_PIPELINE_STAGE_2_NONE),
@@ -868,13 +872,14 @@ bool WriteState::IsWriteBarrierHazard(QueueId queue_id, VkPipelineStageFlags2 sr
     return !WriteInScope(src_access_scope);
 }
 
-void WriteState::Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex) {
+void WriteState::Set(const SyncAccessInfo &usage_info, ResourceUsageTagEx tag_ex, SyncFlags flags) {
     access_ = &usage_info;
     barriers_.reset();
     dependency_chain_ = VK_PIPELINE_STAGE_2_NONE;
     tag_ = tag_ex.tag;
     handle_index_ = tag_ex.handle_index;
     queue_ = kQueueIdInvalid;
+    flags_ = flags;
 }
 
 void WriteState::MergeBarriers(const WriteState &other) {
