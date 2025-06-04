@@ -1240,51 +1240,41 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
         SetValidationFlags(settings_data->disables, validation_flags_ext);
     }
 
-    const bool use_fine_grained_settings = disables.empty() && enables.empty();
+    SetValidationSetting(layer_setting_set, settings_data->enables, best_practices, VK_LAYER_VALIDATE_BEST_PRACTICES);
+    SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_arm, VK_LAYER_VALIDATE_BEST_PRACTICES_ARM);
+    SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_amd, VK_LAYER_VALIDATE_BEST_PRACTICES_AMD);
+    SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_img, VK_LAYER_VALIDATE_BEST_PRACTICES_IMG);
+    SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
+                         VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
+    SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
 
-    // Only read the legacy enables flags when used, not their replacement.
-    // Avoid Android C.I. performance regression from reading Android env variables
-    if (use_fine_grained_settings) {
-        SetValidationSetting(layer_setting_set, settings_data->enables, best_practices, VK_LAYER_VALIDATE_BEST_PRACTICES);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_arm, VK_LAYER_VALIDATE_BEST_PRACTICES_ARM);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_amd, VK_LAYER_VALIDATE_BEST_PRACTICES_AMD);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_img, VK_LAYER_VALIDATE_BEST_PRACTICES_IMG);
-        SetValidationSetting(layer_setting_set, settings_data->enables, vendor_specific_nvidia,
-                             VK_LAYER_VALIDATE_BEST_PRACTICES_NVIDIA);
-        SetValidationSetting(layer_setting_set, settings_data->enables, sync_validation, VK_LAYER_VALIDATE_SYNC);
+    SetValidationSetting(layer_setting_set, settings_data->disables, stateless_checks, VK_LAYER_STATELESS_PARAM);
+    SetValidationSetting(layer_setting_set, settings_data->disables, thread_safety, VK_LAYER_THREAD_SAFETY);
+    SetValidationSetting(layer_setting_set, settings_data->disables, core_checks, VK_LAYER_VALIDATE_CORE);
+    SetValidationSetting(layer_setting_set, settings_data->disables, command_buffer_state, VK_LAYER_CHECK_COMMAND_BUFFER);
+    SetValidationSetting(layer_setting_set, settings_data->disables, object_in_use, VK_LAYER_CHECK_OBJECT_IN_USE);
+    SetValidationSetting(layer_setting_set, settings_data->disables, query_validation, VK_LAYER_CHECK_QUERY);
+    SetValidationSetting(layer_setting_set, settings_data->disables, image_layout_validation, VK_LAYER_CHECK_IMAGE_LAYOUT);
+    SetValidationSetting(layer_setting_set, settings_data->disables, handle_wrapping, VK_LAYER_UNIQUE_HANDLES);
+    SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, VK_LAYER_OBJECT_LIFETIME);
+    SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, VK_LAYER_CHECK_SHADERS);
+    SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, VK_LAYER_CHECK_SHADERS_CACHING);
 
-        // These were deprecated after the 1.3.296 SDK release
-        // Before GPU-AV and DebugPrintf were merged, we used this enum to set GPU-AV and DebugPrintf in vkconfig.
-        // This code should in theory be dead since removing it from vkconfig, but keep just incase for a bit
-        if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED)) {
-            std::string setting_value;
-            vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting_value);
-            if (setting_value == "GPU_BASED_GPU_ASSISTED") {
-                settings_data->enables[gpu_validation] = true;
-                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
-                                              " setting was set, use " + std::string(VK_LAYER_GPUAV_ENABLE) + " instead.");
-            } else if (setting_value == "GPU_BASED_DEBUG_PRINTF") {
-                settings_data->enables[debug_printf_validation] = true;
-                setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
-                                              " setting was set, use " + std::string(VK_LAYER_PRINTF_ENABLE) + " instead.");
-            }
+    // These were deprecated after the 1.3.296 SDK release
+    // Before GPU-AV and DebugPrintf were merged, we used this enum to set GPU-AV and DebugPrintf in vkconfig.
+    // This code should in theory be dead since removing it from vkconfig, but keep just incase for a bit
+    if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED)) {
+        std::string setting_value;
+        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED, setting_value);
+        if (setting_value == "GPU_BASED_GPU_ASSISTED") {
+            settings_data->enables[gpu_validation] = true;
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
+                                          " setting was set, use " + std::string(VK_LAYER_GPUAV_ENABLE) + " instead.");
+        } else if (setting_value == "GPU_BASED_DEBUG_PRINTF") {
+            settings_data->enables[debug_printf_validation] = true;
+            setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_VALIDATE_GPU_BASED) +
+                                          " setting was set, use " + std::string(VK_LAYER_PRINTF_ENABLE) + " instead.");
         }
-    }
-
-    // Only read the legacy disables flags when used, not their replacement.
-    // Avoid Android C.I. performance regression from reading Android env variables
-    if (use_fine_grained_settings) {
-        SetValidationSetting(layer_setting_set, settings_data->disables, stateless_checks, VK_LAYER_STATELESS_PARAM);
-        SetValidationSetting(layer_setting_set, settings_data->disables, thread_safety, VK_LAYER_THREAD_SAFETY);
-        SetValidationSetting(layer_setting_set, settings_data->disables, core_checks, VK_LAYER_VALIDATE_CORE);
-        SetValidationSetting(layer_setting_set, settings_data->disables, command_buffer_state, VK_LAYER_CHECK_COMMAND_BUFFER);
-        SetValidationSetting(layer_setting_set, settings_data->disables, object_in_use, VK_LAYER_CHECK_OBJECT_IN_USE);
-        SetValidationSetting(layer_setting_set, settings_data->disables, query_validation, VK_LAYER_CHECK_QUERY);
-        SetValidationSetting(layer_setting_set, settings_data->disables, image_layout_validation, VK_LAYER_CHECK_IMAGE_LAYOUT);
-        SetValidationSetting(layer_setting_set, settings_data->disables, handle_wrapping, VK_LAYER_UNIQUE_HANDLES);
-        SetValidationSetting(layer_setting_set, settings_data->disables, object_tracking, VK_LAYER_OBJECT_LIFETIME);
-        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation, VK_LAYER_CHECK_SHADERS);
-        SetValidationSetting(layer_setting_set, settings_data->disables, shader_validation_caching, VK_LAYER_CHECK_SHADERS_CACHING);
     }
 
     // This is the "original" way to use DebugPrintf before you could use it with GPU-AV
