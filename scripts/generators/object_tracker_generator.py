@@ -802,6 +802,10 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkPipelineInfoKHR-pipeline-parent"'
         if structName == 'VkMemoryGetMetalHandleInfoEXT' and memberName == 'memory':
             return '"UNASSIGNED-VkMemoryGetMetalHandleInfoEXT-memory-parent"'
+        if structName == 'VkTileMemoryBindInfoQCOM' and memberName == 'memory':
+            return '"UNASSIGNED-VkTileMemoryBindInfoQCOM-memory-parent"'
+        if structName == 'VkExternalComputeQueueCreateInfoNV' and memberName == 'preferredQueue':
+            return '"UNASSIGNED-VkExternalComputeQueueCreateInfoNV-preferredQueue-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
