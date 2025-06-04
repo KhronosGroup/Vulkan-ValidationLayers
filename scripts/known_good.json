@@ -3,11 +3,11 @@
         {
             "name": "Vulkan-Headers",
             "api": "vulkan",
-            "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+            "url": "https://github.com/spencer-lunarg/Vulkan-Headers.git",
             "sub_dir": "Vulkan-Headers",
             "build_dir": "Vulkan-Headers/build",
             "install_dir": "Vulkan-Headers/build/install",
-            "commit": "v1.4.316"
+            "commit": "db0e481da5ee093b2c30823453a5e90eb1dd7fe3"
         },
         {
             "name": "Vulkan-Utility-Libraries",
