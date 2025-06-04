@@ -347,9 +347,9 @@ VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceLayerProperties(uint32_t *pCount
 
 VKAPI_ATTR VkResult VKAPI_CALL EnumerateInstanceExtensionProperties(const char *pLayerName, uint32_t *pCount,
                                                                     VkExtensionProperties *pProperties) {
-    if (pLayerName && !strcmp(pLayerName, device_profile_api_LayerProps.layerName))
+    if (pLayerName && !strcmp(pLayerName, device_profile_api_LayerProps.layerName)) {
         return EnumerateProperties<VkExtensionProperties>(0, NULL, pCount, pProperties);
-
+    }
     return VK_ERROR_LAYER_NOT_PRESENT;
 }
 
