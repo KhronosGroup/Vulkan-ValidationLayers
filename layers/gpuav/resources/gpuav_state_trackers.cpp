@@ -30,7 +30,7 @@
 namespace gpuav {
 
 CommandBufferSubState::CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb)
-    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav), gpuav_(gpuav), cmd_errors_counts_buffer_(gpuav) {
+    : vvl::CommandBufferSubState(cb), gpu_resources_manager(gpuav), cmd_errors_counts_buffer_(gpuav), gpuav_(gpuav) {
     Location loc(vvl::Func::vkAllocateCommandBuffers);
     AllocateResources(loc);
 }
@@ -84,91 +84,6 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
         }
 
         cmd_errors_counts_buffer_.Clear();
-        if (gpuav_.aborted_) return;
-    }
-
-    // Update validation commands common descriptor set
-    {
-        const std::vector<VkDescriptorSetLayoutBinding> validation_cmd_bindings = {
-            // Error output buffer
-            {glsl::kBindingDiagErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-            // Buffer holding action command index in command buffer
-            {glsl::kBindingDiagActionIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
-            // Buffer holding a resource index from the per command buffer command resources list
-            {glsl::kBindingDiagCmdResourceIndex, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
-            // Commands errors counts buffer
-            {glsl::kBindingDiagCmdErrorsCount, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-        };
-
-        if (error_logging_desc_set_layout_ == VK_NULL_HANDLE) {
-            VkDescriptorSetLayoutCreateInfo validation_cmd_desc_set_layout_ci = vku::InitStructHelper();
-            validation_cmd_desc_set_layout_ci.bindingCount = static_cast<uint32_t>(validation_cmd_bindings.size());
-            validation_cmd_desc_set_layout_ci.pBindings = validation_cmd_bindings.data();
-            result = DispatchCreateDescriptorSetLayout(gpuav_.device, &validation_cmd_desc_set_layout_ci, nullptr,
-                                                       &error_logging_desc_set_layout_);
-            if (result != VK_SUCCESS) {
-                gpuav_.InternalError(gpuav_.device, loc, "Unable to create descriptor set layout used for validation commands.");
-                return;
-            }
-        }
-
-        assert((validation_cmd_desc_pool_ == VK_NULL_HANDLE) == (error_logging_desc_set_ == VK_NULL_HANDLE));
-        if (validation_cmd_desc_pool_ == VK_NULL_HANDLE && error_logging_desc_set_ == VK_NULL_HANDLE) {
-            result = gpuav_.desc_set_manager_->GetDescriptorSet(&validation_cmd_desc_pool_, error_logging_desc_set_layout_,
-                                                                &error_logging_desc_set_);
-            if (result != VK_SUCCESS) {
-                gpuav_.InternalError(gpuav_.device, loc, "Unable to create descriptor set used for validation commands.");
-                return;
-            }
-        }
-
-        std::array<VkWriteDescriptorSet, 4> validation_cmd_descriptor_writes = {};
-        assert(validation_cmd_bindings.size() == validation_cmd_descriptor_writes.size());
-
-        VkDescriptorBufferInfo error_output_buffer_desc_info = {};
-
-        error_output_buffer_desc_info.buffer = error_output_buffer_range_.buffer;
-        error_output_buffer_desc_info.offset = error_output_buffer_range_.offset;
-        error_output_buffer_desc_info.range = error_output_buffer_range_.size;
-
-        validation_cmd_descriptor_writes[0] = vku::InitStructHelper();
-        validation_cmd_descriptor_writes[0].dstBinding = glsl::kBindingDiagErrorBuffer;
-        validation_cmd_descriptor_writes[0].descriptorCount = 1;
-        validation_cmd_descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        validation_cmd_descriptor_writes[0].pBufferInfo = &error_output_buffer_desc_info;
-        validation_cmd_descriptor_writes[0].dstSet = GetErrorLoggingDescSet();
-
-        VkDescriptorBufferInfo cmd_indices_buffer_desc_info = {};
-
-        assert(!gpuav_.indices_buffer_.IsDestroyed());
-        cmd_indices_buffer_desc_info.buffer = gpuav_.indices_buffer_.VkHandle();
-        cmd_indices_buffer_desc_info.offset = 0;
-        cmd_indices_buffer_desc_info.range = sizeof(uint32_t);
-
-        validation_cmd_descriptor_writes[1] = vku::InitStructHelper();
-        validation_cmd_descriptor_writes[1].dstBinding = glsl::kBindingDiagActionIndex;
-        validation_cmd_descriptor_writes[1].descriptorCount = 1;
-        validation_cmd_descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-        validation_cmd_descriptor_writes[1].pBufferInfo = &cmd_indices_buffer_desc_info;
-        validation_cmd_descriptor_writes[1].dstSet = GetErrorLoggingDescSet();
-
-        validation_cmd_descriptor_writes[2] = validation_cmd_descriptor_writes[1];
-        validation_cmd_descriptor_writes[2].dstBinding = glsl::kBindingDiagCmdResourceIndex;
-
-        VkDescriptorBufferInfo cmd_errors_count_buffer_desc_info = {};
-        cmd_errors_count_buffer_desc_info.buffer = GetCmdErrorsCountsBuffer();
-        cmd_errors_count_buffer_desc_info.offset = 0;
-        cmd_errors_count_buffer_desc_info.range = VK_WHOLE_SIZE;
-
-        validation_cmd_descriptor_writes[3] = vku::InitStructHelper();
-        validation_cmd_descriptor_writes[3].dstBinding = glsl::kBindingDiagCmdErrorsCount;
-        validation_cmd_descriptor_writes[3].descriptorCount = 1;
-        validation_cmd_descriptor_writes[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        validation_cmd_descriptor_writes[3].pBufferInfo = &cmd_errors_count_buffer_desc_info;
-        validation_cmd_descriptor_writes[3].dstSet = GetErrorLoggingDescSet();
-
-        DispatchUpdateDescriptorSets(gpuav_.device, static_cast<uint32_t>(validation_cmd_descriptor_writes.size()),
-                                     validation_cmd_descriptor_writes.data(), 0, NULL);
     }
 }
 
@@ -199,25 +114,14 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     }
     per_command_error_loggers.clear();
 
-    if (should_destroy) {
-        error_output_buffer_range_ = {};
-        cmd_errors_counts_buffer_.Destroy();
-    }
-
-    if (should_destroy && validation_cmd_desc_pool_ != VK_NULL_HANDLE && error_logging_desc_set_ != VK_NULL_HANDLE) {
-        gpuav_.desc_set_manager_->PutBackDescriptorSet(validation_cmd_desc_pool_, error_logging_desc_set_);
-        validation_cmd_desc_pool_ = VK_NULL_HANDLE;
-        error_logging_desc_set_ = VK_NULL_HANDLE;
-    }
-
     if (should_destroy && instrumentation_desc_set_layout_ != VK_NULL_HANDLE) {
         DispatchDestroyDescriptorSetLayout(gpuav_.device, instrumentation_desc_set_layout_, nullptr);
         instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
     }
 
-    if (should_destroy && error_logging_desc_set_layout_ != VK_NULL_HANDLE) {
-        DispatchDestroyDescriptorSetLayout(gpuav_.device, error_logging_desc_set_layout_, nullptr);
-        error_logging_desc_set_layout_ = VK_NULL_HANDLE;
+    if (should_destroy) {
+        error_output_buffer_range_ = {};
+        cmd_errors_counts_buffer_.Destroy();
     }
 
     draw_index = 0;
