@@ -143,11 +143,17 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
             gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
-        if (!shared_draw_validation_resources.valid) return;
+        if (!shared_draw_validation_resources.valid) {
+            return;
+        }
+        ValidationCommandsCommon &val_cmd_common =
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
         valpipe::ComputePipeline<FirstInstanceValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
-                gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
-        if (!validation_pipeline.valid) return;
+                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+        if (!validation_pipeline.valid) {
+            return;
+        }
 
         auto draw_buffer_state = gpuav.Get<vvl::Buffer>(api_buffer);
         if (!draw_buffer_state) {
@@ -347,11 +353,18 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
                                             loc](Validator &gpuav, CommandBufferSubState &cb_state) {
         SharedDrawValidationResources &shared_draw_validation_resources =
             gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
-        if (!shared_draw_validation_resources.valid) return;
+        if (!shared_draw_validation_resources.valid) {
+            return;
+        }
+        ValidationCommandsCommon &val_cmd_common =
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+
         valpipe::ComputePipeline<CountBufferValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
-                gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
-        if (!validation_pipeline.valid) return;
+                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+        if (!validation_pipeline.valid) {
+            return;
+        }
 
         // Setup shader resources
         // ---
@@ -516,11 +529,17 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
          loc](Validator &gpuav, CommandBufferSubState &cb_state) {
             SharedDrawValidationResources &shared_draw_validation_resources =
                 gpuav.shared_resources_manager.GetOrCreate<SharedDrawValidationResources>(gpuav);
-            if (!shared_draw_validation_resources.valid) return;
+            if (!shared_draw_validation_resources.valid) {
+                return;
+            }
+            ValidationCommandsCommon &val_cmd_common =
+                cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
             valpipe::ComputePipeline<MeshValidationShader> &validation_pipeline =
                 gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
-                    gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
-            if (!validation_pipeline.valid) return;
+                    gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
+            if (!validation_pipeline.valid) {
+                return;
+            }
 
             // Setup shader resources
             // ---
@@ -836,9 +855,11 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
         if (!setup_validation_dispatch_pipeline.valid) {
             return;
         }
+        ValidationCommandsCommon &val_cmd_common =
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
         valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>>(
-                gpuav, loc, cb_state.GetErrorLoggingDescSetLayout());
+                gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
         if (!validation_pipeline.valid) {
             return;
         }

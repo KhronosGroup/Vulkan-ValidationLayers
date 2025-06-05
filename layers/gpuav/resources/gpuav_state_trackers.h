@@ -78,19 +78,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         return instrumentation_desc_set_layout_;
     }
 
-    // Bindings: {error output buffer}
-    const VkDescriptorSet &GetErrorLoggingDescSet() const {
-        assert(error_logging_desc_set_ != VK_NULL_HANDLE);
-        return error_logging_desc_set_;
-    }
-
-    const VkDescriptorSetLayout &GetErrorLoggingDescSetLayout() const {
-        assert(error_logging_desc_set_layout_ != VK_NULL_HANDLE);
-        return error_logging_desc_set_layout_;
-    }
-
-    uint32_t GetValidationErrorBufferDescSetIndex() const { return 0; }
-
     const vko::BufferRange &GetErrorOutputBufferRange() const {
         assert(error_output_buffer_range_.buffer != VK_NULL_HANDLE);
         return error_output_buffer_range_;
@@ -119,6 +106,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     std::vector<ErrorLoggerFunc> per_command_error_loggers;
     vvl::unordered_map<uint32_t, uint32_t> action_cmd_i_to_label_cmd_i_map;
 
+    // Buffer storing GPU-AV errors
+    vko::BufferRange error_output_buffer_range_;
+    // Buffer storing an error count per validated commands.
+    // Used to limit the number of errors a single command can emit.
+    vko::Buffer cmd_errors_counts_buffer_;
+
   private:
     void AllocateResources(const Location &loc);
     void ResetCBState(bool should_destroy);
@@ -126,16 +119,6 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     Validator &gpuav_;
     VkDescriptorSetLayout instrumentation_desc_set_layout_ = VK_NULL_HANDLE;
-
-    VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
-    VkDescriptorSet error_logging_desc_set_ = VK_NULL_HANDLE;
-    VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
-
-    // Buffer storing GPU-AV errors
-    vko::BufferRange error_output_buffer_range_;
-    // Buffer storing an error count per validated commands.
-    // Used to limit the number of errors a single command can emit.
-    vko::Buffer cmd_errors_counts_buffer_;
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
