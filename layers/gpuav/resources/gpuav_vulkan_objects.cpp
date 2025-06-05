@@ -22,6 +22,8 @@
 #include "utils/math_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
+#include "profiling/profiling.h"
+
 namespace gpuav {
 namespace vko {
 
@@ -188,6 +190,18 @@ bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAlloc
             return false;
         }
     }
+#if defined(VVL_TRACY_GPU)
+    VmaBudget budgets[VK_MAX_MEMORY_HEAPS] = {};
+    vmaGetHeapBudgets(gpuav.vma_allocator_, budgets);
+    constexpr std::array<const char *, VK_MAX_MEMORY_HEAPS> heap_names = {
+        {"GPU Heap 0 (kB)", "GPU Heap 1 (kB)", "GPU Heap 2 (kB)", "GPU Heap 3 (kB)", "GPU Heap 4 (kB)", "GPU Heap 5 (kB)",
+         "GPU Heap 6 (kB)", "GPU Heap 7 (kB)", "GPU Heap 8 (kB)", "GPU Heap 9 (kB)", "GPU Heap 10 (kB)", "GPU Heap 11 (kB)",
+         "GPU Heap 12 (kB)", "GPU Heap 13 (kB)", "GPU Heap 14 (kB)", "GPU Heap 15 (kB)"}};
+    for (uint32_t heap_i = 0; heap_i < gpuav.phys_dev_mem_props.memoryHeapCount; ++heap_i) {
+        VVL_TracyPlot(heap_names[heap_i], int64_t(budgets[heap_i].statistics.blockBytes / 1024));
+    }
+#endif
+
     return true;
 }
 
@@ -202,6 +216,17 @@ void Buffer::Destroy() {
         allocation = VK_NULL_HANDLE;
         device_address = 0;
     }
+#if defined(VVL_TRACY_GPU)
+    VmaBudget budgets[VK_MAX_MEMORY_HEAPS] = {};
+    vmaGetHeapBudgets(gpuav.vma_allocator_, budgets);
+    constexpr std::array<const char *, VK_MAX_MEMORY_HEAPS> heap_names = {
+        {"GPU Heap 0 (kB)", "GPU Heap 1 (kB)", "GPU Heap 2 (kB)", "GPU Heap 3 (kB)", "GPU Heap 4 (kB)", "GPU Heap 5 (kB)",
+         "GPU Heap 6 (kB)", "GPU Heap 7 (kB)", "GPU Heap 8 (kB)", "GPU Heap 9 (kB)", "GPU Heap 10 (kB)", "GPU Heap 11 (kB)",
+         "GPU Heap 12 (kB)", "GPU Heap 13 (kB)", "GPU Heap 14 (kB)", "GPU Heap 15 (kB)"}};
+    for (uint32_t heap_i = 0; heap_i < gpuav.phys_dev_mem_props.memoryHeapCount; ++heap_i) {
+        VVL_TracyPlot(heap_names[heap_i], int64_t(budgets[heap_i].statistics.blockBytes / 1024));
+    }
+#endif
 }
 
 void Buffer::Clear() const {
