@@ -1550,7 +1550,7 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     }
 }
 
-void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, bool asymmetric_bit) {
     RecordCmd(command);
     if (!dev_data.disabled[command_buffer_state]) {
         auto event_state = dev_data.Get<vvl::Event>(event);
@@ -1562,11 +1562,11 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
     if (!waited_events.count(event)) {
         write_events_before_wait.push_back(event);
     }
-    event_updates.emplace_back(
-        [event, stageMask](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
-            local_event_signal_info[event] = EventInfo{stageMask, true};
-            return false;  // skip
-        });
+    event_updates.emplace_back([event, stageMask, asymmetric_bit](CommandBuffer &, bool do_validate,
+                                                                  EventMap &local_event_signal_info, VkQueue, const Location &loc) {
+        local_event_signal_info[event] = EventInfo{stageMask, true, asymmetric_bit};
+        return false;  // skip
+    });
 }
 
 void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
@@ -1590,10 +1590,10 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
 }
 
 void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                     VkPipelineStageFlags2KHR src_stage_mask) {
+                                     VkPipelineStageFlags2KHR src_stage_mask, bool asymmetric_bit) {
     RecordCmd(command);
     for (auto &item : sub_states_) {
-        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask);
+        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, asymmetric_bit);
     }
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data.disabled[command_buffer_state]) {
@@ -1687,6 +1687,7 @@ void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const 
         for (const auto &[event, info] : local_event_signal_info) {
             auto event_state = dev_data.Get<vvl::Event>(event);
             event_state->signaled = info.signal;
+            event_state->asymmetric_bit = info.asymmetric_bit;
             event_state->signal_src_stage_mask = info.src_stage_mask;
             event_state->signaling_queue = queue_state.VkHandle();
         }

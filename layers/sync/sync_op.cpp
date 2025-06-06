@@ -564,7 +564,7 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
         const VkEvent event_handle = sync_event->event->VkHandle();
         // TODO add "destroyed" checks
 
-        if (sync_event->first_scope) {
+        if (sync_event->first_scope/* && sync_event->*/) {
             // Only accumulate barrier and event stages if there is a pending set in the current context
             barrier_mask_params |= barrier_set.src_exec_scope.mask_param;
             event_stage_masks |= sync_event->scope.mask_param;
