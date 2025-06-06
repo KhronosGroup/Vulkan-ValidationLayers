@@ -1165,7 +1165,7 @@ bool CoreChecks::ValidateDrawDynamicStateVertex(const LastBound& last_bound_stat
                     }
                 }
             }
-            if (!location_provided && !enabled_features.vertexAttributeRobustness) {
+            if (!location_provided && !enabled_features.vertexAttributeRobustness && !enabled_features.maintenance9) {
                 skip |= LogError(vuid.vertex_input_format_07939, vert_spirv_state->handle(), vuid.loc(),
                                  "Vertex shader uses input at location %" PRIu32
                                  ", but it was not provided with vkCmdSetVertexInputEXT(). (This can be valid if "

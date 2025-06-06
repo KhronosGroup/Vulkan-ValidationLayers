@@ -44,16 +44,16 @@ CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb, CoreChecks&
 }
 
 void CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
-                                             VkPipelineStageFlags2KHR srcStageMask) {
+                                             VkPipelineStageFlags2KHR srcStageMask, bool asymmetric_bit) {
     // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
     auto first_event_index = base.events.size();
     auto event_added_count = eventCount;
     base.event_updates.emplace_back(
-        [command, event_added_count, first_event_index, srcStageMask](
+        [command, event_added_count, first_event_index, srcStageMask, asymmetric_bit](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
             if (!do_validate) return false;
             return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
-                                                          local_event_signal_info, queue, loc);
+                                                          asymmetric_bit, local_event_signal_info, queue, loc);
         });
 }
 

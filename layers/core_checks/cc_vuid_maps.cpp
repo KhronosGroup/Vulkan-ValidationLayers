@@ -621,6 +621,33 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01695"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-06725"},
          }}},
+        {SubresourceRangeError::BaseLayer_02724,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-Todo"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-Todo"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-Todo"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-Todo"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-Todo"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-image-02724"},
+         }}},
+        {SubresourceRangeError::LayerCount_02725,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-Todo2"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-Todo2"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-Todo2"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-Todo2"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-Todo2"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-02725"},
+         }}},
+        {SubresourceRangeError::levelCount_Todo,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-subresourceRange-Todo3"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-subresourceRange-Todo3"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-subresourceRange-Todo3"},
+             {Key(Func::vkCmdClearColorImage), "VUID-vkCmdClearColorImage-pRanges-Todo3"},
+             {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-Todo3"},
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-Todo3"},
+         }}},
     };
 
     const auto &result = FindVUID(error, loc, errors);

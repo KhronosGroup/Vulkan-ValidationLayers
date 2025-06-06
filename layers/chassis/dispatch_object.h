@@ -103,6 +103,7 @@ struct DeviceExtensionProperties {
     VkPhysicalDeviceCooperativeVectorPropertiesNV cooperative_vector_props_nv;
     VkPhysicalDeviceRenderPassStripedPropertiesARM renderpass_striped_props;
     VkPhysicalDeviceExternalMemoryHostPropertiesEXT external_memory_host_props;
+    VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props;
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     VkPhysicalDeviceExternalFormatResolvePropertiesANDROID android_format_resolve_props;
 #endif

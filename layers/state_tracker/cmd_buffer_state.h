@@ -117,6 +117,7 @@ class Event : public StateObject {
     // Signaling state.
     // Gets updated at queue submission granularity or when signaled from the host.
     bool signaled = false;
+    bool asymmetric_bit = false;
 
     // Source stage specified by the "set event" command.
     // Gets updated at queue submission granularity.
@@ -638,9 +639,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
-    void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
+    void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, bool asymmetric_bit);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
-    void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask);
+    void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
+                          bool asymmetric_bit);
     void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
 
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
@@ -731,7 +733,7 @@ class CommandBufferSubState {
 
     virtual void RecordCmd(Func command) {}
     virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                  VkPipelineStageFlags2KHR src_stage_mask) {}
+                                  VkPipelineStageFlags2KHR src_stage_mask, bool asymmetric_bit) {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
     VulkanTypedHandle Handle() const;
