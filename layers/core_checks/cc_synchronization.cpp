@@ -803,11 +803,38 @@ bool CoreChecks::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
     }
     skip |= ValidateCmd(*cb_state, error_obj.location);
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
-    if (pDependencyInfo->dependencyFlags != 0) {
-        skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-03825", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                         "(%s) must be 0.", string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
+    if ((pDependencyInfo->dependencyFlags & ~VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0) {
+        skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-03825", objlist, dep_info_loc.dot(Field::dependencyFlags), "is (%s).",
+                         string_VkDependencyFlags(pDependencyInfo->dependencyFlags).c_str());
     }
     skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, *pDependencyInfo);
+    if ((pDependencyInfo->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR) != 0) {
+        if (pDependencyInfo->bufferMemoryBarrierCount != 0 || pDependencyInfo->imageMemoryBarrierCount != 0) {
+            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10785", objlist,
+                             dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+                             "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but bufferMemoryBarrierCount is %" PRIu32
+                             " and imageMemoryBarrierCount is %" PRIu32 ".",
+                             pDependencyInfo->bufferMemoryBarrierCount, pDependencyInfo->imageMemoryBarrierCount);
+        }
+        if (pDependencyInfo->memoryBarrierCount != 1) {
+            skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10786", objlist,
+                             dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+                             "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but memoryBarrierCount is %" PRIu32 ".",
+                             pDependencyInfo->memoryBarrierCount);
+        } else {
+            if (pDependencyInfo->pMemoryBarriers[0].srcAccessMask != 0 || pDependencyInfo->pMemoryBarriers[0].dstStageMask != 0 ||
+                pDependencyInfo->pMemoryBarriers[0].dstAccessMask != 0) {
+                skip |= LogError("VUID-vkCmdSetEvent2-dependencyFlags-10787", objlist,
+                                 dep_info_loc.dot(Field::pDependencyInfo).dot(Field::dependencyFlags),
+                                 "contains VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but pMemoryBarriers[0].srcAccessMask is %s, "
+                                 "pDependencyInfo->pMemoryBarriers[0].dstStageMask is %s and "
+                                 "pDependencyInfo->pMemoryBarriers[0].dstAccessMask is %s.",
+                                 string_VkAccessFlags2(pDependencyInfo->pMemoryBarriers[0].srcAccessMask).c_str(),
+                                 string_VkPipelineStageFlags2(pDependencyInfo->pMemoryBarriers[0].dstStageMask).c_str(),
+                                 string_VkAccessFlags2(pDependencyInfo->pMemoryBarriers[0].dstAccessMask).c_str());
+            }
+        }
+    }
     return skip;
 }
 
@@ -1249,7 +1276,7 @@ bool CoreChecks::ValidateAccessMask(const LogObjectList &objlist, const Location
 }
 
 bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer &cb_state, size_t eventCount,
-                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
+                                            size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask, bool asymmetric_bit,
                                             const EventMap &local_event_signal_info, VkQueue waiting_queue, const Location &loc) {
     bool skip = false;
     const vvl::DeviceState &state_data = cb_state.dev_data;
@@ -1265,13 +1292,16 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
         // conveniently stored in the vvl::Event object itself (after each queue
         // submit, vvl::CommandBuffer::Submit() updates vvl::Event, so it contains
         // the last src_stage from that submission).
+        bool set_asymmetric_bit = false;
         if (const auto *event_info = vvl::Find(local_event_signal_info, event)) {
             stage_mask |= event_info->src_stage_mask;
+            set_asymmetric_bit = event_info->asymmetric_bit;
             // The "set event" is found in the current submission (the same queue); there can't be inter-queue usage errors
         } else {
             auto event_state = state_data.Get<vvl::Event>(event);
             if (!event_state) continue;
             stage_mask |= event_state->signal_src_stage_mask;
+            set_asymmetric_bit = event_state->asymmetric_bit;
 
             if (event_state->signaling_queue != VK_NULL_HANDLE && event_state->signaling_queue != waiting_queue) {
                 const LogObjectList objlist(cb_state.Handle(), event, event_state->signaling_queue, waiting_queue);
@@ -1280,6 +1310,14 @@ bool CoreChecks::ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::Comman
                                             state_data.FormatHandle(event).c_str(), state_data.FormatHandle(waiting_queue).c_str(),
                                             state_data.FormatHandle(event_state->signaling_queue).c_str());
             }
+        }
+
+        if (asymmetric_bit && !set_asymmetric_bit) {
+            const LogObjectList objlist(cb_state.Handle(), event);
+            skip |= state_data.LogError(
+                "VUID-vkCmdWaitEvents2-pEvents-10789", objlist, Location(command),
+                "event %s is being waited on with VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR, but was signaled without it.",
+                state_data.FormatHandle(event).c_str());
         }
     }
     // TODO: Need to validate that host_bit is only set if set event is called
@@ -1350,22 +1388,27 @@ bool CoreChecks::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
         const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfos, i);
 
         const VkDependencyFlags dependency_flags = pDependencyInfos[i].dependencyFlags;
-        if (dependency_flags != 0) {
+        const VkDependencyFlags allowed_flags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
+        if ((dependency_flags & ~allowed_flags) != 0) {
             const bool is_transfer_use_all_only =
                 dependency_flags == VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR;
 
             if (!enabled_features.maintenance8) {
                 skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                                 "(%s) must be 0.%s", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str(),
+                                 "is (%s).%s", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str(),
                                  is_transfer_use_all_only
                                      ? " To use VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR, the "
                                        "maintenance8 feature must be enabled."
                                      : "");
             } else if (!is_transfer_use_all_only) {
                 skip = LogError("VUID-vkCmdWaitEvents2-maintenance8-10205", objlist, dep_info_loc.dot(Field::dependencyFlags),
-                                "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR is allowed.",
+                                "(%s) but only VK_DEPENDENCY_QUEUE_FAMILY_OWNERSHIP_TRANSFER_USE_ALL_STAGES_BIT_KHR and "
+                                "VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR are allowed.",
                                 string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
             }
+        } else if ((pDependencyInfos[i].dependencyFlags & ~allowed_flags) != 0) {
+            skip |= LogError("VUID-vkCmdWaitEvents2-dependencyFlags-10394", objlist, dep_info_loc.dot(Field::dependencyFlags),
+                             "is (%s).", string_VkDependencyFlags(pDependencyInfos[i].dependencyFlags).c_str());
         }
         skip |= ValidateDependencyInfo(objlist, dep_info_loc, *cb_state, pDependencyInfos[i]);
     }

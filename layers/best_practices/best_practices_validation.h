@@ -235,7 +235,10 @@ class BestPractices : public vvl::DeviceProxy {
     bool ValidateComputeShaderAmd(const spirv::Module& module_state, const spirv::EntryPoint& entrypoint,
                                   const Location& loc) const;
 
-    bool CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfo& dep_info) const;
+    bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags flags) const;
+    bool CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags2KHR flags) const;
+    bool CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc, const VkDependencyInfo& dep_info,
+                             VkCommandBuffer commandBuffer) const;
     bool PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
                                     const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2KHR* pSubmits, VkFence fence,
@@ -276,9 +279,12 @@ class BestPractices : public vvl::DeviceProxy {
                                        const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const override;
     bool ValidateAccessLayoutCombination(const Location& loc, VkImage image, VkAccessFlags2 access, VkImageLayout layout,
                                          VkImageAspectFlags aspect) const;
-    bool ValidateImageMemoryBarrier(const Location& loc, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                    VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
-                                    VkImageAspectFlags aspectMask) const;
+    bool ValidateImageMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout,
+                                    VkImageLayout newLayout, VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
+                                    VkImageAspectFlags aspectMask, uint32_t srcQueueFamilyIndex,
+                                    uint32_t dstQueueFamilyIndex) const;
+    bool ValidateBufferMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                     uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) const;
     bool PreCallValidateCmdPipelineBarrier(VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask,
                                            VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags,
                                            uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,

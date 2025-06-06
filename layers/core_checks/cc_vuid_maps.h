@@ -101,6 +101,9 @@ enum class SubresourceRangeError {
     MipCount_01724,
     BaseLayer_01488,
     LayerCount_01725,
+    BaseLayer_02724_10798,
+    LayerCount_02725_10800,
+    LevelCount_10799,
 };
 const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRangeError error);
 

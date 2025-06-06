@@ -331,6 +331,13 @@ bool core::Instance::PreCallValidateCreateDevice(VkPhysicalDevice gpu, const VkD
         return skip;
     }
 
+    if (!pd_state->has_maintenance9 && pCreateInfo->queueCreateInfoCount == 0) {
+        skip |= LogError("VUID-VkDeviceCreateInfo-None-10778", instance,
+                         error_obj.location.dot(Field::pCreateInfo).dot(Field::queueCreateInfoCount),
+                         "is 0 (This is only allowed if your device supports the maintenance9 feature).");
+        return skip;
+    }
+
     skip |= ValidateDeviceQueueCreateInfos(*pd_state, pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos,
                                            error_obj.location.dot(Field::pCreateInfo));
     return skip;

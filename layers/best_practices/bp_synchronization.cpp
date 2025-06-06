@@ -21,16 +21,23 @@
 #include "sync/sync_utils.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
+#include "generated/dispatch_functions.h"
 
 bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc,
-                                        const VkDependencyInfo& dep_info) const {
+                                        const VkDependencyInfo& dep_info, VkCommandBuffer commandBuffer) const {
     bool skip = false;
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
-        skip |= ValidateImageMemoryBarrier(dep_loc.dot(Field::pImageMemoryBarriers, i), dep_info.pImageMemoryBarriers[i].image,
-                                           dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
-                                           dep_info.pImageMemoryBarriers[i].srcAccessMask,
-                                           dep_info.pImageMemoryBarriers[i].dstAccessMask,
-                                           dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+        skip |= ValidateImageMemoryBarrier(
+            dep_loc.dot(Field::pImageMemoryBarriers, i), commandBuffer, dep_info.pImageMemoryBarriers[i].image,
+            dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
+            dep_info.pImageMemoryBarriers[i].srcAccessMask, dep_info.pImageMemoryBarriers[i].dstAccessMask,
+            dep_info.pImageMemoryBarriers[i].subresourceRange.aspectMask, dep_info.pImageMemoryBarriers[i].srcQueueFamilyIndex,
+            dep_info.pImageMemoryBarriers[i].dstQueueFamilyIndex);
+    }
+    for (uint32_t i = 0; i < dep_info.bufferMemoryBarrierCount; ++i) {
+        skip |= ValidateBufferMemoryBarrier(
+            dep_loc.dot(Field::pBufferMemoryBarriers, i), commandBuffer, dep_info.pBufferMemoryBarriers[i].buffer,
+            dep_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex, dep_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex);
     }
 
     return skip;
@@ -89,7 +96,7 @@ bool BestPractices::PreCallValidateCmdSetEvent2KHR(VkCommandBuffer commandBuffer
 bool BestPractices::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event,
                                                 const VkDependencyInfo* pDependencyInfo, const ErrorObject& error_obj) const {
     bool skip = false;
-    skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo);
+    skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfo), *pDependencyInfo, commandBuffer);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     skip |= CheckEventSignalingState(sub_state, event, error_obj.location.dot(Field::commandBuffer));
@@ -142,7 +149,8 @@ bool BestPractices::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer,
                                                   const VkDependencyInfo* pDependencyInfos, const ErrorObject& error_obj) const {
     bool skip = false;
     for (uint32_t i = 0; i < eventCount; i++) {
-        skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i]);
+        skip |= CheckDependencyInfo(commandBuffer, error_obj.location.dot(Field::pDependencyInfos, i), pDependencyInfos[i],
+                                    commandBuffer);
     }
 
     return skip;
@@ -254,9 +262,10 @@ bool BestPractices::ValidateAccessLayoutCombination(const Location& loc, VkImage
     return skip;
 }
 
-bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                               VkAccessFlags2 srcAccessMask, VkAccessFlags2 dstAccessMask,
-                                               VkImageAspectFlags aspectMask) const {
+bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkImage image,
+                                               VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags2 srcAccessMask,
+                                               VkAccessFlags2 dstAccessMask, VkImageAspectFlags aspectMask,
+                                               uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) const {
     bool skip = false;
 
     if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && IsImageLayoutReadOnly(newLayout)) {
@@ -266,8 +275,66 @@ bool BestPractices::ValidateImageMemoryBarrier(const Location& loc, VkImage imag
                            string_VkImageLayout(newLayout));
     }
 
+    if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
+        srcQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && srcQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL &&
+        dstQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && dstQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL) {
+        auto image_state = Get<vvl::Image>(image);
+        const char* warning = enabled_features.maintenance9
+                                  ? "is not required, because maintenance9 is enabled"
+                                  : "could be omitted, if maintenance9 (which is supported by the physical device) were enabled";
+        if (image_state->create_info.tiling == VK_IMAGE_TILING_LINEAR) {
+            skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-unneeded-QFOT", image, loc,
+                                          "A queue family ownership transfer is being performed on %s, but this %s. Image was "
+                                          "created with VK_IMAGE_TILING_LINEAR.",
+                                          FormatHandle(image).c_str(), warning);
+        } else if ((image_state->create_info.usage &
+                    (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                     VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
+                     VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT | VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR)) ==
+                   0) {
+            auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+            VkQueueFamilyOwnershipTransferPropertiesKHR qfot_props = vku::InitStructHelper();
+            uint32_t qf_count = dstQueueFamilyIndex + 1;
+            std::vector<VkQueueFamilyProperties2> qf_props(qf_count);
+            qf_props.back().pNext = &qfot_props;
+            DispatchGetPhysicalDeviceQueueFamilyProperties2(cb_state->dev_data.physical_device, &qf_count, qf_props.data());
+            // The list of image usages not allowed comes from
+            // https://registry.khronos.org/vulkan/specs/latest/man/html/VkSharingMode.html
+            if (qfot_props.optimalImageTransferToQueueFamilies) {
+                skip |= LogPerformanceWarning(
+                    "BestPractices-PipelineBarrier-unneeded-QFOT", image, loc,
+                    "A queue family ownership transfer is being performed on %s, but this %s. Image was created with "
+                    "VK_IMAGE_TILING_OPTIMAL, image usage does not contain any of VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | "
+                    "VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | "
+                    "VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT | "
+                    "VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR and "
+                    "VkQueueFamilyOwnershipTransferPropertiesKHR::optimalImageTransferToQueueFamilies (%" PRIu32
+                    ") has bit set for destination queue family index %" PRIu32 ".",
+                    FormatHandle(image).c_str(), warning, qfot_props.optimalImageTransferToQueueFamilies, dstQueueFamilyIndex);
+            }
+        }
+    }
+
     skip |= ValidateAccessLayoutCombination(loc, image, srcAccessMask, oldLayout, aspectMask);
     skip |= ValidateAccessLayoutCombination(loc, image, dstAccessMask, newLayout, aspectMask);
+
+    return skip;
+}
+
+bool BestPractices::ValidateBufferMemoryBarrier(const Location& loc, VkCommandBuffer commandBuffer, VkBuffer buffer,
+                                                uint32_t srcQueueFamilyIndex, uint32_t dstQueueFamilyIndex) const {
+    bool skip = false;
+
+    if (device_state->special_supported.has_maintenance9 && srcQueueFamilyIndex != dstQueueFamilyIndex &&
+        srcQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && srcQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL &&
+        dstQueueFamilyIndex != VK_QUEUE_FAMILY_FOREIGN_EXT && dstQueueFamilyIndex != VK_QUEUE_FAMILY_EXTERNAL) {
+        const char* warning = enabled_features.maintenance9
+                                  ? "is not required, because maintenance9 is enabled"
+                                  : "could be omitted, if maintenance9 (which is supported by the physical device) were enabled";
+        skip |= LogPerformanceWarning("BestPractices-PipelineBarrier-unneeded-QFOT", buffer, loc,
+                                      "A queue family ownership transfer is being performed on %s, but this %s.",
+                                      FormatHandle(buffer).c_str(), warning);
+    }
 
     return skip;
 }
@@ -280,10 +347,16 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     bool skip = false;
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
-        skip |= ValidateImageMemoryBarrier(error_obj.location.dot(Field::pImageMemoryBarriers, i), pImageMemoryBarriers[i].image,
-                                           pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout,
-                                           pImageMemoryBarriers[i].srcAccessMask, pImageMemoryBarriers[i].dstAccessMask,
-                                           pImageMemoryBarriers[i].subresourceRange.aspectMask);
+        skip |= ValidateImageMemoryBarrier(
+            error_obj.location.dot(Field::pImageMemoryBarriers, i), commandBuffer, pImageMemoryBarriers[i].image,
+            pImageMemoryBarriers[i].oldLayout, pImageMemoryBarriers[i].newLayout, pImageMemoryBarriers[i].srcAccessMask,
+            pImageMemoryBarriers[i].dstAccessMask, pImageMemoryBarriers[i].subresourceRange.aspectMask,
+            pImageMemoryBarriers[i].srcQueueFamilyIndex, pImageMemoryBarriers[i].dstQueueFamilyIndex);
+    }
+    for (uint32_t i = 0; i < bufferMemoryBarrierCount; ++i) {
+        skip |= ValidateBufferMemoryBarrier(error_obj.location.dot(Field::pBufferMemoryBarriers, i), commandBuffer,
+                                            pBufferMemoryBarriers[i].buffer, pBufferMemoryBarriers[i].srcQueueFamilyIndex,
+                                            pBufferMemoryBarriers[i].dstQueueFamilyIndex);
     }
 
     if (VendorCheckEnabled(kBPVendorAMD)) {
@@ -353,7 +426,7 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBu
     bool skip = false;
 
     const Location dep_info_loc = error_obj.location.dot(Field::pDependencyInfo);
-    skip |= CheckDependencyInfo(commandBuffer, dep_info_loc, *pDependencyInfo);
+    skip |= CheckDependencyInfo(commandBuffer, dep_info_loc, *pDependencyInfo, commandBuffer);
 
     for (uint32_t i = 0; i < pDependencyInfo->imageMemoryBarrierCount; ++i) {
         skip |= ValidateCmdPipelineBarrierImageBarrier(commandBuffer, pDependencyInfo->pImageMemoryBarriers[i],

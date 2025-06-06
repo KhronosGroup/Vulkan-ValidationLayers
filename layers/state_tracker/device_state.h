@@ -50,6 +50,8 @@ class PhysicalDevice : public StateObject {
     const VkQueueFlags supported_queues;
     uint32_t display_plane_property_count = 0;
     uint32_t surface_formats_count = 0;
+    // This is a special case not to use SpecialSupported because it is required at an instance level
+    bool has_maintenance9 = false;
 
     // Map of queue family index to QueueFamilyPerfCounters
     vvl::unordered_map<uint32_t, std::unique_ptr<QueueFamilyPerfCounters>> perf_counters;

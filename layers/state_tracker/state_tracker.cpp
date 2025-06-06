@@ -2939,7 +2939,7 @@ void DeviceState::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
 void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                             const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordSetEvent(record_obj.location.function, event, stageMask);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stageMask, false);
 }
 
 void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2952,7 +2952,8 @@ void DeviceState::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
 
-    cb_state->RecordSetEvent(record_obj.location.function, event, stage_masks.src);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stage_masks.src,
+                             pDependencyInfo->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
@@ -2980,7 +2981,7 @@ void DeviceState::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask);
+    cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask, false);
     cb_state->RecordBarriers(memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                              imageMemoryBarrierCount, pImageMemoryBarriers);
 }
@@ -2996,7 +2997,7 @@ void DeviceState::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
         auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
-        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], stage_masks.src);
+        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], stage_masks.src, pDependencyInfos[i].dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
         cb_state->RecordBarriers(dep_info);
     }
 }

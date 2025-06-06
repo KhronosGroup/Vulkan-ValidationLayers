@@ -435,6 +435,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                                              &phys_dev_ext_props.renderpass_striped_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_external_memory_host,
                                              &phys_dev_ext_props.external_memory_host_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_maintenance9,
+                                             &phys_dev_ext_props.maintenance9_props);
 #if defined(VK_USE_PLATFORM_ANDROID_KHR)
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_android_external_format_resolve,
                                              &phys_dev_ext_props.android_format_resolve_props);
@@ -506,6 +508,12 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
             DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
             special_supported.descriptor_binding_inline_uniform_buffer_uab =
                 inline_ubo_features.descriptorBindingInlineUniformBlockUpdateAfterBind;
+        }
+        if (phys_dev_extensions.find(Extension::_VK_KHR_maintenance9) != phys_dev_extensions.end()) {
+            VkPhysicalDeviceMaintenance9FeaturesKHR maintenance_9_features = vku::InitStructHelper();
+            VkPhysicalDeviceFeatures2 features2 = vku::InitStructHelper(&maintenance_9_features);
+            DispatchGetPhysicalDeviceFeatures2Helper(api_version, physical_device, &features2);
+            special_supported.has_maintenance9 = maintenance_9_features.maintenance9;
         }
     }
 }

@@ -24,6 +24,7 @@
 #include "utils/hash_vk_types.h"
 #include "state_tracker/video_session_state.h"  // TODO - Remove from this header
 #include "state_tracker/special_supported.h"
+#include "device_state.h"
 #include "chassis/dispatch_object.h"
 #include "error_message/logging.h"
 #include "containers/span.h"
@@ -537,6 +538,7 @@ class DeviceState : public vvl::base::Device {
           instance_state(instance),
           special_supported(dev->stateless_device_data.special_supported) {
         physical_device_state = instance_state->Get<vvl::PhysicalDevice>(physical_device).get();
+        physical_device_state->has_maintenance9 = dev->stateless_device_data.special_supported.has_maintenance9;
     }
     ~DeviceState();
 

@@ -110,12 +110,12 @@ bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, con
             skip |= LogPerformanceWarning("WARNING-Shader-OutputNotConsumed", module_state.handle(), vi_loc,
                                           "Vertex attribute at location %" PRIu32 " not consumed by vertex shader.", location);
         } else if (!attribute_input && shader_input) {
-            if (!enabled_features.vertexAttributeRobustness) {
+            if (!enabled_features.vertexAttributeRobustness && !enabled_features.maintenance9) {
                 skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-Input-07904", module_state.handle(),
                                  vi_loc.dot(Field::pVertexAttributeDescriptions),
                                  "does not have a Location %" PRIu32
                                  " but vertex shader has an input variable at that Location. (This can be valid if "
-                                 "vertexAttributeRobustness feature is enabled)",
+                                 "either the vertexAttributeRobustness or maintenance9 feature is enabled)",
                                  location);
             }
         } else if (attribute_input && shader_input) {
