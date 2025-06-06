@@ -860,3 +860,32 @@ TEST_F(PositiveImage, CornerSampledImageNV) {
         vkt::Image image(*m_device, image_create_info, vkt::no_mem);
     }
 }
+
+TEST_F(PositiveImage, ArrayViewAndSparseFlags) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_EXT_IMAGE_2D_VIEW_OF_3D_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::sparseBinding);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceMaintenance9PropertiesKHR maintenance9_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(maintenance9_props);
+    if (!maintenance9_props.image2DViewOf3DSparse) {
+        GTEST_SKIP() << "image2DViewOf3DSparse is not supported";
+    }
+
+    VkImageCreateInfo create_info = vku::InitStructHelper();
+    create_info.flags = VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT | VK_IMAGE_CREATE_SPARSE_BINDING_BIT;
+    create_info.imageType = VK_IMAGE_TYPE_3D;
+    create_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+    create_info.extent = {32u, 32u, 1u};
+    create_info.mipLevels = 1u;
+    create_info.arrayLayers = 1u;
+    create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    create_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    vkt::Image(*m_device, create_info, vkt::no_mem);
+}
