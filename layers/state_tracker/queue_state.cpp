@@ -267,7 +267,7 @@ void vvl::Queue::PostSubmit() {
 
 void vvl::Queue::PostSubmit(QueueSubmission &submission) {
     for (auto &item : sub_states_) {
-        item.second->PostSubmit(submission);
+        item.second->PostSubmit(submissions_);
     }
 
     // If dealing with external fences, the app might call vkWaitForFences, but might not and we might not know when the queue

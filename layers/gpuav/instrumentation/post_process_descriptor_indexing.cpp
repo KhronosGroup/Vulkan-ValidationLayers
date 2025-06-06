@@ -73,9 +73,9 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
         });
 
     auto bound_desc_sets_to_pp_buffer_map =
-        std::make_shared<vvl::unordered_map<std::shared_ptr<vvl::DescriptorSet>, vko::BufferRange>>();
+        std::make_shared<vvl::unordered_map<std::shared_ptr<vvl::DescriptorSet>, vko::StagingBuffer>>();
     cb.on_pre_cb_submission_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav, CommandBufferSubState& cb,
-                                                                                      VkCommandBuffer per_submission_cb) {
+                                                                                      VkCommandBuffer per_pre_submission_cb) {
         VVL_ZoneScoped;
         DescriptorSetBindings& desc_set_bindings = cb.shared_resources_cache.Get<DescriptorSetBindings>();
 
@@ -110,16 +110,14 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                         continue;
                     }
 
-                    vko::BufferRange pp_buffer_range = cb.gpu_resources_manager.GetHostCachedBufferRange(pp_buffer_size);
-                    pp_buffer_range.Clear();
-                    cb.gpu_resources_manager.FlushAllocation(pp_buffer_range);
+                    vko::StagingBuffer staging_buffer(cb.gpu_resources_manager, pp_buffer_size, per_pre_submission_cb);
 
                     auto desc_set_buffer_lut_ptr = (VkDeviceAddress*)desc_set_buffer_lut_buffer_range.offset_mapped_ptr;
-                    desc_set_buffer_lut_ptr[ds_i] = pp_buffer_range.offset_address;
-                    bound_desc_sets_to_pp_buffer_map->insert({desc_binding_cmd.bound_descriptor_sets[ds_i], pp_buffer_range});
+                    desc_set_buffer_lut_ptr[ds_i] = staging_buffer.GetBufferRange().offset_address;
+                    bound_desc_sets_to_pp_buffer_map->insert({desc_binding_cmd.bound_descriptor_sets[ds_i], staging_buffer});
                 } else {
                     auto desc_set_buffer_lut_ptr = (VkDeviceAddress*)desc_set_buffer_lut_buffer_range.offset_mapped_ptr;
-                    desc_set_buffer_lut_ptr[ds_i] = found->second.offset_address;
+                    desc_set_buffer_lut_ptr[ds_i] = found->second.GetBufferRange().offset_address;
                 }
             }
 
@@ -133,15 +131,13 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 barrier_write_after_read.offset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
                 barrier_write_after_read.size = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.size;
 
-                DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-                                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0,
-                                           nullptr);
-
+                DispatchCmdPipelineBarrier(per_pre_submission_cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                           VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 1, &barrier_write_after_read, 0, nullptr);
                 VkBufferCopy copy;
                 copy.srcOffset = desc_set_buffer_lut_buffer_range.offset;
                 copy.dstOffset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
                 copy.size = desc_binding_cmd.bound_descriptor_sets.size() * sizeof(VkDeviceAddress);
-                DispatchCmdCopyBuffer(per_submission_cb, desc_set_buffer_lut_buffer_range.buffer,
+                DispatchCmdCopyBuffer(per_pre_submission_cb, desc_set_buffer_lut_buffer_range.buffer,
                                       desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.buffer, 1, &copy);
 
                 VkBufferMemoryBarrier barrier_read_before_write = vku::InitStructHelper();
@@ -151,18 +147,28 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 barrier_read_before_write.offset = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.offset;
                 barrier_read_before_write.size = desc_binding_cmd.desc_set_binding_to_post_process_buffers_lut.size;
 
-                DispatchCmdPipelineBarrier(per_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                                           0, nullptr, 1, &barrier_read_before_write, 0, nullptr);
+                DispatchCmdPipelineBarrier(per_pre_submission_cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                                           VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 1, &barrier_read_before_write, 0,
+                                           nullptr);
             }
         }
     });
+
+    if (vko::StagingBuffer::CanDeviceEverStage(gpuav)) {
+        cb.on_post_cb_submission_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](Validator& gpuav,
+                                                                                           CommandBufferSubState& cb,
+                                                                                           VkCommandBuffer per_post_submission_cb) {
+            for (const auto& [desc_set, staging_buffer] : *bound_desc_sets_to_pp_buffer_map) {
+                staging_buffer.CmdCopyDeviceToHost(per_post_submission_cb);
+            }
+        });
+    }
 
     // Validate descriptor set accesses done by command buffer submission
     cb.on_cb_completion_functions.emplace_back([bound_desc_sets_to_pp_buffer_map](
                                                    Validator& gpuav, CommandBufferSubState& cb,
                                                    const CommandBufferSubState::LabelLogging& label_logging, const Location& loc) {
         VVL_ZoneScoped;
-
         // TODO - Currently we don't know the actual call that triggered this, but without just giving "vkCmdDraw" we
         // will get VUID_Undefined We now have the DescriptorValidator::action_index, just need to hook it up!
         Location draw_loc(vvl::Func::vkCmdDraw);
@@ -170,19 +176,16 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
         // We loop each vkCmdBindDescriptorSet, find each VkDescriptorSet that was used in the command buffer, and check
         // its post process buffer for which descriptor was accessed Only check a VkDescriptorSet once, might be bound
         // multiple times in a single command buffer
-        for (const auto& [desc_set, pp_buffer_range] : *bound_desc_sets_to_pp_buffer_map) {
+        for (auto& [desc_set, staging_buffer] : *bound_desc_sets_to_pp_buffer_map) {
             // We build once here, but will update the set_index and shader_handle when found
             vvl::DescriptorValidator context(gpuav, cb.base, *desc_set, 0, VK_NULL_HANDLE, nullptr, draw_loc);
 
             // We create a map with the |unique_shader_id| as the key so we can only do the state object lookup once per
             // pipeline/shaderModule/shaderObject
-
             using DescriptorAccessMap = vvl::unordered_map<uint32_t, std::vector<DescriptorAccess>>;
             DescriptorAccessMap descriptor_access_map;
             {
-                VVL_ZoneScoped;
-                cb.gpu_resources_manager.InvalidateAllocation(pp_buffer_range);
-                auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot*)pp_buffer_range.offset_mapped_ptr;
+                auto slot_ptr = (glsl::PostProcessDescriptorIndexSlot*)staging_buffer.GetHostBufferPtr();
 
                 const std::vector<gpuav::spirv::BindingLayout>& binding_layouts = SubState(*desc_set).GetBindingLayouts();
                 for (uint32_t binding = 0; binding < binding_layouts.size(); binding++) {
