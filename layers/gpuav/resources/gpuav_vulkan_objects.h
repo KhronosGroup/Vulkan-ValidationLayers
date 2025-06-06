@@ -106,12 +106,14 @@ class GpuResourcesManager {
     void InvalidateAllocation(const vko::BufferRange &buffer_range);
     vko::BufferRange GetDeviceLocalBufferRange(VkDeviceSize size);
     vko::BufferRange GetDeviceLocalIndirectBufferRange(VkDeviceSize size);
+    vko::BufferRange GetStagingBufferRange(VkDeviceSize size);
 
     void ReturnResources();
     void DestroyResources();
 
-  private:
     Validator &gpuav_;
+
+  private:
     struct CachedDescriptor {
         VkDescriptorPool desc_pool = VK_NULL_HANDLE;
         VkDescriptorSet desc_set = VK_NULL_HANDLE;
@@ -154,6 +156,42 @@ class GpuResourcesManager {
     BufferCache host_cached_buffer_cache_;
     BufferCache device_local_buffer_cache_;
     BufferCache device_local_indirect_buffer_cache_;
+    BufferCache staging_buffer_cache_;
+};
+
+class StagingBuffer {
+  public:
+    StagingBuffer(GpuResourcesManager &gpu_resources_manager, VkDeviceSize size, VkCommandBuffer cb);
+    void CmdCopyDeviceToHost(VkCommandBuffer cb) const;
+    void CmdCopyHostToDevice(VkCommandBuffer cb) const;
+    const BufferRange &GetBufferRange() const { return device_buffer_range; }
+    void *GetHostBufferPtr() {
+        gpu_resources_manager.InvalidateAllocation(host_buffer_range);
+        return host_buffer_range.offset_mapped_ptr;
+    }
+
+  private:
+    BufferRange host_buffer_range = {};
+    BufferRange device_buffer_range = {};
+    GpuResourcesManager &gpu_resources_manager;
+    VkMemoryPropertyFlags device_buffer_mem_prop_flags = {};
+};
+
+// Used to allocate and submit GPU-AV's own command buffers
+class CommandPool {
+  public:
+    CommandPool(Validator &gpuav, uint32_t queue_family_i);
+    ~CommandPool();
+    // Returned command buffer is ready to be used,
+    // corresponding fence has been waited upon.
+    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer();
+
+  private:
+    Validator &gpuav_;
+    VkCommandPool cmd_pool_ = VK_NULL_HANDLE;
+    std::vector<VkCommandBuffer> cmd_buffers_{};
+    std::vector<VkFence> fences_{};
+    uint32_t cmd_buffer_ring_head_ = 0;
 };
 
 // Cache a single object of type T. Key is *only* based on typeid(T)
@@ -223,23 +261,6 @@ class SharedResourcesCache {
 
     vvl::unordered_map<TypeInfoRef, std::pair<void * /*object*/, void (*)(void *) /*object destructor*/>, Hasher, EqualTo>
         shared_validation_resources_map_;
-};
-
-// Used to allocate and submit GPU-AV's own command buffers
-class CommandPool {
-  public:
-    CommandPool(Validator &gpuav, uint32_t queue_family_i);
-    ~CommandPool();
-    // Returned command buffer is ready to be used,
-    // corresponding fence has been waited upon.
-    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer();
-
-  private:
-    Validator &gpuav_;
-    VkCommandPool cmd_pool_ = VK_NULL_HANDLE;
-    std::vector<VkCommandBuffer> cmd_buffers_{};
-    std::vector<VkFence> fences_{};
-    uint32_t cmd_buffer_ring_head_ = 0;
 };
 
 }  // namespace vko
