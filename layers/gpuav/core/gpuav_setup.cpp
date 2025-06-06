@@ -377,6 +377,8 @@ void Validator::InitSettings(const Location &loc) {
     if (!gpuav_settings.IsShaderInstrumentationEnabled()) {
         gpuav_settings.DisableShaderInstrumentationAndOptions();
     }
+
+    gpuav_settings.TracyLogSettings();
 }
 
 void Validator::InternalVmaError(LogObjectList objlist, VkResult result, const char *const specific_message) const {
