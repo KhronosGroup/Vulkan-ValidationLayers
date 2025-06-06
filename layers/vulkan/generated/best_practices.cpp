@@ -164,6 +164,8 @@ DeprecationData GetDeprecatedData(vvl::Extension extension_name) {
         {vvl::Extension::_VK_QCOM_fragment_density_map_offset,
          {DeprecationReason::Promoted, {vvl::Extension::_VK_EXT_fragment_density_map_offset}}},
         {vvl::Extension::_VK_EXT_pipeline_protected_access, {DeprecationReason::Promoted, {vvl::Version::_VK_VERSION_1_4}}},
+        {vvl::Extension::_VK_EXT_vertex_attribute_robustness,
+         {DeprecationReason::Promoted, {vvl::Extension::_VK_KHR_maintenance9}}},
     };
 
     auto it = deprecated_extensions.find(extension_name);
@@ -1106,6 +1108,12 @@ void BestPractices::PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submit
     PostCallRecordQueueSubmit2(queue, submitCount, pSubmits, fence, record_obj);
 }
 
+void BestPractices::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                     const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                                     const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
 void BestPractices::PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                             const VkAllocationCallbacks* pAllocator,
                                                             VkPipelineBinaryHandlesInfoKHR* pBinaries,
@@ -1776,6 +1784,35 @@ void BestPractices::PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, u
                                                               const VkMicromapEXT* pMicromaps, VkQueryType queryType,
                                                               size_t dataSize, void* pData, size_t stride,
                                                               const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                                  const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                                  const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                                      const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                      const VkBindTensorMemoryInfoARM* pBindInfos, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                          const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                          void* pData, const RecordObject& record_obj) {
+    bp_state::LogResult(*this, device, record_obj);
+}
+
+void BestPractices::PostCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                              const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                              void* pData, const RecordObject& record_obj) {
     bp_state::LogResult(*this, device, record_obj);
 }
 

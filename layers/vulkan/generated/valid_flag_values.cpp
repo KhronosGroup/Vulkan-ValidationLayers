@@ -259,6 +259,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QCOM_image_processing};
                 }
             }
+            if (value & (VK_IMAGE_USAGE_TENSOR_ALIASING_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_tensors)) {
+                    return {vvl::Extension::_VK_ARM_tensors};
+                }
+            }
             if (value & (VK_IMAGE_USAGE_TILE_MEMORY_BIT_QCOM)) {
                 if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
                     return {vvl::Extension::_VK_QCOM_tile_memory_heap};
@@ -343,6 +348,13 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             if (value & (VK_QUERY_PIPELINE_STATISTIC_CLUSTER_CULLING_SHADER_INVOCATIONS_BIT_HUAWEI)) {
                 if (!IsExtEnabled(extensions.vk_huawei_cluster_culling_shader)) {
                     return {vvl::Extension::_VK_HUAWEI_cluster_culling_shader};
+                }
+            }
+            return {};
+        case vvl::FlagBitmask::VkQueryPoolCreateFlagBits:
+            if (value & (VK_QUERY_POOL_CREATE_RESET_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_maintenance9)) {
+                    return {vvl::Extension::_VK_KHR_maintenance9};
                 }
             }
             return {};
@@ -711,6 +723,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_KHR_maintenance8};
                 }
             }
+            if (value & (VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_maintenance9)) {
+                    return {vvl::Extension::_VK_KHR_maintenance9};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkFramebufferCreateFlagBits:
             if (value & (VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT)) {
@@ -817,7 +834,7 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             }
             return {};
         case vvl::FlagBitmask::VkResolveModeFlagBits:
-            if (value & (VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_ANDROID)) {
+            if (value & (VK_RESOLVE_MODE_EXTERNAL_FORMAT_DOWNSAMPLE_BIT_ANDROID)) {
                 if (!IsExtEnabled(extensions.vk_android_external_format_resolve)) {
                     return {vvl::Extension::_VK_ANDROID_external_format_resolve};
                 }
@@ -856,6 +873,16 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             if (value & (VK_SWAPCHAIN_CREATE_DEFERRED_MEMORY_ALLOCATION_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_swapchain_maintenance1)) {
                     return {vvl::Extension::_VK_EXT_swapchain_maintenance1};
+                }
+            }
+            if (value & (VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_present_id2)) {
+                    return {vvl::Extension::_VK_KHR_present_id2};
+                }
+            }
+            if (value & (VK_SWAPCHAIN_CREATE_PRESENT_WAIT_2_BIT_KHR)) {
+                if (!IsExtEnabled(extensions.vk_khr_present_wait2)) {
+                    return {vvl::Extension::_VK_KHR_present_wait2};
                 }
             }
             return {};
@@ -912,8 +939,8 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             }
             return {};
         case vvl::FlagBitmask::VkGeometryInstanceFlagBitsKHR:
-            if (value &
-                (VK_GEOMETRY_INSTANCE_FORCE_OPACITY_MICROMAP_2_STATE_EXT | VK_GEOMETRY_INSTANCE_DISABLE_OPACITY_MICROMAPS_EXT)) {
+            if (value & (VK_GEOMETRY_INSTANCE_FORCE_OPACITY_MICROMAP_2_STATE_BIT_EXT |
+                         VK_GEOMETRY_INSTANCE_DISABLE_OPACITY_MICROMAPS_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
                 }
@@ -925,19 +952,19 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_NV_ray_tracing_motion_blur};
                 }
             }
-            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_OPACITY_MICROMAP_UPDATE_EXT |
-                         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DISABLE_OPACITY_MICROMAPS_EXT |
-                         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_OPACITY_MICROMAP_DATA_UPDATE_EXT)) {
+            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_OPACITY_MICROMAP_UPDATE_BIT_EXT |
+                         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DISABLE_OPACITY_MICROMAPS_BIT_EXT |
+                         VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_OPACITY_MICROMAP_DATA_UPDATE_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_opacity_micromap)) {
                     return {vvl::Extension::_VK_EXT_opacity_micromap};
                 }
             }
-            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DISPLACEMENT_MICROMAP_UPDATE_NV)) {
+            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DISPLACEMENT_MICROMAP_UPDATE_BIT_NV)) {
                 if (!IsExtEnabled(extensions.vk_nv_displacement_micromap)) {
                     return {vvl::Extension::_VK_NV_displacement_micromap};
                 }
             }
-            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR)) {
+            if (value & (VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_ray_tracing_position_fetch)) {
                     return {vvl::Extension::_VK_KHR_ray_tracing_position_fetch};
                 }
@@ -1145,6 +1172,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue(vvl::FlagBitmask flag_b
             return string_VkEventCreateFlags(value);
         case vvl::FlagBitmask::VkQueryPipelineStatisticFlagBits:
             return string_VkQueryPipelineStatisticFlags(value);
+        case vvl::FlagBitmask::VkQueryPoolCreateFlagBits:
+            return string_VkQueryPoolCreateFlags(value);
         case vvl::FlagBitmask::VkQueryResultFlagBits:
             return string_VkQueryResultFlags(value);
         case vvl::FlagBitmask::VkBufferCreateFlagBits:
@@ -1363,6 +1392,12 @@ std::string stateless::Context::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag
             return string_VkAccessFlags3KHR(value);
         case vvl::FlagBitmask::VkMemoryDecompressionMethodFlagBitsNV:
             return string_VkMemoryDecompressionMethodFlagsNV(value);
+        case vvl::FlagBitmask::VkTensorCreateFlagBitsARM:
+            return string_VkTensorCreateFlagsARM(value);
+        case vvl::FlagBitmask::VkTensorViewCreateFlagBitsARM:
+            return string_VkTensorViewCreateFlagsARM(value);
+        case vvl::FlagBitmask::VkTensorUsageFlagBitsARM:
+            return string_VkTensorUsageFlagsARM(value);
 
         default:
             std::stringstream ss;

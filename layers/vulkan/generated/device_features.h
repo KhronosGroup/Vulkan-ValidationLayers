@@ -172,6 +172,8 @@ struct DeviceFeatures {
     bool descriptorBufferImageLayoutIgnored;
     // VkPhysicalDeviceDescriptorBufferFeaturesEXT
     bool descriptorBufferPushDescriptors;
+    // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
+    bool descriptorBufferTensorDescriptors;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     bool descriptorBindingPartiallyBound;
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -542,6 +544,8 @@ struct DeviceFeatures {
     bool maintenance7;
     // VkPhysicalDeviceMaintenance8FeaturesKHR
     bool maintenance8;
+    // VkPhysicalDeviceMaintenance9FeaturesKHR
+    bool maintenance9;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     bool memoryMapPlaced;
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
@@ -654,12 +658,16 @@ struct DeviceFeatures {
     bool vertexAttributeAccessBeyondStride;
     // VkPhysicalDevicePresentBarrierFeaturesNV
     bool presentBarrier;
+    // VkPhysicalDevicePresentId2FeaturesKHR
+    bool presentId2;
     // VkPhysicalDevicePresentIdFeaturesKHR
     bool presentId;
     // VkPhysicalDevicePresentMeteringFeaturesNV
     bool presentMetering;
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
     bool presentModeFifoLatestReady;
+    // VkPhysicalDevicePresentWait2FeaturesKHR
+    bool presentWait2;
     // VkPhysicalDevicePresentWaitFeaturesKHR
     bool presentWait;
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
@@ -822,6 +830,10 @@ struct DeviceFeatures {
     bool shaderFloat16;
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     bool shaderInt8;
+    // VkPhysicalDeviceShaderFloat8FeaturesEXT
+    bool shaderFloat8;
+    // VkPhysicalDeviceShaderFloat8FeaturesEXT
+    bool shaderFloat8CooperativeMatrix;
     // VkPhysicalDeviceShaderFloatControls2Features, VkPhysicalDeviceVulkan14Features
     bool shaderFloatControls2;
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
@@ -880,6 +892,18 @@ struct DeviceFeatures {
     bool swapchainMaintenance1;
     // VkPhysicalDeviceSynchronization2Features, VkPhysicalDeviceVulkan13Features
     bool synchronization2;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool descriptorBindingStorageTensorUpdateAfterBind;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool shaderStorageTensorArrayDynamicIndexing;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool shaderStorageTensorArrayNonUniformIndexing;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool shaderTensorAccess;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool tensorNonPacked;
+    // VkPhysicalDeviceTensorFeaturesARM
+    bool tensors;
     // VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT
     bool texelBufferAlignment;
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
@@ -922,6 +946,10 @@ struct DeviceFeatures {
     bool geometryStreams;
     // VkPhysicalDeviceTransformFeedbackFeaturesEXT
     bool transformFeedback;
+    // VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR
+    bool unifiedImageLayouts;
+    // VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR
+    bool unifiedImageLayoutsVideo;
     // VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVulkan12Features
     bool uniformBufferStandardLayout;
     // VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVulkan11Features
@@ -936,6 +964,8 @@ struct DeviceFeatures {
     bool vertexAttributeRobustness;
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     bool vertexInputDynamicState;
+    // VkPhysicalDeviceVideoDecodeVP9FeaturesKHR
+    bool videoDecodeVP9;
     // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
     bool videoEncodeAV1;
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR

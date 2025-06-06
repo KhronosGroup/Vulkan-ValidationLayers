@@ -269,6 +269,9 @@ VkResult CreateScreenSurfaceQNX(VkInstance instance, const VkScreenSurfaceCreate
 VkBool32 GetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
                                                        struct _screen_window* window);
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+void GetPhysicalDeviceExternalTensorPropertiesARM(VkPhysicalDevice physicalDevice,
+                                                  const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+                                                  VkExternalTensorPropertiesARM* pExternalTensorProperties);
 VkResult GetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDevice,
                                                     const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo,
                                                     uint32_t* pFormatCount,

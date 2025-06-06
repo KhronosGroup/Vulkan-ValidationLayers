@@ -182,6 +182,7 @@ vvl::DescriptorClass vvl::DescriptorTypeToClass(VkDescriptorType type) {
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return DescriptorClass::Mutable;
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
             // TODO
             break;
         case VK_DESCRIPTOR_TYPE_MAX_ENUM:
