@@ -193,6 +193,7 @@ bool Buffer::Create(const VkBufferCreateInfo *buffer_create_info, const VmaAlloc
         }
     }
 #if defined(VVL_TRACY_GPU)
+    static_assert(VK_MAX_MEMORY_HEAPS <= 16u);
     VmaBudget budgets[VK_MAX_MEMORY_HEAPS] = {};
     vmaGetHeapBudgets(gpuav.vma_allocator_, budgets);
     constexpr std::array<const char *, VK_MAX_MEMORY_HEAPS> heap_names = {
@@ -219,6 +220,7 @@ void Buffer::Destroy() {
         device_address = 0;
     }
 #if defined(VVL_TRACY_GPU)
+    static_assert(VK_MAX_MEMORY_HEAPS <= 16u);
     VmaBudget budgets[VK_MAX_MEMORY_HEAPS] = {};
     vmaGetHeapBudgets(gpuav.vma_allocator_, budgets);
     constexpr std::array<const char *, VK_MAX_MEMORY_HEAPS> heap_names = {

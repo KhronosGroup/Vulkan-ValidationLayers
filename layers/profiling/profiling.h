@@ -23,6 +23,9 @@
 #include "tracy/../client/TracyProfiler.hpp"
 #include "common/TracySystem.hpp"
 
+#include <sstream>
+#include <string>
+
 // Define CPU zones
 #define VVL_ZoneScoped ZoneScoped
 #define VVL_ZoneScopedN(name) ZoneScopedN(name)
