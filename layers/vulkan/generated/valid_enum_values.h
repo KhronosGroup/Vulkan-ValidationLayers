@@ -214,6 +214,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkRayTracingLssPrimitiveEndCapsM
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG value) const;
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkTensorTilingARM value) const;
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const;
 template <>
 ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowSessionBindingPointNV value) const;

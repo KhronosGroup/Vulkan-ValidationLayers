@@ -4141,6 +4141,20 @@ void Device::PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImag
     PostCallRecordGetImageSubresourceLayout2(device, image, pSubresource, pLayout, record_obj);
 }
 
+void Device::PreCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                             const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
+void Device::PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                              const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(swapchain, record_obj.location);
+    // Host access to swapchain must be externally synchronized
+}
+
 void Device::PreCallRecordDestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                                    const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
     StartReadObjectParentInstance(device, record_obj.location);
@@ -7632,6 +7646,136 @@ void Device::PostCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer command
                                                          const RecordObject& record_obj) {
     FinishWriteObject(commandBuffer, record_obj.location);
     // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                          const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                           const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pTensor);
+    }
+}
+
+void Device::PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                           const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(tensor, record_obj.location);
+    // Host access to tensor must be externally synchronized
+}
+
+void Device::PostCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(tensor, record_obj.location);
+    DestroyObject(tensor);
+    // Host access to tensor must be externally synchronized
+}
+
+void Device::PreCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                              const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                               const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pView);
+    }
+}
+
+void Device::PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+    StartWriteObject(tensorView, record_obj.location);
+    // Host access to tensorView must be externally synchronized
+}
+
+void Device::PostCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+    FinishWriteObject(tensorView, record_obj.location);
+    DestroyObject(tensorView);
+    // Host access to tensorView must be externally synchronized
+}
+
+void Device::PreCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                         VkMemoryRequirements2* pMemoryRequirements,
+                                                         const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                          VkMemoryRequirements2* pMemoryRequirements,
+                                                          const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                              const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                               const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                               VkMemoryRequirements2* pMemoryRequirements,
+                                                               const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                VkMemoryRequirements2* pMemoryRequirements,
+                                                                const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                           const RecordObject& record_obj) {
+    StartWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PostCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                            const RecordObject& record_obj) {
+    FinishWriteObject(commandBuffer, record_obj.location);
+    // Host access to commandBuffer must be externally synchronized
+}
+
+void Device::PreCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                  const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                  const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                   const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                   const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PreCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                      const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                      void* pData, const RecordObject& record_obj) {
+    StartReadObjectParentInstance(device, record_obj.location);
+}
+
+void Device::PostCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                       const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                       void* pData, const RecordObject& record_obj) {
+    FinishReadObjectParentInstance(device, record_obj.location);
 }
 
 void Device::PreCallRecordGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,

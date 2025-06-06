@@ -78,6 +78,8 @@ static const VkDebugReportObjectTypeEXT kDebugReportLookup[kVulkanObjectTypeMax]
     VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT,  // kVulkanObjectTypeAccelerationStructureKHR
     VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA_EXT,   // kVulkanObjectTypeBufferCollectionFUCHSIA
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeMicromapEXT
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorARM
+    VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeTensorViewARM
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeOpticalFlowSessionNV
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeShaderEXT
     VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT,                     // kVulkanObjectTypeExternalComputeQueueNV
@@ -137,6 +139,8 @@ static const char* const kVulkanObjectTypeStrings[kVulkanObjectTypeMax] = {
     "VkAccelerationStructureKHR",
     "VkBufferCollectionFUCHSIA",
     "VkMicromapEXT",
+    "VkTensorARM",
+    "VkTensorViewARM",
     "VkOpticalFlowSessionNV",
     "VkShaderEXT",
     "VkExternalComputeQueueNV",

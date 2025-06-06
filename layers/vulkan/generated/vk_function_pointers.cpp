@@ -473,6 +473,7 @@ PFN_vkCmdBindIndexBuffer2KHR CmdBindIndexBuffer2KHR;
 PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
 PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
 PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+PFN_vkWaitForPresent2KHR WaitForPresent2KHR;
 PFN_vkCreatePipelineBinariesKHR CreatePipelineBinariesKHR;
 PFN_vkDestroyPipelineBinaryKHR DestroyPipelineBinaryKHR;
 PFN_vkGetPipelineKeyKHR GetPipelineKeyKHR;
@@ -789,6 +790,17 @@ PFN_vkCmdSetCoverageModulationTableNV CmdSetCoverageModulationTableNV;
 PFN_vkCmdSetShadingRateImageEnableNV CmdSetShadingRateImageEnableNV;
 PFN_vkCmdSetRepresentativeFragmentTestEnableNV CmdSetRepresentativeFragmentTestEnableNV;
 PFN_vkCmdSetCoverageReductionModeNV CmdSetCoverageReductionModeNV;
+PFN_vkCreateTensorARM CreateTensorARM;
+PFN_vkDestroyTensorARM DestroyTensorARM;
+PFN_vkCreateTensorViewARM CreateTensorViewARM;
+PFN_vkDestroyTensorViewARM DestroyTensorViewARM;
+PFN_vkGetTensorMemoryRequirementsARM GetTensorMemoryRequirementsARM;
+PFN_vkBindTensorMemoryARM BindTensorMemoryARM;
+PFN_vkGetDeviceTensorMemoryRequirementsARM GetDeviceTensorMemoryRequirementsARM;
+PFN_vkCmdCopyTensorARM CmdCopyTensorARM;
+PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM GetPhysicalDeviceExternalTensorPropertiesARM;
+PFN_vkGetTensorOpaqueCaptureDescriptorDataARM GetTensorOpaqueCaptureDescriptorDataARM;
+PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM GetTensorViewOpaqueCaptureDescriptorDataARM;
 PFN_vkGetShaderModuleIdentifierEXT GetShaderModuleIdentifierEXT;
 PFN_vkGetShaderModuleCreateInfoIdentifierEXT GetShaderModuleCreateInfoIdentifierEXT;
 PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
@@ -1873,6 +1885,11 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_KHR_present_wait2", [](VkInstance , VkDevice device) {
+                WaitForPresent2KHR = reinterpret_cast<PFN_vkWaitForPresent2KHR>(GetDeviceProcAddr(device, "vkWaitForPresent2KHR"));
+            }
+        },
+        {
             "VK_KHR_pipeline_binary", [](VkInstance , VkDevice device) {
                 CreatePipelineBinariesKHR = reinterpret_cast<PFN_vkCreatePipelineBinariesKHR>(GetDeviceProcAddr(device, "vkCreatePipelineBinariesKHR"));
                 DestroyPipelineBinaryKHR = reinterpret_cast<PFN_vkDestroyPipelineBinaryKHR>(GetDeviceProcAddr(device, "vkDestroyPipelineBinaryKHR"));
@@ -2431,6 +2448,21 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_ARM_tensors", [](VkInstance instance, VkDevice device) {
+                CreateTensorARM = reinterpret_cast<PFN_vkCreateTensorARM>(GetDeviceProcAddr(device, "vkCreateTensorARM"));
+                DestroyTensorARM = reinterpret_cast<PFN_vkDestroyTensorARM>(GetDeviceProcAddr(device, "vkDestroyTensorARM"));
+                CreateTensorViewARM = reinterpret_cast<PFN_vkCreateTensorViewARM>(GetDeviceProcAddr(device, "vkCreateTensorViewARM"));
+                DestroyTensorViewARM = reinterpret_cast<PFN_vkDestroyTensorViewARM>(GetDeviceProcAddr(device, "vkDestroyTensorViewARM"));
+                GetTensorMemoryRequirementsARM = reinterpret_cast<PFN_vkGetTensorMemoryRequirementsARM>(GetDeviceProcAddr(device, "vkGetTensorMemoryRequirementsARM"));
+                BindTensorMemoryARM = reinterpret_cast<PFN_vkBindTensorMemoryARM>(GetDeviceProcAddr(device, "vkBindTensorMemoryARM"));
+                GetDeviceTensorMemoryRequirementsARM = reinterpret_cast<PFN_vkGetDeviceTensorMemoryRequirementsARM>(GetDeviceProcAddr(device, "vkGetDeviceTensorMemoryRequirementsARM"));
+                CmdCopyTensorARM = reinterpret_cast<PFN_vkCmdCopyTensorARM>(GetDeviceProcAddr(device, "vkCmdCopyTensorARM"));
+                GetTensorOpaqueCaptureDescriptorDataARM = reinterpret_cast<PFN_vkGetTensorOpaqueCaptureDescriptorDataARM>(GetDeviceProcAddr(device, "vkGetTensorOpaqueCaptureDescriptorDataARM"));
+                GetTensorViewOpaqueCaptureDescriptorDataARM = reinterpret_cast<PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM>(GetDeviceProcAddr(device, "vkGetTensorViewOpaqueCaptureDescriptorDataARM"));
+                GetPhysicalDeviceExternalTensorPropertiesARM = reinterpret_cast<PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceExternalTensorPropertiesARM"));
+            }
+        },
+        {
             "VK_EXT_shader_module_identifier", [](VkInstance , VkDevice device) {
                 GetShaderModuleIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleIdentifierEXT>(GetDeviceProcAddr(device, "vkGetShaderModuleIdentifierEXT"));
                 GetShaderModuleCreateInfoIdentifierEXT = reinterpret_cast<PFN_vkGetShaderModuleCreateInfoIdentifierEXT>(GetDeviceProcAddr(device, "vkGetShaderModuleCreateInfoIdentifierEXT"));
@@ -2810,6 +2842,7 @@ void ResetAllExtensions() {
     GetRenderingAreaGranularityKHR = nullptr;
     GetDeviceImageSubresourceLayoutKHR = nullptr;
     GetImageSubresourceLayout2KHR = nullptr;
+    WaitForPresent2KHR = nullptr;
     CreatePipelineBinariesKHR = nullptr;
     DestroyPipelineBinaryKHR = nullptr;
     GetPipelineKeyKHR = nullptr;
@@ -3126,6 +3159,17 @@ void ResetAllExtensions() {
     CmdSetShadingRateImageEnableNV = nullptr;
     CmdSetRepresentativeFragmentTestEnableNV = nullptr;
     CmdSetCoverageReductionModeNV = nullptr;
+    CreateTensorARM = nullptr;
+    DestroyTensorARM = nullptr;
+    CreateTensorViewARM = nullptr;
+    DestroyTensorViewARM = nullptr;
+    GetTensorMemoryRequirementsARM = nullptr;
+    BindTensorMemoryARM = nullptr;
+    GetDeviceTensorMemoryRequirementsARM = nullptr;
+    CmdCopyTensorARM = nullptr;
+    GetPhysicalDeviceExternalTensorPropertiesARM = nullptr;
+    GetTensorOpaqueCaptureDescriptorDataARM = nullptr;
+    GetTensorViewOpaqueCaptureDescriptorDataARM = nullptr;
     GetShaderModuleIdentifierEXT = nullptr;
     GetShaderModuleCreateInfoIdentifierEXT = nullptr;
     GetPhysicalDeviceOpticalFlowImageFormatsNV = nullptr;

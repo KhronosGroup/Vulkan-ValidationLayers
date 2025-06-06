@@ -277,6 +277,13 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityCooperativeVectorNV, {0, &DeviceFeatures::cooperativeVector, nullptr, ""}},
         {spv::CapabilityCooperativeVectorTrainingNV, {0, &DeviceFeatures::cooperativeVectorTraining, nullptr, ""}},
         {spv::CapabilityTileShadingQCOM, {0, &DeviceFeatures::tileShading, nullptr, ""}},
+        {spv::CapabilityTensorsARM, {0, &DeviceFeatures::shaderTensorAccess, nullptr, ""}},
+        {spv::CapabilityStorageTensorArrayDynamicIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayDynamicIndexing, nullptr, ""}},
+        {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayNonUniformIndexing, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -401,6 +408,8 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_NV_cluster_acceleration_structure", {0, nullptr, &DeviceExtensions::vk_nv_cluster_acceleration_structure, ""}},
         {"SPV_NV_cooperative_vector", {0, nullptr, &DeviceExtensions::vk_nv_cooperative_vector, ""}},
         {"SPV_QCOM_tile_shading", {0, nullptr, &DeviceExtensions::vk_qcom_tile_shading, ""}},
+        {"SPV_ARM_tensors", {0, nullptr, &DeviceExtensions::vk_arm_tensors, ""}},
+        {"SPV_EXT_float8", {0, nullptr, &DeviceExtensions::vk_ext_shader_float8, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1180,6 +1189,9 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityCooperativeVectorNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVector"},
     {spv::CapabilityCooperativeVectorTrainingNV, "VkPhysicalDeviceCooperativeVectorFeaturesNV::cooperativeVectorTraining"},
     {spv::CapabilityTileShadingQCOM, "VkPhysicalDeviceTileShadingFeaturesQCOM::tileShading"},
+    {spv::CapabilityTensorsARM, "VkPhysicalDeviceTensorFeaturesARM::shaderTensorAccess"},
+    {spv::CapabilityStorageTensorArrayDynamicIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayDynamicIndexing"},
+    {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayNonUniformIndexing"},
     };
 
     // VUs before catch unknown capabilities
@@ -1284,6 +1296,8 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_NV_cluster_acceleration_structure", {{vvl::Extension::_VK_NV_cluster_acceleration_structure}}},
     {"SPV_NV_cooperative_vector", {{vvl::Extension::_VK_NV_cooperative_vector}}},
     {"SPV_QCOM_tile_shading", {{vvl::Extension::_VK_QCOM_tile_shading}}},
+    {"SPV_ARM_tensors", {{vvl::Extension::_VK_ARM_tensors}}},
+    {"SPV_EXT_float8", {{vvl::Extension::_VK_EXT_shader_float8}}},
     };
 
     // VUs before catch unknown extensions

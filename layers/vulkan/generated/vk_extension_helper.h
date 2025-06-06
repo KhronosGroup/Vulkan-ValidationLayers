@@ -235,15 +235,19 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_subgroup_rotate{kNotEnabled};
     ExtEnabled vk_khr_shader_maximal_reconvergence{kNotEnabled};
     ExtEnabled vk_khr_maintenance5{kNotEnabled};
+    ExtEnabled vk_khr_present_id2{kNotEnabled};
+    ExtEnabled vk_khr_present_wait2{kNotEnabled};
     ExtEnabled vk_khr_ray_tracing_position_fetch{kNotEnabled};
     ExtEnabled vk_khr_pipeline_binary{kNotEnabled};
     ExtEnabled vk_khr_cooperative_matrix{kNotEnabled};
     ExtEnabled vk_khr_compute_shader_derivatives{kNotEnabled};
     ExtEnabled vk_khr_video_decode_av1{kNotEnabled};
     ExtEnabled vk_khr_video_encode_av1{kNotEnabled};
+    ExtEnabled vk_khr_video_decode_vp9{kNotEnabled};
     ExtEnabled vk_khr_video_maintenance1{kNotEnabled};
     ExtEnabled vk_khr_vertex_attribute_divisor{kNotEnabled};
     ExtEnabled vk_khr_load_store_op_none{kNotEnabled};
+    ExtEnabled vk_khr_unified_image_layouts{kNotEnabled};
     ExtEnabled vk_khr_shader_float_controls2{kNotEnabled};
     ExtEnabled vk_khr_index_type_uint8{kNotEnabled};
     ExtEnabled vk_khr_line_rasterization{kNotEnabled};
@@ -254,6 +258,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_khr_shader_relaxed_extended_instruction{kNotEnabled};
     ExtEnabled vk_khr_maintenance7{kNotEnabled};
     ExtEnabled vk_khr_maintenance8{kNotEnabled};
+    ExtEnabled vk_khr_maintenance9{kNotEnabled};
     ExtEnabled vk_khr_video_maintenance2{kNotEnabled};
     ExtEnabled vk_khr_depth_clamp_zero_one{kNotEnabled};
     ExtEnabled vk_khr_robustness2{kNotEnabled};
@@ -460,6 +465,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_external_memory_acquire_unmodified{kNotEnabled};
     ExtEnabled vk_ext_extended_dynamic_state3{kNotEnabled};
     ExtEnabled vk_ext_subpass_merge_feedback{kNotEnabled};
+    ExtEnabled vk_arm_tensors{kNotEnabled};
     ExtEnabled vk_ext_shader_module_identifier{kNotEnabled};
     ExtEnabled vk_ext_rasterization_order_attachment_access{kNotEnabled};
     ExtEnabled vk_nv_optical_flow{kNotEnabled};
@@ -496,6 +502,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_nv_command_buffer_inheritance{kNotEnabled};
     ExtEnabled vk_nv_shader_atomic_float16_vector{kNotEnabled};
     ExtEnabled vk_ext_shader_replicated_composites{kNotEnabled};
+    ExtEnabled vk_ext_shader_float8{kNotEnabled};
     ExtEnabled vk_nv_ray_tracing_validation{kNotEnabled};
     ExtEnabled vk_nv_cluster_acceleration_structure{kNotEnabled};
     ExtEnabled vk_nv_partitioned_acceleration_structure{kNotEnabled};
@@ -678,15 +685,19 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_subgroup_rotate:
         case vvl::Extension::_VK_KHR_shader_maximal_reconvergence:
         case vvl::Extension::_VK_KHR_maintenance5:
+        case vvl::Extension::_VK_KHR_present_id2:
+        case vvl::Extension::_VK_KHR_present_wait2:
         case vvl::Extension::_VK_KHR_ray_tracing_position_fetch:
         case vvl::Extension::_VK_KHR_pipeline_binary:
         case vvl::Extension::_VK_KHR_cooperative_matrix:
         case vvl::Extension::_VK_KHR_compute_shader_derivatives:
         case vvl::Extension::_VK_KHR_video_decode_av1:
         case vvl::Extension::_VK_KHR_video_encode_av1:
+        case vvl::Extension::_VK_KHR_video_decode_vp9:
         case vvl::Extension::_VK_KHR_video_maintenance1:
         case vvl::Extension::_VK_KHR_vertex_attribute_divisor:
         case vvl::Extension::_VK_KHR_load_store_op_none:
+        case vvl::Extension::_VK_KHR_unified_image_layouts:
         case vvl::Extension::_VK_KHR_shader_float_controls2:
         case vvl::Extension::_VK_KHR_index_type_uint8:
         case vvl::Extension::_VK_KHR_line_rasterization:
@@ -697,6 +708,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_KHR_shader_relaxed_extended_instruction:
         case vvl::Extension::_VK_KHR_maintenance7:
         case vvl::Extension::_VK_KHR_maintenance8:
+        case vvl::Extension::_VK_KHR_maintenance9:
         case vvl::Extension::_VK_KHR_video_maintenance2:
         case vvl::Extension::_VK_KHR_depth_clamp_zero_one:
         case vvl::Extension::_VK_KHR_robustness2:
@@ -903,6 +915,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_external_memory_acquire_unmodified:
         case vvl::Extension::_VK_EXT_extended_dynamic_state3:
         case vvl::Extension::_VK_EXT_subpass_merge_feedback:
+        case vvl::Extension::_VK_ARM_tensors:
         case vvl::Extension::_VK_EXT_shader_module_identifier:
         case vvl::Extension::_VK_EXT_rasterization_order_attachment_access:
         case vvl::Extension::_VK_NV_optical_flow:
@@ -939,6 +952,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_NV_command_buffer_inheritance:
         case vvl::Extension::_VK_NV_shader_atomic_float16_vector:
         case vvl::Extension::_VK_EXT_shader_replicated_composites:
+        case vvl::Extension::_VK_EXT_shader_float8:
         case vvl::Extension::_VK_NV_ray_tracing_validation:
         case vvl::Extension::_VK_NV_cluster_acceleration_structure:
         case vvl::Extension::_VK_NV_partitioned_acceleration_structure:

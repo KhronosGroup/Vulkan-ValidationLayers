@@ -92,6 +92,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkImageLayout value) const {
             return IsExtEnabled(extensions.vk_khr_video_encode_queue) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
             return IsExtEnabled(extensions.vk_ext_attachment_feedback_loop_layout) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
             return IsExtEnabled(extensions.vk_khr_video_encode_quantization_map) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT:
@@ -173,6 +175,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const {
             return IsExtEnabled(extensions.vk_fuchsia_buffer_collection) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_MICROMAP_EXT:
             return IsExtEnabled(extensions.vk_ext_opacity_micromap) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+        case VK_OBJECT_TYPE_TENSOR_VIEW_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV:
             return IsExtEnabled(extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_SHADER_EXT:
@@ -448,6 +453,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return IsExtEnabled(extensions.vk_img_format_pvrtc) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_FORMAT_R8_BOOL_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return IsExtEnabled(extensions.vk_nv_optical_flow) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_FORMAT_R10X6_UINT_PACK16_ARM:
@@ -962,6 +969,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkDescriptorType value) const {
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
             return IsExtEnabled(extensions.vk_qcom_image_processing) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+            return IsExtEnabled(extensions.vk_arm_tensors) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return IsExtEnabled(extensions.vk_valve_mutable_descriptor_type) ||
                            IsExtEnabled(extensions.vk_ext_mutable_descriptor_type)
@@ -1301,6 +1310,9 @@ ValidValue stateless::Context::IsValidEnumValue(VkComponentTypeKHR value) const 
             return ValidValue::Valid;
         case VK_COMPONENT_TYPE_BFLOAT16_KHR:
             return IsExtEnabled(extensions.vk_khr_shader_bfloat16) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT:
+        case VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT:
+            return IsExtEnabled(extensions.vk_ext_shader_float8) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -1959,6 +1971,17 @@ ValidValue stateless::Context::IsValidEnumValue(VkDirectDriverLoadingModeLUNARG 
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkTensorTilingARM value) const {
+    switch (value) {
+        case VK_TENSOR_TILING_OPTIMAL_ARM:
+        case VK_TENSOR_TILING_LINEAR_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkOpticalFlowPerformanceLevelNV value) const {
     switch (value) {
         case VK_OPTICAL_FLOW_PERFORMANCE_LEVEL_UNKNOWN_NV:
@@ -2288,6 +2311,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkImageLayout value) const
             return {vvl::Extension::_VK_KHR_video_encode_queue};
         case VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT:
             return {vvl::Extension::_VK_EXT_attachment_feedback_loop_layout};
+        case VK_IMAGE_LAYOUT_TENSOR_ALIASING_ARM:
+            return {vvl::Extension::_VK_ARM_tensors};
         case VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR:
             return {vvl::Extension::_VK_KHR_video_encode_quantization_map};
         case VK_IMAGE_LAYOUT_ZERO_INITIALIZED_EXT:
@@ -2346,6 +2371,9 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkObjectType value) const 
             return {vvl::Extension::_VK_FUCHSIA_buffer_collection};
         case VK_OBJECT_TYPE_MICROMAP_EXT:
             return {vvl::Extension::_VK_EXT_opacity_micromap};
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+        case VK_OBJECT_TYPE_TENSOR_VIEW_ARM:
+            return {vvl::Extension::_VK_ARM_tensors};
         case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
         case VK_OBJECT_TYPE_SHADER_EXT:
@@ -2439,6 +2467,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkFormat value) const {
         case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
         case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
             return {vvl::Extension::_VK_IMG_format_pvrtc};
+        case VK_FORMAT_R8_BOOL_ARM:
+            return {vvl::Extension::_VK_ARM_tensors};
         case VK_FORMAT_R16G16_SFIXED5_NV:
             return {vvl::Extension::_VK_NV_optical_flow};
         case VK_FORMAT_R10X6_UINT_PACK16_ARM:
@@ -2843,6 +2873,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDescriptorType value) co
         case VK_DESCRIPTOR_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM:
         case VK_DESCRIPTOR_TYPE_BLOCK_MATCH_IMAGE_QCOM:
             return {vvl::Extension::_VK_QCOM_image_processing};
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
+            return {vvl::Extension::_VK_ARM_tensors};
         case VK_DESCRIPTOR_TYPE_MUTABLE_EXT:
             return {vvl::Extension::_VK_VALVE_mutable_descriptor_type, vvl::Extension::_VK_EXT_mutable_descriptor_type};
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
@@ -3120,6 +3152,9 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkComponentTypeKHR value) 
     switch (value) {
         case VK_COMPONENT_TYPE_BFLOAT16_KHR:
             return {vvl::Extension::_VK_KHR_shader_bfloat16};
+        case VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT:
+        case VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT:
+            return {vvl::Extension::_VK_EXT_shader_float8};
         default:
             return {};
     };
@@ -3598,6 +3633,15 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkDirectDriverLoadingModeL
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkDirectDriverLoadingModeLUNARG value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkTensorTilingARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkTensorTilingARM value) const {
     return nullptr;
 }
 

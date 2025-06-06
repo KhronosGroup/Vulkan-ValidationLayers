@@ -1802,6 +1802,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_BOTH, "kVUIDUndefined",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdSetCoverageReductionModeNV-videocoding",
 }},
+{Func::vkCmdCopyTensorARM, {
+    "VUID-vkCmdCopyTensorARM-commandBuffer-recording",
+    nullptr,
+    VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT, "VUID-vkCmdCopyTensorARM-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyTensorARM-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdCopyTensorARM-videocoding",
+}},
 {Func::vkCmdOpticalFlowExecuteNV, {
     "VUID-vkCmdOpticalFlowExecuteNV-commandBuffer-recording",
     nullptr,

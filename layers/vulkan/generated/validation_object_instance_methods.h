@@ -1252,6 +1252,17 @@ virtual void PostCallRecordGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysi
                                                                          struct _screen_window* window,
                                                                          const RecordObject& record_obj) {}
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+virtual bool PreCallValidateGetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties, const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(
     VkPhysicalDevice physicalDevice, const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo, uint32_t* pFormatCount,
     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties, const ErrorObject& error_obj) const {

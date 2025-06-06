@@ -570,6 +570,9 @@ static VKAPI_ATTR void VKAPI_CALL StubGetDeviceImageSubresourceLayoutKHR(VkDevic
                                                                          VkSubresourceLayout2*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetImageSubresourceLayout2KHR(VkDevice, VkImage, const VkImageSubresource2*,
                                                                     VkSubresourceLayout2*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubWaitForPresent2KHR(VkDevice, VkSwapchainKHR, const VkPresentWait2InfoKHR*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR VkResult VKAPI_CALL StubCreatePipelineBinariesKHR(VkDevice, const VkPipelineBinaryCreateInfoKHR*,
                                                                     const VkAllocationCallbacks*, VkPipelineBinaryHandlesInfoKHR*) {
     return VK_SUCCESS;
@@ -1239,6 +1242,36 @@ static VKAPI_ATTR void VKAPI_CALL StubCmdSetCoverageModulationTableNV(VkCommandB
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetShadingRateImageEnableNV(VkCommandBuffer, VkBool32) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer, VkBool32) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetCoverageReductionModeNV(VkCommandBuffer, VkCoverageReductionModeNV) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateTensorARM(VkDevice, const VkTensorCreateInfoARM*, const VkAllocationCallbacks*,
+                                                          VkTensorARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyTensorARM(VkDevice, VkTensorARM, const VkAllocationCallbacks*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateTensorViewARM(VkDevice, const VkTensorViewCreateInfoARM*,
+                                                              const VkAllocationCallbacks*, VkTensorViewARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyTensorViewARM(VkDevice, VkTensorViewARM, const VkAllocationCallbacks*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetTensorMemoryRequirementsARM(VkDevice, const VkTensorMemoryRequirementsInfoARM*,
+                                                                     VkMemoryRequirements2*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubBindTensorMemoryARM(VkDevice, uint32_t, const VkBindTensorMemoryInfoARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubGetDeviceTensorMemoryRequirementsARM(VkDevice, const VkDeviceTensorMemoryRequirementsARM*,
+                                                                           VkMemoryRequirements2*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdCopyTensorARM(VkCommandBuffer, const VkCopyTensorInfoARM*) {}
+static VKAPI_ATTR void VKAPI_CALL StubGetPhysicalDeviceExternalTensorPropertiesARM(VkPhysicalDevice,
+                                                                                   const VkPhysicalDeviceExternalTensorInfoARM*,
+                                                                                   VkExternalTensorPropertiesARM*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetTensorOpaqueCaptureDescriptorDataARM(VkDevice,
+                                                                                  const VkTensorCaptureDescriptorDataInfoARM*,
+                                                                                  void*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL
+StubGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice, const VkTensorViewCaptureDescriptorDataInfoARM*, void*) {
+    return VK_SUCCESS;
+}
 static VKAPI_ATTR void VKAPI_CALL StubGetShaderModuleIdentifierEXT(VkDevice, VkShaderModule, VkShaderModuleIdentifierEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetShaderModuleCreateInfoIdentifierEXT(VkDevice, const VkShaderModuleCreateInfo*,
                                                                              VkShaderModuleIdentifierEXT*) {}
@@ -1636,6 +1669,7 @@ const auto& GetApiExtensionMap() {
         {"vkGetRenderingAreaGranularityKHR", {vvl::Extension::_VK_KHR_maintenance5}},
         {"vkGetDeviceImageSubresourceLayoutKHR", {vvl::Extension::_VK_KHR_maintenance5}},
         {"vkGetImageSubresourceLayout2KHR", {vvl::Extension::_VK_KHR_maintenance5}},
+        {"vkWaitForPresent2KHR", {vvl::Extension::_VK_KHR_present_wait2}},
         {"vkCreatePipelineBinariesKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
         {"vkDestroyPipelineBinaryKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
         {"vkGetPipelineKeyKHR", {vvl::Extension::_VK_KHR_pipeline_binary}},
@@ -1907,6 +1941,16 @@ const auto& GetApiExtensionMap() {
          {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object}},
         {"vkCmdSetCoverageReductionModeNV",
          {vvl::Extension::_VK_EXT_extended_dynamic_state3, vvl::Extension::_VK_EXT_shader_object}},
+        {"vkCreateTensorARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkDestroyTensorARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkCreateTensorViewARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkDestroyTensorViewARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkGetTensorMemoryRequirementsARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkBindTensorMemoryARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkGetDeviceTensorMemoryRequirementsARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkCmdCopyTensorARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkGetTensorOpaqueCaptureDescriptorDataARM", {vvl::Extension::_VK_ARM_tensors}},
+        {"vkGetTensorViewOpaqueCaptureDescriptorDataARM", {vvl::Extension::_VK_ARM_tensors}},
         {"vkGetShaderModuleIdentifierEXT", {vvl::Extension::_VK_EXT_shader_module_identifier}},
         {"vkGetShaderModuleCreateInfoIdentifierEXT", {vvl::Extension::_VK_EXT_shader_module_identifier}},
         {"vkCreateOpticalFlowSessionNV", {vvl::Extension::_VK_NV_optical_flow}},
@@ -2962,6 +3006,10 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)gpa(device, "vkGetImageSubresourceLayout2KHR");
     if (table->GetImageSubresourceLayout2KHR == nullptr) {
         table->GetImageSubresourceLayout2KHR = (PFN_vkGetImageSubresourceLayout2KHR)StubGetImageSubresourceLayout2KHR;
+    }
+    table->WaitForPresent2KHR = (PFN_vkWaitForPresent2KHR)gpa(device, "vkWaitForPresent2KHR");
+    if (table->WaitForPresent2KHR == nullptr) {
+        table->WaitForPresent2KHR = (PFN_vkWaitForPresent2KHR)StubWaitForPresent2KHR;
     }
     table->CreatePipelineBinariesKHR = (PFN_vkCreatePipelineBinariesKHR)gpa(device, "vkCreatePipelineBinariesKHR");
     if (table->CreatePipelineBinariesKHR == nullptr) {
@@ -4081,6 +4129,52 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->CmdSetCoverageReductionModeNV == nullptr) {
         table->CmdSetCoverageReductionModeNV = (PFN_vkCmdSetCoverageReductionModeNV)StubCmdSetCoverageReductionModeNV;
     }
+    table->CreateTensorARM = (PFN_vkCreateTensorARM)gpa(device, "vkCreateTensorARM");
+    if (table->CreateTensorARM == nullptr) {
+        table->CreateTensorARM = (PFN_vkCreateTensorARM)StubCreateTensorARM;
+    }
+    table->DestroyTensorARM = (PFN_vkDestroyTensorARM)gpa(device, "vkDestroyTensorARM");
+    if (table->DestroyTensorARM == nullptr) {
+        table->DestroyTensorARM = (PFN_vkDestroyTensorARM)StubDestroyTensorARM;
+    }
+    table->CreateTensorViewARM = (PFN_vkCreateTensorViewARM)gpa(device, "vkCreateTensorViewARM");
+    if (table->CreateTensorViewARM == nullptr) {
+        table->CreateTensorViewARM = (PFN_vkCreateTensorViewARM)StubCreateTensorViewARM;
+    }
+    table->DestroyTensorViewARM = (PFN_vkDestroyTensorViewARM)gpa(device, "vkDestroyTensorViewARM");
+    if (table->DestroyTensorViewARM == nullptr) {
+        table->DestroyTensorViewARM = (PFN_vkDestroyTensorViewARM)StubDestroyTensorViewARM;
+    }
+    table->GetTensorMemoryRequirementsARM = (PFN_vkGetTensorMemoryRequirementsARM)gpa(device, "vkGetTensorMemoryRequirementsARM");
+    if (table->GetTensorMemoryRequirementsARM == nullptr) {
+        table->GetTensorMemoryRequirementsARM = (PFN_vkGetTensorMemoryRequirementsARM)StubGetTensorMemoryRequirementsARM;
+    }
+    table->BindTensorMemoryARM = (PFN_vkBindTensorMemoryARM)gpa(device, "vkBindTensorMemoryARM");
+    if (table->BindTensorMemoryARM == nullptr) {
+        table->BindTensorMemoryARM = (PFN_vkBindTensorMemoryARM)StubBindTensorMemoryARM;
+    }
+    table->GetDeviceTensorMemoryRequirementsARM =
+        (PFN_vkGetDeviceTensorMemoryRequirementsARM)gpa(device, "vkGetDeviceTensorMemoryRequirementsARM");
+    if (table->GetDeviceTensorMemoryRequirementsARM == nullptr) {
+        table->GetDeviceTensorMemoryRequirementsARM =
+            (PFN_vkGetDeviceTensorMemoryRequirementsARM)StubGetDeviceTensorMemoryRequirementsARM;
+    }
+    table->CmdCopyTensorARM = (PFN_vkCmdCopyTensorARM)gpa(device, "vkCmdCopyTensorARM");
+    if (table->CmdCopyTensorARM == nullptr) {
+        table->CmdCopyTensorARM = (PFN_vkCmdCopyTensorARM)StubCmdCopyTensorARM;
+    }
+    table->GetTensorOpaqueCaptureDescriptorDataARM =
+        (PFN_vkGetTensorOpaqueCaptureDescriptorDataARM)gpa(device, "vkGetTensorOpaqueCaptureDescriptorDataARM");
+    if (table->GetTensorOpaqueCaptureDescriptorDataARM == nullptr) {
+        table->GetTensorOpaqueCaptureDescriptorDataARM =
+            (PFN_vkGetTensorOpaqueCaptureDescriptorDataARM)StubGetTensorOpaqueCaptureDescriptorDataARM;
+    }
+    table->GetTensorViewOpaqueCaptureDescriptorDataARM =
+        (PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM)gpa(device, "vkGetTensorViewOpaqueCaptureDescriptorDataARM");
+    if (table->GetTensorViewOpaqueCaptureDescriptorDataARM == nullptr) {
+        table->GetTensorViewOpaqueCaptureDescriptorDataARM =
+            (PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM)StubGetTensorViewOpaqueCaptureDescriptorDataARM;
+    }
     table->GetShaderModuleIdentifierEXT = (PFN_vkGetShaderModuleIdentifierEXT)gpa(device, "vkGetShaderModuleIdentifierEXT");
     if (table->GetShaderModuleIdentifierEXT == nullptr) {
         table->GetShaderModuleIdentifierEXT = (PFN_vkGetShaderModuleIdentifierEXT)StubGetShaderModuleIdentifierEXT;
@@ -4944,6 +5038,12 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
             (PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX)StubGetPhysicalDeviceScreenPresentationSupportQNX;
     }
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    table->GetPhysicalDeviceExternalTensorPropertiesARM =
+        (PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM)gpa(instance, "vkGetPhysicalDeviceExternalTensorPropertiesARM");
+    if (table->GetPhysicalDeviceExternalTensorPropertiesARM == nullptr) {
+        table->GetPhysicalDeviceExternalTensorPropertiesARM =
+            (PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM)StubGetPhysicalDeviceExternalTensorPropertiesARM;
+    }
     table->GetPhysicalDeviceOpticalFlowImageFormatsNV =
         (PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV)gpa(instance, "vkGetPhysicalDeviceOpticalFlowImageFormatsNV");
     if (table->GetPhysicalDeviceOpticalFlowImageFormatsNV == nullptr) {
