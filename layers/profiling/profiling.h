@@ -39,7 +39,7 @@
 // Print messages
 #define VVL_TracyMessage TracyMessage
 #define VVL_TracyMessageL TracyMessageL
-#define VVL_TracyPlot(name, value) TracyPlot(name, value)
+#define VVL_TracyPlot(name, value) TracyPlot(name, int64_t(value))
 #define VVL_TracyMessageStream(message)                \
     {                                                  \
         std::stringstream tracy_ss;                    \

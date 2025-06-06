@@ -524,6 +524,8 @@ StagingBuffer::StagingBuffer(GpuResourcesManager &gpu_resources_manager, VkDevic
 
         // #ARNO_TODO reconsider using host cached memory
         host_buffer_range = gpu_resources_manager.GetHostCachedBufferRange(size);
+
+        VVL_TracyPlot("Actual staging buffer creations", 1);
     }
 
     std::memset(host_buffer_range.offset_mapped_ptr, 0, (size_t)host_buffer_range.size);
