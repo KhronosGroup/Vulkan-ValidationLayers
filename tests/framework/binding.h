@@ -541,7 +541,7 @@ class QueryPool : public internal::NonDispHandle<VkQueryPool> {
     // vkGetQueryPoolResults()
     VkResult Results(uint32_t first, uint32_t count, size_t size, void *data, size_t stride);
 
-    static VkQueryPoolCreateInfo CreateInfo(VkQueryType type, uint32_t slot_count);
+    static VkQueryPoolCreateInfo CreateInfo(VkQueryType type, uint32_t slot_count, VkQueryPoolCreateFlags create_flags = 0);
 };
 
 struct NoMemT {};
@@ -1249,8 +1249,9 @@ inline VkEventCreateInfo Event::CreateInfo(VkFlags flags) {
     return info;
 }
 
-inline VkQueryPoolCreateInfo QueryPool::CreateInfo(VkQueryType type, uint32_t slot_count) {
+inline VkQueryPoolCreateInfo QueryPool::CreateInfo(VkQueryType type, uint32_t slot_count, VkQueryPoolCreateFlags create_flags) {
     VkQueryPoolCreateInfo info = vku::InitStructHelper();
+    info.flags = create_flags;
     info.queryType = type;
     info.queryCount = slot_count;
     return info;

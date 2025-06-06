@@ -92,6 +92,7 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/device_generated_commands.cpp
     unit/device_generated_commands_positive.cpp
     unit/device_queue.cpp
+    unit/device_queue_positive.cpp
     unit/dynamic_rendering.cpp
     unit/dynamic_rendering_positive.cpp
     unit/dynamic_rendering_local_read.cpp

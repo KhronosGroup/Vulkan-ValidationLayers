@@ -331,9 +331,6 @@ void Device::InitQueues(const VkDeviceCreateInfo &info) {
             }
         }
     }
-
-    ASSERT_TRUE(!queues_[GRAPHICS].empty() || !queues_[COMPUTE].empty() || !queues_[TRANSFER].empty() || !queues_[SPARSE].empty() ||
-                !queues_[VIDEO_DECODE].empty() || !queues_[VIDEO_ENCODE].empty());
 }
 
 const Device::QueueFamilyQueues &Device::QueuesFromFamily(uint32_t queue_family) const {
