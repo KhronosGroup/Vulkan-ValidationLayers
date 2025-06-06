@@ -715,6 +715,8 @@ bool PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer, VkBuff
                                            VkIndexType indexType, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                   VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const override;
+bool PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                       const ErrorObject& error_obj) const override;
 bool PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries,
                                               const ErrorObject& error_obj) const override;
@@ -1170,6 +1172,35 @@ bool PreCallValidateCmdUpdatePipelineIndirectBufferNV(VkCommandBuffer commandBuf
                                                       VkPipeline pipeline, const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, const VkPipelineIndirectDeviceAddressInfoNV* pInfo,
                                                        const ErrorObject& error_obj) const override;
+void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                   const RecordObject& record_obj) override;
+bool PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                     const ErrorObject& error_obj) const override;
+void PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
+bool PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                        const ErrorObject& error_obj) const override;
+void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                       const RecordObject& record_obj) override;
+bool PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                         const ErrorObject& error_obj) const override;
+void PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
+bool PreCallValidateGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                   VkMemoryRequirements2* pMemoryRequirements,
+                                                   const ErrorObject& error_obj) const override;
+bool PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                        const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                     const ErrorObject& error_obj) const override;
+bool PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                            void* pData, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                const ErrorObject& error_obj) const override;
 bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                  VkShaderModuleIdentifierEXT* pIdentifier,
                                                  const ErrorObject& error_obj) const override;

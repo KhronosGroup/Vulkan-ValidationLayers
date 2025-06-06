@@ -1082,6 +1082,26 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDevicePresentId2FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_2_FEATURES_KHR: {  // Covers
+                                                                             // VUID-VkPhysicalDevicePresentId2FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentId2FeaturesKHR);
+                VkPhysicalDevicePresentId2FeaturesKHR* structure = (VkPhysicalDevicePresentId2FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentId2), structure->presentId2);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDevicePresentWait2FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR: {  // Covers
+                                                                               // VUID-VkPhysicalDevicePresentWait2FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDevicePresentWait2FeaturesKHR);
+                VkPhysicalDevicePresentWait2FeaturesKHR* structure = (VkPhysicalDevicePresentWait2FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentWait2), structure->presentWait2);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR: {  // Covers
                                                                                            // VUID-VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR-sType-sType
@@ -1139,6 +1159,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceVideoDecodeVP9FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_DECODE_VP9_FEATURES_KHR: {  // Covers
+                                                                                 // VUID-VkPhysicalDeviceVideoDecodeVP9FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVideoDecodeVP9FeaturesKHR);
+                VkPhysicalDeviceVideoDecodeVP9FeaturesKHR* structure = (VkPhysicalDeviceVideoDecodeVP9FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::videoDecodeVP9), structure->videoDecodeVP9);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceVideoMaintenance1FeaturesKHR structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {  // Covers
                                                                                     // VUID-VkPhysicalDeviceVideoMaintenance1FeaturesKHR-sType-sType
@@ -1146,6 +1176,18 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceVideoMaintenance1FeaturesKHR);
                 VkPhysicalDeviceVideoMaintenance1FeaturesKHR* structure = (VkPhysicalDeviceVideoMaintenance1FeaturesKHR*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::videoMaintenance1), structure->videoMaintenance1);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR: {  // Covers
+                                                                                      // VUID-VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR);
+                VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR* structure = (VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::unifiedImageLayouts), structure->unifiedImageLayouts);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::unifiedImageLayoutsVideo), structure->unifiedImageLayoutsVideo);
             }
         } break;
 
@@ -1191,6 +1233,16 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance8FeaturesKHR);
                 VkPhysicalDeviceMaintenance8FeaturesKHR* structure = (VkPhysicalDeviceMaintenance8FeaturesKHR*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::maintenance8), structure->maintenance8);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceMaintenance9FeaturesKHR structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR: {  // Covers
+                                                                              // VUID-VkPhysicalDeviceMaintenance9FeaturesKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceMaintenance9FeaturesKHR);
+                VkPhysicalDeviceMaintenance9FeaturesKHR* structure = (VkPhysicalDeviceMaintenance9FeaturesKHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::maintenance9), structure->maintenance9);
             }
         } break;
 
@@ -2528,6 +2580,40 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
             }
         } break;
 
+        // Validation code for VkPhysicalDeviceTensorFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM: {  // Covers VUID-VkPhysicalDeviceTensorFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceTensorFeaturesARM);
+                VkPhysicalDeviceTensorFeaturesARM* structure = (VkPhysicalDeviceTensorFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::tensorNonPacked), structure->tensorNonPacked);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderTensorAccess), structure->shaderTensorAccess);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderStorageTensorArrayDynamicIndexing),
+                                       structure->shaderStorageTensorArrayDynamicIndexing);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderStorageTensorArrayNonUniformIndexing),
+                                       structure->shaderStorageTensorArrayNonUniformIndexing);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::descriptorBindingStorageTensorUpdateAfterBind),
+                                       structure->descriptorBindingStorageTensorUpdateAfterBind);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::tensors), structure->tensors);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceDescriptorBufferTensorFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM: {  // Covers
+                                                                                         // VUID-VkPhysicalDeviceDescriptorBufferTensorFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDescriptorBufferTensorFeaturesARM);
+                VkPhysicalDeviceDescriptorBufferTensorFeaturesARM* structure =
+                    (VkPhysicalDeviceDescriptorBufferTensorFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::descriptorBufferTensorDescriptors),
+                                       structure->descriptorBufferTensorDescriptors);
+            }
+        } break;
+
         // Validation code for VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT structure members
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT: {  // Covers
                                                                                          // VUID-VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT-sType-sType
@@ -2860,6 +2946,19 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT* structure =
                     (VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::shaderReplicatedComposites), structure->shaderReplicatedComposites);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceShaderFloat8FeaturesEXT structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT: {  // Covers
+                                                                              // VUID-VkPhysicalDeviceShaderFloat8FeaturesEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceShaderFloat8FeaturesEXT);
+                VkPhysicalDeviceShaderFloat8FeaturesEXT* structure = (VkPhysicalDeviceShaderFloat8FeaturesEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::shaderFloat8), structure->shaderFloat8);
+
+                skip |=
+                    ValidateBool32(pNext_loc.dot(Field::shaderFloat8CooperativeMatrix), structure->shaderFloat8CooperativeMatrix);
             }
         } break;
 
@@ -4802,6 +4901,38 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
         // No Validation code for VkVideoEncodeQualityLevelInfoKHR structure members  -- Covers
         // VUID-VkVideoEncodeQualityLevelInfoKHR-sType-sType
 
+        // Validation code for VkSurfaceCapabilitiesPresentId2KHR structure members
+        case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR: {  // Covers
+                                                                         // VUID-VkSurfaceCapabilitiesPresentId2KHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSurfaceCapabilitiesPresentId2KHR);
+                VkSurfaceCapabilitiesPresentId2KHR* structure = (VkSurfaceCapabilitiesPresentId2KHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentId2Supported), structure->presentId2Supported);
+            }
+        } break;
+
+        // Validation code for VkPresentId2KHR structure members
+        case VK_STRUCTURE_TYPE_PRESENT_ID_2_KHR: {  // Covers VUID-VkPresentId2KHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPresentId2KHR);
+                VkPresentId2KHR* structure = (VkPresentId2KHR*)header;
+                skip |=
+                    ValidateArray(pNext_loc.dot(Field::swapchainCount), pNext_loc.dot(Field::pPresentIds),
+                                  structure->swapchainCount, &structure->pPresentIds, true, false,
+                                  "VUID-VkPresentId2KHR-swapchainCount-arraylength", "VUID-VkPresentId2KHR-pPresentIds-parameter");
+            }
+        } break;
+
+        // Validation code for VkSurfaceCapabilitiesPresentWait2KHR structure members
+        case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_WAIT_2_KHR: {  // Covers
+                                                                           // VUID-VkSurfaceCapabilitiesPresentWait2KHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkSurfaceCapabilitiesPresentWait2KHR);
+                VkSurfaceCapabilitiesPresentWait2KHR* structure = (VkSurfaceCapabilitiesPresentWait2KHR*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::presentWait2Supported), structure->presentWait2Supported);
+            }
+        } break;
+
         // Validation code for VkDevicePipelineBinaryInternalCacheControlKHR structure members
         case VK_STRUCTURE_TYPE_DEVICE_PIPELINE_BINARY_INTERNAL_CACHE_CONTROL_KHR: {  // Covers
                                                                                      // VUID-VkDevicePipelineBinaryInternalCacheControlKHR-sType-sType
@@ -4974,7 +5105,32 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // No Validation code for VkVideoDecodeVP9ProfileInfoKHR structure members  -- Covers
+        // VUID-VkVideoDecodeVP9ProfileInfoKHR-sType-sType
+
+        // No Validation code for VkVideoDecodeVP9CapabilitiesKHR structure members  -- Covers
+        // VUID-VkVideoDecodeVP9CapabilitiesKHR-sType-sType
+
+        // Validation code for VkVideoDecodeVP9PictureInfoKHR structure members
+        case VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_PICTURE_INFO_KHR: {  // Covers VUID-VkVideoDecodeVP9PictureInfoKHR-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkVideoDecodeVP9PictureInfoKHR);
+                VkVideoDecodeVP9PictureInfoKHR* structure = (VkVideoDecodeVP9PictureInfoKHR*)header;
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pStdPictureInfo), structure->pStdPictureInfo,
+                                                "VUID-VkVideoDecodeVP9PictureInfoKHR-pStdPictureInfo-parameter");
+            }
+        } break;
+
         // No Validation code for VkVideoInlineQueryInfoKHR structure members  -- Covers VUID-VkVideoInlineQueryInfoKHR-sType-sType
+
+        // Validation code for VkAttachmentFeedbackLoopInfoEXT structure members
+        case VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT: {  // Covers VUID-VkAttachmentFeedbackLoopInfoEXT-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT);
+                VkAttachmentFeedbackLoopInfoEXT* structure = (VkAttachmentFeedbackLoopInfoEXT*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::feedbackLoopEnable), structure->feedbackLoopEnable);
+            }
+        } break;
 
         // No Validation code for VkVideoEncodeQuantizationMapCapabilitiesKHR structure members  -- Covers
         // VUID-VkVideoEncodeQuantizationMapCapabilitiesKHR-sType-sType
@@ -5020,6 +5176,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
                                       "VUID-VkMemoryBarrierAccessFlags3KHR-dstAccessMask3-parameter");
             }
         } break;
+
+        // No Validation code for VkQueueFamilyOwnershipTransferPropertiesKHR structure members  -- Covers
+        // VUID-VkQueueFamilyOwnershipTransferPropertiesKHR-sType-sType
 
         // No Validation code for VkVideoDecodeH264InlineSessionParametersInfoKHR structure members  -- Covers
         // VUID-VkVideoDecodeH264InlineSessionParametersInfoKHR-sType-sType
@@ -6805,6 +6964,123 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkWriteDescriptorSetTensorARM structure members
+        case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM: {  // Covers VUID-VkWriteDescriptorSetTensorARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkWriteDescriptorSetTensorARM);
+                VkWriteDescriptorSetTensorARM* structure = (VkWriteDescriptorSetTensorARM*)header;
+                skip |= ValidateHandleArray(pNext_loc.dot(Field::tensorViewCount), pNext_loc.dot(Field::pTensorViews),
+                                            structure->tensorViewCount, structure->pTensorViews, true, true,
+                                            "VUID-VkWriteDescriptorSetTensorARM-tensorViewCount-arraylength");
+            }
+        } break;
+
+        // No Validation code for VkTensorFormatPropertiesARM structure members  -- Covers
+        // VUID-VkTensorFormatPropertiesARM-sType-sType
+
+        // Validation code for VkTensorMemoryBarrierARM structure members
+        case VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM: {  // Covers VUID-VkTensorMemoryBarrierARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkTensorMemoryBarrierARM);
+                VkTensorMemoryBarrierARM* structure = (VkTensorMemoryBarrierARM*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::srcStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits2,
+                                      AllVkPipelineStageFlagBits2, structure->srcStageMask, kOptionalFlags,
+                                      "VUID-VkTensorMemoryBarrierARM-srcStageMask-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::srcAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                                      AllVkAccessFlagBits2, structure->srcAccessMask, kOptionalFlags,
+                                      "VUID-VkTensorMemoryBarrierARM-srcAccessMask-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::dstStageMask), vvl::FlagBitmask::VkPipelineStageFlagBits2,
+                                      AllVkPipelineStageFlagBits2, structure->dstStageMask, kOptionalFlags,
+                                      "VUID-VkTensorMemoryBarrierARM-dstStageMask-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::dstAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                                      AllVkAccessFlagBits2, structure->dstAccessMask, kOptionalFlags,
+                                      "VUID-VkTensorMemoryBarrierARM-dstAccessMask-parameter");
+
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::tensor), structure->tensor);
+            }
+        } break;
+
+        // Validation code for VkTensorDependencyInfoARM structure members
+        case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM: {  // Covers VUID-VkTensorDependencyInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkTensorDependencyInfoARM);
+                VkTensorDependencyInfoARM* structure = (VkTensorDependencyInfoARM*)header;
+                skip |= ValidateStructType(pNext_loc.dot(Field::pTensorMemoryBarriers), structure->pTensorMemoryBarriers,
+                                           VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM, true,
+                                           "VUID-VkTensorDependencyInfoARM-pTensorMemoryBarriers-parameter",
+                                           "VUID-VkTensorMemoryBarrierARM-sType-sType");
+
+                if (structure->pTensorMemoryBarriers != nullptr) {
+                    [[maybe_unused]] const Location pTensorMemoryBarriers_loc = pNext_loc.dot(Field::pTensorMemoryBarriers);
+                    skip |= ValidateFlags(pTensorMemoryBarriers_loc.dot(Field::srcStageMask),
+                                          vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
+                                          structure->pTensorMemoryBarriers->srcStageMask, kOptionalFlags,
+                                          "VUID-VkTensorMemoryBarrierARM-srcStageMask-parameter");
+
+                    skip |= ValidateFlags(pTensorMemoryBarriers_loc.dot(Field::srcAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                                          AllVkAccessFlagBits2, structure->pTensorMemoryBarriers->srcAccessMask, kOptionalFlags,
+                                          "VUID-VkTensorMemoryBarrierARM-srcAccessMask-parameter");
+
+                    skip |= ValidateFlags(pTensorMemoryBarriers_loc.dot(Field::dstStageMask),
+                                          vvl::FlagBitmask::VkPipelineStageFlagBits2, AllVkPipelineStageFlagBits2,
+                                          structure->pTensorMemoryBarriers->dstStageMask, kOptionalFlags,
+                                          "VUID-VkTensorMemoryBarrierARM-dstStageMask-parameter");
+
+                    skip |= ValidateFlags(pTensorMemoryBarriers_loc.dot(Field::dstAccessMask), vvl::FlagBitmask::VkAccessFlagBits2,
+                                          AllVkAccessFlagBits2, structure->pTensorMemoryBarriers->dstAccessMask, kOptionalFlags,
+                                          "VUID-VkTensorMemoryBarrierARM-dstAccessMask-parameter");
+
+                    skip |= ValidateRequiredHandle(pTensorMemoryBarriers_loc.dot(Field::tensor),
+                                                   structure->pTensorMemoryBarriers->tensor);
+                }
+            }
+        } break;
+
+        // Validation code for VkMemoryDedicatedAllocateInfoTensorARM structure members
+        case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM: {  // Covers
+                                                                             // VUID-VkMemoryDedicatedAllocateInfoTensorARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkMemoryDedicatedAllocateInfoTensorARM);
+                VkMemoryDedicatedAllocateInfoTensorARM* structure = (VkMemoryDedicatedAllocateInfoTensorARM*)header;
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::tensor), structure->tensor);
+            }
+        } break;
+
+        // Validation code for VkExternalMemoryTensorCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM: {  // Covers
+                                                                          // VUID-VkExternalMemoryTensorCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkExternalMemoryTensorCreateInfoARM);
+                VkExternalMemoryTensorCreateInfoARM* structure = (VkExternalMemoryTensorCreateInfoARM*)header;
+                skip |= ValidateFlags(pNext_loc.dot(Field::handleTypes), vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits,
+                                      AllVkExternalMemoryHandleTypeFlagBits, structure->handleTypes, kOptionalFlags,
+                                      "VUID-VkExternalMemoryTensorCreateInfoARM-handleTypes-parameter");
+            }
+        } break;
+
+        // Validation code for VkDescriptorGetTensorInfoARM structure members
+        case VK_STRUCTURE_TYPE_DESCRIPTOR_GET_TENSOR_INFO_ARM: {  // Covers VUID-VkDescriptorGetTensorInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDescriptorGetTensorInfoARM);
+                VkDescriptorGetTensorInfoARM* structure = (VkDescriptorGetTensorInfoARM*)header;
+                skip |= ValidateRequiredHandle(pNext_loc.dot(Field::tensorView), structure->tensorView);
+            }
+        } break;
+
+        // Validation code for VkFrameBoundaryTensorsARM structure members
+        case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM: {  // Covers VUID-VkFrameBoundaryTensorsARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkFrameBoundaryTensorsARM);
+                VkFrameBoundaryTensorsARM* structure = (VkFrameBoundaryTensorsARM*)header;
+                skip |=
+                    ValidateHandleArray(pNext_loc.dot(Field::tensorCount), pNext_loc.dot(Field::pTensors), structure->tensorCount,
+                                        structure->pTensors, true, true, "VUID-VkFrameBoundaryTensorsARM-tensorCount-arraylength");
+            }
+        } break;
+
         // Validation code for VkPipelineShaderStageModuleIdentifierCreateInfoEXT structure members
         case VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT: {  // Covers
                                                                                            // VUID-VkPipelineShaderStageModuleIdentifierCreateInfoEXT-sType-sType
@@ -7279,6 +7555,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_ENABLE_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_POOL_OVERALLOCATION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_SET_HOST_MAPPING_FEATURES_VALVE,
@@ -7338,6 +7615,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_8_FEATURES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT,
@@ -7367,9 +7645,11 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_ROBUSTNESS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_BARRIER_FEATURES_NV,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_2_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_MODE_FIFO_LATEST_READY_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVE_TOPOLOGY_LIST_RESTART_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRIMITIVES_GENERATED_QUERY_FEATURES_EXT,
@@ -7408,6 +7688,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_ENQUEUE_FEATURES_AMDX,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_EXPECT_ASSUME_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT16_INT8_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT_CONTROLS_2_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_ATOMIC_INT64_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_IMAGE_FOOTPRINT_FEATURES_NV,
@@ -7431,6 +7712,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_FEATURES_HUAWEI,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SWAPCHAIN_MAINTENANCE_1_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXTURE_COMPRESSION_ASTC_HDR_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_FEATURES_QCOM,
@@ -7438,11 +7720,13 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TRANSFORM_FEEDBACK_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFORM_BUFFER_STANDARD_LAYOUT_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VARIABLE_POINTERS_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_DIVISOR_FEATURES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_ATTRIBUTE_ROBUSTNESS_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_DECODE_VP9_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_AV1_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR,
@@ -7466,11 +7750,11 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
         skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
                                               "VUID-VkDeviceCreateInfo-flags-zerobitmask");
 
-        skip |= context.ValidateStructTypeArray(
-            pCreateInfo_loc.dot(Field::queueCreateInfoCount), pCreateInfo_loc.dot(Field::pQueueCreateInfos),
-            pCreateInfo->queueCreateInfoCount, pCreateInfo->pQueueCreateInfos, VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, true,
-            true, "VUID-VkDeviceQueueCreateInfo-sType-sType", "VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter",
-            "VUID-VkDeviceCreateInfo-queueCreateInfoCount-arraylength");
+        skip |= context.ValidateStructTypeArray(pCreateInfo_loc.dot(Field::queueCreateInfoCount),
+                                                pCreateInfo_loc.dot(Field::pQueueCreateInfos), pCreateInfo->queueCreateInfoCount,
+                                                pCreateInfo->pQueueCreateInfos, VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, false,
+                                                true, "VUID-VkDeviceQueueCreateInfo-sType-sType",
+                                                "VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter", kVUIDUndefined);
 
         if (pCreateInfo->pQueueCreateInfos != nullptr) {
             for (uint32_t queueCreateInfoIndex = 0; queueCreateInfoIndex < pCreateInfo->queueCreateInfoCount;
@@ -7556,6 +7840,7 @@ bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
                                                                  VK_STRUCTURE_TYPE_D3D12_FENCE_SUBMIT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO,
                                                                  VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
+                                                                 VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM,
                                                                  VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
                                                                  VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO,
@@ -7632,6 +7917,7 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
                                                                      VK_STRUCTURE_TYPE_IMPORT_SCREEN_BUFFER_INFO_QNX,
                                                                      VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO,
                                                                      VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO,
+                                                                     VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM,
                                                                      VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO,
                                                                      VK_STRUCTURE_TYPE_MEMORY_PRIORITY_ALLOCATE_INFO_EXT};
 
@@ -7852,9 +8138,9 @@ bool Device::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCoun
     if (pBindInfo != nullptr) {
         for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
             [[maybe_unused]] const Location pBindInfo_loc = loc.dot(Field::pBindInfo, bindInfoIndex);
-            constexpr std::array allowed_structs_VkBindSparseInfo = {VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO,
-                                                                     VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
-                                                                     VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};
+            constexpr std::array allowed_structs_VkBindSparseInfo = {
+                VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO, VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
+                VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM, VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};
 
             skip |=
                 context.ValidateStructPnext(pBindInfo_loc, pBindInfo[bindInfoIndex].pNext, allowed_structs_VkBindSparseInfo.size(),
@@ -8178,6 +8464,7 @@ bool Device::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCr
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PROFILE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PROFILE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_USAGE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_PROFILE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_PROFILE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_H264_PROFILE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_H265_PROFILE_INFO_KHR,
@@ -8189,8 +8476,9 @@ bool Device::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCr
                                         allowed_structs_VkQueryPoolCreateInfo.data(), GeneratedVulkanHeaderVersion,
                                         "VUID-VkQueryPoolCreateInfo-pNext-pNext", "VUID-VkQueryPoolCreateInfo-sType-unique", true);
 
-        skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
-                                              "VUID-VkQueryPoolCreateInfo-flags-zerobitmask");
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkQueryPoolCreateFlagBits,
+                                      AllVkQueryPoolCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkQueryPoolCreateInfo-flags-parameter");
 
         skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::queryType), vvl::Enum::VkQueryType, pCreateInfo->queryType,
                                            "VUID-VkQueryPoolCreateInfo-queryType-parameter");
@@ -9119,7 +9407,8 @@ bool Device::PreCallValidateUpdateDescriptorSets(VkDevice device, uint32_t descr
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
-                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV,
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM};
 
             skip |= context.ValidateStructPnext(
                 pDescriptorWrites_loc, pDescriptorWrites[descriptorWriteIndex].pNext, allowed_structs_VkWriteDescriptorSet.size(),
@@ -10670,6 +10959,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_STENCIL_RESOLVE_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_DENSITY_MAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEVICE_GENERATED_COMMANDS_PROPERTIES_NV,
@@ -10705,6 +10995,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_5_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_7_PROPERTIES_KHR,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_PROPERTIES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAP_MEMORY_PLACED_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_DECOMPRESSION_PROPERTIES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT,
@@ -10747,6 +11038,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_SIZE_CONTROL_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_SHADING_PROPERTIES_HUAWEI,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_PROPERTIES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TEXEL_BUFFER_ALIGNMENT_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_MEMORY_HEAP_PROPERTIES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TILE_SHADING_PROPERTIES_QCOM,
@@ -10788,7 +11080,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceFormatProperties2(VkPhysicalDevic
         [[maybe_unused]] const Location pFormatProperties_loc = loc.dot(Field::pFormatProperties);
         constexpr std::array allowed_structs_VkFormatProperties2 = {
             VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_2_EXT, VK_STRUCTURE_TYPE_DRM_FORMAT_MODIFIER_PROPERTIES_LIST_EXT,
-            VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3, VK_STRUCTURE_TYPE_SUBPASS_RESOLVE_PERFORMANCE_QUERY_EXT};
+            VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3, VK_STRUCTURE_TYPE_SUBPASS_RESOLVE_PERFORMANCE_QUERY_EXT,
+            VK_STRUCTURE_TYPE_TENSOR_FORMAT_PROPERTIES_ARM};
 
         skip |=
             context.ValidateStructPnext(pFormatProperties_loc, pFormatProperties->pNext, allowed_structs_VkFormatProperties2.size(),
@@ -10898,8 +11191,10 @@ bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyProperties2(VkPhysical
             [[maybe_unused]] const Location pQueueFamilyProperties_loc =
                 loc.dot(Field::pQueueFamilyProperties, pQueueFamilyPropertyIndex);
             constexpr std::array allowed_structs_VkQueueFamilyProperties2 = {
-                VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV, VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV,
+                VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_2_NV,
+                VK_STRUCTURE_TYPE_QUEUE_FAMILY_CHECKPOINT_PROPERTIES_NV,
                 VK_STRUCTURE_TYPE_QUEUE_FAMILY_GLOBAL_PRIORITY_PROPERTIES,
+                VK_STRUCTURE_TYPE_QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR,
                 VK_STRUCTURE_TYPE_QUEUE_FAMILY_QUERY_RESULT_STATUS_PROPERTIES_KHR,
                 VK_STRUCTURE_TYPE_QUEUE_FAMILY_VIDEO_PROPERTIES_KHR};
 
@@ -11995,8 +12290,12 @@ bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent 
                                        "VUID-vkCmdSetEvent2-pDependencyInfo-parameter", "VUID-VkDependencyInfo-sType-sType");
     if (pDependencyInfo != nullptr) {
         [[maybe_unused]] const Location pDependencyInfo_loc = loc.dot(Field::pDependencyInfo);
-        skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDependencyInfo-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array allowed_structs_VkDependencyInfo = {VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+                                                                 VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+
+        skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, allowed_structs_VkDependencyInfo.size(),
+                                            allowed_structs_VkDependencyInfo.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDependencyInfo-pNext-pNext", "VUID-VkDependencyInfo-sType-unique", true);
 
         skip |= context.ValidateFlags(pDependencyInfo_loc.dot(Field::dependencyFlags), vvl::FlagBitmask::VkDependencyFlagBits,
                                       AllVkDependencyFlagBits, pDependencyInfo->dependencyFlags, kOptionalFlags,
@@ -12168,9 +12467,13 @@ bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32
     if (pDependencyInfos != nullptr) {
         for (uint32_t eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
             [[maybe_unused]] const Location pDependencyInfos_loc = loc.dot(Field::pDependencyInfos, eventIndex);
-            skip |= context.ValidateStructPnext(pDependencyInfos_loc, pDependencyInfos[eventIndex].pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfo-pNext-pNext", kVUIDUndefined,
-                                                true);
+            constexpr std::array allowed_structs_VkDependencyInfo = {VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+                                                                     VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+
+            skip |= context.ValidateStructPnext(pDependencyInfos_loc, pDependencyInfos[eventIndex].pNext,
+                                                allowed_structs_VkDependencyInfo.size(), allowed_structs_VkDependencyInfo.data(),
+                                                GeneratedVulkanHeaderVersion, "VUID-VkDependencyInfo-pNext-pNext",
+                                                "VUID-VkDependencyInfo-sType-unique", true);
 
             skip |= context.ValidateFlags(pDependencyInfos_loc.dot(Field::dependencyFlags), vvl::FlagBitmask::VkDependencyFlagBits,
                                           AllVkDependencyFlagBits, pDependencyInfos[eventIndex].dependencyFlags, kOptionalFlags,
@@ -12343,8 +12646,12 @@ bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, c
                                        "VUID-vkCmdPipelineBarrier2-pDependencyInfo-parameter", "VUID-VkDependencyInfo-sType-sType");
     if (pDependencyInfo != nullptr) {
         [[maybe_unused]] const Location pDependencyInfo_loc = loc.dot(Field::pDependencyInfo);
-        skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDependencyInfo-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array allowed_structs_VkDependencyInfo = {VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM,
+                                                                 VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM};
+
+        skip |= context.ValidateStructPnext(pDependencyInfo_loc, pDependencyInfo->pNext, allowed_structs_VkDependencyInfo.size(),
+                                            allowed_structs_VkDependencyInfo.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDependencyInfo-pNext-pNext", "VUID-VkDependencyInfo-sType-unique", true);
 
         skip |= context.ValidateFlags(pDependencyInfo_loc.dot(Field::dependencyFlags), vvl::FlagBitmask::VkDependencyFlagBits,
                                       AllVkDependencyFlagBits, pDependencyInfo->dependencyFlags, kOptionalFlags,
@@ -12512,10 +12819,12 @@ bool Device::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, co
     if (pSubmits != nullptr) {
         for (uint32_t submitIndex = 0; submitIndex < submitCount; ++submitIndex) {
             [[maybe_unused]] const Location pSubmits_loc = loc.dot(Field::pSubmits, submitIndex);
-            constexpr std::array allowed_structs_VkSubmitInfo2 = {
-                VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT, VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
-                VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR, VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
-                VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
+            constexpr std::array allowed_structs_VkSubmitInfo2 = {VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
+                                                                  VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM,
+                                                                  VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV,
+                                                                  VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR,
+                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR,
+                                                                  VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV};
 
             skip |= context.ValidateStructPnext(pSubmits_loc, pSubmits[submitIndex].pNext, allowed_structs_VkSubmitInfo2.size(),
                                                 allowed_structs_VkSubmitInfo2.data(), GeneratedVulkanHeaderVersion,
@@ -12968,9 +13277,14 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
                  ++colorAttachmentIndex) {
                 [[maybe_unused]] const Location pColorAttachments_loc =
                     pRenderingInfo_loc.dot(Field::pColorAttachments, colorAttachmentIndex);
+                constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {
+                    VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
                 skip |= context.ValidateStructPnext(
-                    pColorAttachments_loc, pRenderingInfo->pColorAttachments[colorAttachmentIndex].pNext, 0, nullptr,
-                    GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext", kVUIDUndefined, true);
+                    pColorAttachments_loc, pRenderingInfo->pColorAttachments[colorAttachmentIndex].pNext,
+                    allowed_structs_VkRenderingAttachmentInfo.size(), allowed_structs_VkRenderingAttachmentInfo.data(),
+                    GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
+                    "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
                 skip |= context.ValidateRangedEnum(pColorAttachments_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                    pRenderingInfo->pColorAttachments[colorAttachmentIndex].imageLayout,
@@ -13004,9 +13318,12 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
 
         if (pRenderingInfo->pDepthAttachment != nullptr) {
             [[maybe_unused]] const Location pDepthAttachment_loc = pRenderingInfo_loc.dot(Field::pDepthAttachment);
-            skip |= context.ValidateStructPnext(pDepthAttachment_loc, pRenderingInfo->pDepthAttachment->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
-                                                kVUIDUndefined, true);
+            constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pDepthAttachment_loc, pRenderingInfo->pDepthAttachment->pNext, allowed_structs_VkRenderingAttachmentInfo.size(),
+                allowed_structs_VkRenderingAttachmentInfo.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkRenderingAttachmentInfo-pNext-pNext", "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
             skip |= context.ValidateRangedEnum(pDepthAttachment_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                pRenderingInfo->pDepthAttachment->imageLayout,
@@ -13038,9 +13355,12 @@ bool Device::PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuffer, con
 
         if (pRenderingInfo->pStencilAttachment != nullptr) {
             [[maybe_unused]] const Location pStencilAttachment_loc = pRenderingInfo_loc.dot(Field::pStencilAttachment);
-            skip |= context.ValidateStructPnext(pStencilAttachment_loc, pRenderingInfo->pStencilAttachment->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
-                                                kVUIDUndefined, true);
+            constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pStencilAttachment_loc, pRenderingInfo->pStencilAttachment->pNext, allowed_structs_VkRenderingAttachmentInfo.size(),
+                allowed_structs_VkRenderingAttachmentInfo.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkRenderingAttachmentInfo-pNext-pNext", "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
             skip |= context.ValidateRangedEnum(pStencilAttachment_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                pRenderingInfo->pStencilAttachment->imageLayout,
@@ -13751,7 +14071,8 @@ bool Device::PreCallValidateCmdPushDescriptorSet(VkCommandBuffer commandBuffer, 
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
                 VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
-                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV,
+                VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM};
 
             skip |= context.ValidateStructPnext(
                 pDescriptorWrites_loc, pDescriptorWrites[descriptorWriteIndex].pNext, allowed_structs_VkWriteDescriptorSet.size(),
@@ -13912,7 +14233,8 @@ bool Device::PreCallValidateCmdPushDescriptorSet2(VkCommandBuffer commandBuffer,
                     VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,
                     VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,
                     VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK,
-                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV};
+                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_PARTITIONED_ACCELERATION_STRUCTURE_NV,
+                    VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM};
 
                 skip |= context.ValidateStructPnext(
                     pDescriptorWrites_loc, pPushDescriptorSetInfo->pDescriptorWrites[descriptorWriteIndex].pNext,
@@ -14400,7 +14722,9 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
         constexpr std::array allowed_structs_VkPresentInfoKHR = {VK_STRUCTURE_TYPE_DEVICE_GROUP_PRESENT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_DISPLAY_PRESENT_INFO_KHR,
                                                                  VK_STRUCTURE_TYPE_FRAME_BOUNDARY_EXT,
+                                                                 VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM,
                                                                  VK_STRUCTURE_TYPE_PRESENT_FRAME_TOKEN_GGP,
+                                                                 VK_STRUCTURE_TYPE_PRESENT_ID_2_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_ID_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_REGIONS_KHR,
                                                                  VK_STRUCTURE_TYPE_PRESENT_TIMES_INFO_GOOGLE,
@@ -15020,6 +15344,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDe
             VK_STRUCTURE_TYPE_VIDEO_DECODE_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_CAPABILITIES_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_QUANTIZATION_MAP_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_VIDEO_ENCODE_CAPABILITIES_KHR,
@@ -15467,6 +15792,7 @@ bool Device::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, con
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_PICTURE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_PICTURE_INFO_KHR,
+            VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_PICTURE_INFO_KHR,
             VK_STRUCTURE_TYPE_VIDEO_INLINE_QUERY_INFO_KHR};
 
         skip |=
@@ -16403,6 +16729,8 @@ bool Instance::PreCallValidateGetPhysicalDeviceSurfaceCapabilities2KHR(VkPhysica
             VK_STRUCTURE_TYPE_SHARED_PRESENT_SURFACE_CAPABILITIES_KHR,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_FULL_SCREEN_EXCLUSIVE_EXT,
             VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_BARRIER_NV,
+            VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR,
+            VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_WAIT_2_KHR,
             VK_STRUCTURE_TYPE_SURFACE_PRESENT_MODE_COMPATIBILITY_EXT,
             VK_STRUCTURE_TYPE_SURFACE_PRESENT_SCALING_CAPABILITIES_EXT,
             VK_STRUCTURE_TYPE_SURFACE_PROTECTED_CAPABILITIES_KHR};
@@ -17498,6 +17826,25 @@ bool Device::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkIma
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_maintenance5)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_maintenance5});
     skip |= PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
+    return skip;
+}
+
+bool Device::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                               const VkPresentWait2InfoKHR* pPresentWait2Info, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_khr_present_wait2)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_present_wait2});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::swapchain), swapchain);
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pPresentWait2Info), pPresentWait2Info, VK_STRUCTURE_TYPE_PRESENT_WAIT_2_INFO_KHR, true,
+        "VUID-vkWaitForPresent2KHR-pPresentWait2Info-parameter", "VUID-VkPresentWait2InfoKHR-sType-sType");
+    if (pPresentWait2Info != nullptr) {
+        [[maybe_unused]] const Location pPresentWait2Info_loc = loc.dot(Field::pPresentWait2Info);
+        skip |=
+            context.ValidateStructPnext(pPresentWait2Info_loc, pPresentWait2Info->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                        "VUID-VkPresentWait2InfoKHR-pNext-pNext", kVUIDUndefined, true);
+    }
     return skip;
 }
 
@@ -21505,8 +21852,12 @@ bool Device::PreCallValidateGetDescriptorEXT(VkDevice device, const VkDescriptor
                                        "VUID-VkDescriptorGetInfoEXT-sType-sType");
     if (pDescriptorInfo != nullptr) {
         [[maybe_unused]] const Location pDescriptorInfo_loc = loc.dot(Field::pDescriptorInfo);
-        skip |= context.ValidateStructPnext(pDescriptorInfo_loc, pDescriptorInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkDescriptorGetInfoEXT-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array allowed_structs_VkDescriptorGetInfoEXT = {VK_STRUCTURE_TYPE_DESCRIPTOR_GET_TENSOR_INFO_ARM};
+
+        skip |= context.ValidateStructPnext(
+            pDescriptorInfo_loc, pDescriptorInfo->pNext, allowed_structs_VkDescriptorGetInfoEXT.size(),
+            allowed_structs_VkDescriptorGetInfoEXT.data(), GeneratedVulkanHeaderVersion, "VUID-VkDescriptorGetInfoEXT-pNext-pNext",
+            "VUID-VkDescriptorGetInfoEXT-sType-unique", true);
 
         skip |= context.ValidateRangedEnum(pDescriptorInfo_loc.dot(Field::type), vvl::Enum::VkDescriptorType, pDescriptorInfo->type,
                                            "VUID-VkDescriptorGetInfoEXT-type-parameter");
@@ -23638,6 +23989,455 @@ bool Device::PreCallValidateCmdSetCoverageReductionModeNV(VkCommandBuffer comman
     return skip;
 }
 
+bool Device::PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                            const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM, true,
+                                       "VUID-vkCreateTensorARM-pCreateInfo-parameter", "VUID-VkTensorCreateInfoARM-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        constexpr std::array allowed_structs_VkTensorCreateInfoARM = {
+            VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM,
+            VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
+
+        skip |=
+            context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkTensorCreateInfoARM.size(),
+                                        allowed_structs_VkTensorCreateInfoARM.data(), GeneratedVulkanHeaderVersion,
+                                        "VUID-VkTensorCreateInfoARM-pNext-pNext", "VUID-VkTensorCreateInfoARM-sType-unique", true);
+
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkTensorCreateFlagBitsARM,
+                                      AllVkTensorCreateFlagBitsARM, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkTensorCreateInfoARM-flags-parameter");
+
+        skip |= context.ValidateStructType(
+            pCreateInfo_loc.dot(Field::pDescription), pCreateInfo->pDescription, VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM, true,
+            "VUID-VkTensorCreateInfoARM-pDescription-parameter", "VUID-VkTensorDescriptionARM-sType-sType");
+
+        if (pCreateInfo->pDescription != nullptr) {
+            [[maybe_unused]] const Location pDescription_loc = pCreateInfo_loc.dot(Field::pDescription);
+            skip |= context.ValidateStructPnext(pDescription_loc, pCreateInfo->pDescription->pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
+                                                kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
+                                               pCreateInfo->pDescription->tiling, "VUID-VkTensorDescriptionARM-tiling-parameter");
+
+            skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                               pCreateInfo->pDescription->format, "VUID-VkTensorDescriptionARM-format-parameter");
+
+            skip |= context.ValidateArray(pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pDimensions),
+                                          pCreateInfo->pDescription->dimensionCount, &pCreateInfo->pDescription->pDimensions, true,
+                                          true, "VUID-VkTensorDescriptionARM-dimensionCount-arraylength",
+                                          "VUID-VkTensorDescriptionARM-pDimensions-parameter");
+
+            skip |= context.ValidateArray(pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pStrides),
+                                          pCreateInfo->pDescription->dimensionCount, &pCreateInfo->pDescription->pStrides, true,
+                                          false, "VUID-VkTensorDescriptionARM-dimensionCount-arraylength",
+                                          "VUID-VkTensorDescriptionARM-pStrides-parameter");
+
+            skip |= context.ValidateFlags(pDescription_loc.dot(Field::usage), vvl::FlagBitmask::VkTensorUsageFlagBitsARM,
+                                          AllVkTensorUsageFlagBitsARM, pCreateInfo->pDescription->usage, kRequiredFlags,
+                                          "VUID-VkTensorDescriptionARM-usage-parameter",
+                                          "VUID-VkTensorDescriptionARM-usage-requiredbitmask");
+        }
+
+        skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
+                                           pCreateInfo->sharingMode, "VUID-VkTensorCreateInfoARM-sharingMode-parameter");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pTensor), pTensor, "VUID-vkCreateTensorARM-pTensor-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM,
+                                       true, "VUID-vkCreateTensorViewARM-pCreateInfo-parameter",
+                                       "VUID-VkTensorViewCreateInfoARM-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        constexpr std::array allowed_structs_VkTensorViewCreateInfoARM = {
+            VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
+
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkTensorViewCreateInfoARM.size(),
+                                            allowed_structs_VkTensorViewCreateInfoARM.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkTensorViewCreateInfoARM-pNext-pNext",
+                                            "VUID-VkTensorViewCreateInfoARM-sType-unique", true);
+
+        skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkTensorViewCreateFlagBitsARM,
+                                      AllVkTensorViewCreateFlagBitsARM, pCreateInfo->flags, kOptionalFlags,
+                                      "VUID-VkTensorViewCreateInfoARM-flags-parameter");
+
+        skip |= context.ValidateRequiredHandle(pCreateInfo_loc.dot(Field::tensor), pCreateInfo->tensor);
+
+        skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::format), vvl::Enum::VkFormat, pCreateInfo->format,
+                                           "VUID-VkTensorViewCreateInfoARM-format-parameter");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pView), pView, "VUID-vkCreateTensorViewARM-pView-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                 const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                           VkMemoryRequirements2* pMemoryRequirements,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM, true,
+                                       "VUID-vkGetTensorMemoryRequirementsARM-pInfo-parameter",
+                                       "VUID-VkTensorMemoryRequirementsInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkTensorMemoryRequirementsInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::tensor), pInfo->tensor);
+    }
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pMemoryRequirements), pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true,
+        "VUID-vkGetTensorMemoryRequirementsARM-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
+    if (pMemoryRequirements != nullptr) {
+        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
+        constexpr std::array allowed_structs_VkMemoryRequirements2 = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
+                                                                      VK_STRUCTURE_TYPE_TILE_MEMORY_REQUIREMENTS_QCOM};
+
+        skip |= context.ValidateStructPnext(
+            pMemoryRequirements_loc, pMemoryRequirements->pNext, allowed_structs_VkMemoryRequirements2.size(),
+            allowed_structs_VkMemoryRequirements2.data(), GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext",
+            "VUID-VkMemoryRequirements2-sType-unique", false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                const VkBindTensorMemoryInfoARM* pBindInfos, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfos), bindInfoCount, pBindInfos,
+        VK_STRUCTURE_TYPE_BIND_TENSOR_MEMORY_INFO_ARM, true, true, "VUID-VkBindTensorMemoryInfoARM-sType-sType",
+        "VUID-vkBindTensorMemoryARM-pBindInfos-parameter", "VUID-vkBindTensorMemoryARM-bindInfoCount-arraylength");
+    if (pBindInfos != nullptr) {
+        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+            [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
+            skip |= context.ValidateStructPnext(pBindInfos_loc, pBindInfos[bindInfoIndex].pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkBindTensorMemoryInfoARM-pNext-pNext",
+                                                kVUIDUndefined, true);
+
+            skip |= context.ValidateRequiredHandle(pBindInfos_loc.dot(Field::tensor), pBindInfos[bindInfoIndex].tensor);
+
+            skip |= context.ValidateRequiredHandle(pBindInfos_loc.dot(Field::memory), pBindInfos[bindInfoIndex].memory);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements,
+                                                                 const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DEVICE_TENSOR_MEMORY_REQUIREMENTS_ARM, true,
+                                       "VUID-vkGetDeviceTensorMemoryRequirementsARM-pInfo-parameter",
+                                       "VUID-VkDeviceTensorMemoryRequirementsARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDeviceTensorMemoryRequirementsARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateStructType(
+            pInfo_loc.dot(Field::pCreateInfo), pInfo->pCreateInfo, VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM, true,
+            "VUID-VkDeviceTensorMemoryRequirementsARM-pCreateInfo-parameter", "VUID-VkTensorCreateInfoARM-sType-sType");
+
+        if (pInfo->pCreateInfo != nullptr) {
+            [[maybe_unused]] const Location pCreateInfo_loc = pInfo_loc.dot(Field::pCreateInfo);
+            constexpr std::array allowed_structs_VkTensorCreateInfoARM = {
+                VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_OPAQUE_CAPTURE_DESCRIPTOR_DATA_CREATE_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pCreateInfo_loc, pInfo->pCreateInfo->pNext, allowed_structs_VkTensorCreateInfoARM.size(),
+                allowed_structs_VkTensorCreateInfoARM.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkTensorCreateInfoARM-pNext-pNext", "VUID-VkTensorCreateInfoARM-sType-unique", true);
+
+            skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkTensorCreateFlagBitsARM,
+                                          AllVkTensorCreateFlagBitsARM, pInfo->pCreateInfo->flags, kOptionalFlags,
+                                          "VUID-VkTensorCreateInfoARM-flags-parameter");
+
+            skip |= context.ValidateStructType(pCreateInfo_loc.dot(Field::pDescription), pInfo->pCreateInfo->pDescription,
+                                               VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM, true,
+                                               "VUID-VkTensorCreateInfoARM-pDescription-parameter",
+                                               "VUID-VkTensorDescriptionARM-sType-sType");
+
+            if (pInfo->pCreateInfo->pDescription != nullptr) {
+                [[maybe_unused]] const Location pDescription_loc = pCreateInfo_loc.dot(Field::pDescription);
+                skip |= context.ValidateStructPnext(pDescription_loc, pInfo->pCreateInfo->pDescription->pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
+                                                    kVUIDUndefined, true);
+
+                skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
+                                                   pInfo->pCreateInfo->pDescription->tiling,
+                                                   "VUID-VkTensorDescriptionARM-tiling-parameter");
+
+                skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                                   pInfo->pCreateInfo->pDescription->format,
+                                                   "VUID-VkTensorDescriptionARM-format-parameter");
+
+                skip |= context.ValidateArray(
+                    pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pDimensions),
+                    pInfo->pCreateInfo->pDescription->dimensionCount, &pInfo->pCreateInfo->pDescription->pDimensions, true, true,
+                    "VUID-VkTensorDescriptionARM-dimensionCount-arraylength", "VUID-VkTensorDescriptionARM-pDimensions-parameter");
+
+                skip |= context.ValidateArray(
+                    pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pStrides),
+                    pInfo->pCreateInfo->pDescription->dimensionCount, &pInfo->pCreateInfo->pDescription->pStrides, true, false,
+                    "VUID-VkTensorDescriptionARM-dimensionCount-arraylength", "VUID-VkTensorDescriptionARM-pStrides-parameter");
+
+                skip |= context.ValidateFlags(pDescription_loc.dot(Field::usage), vvl::FlagBitmask::VkTensorUsageFlagBitsARM,
+                                              AllVkTensorUsageFlagBitsARM, pInfo->pCreateInfo->pDescription->usage, kRequiredFlags,
+                                              "VUID-VkTensorDescriptionARM-usage-parameter",
+                                              "VUID-VkTensorDescriptionARM-usage-requiredbitmask");
+            }
+
+            skip |= context.ValidateRangedEnum(pCreateInfo_loc.dot(Field::sharingMode), vvl::Enum::VkSharingMode,
+                                               pInfo->pCreateInfo->sharingMode, "VUID-VkTensorCreateInfoARM-sharingMode-parameter");
+        }
+    }
+    skip |= context.ValidateStructType(
+        loc.dot(Field::pMemoryRequirements), pMemoryRequirements, VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true,
+        "VUID-vkGetDeviceTensorMemoryRequirementsARM-pMemoryRequirements-parameter", "VUID-VkMemoryRequirements2-sType-sType");
+    if (pMemoryRequirements != nullptr) {
+        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
+        constexpr std::array allowed_structs_VkMemoryRequirements2 = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
+                                                                      VK_STRUCTURE_TYPE_TILE_MEMORY_REQUIREMENTS_QCOM};
+
+        skip |= context.ValidateStructPnext(
+            pMemoryRequirements_loc, pMemoryRequirements->pNext, allowed_structs_VkMemoryRequirements2.size(),
+            allowed_structs_VkMemoryRequirements2.data(), GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext",
+            "VUID-VkMemoryRequirements2-sType-unique", false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pCopyTensorInfo), pCopyTensorInfo, VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM, true,
+                                   "VUID-vkCmdCopyTensorARM-pCopyTensorInfo-parameter", "VUID-VkCopyTensorInfoARM-sType-sType");
+    if (pCopyTensorInfo != nullptr) {
+        [[maybe_unused]] const Location pCopyTensorInfo_loc = loc.dot(Field::pCopyTensorInfo);
+        skip |= context.ValidateStructPnext(pCopyTensorInfo_loc, pCopyTensorInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkCopyTensorInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pCopyTensorInfo_loc.dot(Field::srcTensor), pCopyTensorInfo->srcTensor);
+
+        skip |= context.ValidateRequiredHandle(pCopyTensorInfo_loc.dot(Field::dstTensor), pCopyTensorInfo->dstTensor);
+
+        skip |= context.ValidateStructTypeArray(
+            pCopyTensorInfo_loc.dot(Field::regionCount), pCopyTensorInfo_loc.dot(Field::pRegions), pCopyTensorInfo->regionCount,
+            pCopyTensorInfo->pRegions, VK_STRUCTURE_TYPE_TENSOR_COPY_ARM, true, true, "VUID-VkTensorCopyARM-sType-sType",
+            "VUID-VkCopyTensorInfoARM-pRegions-parameter", "VUID-VkCopyTensorInfoARM-regionCount-arraylength");
+
+        if (pCopyTensorInfo->pRegions != nullptr) {
+            for (uint32_t regionIndex = 0; regionIndex < pCopyTensorInfo->regionCount; ++regionIndex) {
+                [[maybe_unused]] const Location pRegions_loc = pCopyTensorInfo_loc.dot(Field::pRegions, regionIndex);
+                skip |= context.ValidateStructPnext(pRegions_loc, pCopyTensorInfo->pRegions[regionIndex].pNext, 0, nullptr,
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkTensorCopyARM-pNext-pNext",
+                                                    kVUIDUndefined, true);
+
+                skip |= context.ValidateArray(
+                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pSrcOffset),
+                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pSrcOffset, true,
+                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pSrcOffset-parameter");
+
+                skip |= context.ValidateArray(
+                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pDstOffset),
+                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pDstOffset, true,
+                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pDstOffset-parameter");
+
+                skip |= context.ValidateArray(
+                    pRegions_loc.dot(Field::dimensionCount), pRegions_loc.dot(Field::pExtent),
+                    pCopyTensorInfo->pRegions[regionIndex].dimensionCount, &pCopyTensorInfo->pRegions[regionIndex].pExtent, true,
+                    false, "VUID-VkTensorCopyARM-dimensionCount-arraylength", "VUID-VkTensorCopyARM-pExtent-parameter");
+            }
+        }
+    }
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructType(loc.dot(Field::pExternalTensorInfo), pExternalTensorInfo,
+                                       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_TENSOR_INFO_ARM, true,
+                                       "VUID-vkGetPhysicalDeviceExternalTensorPropertiesARM-pExternalTensorInfo-parameter",
+                                       "VUID-VkPhysicalDeviceExternalTensorInfoARM-sType-sType");
+    if (pExternalTensorInfo != nullptr) {
+        [[maybe_unused]] const Location pExternalTensorInfo_loc = loc.dot(Field::pExternalTensorInfo);
+        skip |= context.ValidateStructPnext(pExternalTensorInfo_loc, pExternalTensorInfo->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceExternalTensorInfoARM-pNext-pNext",
+                                            kVUIDUndefined, true);
+
+        skip |= context.ValidateFlags(pExternalTensorInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkTensorCreateFlagBitsARM,
+                                      AllVkTensorCreateFlagBitsARM, pExternalTensorInfo->flags, kOptionalFlags,
+                                      "VUID-VkPhysicalDeviceExternalTensorInfoARM-flags-parameter");
+
+        skip |= context.ValidateStructType(pExternalTensorInfo_loc.dot(Field::pDescription), pExternalTensorInfo->pDescription,
+                                           VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM, true,
+                                           "VUID-VkPhysicalDeviceExternalTensorInfoARM-pDescription-parameter",
+                                           "VUID-VkTensorDescriptionARM-sType-sType");
+
+        if (pExternalTensorInfo->pDescription != nullptr) {
+            [[maybe_unused]] const Location pDescription_loc = pExternalTensorInfo_loc.dot(Field::pDescription);
+            skip |= context.ValidateStructPnext(pDescription_loc, pExternalTensorInfo->pDescription->pNext, 0, nullptr,
+                                                GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
+                                                kVUIDUndefined, true);
+
+            skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
+                                               pExternalTensorInfo->pDescription->tiling,
+                                               "VUID-VkTensorDescriptionARM-tiling-parameter");
+
+            skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::format), vvl::Enum::VkFormat,
+                                               pExternalTensorInfo->pDescription->format,
+                                               "VUID-VkTensorDescriptionARM-format-parameter");
+
+            skip |= context.ValidateArray(
+                pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pDimensions),
+                pExternalTensorInfo->pDescription->dimensionCount, &pExternalTensorInfo->pDescription->pDimensions, true, true,
+                "VUID-VkTensorDescriptionARM-dimensionCount-arraylength", "VUID-VkTensorDescriptionARM-pDimensions-parameter");
+
+            skip |= context.ValidateArray(
+                pDescription_loc.dot(Field::dimensionCount), pDescription_loc.dot(Field::pStrides),
+                pExternalTensorInfo->pDescription->dimensionCount, &pExternalTensorInfo->pDescription->pStrides, true, false,
+                "VUID-VkTensorDescriptionARM-dimensionCount-arraylength", "VUID-VkTensorDescriptionARM-pStrides-parameter");
+
+            skip |= context.ValidateFlags(pDescription_loc.dot(Field::usage), vvl::FlagBitmask::VkTensorUsageFlagBitsARM,
+                                          AllVkTensorUsageFlagBitsARM, pExternalTensorInfo->pDescription->usage, kRequiredFlags,
+                                          "VUID-VkTensorDescriptionARM-usage-parameter",
+                                          "VUID-VkTensorDescriptionARM-usage-requiredbitmask");
+        }
+
+        skip |= context.ValidateFlags(pExternalTensorInfo_loc.dot(Field::handleType),
+                                      vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits, AllVkExternalMemoryHandleTypeFlagBits,
+                                      pExternalTensorInfo->handleType, kRequiredSingleBit,
+                                      "VUID-VkPhysicalDeviceExternalTensorInfoARM-handleType-parameter",
+                                      "VUID-VkPhysicalDeviceExternalTensorInfoARM-handleType-parameter");
+    }
+    skip |= context.ValidateStructType(loc.dot(Field::pExternalTensorProperties), pExternalTensorProperties,
+                                       VK_STRUCTURE_TYPE_EXTERNAL_TENSOR_PROPERTIES_ARM, true,
+                                       "VUID-vkGetPhysicalDeviceExternalTensorPropertiesARM-pExternalTensorProperties-parameter",
+                                       "VUID-VkExternalTensorPropertiesARM-sType-sType");
+    if (pExternalTensorProperties != nullptr) {
+        [[maybe_unused]] const Location pExternalTensorProperties_loc = loc.dot(Field::pExternalTensorProperties);
+        skip |= context.ValidateStructPnext(pExternalTensorProperties_loc, pExternalTensorProperties->pNext, 0, nullptr,
+                                            GeneratedVulkanHeaderVersion, "VUID-VkExternalTensorPropertiesARM-pNext-pNext",
+                                            kVUIDUndefined, false);
+
+        // No xml-driven validation
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                    const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_TENSOR_CAPTURE_DESCRIPTOR_DATA_INFO_ARM,
+                                       true, "VUID-vkGetTensorOpaqueCaptureDescriptorDataARM-pInfo-parameter",
+                                       "VUID-VkTensorCaptureDescriptorDataInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkTensorCaptureDescriptorDataInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::tensor), pInfo->tensor);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pData), pData,
+                                            "VUID-vkGetTensorOpaqueCaptureDescriptorDataARM-pData-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                        const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                        void* pData, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_TENSOR_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_ARM,
+                                       true, "VUID-vkGetTensorViewOpaqueCaptureDescriptorDataARM-pInfo-parameter",
+                                       "VUID-VkTensorViewCaptureDescriptorDataInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkTensorViewCaptureDescriptorDataInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::tensorView), pInfo->tensorView);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pData), pData,
+                                            "VUID-vkGetTensorViewOpaqueCaptureDescriptorDataARM-pData-parameter");
+    return skip;
+}
+
 bool Device::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                          VkShaderModuleIdentifierEXT* pIdentifier,
                                                          const ErrorObject& error_obj) const {
@@ -24089,9 +24889,14 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
                  ++colorAttachmentIndex) {
                 [[maybe_unused]] const Location pColorAttachments_loc =
                     pRenderingInfo_loc.dot(Field::pColorAttachments, colorAttachmentIndex);
+                constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {
+                    VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
                 skip |= context.ValidateStructPnext(
-                    pColorAttachments_loc, pRenderingInfo->pColorAttachments[colorAttachmentIndex].pNext, 0, nullptr,
-                    GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext", kVUIDUndefined, true);
+                    pColorAttachments_loc, pRenderingInfo->pColorAttachments[colorAttachmentIndex].pNext,
+                    allowed_structs_VkRenderingAttachmentInfo.size(), allowed_structs_VkRenderingAttachmentInfo.data(),
+                    GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
+                    "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
                 skip |= context.ValidateRangedEnum(pColorAttachments_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                    pRenderingInfo->pColorAttachments[colorAttachmentIndex].imageLayout,
@@ -24125,9 +24930,12 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
 
         if (pRenderingInfo->pDepthAttachment != nullptr) {
             [[maybe_unused]] const Location pDepthAttachment_loc = pRenderingInfo_loc.dot(Field::pDepthAttachment);
-            skip |= context.ValidateStructPnext(pDepthAttachment_loc, pRenderingInfo->pDepthAttachment->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
-                                                kVUIDUndefined, true);
+            constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pDepthAttachment_loc, pRenderingInfo->pDepthAttachment->pNext, allowed_structs_VkRenderingAttachmentInfo.size(),
+                allowed_structs_VkRenderingAttachmentInfo.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkRenderingAttachmentInfo-pNext-pNext", "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
             skip |= context.ValidateRangedEnum(pDepthAttachment_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                pRenderingInfo->pDepthAttachment->imageLayout,
@@ -24159,9 +24967,12 @@ bool Device::PreCallValidateGetDynamicRenderingTilePropertiesQCOM(VkDevice devic
 
         if (pRenderingInfo->pStencilAttachment != nullptr) {
             [[maybe_unused]] const Location pStencilAttachment_loc = pRenderingInfo_loc.dot(Field::pStencilAttachment);
-            skip |= context.ValidateStructPnext(pStencilAttachment_loc, pRenderingInfo->pStencilAttachment->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkRenderingAttachmentInfo-pNext-pNext",
-                                                kVUIDUndefined, true);
+            constexpr std::array allowed_structs_VkRenderingAttachmentInfo = {VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT};
+
+            skip |= context.ValidateStructPnext(
+                pStencilAttachment_loc, pRenderingInfo->pStencilAttachment->pNext, allowed_structs_VkRenderingAttachmentInfo.size(),
+                allowed_structs_VkRenderingAttachmentInfo.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkRenderingAttachmentInfo-pNext-pNext", "VUID-VkRenderingAttachmentInfo-sType-unique", true);
 
             skip |= context.ValidateRangedEnum(pStencilAttachment_loc.dot(Field::imageLayout), vvl::Enum::VkImageLayout,
                                                pRenderingInfo->pStencilAttachment->imageLayout,

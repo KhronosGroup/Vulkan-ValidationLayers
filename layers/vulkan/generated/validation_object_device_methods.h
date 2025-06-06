@@ -2835,6 +2835,14 @@ virtual void PreCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage
                                                         VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
 virtual void PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                          VkSubresourceLayout2* pLayout, const RecordObject& record_obj) {}
+virtual bool PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                               const VkPresentWait2InfoKHR* pPresentWait2Info, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                             const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {}
+virtual void PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                              const VkPresentWait2InfoKHR* pPresentWait2Info, const RecordObject& record_obj) {}
 virtual bool PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                       const VkAllocationCallbacks* pAllocator,
                                                       VkPipelineBinaryHandlesInfoKHR* pBinaries,
@@ -5250,6 +5258,104 @@ virtual void PreCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandB
 virtual void PostCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                          VkCoverageReductionModeNV coverageReductionMode,
                                                          const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                            const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                          const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                           const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                                const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                 const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {}
+virtual void PostCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                const VkAllocationCallbacks* pAllocator, const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                           VkMemoryRequirements2* pMemoryRequirements,
+                                                           const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                         VkMemoryRequirements2* pMemoryRequirements,
+                                                         const RecordObject& record_obj) {}
+virtual void PostCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                          VkMemoryRequirements2* pMemoryRequirements,
+                                                          const RecordObject& record_obj) {}
+virtual bool PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                const VkBindTensorMemoryInfoARM* pBindInfos, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                              const RecordObject& record_obj) {}
+virtual void PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                               const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements,
+                                                                 const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                               VkMemoryRequirements2* pMemoryRequirements,
+                                                               const RecordObject& record_obj) {}
+virtual void PostCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                VkMemoryRequirements2* pMemoryRequirements,
+                                                                const RecordObject& record_obj) {}
+virtual bool PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                             const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                           const RecordObject& record_obj) {}
+virtual void PostCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                            const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                    const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                    const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                  const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                  const RecordObject& record_obj) {}
+virtual void PostCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                   const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                   const RecordObject& record_obj) {}
+virtual bool PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                        const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                        void* pData, const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                      const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                      void* pData, const RecordObject& record_obj) {}
+virtual void PostCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                       const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                       void* pData, const RecordObject& record_obj) {}
 virtual bool PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                          VkShaderModuleIdentifierEXT* pIdentifier,
                                                          const ErrorObject& error_obj) const {

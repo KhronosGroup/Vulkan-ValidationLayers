@@ -672,6 +672,18 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->shaderMaximalReconvergence |= enabled->shaderMaximalReconvergence == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_2_FEATURES_KHR: {
+                const VkPhysicalDevicePresentId2FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentId2FeaturesKHR *>(pNext);
+                features->presentId2 |= enabled->presentId2 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR: {
+                const VkPhysicalDevicePresentWait2FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDevicePresentWait2FeaturesKHR *>(pNext);
+                features->presentWait2 |= enabled->presentWait2 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR: {
                 const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR *>(pNext);
@@ -704,10 +716,23 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->videoEncodeAV1 |= enabled->videoEncodeAV1 == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_DECODE_VP9_FEATURES_KHR: {
+                const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceVideoDecodeVP9FeaturesKHR *>(pNext);
+                features->videoDecodeVP9 |= enabled->videoDecodeVP9 == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR: {
                 const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceVideoMaintenance1FeaturesKHR *>(pNext);
                 features->videoMaintenance1 |= enabled->videoMaintenance1 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR: {
+                const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR *>(pNext);
+                features->unifiedImageLayouts |= enabled->unifiedImageLayouts == VK_TRUE;
+                features->unifiedImageLayoutsVideo |= enabled->unifiedImageLayoutsVideo == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_ENCODE_QUANTIZATION_MAP_FEATURES_KHR: {
@@ -732,6 +757,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceMaintenance8FeaturesKHR *enabled =
                     reinterpret_cast<const VkPhysicalDeviceMaintenance8FeaturesKHR *>(pNext);
                 features->maintenance8 |= enabled->maintenance8 == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR: {
+                const VkPhysicalDeviceMaintenance9FeaturesKHR *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceMaintenance9FeaturesKHR *>(pNext);
+                features->maintenance9 |= enabled->maintenance9 == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR: {
@@ -1466,6 +1497,25 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->subpassMergeFeedback |= enabled->subpassMergeFeedback == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM: {
+                const VkPhysicalDeviceTensorFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceTensorFeaturesARM *>(pNext);
+                features->tensorNonPacked |= enabled->tensorNonPacked == VK_TRUE;
+                features->shaderTensorAccess |= enabled->shaderTensorAccess == VK_TRUE;
+                features->shaderStorageTensorArrayDynamicIndexing |= enabled->shaderStorageTensorArrayDynamicIndexing == VK_TRUE;
+                features->shaderStorageTensorArrayNonUniformIndexing |=
+                    enabled->shaderStorageTensorArrayNonUniformIndexing == VK_TRUE;
+                features->descriptorBindingStorageTensorUpdateAfterBind |=
+                    enabled->descriptorBindingStorageTensorUpdateAfterBind == VK_TRUE;
+                features->tensors |= enabled->tensors == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM: {
+                const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDescriptorBufferTensorFeaturesARM *>(pNext);
+                features->descriptorBufferTensorDescriptors |= enabled->descriptorBufferTensorDescriptors == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT: {
                 const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT *>(pNext);
@@ -1650,6 +1700,13 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *enabled =
                     reinterpret_cast<const VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT *>(pNext);
                 features->shaderReplicatedComposites |= enabled->shaderReplicatedComposites == VK_TRUE;
+                break;
+            }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT: {
+                const VkPhysicalDeviceShaderFloat8FeaturesEXT *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceShaderFloat8FeaturesEXT *>(pNext);
+                features->shaderFloat8 |= enabled->shaderFloat8 == VK_TRUE;
+                features->shaderFloat8CooperativeMatrix |= enabled->shaderFloat8CooperativeMatrix == VK_TRUE;
                 break;
             }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV: {

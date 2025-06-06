@@ -164,6 +164,8 @@ enum class Feature {
     descriptorBufferImageLayoutIgnored,
     // VkPhysicalDeviceDescriptorBufferFeaturesEXT
     descriptorBufferPushDescriptors,
+    // VkPhysicalDeviceDescriptorBufferTensorFeaturesARM
+    descriptorBufferTensorDescriptors,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
     descriptorBindingPartiallyBound,
     // VkPhysicalDeviceDescriptorIndexingFeatures, VkPhysicalDeviceVulkan12Features
@@ -532,6 +534,8 @@ enum class Feature {
     maintenance7,
     // VkPhysicalDeviceMaintenance8FeaturesKHR
     maintenance8,
+    // VkPhysicalDeviceMaintenance9FeaturesKHR
+    maintenance9,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
     memoryMapPlaced,
     // VkPhysicalDeviceMapMemoryPlacedFeaturesEXT
@@ -644,12 +648,16 @@ enum class Feature {
     vertexAttributeAccessBeyondStride,
     // VkPhysicalDevicePresentBarrierFeaturesNV
     presentBarrier,
+    // VkPhysicalDevicePresentId2FeaturesKHR
+    presentId2,
     // VkPhysicalDevicePresentIdFeaturesKHR
     presentId,
     // VkPhysicalDevicePresentMeteringFeaturesNV
     presentMetering,
     // VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT
     presentModeFifoLatestReady,
+    // VkPhysicalDevicePresentWait2FeaturesKHR
+    presentWait2,
     // VkPhysicalDevicePresentWaitFeaturesKHR
     presentWait,
     // VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
@@ -812,6 +820,10 @@ enum class Feature {
     shaderFloat16,
     // VkPhysicalDeviceShaderFloat16Int8Features, VkPhysicalDeviceVulkan12Features
     shaderInt8,
+    // VkPhysicalDeviceShaderFloat8FeaturesEXT
+    shaderFloat8,
+    // VkPhysicalDeviceShaderFloat8FeaturesEXT
+    shaderFloat8CooperativeMatrix,
     // VkPhysicalDeviceShaderFloatControls2Features, VkPhysicalDeviceVulkan14Features
     shaderFloatControls2,
     // VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT
@@ -870,6 +882,18 @@ enum class Feature {
     swapchainMaintenance1,
     // VkPhysicalDeviceSynchronization2Features, VkPhysicalDeviceVulkan13Features
     synchronization2,
+    // VkPhysicalDeviceTensorFeaturesARM
+    descriptorBindingStorageTensorUpdateAfterBind,
+    // VkPhysicalDeviceTensorFeaturesARM
+    shaderStorageTensorArrayDynamicIndexing,
+    // VkPhysicalDeviceTensorFeaturesARM
+    shaderStorageTensorArrayNonUniformIndexing,
+    // VkPhysicalDeviceTensorFeaturesARM
+    shaderTensorAccess,
+    // VkPhysicalDeviceTensorFeaturesARM
+    tensorNonPacked,
+    // VkPhysicalDeviceTensorFeaturesARM
+    tensors,
     // VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT
     texelBufferAlignment,
     // VkPhysicalDeviceTextureCompressionASTCHDRFeatures, VkPhysicalDeviceVulkan13Features
@@ -912,6 +936,10 @@ enum class Feature {
     geometryStreams,
     // VkPhysicalDeviceTransformFeedbackFeaturesEXT
     transformFeedback,
+    // VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR
+    unifiedImageLayouts,
+    // VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR
+    unifiedImageLayoutsVideo,
     // VkPhysicalDeviceUniformBufferStandardLayoutFeatures, VkPhysicalDeviceVulkan12Features
     uniformBufferStandardLayout,
     // VkPhysicalDeviceVariablePointersFeatures, VkPhysicalDeviceVulkan11Features
@@ -926,6 +954,8 @@ enum class Feature {
     vertexAttributeRobustness,
     // VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT
     vertexInputDynamicState,
+    // VkPhysicalDeviceVideoDecodeVP9FeaturesKHR
+    videoDecodeVP9,
     // VkPhysicalDeviceVideoEncodeAV1FeaturesKHR
     videoEncodeAV1,
     // VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR

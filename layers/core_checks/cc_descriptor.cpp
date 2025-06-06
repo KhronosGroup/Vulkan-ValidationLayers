@@ -398,7 +398,7 @@ bool CoreChecks::ValidateCmdBindDescriptorSets(const vvl::CommandBuffer &cb_stat
                             cur_dyn_offset++;
                             set_dyn_offset++;
                         }  // descriptorCount loop
-                    }  // bindingCount loop
+                    }      // bindingCount loop
                     // Keep running total of dynamic descriptor count to verify at the end
                     total_dynamic_descriptors += set_dynamic_descriptor_count;
                 }
@@ -2217,6 +2217,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
 
         } break;
         case VK_DESCRIPTOR_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV:
+        case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
             // TODO
             break;
         // KHR acceleration structures don't require memory to be bound manually to them.

@@ -69,6 +69,8 @@ Counter<VkAccelerationStructureKHR> c_VkAccelerationStructureKHR;
 Counter<VkBufferCollectionFUCHSIA> c_VkBufferCollectionFUCHSIA;
 #endif  // VK_USE_PLATFORM_FUCHSIA
 Counter<VkMicromapEXT> c_VkMicromapEXT;
+Counter<VkTensorARM> c_VkTensorARM;
+Counter<VkTensorViewARM> c_VkTensorViewARM;
 Counter<VkOpticalFlowSessionNV> c_VkOpticalFlowSessionNV;
 Counter<VkShaderEXT> c_VkShaderEXT;
 Counter<VkIndirectExecutionSetEXT> c_VkIndirectExecutionSetEXT;
@@ -126,6 +128,8 @@ WRAPPER(VkAccelerationStructureKHR)
 WRAPPER(VkBufferCollectionFUCHSIA)
 #endif  // VK_USE_PLATFORM_FUCHSIA
 WRAPPER(VkMicromapEXT)
+WRAPPER(VkTensorARM)
+WRAPPER(VkTensorViewARM)
 WRAPPER(VkOpticalFlowSessionNV)
 WRAPPER(VkShaderEXT)
 WRAPPER(VkIndirectExecutionSetEXT)
@@ -188,6 +192,8 @@ void InitCounters() {
     c_VkBufferCollectionFUCHSIA.Init(kVulkanObjectTypeBufferCollectionFUCHSIA, this);
 #endif  // VK_USE_PLATFORM_FUCHSIA
     c_VkMicromapEXT.Init(kVulkanObjectTypeMicromapEXT, this);
+    c_VkTensorARM.Init(kVulkanObjectTypeTensorARM, this);
+    c_VkTensorViewARM.Init(kVulkanObjectTypeTensorViewARM, this);
     c_VkOpticalFlowSessionNV.Init(kVulkanObjectTypeOpticalFlowSessionNV, this);
     c_VkShaderEXT.Init(kVulkanObjectTypeShaderEXT, this);
     c_VkIndirectExecutionSetEXT.Init(kVulkanObjectTypeIndirectExecutionSetEXT, this);
@@ -2215,6 +2221,12 @@ void PreCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, 
 void PostCallRecordGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                  VkSubresourceLayout2* pLayout, const RecordObject& record_obj) override;
 
+void PreCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                     const RecordObject& record_obj) override;
+
+void PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                      const RecordObject& record_obj) override;
+
 void PreCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries,
                                             const RecordObject& record_obj) override;
@@ -3882,6 +3894,76 @@ void PreCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, V
 
 void PostCallRecordCmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode,
                                                  const RecordObject& record_obj) override;
+
+void PreCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                  const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                  const RecordObject& record_obj) override;
+
+void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                   const RecordObject& record_obj) override;
+
+void PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                   const RecordObject& record_obj) override;
+
+void PostCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                    const RecordObject& record_obj) override;
+
+void PreCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                      const RecordObject& record_obj) override;
+
+void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                       const RecordObject& record_obj) override;
+
+void PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                        const RecordObject& record_obj) override;
+
+void PreCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                 VkMemoryRequirements2* pMemoryRequirements,
+                                                 const RecordObject& record_obj) override;
+
+void PostCallRecordGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                  VkMemoryRequirements2* pMemoryRequirements,
+                                                  const RecordObject& record_obj) override;
+
+void PreCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                      const RecordObject& record_obj) override;
+
+void PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                       const RecordObject& record_obj) override;
+
+void PreCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                       VkMemoryRequirements2* pMemoryRequirements,
+                                                       const RecordObject& record_obj) override;
+
+void PostCallRecordGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                        VkMemoryRequirements2* pMemoryRequirements,
+                                                        const RecordObject& record_obj) override;
+
+void PreCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                   const RecordObject& record_obj) override;
+
+void PostCallRecordCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                    const RecordObject& record_obj) override;
+
+void PreCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                          void* pData, const RecordObject& record_obj) override;
+
+void PostCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                           void* pData, const RecordObject& record_obj) override;
+
+void PreCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                              const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                              const RecordObject& record_obj) override;
+
+void PostCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                               const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                               const RecordObject& record_obj) override;
 
 void PreCallRecordGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                VkShaderModuleIdentifierEXT* pIdentifier, const RecordObject& record_obj) override;

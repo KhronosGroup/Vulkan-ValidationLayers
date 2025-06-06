@@ -361,6 +361,10 @@ bool PreCallValidateGetPhysicalDeviceScreenPresentationSupportQNX(VkPhysicalDevi
                                                                   struct _screen_window* window,
                                                                   const ErrorObject& error_obj) const override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+bool PreCallValidateGetPhysicalDeviceExternalTensorPropertiesARM(VkPhysicalDevice physicalDevice,
+                                                                 const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+                                                                 VkExternalTensorPropertiesARM* pExternalTensorProperties,
+                                                                 const ErrorObject& error_obj) const override;
 bool PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDevice,
                                                                const VkOpticalFlowImageFormatInfoNV* pOpticalFlowImageFormatInfo,
                                                                uint32_t* pFormatCount,

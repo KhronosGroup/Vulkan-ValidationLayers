@@ -221,6 +221,14 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     }
                 }
             } break;
+            case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkFrameBoundaryTensorsARM*>(cur_pnext);
+                if (safe_struct->pTensors) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->tensorCount; ++index0) {
+                        safe_struct->pTensors[index0] = Unwrap(safe_struct->pTensors[index0]);
+                    }
+                }
+            } break;
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             case VK_STRUCTURE_TYPE_WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkWin32KeyedMutexAcquireReleaseInfoKHR*>(cur_pnext);
@@ -276,6 +284,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                 }
                 if (safe_struct->buffer) {
                     safe_struct->buffer = Unwrap(safe_struct->buffer);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkMemoryDedicatedAllocateInfoTensorARM*>(cur_pnext);
+
+                if (safe_struct->tensor) {
+                    safe_struct->tensor = Unwrap(safe_struct->tensor);
                 }
             } break;
 #ifdef VK_USE_PLATFORM_FUCHSIA
@@ -376,6 +391,14 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     }
                 }
             } break;
+            case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkWriteDescriptorSetTensorARM*>(cur_pnext);
+                if (safe_struct->pTensorViews) {
+                    for (uint32_t index0 = 0; index0 < safe_struct->tensorViewCount; ++index0) {
+                        safe_struct->pTensorViews[index0] = Unwrap(safe_struct->pTensorViews[index0]);
+                    }
+                }
+            } break;
             case VK_STRUCTURE_TYPE_TILE_MEMORY_BIND_INFO_QCOM: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkTileMemoryBindInfoQCOM*>(cur_pnext);
 
@@ -396,6 +419,21 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
 
                 if (safe_struct->swapchain) {
                     safe_struct->swapchain = Unwrap(safe_struct->swapchain);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkTensorDependencyInfoARM*>(cur_pnext);
+                if (safe_struct->pTensorMemoryBarriers) {
+                    if (safe_struct->pTensorMemoryBarriers->tensor) {
+                        safe_struct->pTensorMemoryBarriers->tensor = Unwrap(safe_struct->pTensorMemoryBarriers->tensor);
+                    }
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkTensorMemoryBarrierARM*>(cur_pnext);
+
+                if (safe_struct->tensor) {
+                    safe_struct->tensor = Unwrap(safe_struct->tensor);
                 }
             } break;
             case VK_STRUCTURE_TYPE_RENDER_PASS_STRIPE_SUBMIT_INFO_ARM: {
@@ -497,6 +535,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
 
                 if (safe_struct->buffer) {
                     safe_struct->buffer = Unwrap(safe_struct->buffer);
+                }
+            } break;
+            case VK_STRUCTURE_TYPE_DESCRIPTOR_GET_TENSOR_INFO_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkDescriptorGetTensorInfoARM*>(cur_pnext);
+
+                if (safe_struct->tensorView) {
+                    safe_struct->tensorView = Unwrap(safe_struct->tensorView);
                 }
             } break;
             case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT: {
@@ -2316,6 +2361,7 @@ void Device::CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const Vk
                     }
                 }
             }
+            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
         }
     }
     device_dispatch_table.CmdSetEvent2(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
@@ -2347,6 +2393,7 @@ void Device::CmdWaitEvents2(VkCommandBuffer commandBuffer, uint32_t eventCount, 
             local_pDependencyInfos = var_local_pDependencyInfos.data();
             for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
                 local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
+                UnwrapPnextChainHandles(local_pDependencyInfos[index0].pNext);
                 if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
                     for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
@@ -2394,6 +2441,7 @@ void Device::CmdPipelineBarrier2(VkCommandBuffer commandBuffer, const VkDependen
                     }
                 }
             }
+            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
         }
     }
     device_dispatch_table.CmdPipelineBarrier2(commandBuffer, (const VkDependencyInfo*)local_pDependencyInfo);
@@ -4570,6 +4618,7 @@ void Device::CmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event, const
                     }
                 }
             }
+            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
         }
     }
     device_dispatch_table.CmdSetEvent2KHR(commandBuffer, event, (const VkDependencyInfo*)local_pDependencyInfo);
@@ -4601,6 +4650,7 @@ void Device::CmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCoun
             local_pDependencyInfos = var_local_pDependencyInfos.data();
             for (uint32_t index0 = 0; index0 < eventCount; ++index0) {
                 local_pDependencyInfos[index0].initialize(&pDependencyInfos[index0]);
+                UnwrapPnextChainHandles(local_pDependencyInfos[index0].pNext);
                 if (local_pDependencyInfos[index0].pBufferMemoryBarriers) {
                     for (uint32_t index1 = 0; index1 < local_pDependencyInfos[index0].bufferMemoryBarrierCount; ++index1) {
                         if (pDependencyInfos[index0].pBufferMemoryBarriers[index1].buffer) {
@@ -4648,6 +4698,7 @@ void Device::CmdPipelineBarrier2KHR(VkCommandBuffer commandBuffer, const VkDepen
                     }
                 }
             }
+            UnwrapPnextChainHandles(local_pDependencyInfo->pNext);
         }
     }
     device_dispatch_table.CmdPipelineBarrier2KHR(commandBuffer, (const VkDependencyInfo*)local_pDependencyInfo);
@@ -4864,6 +4915,14 @@ void Device::GetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const
     if (!wrap_handles) return device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
     { image = Unwrap(image); }
     device_dispatch_table.GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
+}
+
+VkResult Device::WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info) {
+    if (!wrap_handles) return device_dispatch_table.WaitForPresent2KHR(device, swapchain, pPresentWait2Info);
+    { swapchain = Unwrap(swapchain); }
+    VkResult result = device_dispatch_table.WaitForPresent2KHR(device, swapchain, pPresentWait2Info);
+
+    return result;
 }
 
 void Device::DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
@@ -7867,6 +7926,171 @@ void Device::CmdSetRepresentativeFragmentTestEnableNV(VkCommandBuffer commandBuf
 
 void Device::CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode) {
     device_dispatch_table.CmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
+}
+
+VkResult Device::CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                                 VkTensorARM* pTensor) {
+    if (!wrap_handles) return device_dispatch_table.CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
+
+    VkResult result = device_dispatch_table.CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
+    if (result == VK_SUCCESS) {
+        *pTensor = WrapNew(*pTensor);
+    }
+    return result;
+}
+
+void Device::DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyTensorARM(device, tensor, pAllocator);
+    tensor = Erase(tensor);
+    device_dispatch_table.DestroyTensorARM(device, tensor, pAllocator);
+}
+
+VkResult Device::CreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
+    if (!wrap_handles) return device_dispatch_table.CreateTensorViewARM(device, pCreateInfo, pAllocator, pView);
+    vku::safe_VkTensorViewCreateInfoARM var_local_pCreateInfo;
+    vku::safe_VkTensorViewCreateInfoARM* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->tensor) {
+                local_pCreateInfo->tensor = Unwrap(pCreateInfo->tensor);
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.CreateTensorViewARM(device, (const VkTensorViewCreateInfoARM*)local_pCreateInfo, pAllocator, pView);
+    if (result == VK_SUCCESS) {
+        *pView = WrapNew(*pView);
+    }
+    return result;
+}
+
+void Device::DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyTensorViewARM(device, tensorView, pAllocator);
+    tensorView = Erase(tensorView);
+    device_dispatch_table.DestroyTensorViewARM(device, tensorView, pAllocator);
+}
+
+void Device::GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                            VkMemoryRequirements2* pMemoryRequirements) {
+    if (!wrap_handles) return device_dispatch_table.GetTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+    vku::safe_VkTensorMemoryRequirementsInfoARM var_local_pInfo;
+    vku::safe_VkTensorMemoryRequirementsInfoARM* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->tensor) {
+                local_pInfo->tensor = Unwrap(pInfo->tensor);
+            }
+        }
+    }
+    device_dispatch_table.GetTensorMemoryRequirementsARM(device, (const VkTensorMemoryRequirementsInfoARM*)local_pInfo,
+                                                         pMemoryRequirements);
+}
+
+VkResult Device::BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindTensorMemoryARM(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindTensorMemoryInfoARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindTensorMemoryInfoARM* local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+
+                if (pBindInfos[index0].tensor) {
+                    local_pBindInfos[index0].tensor = Unwrap(pBindInfos[index0].tensor);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result =
+        device_dispatch_table.BindTensorMemoryARM(device, bindInfoCount, (const VkBindTensorMemoryInfoARM*)local_pBindInfos);
+
+    return result;
+}
+
+void Device::GetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                  VkMemoryRequirements2* pMemoryRequirements) {
+    device_dispatch_table.GetDeviceTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+}
+
+void Device::CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdCopyTensorARM(commandBuffer, pCopyTensorInfo);
+    vku::safe_VkCopyTensorInfoARM var_local_pCopyTensorInfo;
+    vku::safe_VkCopyTensorInfoARM* local_pCopyTensorInfo = nullptr;
+    {
+        if (pCopyTensorInfo) {
+            local_pCopyTensorInfo = &var_local_pCopyTensorInfo;
+            local_pCopyTensorInfo->initialize(pCopyTensorInfo);
+
+            if (pCopyTensorInfo->srcTensor) {
+                local_pCopyTensorInfo->srcTensor = Unwrap(pCopyTensorInfo->srcTensor);
+            }
+            if (pCopyTensorInfo->dstTensor) {
+                local_pCopyTensorInfo->dstTensor = Unwrap(pCopyTensorInfo->dstTensor);
+            }
+        }
+    }
+    device_dispatch_table.CmdCopyTensorARM(commandBuffer, (const VkCopyTensorInfoARM*)local_pCopyTensorInfo);
+}
+
+void Instance::GetPhysicalDeviceExternalTensorPropertiesARM(VkPhysicalDevice physicalDevice,
+                                                            const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+                                                            VkExternalTensorPropertiesARM* pExternalTensorProperties) {
+    instance_dispatch_table.GetPhysicalDeviceExternalTensorPropertiesARM(physicalDevice, pExternalTensorInfo,
+                                                                         pExternalTensorProperties);
+}
+
+VkResult Device::GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                         void* pData) {
+    if (!wrap_handles) return device_dispatch_table.GetTensorOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
+    vku::safe_VkTensorCaptureDescriptorDataInfoARM var_local_pInfo;
+    vku::safe_VkTensorCaptureDescriptorDataInfoARM* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->tensor) {
+                local_pInfo->tensor = Unwrap(pInfo->tensor);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetTensorOpaqueCaptureDescriptorDataARM(
+        device, (const VkTensorCaptureDescriptorDataInfoARM*)local_pInfo, pData);
+
+    return result;
+}
+
+VkResult Device::GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                             void* pData) {
+    if (!wrap_handles) return device_dispatch_table.GetTensorViewOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
+    vku::safe_VkTensorViewCaptureDescriptorDataInfoARM var_local_pInfo;
+    vku::safe_VkTensorViewCaptureDescriptorDataInfoARM* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->tensorView) {
+                local_pInfo->tensorView = Unwrap(pInfo->tensorView);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetTensorViewOpaqueCaptureDescriptorDataARM(
+        device, (const VkTensorViewCaptureDescriptorDataInfoARM*)local_pInfo, pData);
+
+    return result;
 }
 
 void Device::GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule, VkShaderModuleIdentifierEXT* pIdentifier) {
