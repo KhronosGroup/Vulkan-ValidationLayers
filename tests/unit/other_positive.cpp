@@ -281,8 +281,7 @@ TEST_F(VkPositiveLayerTest, EnumeratePhysicalDeviceGroups) {
     TEST_DESCRIPTION("Test using VkPhysicalDevice handles obtained with vkEnumeratePhysicalDeviceGroups");
 
 #ifdef __linux__
-    if (std::getenv("NODEVICE_SELECT") == nullptr)
-    {
+    if (std::getenv("NODEVICE_SELECT") == nullptr) {
         // Currently due to a bug in MESA this test will fail.
         // https://gitlab.freedesktop.org/mesa/mesa/-/commit/4588453815c58ec848b0ff6f18a08836e70f55df
         //
@@ -621,11 +620,13 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
     vk::GetPhysicalDeviceExternalBufferProperties(Gpu(), &externalBufferInfo, &externalBufferProperties);
 }
 
-TEST_F(VkPositiveLayerTest, TimelineSemaphoreWithVulkan11) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10208
+TEST_F(VkPositiveLayerTest, DISABLED_TimelineSemaphoreWithVulkan11) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8308");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
     AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_PRESENT_ID_EXTENSION_NAME);
     RETURN_IF_SKIP(Init());
 }
 
