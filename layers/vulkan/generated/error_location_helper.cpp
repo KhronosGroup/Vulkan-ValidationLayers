@@ -53,6 +53,7 @@ const char* String(Func func) {
     {"vkBindImageMemory2", 19},
     {"vkBindImageMemory2KHR", 22},
     {"vkBindOpticalFlowSessionImageNV", 32},
+    {"vkBindTensorMemoryARM", 22},
     {"vkBindVideoSessionMemoryKHR", 28},
     {"vkBuildAccelerationStructuresKHR", 33},
     {"vkBuildMicromapsEXT", 20},
@@ -123,6 +124,7 @@ const char* String(Func func) {
     {"vkCmdCopyMicromapEXT", 21},
     {"vkCmdCopyMicromapToMemoryEXT", 29},
     {"vkCmdCopyQueryPoolResults", 26},
+    {"vkCmdCopyTensorARM", 19},
     {"vkCmdCuLaunchKernelNVX", 23},
     {"vkCmdCudaLaunchKernelNV", 24},
     {"vkCmdDebugMarkerBeginEXT", 25},
@@ -407,6 +409,8 @@ const char* String(Func func) {
     {"vkCreateSharedSwapchainsKHR", 28},
     {"vkCreateStreamDescriptorSurfaceGGP", 35},
     {"vkCreateSwapchainKHR", 21},
+    {"vkCreateTensorARM", 18},
+    {"vkCreateTensorViewARM", 22},
     {"vkCreateValidationCacheEXT", 27},
     {"vkCreateViSurfaceNN", 20},
     {"vkCreateVideoSessionKHR", 24},
@@ -465,6 +469,8 @@ const char* String(Func func) {
     {"vkDestroyShaderModule", 22},
     {"vkDestroySurfaceKHR", 20},
     {"vkDestroySwapchainKHR", 22},
+    {"vkDestroyTensorARM", 19},
+    {"vkDestroyTensorViewARM", 23},
     {"vkDestroyValidationCacheEXT", 28},
     {"vkDestroyVideoSessionKHR", 25},
     {"vkDestroyVideoSessionParametersKHR", 35},
@@ -537,6 +543,7 @@ const char* String(Func func) {
     {"vkGetDeviceQueue", 17},
     {"vkGetDeviceQueue2", 18},
     {"vkGetDeviceSubpassShadingMaxWorkgroupSizeHUAWEI", 48},
+    {"vkGetDeviceTensorMemoryRequirementsARM", 39},
     {"vkGetDisplayModeProperties2KHR", 31},
     {"vkGetDisplayModePropertiesKHR", 30},
     {"vkGetDisplayPlaneCapabilities2KHR", 34},
@@ -607,6 +614,7 @@ const char* String(Func func) {
     {"vkGetPhysicalDeviceExternalImageFormatPropertiesNV", 51},
     {"vkGetPhysicalDeviceExternalSemaphoreProperties", 47},
     {"vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", 50},
+    {"vkGetPhysicalDeviceExternalTensorPropertiesARM", 47},
     {"vkGetPhysicalDeviceFeatures", 28},
     {"vkGetPhysicalDeviceFeatures2", 29},
     {"vkGetPhysicalDeviceFeatures2KHR", 32},
@@ -689,6 +697,9 @@ const char* String(Func func) {
     {"vkGetSwapchainCounterEXT", 25},
     {"vkGetSwapchainImagesKHR", 24},
     {"vkGetSwapchainStatusKHR", 24},
+    {"vkGetTensorMemoryRequirementsARM", 33},
+    {"vkGetTensorOpaqueCaptureDescriptorDataARM", 42},
+    {"vkGetTensorViewOpaqueCaptureDescriptorDataARM", 46},
     {"vkGetValidationCacheDataEXT", 28},
     {"vkGetVideoSessionMemoryRequirementsKHR", 39},
     {"vkGetWinrtDisplayNV", 20},
@@ -761,6 +772,7 @@ const char* String(Func func) {
     {"vkUpdateIndirectExecutionSetShaderEXT", 38},
     {"vkUpdateVideoSessionParametersKHR", 34},
     {"vkWaitForFences", 16},
+    {"vkWaitForPresent2KHR", 21},
     {"vkWaitForPresentKHR", 20},
     {"vkWaitSemaphores", 17},
     {"vkWaitSemaphoresKHR", 20},
@@ -816,6 +828,7 @@ const char* String(Struct structure) {
     {"VkAttachmentDescription", 24},
     {"VkAttachmentDescription2", 25},
     {"VkAttachmentDescriptionStencilLayout", 37},
+    {"VkAttachmentFeedbackLoopInfoEXT", 32},
     {"VkAttachmentReference", 22},
     {"VkAttachmentReference2", 23},
     {"VkAttachmentReferenceStencilLayout", 35},
@@ -838,6 +851,7 @@ const char* String(Struct structure) {
     {"VkBindPipelineIndirectCommandNV", 32},
     {"VkBindShaderGroupIndirectCommandNV", 35},
     {"VkBindSparseInfo", 17},
+    {"VkBindTensorMemoryInfoARM", 26},
     {"VkBindVertexBufferIndirectCommandEXT", 37},
     {"VkBindVertexBufferIndirectCommandNV", 36},
     {"VkBindVideoSessionMemoryInfoKHR", 32},
@@ -925,6 +939,7 @@ const char* String(Struct structure) {
     {"VkCopyMemoryToMicromapInfoEXT", 30},
     {"VkCopyMicromapInfoEXT", 22},
     {"VkCopyMicromapToMemoryInfoEXT", 30},
+    {"VkCopyTensorInfoARM", 20},
     {"VkCuFunctionCreateInfoNVX", 26},
     {"VkCuLaunchInfoNVX", 18},
     {"VkCuModuleCreateInfoNVX", 24},
@@ -956,6 +971,7 @@ const char* String(Struct structure) {
     {"VkDescriptorBufferInfo", 23},
     {"VkDescriptorDataEXT", 20},
     {"VkDescriptorGetInfoEXT", 23},
+    {"VkDescriptorGetTensorInfoARM", 29},
     {"VkDescriptorImageInfo", 22},
     {"VkDescriptorPoolCreateInfo", 27},
     {"VkDescriptorPoolInlineUniformBlockCreateInfo", 45},
@@ -1004,6 +1020,7 @@ const char* String(Struct structure) {
     {"VkDeviceQueueGlobalPriorityCreateInfo", 38},
     {"VkDeviceQueueInfo2", 19},
     {"VkDeviceQueueShaderCoreControlCreateInfoARM", 44},
+    {"VkDeviceTensorMemoryRequirementsARM", 36},
     {"VkDirectDriverLoadingInfoLUNARG", 32},
     {"VkDirectDriverLoadingListLUNARG", 32},
     {"VkDirectFBSurfaceCreateInfoEXT", 31},
@@ -1074,7 +1091,9 @@ const char* String(Struct structure) {
     {"VkExternalMemoryImageCreateInfo", 32},
     {"VkExternalMemoryImageCreateInfoNV", 34},
     {"VkExternalMemoryProperties", 27},
+    {"VkExternalMemoryTensorCreateInfoARM", 36},
     {"VkExternalSemaphoreProperties", 30},
+    {"VkExternalTensorPropertiesARM", 30},
     {"VkFenceCreateInfo", 18},
     {"VkFenceGetFdInfoKHR", 20},
     {"VkFenceGetWin32HandleInfoKHR", 29},
@@ -1084,6 +1103,7 @@ const char* String(Struct structure) {
     {"VkFormatProperties3", 20},
     {"VkFragmentShadingRateAttachmentInfoKHR", 39},
     {"VkFrameBoundaryEXT", 19},
+    {"VkFrameBoundaryTensorsARM", 26},
     {"VkFramebufferAttachmentImageInfo", 33},
     {"VkFramebufferAttachmentsCreateInfo", 35},
     {"VkFramebufferCreateInfo", 24},
@@ -1202,6 +1222,7 @@ const char* String(Struct structure) {
     {"VkMemoryBarrier2", 17},
     {"VkMemoryBarrierAccessFlags3KHR", 31},
     {"VkMemoryDedicatedAllocateInfo", 30},
+    {"VkMemoryDedicatedAllocateInfoTensorARM", 39},
     {"VkMemoryDedicatedRequirements", 30},
     {"VkMemoryFdPropertiesKHR", 24},
     {"VkMemoryGetAndroidHardwareBufferInfoANDROID", 44},
@@ -1322,6 +1343,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceDescriptorBufferDensityMapPropertiesEXT", 56},
     {"VkPhysicalDeviceDescriptorBufferFeaturesEXT", 44},
     {"VkPhysicalDeviceDescriptorBufferPropertiesEXT", 46},
+    {"VkPhysicalDeviceDescriptorBufferTensorFeaturesARM", 50},
+    {"VkPhysicalDeviceDescriptorBufferTensorPropertiesARM", 52},
     {"VkPhysicalDeviceDescriptorIndexingFeatures", 43},
     {"VkPhysicalDeviceDescriptorIndexingProperties", 45},
     {"VkPhysicalDeviceDescriptorPoolOverallocationFeaturesNV", 55},
@@ -1358,6 +1381,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceExternalMemoryRDMAFeaturesNV", 45},
     {"VkPhysicalDeviceExternalMemoryScreenBufferFeaturesQNX", 54},
     {"VkPhysicalDeviceExternalSemaphoreInfo", 38},
+    {"VkPhysicalDeviceExternalTensorInfoARM", 38},
     {"VkPhysicalDeviceFaultFeaturesEXT", 33},
     {"VkPhysicalDeviceFeatures", 25},
     {"VkPhysicalDeviceFeatures2", 26},
@@ -1429,6 +1453,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceMaintenance7FeaturesKHR", 40},
     {"VkPhysicalDeviceMaintenance7PropertiesKHR", 42},
     {"VkPhysicalDeviceMaintenance8FeaturesKHR", 40},
+    {"VkPhysicalDeviceMaintenance9FeaturesKHR", 40},
+    {"VkPhysicalDeviceMaintenance9PropertiesKHR", 42},
     {"VkPhysicalDeviceMapMemoryPlacedFeaturesEXT", 43},
     {"VkPhysicalDeviceMapMemoryPlacedPropertiesEXT", 45},
     {"VkPhysicalDeviceMemoryBudgetPropertiesEXT", 42},
@@ -1478,9 +1504,11 @@ const char* String(Struct structure) {
     {"VkPhysicalDevicePortabilitySubsetFeaturesKHR", 45},
     {"VkPhysicalDevicePortabilitySubsetPropertiesKHR", 47},
     {"VkPhysicalDevicePresentBarrierFeaturesNV", 41},
+    {"VkPhysicalDevicePresentId2FeaturesKHR", 38},
     {"VkPhysicalDevicePresentIdFeaturesKHR", 37},
     {"VkPhysicalDevicePresentMeteringFeaturesNV", 42},
     {"VkPhysicalDevicePresentModeFifoLatestReadyFeaturesEXT", 54},
+    {"VkPhysicalDevicePresentWait2FeaturesKHR", 40},
     {"VkPhysicalDevicePresentWaitFeaturesKHR", 39},
     {"VkPhysicalDevicePrimitiveTopologyListRestartFeaturesEXT", 56},
     {"VkPhysicalDevicePrimitivesGeneratedQueryFeaturesEXT", 52},
@@ -1537,6 +1565,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceShaderEnqueuePropertiesAMDX", 44},
     {"VkPhysicalDeviceShaderExpectAssumeFeatures", 43},
     {"VkPhysicalDeviceShaderFloat16Int8Features", 42},
+    {"VkPhysicalDeviceShaderFloat8FeaturesEXT", 40},
     {"VkPhysicalDeviceShaderFloatControls2Features", 45},
     {"VkPhysicalDeviceShaderImageAtomicInt64FeaturesEXT", 50},
     {"VkPhysicalDeviceShaderImageFootprintFeaturesNV", 47},
@@ -1572,6 +1601,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceSurfaceInfo2KHR", 32},
     {"VkPhysicalDeviceSwapchainMaintenance1FeaturesEXT", 49},
     {"VkPhysicalDeviceSynchronization2Features", 41},
+    {"VkPhysicalDeviceTensorFeaturesARM", 34},
+    {"VkPhysicalDeviceTensorPropertiesARM", 36},
     {"VkPhysicalDeviceTexelBufferAlignmentFeaturesEXT", 48},
     {"VkPhysicalDeviceTexelBufferAlignmentProperties", 47},
     {"VkPhysicalDeviceTextureCompressionASTCHDRFeatures", 50},
@@ -1585,6 +1616,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceToolProperties", 31},
     {"VkPhysicalDeviceTransformFeedbackFeaturesEXT", 45},
     {"VkPhysicalDeviceTransformFeedbackPropertiesEXT", 47},
+    {"VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR", 47},
     {"VkPhysicalDeviceUniformBufferStandardLayoutFeatures", 52},
     {"VkPhysicalDeviceVariablePointersFeatures", 41},
     {"VkPhysicalDeviceVertexAttributeDivisorFeatures", 47},
@@ -1592,6 +1624,7 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceVertexAttributeDivisorPropertiesEXT", 52},
     {"VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT", 53},
     {"VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT", 51},
+    {"VkPhysicalDeviceVideoDecodeVP9FeaturesKHR", 42},
     {"VkPhysicalDeviceVideoEncodeAV1FeaturesKHR", 42},
     {"VkPhysicalDeviceVideoEncodeQualityLevelInfoKHR", 47},
     {"VkPhysicalDeviceVideoEncodeQuantizationMapFeaturesKHR", 54},
@@ -1679,12 +1712,14 @@ const char* String(Struct structure) {
     {"VkPipelineViewportSwizzleStateCreateInfoNV", 43},
     {"VkPipelineViewportWScalingStateCreateInfoNV", 44},
     {"VkPresentFrameTokenGGP", 23},
+    {"VkPresentId2KHR", 16},
     {"VkPresentIdKHR", 15},
     {"VkPresentInfoKHR", 17},
     {"VkPresentRegionKHR", 19},
     {"VkPresentRegionsKHR", 20},
     {"VkPresentTimeGOOGLE", 20},
     {"VkPresentTimesInfoGOOGLE", 25},
+    {"VkPresentWait2InfoKHR", 22},
     {"VkPrivateDataSlotCreateInfo", 28},
     {"VkProtectedSubmitInfo", 22},
     {"VkPushConstantRange", 20},
@@ -1699,6 +1734,7 @@ const char* String(Struct structure) {
     {"VkQueueFamilyCheckpointProperties2NV", 37},
     {"VkQueueFamilyCheckpointPropertiesNV", 36},
     {"VkQueueFamilyGlobalPriorityProperties", 38},
+    {"VkQueueFamilyOwnershipTransferPropertiesKHR", 44},
     {"VkQueueFamilyProperties", 24},
     {"VkQueueFamilyProperties2", 25},
     {"VkQueueFamilyQueryResultStatusPropertiesKHR", 44},
@@ -1814,6 +1850,8 @@ const char* String(Struct structure) {
     {"VkSurfaceCapabilitiesFullScreenExclusiveEXT", 44},
     {"VkSurfaceCapabilitiesKHR", 25},
     {"VkSurfaceCapabilitiesPresentBarrierNV", 38},
+    {"VkSurfaceCapabilitiesPresentId2KHR", 35},
+    {"VkSurfaceCapabilitiesPresentWait2KHR", 37},
     {"VkSurfaceFormat2KHR", 20},
     {"VkSurfaceFormatKHR", 19},
     {"VkSurfaceFullScreenExclusiveInfoEXT", 36},
@@ -1832,6 +1870,16 @@ const char* String(Struct structure) {
     {"VkSwapchainPresentModesCreateInfoEXT", 37},
     {"VkSwapchainPresentScalingCreateInfoEXT", 39},
     {"VkSysmemColorSpaceFUCHSIA", 26},
+    {"VkTensorCaptureDescriptorDataInfoARM", 37},
+    {"VkTensorCopyARM", 16},
+    {"VkTensorCreateInfoARM", 22},
+    {"VkTensorDependencyInfoARM", 26},
+    {"VkTensorDescriptionARM", 23},
+    {"VkTensorFormatPropertiesARM", 28},
+    {"VkTensorMemoryBarrierARM", 25},
+    {"VkTensorMemoryRequirementsInfoARM", 34},
+    {"VkTensorViewCaptureDescriptorDataInfoARM", 41},
+    {"VkTensorViewCreateInfoARM", 26},
     {"VkTextureLODGatherFormatPropertiesAMD", 38},
     {"VkTileMemoryBindInfoQCOM", 25},
     {"VkTileMemoryRequirementsQCOM", 29},
@@ -1876,6 +1924,9 @@ const char* String(Struct structure) {
     {"VkVideoDecodeH265SessionParametersCreateInfoKHR", 48},
     {"VkVideoDecodeInfoKHR", 21},
     {"VkVideoDecodeUsageInfoKHR", 26},
+    {"VkVideoDecodeVP9CapabilitiesKHR", 32},
+    {"VkVideoDecodeVP9PictureInfoKHR", 31},
+    {"VkVideoDecodeVP9ProfileInfoKHR", 31},
     {"VkVideoEncodeAV1CapabilitiesKHR", 32},
     {"VkVideoEncodeAV1DpbSlotInfoKHR", 31},
     {"VkVideoEncodeAV1FrameSizeKHR", 29},
@@ -1961,6 +2012,7 @@ const char* String(Struct structure) {
     {"VkWriteDescriptorSetAccelerationStructureNV", 44},
     {"VkWriteDescriptorSetInlineUniformBlock", 39},
     {"VkWriteDescriptorSetPartitionedAccelerationStructureNV", 55},
+    {"VkWriteDescriptorSetTensorARM", 30},
     {"VkWriteIndirectExecutionSetPipelineEXT", 39},
     {"VkWriteIndirectExecutionSetShaderEXT", 37},
     {"VkXYColorEXT", 13},
@@ -2183,6 +2235,7 @@ const char* String(Field field) {
     {"componentMapping", 17},
     {"components", 11},
     {"compositeAlpha", 15},
+    {"compressedHeaderOffset", 23},
     {"compressedSize", 15},
     {"compressionControlPlaneCount", 29},
     {"computeCapabilityMajor", 23},
@@ -2286,6 +2339,7 @@ const char* String(Field field) {
     {"defaultRobustnessStorageBuffers", 32},
     {"defaultRobustnessUniformBuffers", 32},
     {"defaultRobustnessVertexInputs", 30},
+    {"defaultVertexAttributeValue", 28},
     {"deferredOperation", 18},
     {"degenerateLinesRasterized", 26},
     {"degenerateTrianglesRasterized", 30},
@@ -2327,6 +2381,7 @@ const char* String(Field field) {
     {"descriptorBindingSampledImageUpdateAfterBind", 45},
     {"descriptorBindingStorageBufferUpdateAfterBind", 46},
     {"descriptorBindingStorageImageUpdateAfterBind", 45},
+    {"descriptorBindingStorageTensorUpdateAfterBind", 46},
     {"descriptorBindingStorageTexelBufferUpdateAfterBind", 51},
     {"descriptorBindingUniformBufferUpdateAfterBind", 46},
     {"descriptorBindingUniformTexelBufferUpdateAfterBind", 51},
@@ -2338,6 +2393,7 @@ const char* String(Field field) {
     {"descriptorBufferImageLayoutIgnored", 35},
     {"descriptorBufferOffsetAlignment", 32},
     {"descriptorBufferPushDescriptors", 32},
+    {"descriptorBufferTensorDescriptors", 34},
     {"descriptorCopyCount", 20},
     {"descriptorCount", 16},
     {"descriptorIndexing", 19},
@@ -2382,6 +2438,7 @@ const char* String(Field field) {
     {"deviceUUID", 11},
     {"dfb", 4},
     {"diagnosticsConfig", 18},
+    {"dimensionCount", 15},
     {"disableInternalCache", 21},
     {"disabledValidationCheckCount", 29},
     {"disabledValidationFeatureCount", 31},
@@ -2463,6 +2520,7 @@ const char* String(Field field) {
     {"dstStride", 10},
     {"dstSubpass", 11},
     {"dstSubresource", 15},
+    {"dstTensor", 10},
     {"dualSrcBlend", 13},
     {"duration", 9},
     {"dwAccess", 9},
@@ -2567,6 +2625,7 @@ const char* String(Field field) {
     {"failOp", 7},
     {"fd", 3},
     {"features", 9},
+    {"feedbackLoopEnable", 19},
     {"fence", 6},
     {"fenceCount", 11},
     {"fieldOffsetGranularity", 23},
@@ -2738,6 +2797,7 @@ const char* String(Field field) {
     {"idrPeriod", 10},
     {"image", 6},
     {"image2DViewOf3D", 16},
+    {"image2DViewOf3DSparse", 22},
     {"imageAlignmentControl", 22},
     {"imageArrayLayers", 17},
     {"imageBindCount", 15},
@@ -2914,6 +2974,7 @@ const char* String(Field field) {
     {"linearColorAttachment", 22},
     {"linearSweptSpheres", 19},
     {"linearTilingFeatures", 21},
+    {"linearTilingTensorFeatures", 27},
     {"loadOp", 7},
     {"localDeviceIndex", 17},
     {"localDimmingEnable", 19},
@@ -2930,6 +2991,7 @@ const char* String(Field field) {
     {"maintenance6", 13},
     {"maintenance7", 13},
     {"maintenance8", 13},
+    {"maintenance9", 13},
     {"major", 6},
     {"mapEntryCount", 14},
     {"marker", 7},
@@ -2986,6 +3048,7 @@ const char* String(Field field) {
     {"maxDescriptorSetStorageBuffers", 31},
     {"maxDescriptorSetStorageBuffersDynamic", 38},
     {"maxDescriptorSetStorageImages", 30},
+    {"maxDescriptorSetStorageTensors", 31},
     {"maxDescriptorSetSubsampledSamplers", 35},
     {"maxDescriptorSetTotalBuffersDynamic", 36},
     {"maxDescriptorSetTotalStorageBuffersDynamic", 43},
@@ -3000,6 +3063,7 @@ const char* String(Field field) {
     {"maxDescriptorSetUpdateAfterBindStorageBuffers", 46},
     {"maxDescriptorSetUpdateAfterBindStorageBuffersDynamic", 53},
     {"maxDescriptorSetUpdateAfterBindStorageImages", 45},
+    {"maxDescriptorSetUpdateAfterBindStorageTensors", 46},
     {"maxDescriptorSetUpdateAfterBindTotalBuffersDynamic", 51},
     {"maxDescriptorSetUpdateAfterBindTotalStorageBuffersDynamic", 58},
     {"maxDescriptorSetUpdateAfterBindTotalUniformBuffersDynamic", 58},
@@ -3108,12 +3172,14 @@ const char* String(Field field) {
     {"maxOutputClusterCount", 22},
     {"maxPPictureL0ReferenceCount", 28},
     {"maxPartitionCount", 18},
+    {"maxPerDimensionTensorElements", 30},
     {"maxPerSetDescriptors", 21},
     {"maxPerStageDescriptorAccelerationStructures", 44},
     {"maxPerStageDescriptorInlineUniformBlocks", 41},
     {"maxPerStageDescriptorInputAttachments", 38},
     {"maxPerStageDescriptorSampledImages", 35},
     {"maxPerStageDescriptorSamplers", 30},
+    {"maxPerStageDescriptorSetStorageTensors", 39},
     {"maxPerStageDescriptorStorageBuffers", 36},
     {"maxPerStageDescriptorStorageImages", 35},
     {"maxPerStageDescriptorUniformBuffers", 36},
@@ -3124,6 +3190,7 @@ const char* String(Field field) {
     {"maxPerStageDescriptorUpdateAfterBindSamplers", 45},
     {"maxPerStageDescriptorUpdateAfterBindStorageBuffers", 51},
     {"maxPerStageDescriptorUpdateAfterBindStorageImages", 50},
+    {"maxPerStageDescriptorUpdateAfterBindStorageTensors", 51},
     {"maxPerStageDescriptorUpdateAfterBindUniformBuffers", 51},
     {"maxPerStageResources", 21},
     {"maxPerStageUpdateAfterBindResources", 36},
@@ -3190,6 +3257,12 @@ const char* String(Field field) {
     {"maxTaskWorkGroupSize", 21},
     {"maxTaskWorkGroupTotalCount", 27},
     {"maxTemporalLayerCount", 22},
+    {"maxTensorDimensionCount", 24},
+    {"maxTensorElements", 18},
+    {"maxTensorShaderAccessArrayLength", 33},
+    {"maxTensorShaderAccessSize", 26},
+    {"maxTensorSize", 14},
+    {"maxTensorStride", 16},
     {"maxTessellationControlPerPatchOutputComponents", 47},
     {"maxTessellationControlPerVertexInputComponents", 47},
     {"maxTessellationControlPerVertexOutputComponents", 48},
@@ -3424,8 +3497,10 @@ const char* String(Field field) {
     {"optimalBufferCopyOffsetAlignment", 33},
     {"optimalBufferCopyRowPitchAlignment", 35},
     {"optimalDeviceAccess", 20},
+    {"optimalImageTransferToQueueFamilies", 36},
     {"optimalTilingFeatures", 22},
     {"optimalTilingLayoutUUID", 24},
+    {"optimalTilingTensorFeatures", 28},
     {"origin", 7},
     {"osRenderQueueEndTimeUs", 23},
     {"osRenderQueueStartTimeUs", 25},
@@ -3520,6 +3595,7 @@ const char* String(Field field) {
     {"pCopyImageToMemoryInfo", 23},
     {"pCopyMemoryToImageInfo", 23},
     {"pCopySrcLayouts", 16},
+    {"pCopyTensorInfo", 16},
     {"pCorrelatedViewMasks", 21},
     {"pCorrelationMasks", 18},
     {"pCountInfo", 11},
@@ -3550,6 +3626,7 @@ const char* String(Field field) {
     {"pDepthStencilAttachment", 24},
     {"pDepthStencilResolveAttachment", 31},
     {"pDepthStencilState", 19},
+    {"pDescription", 13},
     {"pDescriptor", 12},
     {"pDescriptorCopies", 18},
     {"pDescriptorCounts", 18},
@@ -3566,6 +3643,7 @@ const char* String(Field field) {
     {"pDeviceIndices", 15},
     {"pDeviceMasks", 13},
     {"pDeviceRenderAreas", 19},
+    {"pDimensions", 12},
     {"pDisabledValidationChecks", 26},
     {"pDisabledValidationFeatures", 28},
     {"pDiscardRectangles", 19},
@@ -3580,6 +3658,7 @@ const char* String(Field field) {
     {"pDrivers", 9},
     {"pDrmFormatModifierProperties", 29},
     {"pDrmFormatModifiers", 20},
+    {"pDstOffset", 11},
     {"pDstSize", 9},
     {"pDynamicMetadata", 17},
     {"pDynamicOffsets", 16},
@@ -3599,6 +3678,7 @@ const char* String(Field field) {
     {"pExecuteInfo", 13},
     {"pExecutionSet", 14},
     {"pExecutionSetWrites", 20},
+    {"pExtent", 8},
     {"pExternalBufferInfo", 20},
     {"pExternalBufferProperties", 26},
     {"pExternalFenceInfo", 19},
@@ -3607,6 +3687,8 @@ const char* String(Field field) {
     {"pExternalQueue", 15},
     {"pExternalSemaphoreInfo", 23},
     {"pExternalSemaphoreProperties", 29},
+    {"pExternalTensorInfo", 20},
+    {"pExternalTensorProperties", 26},
     {"pExtras", 8},
     {"pFaultCounts", 13},
     {"pFaultInfo", 11},
@@ -3779,6 +3861,7 @@ const char* String(Field field) {
     {"pPresentInfo", 13},
     {"pPresentModeCount", 18},
     {"pPresentModes", 14},
+    {"pPresentWait2Info", 18},
     {"pPresentationInfo", 18},
     {"pPresentationTimingCount", 25},
     {"pPresentationTimings", 21},
@@ -3866,6 +3949,7 @@ const char* String(Field field) {
     {"pSpecializationInfo", 20},
     {"pSplitInstanceBindRegions", 26},
     {"pSrcCaches", 11},
+    {"pSrcOffset", 11},
     {"pStages", 8},
     {"pStatisticCount", 16},
     {"pStatistics", 12},
@@ -3912,6 +3996,10 @@ const char* String(Field field) {
     {"pSwapchains", 12},
     {"pTag", 5},
     {"pTagInfo", 9},
+    {"pTensor", 8},
+    {"pTensorMemoryBarriers", 22},
+    {"pTensorViews", 13},
+    {"pTensors", 9},
     {"pTessellationState", 19},
     {"pTexelBufferView", 17},
     {"pTileMemoryBindInfo", 20},
@@ -4124,6 +4212,8 @@ const char* String(Field field) {
     {"presentGravityY", 16},
     {"presentID", 10},
     {"presentId", 10},
+    {"presentId2", 11},
+    {"presentId2Supported", 20},
     {"presentMargin", 14},
     {"presentMask", 12},
     {"presentMetering", 16},
@@ -4132,6 +4222,8 @@ const char* String(Field field) {
     {"presentModeFifoLatestReady", 27},
     {"presentStartTimeUs", 19},
     {"presentWait", 12},
+    {"presentWait2", 13},
+    {"presentWait2Supported", 22},
     {"preserveAttachmentCount", 24},
     {"primaryMajor", 13},
     {"primaryMinor", 13},
@@ -4410,6 +4502,8 @@ const char* String(Field field) {
     {"shaderFloat16", 14},
     {"shaderFloat16VectorAtomics", 27},
     {"shaderFloat64", 14},
+    {"shaderFloat8", 13},
+    {"shaderFloat8CooperativeMatrix", 30},
     {"shaderFloatControls2", 21},
     {"shaderGroupBaseAlignment", 25},
     {"shaderGroupHandleAlignment", 27},
@@ -4480,6 +4574,9 @@ const char* String(Field field) {
     {"shaderStorageImageMultisample", 30},
     {"shaderStorageImageReadWithoutFormat", 36},
     {"shaderStorageImageWriteWithoutFormat", 37},
+    {"shaderStorageTensorArrayDynamicIndexing", 40},
+    {"shaderStorageTensorArrayNonUniformIndexing", 43},
+    {"shaderStorageTensorArrayNonUniformIndexingNative", 49},
     {"shaderStorageTexelBufferArrayDynamicIndexing", 45},
     {"shaderStorageTexelBufferArrayNonUniformIndexing", 48},
     {"shaderSubgroupClock", 20},
@@ -4487,6 +4584,8 @@ const char* String(Field field) {
     {"shaderSubgroupRotate", 21},
     {"shaderSubgroupRotateClustered", 30},
     {"shaderSubgroupUniformControlFlow", 33},
+    {"shaderTensorAccess", 19},
+    {"shaderTensorSupportedStages", 28},
     {"shaderTerminateInvocation", 26},
     {"shaderTessellationAndGeometryPointSize", 39},
     {"shaderTileImageCoherentReadAccelerated", 39},
@@ -4584,6 +4683,7 @@ const char* String(Field field) {
     {"srcStride", 10},
     {"srcSubpass", 11},
     {"srcSubresource", 15},
+    {"srcTensor", 10},
     {"srgb", 5},
     {"srtMotionInstance", 18},
     {"stage", 6},
@@ -4721,6 +4821,16 @@ const char* String(Field field) {
     {"taskShader", 11},
     {"templateType", 13},
     {"temporalLayerCount", 19},
+    {"tensor", 7},
+    {"tensorCaptureReplayDescriptorDataSize", 38},
+    {"tensorCount", 12},
+    {"tensorDescriptorSize", 21},
+    {"tensorMemoryBarrierCount", 25},
+    {"tensorNonPacked", 16},
+    {"tensorView", 11},
+    {"tensorViewCaptureReplayDescriptorDataSize", 42},
+    {"tensorViewCount", 16},
+    {"tensors", 8},
     {"tessellationIsolines", 21},
     {"tessellationPointMode", 22},
     {"tessellationShader", 19},
@@ -4755,6 +4865,7 @@ const char* String(Field field) {
     {"tileShadingSampledAttachments", 30},
     {"tileShadingStencilAttachments", 30},
     {"tileSize", 9},
+    {"tilesOffset", 12},
     {"tiling", 7},
     {"timeDomain", 11},
     {"timelineSemaphore", 18},
@@ -4796,8 +4907,11 @@ const char* String(Field field) {
     {"u64", 4},
     {"uint32", 7},
     {"uint64", 7},
+    {"uncompressedHeaderOffset", 25},
     {"underlyingAPI", 14},
     {"unidirectionalCompoundReferenceNameMask", 40},
+    {"unifiedImageLayouts", 20},
+    {"unifiedImageLayoutsVideo", 25},
     {"uniformAndStorageBuffer16BitAccess", 35},
     {"uniformAndStorageBuffer8BitAccess", 34},
     {"uniformBufferDescriptorSize", 28},
@@ -4866,6 +4980,7 @@ const char* String(Field field) {
     {"videoCodecOperation", 20},
     {"videoCodecOperations", 21},
     {"videoContentHints", 18},
+    {"videoDecodeVP9", 15},
     {"videoEncodeAV1", 15},
     {"videoEncodeQuantizationMap", 27},
     {"videoMaintenance1", 18},
@@ -4971,6 +5086,7 @@ const char* String(Enum value) {
     {"VkCoverageReductionModeNV", 26},
     {"VkCubicFilterWeightsQCOM", 25},
     {"VkDebugReportObjectTypeEXT", 27},
+    {"VkDefaultVertexAttributeValueKHR", 33},
     {"VkDepthBiasRepresentationEXT", 29},
     {"VkDepthClampModeEXT", 20},
     {"VkDescriptorType", 17},
@@ -5066,6 +5182,7 @@ const char* String(Enum value) {
     {"VkSubpassContents", 18},
     {"VkSubpassMergeStatusEXT", 24},
     {"VkSystemAllocationScope", 24},
+    {"VkTensorTilingARM", 18},
     {"VkTessellationDomainOrigin", 27},
     {"VkTimeDomainKHR", 16},
     {"VkValidationCacheHeaderVersionEXT", 34},
@@ -5182,6 +5299,7 @@ const char* String(FlagBitmask value) {
     {"VkPresentScalingFlagBitsEXT", 28},
     {"VkQueryControlFlagBits", 23},
     {"VkQueryPipelineStatisticFlagBits", 33},
+    {"VkQueryPoolCreateFlagBits", 26},
     {"VkQueryResultFlagBits", 22},
     {"VkQueueFlagBits", 16},
     {"VkRenderPassCreateFlagBits", 27},
@@ -5203,6 +5321,9 @@ const char* String(FlagBitmask value) {
     {"VkSurfaceCounterFlagBitsEXT", 28},
     {"VkSurfaceTransformFlagBitsKHR", 30},
     {"VkSwapchainCreateFlagBitsKHR", 29},
+    {"VkTensorCreateFlagBitsARM", 26},
+    {"VkTensorUsageFlagBitsARM", 25},
+    {"VkTensorViewCreateFlagBitsARM", 30},
     {"VkTileShadingRenderPassFlagBitsQCOM", 36},
     {"VkToolPurposeFlagBits", 22},
     {"VkVideoCapabilityFlagBitsKHR", 29},
@@ -5273,6 +5394,7 @@ const char* String(Extension extension) {
     {"VK_ARM_scheduling_controls", 27},
     {"VK_ARM_shader_core_builtins", 28},
     {"VK_ARM_shader_core_properties", 30},
+    {"VK_ARM_tensors", 15},
     {"VK_EXT_4444_formats", 20},
     {"VK_EXT_acquire_drm_display", 27},
     {"VK_EXT_acquire_xlib_display", 28},
@@ -5381,6 +5503,7 @@ const char* String(Extension extension) {
     {"VK_EXT_shader_atomic_float", 27},
     {"VK_EXT_shader_atomic_float2", 28},
     {"VK_EXT_shader_demote_to_helper_invocation", 42},
+    {"VK_EXT_shader_float8", 21},
     {"VK_EXT_shader_image_atomic_int64", 33},
     {"VK_EXT_shader_module_identifier", 32},
     {"VK_EXT_shader_object", 21},
@@ -5486,6 +5609,7 @@ const char* String(Extension extension) {
     {"VK_KHR_maintenance6", 20},
     {"VK_KHR_maintenance7", 20},
     {"VK_KHR_maintenance8", 20},
+    {"VK_KHR_maintenance9", 20},
     {"VK_KHR_map_memory2", 19},
     {"VK_KHR_multiview", 17},
     {"VK_KHR_performance_query", 25},
@@ -5495,7 +5619,9 @@ const char* String(Extension extension) {
     {"VK_KHR_portability_enumeration", 31},
     {"VK_KHR_portability_subset", 26},
     {"VK_KHR_present_id", 18},
+    {"VK_KHR_present_id2", 19},
     {"VK_KHR_present_wait", 20},
+    {"VK_KHR_present_wait2", 21},
     {"VK_KHR_push_descriptor", 23},
     {"VK_KHR_ray_query", 17},
     {"VK_KHR_ray_tracing_maintenance1", 32},
@@ -5532,6 +5658,7 @@ const char* String(Extension extension) {
     {"VK_KHR_swapchain_mutable_format", 32},
     {"VK_KHR_synchronization2", 24},
     {"VK_KHR_timeline_semaphore", 26},
+    {"VK_KHR_unified_image_layouts", 29},
     {"VK_KHR_uniform_buffer_standard_layout", 38},
     {"VK_KHR_variable_pointers", 25},
     {"VK_KHR_vertex_attribute_divisor", 32},
@@ -5539,6 +5666,7 @@ const char* String(Extension extension) {
     {"VK_KHR_video_decode_h264", 25},
     {"VK_KHR_video_decode_h265", 25},
     {"VK_KHR_video_decode_queue", 26},
+    {"VK_KHR_video_decode_vp9", 24},
     {"VK_KHR_video_encode_av1", 24},
     {"VK_KHR_video_encode_h264", 25},
     {"VK_KHR_video_encode_h265", 25},
@@ -5749,6 +5877,7 @@ bool IsFieldPointer(Field field) {
     case Field::pCopyImageToMemoryInfo:
     case Field::pCopyMemoryToImageInfo:
     case Field::pCopySrcLayouts:
+    case Field::pCopyTensorInfo:
     case Field::pCorrelatedViewMasks:
     case Field::pCorrelationMasks:
     case Field::pCountInfo:
@@ -5779,6 +5908,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDepthStencilAttachment:
     case Field::pDepthStencilResolveAttachment:
     case Field::pDepthStencilState:
+    case Field::pDescription:
     case Field::pDescriptor:
     case Field::pDescriptorCopies:
     case Field::pDescriptorCounts:
@@ -5795,6 +5925,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDeviceIndices:
     case Field::pDeviceMasks:
     case Field::pDeviceRenderAreas:
+    case Field::pDimensions:
     case Field::pDisabledValidationChecks:
     case Field::pDisabledValidationFeatures:
     case Field::pDiscardRectangles:
@@ -5809,6 +5940,7 @@ bool IsFieldPointer(Field field) {
     case Field::pDrivers:
     case Field::pDrmFormatModifierProperties:
     case Field::pDrmFormatModifiers:
+    case Field::pDstOffset:
     case Field::pDstSize:
     case Field::pDynamicMetadata:
     case Field::pDynamicOffsets:
@@ -5828,6 +5960,7 @@ bool IsFieldPointer(Field field) {
     case Field::pExecuteInfo:
     case Field::pExecutionSet:
     case Field::pExecutionSetWrites:
+    case Field::pExtent:
     case Field::pExternalBufferInfo:
     case Field::pExternalBufferProperties:
     case Field::pExternalFenceInfo:
@@ -5836,6 +5969,8 @@ bool IsFieldPointer(Field field) {
     case Field::pExternalQueue:
     case Field::pExternalSemaphoreInfo:
     case Field::pExternalSemaphoreProperties:
+    case Field::pExternalTensorInfo:
+    case Field::pExternalTensorProperties:
     case Field::pExtras:
     case Field::pFaultCounts:
     case Field::pFaultInfo:
@@ -6008,6 +6143,7 @@ bool IsFieldPointer(Field field) {
     case Field::pPresentInfo:
     case Field::pPresentModeCount:
     case Field::pPresentModes:
+    case Field::pPresentWait2Info:
     case Field::pPresentationInfo:
     case Field::pPresentationTimingCount:
     case Field::pPresentationTimings:
@@ -6095,6 +6231,7 @@ bool IsFieldPointer(Field field) {
     case Field::pSpecializationInfo:
     case Field::pSplitInstanceBindRegions:
     case Field::pSrcCaches:
+    case Field::pSrcOffset:
     case Field::pStages:
     case Field::pStatisticCount:
     case Field::pStatistics:
@@ -6141,6 +6278,10 @@ bool IsFieldPointer(Field field) {
     case Field::pSwapchains:
     case Field::pTag:
     case Field::pTagInfo:
+    case Field::pTensor:
+    case Field::pTensorMemoryBarriers:
+    case Field::pTensorViews:
+    case Field::pTensors:
     case Field::pTessellationState:
     case Field::pTexelBufferView:
     case Field::pTileMemoryBindInfo:
@@ -7055,6 +7196,18 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceRayTracingMaintenance1FeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR:
        return Struct::VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR;
+    case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_ID_2_KHR:
+       return Struct::VkSurfaceCapabilitiesPresentId2KHR;
+    case VK_STRUCTURE_TYPE_PRESENT_ID_2_KHR:
+       return Struct::VkPresentId2KHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_ID_2_FEATURES_KHR:
+       return Struct::VkPhysicalDevicePresentId2FeaturesKHR;
+    case VK_STRUCTURE_TYPE_SURFACE_CAPABILITIES_PRESENT_WAIT_2_KHR:
+       return Struct::VkSurfaceCapabilitiesPresentWait2KHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_WAIT_2_FEATURES_KHR:
+       return Struct::VkPhysicalDevicePresentWait2FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PRESENT_WAIT_2_INFO_KHR:
+       return Struct::VkPresentWait2InfoKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR:
        return Struct::VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PIPELINE_BINARY_FEATURES_KHR:
@@ -7119,10 +7272,22 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkVideoEncodeAV1RateControlInfoKHR;
     case VK_STRUCTURE_TYPE_VIDEO_ENCODE_AV1_RATE_CONTROL_LAYER_INFO_KHR:
        return Struct::VkVideoEncodeAV1RateControlLayerInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_DECODE_VP9_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceVideoDecodeVP9FeaturesKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_PROFILE_INFO_KHR:
+       return Struct::VkVideoDecodeVP9ProfileInfoKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_CAPABILITIES_KHR:
+       return Struct::VkVideoDecodeVP9CapabilitiesKHR;
+    case VK_STRUCTURE_TYPE_VIDEO_DECODE_VP9_PICTURE_INFO_KHR:
+       return Struct::VkVideoDecodeVP9PictureInfoKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_1_FEATURES_KHR:
        return Struct::VkPhysicalDeviceVideoMaintenance1FeaturesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_INLINE_QUERY_INFO_KHR:
        return Struct::VkVideoInlineQueryInfoKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_UNIFIED_IMAGE_LAYOUTS_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR;
+    case VK_STRUCTURE_TYPE_ATTACHMENT_FEEDBACK_LOOP_INFO_EXT:
+       return Struct::VkAttachmentFeedbackLoopInfoEXT;
     case VK_STRUCTURE_TYPE_CALIBRATED_TIMESTAMP_INFO_KHR:
        return Struct::VkCalibratedTimestampInfoKHR;
     case VK_STRUCTURE_TYPE_SET_DESCRIPTOR_BUFFER_OFFSETS_INFO_EXT:
@@ -7165,6 +7330,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceMaintenance8FeaturesKHR;
     case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR:
        return Struct::VkMemoryBarrierAccessFlags3KHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_FEATURES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance9FeaturesKHR;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_9_PROPERTIES_KHR:
+       return Struct::VkPhysicalDeviceMaintenance9PropertiesKHR;
+    case VK_STRUCTURE_TYPE_QUEUE_FAMILY_OWNERSHIP_TRANSFER_PROPERTIES_KHR:
+       return Struct::VkQueueFamilyOwnershipTransferPropertiesKHR;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VIDEO_MAINTENANCE_2_FEATURES_KHR:
        return Struct::VkPhysicalDeviceVideoMaintenance2FeaturesKHR;
     case VK_STRUCTURE_TYPE_VIDEO_DECODE_H264_INLINE_SESSION_PARAMETERS_INFO_KHR:
@@ -7951,6 +8122,54 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkDirectDriverLoadingInfoLUNARG;
     case VK_STRUCTURE_TYPE_DIRECT_DRIVER_LOADING_LIST_LUNARG:
        return Struct::VkDirectDriverLoadingListLUNARG;
+    case VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM:
+       return Struct::VkTensorDescriptionARM;
+    case VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM:
+       return Struct::VkTensorCreateInfoARM;
+    case VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM:
+       return Struct::VkTensorViewCreateInfoARM;
+    case VK_STRUCTURE_TYPE_TENSOR_MEMORY_REQUIREMENTS_INFO_ARM:
+       return Struct::VkTensorMemoryRequirementsInfoARM;
+    case VK_STRUCTURE_TYPE_BIND_TENSOR_MEMORY_INFO_ARM:
+       return Struct::VkBindTensorMemoryInfoARM;
+    case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM:
+       return Struct::VkWriteDescriptorSetTensorARM;
+    case VK_STRUCTURE_TYPE_TENSOR_FORMAT_PROPERTIES_ARM:
+       return Struct::VkTensorFormatPropertiesARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_PROPERTIES_ARM:
+       return Struct::VkPhysicalDeviceTensorPropertiesARM;
+    case VK_STRUCTURE_TYPE_TENSOR_MEMORY_BARRIER_ARM:
+       return Struct::VkTensorMemoryBarrierARM;
+    case VK_STRUCTURE_TYPE_TENSOR_DEPENDENCY_INFO_ARM:
+       return Struct::VkTensorDependencyInfoARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TENSOR_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceTensorFeaturesARM;
+    case VK_STRUCTURE_TYPE_DEVICE_TENSOR_MEMORY_REQUIREMENTS_ARM:
+       return Struct::VkDeviceTensorMemoryRequirementsARM;
+    case VK_STRUCTURE_TYPE_TENSOR_COPY_ARM:
+       return Struct::VkTensorCopyARM;
+    case VK_STRUCTURE_TYPE_COPY_TENSOR_INFO_ARM:
+       return Struct::VkCopyTensorInfoARM;
+    case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO_TENSOR_ARM:
+       return Struct::VkMemoryDedicatedAllocateInfoTensorARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_TENSOR_INFO_ARM:
+       return Struct::VkPhysicalDeviceExternalTensorInfoARM;
+    case VK_STRUCTURE_TYPE_EXTERNAL_TENSOR_PROPERTIES_ARM:
+       return Struct::VkExternalTensorPropertiesARM;
+    case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_TENSOR_CREATE_INFO_ARM:
+       return Struct::VkExternalMemoryTensorCreateInfoARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_FEATURES_ARM:
+       return Struct::VkPhysicalDeviceDescriptorBufferTensorFeaturesARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_TENSOR_PROPERTIES_ARM:
+       return Struct::VkPhysicalDeviceDescriptorBufferTensorPropertiesARM;
+    case VK_STRUCTURE_TYPE_DESCRIPTOR_GET_TENSOR_INFO_ARM:
+       return Struct::VkDescriptorGetTensorInfoARM;
+    case VK_STRUCTURE_TYPE_TENSOR_CAPTURE_DESCRIPTOR_DATA_INFO_ARM:
+       return Struct::VkTensorCaptureDescriptorDataInfoARM;
+    case VK_STRUCTURE_TYPE_TENSOR_VIEW_CAPTURE_DESCRIPTOR_DATA_INFO_ARM:
+       return Struct::VkTensorViewCaptureDescriptorDataInfoARM;
+    case VK_STRUCTURE_TYPE_FRAME_BOUNDARY_TENSORS_ARM:
+       return Struct::VkFrameBoundaryTensorsARM;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT:
@@ -8121,6 +8340,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceShaderAtomicFloat16VectorFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_REPLICATED_COMPOSITES_FEATURES_EXT:
        return Struct::VkPhysicalDeviceShaderReplicatedCompositesFeaturesEXT;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_FLOAT8_FEATURES_EXT:
+       return Struct::VkPhysicalDeviceShaderFloat8FeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_VALIDATION_FEATURES_NV:
        return Struct::VkPhysicalDeviceRayTracingValidationFeaturesNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CLUSTER_ACCELERATION_STRUCTURE_FEATURES_NV:

@@ -473,12 +473,6 @@ TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
     m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-pQueueCreateInfos-parameter");
     vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
     m_errorMonitor->VerifyFound();
-
-    device_ci.pQueueCreateInfos = &device_queue_ci;
-    device_ci.queueCreateInfoCount = 0u;
-    m_errorMonitor->SetDesiredError("VUID-VkDeviceCreateInfo-queueCreateInfoCount-arraylength");
-    vk::CreateDevice(Gpu(), &device_ci, nullptr, &device);
-    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {

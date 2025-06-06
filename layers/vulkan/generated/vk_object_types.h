@@ -78,12 +78,14 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeAccelerationStructureKHR = 47,
     kVulkanObjectTypeBufferCollectionFUCHSIA = 48,
     kVulkanObjectTypeMicromapEXT = 49,
-    kVulkanObjectTypeOpticalFlowSessionNV = 50,
-    kVulkanObjectTypeShaderEXT = 51,
-    kVulkanObjectTypeExternalComputeQueueNV = 52,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 53,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 54,
-    kVulkanObjectTypeMax = 55
+    kVulkanObjectTypeTensorARM = 50,
+    kVulkanObjectTypeTensorViewARM = 51,
+    kVulkanObjectTypeOpticalFlowSessionNV = 52,
+    kVulkanObjectTypeShaderEXT = 53,
+    kVulkanObjectTypeExternalComputeQueueNV = 54,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 55,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 56,
+    kVulkanObjectTypeMax = 57
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -191,6 +193,10 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_BUFFER_COLLECTION_FUCHSIA;
         case kVulkanObjectTypeMicromapEXT:
             return VK_OBJECT_TYPE_MICROMAP_EXT;
+        case kVulkanObjectTypeTensorARM:
+            return VK_OBJECT_TYPE_TENSOR_ARM;
+        case kVulkanObjectTypeTensorViewARM:
+            return VK_OBJECT_TYPE_TENSOR_VIEW_ARM;
         case kVulkanObjectTypeOpticalFlowSessionNV:
             return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
         case kVulkanObjectTypeShaderEXT:
@@ -307,6 +313,10 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeBufferCollectionFUCHSIA;
         case VK_OBJECT_TYPE_MICROMAP_EXT:
             return kVulkanObjectTypeMicromapEXT;
+        case VK_OBJECT_TYPE_TENSOR_ARM:
+            return kVulkanObjectTypeTensorARM;
+        case VK_OBJECT_TYPE_TENSOR_VIEW_ARM:
+            return kVulkanObjectTypeTensorViewARM;
         case VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV:
             return kVulkanObjectTypeOpticalFlowSessionNV;
         case VK_OBJECT_TYPE_SHADER_EXT:
@@ -1145,6 +1155,30 @@ struct VkHandleInfo<VkMicromapEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeMicromapEXT> {
     typedef VkMicromapEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkTensorARM> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeTensorARM;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_TENSOR_ARM;
+    static const char* Typename() { return "VkTensorARM"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeTensorARM> {
+    typedef VkTensorARM Type;
+};
+
+template <>
+struct VkHandleInfo<VkTensorViewARM> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeTensorViewARM;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_TENSOR_VIEW_ARM;
+    static const char* Typename() { return "VkTensorViewARM"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeTensorViewARM> {
+    typedef VkTensorViewARM Type;
 };
 
 template <>

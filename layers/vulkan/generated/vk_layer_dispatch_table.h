@@ -171,6 +171,7 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkCreateScreenSurfaceQNX CreateScreenSurfaceQNX;
     PFN_vkGetPhysicalDeviceScreenPresentationSupportQNX GetPhysicalDeviceScreenPresentationSupportQNX;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+    PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM GetPhysicalDeviceExternalTensorPropertiesARM;
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
     PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV
@@ -492,6 +493,7 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkGetRenderingAreaGranularityKHR GetRenderingAreaGranularityKHR;
     PFN_vkGetDeviceImageSubresourceLayoutKHR GetDeviceImageSubresourceLayoutKHR;
     PFN_vkGetImageSubresourceLayout2KHR GetImageSubresourceLayout2KHR;
+    PFN_vkWaitForPresent2KHR WaitForPresent2KHR;
     PFN_vkCreatePipelineBinariesKHR CreatePipelineBinariesKHR;
     PFN_vkDestroyPipelineBinaryKHR DestroyPipelineBinaryKHR;
     PFN_vkGetPipelineKeyKHR GetPipelineKeyKHR;
@@ -754,6 +756,16 @@ typedef struct VkLayerDispatchTable_ {
     PFN_vkCmdSetShadingRateImageEnableNV CmdSetShadingRateImageEnableNV;
     PFN_vkCmdSetRepresentativeFragmentTestEnableNV CmdSetRepresentativeFragmentTestEnableNV;
     PFN_vkCmdSetCoverageReductionModeNV CmdSetCoverageReductionModeNV;
+    PFN_vkCreateTensorARM CreateTensorARM;
+    PFN_vkDestroyTensorARM DestroyTensorARM;
+    PFN_vkCreateTensorViewARM CreateTensorViewARM;
+    PFN_vkDestroyTensorViewARM DestroyTensorViewARM;
+    PFN_vkGetTensorMemoryRequirementsARM GetTensorMemoryRequirementsARM;
+    PFN_vkBindTensorMemoryARM BindTensorMemoryARM;
+    PFN_vkGetDeviceTensorMemoryRequirementsARM GetDeviceTensorMemoryRequirementsARM;
+    PFN_vkCmdCopyTensorARM CmdCopyTensorARM;
+    PFN_vkGetTensorOpaqueCaptureDescriptorDataARM GetTensorOpaqueCaptureDescriptorDataARM;
+    PFN_vkGetTensorViewOpaqueCaptureDescriptorDataARM GetTensorViewOpaqueCaptureDescriptorDataARM;
     PFN_vkGetShaderModuleIdentifierEXT GetShaderModuleIdentifierEXT;
     PFN_vkGetShaderModuleCreateInfoIdentifierEXT GetShaderModuleCreateInfoIdentifierEXT;
     PFN_vkCreateOpticalFlowSessionNV CreateOpticalFlowSessionNV;

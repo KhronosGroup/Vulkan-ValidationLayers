@@ -200,15 +200,19 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_KHR_SHADER_SUBGROUP_ROTATE_EXTENSION_NAME, VK_KHR_SHADER_SUBGROUP_ROTATE_SPEC_VERSION},
     {VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_EXTENSION_NAME, VK_KHR_SHADER_MAXIMAL_RECONVERGENCE_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_5_EXTENSION_NAME, VK_KHR_MAINTENANCE_5_SPEC_VERSION},
+    {VK_KHR_PRESENT_ID_2_EXTENSION_NAME, VK_KHR_PRESENT_ID_2_SPEC_VERSION},
+    {VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME, VK_KHR_PRESENT_WAIT_2_SPEC_VERSION},
     {VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME, VK_KHR_RAY_TRACING_POSITION_FETCH_SPEC_VERSION},
     {VK_KHR_PIPELINE_BINARY_EXTENSION_NAME, VK_KHR_PIPELINE_BINARY_SPEC_VERSION},
     {VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_COOPERATIVE_MATRIX_SPEC_VERSION},
     {VK_KHR_COMPUTE_SHADER_DERIVATIVES_EXTENSION_NAME, VK_KHR_COMPUTE_SHADER_DERIVATIVES_SPEC_VERSION},
     {VK_KHR_VIDEO_DECODE_AV1_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_AV1_SPEC_VERSION},
     {VK_KHR_VIDEO_ENCODE_AV1_EXTENSION_NAME, VK_KHR_VIDEO_ENCODE_AV1_SPEC_VERSION},
+    {VK_KHR_VIDEO_DECODE_VP9_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_VP9_SPEC_VERSION},
     {VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME, VK_KHR_VIDEO_MAINTENANCE_1_SPEC_VERSION},
     {VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_EXTENSION_NAME, VK_KHR_VERTEX_ATTRIBUTE_DIVISOR_SPEC_VERSION},
     {VK_KHR_LOAD_STORE_OP_NONE_EXTENSION_NAME, VK_KHR_LOAD_STORE_OP_NONE_SPEC_VERSION},
+    {VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME, VK_KHR_UNIFIED_IMAGE_LAYOUTS_SPEC_VERSION},
     {VK_KHR_SHADER_FLOAT_CONTROLS_2_EXTENSION_NAME, VK_KHR_SHADER_FLOAT_CONTROLS_2_SPEC_VERSION},
     {VK_KHR_INDEX_TYPE_UINT8_EXTENSION_NAME, VK_KHR_INDEX_TYPE_UINT8_SPEC_VERSION},
     {VK_KHR_LINE_RASTERIZATION_EXTENSION_NAME, VK_KHR_LINE_RASTERIZATION_SPEC_VERSION},
@@ -219,6 +223,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_EXTENSION_NAME, VK_KHR_SHADER_RELAXED_EXTENDED_INSTRUCTION_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_7_EXTENSION_NAME, VK_KHR_MAINTENANCE_7_SPEC_VERSION},
     {VK_KHR_MAINTENANCE_8_EXTENSION_NAME, VK_KHR_MAINTENANCE_8_SPEC_VERSION},
+    {VK_KHR_MAINTENANCE_9_EXTENSION_NAME, VK_KHR_MAINTENANCE_9_SPEC_VERSION},
     {VK_KHR_VIDEO_MAINTENANCE_2_EXTENSION_NAME, VK_KHR_VIDEO_MAINTENANCE_2_SPEC_VERSION},
     {VK_KHR_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME, VK_KHR_DEPTH_CLAMP_ZERO_ONE_SPEC_VERSION},
     {VK_KHR_ROBUSTNESS_2_EXTENSION_NAME, VK_KHR_ROBUSTNESS_2_SPEC_VERSION},
@@ -446,6 +451,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_SPEC_VERSION},
     {VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME, VK_EXT_EXTENDED_DYNAMIC_STATE_3_SPEC_VERSION},
     {VK_EXT_SUBPASS_MERGE_FEEDBACK_EXTENSION_NAME, VK_EXT_SUBPASS_MERGE_FEEDBACK_SPEC_VERSION},
+    {VK_ARM_TENSORS_EXTENSION_NAME, VK_ARM_TENSORS_SPEC_VERSION},
     {VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME, VK_EXT_SHADER_MODULE_IDENTIFIER_SPEC_VERSION},
     {VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_EXTENSION_NAME, VK_EXT_RASTERIZATION_ORDER_ATTACHMENT_ACCESS_SPEC_VERSION},
     {VK_NV_OPTICAL_FLOW_EXTENSION_NAME, VK_NV_OPTICAL_FLOW_SPEC_VERSION},
@@ -486,6 +492,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
     {VK_NV_COMMAND_BUFFER_INHERITANCE_EXTENSION_NAME, VK_NV_COMMAND_BUFFER_INHERITANCE_SPEC_VERSION},
     {VK_NV_SHADER_ATOMIC_FLOAT16_VECTOR_EXTENSION_NAME, VK_NV_SHADER_ATOMIC_FLOAT16_VECTOR_SPEC_VERSION},
     {VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME, VK_EXT_SHADER_REPLICATED_COMPOSITES_SPEC_VERSION},
+    {VK_EXT_SHADER_FLOAT8_EXTENSION_NAME, VK_EXT_SHADER_FLOAT8_SPEC_VERSION},
     {VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME, VK_NV_RAY_TRACING_VALIDATION_SPEC_VERSION},
     {VK_NV_CLUSTER_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_NV_CLUSTER_ACCELERATION_STRUCTURE_SPEC_VERSION},
     {VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_NV_PARTITIONED_ACCELERATION_STRUCTURE_SPEC_VERSION},
@@ -1309,6 +1316,8 @@ static VKAPI_ATTR void VKAPI_CALL GetDeviceImageSubresourceLayoutKHR(VkDevice de
 static VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device, VkImage image,
                                                                 const VkImageSubresource2* pSubresource,
                                                                 VkSubresourceLayout2* pLayout);
+static VKAPI_ATTR VkResult VKAPI_CALL WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                         const VkPresentWait2InfoKHR* pPresentWait2Info);
 static VKAPI_ATTR VkResult VKAPI_CALL CreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                                 const VkAllocationCallbacks* pAllocator,
                                                                 VkPipelineBinaryHandlesInfoKHR* pBinaries);
@@ -1944,6 +1953,29 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCom
                                                                            VkBool32 representativeFragmentTestEnable);
 static VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                                 VkCoverageReductionModeNV coverageReductionMode);
+static VKAPI_ATTR VkResult VKAPI_CALL CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor);
+static VKAPI_ATTR void VKAPI_CALL DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator);
+static VKAPI_ATTR VkResult VKAPI_CALL CreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView);
+static VKAPI_ATTR void VKAPI_CALL DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                       const VkAllocationCallbacks* pAllocator);
+static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements);
+static VKAPI_ATTR VkResult VKAPI_CALL BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindTensorMemoryInfoARM* pBindInfos);
+static VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(VkDevice device,
+                                                                       const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                       VkMemoryRequirements2* pMemoryRequirements);
+static VKAPI_ATTR void VKAPI_CALL CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo);
+static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties);
+static VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                              const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                              void* pData);
+static VKAPI_ATTR VkResult VKAPI_CALL
+GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData);
 static VKAPI_ATTR void VKAPI_CALL GetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                                VkShaderModuleIdentifierEXT* pIdentifier);
 static VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice device,
@@ -2532,6 +2564,7 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkGetRenderingAreaGranularityKHR", (void*)GetRenderingAreaGranularityKHR},
     {"vkGetDeviceImageSubresourceLayoutKHR", (void*)GetDeviceImageSubresourceLayoutKHR},
     {"vkGetImageSubresourceLayout2KHR", (void*)GetImageSubresourceLayout2KHR},
+    {"vkWaitForPresent2KHR", (void*)WaitForPresent2KHR},
     {"vkCreatePipelineBinariesKHR", (void*)CreatePipelineBinariesKHR},
     {"vkDestroyPipelineBinaryKHR", (void*)DestroyPipelineBinaryKHR},
     {"vkGetPipelineKeyKHR", (void*)GetPipelineKeyKHR},
@@ -2849,6 +2882,17 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkCmdSetShadingRateImageEnableNV", (void*)CmdSetShadingRateImageEnableNV},
     {"vkCmdSetRepresentativeFragmentTestEnableNV", (void*)CmdSetRepresentativeFragmentTestEnableNV},
     {"vkCmdSetCoverageReductionModeNV", (void*)CmdSetCoverageReductionModeNV},
+    {"vkCreateTensorARM", (void*)CreateTensorARM},
+    {"vkDestroyTensorARM", (void*)DestroyTensorARM},
+    {"vkCreateTensorViewARM", (void*)CreateTensorViewARM},
+    {"vkDestroyTensorViewARM", (void*)DestroyTensorViewARM},
+    {"vkGetTensorMemoryRequirementsARM", (void*)GetTensorMemoryRequirementsARM},
+    {"vkBindTensorMemoryARM", (void*)BindTensorMemoryARM},
+    {"vkGetDeviceTensorMemoryRequirementsARM", (void*)GetDeviceTensorMemoryRequirementsARM},
+    {"vkCmdCopyTensorARM", (void*)CmdCopyTensorARM},
+    {"vkGetPhysicalDeviceExternalTensorPropertiesARM", (void*)GetPhysicalDeviceExternalTensorPropertiesARM},
+    {"vkGetTensorOpaqueCaptureDescriptorDataARM", (void*)GetTensorOpaqueCaptureDescriptorDataARM},
+    {"vkGetTensorViewOpaqueCaptureDescriptorDataARM", (void*)GetTensorViewOpaqueCaptureDescriptorDataARM},
     {"vkGetShaderModuleIdentifierEXT", (void*)GetShaderModuleIdentifierEXT},
     {"vkGetShaderModuleCreateInfoIdentifierEXT", (void*)GetShaderModuleCreateInfoIdentifierEXT},
     {"vkGetPhysicalDeviceOpticalFlowImageFormatsNV", (void*)GetPhysicalDeviceOpticalFlowImageFormatsNV},
@@ -4254,6 +4298,11 @@ static VKAPI_ATTR void VKAPI_CALL GetImageSubresourceLayout2KHR(VkDevice device,
     GetImageSubresourceLayout2(device, image, pSubresource, pLayout);
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL WaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                         const VkPresentWait2InfoKHR* pPresentWait2Info) {
+    return VK_SUCCESS;
+}
+
 static VKAPI_ATTR void VKAPI_CALL DestroyPipelineBinaryKHR(VkDevice device, VkPipelineBinaryKHR pipelineBinary,
                                                            const VkAllocationCallbacks* pAllocator) {}
 
@@ -5457,6 +5506,54 @@ static VKAPI_ATTR void VKAPI_CALL CmdSetRepresentativeFragmentTestEnableNV(VkCom
 
 static VKAPI_ATTR void VKAPI_CALL CmdSetCoverageReductionModeNV(VkCommandBuffer commandBuffer,
                                                                 VkCoverageReductionModeNV coverageReductionMode) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor) {
+    unique_lock_t lock(global_lock);
+    *pTensor = (VkTensorARM)global_unique_handle++;
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL CreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                          const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
+    unique_lock_t lock(global_lock);
+    *pView = (VkTensorViewARM)global_unique_handle++;
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL DestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                       const VkAllocationCallbacks* pAllocator) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                                 VkMemoryRequirements2* pMemoryRequirements) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL BindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindTensorMemoryInfoARM* pBindInfos) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR void VKAPI_CALL GetDeviceTensorMemoryRequirementsARM(VkDevice device,
+                                                                       const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                       VkMemoryRequirements2* pMemoryRequirements) {}
+
+static VKAPI_ATTR void VKAPI_CALL CmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {}
+
+static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties) {}
+
+static VKAPI_ATTR VkResult VKAPI_CALL GetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                              const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                              void* pData) {
+    return VK_SUCCESS;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL
+GetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData) {
+    return VK_SUCCESS;
+}
 
 static VKAPI_ATTR void VKAPI_CALL GetShaderModuleCreateInfoIdentifierEXT(VkDevice device,
                                                                          const VkShaderModuleCreateInfo* pCreateInfo,

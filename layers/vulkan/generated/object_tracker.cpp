@@ -86,6 +86,8 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     skip |= ReportLeakedObjects(kVulkanObjectTypeAccelerationStructureKHR, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeMicromapEXT, error_code, loc);
+    skip |= ReportLeakedObjects(kVulkanObjectTypeTensorARM, error_code, loc);
+    skip |= ReportLeakedObjects(kVulkanObjectTypeTensorViewARM, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeOpticalFlowSessionNV, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeShaderEXT, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, error_code, loc);
@@ -144,6 +146,8 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeAccelerationStructureKHR, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeBufferCollectionFUCHSIA, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeMicromapEXT, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeTensorARM, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeTensorViewARM, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeOpticalFlowSessionNV, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeShaderEXT, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, loc);
@@ -245,6 +249,18 @@ bool Device::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCount, con
                     }
                 }
             }
+            if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryTensorsARM>(pSubmits[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryTensorsARM);
+
+                if ((pNext->tensorCount > 0) && (pNext->pTensors)) {
+                    for (uint32_t index2 = 0; index2 < pNext->tensorCount; ++index2) {
+                        skip |= ValidateObject(pNext->pTensors[index2], kVulkanObjectTypeTensorARM, false,
+                                               "VUID-VkFrameBoundaryTensorsARM-pTensors-parameter",
+                                               "UNASSIGNED-VkFrameBoundaryTensorsARM-pTensors-parent",
+                                               pNext_loc.dot(Field::pTensors, index2));
+                    }
+                }
+            }
 #ifdef VK_USE_PLATFORM_WIN32_KHR
             if ([[maybe_unused]] auto pNext =
                     vku::FindStructInPNextChain<VkWin32KeyedMutexAcquireReleaseInfoKHR>(pSubmits[index0].pNext)) {
@@ -339,6 +355,13 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
             skip |=
                 ValidateObject(pNext->buffer, kVulkanObjectTypeBuffer, true, "VUID-VkMemoryDedicatedAllocateInfo-buffer-parameter",
                                "VUID-VkMemoryDedicatedAllocateInfo-commonparent", pNext_loc.dot(Field::buffer));
+        }
+        if ([[maybe_unused]] auto pNext =
+                vku::FindStructInPNextChain<VkMemoryDedicatedAllocateInfoTensorARM>(pAllocateInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pAllocateInfo_loc.pNext(Struct::VkMemoryDedicatedAllocateInfoTensorARM);
+            skip |= ValidateObject(pNext->tensor, kVulkanObjectTypeTensorARM, false,
+                                   "VUID-VkMemoryDedicatedAllocateInfoTensorARM-tensor-parameter",
+                                   "UNASSIGNED-VkMemoryDedicatedAllocateInfoTensorARM-tensor-parent", pNext_loc.dot(Field::tensor));
         }
     }
 
@@ -580,6 +603,18 @@ bool Device::PreCallValidateQueueBindSparse(VkQueue queue, uint32_t bindInfoCoun
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                                "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pBuffers, index2));
+                    }
+                }
+            }
+            if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryTensorsARM>(pBindInfo[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryTensorsARM);
+
+                if ((pNext->tensorCount > 0) && (pNext->pTensors)) {
+                    for (uint32_t index2 = 0; index2 < pNext->tensorCount; ++index2) {
+                        skip |= ValidateObject(pNext->pTensors[index2], kVulkanObjectTypeTensorARM, false,
+                                               "VUID-VkFrameBoundaryTensorsARM-pTensors-parameter",
+                                               "UNASSIGNED-VkFrameBoundaryTensorsARM-pTensors-parent",
+                                               pNext_loc.dot(Field::pTensors, index2));
                     }
                 }
             }
@@ -2363,6 +2398,12 @@ bool Device::PreCallValidateCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent 
                                        "UNASSIGNED-vkCmdSetEvent2-commandBuffer-commonparent", index1_loc.dot(Field::image));
             }
         }
+        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkTensorMemoryBarrierARM>(pDependencyInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pDependencyInfo_loc.pNext(Struct::VkTensorMemoryBarrierARM);
+            skip |=
+                ValidateObject(pNext->tensor, kVulkanObjectTypeTensorARM, false, "VUID-VkTensorMemoryBarrierARM-tensor-parameter",
+                               "UNASSIGNED-VkTensorMemoryBarrierARM-tensor-parent", pNext_loc.dot(Field::tensor));
+        }
     }
 
     return skip;
@@ -2410,6 +2451,13 @@ bool Device::PreCallValidateCmdWaitEvents2(VkCommandBuffer commandBuffer, uint32
                                            "UNASSIGNED-vkCmdWaitEvents2-commandBuffer-commonparent", index1_loc.dot(Field::image));
                 }
             }
+            if ([[maybe_unused]] auto pNext =
+                    vku::FindStructInPNextChain<VkTensorMemoryBarrierARM>(pDependencyInfos[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkTensorMemoryBarrierARM);
+                skip |= ValidateObject(pNext->tensor, kVulkanObjectTypeTensorARM, false,
+                                       "VUID-VkTensorMemoryBarrierARM-tensor-parameter",
+                                       "UNASSIGNED-VkTensorMemoryBarrierARM-tensor-parent", pNext_loc.dot(Field::tensor));
+            }
         }
     }
 
@@ -2438,6 +2486,12 @@ bool Device::PreCallValidateCmdPipelineBarrier2(VkCommandBuffer commandBuffer, c
                                        "VUID-VkImageMemoryBarrier2-image-parameter",
                                        "UNASSIGNED-vkCmdPipelineBarrier2-commandBuffer-commonparent", index1_loc.dot(Field::image));
             }
+        }
+        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkTensorMemoryBarrierARM>(pDependencyInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pDependencyInfo_loc.pNext(Struct::VkTensorMemoryBarrierARM);
+            skip |=
+                ValidateObject(pNext->tensor, kVulkanObjectTypeTensorARM, false, "VUID-VkTensorMemoryBarrierARM-tensor-parameter",
+                               "UNASSIGNED-VkTensorMemoryBarrierARM-tensor-parent", pNext_loc.dot(Field::tensor));
         }
     }
 
@@ -2504,6 +2558,18 @@ bool Device::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, co
                         skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                                "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                                pNext_loc.dot(Field::pBuffers, index2));
+                    }
+                }
+            }
+            if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryTensorsARM>(pSubmits[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkFrameBoundaryTensorsARM);
+
+                if ((pNext->tensorCount > 0) && (pNext->pTensors)) {
+                    for (uint32_t index2 = 0; index2 < pNext->tensorCount; ++index2) {
+                        skip |= ValidateObject(pNext->pTensors[index2], kVulkanObjectTypeTensorARM, false,
+                                               "VUID-VkFrameBoundaryTensorsARM-pTensors-parameter",
+                                               "UNASSIGNED-VkFrameBoundaryTensorsARM-pTensors-parent",
+                                               pNext_loc.dot(Field::pTensors, index2));
                     }
                 }
             }
@@ -3211,6 +3277,18 @@ bool Device::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentInfoKH
                     skip |= ValidateObject(pNext->pBuffers[index2], kVulkanObjectTypeBuffer, false,
                                            "VUID-VkFrameBoundaryEXT-pBuffers-parameter", "VUID-VkFrameBoundaryEXT-commonparent",
                                            pNext_loc.dot(Field::pBuffers, index2));
+                }
+            }
+        }
+        if ([[maybe_unused]] auto pNext = vku::FindStructInPNextChain<VkFrameBoundaryTensorsARM>(pPresentInfo->pNext)) {
+            [[maybe_unused]] const Location pNext_loc = pPresentInfo_loc.pNext(Struct::VkFrameBoundaryTensorsARM);
+
+            if ((pNext->tensorCount > 0) && (pNext->pTensors)) {
+                for (uint32_t index2 = 0; index2 < pNext->tensorCount; ++index2) {
+                    skip |= ValidateObject(pNext->pTensors[index2], kVulkanObjectTypeTensorARM, false,
+                                           "VUID-VkFrameBoundaryTensorsARM-pTensors-parameter",
+                                           "UNASSIGNED-VkFrameBoundaryTensorsARM-pTensors-parent",
+                                           pNext_loc.dot(Field::pTensors, index2));
                 }
             }
         }
@@ -4485,6 +4563,16 @@ bool Device::PreCallValidateCmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer
 bool Device::PreCallValidateGetImageSubresourceLayout2KHR(VkDevice device, VkImage image, const VkImageSubresource2* pSubresource,
                                                           VkSubresourceLayout2* pLayout, const ErrorObject& error_obj) const {
     return PreCallValidateGetImageSubresourceLayout2(device, image, pSubresource, pLayout, error_obj);
+}
+
+bool Device::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                               const VkPresentWait2InfoKHR* pPresentWait2Info, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkWaitForPresent2KHR-device-parameter"
+    skip |= ValidateObject(swapchain, kVulkanObjectTypeSwapchainKHR, false, "VUID-vkWaitForPresent2KHR-swapchain-parameter",
+                           "VUID-vkWaitForPresent2KHR-swapchain-parent", error_obj.location.dot(Field::swapchain));
+
+    return skip;
 }
 
 bool Device::PreCallValidateCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
@@ -7327,6 +7415,160 @@ bool Device::PreCallValidateGetPipelineIndirectDeviceAddressNV(VkDevice device, 
 
 // vkCmdSetCoverageReductionModeNV:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetCoverageReductionModeNV-commandBuffer-parameter"
+
+// vkCreateTensorARM:
+// Checked by chassis: device: "VUID-vkCreateTensorARM-device-parameter"
+
+void Device::PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                           const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pTensor, kVulkanObjectTypeTensorARM, pAllocator, record_obj.location, device);
+}
+
+bool Device::PreCallValidateDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyTensorARM-device-parameter"
+    skip |= ValidateObject(tensor, kVulkanObjectTypeTensorARM, true, "VUID-vkDestroyTensorARM-tensor-parameter",
+                           "VUID-vkDestroyTensorARM-tensor-parent", error_obj.location.dot(Field::tensor));
+    skip |=
+        ValidateDestroyObject(tensor, kVulkanObjectTypeTensorARM, pAllocator, kVUIDUndefined, kVUIDUndefined, error_obj.location);
+
+    return skip;
+}
+
+void Device::PreCallRecordDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator,
+                                           const RecordObject& record_obj) {
+    RecordDestroyObject(tensor, kVulkanObjectTypeTensorARM, record_obj.location);
+}
+
+bool Device::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateTensorViewARM-device-parameter"
+    if (pCreateInfo) {
+        [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
+        skip |= ValidateObject(pCreateInfo->tensor, kVulkanObjectTypeTensorARM, false,
+                               "VUID-VkTensorViewCreateInfoARM-tensor-parameter",
+                               "UNASSIGNED-VkTensorViewCreateInfoARM-tensor-parent", pCreateInfo_loc.dot(Field::tensor));
+    }
+
+    return skip;
+}
+
+void Device::PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                               const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pView, kVulkanObjectTypeTensorViewARM, pAllocator, record_obj.location, device);
+}
+
+bool Device::PreCallValidateDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                 const VkAllocationCallbacks* pAllocator, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyTensorViewARM-device-parameter"
+    skip |= ValidateObject(tensorView, kVulkanObjectTypeTensorViewARM, true, "VUID-vkDestroyTensorViewARM-tensorView-parameter",
+                           "VUID-vkDestroyTensorViewARM-tensorView-parent", error_obj.location.dot(Field::tensorView));
+    skip |= ValidateDestroyObject(tensorView, kVulkanObjectTypeTensorViewARM, pAllocator, kVUIDUndefined, kVUIDUndefined,
+                                  error_obj.location);
+
+    return skip;
+}
+
+void Device::PreCallRecordDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView, const VkAllocationCallbacks* pAllocator,
+                                               const RecordObject& record_obj) {
+    RecordDestroyObject(tensorView, kVulkanObjectTypeTensorViewARM, record_obj.location);
+}
+
+bool Device::PreCallValidateGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                           VkMemoryRequirements2* pMemoryRequirements,
+                                                           const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetTensorMemoryRequirementsARM-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->tensor, kVulkanObjectTypeTensorARM, false,
+                               "VUID-VkTensorMemoryRequirementsInfoARM-tensor-parameter",
+                               "UNASSIGNED-VkTensorMemoryRequirementsInfoARM-tensor-parent", pInfo_loc.dot(Field::tensor));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                const VkBindTensorMemoryInfoARM* pBindInfos, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkBindTensorMemoryARM-device-parameter"
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfos, index0);
+            skip |= ValidateObject(pBindInfos[index0].tensor, kVulkanObjectTypeTensorARM, false,
+                                   "VUID-VkBindTensorMemoryInfoARM-tensor-parameter", "VUID-VkBindTensorMemoryInfoARM-commonparent",
+                                   index0_loc.dot(Field::tensor));
+            skip |= ValidateObject(pBindInfos[index0].memory, kVulkanObjectTypeDeviceMemory, false,
+                                   "VUID-VkBindTensorMemoryInfoARM-memory-parameter", "VUID-VkBindTensorMemoryInfoARM-commonparent",
+                                   index0_loc.dot(Field::memory));
+        }
+    }
+
+    return skip;
+}
+
+// vkGetDeviceTensorMemoryRequirementsARM:
+// Checked by chassis: device: "VUID-vkGetDeviceTensorMemoryRequirementsARM-device-parameter"
+
+bool Device::PreCallValidateCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo,
+                                             const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdCopyTensorARM-commandBuffer-parameter"
+    if (pCopyTensorInfo) {
+        [[maybe_unused]] const Location pCopyTensorInfo_loc = error_obj.location.dot(Field::pCopyTensorInfo);
+        skip |= ValidateObject(pCopyTensorInfo->srcTensor, kVulkanObjectTypeTensorARM, false,
+                               "VUID-VkCopyTensorInfoARM-srcTensor-parameter", "VUID-VkCopyTensorInfoARM-commonparent",
+                               pCopyTensorInfo_loc.dot(Field::srcTensor));
+        skip |= ValidateObject(pCopyTensorInfo->dstTensor, kVulkanObjectTypeTensorARM, false,
+                               "VUID-VkCopyTensorInfoARM-dstTensor-parameter", "VUID-VkCopyTensorInfoARM-commonparent",
+                               pCopyTensorInfo_loc.dot(Field::dstTensor));
+    }
+
+    return skip;
+}
+
+// vkGetPhysicalDeviceExternalTensorPropertiesARM:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceExternalTensorPropertiesARM-physicalDevice-parameter"
+
+bool Device::PreCallValidateGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                    const VkTensorCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetTensorOpaqueCaptureDescriptorDataARM-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->tensor, kVulkanObjectTypeTensorARM, false,
+                               "VUID-VkTensorCaptureDescriptorDataInfoARM-tensor-parameter",
+                               "UNASSIGNED-VkTensorCaptureDescriptorDataInfoARM-tensor-parent", pInfo_loc.dot(Field::tensor));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                        const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                        void* pData, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetTensorViewOpaqueCaptureDescriptorDataARM-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->tensorView, kVulkanObjectTypeTensorViewARM, false,
+                               "VUID-VkTensorViewCaptureDescriptorDataInfoARM-tensorView-parameter",
+                               "UNASSIGNED-VkTensorViewCaptureDescriptorDataInfoARM-tensorView-parent",
+                               pInfo_loc.dot(Field::tensorView));
+    }
+
+    return skip;
+}
 
 bool Device::PreCallValidateGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,
                                                          VkShaderModuleIdentifierEXT* pIdentifier,

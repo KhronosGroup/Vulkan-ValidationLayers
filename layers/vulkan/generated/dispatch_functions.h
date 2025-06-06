@@ -2278,6 +2278,12 @@ static inline void DispatchGetImageSubresourceLayout2KHR(VkDevice device, VkImag
     dispatch->GetImageSubresourceLayout2KHR(device, image, pSubresource, pLayout);
 }
 
+static inline VkResult DispatchWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                  const VkPresentWait2InfoKHR* pPresentWait2Info) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->WaitForPresent2KHR(device, swapchain, pPresentWait2Info);
+}
+
 static inline VkResult DispatchCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                                          const VkAllocationCallbacks* pAllocator,
                                                          VkPipelineBinaryHandlesInfoKHR* pBinaries) {
@@ -4020,6 +4026,73 @@ static inline void DispatchCmdSetCoverageReductionModeNV(VkCommandBuffer command
                                                          VkCoverageReductionModeNV coverageReductionMode) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdSetCoverageReductionModeNV(commandBuffer, coverageReductionMode);
+}
+
+static inline VkResult DispatchCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateTensorARM(device, pCreateInfo, pAllocator, pTensor);
+}
+
+static inline void DispatchDestroyTensorARM(VkDevice device, VkTensorARM tensor, const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyTensorARM(device, tensor, pAllocator);
+}
+
+static inline VkResult DispatchCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateTensorViewARM(device, pCreateInfo, pAllocator, pView);
+}
+
+static inline void DispatchDestroyTensorViewARM(VkDevice device, VkTensorViewARM tensorView,
+                                                const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyTensorViewARM(device, tensorView, pAllocator);
+}
+
+static inline void DispatchGetTensorMemoryRequirementsARM(VkDevice device, const VkTensorMemoryRequirementsInfoARM* pInfo,
+                                                          VkMemoryRequirements2* pMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+}
+
+static inline VkResult DispatchBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                   const VkBindTensorMemoryInfoARM* pBindInfos) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->BindTensorMemoryARM(device, bindInfoCount, pBindInfos);
+}
+
+static inline void DispatchGetDeviceTensorMemoryRequirementsARM(VkDevice device, const VkDeviceTensorMemoryRequirementsARM* pInfo,
+                                                                VkMemoryRequirements2* pMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetDeviceTensorMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+}
+
+static inline void DispatchCmdCopyTensorARM(VkCommandBuffer commandBuffer, const VkCopyTensorInfoARM* pCopyTensorInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdCopyTensorARM(commandBuffer, pCopyTensorInfo);
+}
+
+static inline void DispatchGetPhysicalDeviceExternalTensorPropertiesARM(
+    VkPhysicalDevice physicalDevice, const VkPhysicalDeviceExternalTensorInfoARM* pExternalTensorInfo,
+    VkExternalTensorPropertiesARM* pExternalTensorProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    dispatch->GetPhysicalDeviceExternalTensorPropertiesARM(physicalDevice, pExternalTensorInfo, pExternalTensorProperties);
+}
+
+static inline VkResult DispatchGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                       const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                                       void* pData) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetTensorOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
+}
+
+static inline VkResult DispatchGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                                           const VkTensorViewCaptureDescriptorDataInfoARM* pInfo,
+                                                                           void* pData) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetTensorViewOpaqueCaptureDescriptorDataARM(device, pInfo, pData);
 }
 
 static inline void DispatchGetShaderModuleIdentifierEXT(VkDevice device, VkShaderModule shaderModule,

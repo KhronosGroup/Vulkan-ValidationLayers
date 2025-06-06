@@ -388,6 +388,9 @@ void PostCallRecordGetEncodedVideoSessionParametersKHR(VkDevice device,
 void PostCallRecordQueueSubmit2KHR(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                    const RecordObject& record_obj) override;
 
+void PostCallRecordWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain, const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                      const RecordObject& record_obj) override;
+
 void PostCallRecordCreatePipelineBinariesKHR(VkDevice device, const VkPipelineBinaryCreateInfoKHR* pCreateInfo,
                                              const VkAllocationCallbacks* pAllocator, VkPipelineBinaryHandlesInfoKHR* pBinaries,
                                              const RecordObject& record_obj) override;
@@ -684,6 +687,24 @@ void PostCallRecordCopyMemoryToMicromapEXT(VkDevice device, VkDeferredOperationK
 void PostCallRecordWriteMicromapsPropertiesEXT(VkDevice device, uint32_t micromapCount, const VkMicromapEXT* pMicromaps,
                                                VkQueryType queryType, size_t dataSize, void* pData, size_t stride,
                                                const RecordObject& record_obj) override;
+
+void PostCallRecordCreateTensorARM(VkDevice device, const VkTensorCreateInfoARM* pCreateInfo,
+                                   const VkAllocationCallbacks* pAllocator, VkTensorARM* pTensor,
+                                   const RecordObject& record_obj) override;
+
+void PostCallRecordCreateTensorViewARM(VkDevice device, const VkTensorViewCreateInfoARM* pCreateInfo,
+                                       const VkAllocationCallbacks* pAllocator, VkTensorViewARM* pView,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordBindTensorMemoryARM(VkDevice device, uint32_t bindInfoCount, const VkBindTensorMemoryInfoARM* pBindInfos,
+                                       const RecordObject& record_obj) override;
+
+void PostCallRecordGetTensorOpaqueCaptureDescriptorDataARM(VkDevice device, const VkTensorCaptureDescriptorDataInfoARM* pInfo,
+                                                           void* pData, const RecordObject& record_obj) override;
+
+void PostCallRecordGetTensorViewOpaqueCaptureDescriptorDataARM(VkDevice device,
+                                                               const VkTensorViewCaptureDescriptorDataInfoARM* pInfo, void* pData,
+                                                               const RecordObject& record_obj) override;
 
 void PostCallRecordCreateOpticalFlowSessionNV(VkDevice device, const VkOpticalFlowSessionCreateInfoNV* pCreateInfo,
                                               const VkAllocationCallbacks* pAllocator, VkOpticalFlowSessionNV* pSession,
