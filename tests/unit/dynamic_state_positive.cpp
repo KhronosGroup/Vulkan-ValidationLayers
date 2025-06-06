@@ -1506,6 +1506,58 @@ TEST_F(PositiveDynamicState, DrawNotSetTessellationDomainOrigin) {
     m_command_buffer.End();
 }
 
+TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
+    TEST_DESCRIPTION("Shader uses a location not provided with dynamic vertex input");
+
+    AddRequiredExtensions(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::vertexInputDynamicState);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    char const *vsSource = R"glsl(
+        #version 450
+        layout(location = 0) in vec4 x;
+        layout(location = 1) in vec4 y;
+        layout(location = 0) out vec4 c;
+        void main() {
+           c = x * y;
+        }
+    )glsl";
+
+    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.shader_stages_ = {vs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
+    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+
+    vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    VkDeviceSize offset = 0u;
+    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset);
+
+    VkVertexInputBindingDescription2EXT vertexInputBindingDescription = vku::InitStructHelper();
+    vertexInputBindingDescription.binding = 0u;
+    vertexInputBindingDescription.stride = sizeof(float) * 4;
+    vertexInputBindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    vertexInputBindingDescription.divisor = 1u;
+    VkVertexInputAttributeDescription2EXT vertexAttributeDescription = vku::InitStructHelper();
+    vertexAttributeDescription.location = 0u;
+    vertexAttributeDescription.binding = 0u;
+    vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    vertexAttributeDescription.offset = 0u;
+    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &vertexInputBindingDescription, 1u, &vertexAttributeDescription);
+
+    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicState, LineRasterization) {
     AddRequiredExtensions(VK_EXT_LINE_RASTERIZATION_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
