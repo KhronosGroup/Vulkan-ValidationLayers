@@ -49,11 +49,13 @@ class QueryPool : public StateObject {
           supported_video_profile(std::move(supp_video_profile)),
           video_encode_feedback_flags(enabled_video_encode_feedback_flags),
           query_states_(pCreateInfo->queryCount) {
+        const QueryState initial_state =
+            (pCreateInfo->flags & VK_QUERY_POOL_CREATE_RESET_BIT_KHR) ? QUERYSTATE_RESET : QUERYSTATE_UNKNOWN;
         for (uint32_t i = 0; i < pCreateInfo->queryCount; ++i) {
             auto perf_size = n_perf_pass > 0 ? n_perf_pass : 1;
             query_states_[i].reserve(perf_size);
             for (uint32_t p = 0; p < perf_size; p++) {
-                query_states_[i].emplace_back(QUERYSTATE_UNKNOWN);
+                query_states_[i].emplace_back(initial_state);
             }
         }
     }

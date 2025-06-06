@@ -621,6 +621,33 @@ const std::string &GetSubresourceRangeVUID(const Location &loc, SubresourceRange
              {Key(Func::vkCmdClearDepthStencilImage), "VUID-vkCmdClearDepthStencilImage-pRanges-01695"},
              {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-06725"},
          }}},
+        {SubresourceRangeError::BaseLayer_02724_10798,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-maintenance9-10798"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-maintenance9-10798"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-maintenance9-10798"},
+             {Key(Func::vkCmdClearColorImage), ""},         // Not possible to hit with entrypoint
+             {Key(Func::vkCmdClearDepthStencilImage), ""},  // Not possible to hit with entrypoint
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-image-02724"},
+         }}},
+        {SubresourceRangeError::LayerCount_02725_10800,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-maintenance9-10800"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-maintenance9-10800"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-maintenance9-10800"},
+             {Key(Func::vkCmdClearColorImage), ""},         // Not possible to hit with entrypoint
+             {Key(Func::vkCmdClearDepthStencilImage), ""},  // Not possible to hit with entrypoint
+             {Key(Func::vkCreateImageView), "VUID-VkImageViewCreateInfo-subresourceRange-02725"},
+         }}},
+        {SubresourceRangeError::LevelCount_10799,
+         {{
+             {Key(Struct::VkImageMemoryBarrier), "VUID-VkImageMemoryBarrier-maintenance9-10799"},
+             {Key(Struct::VkImageMemoryBarrier2), "VUID-VkImageMemoryBarrier2-maintenance9-10799"},
+             {Key(Func::vkTransitionImageLayout), "VUID-VkHostImageLayoutTransitionInfo-maintenance9-10799"},
+             {Key(Func::vkCmdClearColorImage), ""},         // Not possible to hit with entrypoint
+             {Key(Func::vkCmdClearDepthStencilImage), ""},  // Not possible to hit with entrypoint
+             {Key(Func::vkCreateImageView), ""},            // Not possible to hit with entrypoint
+         }}},
     };
 
     const auto &result = FindVUID(error, loc, errors);

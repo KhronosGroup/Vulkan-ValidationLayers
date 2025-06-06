@@ -378,7 +378,8 @@ bool Device::ValidateCreateImageSparse(const VkImageCreateInfo &create_info, con
                              "images using sparse memory cannot have VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT set. (image flags %s)",
                              string_VkImageCreateFlags(image_flags).c_str());
         }
-        if (image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
+        if ((!enabled_features.maintenance9 || !phys_dev_ext_props.maintenance9_props.image2DViewOf3DSparse) &&
+            image_flags & VK_IMAGE_CREATE_2D_VIEW_COMPATIBLE_BIT_EXT) {
             skip |= LogError("VUID-VkImageCreateInfo-imageType-10197", device, create_info_loc.dot(Field::flags), "is %s.",
                              string_VkImageCreateFlags(image_flags).c_str());
         }

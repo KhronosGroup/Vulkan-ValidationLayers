@@ -37,4 +37,6 @@ struct SpecialSupported {
     bool descriptor_binding_storage_image_uab{false};   // descriptorBindingStorageImageUpdateAfterBind
     // From VK_EXT_inline_uniform_block, but interacts with VK_EXT_descriptor_indexing
     bool descriptor_binding_inline_uniform_buffer_uab{false};  // descriptorBindingInlineUniformBlockUpdateAfterBind
+    // VK_KHR_maintenance9
+    bool has_maintenance9{false};
 };
