@@ -211,7 +211,7 @@ class QueueSubState {
     virtual void Destroy() {}
 
     virtual void PreSubmit(std::vector<QueueSubmission> &submissions) {}
-    virtual void PostSubmit(QueueSubmission &submission) {}
+    virtual void PostSubmit(std::deque<QueueSubmission> &submissions_) {}
     virtual void Retire(QueueSubmission &submission) {}
 
     VulkanTypedHandle Handle() const { return base.Handle(); }
