@@ -313,10 +313,6 @@ bool BestPractices::PreCallValidateQueueSubmit(VkQueue queue, uint32_t submitCou
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
-        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreCount; semaphore++) {
-            skip |= CheckPipelineStageFlags(queue, submit_loc.dot(Field::pWaitDstStageMask, semaphore),
-                                            pSubmits[submit].pWaitDstStageMask[semaphore]);
-        }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferCount; cb_index++) {
             if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBuffers[cb_index])) {
                 const Location cb_loc = submit_loc.dot(vvl::Field::pCommandBuffers, cb_index);
@@ -341,11 +337,6 @@ bool BestPractices::PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCo
 
     for (uint32_t submit = 0; submit < submitCount; submit++) {
         const Location submit_loc = error_obj.location.dot(Field::pSubmits, submit);
-        for (uint32_t semaphore = 0; semaphore < pSubmits[submit].waitSemaphoreInfoCount; semaphore++) {
-            const Location semaphore_loc = submit_loc.dot(Field::pWaitSemaphoreInfos, semaphore);
-            skip |= CheckPipelineStageFlags(queue, semaphore_loc.dot(Field::stageMask),
-                                            pSubmits[submit].pWaitSemaphoreInfos[semaphore].stageMask);
-        }
         for (uint32_t cb_index = 0; cb_index < pSubmits[submit].commandBufferInfoCount; cb_index++) {
             if (auto cb_state = GetRead<vvl::CommandBuffer>(pSubmits[submit].pCommandBufferInfos[cb_index].commandBuffer)) {
                 const Location infos_loc = submit_loc.dot(vvl::Field::pCommandBufferInfos, cb_index);

@@ -154,14 +154,6 @@ bool BestPractices::PreCallValidateCreateRenderPass(VkDevice device, const VkRen
         }
     }
 
-    for (uint32_t dependency = 0; dependency < pCreateInfo->dependencyCount; dependency++) {
-        const Location dependency_loc = create_info_loc.dot(Field::pDependencies, dependency);
-        skip |= CheckPipelineStageFlags(device, dependency_loc.dot(Field::srcStageMask),
-                                        pCreateInfo->pDependencies[dependency].srcStageMask);
-        skip |= CheckPipelineStageFlags(device, dependency_loc.dot(Field::dstStageMask),
-                                        pCreateInfo->pDependencies[dependency].dstStageMask);
-    }
-
     return skip;
 }
 

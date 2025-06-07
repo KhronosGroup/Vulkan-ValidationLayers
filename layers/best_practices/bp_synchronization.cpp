@@ -22,40 +22,9 @@
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 
-bool BestPractices::CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc, VkPipelineStageFlags flags) const {
-    bool skip = false;
-
-    if (flags & VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT) {
-        skip |= LogWarning("BestPractices-pipeline-stage-flags-graphics", objlist, loc, "using VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT");
-    } else if (flags & VK_PIPELINE_STAGE_ALL_COMMANDS_BIT) {
-        skip |= LogWarning("BestPractices-pipeline-stage-flags-compute", objlist, loc, "using VK_PIPELINE_STAGE_ALL_COMMANDS_BIT");
-    }
-
-    return skip;
-}
-
-bool BestPractices::CheckPipelineStageFlags(const LogObjectList& objlist, const Location& loc,
-                                            VkPipelineStageFlags2KHR flags) const {
-    bool skip = false;
-
-    if (flags & VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT) {
-        skip |=
-            LogWarning("BestPractices-pipeline-stage-flags2-graphics", objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT");
-    } else if (flags & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
-        skip |=
-            LogWarning("BestPractices-pipeline-stage-flags2-compute", objlist, loc, "using VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT");
-    }
-
-    return skip;
-}
-
 bool BestPractices::CheckDependencyInfo(const LogObjectList& objlist, const Location& dep_loc,
                                         const VkDependencyInfo& dep_info) const {
     bool skip = false;
-    auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
-
-    skip |= CheckPipelineStageFlags(objlist, dep_loc, stage_masks.src);
-    skip |= CheckPipelineStageFlags(objlist, dep_loc, stage_masks.dst);
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(dep_loc.dot(Field::pImageMemoryBarriers, i), dep_info.pImageMemoryBarriers[i].image,
                                            dep_info.pImageMemoryBarriers[i].oldLayout, dep_info.pImageMemoryBarriers[i].newLayout,
@@ -99,8 +68,6 @@ void BestPractices::RecordCmdResetEvent(bp_state::CommandBufferSubState& command
 bool BestPractices::PreCallValidateCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                const ErrorObject& error_obj) const {
     bool skip = false;
-
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     skip |= CheckEventSignalingState(sub_state, event, error_obj.location.dot(Field::commandBuffer));
@@ -141,13 +108,6 @@ void BestPractices::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, Vk
     RecordCmdSetEvent(sub_state, event);
 }
 
-bool BestPractices::PreCallValidateCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
-                                                 const ErrorObject& error_obj) const {
-    bool skip = false;
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
-    return skip;
-}
-
 void BestPractices::PostCallRecordCmdResetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                                 const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
@@ -160,13 +120,6 @@ bool BestPractices::PreCallValidateCmdResetEvent2KHR(VkCommandBuffer commandBuff
     return PreCallValidateCmdResetEvent2(commandBuffer, event, stageMask, error_obj);
 }
 
-bool BestPractices::PreCallValidateCmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags2 stageMask,
-                                                  const ErrorObject& error_obj) const {
-    bool skip = false;
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::stageMask), stageMask);
-    return skip;
-}
-
 void BestPractices::PostCallRecordCmdResetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
                                                     VkPipelineStageFlags2KHR stageMask, const RecordObject& record_obj) {
     PostCallRecordCmdResetEvent2(commandBuffer, event, stageMask, record_obj);
@@ -177,21 +130,6 @@ void BestPractices::PostCallRecordCmdResetEvent2(VkCommandBuffer commandBuffer, 
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
     RecordCmdResetEvent(sub_state, event);
-}
-
-bool BestPractices::PreCallValidateCmdWaitEvents(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
-                                                 VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask,
-                                                 uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers,
-                                                 uint32_t bufferMemoryBarrierCount,
-                                                 const VkBufferMemoryBarrier* pBufferMemoryBarriers,
-                                                 uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers,
-                                                 const ErrorObject& error_obj) const {
-    bool skip = false;
-
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::srcStageMask), srcStageMask);
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::dstStageMask), dstStageMask);
-
-    return skip;
 }
 
 bool BestPractices::PreCallValidateCmdWaitEvents2KHR(VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent* pEvents,
@@ -340,9 +278,6 @@ bool BestPractices::PreCallValidateCmdPipelineBarrier(
     uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
     const VkImageMemoryBarrier* pImageMemoryBarriers, const ErrorObject& error_obj) const {
     bool skip = false;
-
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::srcStageMask), srcStageMask);
-    skip |= CheckPipelineStageFlags(commandBuffer, error_obj.location.dot(Field::dstStageMask), dstStageMask);
 
     for (uint32_t i = 0; i < imageMemoryBarrierCount; ++i) {
         skip |= ValidateImageMemoryBarrier(error_obj.location.dot(Field::pImageMemoryBarriers, i), pImageMemoryBarriers[i].image,
