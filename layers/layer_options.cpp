@@ -1145,10 +1145,9 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
                                       " setting was set, this setting will be remove after the July 2025 SDK is published.");
     }
     if (vkuHasLayerSetting(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES)) {
-        vkuGetLayerSettingValue(layer_setting_set, DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES,
-                                gpuav_settings.vma_linear_output);
         setting_warnings.emplace_back("Deprecated " + std::string(DEPRECATED_VK_LAYER_GPUAV_MAX_BUFFER_DEVICE_ADDRESSES) +
-                                      " setting was set, this setting will be remove after the July 2025 SDK is published.");
+                                      " setting was set, but is has been deprecated and has no effect. It will be removed after "
+                                      "the July 2025 SDK is published.");
     }
 
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_GPUAV_DEBUG_VALIDATE_INSTRUMENTED_SHADERS)) {
