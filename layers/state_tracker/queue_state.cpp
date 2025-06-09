@@ -181,6 +181,12 @@ std::optional<vvl::SemaphoreInfo> vvl::Queue::FindTimelineWaitWithoutResolvingSi
     }
     // Step 2. Query each timeline wait (read-locks Semaphore)
     for (const SemaphoreInfo &wait_info : timeline_waits) {
+        if (wait_info.semaphore->Scope() != vvl::Semaphore::kInternal) {
+            // For external semaphore we can't track the signal. The conservative assumption
+            // for false positive free validation is that the signal is available, so skip
+            // this semaphore.
+            continue;
+        }
         if (!wait_info.semaphore->HasResolvingTimelineSignal(wait_info.payload)) {
             return wait_info;
         }
