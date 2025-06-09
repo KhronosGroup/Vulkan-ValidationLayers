@@ -149,6 +149,18 @@ class DeprecationGenerator(BaseGenerator):
                 ''')
 
             firstCheck = True
+            if command.deprecate.version:
+                logic = 'if' if firstCheck else 'else if'
+                if firstCheck:
+                    firstCheck = False
+
+                out.append(f'''
+                    {logic} (api_version >= {command.deprecate.version.nameApi}) {{
+                        reported = true;
+                        LogWarning("WARNING-{command.deprecate.link}", device, error_obj.location,
+                            "{command.name} is deprecated and this device supports {command.deprecate.version.name}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
+                    }}''')
+
             for extension in command.deprecate.extensions:
                 logic = 'if' if firstCheck else 'else if'
                 if firstCheck:
@@ -159,16 +171,6 @@ class DeprecationGenerator(BaseGenerator):
                         reported = true;
                         LogWarning("WARNING-{command.deprecate.link}", device, error_obj.location,
                             "{command.name} is deprecated and this device supports {extension}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
-                    }}''')
-
-            if command.deprecate.version:
-                logic = 'if' if firstCheck else 'else if'
-
-                out.append(f'''
-                    {logic} (api_version >= {command.deprecate.version.nameApi}) {{
-                        reported = true;
-                        LogWarning("WARNING-{command.deprecate.link}", device, error_obj.location,
-                            "{command.name} is deprecated and this device supports {command.deprecate.version.name}\\nSee more information about this deprecation in the specification: https://docs.vulkan.org/spec/latest/appendices/deprecation.html#{command.deprecate.link}");
                     }}''')
 
             out.append('''
