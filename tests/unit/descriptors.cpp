@@ -543,13 +543,13 @@ TEST_F(NegativeDescriptors, WriteDescriptorSetTypeStageMatch) {
     descriptor_write.dstBinding = 2;
     descriptor_write.dstArrayElement = 0;
     descriptor_write.descriptorCount = 5;
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-10776");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     descriptor_write.dstArrayElement = 1;
     descriptor_write.descriptorCount = 4;
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-10776");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }
@@ -3072,7 +3072,7 @@ TEST_F(NegativeDescriptors, ConsecutiveBindingUpdatesStartOverInConsistent) {
     descriptor_write.descriptorCount = 2;
     descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     descriptor_write.pBufferInfo = buffer_infos;
-    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-00317");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-10776");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
     m_errorMonitor->VerifyFound();
 }

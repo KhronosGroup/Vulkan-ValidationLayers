@@ -180,7 +180,7 @@ TEST_F(NegativeDescriptorIndexing, SetNonIdenticalWrite) {
     descriptor_write.descriptorCount = 3;
 
     // binding 1 has a different VkDescriptorBindingFlags
-    m_errorMonitor->SetDesiredError("UNASSIGEND-VkWriteDescriptorSet-bindingFlags");
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorCount-10777");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
     m_errorMonitor->VerifyFound();
 }

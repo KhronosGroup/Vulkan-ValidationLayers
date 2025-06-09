@@ -263,7 +263,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithUnsupportedHandleType) {
                         "run valdiation";
     }
 
-    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860");
     buffer.BindMemory(buffer.Memory(), 0);
     m_errorMonitor->VerifyFound();
 }
@@ -304,7 +304,7 @@ TEST_F(NegativeExternalMemorySync, BufferMemoryWithIncompatibleHandleTypes) {
     // Create memory object with incompatible handle types
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = exportable_types;
-    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860");
     buffer.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
@@ -367,7 +367,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithUnsupportedHandleType) {
         export_memory_info.pNext = &dedicated_allocate_info;
     }
 
-    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860");
     image.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
@@ -422,7 +422,7 @@ TEST_F(NegativeExternalMemorySync, ImageMemoryWithIncompatibleHandleTypes) {
     auto export_memory_info = vku::InitStruct<VkExportMemoryAllocateInfo>(dedicated_allocation ? &dedicated_info : nullptr);
     export_memory_info.handleTypes = exportable_types;
 
-    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656");
+    m_errorMonitor->SetDesiredError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860");
     image.AllocateAndBindMemory(*m_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &export_memory_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2331,7 +2331,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryWin32BufferSupport) {
     m_errorMonitor->SetUnexpectedError("VUID-VkBufferCreateInfo-pNext-00920");
     vkt::Buffer buffer(*m_device, buffer_ci, vkt::no_mem);
 
-    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658");
+    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861");
     buffer.BindMemory(imported_memory, 0);
     m_errorMonitor->VerifyFound();
     ::CloseHandle(handle);
@@ -2559,7 +2559,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdBufferSupport) {
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     import_info.fd = 1;
 
-    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryFdInfoKHR-handleType-00667");
+    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryFdInfoKHR-handleType-09862");
     VkMemoryAllocateInfo alloc_info =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
@@ -2589,7 +2589,7 @@ TEST_F(NegativeExternalMemorySync, ImportMemoryFdImageSupport) {
     import_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     import_info.fd = 1;
 
-    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryFdInfoKHR-handleType-00667");
+    m_errorMonitor->SetDesiredError("VUID-VkImportMemoryFdInfoKHR-handleType-09862");
     VkMemoryAllocateInfo alloc_info =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
