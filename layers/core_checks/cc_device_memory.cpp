@@ -685,7 +685,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             auto dedicated_image_state = Get<vvl::Image>(dedicated_image);
             if (dedicated_image_state &&
                 !HasExternalMemoryImportSupport(*dedicated_image_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_image,
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_image,
                                  allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::image),
                                  "is %s but vkGetPhysicalDeviceImageFormatProperties2 shows no support for "
                                  "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
@@ -696,7 +696,7 @@ bool CoreChecks::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAl
             auto dedicated_buffer_state = Get<vvl::Buffer>(dedicated_buffer);
             if (dedicated_buffer_state &&
                 !HasExternalMemoryImportSupport(*dedicated_buffer_state, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT)) {
-                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-00667", dedicated_buffer,
+                skip |= LogError("VUID-VkImportMemoryFdInfoKHR-handleType-09862", dedicated_buffer,
                                  allocate_info_loc.pNext(Struct::VkMemoryDedicatedAllocateInfo, Field::buffer),
                                  "is %s but vkGetPhysicalDeviceExternalBufferProperties shows no support for "
                                  "VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT.",
@@ -953,7 +953,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
                 if ((external_features & VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT) == 0) {
                     export_supported = false;
                     const LogObjectList objlist(buffer, memory);
-                    skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656", objlist, loc,
+                    skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860", objlist, loc,
                                      "The VkDeviceMemory (%s) has VkExportMemoryAllocateInfo::handleTypes with the %s flag "
                                      "set, which does not support VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT with the buffer "
                                      "create flags (%s) and usage flags (%s).",
@@ -980,7 +980,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             const auto compatible_types = external_properties.externalMemoryProperties.compatibleHandleTypes;
             if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
                 const LogObjectList objlist(buffer, memory);
-                skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656", objlist, loc.dot(Field::memory),
+                skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860", objlist, loc.dot(Field::memory),
                                  "(%s) has VkExportMemoryAllocateInfo::handleTypes (%s) that are not "
                                  "reported as compatible by vkGetPhysicalDeviceExternalBufferProperties with the buffer create "
                                  "flags (%s) and usage flags (%s).",
@@ -1131,7 +1131,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
             if (!HasExternalMemoryImportSupport(*buffer_state, mem_info->import_handle_type.value())) {
                 const LogObjectList objlist(buffer, memory);
                 skip |= LogError(
-                    "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658", objlist, loc.dot(Field::memory),
+                    "VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861", objlist, loc.dot(Field::memory),
                     "(%s) was imported from handleType %s but VkExternalBufferProperties does not report it as importable.",
                     FormatHandle(memory).c_str(), string_VkExternalMemoryHandleTypeFlagBits(mem_info->import_handle_type.value()));
             }
@@ -1912,7 +1912,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                         if (result != VK_SUCCESS) {
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
-                            skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656", objlist, loc,
+                            skip |= LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860", objlist, loc,
                                              "The handle type (%s) specified by the memory's VkExportMemoryAllocateInfo, and the "
                                              "VkImageCreateInfo\n%s"
                                              "is not supported combination of parameters. "
@@ -1927,7 +1927,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                             export_supported = false;
                             const LogObjectList objlist(bind_info.image, bind_info.memory);
                             skip |=
-                                LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-00656", objlist, loc.dot(Field::memory),
+                                LogError("VUID-VkExportMemoryAllocateInfo-handleTypes-09860", objlist, loc.dot(Field::memory),
                                          "(%s) has VkExportMemoryAllocateInfo::handleTypes with the %s "
                                          "flag set, which does not support VK_EXTERNAL_MEMORY_FEATURE_EXPORTABLE_BIT with the "
                                          "VkImageCreateInfo\n%s",
@@ -1954,7 +1954,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     if (export_supported && (mem_info->export_handle_types & compatible_types) != mem_info->export_handle_types) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
                         skip |= LogError(
-                            "VUID-VkExportMemoryAllocateInfo-handleTypes-00656", objlist, loc.dot(Field::memory),
+                            "VUID-VkExportMemoryAllocateInfo-handleTypes-09860", objlist, loc.dot(Field::memory),
                             "(%s) has VkExportMemoryAllocateInfo::handleTypes (%s) that are not "
                             "reported as compatible by vkGetPhysicalDeviceImageFormatProperties2 with VkImageCreateInfo\n%s",
                             FormatHandle(bind_info.memory).c_str(),
@@ -1997,7 +1997,7 @@ bool CoreChecks::ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindIma
                     // Check if image can be bound to memory imported from specific handle type
                     if (!HasExternalMemoryImportSupport(*image_state, mem_info->import_handle_type.value())) {
                         const LogObjectList objlist(bind_info.image, bind_info.memory);
-                        skip |= LogError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-00658", objlist, loc.dot(Field::memory),
+                        skip |= LogError("VUID-VkImportMemoryWin32HandleInfoKHR-handleType-09861", objlist, loc.dot(Field::memory),
                                          "(%s) was imported from handleType %s but VkExternalImageFormatProperties does not report "
                                          "it as importable.",
                                          FormatHandle(bind_info.memory).c_str(),

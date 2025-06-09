@@ -223,7 +223,7 @@ bool CoreChecks::ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo &alloc
             if ((VK_SUCCESS != fmt_lookup_result) || (0 == (ext_img_fmt_props.externalMemoryProperties.externalMemoryFeatures &
                                                             VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT))) {
                 skip |= LogError(
-                    "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-01880", device, allocate_info_loc,
+                    "VUID-VkImportAndroidHardwareBufferInfoANDROID-buffer-09863", device, allocate_info_loc,
                     "Neither the VkExternalImageFormatProperties nor the VkExternalBufferProperties "
                     "structs for the AHardwareBuffer include the VK_EXTERNAL_MEMORY_FEATURE_IMPORTABLE_BIT flag. (AHB = %p).",
                     import_ahb_info->buffer);

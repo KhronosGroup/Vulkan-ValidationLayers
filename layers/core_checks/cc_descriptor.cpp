@@ -1779,7 +1779,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                                      current_binding->binding, string_VkDescriptorType(current_binding->type), extra.str().c_str());
                 } else if (current_binding->stage_flags != stage_flags) {
                     const LogObjectList objlist(update.dstSet, dst_layout->Handle());
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-00317", objlist, write_loc.dot(Field::dstBinding),
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-10776", objlist, write_loc.dot(Field::dstBinding),
                                      "(%" PRIu32
                                      ") was created with %s\n"
                                      "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
@@ -1800,8 +1800,7 @@ bool CoreChecks::ValidateWriteUpdate(const vvl::DescriptorSet &dst_set, const Vk
                                      current_binding->binding, current_binding->has_immutable_samplers ? "non-null" : "null");
                 } else if (current_binding->binding_flags != binding_flags) {
                     const LogObjectList objlist(update.dstSet, dst_layout->Handle());
-                    // VUID being created in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7371
-                    skip |= LogError("UNASSIGEND-VkWriteDescriptorSet-bindingFlags", objlist, write_loc.dot(Field::dstBinding),
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorCount-10777", objlist, write_loc.dot(Field::dstBinding),
                                      "(%" PRIu32
                                      ") was created with %s\n"
                                      "The descriptorCount was %" PRIu32 " and the offset of %" PRIu32 " references binding %" PRIu32
