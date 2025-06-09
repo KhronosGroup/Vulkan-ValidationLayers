@@ -742,9 +742,10 @@
                                             "settings": [
                                                 {
                                                     "key": "gpuav_max_buffer_device_addresses",
-                                                    "label": "Maximum number of buffer device addresses in use at one time",
+                                                    "label": "Deprecated and disabled setting",
                                                     "description": "",
                                                     "type": "INT",
+                                                    "status": "DEPRECATED",
                                                     "default": 10000,
                                                     "range": {
                                                         "min": 100,
