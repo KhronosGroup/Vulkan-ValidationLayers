@@ -287,6 +287,13 @@ bool vvl::Semaphore::HasResolvingTimelineSignal(uint64_t wait_payload) const {
     assert(type == VK_SEMAPHORE_TYPE_TIMELINE);
     auto guard = ReadLock();
 
+    // For external semaphore we can't track the signal.
+    // In theory, it can be context-dependent whether to assume the external signal is
+    // available or not in order to have false positive free validation. Assert that
+    // this function is only called for regular semaphores and it is up to the caller
+    // to handle external case.
+    assert(scope_ == vvl::Semaphore::kInternal);
+
     // Check if completed payload value (which includes initial value) resolves the wait.
     if (wait_payload <= completed_.payload) {
         return true;

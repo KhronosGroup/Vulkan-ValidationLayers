@@ -118,7 +118,7 @@ class Semaphore : public RefcountedStateObject {
     std::optional<SubmissionReference> GetPendingBinaryWaitSubmission() const;
 
     // If a pending binary signal depends on an unresolved timeline wait, this function
-    // returns information about the timeline wait; otherwise, it returns an empty result.
+    // returns information about unresolved timeline wait; otherwise, it returns an empty result.
     // This is used to validate VUs (such as VUID-vkQueueSubmit-pWaitSemaphores-03238) that have this statement:
     // "and any semaphore signal operations on which it depends must have also been submitted for execution"
     std::optional<SemaphoreInfo> GetPendingBinarySignalTimelineDependency() const;
