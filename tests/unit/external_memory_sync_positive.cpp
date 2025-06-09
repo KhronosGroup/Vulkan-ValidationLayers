@@ -653,13 +653,12 @@ TEST_F(PositiveExternalMemorySync, BinarySyncDependsOnExternalTimelineSignal) {
     AddRequiredFeature(vkt::Feature::timelineSemaphore);
     RETURN_IF_SKIP(Init());
 
-    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
-    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
-
-    // NOTE: external semaphore support depends on semaphore type so need to provide VkSemaphoreTypeCreateInfo here!
-    if (!SemaphoreExportImportSupported(Gpu(), handle_type, &semaphore_type_ci)) {
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
     }
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
 
     VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
     export_info.handleTypes = handle_type;

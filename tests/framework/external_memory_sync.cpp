@@ -217,13 +217,17 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreat
     return (external_features & VK_EXTERNAL_MEMORY_FEATURE_DEDICATED_ONLY_BIT) != 0;
 }
 
-bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type, void *p_next) {
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkSemaphoreType semaphore_type,
+                                    VkExternalSemaphoreHandleTypeFlagBits handle_type) {
     constexpr auto export_import_flags =
         VK_EXTERNAL_SEMAPHORE_FEATURE_EXPORTABLE_BIT | VK_EXTERNAL_SEMAPHORE_FEATURE_IMPORTABLE_BIT;
 
-    VkPhysicalDeviceExternalSemaphoreInfo info = vku::InitStructHelper(p_next);
-    info.handleType = handle_type;
+    VkSemaphoreTypeCreateInfo type_info = vku::InitStructHelper();
+    type_info.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+    VkPhysicalDeviceExternalSemaphoreInfo external_info = vku::InitStructHelper(&type_info);
+    external_info.handleType = handle_type;
     VkExternalSemaphoreProperties properties = vku::InitStructHelper();
-    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &info, &properties);
+    vk::GetPhysicalDeviceExternalSemaphoreProperties(gpu, &external_info, &properties);
     return (properties.externalSemaphoreFeatures & export_import_flags) == export_import_flags;
 }

@@ -5100,7 +5100,7 @@ TEST_F(NegativeSyncObject, TimelineSemaphoreAndExportedCopyCooperation) {
     if (!m_second_queue) {
         GTEST_SKIP() << "Two queues are needed";
     }
-    if (!SemaphoreExportImportSupported(Gpu(), handle_type)) {
+    if (!SemaphoreExportImportSupported(Gpu(), VK_SEMAPHORE_TYPE_TIMELINE, handle_type)) {
         GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
     }
 
