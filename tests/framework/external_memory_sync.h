@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,5 +44,5 @@ bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkBufferCrea
 bool HandleTypeNeedsDedicatedAllocation(VkPhysicalDevice gpu, const VkImageCreateInfo &image_create_info,
                                         VkExternalMemoryHandleTypeFlagBits handle_type);
 
-bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkExternalSemaphoreHandleTypeFlagBits handle_type,
-                                    void *p_next = nullptr);
+bool SemaphoreExportImportSupported(VkPhysicalDevice gpu, VkSemaphoreType semaphore_type,
+                                    VkExternalSemaphoreHandleTypeFlagBits handle_type);
