@@ -1422,3 +1422,14 @@ TEST_F(VkLayerTest, UnkonwnStructType) {
     vk::GetPhysicalDeviceProperties2KHR(Gpu(), &properties2);
     m_errorMonitor->VerifyFound();
 }
+
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10208
+TEST_F(VkLayerTest, DISABLED_MultipleExtensionOrDependency) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_NV_LOW_LATENCY_2_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    // missing  VK_KHR_present_id or  VK_KHR_present_id2
+    m_errorMonitor->SetDesiredError("VUID-vkCreateDevice-ppEnabledExtensionNames-01387");
+    RETURN_IF_SKIP(Init());
+    m_errorMonitor->VerifyFound();
+}

@@ -621,7 +621,7 @@ TEST_F(VkPositiveLayerTest, InstanceExtensionsCallingDeviceStruct1) {
 }
 
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10208
-TEST_F(VkPositiveLayerTest, DISABLED_TimelineSemaphoreWithVulkan11) {
+TEST_F(VkPositiveLayerTest, TimelineSemaphoreWithVulkan11) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8308");
     SetTargetApiVersion(VK_API_VERSION_1_1);
     AddRequiredExtensions(VK_NV_LOW_LATENCY_2_EXTENSION_NAME);

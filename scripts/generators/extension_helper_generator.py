@@ -82,6 +82,13 @@ class ExtensionHelperOutputGenerator(BaseGenerator):
             self.fieldName[extension.name] = extension.name.lower()
             self.requiredExpression[extension.name] = list()
             if extension.depends is not None:
+                # TODO - https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10208
+                # Need to handle something like (VK_KHR_present_id,VK_KHR_present_id2)
+                # Also have no way in exprValues to even detect it to make this check automatic
+                if extension.name == 'VK_NV_low_latency2':
+                    self.requiredExpression[extension.name].append(self.vk.extensions['VK_KHR_timeline_semaphore'])
+                    continue
+
                 # This is a work around for https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5372
                 temp = re.sub(r',VK_VERSION_1_\d+', '', extension.depends)
                 # It can look like (VK_KHR_timeline_semaphore,VK_VERSION_1_2) or (VK_VERSION_1_2,VK_KHR_timeline_semaphore)
