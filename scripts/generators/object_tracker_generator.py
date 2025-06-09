@@ -806,6 +806,22 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkTileMemoryBindInfoQCOM-memory-parent"'
         if structName == 'VkExternalComputeQueueCreateInfoNV' and memberName == 'preferredQueue':
             return '"UNASSIGNED-VkExternalComputeQueueCreateInfoNV-preferredQueue-parent"'
+        if structName == 'VkFrameBoundaryTensorsARM' and memberName == 'pTensors':
+            return '"UNASSIGNED-VkFrameBoundaryTensorsARM-pTensors-parent"'
+        if structName == 'VkTensorMemoryBarrierARM' and memberName == 'tensor':
+            return '"UNASSIGNED-VkTensorMemoryBarrierARM-tensor-parent"'
+        if structName == 'VkMemoryDedicatedAllocateInfoTensorARM' and memberName == 'tensor':
+            return '"UNASSIGNED-VkMemoryDedicatedAllocateInfoTensorARM-tensor-parent"'
+        if structName == 'VkDescriptorGetTensorInfoARM' and memberName == 'tensorView':
+            return '"UNASSIGNED-VkDescriptorGetTensorInfoARM-tensorView-parent"'
+        if structName == 'VkTensorViewCreateInfoARM' and memberName == 'tensor':
+            return '"UNASSIGNED-VkTensorViewCreateInfoARM-tensor-parent"'
+        if structName == 'VkTensorMemoryRequirementsInfoARM' and memberName == 'tensor':
+            return '"UNASSIGNED-VkTensorMemoryRequirementsInfoARM-tensor-parent"'
+        if structName == 'VkTensorCaptureDescriptorDataInfoARM' and memberName == 'tensor':
+            return '"UNASSIGNED-VkTensorCaptureDescriptorDataInfoARM-tensor-parent"'
+        if structName == 'VkTensorViewCaptureDescriptorDataInfoARM' and memberName == 'tensorView':
+            return '"UNASSIGNED-VkTensorViewCaptureDescriptorDataInfoARM-tensorView-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):
