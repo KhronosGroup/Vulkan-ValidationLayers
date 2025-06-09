@@ -636,3 +636,49 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer2.MemoryRequirements(), 0, &import_info);
     vkt::DeviceMemory memory_import(*m_device, alloc_info);
 }
+
+TEST_F(PositiveExternalMemorySync, BinarySyncDependsOnExternalTimelineSignal) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10211
+    TEST_DESCRIPTION("Binary semaphore waits for binary signal that depends on timeline signal from imported semaphore");
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+    const auto extension_name = VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    const auto handle_type = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(extension_name);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    VkSemaphoreTypeCreateInfo semaphore_type_ci = vku::InitStructHelper();
+    semaphore_type_ci.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+
+    // NOTE: external semaphore support depends on semaphore type so need to provide VkSemaphoreTypeCreateInfo here!
+    if (!SemaphoreExportImportSupported(Gpu(), handle_type, &semaphore_type_ci)) {
+        GTEST_SKIP() << "Semaphore does not support export and import through opaque handle";
+    }
+
+    VkExportSemaphoreCreateInfo export_info = vku::InitStructHelper(&semaphore_type_ci);
+    export_info.handleTypes = handle_type;
+    VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper(&export_info);
+
+    vkt::Semaphore semaphore(*m_device, semaphore_ci);
+    vkt::Semaphore imported_semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+    vkt::Semaphore binary_semaphore(*m_device);
+
+    ExternalHandle handle{};
+    semaphore.ExportHandle(handle, handle_type);
+    imported_semaphore.ImportHandle(handle, handle_type);
+
+    // Check that this scenario does not generate VUID-vkQueueSubmit2-semaphore-03873.
+    // In case of regression when the exported signal is not handled correctly, the
+    // validation may assume that timeline wait does not have resolving signal submitted yet.
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineSignal(semaphore, 1));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(imported_semaphore, 1), vkt::TimelineSignal(imported_semaphore, 2));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::TimelineWait(semaphore, 2), vkt::Signal(binary_semaphore));
+    m_default_queue->Submit2(vkt::no_cmd, vkt::Wait(binary_semaphore));
+    m_device->Wait();
+}
