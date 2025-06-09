@@ -2951,6 +2951,30 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     m_command_buffer.End();
 }
 
+TEST_F(NegativeRayTracing, InvalidMaxVertex) {
+    TEST_DESCRIPTION("Build a BLAS made out of triangles, without using indices, and using an invalid maxVertex");
+
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    // Invalid update to triangles max vertex
+    m_command_buffer.Begin();
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    blas.GetGeometries()[0].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+    blas.GetGeometries()[0].SetTrianglesMaxVertex(1);
+
+    m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureBuildRangeInfoKHR-None-10775");
+    blas.BuildCmdBuffer(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTrianglesIndexType) {
     TEST_DESCRIPTION(
         "Build a list of destination acceleration structures, then do an update build on that same list but with a different index "
