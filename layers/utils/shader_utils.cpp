@@ -144,6 +144,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
         bool workgroup_scalar_block_layout;
         bool allow_local_size_id;
         bool allow_offset_texture_operand;
+        bool allow_vulkan_32_bit_bitwise;
     } settings;
 
     // VK_KHR_relaxed_block_layout never had a feature bit so just enabling the extension allows relaxed layout
@@ -156,6 +157,7 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     settings.workgroup_scalar_block_layout = enabled_features.workgroupMemoryExplicitLayoutScalarBlockLayout == VK_TRUE;
     settings.allow_local_size_id = enabled_features.maintenance4 == VK_TRUE;
     settings.allow_offset_texture_operand = enabled_features.maintenance8 == VK_TRUE;
+    settings.allow_vulkan_32_bit_bitwise = enabled_features.maintenance9 == VK_TRUE;
 
     if (settings.relax_block_layout) {
         // --relax-block-layout
@@ -180,6 +182,10 @@ void AdjustValidatorOptions(const DeviceExtensions &device_extensions, const Dev
     if (settings.allow_offset_texture_operand) {
         // --allow-offset-texture-operand
         out_options.SetAllowOffsetTextureOperand(true);
+    }
+    if (settings.allow_vulkan_32_bit_bitwise) {
+        // --allow-vulkan-32-bit-bitwise
+        out_options.SetAllowVulkan32BitBitwise(true);
     }
 
     // Faster validation without friendly names.
