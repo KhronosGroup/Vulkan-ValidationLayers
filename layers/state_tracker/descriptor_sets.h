@@ -850,6 +850,7 @@ class DescriptorSet : public StateObject, public SubStateManager<DescriptorSetSu
     // Return true if given binding is present in this set
     bool HasBinding(const uint32_t binding) const { return layout_->HasBinding(binding); };
 
+    void NotifyUpdate();
     // Perform a push update whose contents were just validated using ValidatePushDescriptorsUpdate
     virtual void PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs);
     // Perform a WriteUpdate whose contents were just validated using ValidateWriteUpdate
