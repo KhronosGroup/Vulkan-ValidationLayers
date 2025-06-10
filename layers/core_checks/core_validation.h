@@ -600,6 +600,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                      const Location& loc) const;
     bool ValidateVideoDecodeInfoAV1(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
                                     const Location& loc) const;
+    bool ValidateVideoDecodeInfoVP9(const vvl::CommandBuffer& cb_state, const VkVideoDecodeInfoKHR& decode_info,
+                                    const Location& loc) const;
     bool ValidateVideoEncodeH264PicType(const vvl::VideoSession& vs_state, StdVideoH264PictureType pic_type, const Location& loc,
                                         const char* where) const;
     bool ValidateVideoEncodeInfoH264(const vvl::CommandBuffer& cb_state, const VkVideoEncodeInfoKHR& encode_info,

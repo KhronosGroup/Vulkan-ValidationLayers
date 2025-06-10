@@ -260,6 +260,8 @@ target_sources(vk_layer_validation_tests PRIVATE
     unit/video_decode_h264_positive.cpp
     unit/video_decode_h265.cpp
     unit/video_decode_h265_positive.cpp
+    unit/video_decode_vp9.cpp
+    unit/video_decode_vp9_positive.cpp
     unit/video_encode.cpp
     unit/video_encode_positive.cpp
     unit/video_encode_av1.cpp

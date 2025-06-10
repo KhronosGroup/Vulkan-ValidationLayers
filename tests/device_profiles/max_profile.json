@@ -968,6 +968,9 @@
                 "VkPhysicalDeviceVideoEncodeAV1FeaturesKHR": {
                     "videoEncodeAV1": true
                 },
+                "VkPhysicalDeviceVideoDecodeVP9FeaturesKHR": {
+                    "videoDecodeVP9": true
+                },
                 "VkPhysicalDeviceNestedCommandBufferFeaturesEXT": {
                     "nestedCommandBuffer": true,
                     "nestedCommandBufferRendering": true,
@@ -2331,6 +2334,7 @@
                 "VK_KHR_video_decode_h264": 1,
                 "VK_KHR_video_decode_h265": 1,
                 "VK_KHR_video_decode_queue": 1,
+                "VK_KHR_video_decode_vp9": 1,
                 "VK_KHR_video_encode_av1": 1,
                 "VK_KHR_video_encode_h264": 1,
                 "VK_KHR_video_encode_h265": 1,
@@ -8097,7 +8101,8 @@
                         "videoCodecOperations": [
                             "VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR",
                             "VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR",
-                            "VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR"
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR",
+                            "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR"
                         ]
                     }
                 },
@@ -8714,6 +8719,158 @@
                         },
                         "VkVideoDecodeAV1CapabilitiesKHR": {
                             "maxLevel": "STD_VIDEO_AV1_LEVEL_3_2"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
+                            ],
+                            "lumaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ],
+                            "chromaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9ProfileInfoKHR": {
+                            "stdProfile": "STD_VIDEO_VP9_PROFILE_0"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
+                            ],
+                            "lumaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ],
+                            "chromaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9ProfileInfoKHR": {
+                            "stdProfile": "STD_VIDEO_VP9_PROFILE_0"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
+                            ],
+                            "lumaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ],
+                            "chromaBitDepth": [
+                                "VK_VIDEO_COMPONENT_BIT_DEPTH_8_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9ProfileInfoKHR": {
+                            "stdProfile": "STD_VIDEO_VP9_PROFILE_0"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR"
+                        }
+                    },
+                    "capabilities": {
+                        "VkVideoCapabilitiesKHR": {
+                            "flags": [
+                                "VK_VIDEO_CAPABILITY_PROTECTED_CONTENT_BIT_KHR"
+                            ],
+                            "minBitstreamBufferOffsetAlignment": 256,
+                            "minBitstreamBufferSizeAlignment": 256,
+                            "pictureAccessGranularity": {
+                                "width": 16,
+                                "height": 16
+                            },
+                            "minCodedExtent": {
+                                "width": 16,
+                                "height": 16
+                            },
+                            "maxCodedExtent": {
+                                "width": 1920,
+                                "height": 1080
+                            },
+                            "maxDpbSlots": 4,
+                            "maxActiveReferencePictures": 3,
+                            "stdHeaderVersion": {
+                                "extensionName": "VK_STD_vulkan_video_codec_vp9_decode",
+                                "specVersion": 4194304
+                            }
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_420_BIT_KHR"
+                            ]
+                        }
+                    },
+                    "capabilities": {
+                        "VkVideoDecodeCapabilitiesKHR": {
+                            "flags": [
+                                "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9CapabilitiesKHR": {
+                            "maxLevel": "STD_VIDEO_VP9_LEVEL_6_2"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_422_BIT_KHR"
+                            ]
+                        }
+                    },
+                    "capabilities": {
+                        "VkVideoDecodeCapabilitiesKHR": {
+                            "flags": [
+                                "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9CapabilitiesKHR": {
+                            "maxLevel": "STD_VIDEO_VP9_LEVEL_5_0"
+                        }
+                    }
+                },
+                {
+                    "profile": {
+                        "VkVideoProfileInfoKHR": {
+                            "videoCodecOperation": "VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR",
+                            "chromaSubsampling": [
+                                "VK_VIDEO_CHROMA_SUBSAMPLING_444_BIT_KHR"
+                            ]
+                        }
+                    },
+                    "capabilities": {
+                        "VkVideoDecodeCapabilitiesKHR": {
+                            "flags": [
+                                "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR",
+                                "VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_DISTINCT_BIT_KHR"
+                            ]
+                        },
+                        "VkVideoDecodeVP9CapabilitiesKHR": {
+                            "maxLevel": "STD_VIDEO_VP9_LEVEL_3_2"
                         }
                     }
                 },

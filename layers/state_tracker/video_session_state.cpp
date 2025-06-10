@@ -94,6 +94,20 @@ bool VideoProfileDesc::InitProfile(VkVideoProfileInfoKHR const *profile) {
                 profile_.base.pNext = &profile_.decode_av1;
                 break;
             }
+            case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+                auto decode_vp9 = vku::FindStructInPNextChain<VkVideoDecodeVP9ProfileInfoKHR>(profile->pNext);
+                if (decode_vp9) {
+                    profile_.valid = true;
+                    profile_.decode_vp9 = *decode_vp9;
+                    profile_.decode_vp9.pNext = nullptr;
+                } else {
+                    profile_.valid = false;
+                    profile_.decode_vp9 = vku::InitStructHelper();
+                }
+                profile_.is_decode = true;
+                profile_.base.pNext = &profile_.decode_vp9;
+                break;
+            }
             case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
                 auto encode_h264 = vku::FindStructInPNextChain<VkVideoEncodeH264ProfileInfoKHR>(profile->pNext);
                 if (encode_h264) {
@@ -191,6 +205,13 @@ void VideoProfileDesc::InitCapabilities(VkPhysicalDevice physical_device) {
             capabilities_.decode = vku::InitStructHelper();
             capabilities_.decode.pNext = &capabilities_.decode_av1;
             capabilities_.decode_av1 = vku::InitStructHelper();
+            break;
+
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+            capabilities_.base.pNext = &capabilities_.decode;
+            capabilities_.decode = vku::InitStructHelper();
+            capabilities_.decode.pNext = &capabilities_.decode_vp9;
+            capabilities_.decode_vp9 = vku::InitStructHelper();
             break;
 
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
@@ -396,6 +417,7 @@ VideoPictureID::VideoPictureID(VideoProfileDesc const &profile, VkVideoReference
 
         case VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
@@ -756,6 +778,11 @@ bool VideoSession::ReferenceSetupRequested(VkVideoDecodeInfoKHR const &decode_in
             return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr &&
                    pic_info->pStdPictureInfo->refresh_frame_flags != 0;
         }
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+            auto pic_info = vku::FindStructInPNextChain<VkVideoDecodeVP9PictureInfoKHR>(decode_info.pNext);
+            return pic_info != nullptr && pic_info->pStdPictureInfo != nullptr &&
+                   pic_info->pStdPictureInfo->refresh_frame_flags != 0;
+        }
 
         default:
             return false;
@@ -838,6 +865,12 @@ VideoSessionParameters::VideoSessionParameters(VkVideoSessionParametersKHR handl
             if (decode_av1->pStdSequenceHeader) {
                 data_.av1.seq_header = std::make_unique<StdVideoAV1SequenceHeader>(*decode_av1->pStdSequenceHeader);
             }
+            break;
+        }
+
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+            // VP9 does not use video session parameters
+            assert(false);
             break;
         }
 
@@ -935,6 +968,12 @@ void VideoSessionParameters::Update(VkVideoSessionParametersUpdateInfoKHR const 
             break;
         }
 
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+            // VP9 does not use video session parameters
+            assert(false);
+            break;
+        }
+
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
             auto add_info = vku::FindStructInPNextChain<VkVideoEncodeH264SessionParametersAddInfoKHR>(info->pNext);
             if (add_info) {
@@ -1027,6 +1066,9 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
             break;
         case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR:
             ss << "AV1 Decode";
+            break;
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+            ss << "VP9 Decode";
             break;
         case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
             ss << "H.264 Encode";
@@ -1147,6 +1189,22 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
         }
     };
 
+    auto string_std_video_vp9_profile = [](StdVideoVP9Profile stdProfile) {
+        switch (stdProfile) {
+            case STD_VIDEO_VP9_PROFILE_0:
+                return "Profile 0";
+            case STD_VIDEO_VP9_PROFILE_1:
+                return "Profile 1";
+            case STD_VIDEO_VP9_PROFILE_2:
+                return "Profile 2";
+            case STD_VIDEO_VP9_PROFILE_3:
+                return "Profile 3";
+            default:
+                assert(false);
+                return "<unknown VP9 profile>";
+        }
+    };
+
     switch (internal_profile.base.videoCodecOperation) {
         case VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR:
             ss << string_std_video_h264_profile_idc(internal_profile.decode_h264.stdProfileIdc) << " "
@@ -1167,6 +1225,9 @@ std::string string_VideoProfileDesc(const vvl::VideoProfileDesc &profile) {
             break;
         case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
             ss << string_std_video_av1_profile_idc(internal_profile.decode_av1.stdProfile);
+            break;
+        case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+            ss << string_std_video_vp9_profile(internal_profile.decode_vp9.stdProfile);
             break;
         default:
             assert(false);
