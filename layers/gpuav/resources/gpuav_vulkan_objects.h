@@ -91,6 +91,8 @@ struct BufferRange {
     void *offset_mapped_ptr = nullptr;
     VkDeviceAddress offset_address = 0;
     VmaAllocation vma_alloc = VK_NULL_HANDLE;  // Todo: get rid of this once host cached allocation are removed
+
+    void Clear() const;
 };
 
 // Register/Create and register GPU resources, all to be destroyed upon a call to DestroyResources

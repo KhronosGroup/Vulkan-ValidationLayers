@@ -135,9 +135,8 @@ class DescriptorSetBindings {
 
         vko::BufferRange descritpor_state_ssbo{};  // type BoundDescriptorSetsStateSSBO
 
-        // #ARNO_TODO "The index"? what index? The start of bound_descriptor_sets?
-        // Note: The index here is from vkCmdBindDescriptorSets::firstSet
-        // for each "set" in vkCmdBindDescriptorSets::descriptorSetCount
+        // The index into this vector will start from vkCmdBindDescriptorSets::firstSet
+        // The vector size is vkCmdBindDescriptorSets::descriptorSetCount
         std::vector<std::shared_ptr<vvl::DescriptorSet>> bound_descriptor_sets;
     };
 
