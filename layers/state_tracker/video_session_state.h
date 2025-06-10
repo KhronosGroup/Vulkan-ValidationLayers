@@ -72,6 +72,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             VkVideoDecodeH264ProfileInfoKHR decode_h264;
             VkVideoDecodeH265ProfileInfoKHR decode_h265;
             VkVideoDecodeAV1ProfileInfoKHR decode_av1;
+            VkVideoDecodeVP9ProfileInfoKHR decode_vp9;
             VkVideoEncodeH264ProfileInfoKHR encode_h264;
             VkVideoEncodeH265ProfileInfoKHR encode_h265;
             VkVideoEncodeAV1ProfileInfoKHR encode_av1;
@@ -89,6 +90,7 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
             VkVideoDecodeH264CapabilitiesKHR decode_h264;
             VkVideoDecodeH265CapabilitiesKHR decode_h265;
             VkVideoDecodeAV1CapabilitiesKHR decode_av1;
+            VkVideoDecodeVP9CapabilitiesKHR decode_vp9;
             VkVideoEncodeH264CapabilitiesKHR encode_h264;
             VkVideoEncodeH265CapabilitiesKHR encode_h265;
             VkVideoEncodeAV1CapabilitiesKHR encode_av1;
@@ -174,6 +176,10 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
                                 lhs->profile_.decode_av1.filmGrainSupport == rhs->profile_.decode_av1.filmGrainSupport;
                         break;
 
+                    case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR:
+                        match = match && lhs->profile_.decode_vp9.stdProfile == rhs->profile_.decode_vp9.stdProfile;
+                        break;
+
                     case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
                         match = match && lhs->profile_.encode_h264.stdProfileIdc == rhs->profile_.encode_h264.stdProfileIdc;
                         break;
@@ -222,6 +228,10 @@ class VideoProfileDesc : public std::enable_shared_from_this<VideoProfileDesc> {
                 }
                 case VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR: {
                     hc << desc->profile_.decode_av1.stdProfile << desc->profile_.decode_av1.filmGrainSupport;
+                    break;
+                }
+                case VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR: {
+                    hc << desc->profile_.decode_vp9.stdProfile;
                     break;
                 }
                 case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {

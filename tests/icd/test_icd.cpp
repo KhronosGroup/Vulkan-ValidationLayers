@@ -1393,9 +1393,9 @@ static VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyProperties2(VkPhys
             }
             auto video_props = vku::FindStructInPNextChain<VkQueueFamilyVideoPropertiesKHR>(pQueueFamilyProperties[1].pNext);
             if (video_props) {
-                video_props->videoCodecOperations = VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR |
-                                                    VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR |
-                                                    VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR;
+                video_props->videoCodecOperations =
+                    VK_VIDEO_CODEC_OPERATION_DECODE_H264_BIT_KHR | VK_VIDEO_CODEC_OPERATION_DECODE_H265_BIT_KHR |
+                    VK_VIDEO_CODEC_OPERATION_DECODE_AV1_BIT_KHR | VK_VIDEO_CODEC_OPERATION_DECODE_VP9_BIT_KHR;
             }
         }
         if (*pQueueFamilyPropertyCount >= 3) {
