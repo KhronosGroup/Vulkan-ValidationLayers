@@ -306,6 +306,27 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
     const VkSemaphore handle = semaphore_state.VkHandle();
     LogObjectList objlist(handle, queue);
 
+    // Detect use case when to disable present semaphore in-use check
+    auto is_shared_present_pre_maintenance1 = [this](const vvl::Semaphore::SwapchainWaitInfo &swapchain_wait_info) {
+        // Null swapchain is only in the case of multiple swapchains.
+        // Assume it's not a shared present mode and proceed with reporting semaphore in-use error
+        if (!swapchain_wait_info.swapchain) {
+            return false;
+        }
+        // When maintenance1 is enabled, the app can use fence to safely re-use present semaphore.
+        // Shared present mode is not an excuse in this case.
+        if (IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1)) {
+            return false;
+        }
+        // Without maintenance1 and with shared present mode, which often means AcquireNextImage
+        // was called only once, we don't have a good way to ensure safe re-use of present semaphores.
+        // Disable corresponding validation and assume that the app does its best (sufficient
+        // buffering scheme) in re-using present semaphores.
+        const VkPresentModeKHR present_mode = swapchain_wait_info.swapchain->create_info.presentMode;
+        return present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR ||
+               present_mode == VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR;
+    };
+
     switch (semaphore_state.type) {
         case VK_SEMAPHORE_TYPE_BINARY: {
             if ((semaphore_state.Scope() == vvl::Semaphore::kInternal || internal_semaphores.count(handle))) {
@@ -328,7 +349,8 @@ bool SemaphoreSubmitState::ValidateSignalSemaphore(const Location &signal_semaph
                         vuid, objlist, signal_semaphore_loc,
                         "(%s) is being signaled by %s, but it was previously signaled by %s and has not since been waited on",
                         core.FormatHandle(handle).c_str(), core.FormatHandle(queue).c_str(), initiator.str().c_str());
-                } else if (const auto swapchain_info = semaphore_state.GetSwapchainWaitInfo(); swapchain_info.has_value()) {
+                } else if (const auto swapchain_info = semaphore_state.GetSwapchainWaitInfo();
+                           swapchain_info.has_value() && !is_shared_present_pre_maintenance1(*swapchain_info)) {
                     const bool present_fence_supported = IsExtEnabled(core.extensions.vk_ext_swapchain_maintenance1);
                     const std::string error_message =
                         GetSemaphoreInUseBySwapchainMessage(*swapchain_info, semaphore_state, queue, present_fence_supported, core);
