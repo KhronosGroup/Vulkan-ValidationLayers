@@ -1398,14 +1398,14 @@ TEST_F(NegativeVideoEncode, EncodeImageLayouts) {
     cb.EncodeVideo(context.EncodeFrame(0));
 
     // Encode input must be in ENCODE_SRC layout
-    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08222");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10811");
     vk::CmdPipelineBarrier2KHR(cb, context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
     cb.EncodeVideo(context.EncodeFrame(0));
     m_errorMonitor->VerifyFound();
     vk::CmdPipelineBarrier2KHR(cb, context.EncodeInput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR));
 
     // Reconstructed must be in ENCODE_DPB layout
-    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08223");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10812");
     vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     cb.EncodeVideo(context.EncodeFrame(0));
     m_errorMonitor->VerifyFound();
@@ -1414,7 +1414,7 @@ TEST_F(NegativeVideoEncode, EncodeImageLayouts) {
     // Reference must be in ENCODE_DPB layout
     cb.EncodeVideo(context.EncodeReferenceFrame(0));
     vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
-    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pPictureResource-08224");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdEncodeVideoKHR-pPictureResource-10813");
     cb.EncodeVideo(context.EncodeFrame(1).AddReferenceFrame(0));
     m_errorMonitor->VerifyFound();
 

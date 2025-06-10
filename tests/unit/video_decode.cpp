@@ -389,7 +389,7 @@ TEST_F(NegativeVideoDecode, DecodeImageLayouts) {
     // Decode output must be in DECODE_DST layout if it is distinct from reconstructed
     if (config.SupportsDecodeOutputDistinct()) {
         vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10801");
         cb.DecodeVideo(context.DecodeFrame(0));
         m_errorMonitor->VerifyFound();
         vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
@@ -399,16 +399,16 @@ TEST_F(NegativeVideoDecode, DecodeImageLayouts) {
 
     // Decode output must be in DECODE_DPB layout if it coincides with reconstructed
     if (config.SupportsDecodeOutputCoincide()) {
-        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254");
-        m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253");
+        m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10803");
+        m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10802");
         vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR, 0, 1));
         cb.DecodeVideo(context.DecodeFrame(0).SetDecodeOutput(context.Dpb()->Picture(0)));
         m_errorMonitor->VerifyFound();
     }
 
     // Reconstructed must be in DECODE_DPB layout
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10802");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10803");
     vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
     cb.DecodeVideo(context.DecodeFrame(0));
     m_errorMonitor->VerifyFound();
@@ -417,7 +417,7 @@ TEST_F(NegativeVideoDecode, DecodeImageLayouts) {
     // Reference must be in DECODE_DPB layout
     cb.DecodeVideo(context.DecodeReferenceFrame(0));
     vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL, 0, 1));
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pPictureResource-07255");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pPictureResource-10804");
     cb.DecodeVideo(context.DecodeFrame(1).AddReferenceFrame(0));
     m_errorMonitor->VerifyFound();
 
@@ -448,7 +448,7 @@ TEST_F(NegativeVideoDecode, DecodeOutputImageLayoutDistinctOnlyNoDpb) {
 
     // Decode output must be in DECODE_DST layout if no reconstructed picture is specified (no DPB slots are used)
     vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10801");
     cb.DecodeVideo(context.DecodeFrame());
     m_errorMonitor->VerifyFound();
 
@@ -482,7 +482,7 @@ TEST_F(NegativeVideoDecode, DecodeOutputImageLayoutCoincideOnlyNoDpb) {
 
     // Decode output must be in DECODE_DST layout if no reconstructed picture is specified (no DPB slots are used)
     vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10801");
     cb.DecodeVideo(context.DecodeFrame());
     m_errorMonitor->VerifyFound();
 

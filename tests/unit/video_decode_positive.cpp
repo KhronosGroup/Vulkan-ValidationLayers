@@ -42,3 +42,41 @@ TEST_F(PositiveVideoDecode, ProfileIndependentResources) {
     cb.EndVideoCoding(context.End());
     cb.End();
 }
+
+TEST_F(PositiveVideoDecode, DecodeImageLayouts) {
+    TEST_DESCRIPTION("vkCmdDecodeVideoKHR with VK_KHR_unified_image_layouts");
+
+    AddRequiredExtensions(VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::unifiedImageLayoutsVideo);
+    RETURN_IF_SKIP(Init());
+
+    VideoConfig config = GetConfig(GetConfigsWithDpbSlots(GetConfigsWithReferences(GetConfigsDecode()), 2));
+    if (!config) {
+        GTEST_SKIP() << "Test requires a video decode profile with reference picture support and 2 DPB slots";
+    }
+
+    config.SessionCreateInfo()->maxDpbSlots = 2;
+    config.SessionCreateInfo()->maxActiveReferencePictures = 1;
+
+    VideoContext context(m_device, config);
+    context.CreateAndBindSessionMemory();
+    context.CreateResources();
+
+    vkt::CommandBuffer& cb = context.CmdBuffer();
+
+    cb.Begin();
+    cb.BeginVideoCoding(context.Begin().AddResource(-1, 0).AddResource(-1, 1));
+
+    vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR));
+    vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR));
+
+    cb.DecodeVideo(context.DecodeFrame(0));
+
+    // Decode output must be in DECODE_DST layout if it is distinct from reconstructed
+    if (config.SupportsDecodeOutputDistinct()) {
+        vk::CmdPipelineBarrier2KHR(cb, context.DecodeOutput()->LayoutTransition(VK_IMAGE_LAYOUT_GENERAL));
+        cb.DecodeVideo(context.DecodeFrame(0));
+        m_errorMonitor->VerifyFound();
+        vk::CmdPipelineBarrier2KHR(cb, context.Dpb()->LayoutTransition(VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, 0, 1));
+    }
+}
