@@ -51,7 +51,7 @@ WriteLockGuard BestPractices::WriteLock() {
     }
 }
 
-bool bp_state::VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors) {
+bool bp_state::VendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors) {
     for (const auto& vendor : GetVendorInfo()) {
         if (vendors & vendor.first && enabled[vendor.second.vendor_id]) {
             return true;

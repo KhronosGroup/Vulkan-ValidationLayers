@@ -76,7 +76,7 @@ void LogResult(const StateObject& state, Handle handle, const RecordObject& reco
 
 const char* VendorSpecificTag(BPVendorFlags vendors);
 
-bool VendorCheckEnabled(const CHECK_ENABLED& enabled, BPVendorFlags vendors);
+bool VendorCheckEnabled(const ValidationEnabled& enabled, BPVendorFlags vendors);
 
 class Instance : public vvl::InstanceProxy {
     using BaseClass = vvl::InstanceProxy;

@@ -91,8 +91,8 @@ class Instance : public Logger {
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
 
-    const CHECK_DISABLED& disabled;
-    const CHECK_ENABLED& enabled;
+    const ValidationDisabled& disabled;
+    const ValidationEnabled& enabled;
 
     VkInstance instance = VK_NULL_HANDLE;
     const LayerObjectTypeId container_type;
@@ -148,8 +148,8 @@ class Device : public Logger {
     GpuAVSettings& gpuav_settings;
     const SyncValSettings& syncval_settings;
 
-    const CHECK_DISABLED& disabled;
-    const CHECK_ENABLED& enabled;
+    const ValidationDisabled& disabled;
+    const ValidationEnabled& enabled;
 
     const VkInstance instance;
     const VkPhysicalDevice physical_device;
