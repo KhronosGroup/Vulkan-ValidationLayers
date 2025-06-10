@@ -167,8 +167,8 @@ struct Settings {
     GpuAVSettings gpuav_settings = {};
     SyncValSettings syncval_settings = {};
 
-    CHECK_DISABLED disabled = {};
-    CHECK_ENABLED enabled = {};
+    ValidationDisabled disabled = {};
+    ValidationEnabled enabled = {};
 };
 
 class HandleWrapper : public Logger {

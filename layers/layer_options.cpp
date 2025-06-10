@@ -249,7 +249,7 @@ const char *DEPRECATED_VK_LAYER_VALIDATE_SYNC_QUEUE_SUBMIT = "sync_queue_submit"
 #if !defined(BUILD_SELF_VVL)
 
 // Set the local disable flag for the appropriate VALIDATION_CHECK_DISABLE enum
-void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDisables disable_id) {
+void SetValidationDisable(ValidationDisabled &disable_data, const ValidationCheckDisables disable_id) {
     switch (disable_id) {
         case VALIDATION_CHECK_DISABLE_COMMAND_BUFFER_STATE:
             disable_data[command_buffer_state] = true;
@@ -269,7 +269,7 @@ void SetValidationDisable(CHECK_DISABLED &disable_data, const ValidationCheckDis
 }
 
 // Set the local disable flag for a single VK_VALIDATION_FEATURE_DISABLE_* flag
-void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidationFeatureDisableEXT feature_disable) {
+void SetValidationFeatureDisable(ValidationDisabled &disable_data, const VkValidationFeatureDisableEXT feature_disable) {
     switch (feature_disable) {
         case VK_VALIDATION_FEATURE_DISABLE_SHADERS_EXT:
             disable_data[shader_validation] = true;
@@ -302,7 +302,7 @@ void SetValidationFeatureDisable(CHECK_DISABLED &disable_data, const VkValidatio
 }
 
 // Set the local enable flag for the appropriate VALIDATION_CHECK_ENABLE enum
-void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnables enable_id) {
+void SetValidationEnable(ValidationEnabled &enable_data, const ValidationCheckEnables enable_id) {
     switch (enable_id) {
         case VALIDATION_CHECK_ENABLE_VENDOR_SPECIFIC_ARM:
             enable_data[vendor_specific_arm] = true;
@@ -328,7 +328,7 @@ void SetValidationEnable(CHECK_ENABLED &enable_data, const ValidationCheckEnable
 }
 
 // Set the local enable flag for a single VK_VALIDATION_FEATURE_ENABLE_* flag
-void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFeatureEnableEXT feature_enable) {
+void SetValidationFeatureEnable(ValidationEnabled &enable_data, const VkValidationFeatureEnableEXT feature_enable) {
     switch (feature_enable) {
         case VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT:
             enable_data[gpu_validation] = true;
@@ -351,7 +351,7 @@ void SetValidationFeatureEnable(CHECK_ENABLED &enable_data, const VkValidationFe
 }
 
 // Set the local disable flag for settings specified through the VK_EXT_validation_flags extension
-void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *val_flags_struct) {
+void SetValidationFlags(ValidationDisabled &disables, const VkValidationFlagsEXT *val_flags_struct) {
     for (uint32_t i = 0; i < val_flags_struct->disabledValidationCheckCount; ++i) {
         switch (val_flags_struct->pDisabledValidationChecks[i]) {
             case VK_VALIDATION_CHECK_SHADERS_EXT:
@@ -368,7 +368,7 @@ void SetValidationFlags(CHECK_DISABLED &disables, const VkValidationFlagsEXT *va
 }
 
 // Process Validation Features flags specified through the ValidationFeature extension
-void SetValidationFeatures(CHECK_DISABLED &disable_data, CHECK_ENABLED &enable_data,
+void SetValidationFeatures(ValidationDisabled &disable_data, ValidationEnabled &enable_data,
                            const VkValidationFeaturesEXT *val_features_struct) {
     for (uint32_t i = 0; i < val_features_struct->disabledValidationFeatureCount; ++i) {
         SetValidationFeatureDisable(disable_data, val_features_struct->pDisabledValidationFeatures[i]);
@@ -400,7 +400,7 @@ std::string GetNextToken(std::string *token_list, const std::string &delimiter, 
 }
 
 // Given a string representation of a list of enable enum values, call the appropriate setter function
-void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, CHECK_ENABLED &enables) {
+void SetLocalEnableSetting(std::string list_of_enables, const std::string &delimiter, ValidationEnabled &enables) {
     size_t pos = 0;
     std::string token;
     while (list_of_enables.length() != 0) {
@@ -420,7 +420,7 @@ void SetLocalEnableSetting(std::string list_of_enables, const std::string &delim
 }
 
 // Given a string representation of a list of disable enum values, call the appropriate setter function
-void SetLocalDisableSetting(std::string list_of_disables, const std::string &delimiter, CHECK_DISABLED &disables) {
+void SetLocalDisableSetting(std::string list_of_disables, const std::string &delimiter, ValidationDisabled &disables) {
     size_t pos = 0;
     std::string token;
     while (list_of_disables.length() != 0) {
@@ -679,7 +679,7 @@ static void ValidateLayerSettingsProvided(const VkLayerSettingsCreateInfoEXT *la
     }
 }
 
-static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DISABLED &disable_data,
+static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, ValidationDisabled &disable_data,
                                  const DisableFlags feature_disable, const char *setting) {
     if (vkuHasLayerSetting(layer_setting_set, setting)) {
         bool enabled = true;
@@ -688,8 +688,8 @@ static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_DIS
     }
 }
 
-static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, CHECK_ENABLED &enable_data, const EnableFlags feature_enable,
-                                 const char *setting) {
+static void SetValidationSetting(VkuLayerSettingSet layer_setting_set, ValidationEnabled &enable_data,
+                                 const EnableFlags feature_enable, const char *setting) {
     if (vkuHasLayerSetting(layer_setting_set, setting)) {
         bool enabled = true;
         vkuGetLayerSettingValue(layer_setting_set, setting, enabled);
