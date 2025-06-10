@@ -1532,9 +1532,8 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
                                                                                VkSurfaceCapabilities2KHR* pSurfaceCapabilities) {
     GetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, pSurfaceInfo->surface, &pSurfaceCapabilities->surfaceCapabilities);
 
-    auto* present_mode_compatibility =
-        vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext);
-    if (present_mode_compatibility) {
+    if (auto* present_mode_compatibility =
+            vku::FindStructInPNextChain<VkSurfacePresentModeCompatibilityEXT>(pSurfaceCapabilities->pNext)) {
         if (!present_mode_compatibility->pPresentModes) {
             present_mode_compatibility->presentModeCount = 3;
         } else {
@@ -1543,6 +1542,11 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
             present_mode_compatibility->pPresentModes[1] = VK_PRESENT_MODE_FIFO_KHR;
             present_mode_compatibility->pPresentModes[2] = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
         }
+    }
+    if (auto* shared_present_capabilities =
+            vku::FindStructInPNextChain<VkSharedPresentSurfaceCapabilitiesKHR>(pSurfaceCapabilities->pNext)) {
+        // "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT must be included in the set but implementations may support additional usages."
+        shared_present_capabilities->sharedPresentSupportedUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
     return VK_SUCCESS;
 }
