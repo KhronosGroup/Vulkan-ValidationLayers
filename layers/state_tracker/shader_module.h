@@ -111,47 +111,63 @@ struct DecorationSet : public DecorationBase {
 
 // Tracking of OpExecutionMode / OpExecutionModeId values
 struct ExecutionModeSet {
-    enum FlagBit {
-        output_points_bit = 1 << 0,
-        point_mode_bit = 1 << 1,
-        post_depth_coverage_bit = 1 << 2,
-        local_size_bit = 1 << 3,
-        local_size_id_bit = 1 << 4,
-        iso_lines_bit = 1 << 5,
-        xfb_bit = 1 << 6,
-        early_fragment_test_bit = 1 << 7,
-        subgroup_uniform_control_flow_bit = 1 << 8,
+    enum FlagBit : uint64_t {
+        output_points_bit = 1ull << 0,
+        output_lines_bit = 1ull << 1,
+        output_triangle_bit = 1ull << 2,
 
-        signed_zero_inf_nan_preserve_width_16 = 1 << 9,
-        signed_zero_inf_nan_preserve_width_32 = 1 << 10,
-        signed_zero_inf_nan_preserve_width_64 = 1 << 11,
-        denorm_preserve_width_16 = 1 << 12,
-        denorm_preserve_width_32 = 1 << 13,
-        denorm_preserve_width_64 = 1 << 14,
-        denorm_flush_to_zero_width_16 = 1 << 15,
-        denorm_flush_to_zero_width_32 = 1 << 16,
-        denorm_flush_to_zero_width_64 = 1 << 17,
-        rounding_mode_rte_width_16 = 1 << 18,
-        rounding_mode_rte_width_32 = 1 << 19,
-        rounding_mode_rte_width_64 = 1 << 20,
-        rounding_mode_rtz_width_16 = 1 << 21,
-        rounding_mode_rtz_width_32 = 1 << 22,
-        rounding_mode_rtz_width_64 = 1 << 23,
+        subdivision_iso_lines_bit = 1ull << 3,
+        subdivision_triangle_bit = 1ull << 4,
+        subdivision_quad_bit = 1ull << 5,
 
-        depth_replacing_bit = 1 << 24,
-        stencil_ref_replacing_bit = 1 << 25,
+        vertex_order_cw_bit = 1ull << 6,
+        vertex_order_ccw_bit = 1ull << 7,
 
-        fp_fast_math_default = 1 << 26,
+        spacing_equal_bit = 1ull << 8,
+        spacing_fractional_even_bit = 1ull << 9,
+        spacing_fractional_odd_bit = 1ull << 10,
 
-        derivative_group_linear = 1 << 27,
-        derivative_group_quads = 1 << 28,
+        point_mode_bit = 1ull << 11,
+        post_depth_coverage_bit = 1ull << 12,
+        local_size_bit = 1ull << 13,
+        local_size_id_bit = 1ull << 14,
+        xfb_bit = 1ull << 15,
+        early_fragment_test_bit = 1ull << 16,
+        subgroup_uniform_control_flow_bit = 1ull << 17,
+
+        signed_zero_inf_nan_preserve_width_16 = 1ull << 18,
+        signed_zero_inf_nan_preserve_width_32 = 1ull << 19,
+        signed_zero_inf_nan_preserve_width_64 = 1ull << 20,
+        denorm_preserve_width_16 = 1ull << 21,
+        denorm_preserve_width_32 = 1ull << 22,
+        denorm_preserve_width_64 = 1ull << 23,
+        denorm_flush_to_zero_width_16 = 1ull << 24,
+        denorm_flush_to_zero_width_32 = 1ull << 25,
+        denorm_flush_to_zero_width_64 = 1ull << 26,
+        rounding_mode_rte_width_16 = 1ull << 27,
+        rounding_mode_rte_width_32 = 1ull << 28,
+        rounding_mode_rte_width_64 = 1ull << 29,
+        rounding_mode_rtz_width_16 = 1ull << 30,
+        rounding_mode_rtz_width_32 = 1ull << 31,
+        rounding_mode_rtz_width_64 = 1ull << 32,
+
+        depth_replacing_bit = 1ull << 33,
+        stencil_ref_replacing_bit = 1ull << 34,
+
+        fp_fast_math_default = 1ull << 35,
+
+        derivative_group_linear = 1ull << 36,
+        derivative_group_quads = 1ull << 37,
+
+        geometry_input_points_bit = 1ull << 38,
+        geometry_input_line_bit = 1ull << 39,
+        geometry_input_line_adjacency_bit = 1ull << 40,
+        geometry_input_triangle_bit = 1ull << 41,
+        geometry_input_triangle_adjacency_bit = 1ull << 42,
     };
 
     // bits to know if things have been set or not by a Decoration
-    uint32_t flags = 0;
-
-    VkPrimitiveTopology input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-    VkPrimitiveTopology primitive_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    uint64_t flags = 0;
 
     // SPIR-V spec says only LocalSize or LocalSizeId can be used, so can share
     LocalSize local_size = {kInvalidValue, kInvalidValue, kInvalidValue};
@@ -160,12 +176,16 @@ struct ExecutionModeSet {
     uint32_t output_primitives = 0;
     uint32_t invocations = 0;
 
-    uint32_t tessellation_subdivision = 0;
-    uint32_t tessellation_orientation = 0;
-    uint32_t tessellation_spacing = 0;
-
     void Add(const Instruction &insn);
     bool Has(FlagBit flag_bit) const { return (flags & flag_bit) != 0; }
+
+    // Helpers for the various input/output stuff Geom/Tess/Mesh has
+    uint32_t GetTessellationSubdivision() const;
+    uint32_t GetTessellationOrientation() const;
+    uint32_t GetTessellationSpacing() const;
+    VkPrimitiveTopology GetTessellationEvalOutputTopology() const;
+    VkPrimitiveTopology GetGeometryInputTopology() const;
+    VkPrimitiveTopology GetGeometryMeshOutputTopology() const;
 };
 
 struct AtomicInstructionInfo {
@@ -717,9 +737,6 @@ struct Module {
     std::string DescribeType(uint32_t type) const;
     std::string DescribeVariable(uint32_t id) const;
     std::string DescribeInstruction(const Instruction &error_insn) const;
-
-    // Note that some shaders can have an input and output topology
-    std::optional<VkPrimitiveTopology> GetTopology(const EntryPoint &entrypoint) const;
 
     std::shared_ptr<const EntryPoint> FindEntrypoint(char const *name, VkShaderStageFlagBits stageBits) const;
     LocalSize FindLocalSize(const EntryPoint &entrypoint) const;

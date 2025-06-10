@@ -3534,7 +3534,7 @@ TEST_F(NegativePipeline, GeometryShaderConservativeRasterization) {
     CreatePipelineHelper pipe(*this);
     pipe.rs_state_ci_.pNext = &conservative_state;
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
-    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-06760");
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-conservativePointAndLineRasterization-08892");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }

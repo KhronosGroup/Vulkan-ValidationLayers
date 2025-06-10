@@ -35,6 +35,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "containers/limits.h"
+#include "utils/vk_api_utils.h"
 
 bool CoreChecks::ValidateInterfaceVertexInput(const vvl::Pipeline &pipeline, const spirv::Module &module_state,
                                               const spirv::EntryPoint &entrypoint, const Location &create_info_loc) const {
@@ -220,37 +221,38 @@ bool CoreChecks::ValidatePrimitiveTopology(const spirv::Module &module_state, co
     }
 
     bool has_tess = false;
-    VkPrimitiveTopology topology = pipeline.InputAssemblyState()->topology;
+    VkPrimitiveTopology tess_output_topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
     for (uint32_t i = 0; i < pipeline.stage_states.size(); i++) {
         auto &stage_state = pipeline.stage_states[i];
         const VkShaderStageFlagBits stage = stage_state.GetStage();
         if (stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT || stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
             has_tess = true;
+            // PointMode will take precedence over everything
+            // (details in https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7404)
             if (stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
-                topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-                // Point Mode found will set the tessellation topology
-                // See https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9821
+                tess_output_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
                 break;
-            } else {
-                topology = stage_state.entrypoint->execution_mode.primitive_topology;
+            } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                tess_output_topology = stage_state.entrypoint->execution_mode.GetTessellationEvalOutputTopology();
             }
         }
     }
 
-    VkPrimitiveTopology geom_topology = entrypoint.execution_mode.input_primitive_topology;
-    bool mismatch = false;
-    mismatch |= (topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST && geom_topology != VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    mismatch |= IsLineTopology(topology) && !IsLineTopology(geom_topology);
-    mismatch |= IsTriangleTopology(topology) && !IsTriangleTopology(geom_topology);
-    if (mismatch) {
-        if (has_tess) {
+    const VkPrimitiveTopology geom_input_topology = entrypoint.execution_mode.GetGeometryInputTopology();
+    if (has_tess) {
+        if (!IsSameTopologyClass(geom_input_topology, tess_output_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00739", module_state.handle(), loc,
-                             "SPIR-V (Geometry stage) expects input topology %s, but tessellation shader output topology is %s.",
-                             string_VkPrimitiveTopology(geom_topology), string_VkPrimitiveTopology(topology));
-        } else {
+                             "SPIR-V (Geometry stage) has declares in the shader input topology %s, but tessellation shader output "
+                             "topology is %s.",
+                             string_VkPrimitiveTopology(geom_input_topology), string_VkPrimitiveTopology(tess_output_topology));
+        }
+    } else {
+        VkPrimitiveTopology vertex_input_topology = pipeline.InputAssemblyState()->topology;
+        if (!IsSameTopologyClass(geom_input_topology, vertex_input_topology)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00738", module_state.handle(), loc,
-                             "SPIR-V (Geometry stage) expects input topology %s, but pipeline was created with primitive topology %s.",
-                             string_VkPrimitiveTopology(geom_topology), string_VkPrimitiveTopology(topology));
+                             "SPIR-V (Geometry stage) has declares in the shader input topology %s, but pipeline was created with "
+                             "a vertex input primitive topology of %s.",
+                             string_VkPrimitiveTopology(geom_input_topology), string_VkPrimitiveTopology(vertex_input_topology));
         }
     }
 
@@ -657,10 +659,10 @@ bool CoreChecks::ValidatePipelineTessellationStages(const spirv::Module &tesc_mo
                                                     const Location &create_info_loc) const {
     bool skip = false;
 
-    const auto tesc_subdivision = tesc_entrypoint.execution_mode.tessellation_subdivision;
-    const auto tese_subdivision = tese_entrypoint.execution_mode.tessellation_subdivision;
-    const auto tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
-    const auto tese_patch_size = tese_entrypoint.execution_mode.output_vertices;
+    const uint32_t tesc_subdivision = tesc_entrypoint.execution_mode.GetTessellationSubdivision();
+    const uint32_t tese_subdivision = tese_entrypoint.execution_mode.GetTessellationSubdivision();
+    const uint32_t tesc_patch_size = tesc_entrypoint.execution_mode.output_vertices;
+    const uint32_t tese_patch_size = tese_entrypoint.execution_mode.output_vertices;
     if (tesc_subdivision == 0 && tese_subdivision == 0) {
         const LogObjectList objlist(tesc_module_state.handle(), tese_module_state.handle());
         skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-pStages-00732", objlist, create_info_loc,

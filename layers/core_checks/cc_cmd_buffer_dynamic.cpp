@@ -38,8 +38,7 @@
 #include "utils/vk_api_utils.h"
 
 bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, const CBDynamicFlags& state_status_cb,
-                                           CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid,
-                                           const char* explicit_vuid) const {
+                                           CBDynamicState dynamic_state, const vvl::DrawDispatchVuid& vuid) const {
     if (!state_status_cb[dynamic_state]) {
         LogObjectList objlist(last_bound_state.cb_state.Handle());
         const vvl::Pipeline* pipeline = last_bound_state.pipeline_state;
@@ -235,14 +234,19 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_LINE_STIPPLE:
                 vuid_str = vuid.dynamic_line_stipple_ext_07849;
                 break;
+            case CB_DYNAMIC_STATE_LINE_WIDTH:
+                vuid_str = vuid.set_line_width_08617;
+                break;
             case CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:
                 vuid_str = vuid.vertex_input_binding_stride_04913;
                 break;
             case CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT:
-            case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
-                // These have 3 different VUs depending on shader stages
-                vuid_str = explicit_vuid;
+                vuid_str = vuid.set_line_rasterization_mode_08666;
                 break;
+            case CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT:
+                vuid_str = vuid.set_line_stipple_enable_08669;
+                break;
+                ;
             default:
                 assert(false);
                 break;
@@ -409,56 +413,17 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
             }
         }
 
-        const bool stippled_lines = enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
-                                    enabled_features.stippledSmoothLines;
-        if (stippled_lines) {
-            if (cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
+        const VkPrimitiveTopology topology = last_bound_state.GetRasterizationInputTopology();
+        if (IsLineTopology(topology)) {
+            skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, vuid);
+
+            const bool stippled_lines = enabled_features.stippledRectangularLines || enabled_features.stippledBresenhamLines ||
+                                        enabled_features.stippledSmoothLines;
+            if (stippled_lines) {
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  vuid, vuid.set_line_rasterization_mode_08666);
-                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, vuid,
-                                                  vuid.set_line_stipple_enable_08669);
-            }
-
-            if (vertex_shader_bound) {
-                const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-                if (IsLineTopology(topology)) {
-                    skip |=
-                        ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  vuid, vuid.set_line_rasterization_mode_08667);
-                    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                      vuid, vuid.set_line_stipple_enable_08670);
-                }
-            }
-
-            if (tese_shader_bound || geom_shader_bound) {
-                bool has_geom_tess_line_topology = false;
-                if (has_pipeline) {
-                    for (const ShaderStageState& shader_stage_state : last_bound_state.pipeline_state->stage_states) {
-                        if (shader_stage_state.GetStage() == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT ||
-                            shader_stage_state.GetStage() == VK_SHADER_STAGE_GEOMETRY_BIT) {
-                            if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
-                                if (auto topology = shader_stage_state.spirv_state->GetTopology(*shader_stage_state.entrypoint)) {
-                                    has_geom_tess_line_topology |= IsLineTopology(*topology);
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    has_geom_tess_line_topology |=
-                        tese_shader_bound &&
-                        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
-                    has_geom_tess_line_topology |=
-                        geom_shader_bound &&
-                        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
-                }
-
-                if (has_geom_tess_line_topology) {
-                    skip |=
-                        ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT,
-                                                  vuid, vuid.set_line_rasterization_mode_08668);
-                    skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT,
-                                                      vuid, vuid.set_line_stipple_enable_08671);
-                }
+                                                  vuid);
+                skip |=
+                    ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT, vuid);
             }
         }
 
@@ -585,18 +550,6 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
                          "called in this command buffer.",
                          FormatHandle(pipeline).c_str(), DynamicStatesToString(unset_status_pipeline).c_str(),
                          DynamicStatesCommandsToString(unset_status_pipeline).c_str());
-    }
-
-    // build the mask of what has been set in the Pipeline, but yet to be set in the Command Buffer
-    const CBDynamicFlags state_status_cb = ~((cb_state.dynamic_state_status.cb ^ pipeline.dynamic_state) & pipeline.dynamic_state);
-
-    if (pipeline.RasterizationState()) {
-        // Any line topology
-        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-        if (IsLineTopology(topology)) {
-            skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
-                                              vuid.dynamic_line_width_07833);
-        }
     }
 
     return skip;
@@ -734,24 +687,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
         }
     }
 
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT) &&
-        !phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization) {
-        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
-        if (IsValueIn(topology,
-                      {VK_PRIMITIVE_TOPOLOGY_POINT_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_LIST, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
-                       VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY})) {
-            if (cb_state.dynamic_state_value.conservative_rasterization_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
-                skip |= LogError(
-                    vuid.convervative_rasterization_07499, objlist, vuid.loc(),
-                    "Primitive topology is %s and conservativePointAndLineRasterization is VK_FALSE, but "
-                    "conservativeRasterizationMode set with vkCmdSetConservativeRasterizationModeEXT() was %s.%s",
-                    string_VkPrimitiveTopology(topology),
-                    string_VkConservativeRasterizationModeEXT(cb_state.dynamic_state_value.conservative_rasterization_mode),
-                    cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT).c_str());
-            }
-        }
-    }
-
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
         // Found in https://gitlab.khronos.org/vulkan/vulkan/-/issues/4116 that not setting all attachment can invalidate previous
         // calls, so the last call needs to have set them all
@@ -849,7 +784,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
         bool compatible_topology = false;
         const VkPrimitiveTopology pipeline_topology = pipeline.InputAssemblyState()->topology;
         const VkPrimitiveTopology dynamic_topology = cb_state.dynamic_state_value.primitive_topology;
-        if (pipeline_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
+        if (IsPointTopology(pipeline_topology)) {
             compatible_topology = dynamic_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
         } else if (IsLineTopology(pipeline_topology)) {
             compatible_topology = IsLineTopology(dynamic_topology);
@@ -1293,6 +1228,22 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                 }
             }
         }
+
+        if (IsExtEnabled(extensions.vk_ext_conservative_rasterization) &&
+            !phys_dev_ext_props.conservative_rasterization_props.conservativePointAndLineRasterization) {
+            if (cb_state.dynamic_state_value.conservative_rasterization_mode != VK_CONSERVATIVE_RASTERIZATION_MODE_DISABLED_EXT) {
+                const VkPrimitiveTopology topology = last_bound_state.GetRasterizationInputTopology();
+                if (IsLineTopology(topology) || IsPointTopology(topology)) {
+                    skip |= LogError(
+                        vuid.convervative_rasterization_07499, cb_state.Handle(), vuid.loc(),
+                        "the rasterization input topology is %s and conservativePointAndLineRasterization is VK_FALSE, but "
+                        "conservativeRasterizationMode set with vkCmdSetConservativeRasterizationModeEXT() was %s.%s",
+                        string_VkPrimitiveTopology(topology),
+                        string_VkConservativeRasterizationModeEXT(cb_state.dynamic_state_value.conservative_rasterization_mode),
+                        cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_CONSERVATIVE_RASTERIZATION_MODE_EXT).c_str());
+                }
+            }
+        }
     }
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
@@ -1317,7 +1268,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT) &&
         (cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_BRESENHAM ||
          cb_state.dynamic_state_value.line_rasterization_mode == VK_LINE_RASTERIZATION_MODE_RECTANGULAR_SMOOTH)) {
-        const VkPrimitiveTopology topology = last_bound_state.GetPrimitiveTopology();
+        const VkPrimitiveTopology topology = last_bound_state.GetRasterizationInputTopology();
         if (IsLineTopology(topology)) {
             const bool alpha_to_coverage_enable = last_bound_state.IsAlphaToCoverageEnable();
             const bool alpha_to_one_enable = last_bound_state.IsAlphaToOneEnable();
@@ -1543,38 +1494,10 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::TASK);
     graphics_shader_bound |= last_bound_state.IsValidShaderBound(ShaderObjectStage::MESH);
-    bool vertex_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::VERTEX);
-    bool tessev_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::TESSELLATION_EVALUATION);
-    bool geom_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::GEOMETRY);
     bool fragment_shader_bound = last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
 
     if (!graphics_shader_bound) {
         return skip;
-    }
-
-    bool tess_shader_line_topology =
-        tessev_shader_bound &&
-        IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::TESSELLATION_EVALUATION)->GetTopology());
-    bool geom_shader_line_topology =
-        geom_shader_bound && IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
-
-    if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-        if (vertex_shader_bound) {
-            if (IsLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist,
-                                                  loc, vuid.set_line_width_08618);
-            }
-        }
-    }
-    if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_POLYGON_MODE_EXT) &&
-        cb_state.dynamic_state_value.polygon_mode == VK_POLYGON_MODE_LINE) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
-                                          vuid.set_line_width_08617);
-    }
-
-    if (tess_shader_line_topology || geom_shader_line_topology) {
-        skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist, loc,
-                                          vuid.set_line_width_08619);
     }
 
     if (fragment_shader_bound) {

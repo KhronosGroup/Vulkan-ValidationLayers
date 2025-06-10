@@ -107,9 +107,6 @@ struct LastBound {
     bool IsColorWriteEnabled(uint32_t i) const;
     bool IsColorBlendEnabled(uint32_t i) const;
     bool IsBlendConstantsEnabled(uint32_t i) const;
-    VkPrimitiveTopology GetPrimitiveTopology() const;
-    VkPrimitiveTopology GetVertexInputAssemblerTopology() const;
-    std::string DescribeVertexInputAssemblerTopology() const;
     VkCullModeFlags GetCullMode() const;
     VkConservativeRasterizationModeEXT GetConservativeRasterizationMode() const;
     bool IsSampleLocationsEnable() const;
@@ -125,6 +122,12 @@ struct LastBound {
     bool IsAlphaToOneEnable() const;
     VkCoverageModulationModeNV GetCoverageModulationMode() const;
     uint32_t GetViewportSwizzleCount() const;
+    VkPolygonMode GetPolygonMode() const;
+
+    VkPrimitiveTopology GetVertexInputAssemblerTopology() const;
+    std::string DescribeVertexInputAssemblerTopology() const;
+    VkPrimitiveTopology ClipSpaceTopology() const;
+    VkPrimitiveTopology GetRasterizationInputTopology() const;
 
     VkShaderEXT GetShader(ShaderObjectStage stage) const;
     vvl::ShaderObject *GetShaderState(ShaderObjectStage stage) const;
@@ -137,7 +140,6 @@ struct LastBound {
     std::vector<vvl::ShaderObject *> GetAllBoundGraphicsShaders();
     bool IsAnyGraphicsShaderBound() const;
     VkShaderStageFlags GetAllActiveBoundStages() const;
-
     bool IsBoundSetCompatible(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;
     bool IsBoundSetCompatible(uint32_t set, const vvl::ShaderObject &shader_object_state) const;
     std::string DescribeNonCompatibleSet(uint32_t set, const vvl::PipelineLayout &pipeline_layout) const;

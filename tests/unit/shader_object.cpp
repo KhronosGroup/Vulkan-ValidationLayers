@@ -2123,7 +2123,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineRasterizationMode
     vk::CmdSetLineStippleEnableEXT(m_command_buffer, VK_FALSE);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08667");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08666");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2173,7 +2173,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyCmdSetLineStippleEnableEXT)
     vk::CmdSetLineRasterizationModeEXT(m_command_buffer, VK_LINE_RASTERIZATION_MODE_DEFAULT);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08670");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08669");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -3164,7 +3164,7 @@ TEST_F(NegativeShaderObject, MissingPrimitiveTopologyLineCmdSetLineWidthEXT) {
     vk::CmdSetPrimitiveTopologyEXT(m_command_buffer, VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08618");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08617");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4756,7 +4756,7 @@ TEST_F(NegativeShaderObject, MissingLineWidthSet) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_LINE_WIDTH});
     m_command_buffer.BindShaders(m_vert_shader, geom_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08619");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08617");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4874,7 +4874,7 @@ TEST_F(NegativeShaderObject, MissingLineRasterizationMode) {
     m_command_buffer.BindShaders(m_vert_shader, geom_shader, m_frag_shader);
     vk::CmdSetLineStippleEnableEXT(m_command_buffer, VK_FALSE);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08668");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08666");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -4910,7 +4910,7 @@ TEST_F(NegativeShaderObject, MissingLineStippleEnable) {
     m_command_buffer.BindShaders(m_vert_shader, geom_shader, m_frag_shader);
     vk::CmdSetLineRasterizationModeEXT(m_command_buffer, VK_LINE_RASTERIZATION_MODE_DEFAULT);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08671");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08669");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
