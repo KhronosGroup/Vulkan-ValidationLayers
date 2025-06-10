@@ -27,6 +27,7 @@
 #include <spirv/unified1/spirv.hpp>
 #include <spirv/1.2/GLSL.std.450.h>
 #include <spirv/unified1/NonSemanticShaderDebugInfo100.h>
+#include <vulkan/vulkan_core.h>
 #include "error_message/spirv_logging.h"
 
 namespace spirv {
@@ -137,52 +138,59 @@ void ExecutionModeSet::Add(const Instruction& insn) {
     const uint32_t execution_mode = insn.Word(2);
     const uint32_t value = insn.Length() > 3u ? insn.Word(3) : 0u;
     switch (execution_mode) {
-        case spv::ExecutionModeOutputPoints:  // for geometry shaders
+        case spv::ExecutionModeOutputPoints:  // Geometry / Mesh
             flags |= output_points_bit;
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
             break;
-        case spv::ExecutionModePointMode:  // for tessellation shaders
+        case spv::ExecutionModeOutputLineStrip:  // Geometry
+        case spv::ExecutionModeOutputLinesEXT:   // Mesh (alias ExecutionModeOutputLinesNV)
+            flags |= output_lines_bit;
+            break;
+        case spv::ExecutionModeOutputTriangleStrip:  // Geometry
+        case spv::ExecutionModeOutputTrianglesEXT:   // Mesh (alias ExecutionModeOutputTrianglesNV)
+            flags |= output_triangle_bit;
+            break;
+        case spv::ExecutionModeInputPoints:  // Geometry
+            flags |= geometry_input_points_bit;
+            break;
+        case spv::ExecutionModeInputLines:  // Geometry
+            flags |= geometry_input_line_bit;
+            break;
+        case spv::ExecutionModeInputLinesAdjacency:  // Geometry
+            flags |= geometry_input_line_adjacency_bit;
+            break;
+        case spv::ExecutionModeInputTrianglesAdjacency:  // Geometry
+            flags |= geometry_input_triangle_adjacency_bit;
+            break;
+        case spv::ExecutionModePointMode:  // Tessellation
             flags |= point_mode_bit;
+            break;
+        case spv::ExecutionModeIsolines:  // Tessellation
+            flags |= subdivision_iso_lines_bit;
+            break;
+        case spv::ExecutionModeTriangles:  // Tessellation and Geometry
+            flags |= subdivision_triangle_bit;
+            flags |= geometry_input_triangle_bit;
+            break;
+        case spv::ExecutionModeQuads:  // Tessellation
+            flags |= subdivision_quad_bit;
+            break;
+        case spv::ExecutionModeSpacingEqual:  // Tessellation
+            flags |= spacing_equal_bit;
+            break;
+        case spv::ExecutionModeSpacingFractionalEven:  // Tessellation
+            flags |= spacing_fractional_even_bit;
+            break;
+        case spv::ExecutionModeSpacingFractionalOdd:  // Tessellation
+            flags |= spacing_fractional_odd_bit;
+            break;
+        case spv::ExecutionModeVertexOrderCw:  // Tessellation
+            flags |= vertex_order_cw_bit;
+            break;
+        case spv::ExecutionModeVertexOrderCcw:  // Tessellation
+            flags |= vertex_order_ccw_bit;
             break;
         case spv::ExecutionModePostDepthCoverage:  // VK_EXT_post_depth_coverage
             flags |= post_depth_coverage_bit;
-            break;
-        case spv::ExecutionModeIsolines:  // Tessellation
-            flags |= iso_lines_bit;
-            tessellation_subdivision = spv::ExecutionModeIsolines;
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-            break;
-        case spv::ExecutionModeOutputLineStrip:
-        case spv::ExecutionModeOutputLinesEXT:  // alias ExecutionModeOutputLinesNV
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-            break;
-        case spv::ExecutionModeTriangles:
-            // ExecutionModeTriangles is input if shader is geometry and output if shader is tessellation evaluation
-            // Because we don't know which shader stage is used here we set both, but only set input for geometry shader if it
-            // hasn't been set yet
-            if (input_primitive_topology == VK_PRIMITIVE_TOPOLOGY_MAX_ENUM) {
-                input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-            }
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-            tessellation_subdivision = spv::ExecutionModeTriangles;
-            break;
-        case spv::ExecutionModeQuads:
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-            tessellation_subdivision = spv::ExecutionModeQuads;
-            break;
-        case spv::ExecutionModeOutputTriangleStrip:
-        case spv::ExecutionModeOutputTrianglesEXT:  // alias ExecutionModeOutputTrianglesNV
-            primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-            break;
-        case spv::ExecutionModeInputPoints:
-            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-            break;
-        case spv::ExecutionModeInputLines:
-        case spv::ExecutionModeInputLinesAdjacency:
-            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-            break;
-        case spv::ExecutionModeInputTrianglesAdjacency:
-            input_primitive_topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
             break;
         case spv::ExecutionModeLocalSizeId:
             flags |= local_size_id_bit;
@@ -265,21 +273,6 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         case spv::ExecutionModeSubgroupUniformControlFlowKHR:  // VK_KHR_shader_subgroup_uniform_control_flow
             flags |= subgroup_uniform_control_flow_bit;
             break;
-        case spv::ExecutionModeSpacingEqual:
-            tessellation_spacing = spv::ExecutionModeSpacingEqual;
-            break;
-        case spv::ExecutionModeSpacingFractionalEven:
-            tessellation_spacing = spv::ExecutionModeSpacingFractionalEven;
-            break;
-        case spv::ExecutionModeSpacingFractionalOdd:
-            tessellation_spacing = spv::ExecutionModeSpacingFractionalOdd;
-            break;
-        case spv::ExecutionModeVertexOrderCw:
-            tessellation_orientation = spv::ExecutionModeVertexOrderCw;
-            break;
-        case spv::ExecutionModeVertexOrderCcw:
-            tessellation_orientation = spv::ExecutionModeVertexOrderCcw;
-            break;
         case spv::ExecutionModeDepthReplacing:
             flags |= depth_replacing_bit;
             break;
@@ -295,6 +288,80 @@ void ExecutionModeSet::Add(const Instruction& insn) {
         default:
             break;
     }
+}
+
+uint32_t ExecutionModeSet::GetTessellationSubdivision() const {
+    uint32_t tessellation_subdivision = 0;
+    if (Has(subdivision_iso_lines_bit)) {
+        tessellation_subdivision = spv::ExecutionModeIsolines;
+    } else if (Has(subdivision_triangle_bit)) {
+        tessellation_subdivision = spv::ExecutionModeTriangles;
+    } else if (Has(subdivision_quad_bit)) {
+        tessellation_subdivision = spv::ExecutionModeQuads;
+    }
+    return tessellation_subdivision;
+}
+
+uint32_t ExecutionModeSet::GetTessellationOrientation() const {
+    uint32_t tessellation_orientation = 0;
+    if (Has(vertex_order_cw_bit)) {
+        tessellation_orientation = spv::ExecutionModeVertexOrderCw;
+    } else if (Has(vertex_order_ccw_bit)) {
+        tessellation_orientation = spv::ExecutionModeVertexOrderCcw;
+    }
+    return tessellation_orientation;
+}
+
+uint32_t ExecutionModeSet::GetTessellationSpacing() const {
+    uint32_t tessellation_spacing = 0;
+    if (Has(spacing_equal_bit)) {
+        tessellation_spacing = spv::ExecutionModeSpacingEqual;
+    } else if (Has(spacing_fractional_even_bit)) {
+        tessellation_spacing = spv::ExecutionModeSpacingFractionalEven;
+    } else if (Has(spacing_fractional_odd_bit)) {
+        tessellation_spacing = spv::ExecutionModeSpacingFractionalOdd;
+    }
+    return tessellation_spacing;
+}
+
+VkPrimitiveTopology ExecutionModeSet::GetTessellationEvalOutputTopology() const {
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    if (Has(subdivision_iso_lines_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    } else if (Has(subdivision_quad_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    } else if (Has(subdivision_triangle_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    }
+    return topology;
+}
+
+VkPrimitiveTopology ExecutionModeSet::GetGeometryInputTopology() const {
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    if (Has(geometry_input_points_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    } else if (Has(geometry_input_line_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    } else if (Has(geometry_input_line_adjacency_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+    } else if (Has(geometry_input_triangle_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    } else if (Has(geometry_input_triangle_adjacency_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+    }
+    return topology;
+}
+
+VkPrimitiveTopology ExecutionModeSet::GetGeometryMeshOutputTopology() const {
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    if (Has(output_points_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    } else if (Has(output_lines_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    } else if (Has(output_triangle_bit)) {
+        topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    }
+    return topology;
 }
 
 static uint32_t ExecutionModelToShaderStageFlagBits(uint32_t mode) {
@@ -863,19 +930,6 @@ EntryPoint::EntryPoint(const Module& module_state, const Instruction& entrypoint
             }
         }
     }
-}
-
-std::optional<VkPrimitiveTopology> Module::GetTopology(const EntryPoint& entrypoint) const {
-    std::optional<VkPrimitiveTopology> result;
-
-    // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
-    if (entrypoint.execution_mode.Has(ExecutionModeSet::point_mode_bit)) {
-        result.emplace(VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
-    } else if (entrypoint.execution_mode.primitive_topology != VK_PRIMITIVE_TOPOLOGY_MAX_ENUM) {
-        result.emplace(entrypoint.execution_mode.primitive_topology);
-    }
-
-    return result;
 }
 
 Module::StaticData::StaticData(const Module& module_state, StatelessData* stateless_data) {

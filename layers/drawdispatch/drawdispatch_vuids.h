@@ -176,7 +176,6 @@ struct DrawDispatchVuid {
     const char* dynamic_viewport_07831 = kVUIDUndefined;
     const char* dynamic_scissor_07832 = kVUIDUndefined;
     const char* dynamic_depth_bias_07834 = kVUIDUndefined;
-    const char* dynamic_line_width_07833 = kVUIDUndefined;
     const char* dynamic_line_stipple_ext_07849 = kVUIDUndefined;
     const char* dynamic_blend_constants_07835 = kVUIDUndefined;
     const char* dynamic_depth_bounds_07836 = kVUIDUndefined;
@@ -227,11 +226,7 @@ struct DrawDispatchVuid {
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
     const char* set_color_write_enable_08647 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
-    const char* set_line_rasterization_mode_08667 = kVUIDUndefined;
-    const char* set_line_rasterization_mode_08668 = kVUIDUndefined;
     const char* set_line_stipple_enable_08669 = kVUIDUndefined;
-    const char* set_line_stipple_enable_08670 = kVUIDUndefined;
-    const char* set_line_stipple_enable_08671 = kVUIDUndefined;
     const char* next_stage_10745 = kVUIDUndefined;
     const char* vertex_shader_08684 = kVUIDUndefined;
     const char* tessellation_control_shader_08685 = kVUIDUndefined;
@@ -251,8 +246,6 @@ struct DrawDispatchVuid {
     const char* shaders_descriptor_layouts_08879 = kVUIDUndefined;
     const char* draw_shaders_no_task_mesh_08885 = kVUIDUndefined;
     const char* set_line_width_08617 = kVUIDUndefined;
-    const char* set_line_width_08618 = kVUIDUndefined;
-    const char* set_line_width_08619 = kVUIDUndefined;
     const char* set_viewport_with_count_08642 = kVUIDUndefined;
     const char* alpha_component_word_08920 = kVUIDUndefined;
     const char* color_write_mask_09116 = kVUIDUndefined;

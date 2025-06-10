@@ -47,13 +47,4 @@ ShaderObject::ShaderObject(DeviceState &dev_data, const VkShaderCreateInfoEXT &c
     }
 }
 
-VkPrimitiveTopology ShaderObject::GetTopology() const {
-    if (spirv) {
-        const auto topology = spirv->GetTopology(*entrypoint);
-        if (topology) {
-            return *topology;
-        }
-    }
-    return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-}
 }  // namespace vvl

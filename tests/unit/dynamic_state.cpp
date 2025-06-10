@@ -67,7 +67,7 @@ TEST_F(NegativeDynamicState, LineWidthNotBound) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07833");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08617");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 }
@@ -161,7 +161,7 @@ TEST_F(NegativeDynamicState, InvalidateStaticPipeline) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_2);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_0);
 
-    m_errorMonitor->SetDesiredError("No Dynamic");  // VUID-vkCmdDraw-None-08670
+    m_errorMonitor->SetDesiredError("No Dynamic");  // VUID-vkCmdDraw-None-08669
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2079,7 +2079,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineRasterizationMode) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08667");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08666");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetLineRasterizationModeEXT-lineRasterizationMode-07418");
@@ -2113,7 +2113,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnable) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08670");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08669");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
@@ -2149,8 +2149,7 @@ TEST_F(NegativeDynamicState, DrawNotSetLineStippleEnableGeometry) {
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08670");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08671");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08669");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();

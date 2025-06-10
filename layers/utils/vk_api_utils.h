@@ -89,6 +89,8 @@ static inline bool IsSecondaryColorInputBlendFactor(VkBlendFactor blend_factor) 
             blend_factor == VK_BLEND_FACTOR_SRC1_ALPHA || blend_factor == VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA);
 }
 
+static inline bool IsPointTopology(VkPrimitiveTopology topology) { return topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST; };
+
 static inline bool IsLineTopology(VkPrimitiveTopology topology) {
     return (topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST || topology == VK_PRIMITIVE_TOPOLOGY_LINE_STRIP ||
             topology == VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY ||
@@ -100,6 +102,34 @@ static inline bool IsTriangleTopology(VkPrimitiveTopology topology) {
             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN || topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY ||
             topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY);
 };
+
+// from vkspec.html#drawing-primitive-topology-class
+static inline bool IsSameTopologyClass(VkPrimitiveTopology a, VkPrimitiveTopology b) {
+    if (IsPointTopology(a)) {
+        return IsPointTopology(b);
+    } else if (IsLineTopology(a)) {
+        return IsLineTopology(b);
+    } else if (IsTriangleTopology(a)) {
+        return IsTriangleTopology(b);
+    } else {
+        return a == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST && b == VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+    }
+};
+
+static inline VkPrimitiveTopology TriangleToLineTopology(VkPrimitiveTopology topology) {
+    if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST) {
+        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    } else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY) {
+        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+    } else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP) {
+        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    } else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY) {
+        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+    } else if (topology == VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN) {
+        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+    }
+    return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+}
 
 static inline VkExtent3D CastTo3D(const VkExtent2D &d2) {
     VkExtent3D d3 = {d2.width, d2.height, 1};

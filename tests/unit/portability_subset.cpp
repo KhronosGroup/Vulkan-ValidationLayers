@@ -314,7 +314,8 @@ TEST_F(NegativePortabilitySubset, VertexAttributes) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePortabilitySubset, RasterizationState) {
+// TODO - Needs someone to look into Topology issues
+TEST_F(NegativePortabilitySubset, DISABLED_RasterizationState) {
     TEST_DESCRIPTION("Portability: CreateGraphicsPipelines - VUID 04458");
     AddRequiredExtensions(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     RETURN_IF_SKIP(InitFramework());

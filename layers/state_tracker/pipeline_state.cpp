@@ -368,6 +368,68 @@ static CBDynamicFlags GetGraphicsDynamicState(Pipeline &pipe_state) {
     return flags;
 }
 
+// This will only get the topology if possible
+static VkPrimitiveTopology GetRasterizationInputTopology(const Pipeline &pipe_state, const DeviceState &state) {
+    VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+    if (!pipe_state.RasterizationState()) {
+        return topology;
+    }
+
+    // Get Clip Space Topology first
+    if (pipe_state.active_shaders & (VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+        for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
+            if (shader_stage_state.GetStage() == VK_SHADER_STAGE_MESH_BIT_EXT ||
+                shader_stage_state.GetStage() == VK_SHADER_STAGE_GEOMETRY_BIT) {
+                if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                    topology = shader_stage_state.entrypoint->execution_mode.GetGeometryMeshOutputTopology();
+                    break;
+                }
+            }
+        }
+    } else if (pipe_state.active_shaders & VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+        for (const ShaderStageState &shader_stage_state : pipe_state.stage_states) {
+            const VkShaderStageFlagBits stage = shader_stage_state.GetStage();
+            if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT || stage == VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT) {
+                if (shader_stage_state.spirv_state && shader_stage_state.entrypoint) {
+                    if (shader_stage_state.entrypoint->execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit)) {
+                        // In tessellation shaders, PointMode is separate and trumps the tessellation topology.
+                        // Can be found in both tessellation shaders
+                        topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+                        break;
+                    } else if (stage == VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT) {
+                        topology = shader_stage_state.entrypoint->execution_mode.GetTessellationEvalOutputTopology();
+                    }
+                }
+            }
+        }
+    } else if (pipe_state.active_shaders & VK_SHADER_STAGE_VERTEX_BIT) {
+        if (pipe_state.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
+            state.phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted) {
+            return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;  // will detect at draw time
+        }
+        if (!pipe_state.InputAssemblyState()) {
+            return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+        }
+        topology = pipe_state.InputAssemblyState()->topology;
+    }
+
+    // Now apply the Polygon mode
+    VkPolygonMode polygon_mode = pipe_state.RasterizationState()->polygonMode;
+
+    // If we have point topology now, the polygon won't effect it
+    if (IsPointTopology(topology)) {
+        return topology;
+    } else if (pipe_state.IsDynamic(CB_DYNAMIC_STATE_POLYGON_MODE_EXT)) {
+        return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;  // will detect at draw time
+    } else if (polygon_mode == VK_POLYGON_MODE_POINT && (IsLineTopology(topology) || IsTriangleTopology(topology))) {
+        topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+    } else if (polygon_mode == VK_POLYGON_MODE_LINE && IsTriangleTopology(topology)) {
+        topology = TriangleToLineTopology(topology);
+    }
+
+    return topology;
+}
+
 static CBDynamicFlags GetRayTracingDynamicState(Pipeline &pipe_state) {
     CBDynamicFlags flags = 0;
 
@@ -485,27 +547,6 @@ static vvl::unordered_set<uint32_t> GetFSOutputLocations(const std::vector<Shade
                 result.insert(variable->interface_slots[0].Location());
             }
             break;  // found
-        }
-    }
-    return result;
-}
-
-static VkPrimitiveTopology GetTopologyAtRasterizer(const Pipeline &pipeline) {
-    auto result = (pipeline.InputAssemblyState()) ? pipeline.InputAssemblyState()->topology : VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
-
-    // When dealing with GPL, if there is no Vertex Input stage, check if the topology was linked in, but don't go searching in
-    // shaders, otherwise a pre-raster GPL stage can have a mismatched topology
-    if (!pipeline.OwnsSubState(pipeline.vertex_input_state)) {
-        return result;
-    }
-
-    for (const auto &stage : pipeline.stage_states) {
-        if (!stage.entrypoint) {
-            continue;
-        }
-        auto stage_topo = stage.spirv_state->GetTopology(*stage.entrypoint);
-        if (stage_topo) {
-            result = *stage_topo;
         }
     }
     return result;
@@ -717,7 +758,7 @@ Pipeline::Pipeline(const DeviceState &state_data, const VkGraphicsPipelineCreate
       active_slots(GetActiveSlots(stage_states)),
       max_active_slot(GetMaxActiveSlot(active_slots)),
       dynamic_state(GetGraphicsDynamicState(*this)),
-      topology_at_rasterizer(GetTopologyAtRasterizer(*this)),
+      topology_at_rasterizer(GetRasterizationInputTopology(*this, state_data)),
       descriptor_buffer_mode((create_flags & VK_PIPELINE_CREATE_2_DESCRIPTOR_BUFFER_BIT_EXT) != 0),
       uses_pipeline_robustness(UsesPipelineRobustness(GraphicsCreateInfo().pNext, *this)),
       uses_pipeline_vertex_robustness(UsesPipelineVertexRobustness(GraphicsCreateInfo().pNext, *this)),

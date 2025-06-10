@@ -1252,14 +1252,11 @@ bool CoreChecks::ValidatePointSizeShaderState(const spirv::Module &module_state,
         }
     } else if (stage == VK_SHADER_STAGE_VERTEX_BIT &&
                ((pipeline.create_info_shaders & (VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT)) ==
-                0) &&
-               pipeline.topology_at_rasterizer == VK_PRIMITIVE_TOPOLOGY_POINT_LIST) {
-        const bool ignore_topology = pipeline.IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY) &&
-                                     phys_dev_ext_props.extended_dynamic_state3_props.dynamicPrimitiveTopologyUnrestricted;
-        if (!entrypoint.written_builtin_point_size && !ignore_topology && !maintenance5) {
-            skip |= LogError(
-                "VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
-                "SPIR-V (Vertex) PointSize is not written to, but Pipeline topology is set to VK_PRIMITIVE_TOPOLOGY_POINT_LIST.");
+                0)) {
+        if (!entrypoint.written_builtin_point_size && IsPointTopology(pipeline.topology_at_rasterizer) && !maintenance5) {
+            skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-topology-08773", module_state.handle(), loc,
+                             "SPIR-V (Vertex) PointSize is not written to, but Pipeline topology is set to "
+                             "VK_PRIMITIVE_TOPOLOGY_POINT_LIST.");
         }
     }
 

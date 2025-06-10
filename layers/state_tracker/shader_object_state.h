@@ -54,7 +54,6 @@ struct ShaderObject : public StateObject, public SubStateManager<ShaderObjectSub
 
     VkShaderEXT VkHandle() const { return handle_.Cast<VkShaderEXT>(); }
     bool IsGraphicsShaderState() const { return create_info.stage != VK_SHADER_STAGE_COMPUTE_BIT; };
-    VkPrimitiveTopology GetTopology() const;
 };
 
 class ShaderObjectSubState {

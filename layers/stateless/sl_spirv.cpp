@@ -885,7 +885,7 @@ bool SpirvValidator::ValidateShaderStageInputOutputLimits(const spirv::Module &m
 
     const uint32_t num_vertices = entrypoint.execution_mode.output_vertices;
     const uint32_t num_primitives = entrypoint.execution_mode.output_primitives;
-    const bool is_iso_lines = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::iso_lines_bit);
+    const bool is_iso_lines = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::subdivision_iso_lines_bit);
     const bool is_point_mode = entrypoint.execution_mode.Has(spirv::ExecutionModeSet::point_mode_bit);
 
     // The max is a combiniation of both the user defined variables largest values
