@@ -633,6 +633,13 @@ void vvl::DescriptorSet::Destroy() {
     StateObject::Destroy();
 }
 
+// Will let things like GPU-AV know descriptor sets are updated
+void vvl::DescriptorSet::NotifyUpdate() {
+    for (auto &item : sub_states_) {
+        item.second->NotifyUpdate();
+    }
+}
+
 // Loop through the write updates to do for a push descriptor set, ignoring dstSet
 void vvl::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, const VkWriteDescriptorSet *write_descs) {
     assert(IsPushDescriptor());
@@ -645,6 +652,8 @@ void vvl::DescriptorSet::PerformPushDescriptorsUpdate(uint32_t write_count, cons
     for (uint32_t i = 0; i < write_count; i++) {
         push_descriptor_set_writes.push_back(vku::safe_VkWriteDescriptorSet(&write_descs[i]));
     }
+
+    NotifyUpdate();
 }
 
 // Perform write update in given update struct
@@ -672,7 +681,10 @@ void vvl::DescriptorSet::PerformWriteUpdate(const VkWriteDescriptorSet &update) 
                                                                VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         Invalidate(false);
     }
+
+    NotifyUpdate();
 }
+
 // Perform Copy update
 void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, const DescriptorSet &src_set) {
     auto src_iter = src_set.FindDescriptor(update.srcBinding, update.srcArrayElement);
@@ -701,6 +713,8 @@ void vvl::DescriptorSet::PerformCopyUpdate(const VkCopyDescriptorSet &update, co
           (VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT))) {
         Invalidate(false);
     }
+
+    NotifyUpdate();
 }
 
 // Update the drawing state for the affected descriptors.
