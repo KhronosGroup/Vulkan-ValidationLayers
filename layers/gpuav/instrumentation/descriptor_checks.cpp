@@ -118,13 +118,12 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
 
     desc_set_bindings.on_update_bound_descriptor_sets.emplace_back(
         [](Validator& gpuav, CommandBufferSubState& cb, DescriptorSetBindings::BindingCommand& desc_binding_cmd) {
-            DescriptorChecksCbState& desc_checks_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksCbState>();
-            desc_checks_cb_state.last_bound_desc_sets_state_ssbo =
+            DescriptorChecksCbState& dc_cb_state = cb.shared_resources_cache.GetOrCreate<DescriptorChecksCbState>();
+            dc_cb_state.last_bound_desc_sets_state_ssbo =
                 cb.gpu_resources_manager.GetHostVisibleBufferRange(sizeof(glsl::BoundDescriptorSetsStateSSBO));
-            memset(desc_checks_cb_state.last_bound_desc_sets_state_ssbo.offset_mapped_ptr, 0,
-                   size_t(desc_checks_cb_state.last_bound_desc_sets_state_ssbo.size));
-            auto desc_state_ssbo = static_cast<glsl::BoundDescriptorSetsStateSSBO*>(
-                desc_checks_cb_state.last_bound_desc_sets_state_ssbo.offset_mapped_ptr);
+            dc_cb_state.last_bound_desc_sets_state_ssbo.Clear();
+            auto desc_state_ssbo =
+                static_cast<glsl::BoundDescriptorSetsStateSSBO*>(dc_cb_state.last_bound_desc_sets_state_ssbo.offset_mapped_ptr);
             desc_state_ssbo->descriptor_init_status = gpuav.shared_resources_manager.Get<DescriptorHeap>().GetDeviceAddress();
 
             for (size_t bound_ds_i = 0; bound_ds_i < desc_binding_cmd.bound_descriptor_sets.size(); ++bound_ds_i) {
@@ -142,17 +141,17 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     SubState(*bound_ds).GetTypeAddress(gpuav, Location(vvl::Func::Empty));
             }
 
-            desc_binding_cmd.descritpor_state_ssbo = desc_checks_cb_state.last_bound_desc_sets_state_ssbo;
+            desc_binding_cmd.descritpor_state_ssbo = dc_cb_state.last_bound_desc_sets_state_ssbo;
         });
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
                                                   VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
-            DescriptorChecksCbState* desc_checks_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
-            if (desc_checks_cb_state) {
-                out_buffer_info.buffer = desc_checks_cb_state->last_bound_desc_sets_state_ssbo.buffer;
-                out_buffer_info.offset = desc_checks_cb_state->last_bound_desc_sets_state_ssbo.offset;
-                out_buffer_info.range = desc_checks_cb_state->last_bound_desc_sets_state_ssbo.size;
+            DescriptorChecksCbState* dc_cb_state = cb.shared_resources_cache.TryGet<DescriptorChecksCbState>();
+            if (dc_cb_state) {
+                out_buffer_info.buffer = dc_cb_state->last_bound_desc_sets_state_ssbo.buffer;
+                out_buffer_info.offset = dc_cb_state->last_bound_desc_sets_state_ssbo.offset;
+                out_buffer_info.range = dc_cb_state->last_bound_desc_sets_state_ssbo.size;
             } else {
                 // Eventually, no descriptor set was bound in command buffer.
                 // Instrumenation descriptor set is already defined at this point and needs a binding,

@@ -111,7 +111,7 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                     }
 
                     vko::BufferRange pp_buffer_range = cb.gpu_resources_manager.GetHostCachedBufferRange(pp_buffer_size);
-                    memset((std::byte*)pp_buffer_range.offset_mapped_ptr, 0, (size_t)pp_buffer_range.size);
+                    pp_buffer_range.Clear();
                     cb.gpu_resources_manager.FlushAllocation(pp_buffer_range);
 
                     auto desc_set_buffer_lut_ptr = (VkDeviceAddress*)desc_set_buffer_lut_buffer_range.offset_mapped_ptr;

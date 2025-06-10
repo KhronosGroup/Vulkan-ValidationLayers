@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
+#include "state_tracker/descriptor_sets.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 
 namespace gpuav {

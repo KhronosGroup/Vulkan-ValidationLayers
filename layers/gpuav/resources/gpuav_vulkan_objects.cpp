@@ -235,6 +235,12 @@ void Buffer::Clear() const {
     memset((uint8_t *)mapped_ptr, 0, static_cast<size_t>(size));
 }
 
+void BufferRange::Clear() const {
+    // Caller is in charge of calling Flush/Invalidate as needed
+    assert(offset_mapped_ptr);
+    memset((uint8_t *)offset_mapped_ptr, 0, static_cast<size_t>(size));
+}
+
 GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     {
         VmaAllocationCreateInfo alloc_ci = {};
