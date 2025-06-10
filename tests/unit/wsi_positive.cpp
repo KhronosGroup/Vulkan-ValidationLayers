@@ -2404,3 +2404,57 @@ TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
     m_default_queue->Wait();
     m_second_queue->Wait();
 }
+
+TEST_F(PositiveWsi, SharedPresentAndPresentSemaphoreReuse) {
+    TEST_DESCRIPTION("Present semaphore in-use check is disabled when shared present mode is used without swapchain maintenance1");
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    bool found = false;
+    for (VkPresentModeKHR present_mode : m_surface_present_modes) {
+        if (present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR) {
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        GTEST_SKIP() << "Cannot find shared present mode";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = 1;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
+
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    SetImageLayoutPresentSrc(images[image_index]);
+
+    vkt::Semaphore semaphore(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Present(swapchain, image_index, semaphore);
+
+    // For poor apps without swapchain_maintenance1 that use shared present modes
+    // and call AcquireNextImage only once, the present semaphore in-use check is disabled.
+    // The app doesn't have an official ways to do this better.
+    // If supported, swapchain_maintenance1 should be used in such scenario.
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Present(swapchain, image_index, semaphore);
+    m_default_queue->Wait();
+}
