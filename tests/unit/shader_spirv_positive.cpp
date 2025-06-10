@@ -2244,3 +2244,22 @@ TEST_F(PositiveShaderSpirv, ShaderRelaxedExtendedInstruction) {
 
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
 }
+
+TEST_F(PositiveShaderSpirv, Bitwise32bitMaintenance9) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+
+        void main() {
+            uint64_t x = 21;
+            int64_t y = bitCount(x);
+        }
+    )glsl";
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+}

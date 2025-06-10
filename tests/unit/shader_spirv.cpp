@@ -2758,3 +2758,22 @@ TEST_F(NegativeShaderSpirv, ShaderRelaxedExtendedInstruction) {
     VkShaderObj cs(this, spv_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeShaderSpirv, Bitwise32bitMaintenance9) {
+    AddRequiredFeature(vkt::Feature::shaderInt64);
+    RETURN_IF_SKIP(Init());  // missing maintenance9
+
+    char const *cs_source = R"glsl(
+        #version 450
+        #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+        void main() {
+            uint64_t x = 21;
+            int64_t y = bitCount(x);
+        }
+    )glsl";
+
+    // Will be VUID-RuntimeSpirv-None-10824 when spirv-tools is updated
+    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-Base-04781");
+    VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    m_errorMonitor->VerifyFound();
+}
