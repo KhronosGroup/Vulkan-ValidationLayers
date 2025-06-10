@@ -140,9 +140,9 @@ bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl
                                   mismatch_layout_vuid, error);
 }
 
-bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
-                                   const VkImageSubresourceRange &normalized_subresource_range, VkImageLayout explicit_layout,
-                                   const Location &loc, const char *mismatch_layout_vuid, bool *error) const {
+bool CoreChecks::VerifyVideoImageLayout(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
+                                        const VkImageSubresourceRange &normalized_subresource_range, VkImageLayout explicit_layout,
+                                        const Location &loc, const char *mismatch_layout_vuid, bool *error) const {
     if (disabled[image_layout_validation]) {
         return false;
     }
@@ -155,8 +155,34 @@ bool CoreChecks::VerifyImageLayout(const vvl::CommandBuffer &cb_state, const vvl
                                    ? RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
                                    : RangeGenerator{};
 
-    return VerifyImageLayoutRange(cb_state, image_state, normalized_subresource_range.aspectMask, explicit_layout,
-                                  *image_layout_map, std::move(range_gen), loc, mismatch_layout_vuid, error);
+    bool skip = false;
+    LayoutUseCheckAndMessage layout_check(explicit_layout, normalized_subresource_range.aspectMask);
+    LayoutUseCheckAndMessage layout_check_general(VK_IMAGE_LAYOUT_GENERAL, normalized_subresource_range.aspectMask);
+    skip |= ForEachMatchingLayoutMapRange(
+        *image_layout_map, std::move(range_gen),
+        [this, &cb_state, &image_state, &layout_check, &layout_check_general, mismatch_layout_vuid, loc, error](
+            const LayoutRange &range, const ImageLayoutState &state) {
+            bool local_skip = false;
+            if (!layout_check.Check(state) && (!enabled_features.unifiedImageLayoutsVideo || !layout_check_general.Check(state))) {
+                if (error) {
+                    *error = true;
+                }
+                const subresource_adapter::Subresource subresource = image_state.subresource_encoder.Decode(range.begin);
+                std::string expected_layout = string_VkImageLayout(layout_check.expected_layout);
+                if (enabled_features.unifiedImageLayoutsVideo) {
+                    expected_layout += " or VK_IMAGE_LAYOUT_GENERAL";
+                }
+                const LogObjectList objlist(cb_state.Handle(), image_state.Handle());
+                local_skip |= LogError(mismatch_layout_vuid, objlist, loc,
+                                       "Cannot use %s (layer=%" PRIu32 " mip=%" PRIu32
+                                       ") with specific layout %s that doesn't match the "
+                                       "%s layout %s.",
+                                       FormatHandle(image_state).c_str(), subresource.arrayLayer, subresource.mipLevel,
+                                       expected_layout.c_str(), layout_check.message, string_VkImageLayout(layout_check.layout));
+            }
+            return local_skip;
+        });
+    return skip;
 }
 
 void CoreChecks::TransitionFinalSubpassLayouts(vvl::CommandBuffer &cb_state) {

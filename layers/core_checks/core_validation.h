@@ -1035,9 +1035,9 @@ class CoreChecks : public vvl::DeviceProxy {
                            VkImageLayout explicit_layout, const Location& image_loc, const char* mismatch_layout_vuid,
                            bool* error) const override;
 
-    bool VerifyImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
-                           const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
-                           const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
+    bool VerifyVideoImageLayout(const vvl::CommandBuffer& cb_state, const vvl::Image& image_state,
+                                const VkImageSubresourceRange& normalized_subresource_range, VkImageLayout explicit_layout,
+                                const Location& image_loc, const char* mismatch_layout_vuid, bool* error) const;
 
     bool ValidateTransferGranularityExtent(const LogObjectList& objlist, const VkExtent3D& extent, const VkOffset3D& offset,
                                            const VkExtent3D& granularity, VkExtent3D subresource_extent,

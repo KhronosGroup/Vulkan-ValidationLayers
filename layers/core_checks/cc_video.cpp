@@ -3285,9 +3285,9 @@ bool CoreChecks::ValidateVideoEncodeQuantizationMapInfo(const vvl::CommandBuffer
         skip |= ValidateProtectedImage(cb_state, *iv_state->image_state, loc.dot(Field::quantizationMap),
                                        "VUID-vkCmdEncodeVideoKHR-pNext-10313");
 
-        skip |= VerifyImageLayout(cb_state, *iv_state->image_state, iv_state->normalized_subresource_range,
-                                  VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, loc.dot(Field::quantizationMap),
-                                  "VUID-vkCmdEncodeVideoKHR-pNext-10314", &hit_error);
+        skip |= VerifyVideoImageLayout(cb_state, *iv_state->image_state, iv_state->normalized_subresource_range,
+                                       VK_IMAGE_LAYOUT_VIDEO_ENCODE_QUANTIZATION_MAP_KHR, loc.dot(Field::quantizationMap),
+                                       "VUID-vkCmdEncodeVideoKHR-pNext-10314", &hit_error);
 
         if (!IsImageCompatibleWithVideoSession(*iv_state->image_state, *vs_state)) {
             const LogObjectList objlist(cb_state.Handle(), vs_state->Handle(), iv_state->Handle());
@@ -5237,9 +5237,9 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "is not one of the bound video picture resources.");
                 }
 
-                skip |= VerifyImageLayout(*cb_state, *setup_resource.image_state, setup_resource.range,
-                                          VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
-                                          "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07254", &hit_error);
+                skip |= VerifyVideoImageLayout(*cb_state, *setup_resource.image_state, setup_resource.range,
+                                               VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
+                                               "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10803", &hit_error);
             }
         } else {
             skip |= LogError("VUID-VkVideoDecodeInfoKHR-pSetupReferenceSlot-07169", commandBuffer,
@@ -5312,10 +5312,10 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
             dst_same_as_setup ? VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR : VK_IMAGE_LAYOUT_VIDEO_DECODE_DST_KHR;
 
         const char *vuid =
-            dst_same_as_setup ? "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07253" : "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-07252";
+            dst_same_as_setup ? "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10802" : "VUID-vkCmdDecodeVideoKHR-pDecodeInfo-10801";
 
-        skip |= VerifyImageLayout(*cb_state, *dst_resource.image_state, dst_resource.range, expected_layout, error_obj.location,
-                                  vuid, &hit_error);
+        skip |= VerifyVideoImageLayout(*cb_state, *dst_resource.image_state, dst_resource.range, expected_layout,
+                                       error_obj.location, vuid, &hit_error);
 
         if (setup_resource) {
             if ((profile_caps.decode.flags & VK_VIDEO_DECODE_CAPABILITY_DPB_AND_OUTPUT_COINCIDE_BIT_KHR) == 0 &&
@@ -5387,9 +5387,9 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
                                                      decode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
                                                      "VUID-vkCmdDecodeVideoKHR-codedOffset-07257");
 
-                    skip |= VerifyImageLayout(*cb_state, *reference_resource.image_state, reference_resource.range,
-                                              VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
-                                              "VUID-vkCmdDecodeVideoKHR-pPictureResource-07255", &hit_error);
+                    skip |= VerifyVideoImageLayout(*cb_state, *reference_resource.image_state, reference_resource.range,
+                                                   VK_IMAGE_LAYOUT_VIDEO_DECODE_DPB_KHR, error_obj.location,
+                                                   "VUID-vkCmdDecodeVideoKHR-pPictureResource-10804", &hit_error);
                 }
             } else {
                 skip |= LogError("VUID-VkVideoDecodeInfoKHR-pPictureResource-07172", commandBuffer,
@@ -5780,9 +5780,9 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                      "bound video picture resources.");
                 }
 
-                skip |= VerifyImageLayout(*cb_state, *setup_resource.image_state, setup_resource.range,
-                                          VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, error_obj.location,
-                                          "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08223", &hit_error);
+                skip |= VerifyVideoImageLayout(*cb_state, *setup_resource.image_state, setup_resource.range,
+                                               VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, error_obj.location,
+                                               "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10812", &hit_error);
             }
         } else {
             skip |= LogError("VUID-VkVideoEncodeInfoKHR-pSetupReferenceSlot-08240", commandBuffer,
@@ -5846,8 +5846,9 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                              FormatHandle(src_resource.image_state->Handle()).c_str(), FormatHandle(*vs_state).c_str());
         }
 
-        skip |= VerifyImageLayout(*cb_state, *src_resource.image_state, src_resource.range, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,
-                                  error_obj.location, "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-08222", &hit_error);
+        skip |=
+            VerifyVideoImageLayout(*cb_state, *src_resource.image_state, src_resource.range, VK_IMAGE_LAYOUT_VIDEO_ENCODE_SRC_KHR,
+                                   error_obj.location, "VUID-vkCmdEncodeVideoKHR-pEncodeInfo-10811", &hit_error);
     }
 
     if (pEncodeInfo->pReferenceSlots) {
@@ -5905,9 +5906,9 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
                                                      encode_info_loc.dot(Field::pReferenceSlots, i).dot(Field::pPictureResource),
                                                      "VUID-vkCmdEncodeVideoKHR-codedOffset-08218");
 
-                    skip |= VerifyImageLayout(*cb_state, *reference_resource.image_state, reference_resource.range,
-                                              VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, error_obj.location,
-                                              "VUID-vkCmdEncodeVideoKHR-pPictureResource-08224", &hit_error);
+                    skip |= VerifyVideoImageLayout(*cb_state, *reference_resource.image_state, reference_resource.range,
+                                                   VK_IMAGE_LAYOUT_VIDEO_ENCODE_DPB_KHR, error_obj.location,
+                                                   "VUID-vkCmdEncodeVideoKHR-pPictureResource-10813", &hit_error);
                 }
             } else {
                 skip |= LogError("VUID-VkVideoEncodeInfoKHR-pPictureResource-08242", commandBuffer,
