@@ -6451,6 +6451,53 @@ TEST_F(NegativeDynamicRendering, CommandBufferRecording) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRendering, AttachmentFeedbackLoopInfo) {
+    AddRequiredExtensions(VK_EXT_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_EXTENSION_NAME);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkImageCreateInfo image_ci = vku::InitStructHelper();
+    image_ci.imageType = VK_IMAGE_TYPE_2D;
+    image_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    image_ci.extent = {32u, 32u, 1u};
+    image_ci.mipLevels = 1u;
+    image_ci.arrayLayers = 1u;
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_ci.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_ci.usage =
+        VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView();
+
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper();
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &image_ci.format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_info);
+    pipe.CreateGraphicsPipeline();
+
+    VkAttachmentFeedbackLoopInfoEXT attachment_feedback_loop_info = vku::InitStructHelper();
+    attachment_feedback_loop_info.feedbackLoopEnable = VK_TRUE;
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper(&attachment_feedback_loop_info);
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.clearValue.color = m_clear_color;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.renderArea = {{0, 0}, {32u, 32u}};
+    rendering_info.layerCount = 1u;
+    rendering_info.colorAttachmentCount = 1u;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkAttachmentFeedbackLoopInfoEXT-unifiedImageLayouts-10782");
+    vk::CmdBeginRenderingKHR(m_command_buffer, &rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
 TEST_F(NegativeDynamicRendering, AttachmentFeedbackLoopInfoInvalidUsage) {
     AddRequiredExtensions(VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::unifiedImageLayouts);
