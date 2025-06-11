@@ -33,13 +33,13 @@
 #include "state_tracker/event_map.h"
 
 #include "containers/subresource_adapter.h"
-#include "containers/qfo_transfer.h"
 #include "containers/custom_containers.h"
-#include "containers/qfo_transfer.h"
 
 #include "generated/dynamic_state_helper.h"
 #include "stateless/sl_spirv.h"
 #include <spirv-tools/libspirv.hpp>
+
+#include "utils/sync_utils.h"
 
 namespace vvl {
 struct DrawDispatchVuid;
@@ -206,11 +206,6 @@ class CoreChecks : public vvl::DeviceProxy {
     using Func = vvl::Func;
     using Struct = vvl::Struct;
     using Field = vvl::Field;
-    using MemoryBarrier = sync_utils::MemoryBarrier;
-    using OwnershipTransferBarrier = sync_utils::OwnershipTransferBarrier;
-    using BufferBarrier = sync_utils::BufferBarrier;
-    using ImageBarrier = sync_utils::ImageBarrier;
-    using OwnershipTransferOp = sync_utils::OwnershipTransferOp;
 
     GlobalQFOTransferBarrierMap<QFOImageTransferBarrier> qfo_release_image_barrier_map;
     GlobalQFOTransferBarrierMap<QFOBufferTransferBarrier> qfo_release_buffer_barrier_map;
@@ -373,7 +368,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateAccessMask(const LogObjectList& objlist, const Location& access_mask_loc, const Location& stage_mask_loc,
                             VkQueueFlags queue_flags, VkAccessFlags2KHR access_mask, VkPipelineStageFlags2KHR stage_mask) const;
     bool ValidateMemoryBarrier(const LogObjectList& objlist, const Location& barrier_loc, const vvl::CommandBuffer& cb_state,
-                               const MemoryBarrier& barrier, OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none,
+                               const SyncMemoryBarrier& barrier,
+                               OwnershipTransferOp ownership_transfer_op = OwnershipTransferOp::none,
                                VkDependencyFlags dependency_flags = 0) const;
 
     bool ValidateSubpassDependency(const ErrorObject& error_obj, const Location& loc, const VkSubpassDependency2& barrier) const;

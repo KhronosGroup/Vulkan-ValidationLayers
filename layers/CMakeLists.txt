@@ -79,6 +79,8 @@ target_sources(VkLayer_utils PRIVATE
     utils/keyboard.h
     utils/ray_tracing_utils.cpp
     utils/ray_tracing_utils.h
+    utils/sync_utils.cpp
+    utils/sync_utils.h
     utils/text_utils.cpp
     utils/text_utils.h
     utils/vk_struct_compare.cpp
@@ -193,8 +195,6 @@ target_sources(vvl PRIVATE
     chassis/chassis_modification_state.h
     chassis/chassis_manual.cpp
     chassis/dispatch_object_manual.cpp
-    containers/qfo_transfer.h
-    containers/qfo_transfer.cpp
     containers/range.h
     containers/range_map.h
     containers/subresource_adapter.cpp
@@ -434,8 +434,6 @@ target_sources(vvl PRIVATE
     sync/sync_stats.h
     sync/sync_submit.cpp
     sync/sync_submit.h
-    sync/sync_utils.cpp
-    sync/sync_utils.h
     sync/sync_validation.cpp
     sync/sync_validation.h
     thread_tracker/thread_safety_validation.cpp

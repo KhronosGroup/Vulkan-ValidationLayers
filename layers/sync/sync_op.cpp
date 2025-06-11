@@ -26,6 +26,7 @@
 #include "state_tracker/render_pass_state.h"
 
 #include "sync/sync_validation.h"
+#include "utils/sync_utils.h"
 
 // Range generators for to allow event scope filtration to be limited to the top of the resource access traversal pipeline
 //
@@ -380,7 +381,7 @@ SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValida
 SyncOpPipelineBarrier::SyncOpPipelineBarrier(vvl::Func command, const SyncValidator &sync_state, VkQueueFlags queue_flags,
                                              const VkDependencyInfo &dep_info)
     : SyncOpBase(command) {
-    const sync_utils::ExecScopes stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
+    const ExecScopes stage_masks = sync_utils::GetExecScopes(dep_info);
     barrier_set_.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
     barrier_set_.dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
     barrier_set_.MakeMemoryBarriers(queue_flags, dep_info.memoryBarrierCount, dep_info.pMemoryBarriers);
@@ -481,7 +482,7 @@ SyncOpWaitEvents::SyncOpWaitEvents(vvl::Func command, const SyncValidator &sync_
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfo[i];
         auto &barrier_set = barrier_sets_[i];
-        auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
+        auto stage_masks = sync_utils::GetExecScopes(dep_info);
         barrier_set.src_exec_scope = SyncExecScope::MakeSrc(queue_flags, stage_masks.src);
         barrier_set.dst_exec_scope = SyncExecScope::MakeDst(queue_flags, stage_masks.dst);
         barrier_set.MakeMemoryBarriers(queue_flags, dep_info.memoryBarrierCount, dep_info.pMemoryBarriers);
@@ -846,7 +847,7 @@ SyncOpSetEvent::SyncOpSetEvent(vvl::Func command, const SyncValidator &sync_stat
     : SyncOpBase(command),
       event_(sync_state.Get<vvl::Event>(event)),
       recorded_context_(),
-      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetGlobalStageMasks(dep_info).src)),
+      src_exec_scope_(SyncExecScope::MakeSrc(queue_flags, sync_utils::GetExecScopes(dep_info).src)),
       dep_info_(new vku::safe_VkDependencyInfo(&dep_info)) {
     if (access_context) {
         recorded_context_ = std::make_shared<const AccessContext>(*access_context);

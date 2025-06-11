@@ -14,8 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "sync/sync_utils.h"
 #include "sync/sync_access_state.h"
+#include "utils/sync_utils.h"
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 ResourceAccessState::OrderingBarriers ResourceAccessState::kOrderingRules = {
@@ -973,13 +973,36 @@ HazardResult::HazardState::HazardState(const ResourceAccessState *access_state_,
     }
 }
 
+static VkPipelineStageFlags2 RelatedPipelineStages(VkPipelineStageFlags2 stage_mask,
+                                                   const vvl::unordered_map<VkPipelineStageFlags2, VkPipelineStageFlags2> &map) {
+    VkPipelineStageFlags2 unscanned = stage_mask;
+    VkPipelineStageFlags2 related = 0;
+    for (const auto &entry : map) {
+        const auto &stage = entry.first;
+        if (stage & unscanned) {
+            related = related | entry.second;
+            unscanned = unscanned & ~stage;
+            if (!unscanned) break;
+        }
+    }
+    return related;
+}
+
+static VkPipelineStageFlags2 WithEarlierPipelineStages(VkPipelineStageFlags2 stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyEarlierStages());
+}
+
+static VkPipelineStageFlags2 WithLaterPipelineStages(VkPipelineStageFlags2 stage_mask) {
+    return stage_mask | RelatedPipelineStages(stage_mask, syncLogicallyLaterStages());
+}
+
 SyncExecScope SyncExecScope::MakeSrc(VkQueueFlags queue_flags, VkPipelineStageFlags2 mask_param,
                                      const VkPipelineStageFlags2 disabled_feature_mask) {
     const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags, disabled_feature_mask);
 
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.exec_scope = sync_utils::WithEarlierPipelineStages(expanded_mask);
+    result.exec_scope = WithEarlierPipelineStages(expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(expanded_mask);
     // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
     if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
@@ -992,7 +1015,7 @@ SyncExecScope SyncExecScope::MakeDst(VkQueueFlags queue_flags, VkPipelineStageFl
     const VkPipelineStageFlags2 expanded_mask = sync_utils::ExpandPipelineStages(mask_param, queue_flags);
     SyncExecScope result;
     result.mask_param = mask_param;
-    result.exec_scope = sync_utils::WithLaterPipelineStages(expanded_mask);
+    result.exec_scope = WithLaterPipelineStages(expanded_mask);
     result.valid_accesses = SyncStageAccess::AccessScopeByStage(expanded_mask);
     // ALL_COMMANDS stage includes all accesses performed by the gpu, not only accesses defined by the stages
     if (mask_param & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
