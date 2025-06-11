@@ -401,4 +401,22 @@ void Validator::InternalVmaError(LogObjectList objlist, VkResult result, const c
     dispatch_device_->ReleaseValidationObject(LayerObjectTypeGpuAssisted);
 }
 
+// Things like DescriptorHeap are singleton class that lives in GPU-AV, but are used when state tracking adds/destroy new resources
+// we need to track. One issue is on vkDestroyDevice we need to teardown the GPU-AV class, then after we try and destroy leaked
+// state objects (ex. user forgot to call vkDestroySampler).
+void Validator::DestroySubstate() {
+    if (!dispatch_device_ || aborted_) {
+        return;
+    }
+
+    // While this is not ideal, it is more important to keep normal code fast and do extra cleanup on teardown
+    for (auto object_it = dispatch_device_->object_dispatch.begin(); object_it != dispatch_device_->object_dispatch.end();
+         object_it++) {
+        if ((*object_it)->container_type == LayerObjectTypeStateTracker) {
+            auto &state_tracker = dynamic_cast<vvl::DeviceState &>(**object_it);
+            state_tracker.RemoveSubState(LayerObjectTypeGpuAssisted);
+        }
+    }
+}
+
 }  // namespace gpuav

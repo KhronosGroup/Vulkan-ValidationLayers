@@ -52,13 +52,29 @@ DeviceState::~DeviceState() { DestroyObjectMaps(); }
 void DeviceState::AddProxy(DeviceProxy &proxy) { proxies.emplace(proxy.container_type, proxy); }
 
 void DeviceState::RemoveProxy(LayerObjectTypeId id) {
-    // this is used by gpuav abort so it needs to clean up any substates as well
     proxies.erase(id);
+    // this is used by gpuav abort so it needs to clean up any substates as well
+    RemoveSubState(id);
+}
+
+// Seperate function so GPU-AV (or other objects) can destroy its substate before it destroys itself (and then the leaked object
+// cleanup tries to destroy the substate)
+void DeviceState::RemoveSubState(LayerObjectTypeId id) {
+    // Currently we have not good way to track all objects that have a substate, so this is a list from manual inspection
     ForEachShared<vvl::CommandBuffer>([id](std::shared_ptr<vvl::CommandBuffer> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::Queue>([id](std::shared_ptr<vvl::Queue> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::Swapchain>([id](std::shared_ptr<vvl::Swapchain> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::ImageView>([id](std::shared_ptr<vvl::ImageView> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::Image>([id](std::shared_ptr<vvl::Image> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::Sampler>([id](std::shared_ptr<vvl::Sampler> state) { state->RemoveSubState(id); });
     ForEachShared<vvl::DescriptorSet>([id](std::shared_ptr<vvl::DescriptorSet> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::BufferView>([id](std::shared_ptr<vvl::BufferView> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::Buffer>([id](std::shared_ptr<vvl::Buffer> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::AccelerationStructureNV>(
+        [id](std::shared_ptr<vvl::AccelerationStructureNV> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::AccelerationStructureKHR>(
+        [id](std::shared_ptr<vvl::AccelerationStructureKHR> state) { state->RemoveSubState(id); });
+    ForEachShared<vvl::ShaderObject>([id](std::shared_ptr<vvl::ShaderObject> state) { state->RemoveSubState(id); });
 }
 
 VkDeviceAddress DeviceState::GetBufferDeviceAddressHelper(VkBuffer buffer, const DeviceExtensions *exts = nullptr) const {

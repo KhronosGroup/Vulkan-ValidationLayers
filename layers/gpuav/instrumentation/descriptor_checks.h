@@ -17,8 +17,8 @@
 #include <mutex>
 
 #include "containers/custom_containers.h"
-#include "error_message/error_location.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include "generated/vk_object_types.h"
 
 namespace gpuav {
 class Validator;
