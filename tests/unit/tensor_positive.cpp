@@ -12,6 +12,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "data_graph_objects.h"
+#include "generated/pnext_chain_extraction.h"
 #include <vector>
 
 class PositiveTensor : public TensorTest {};
@@ -22,6 +23,14 @@ void TensorTest::InitBasicTensor() {
     AddRequiredFeature(vkt::Feature::tensors);
     RETURN_IF_SKIP(Init());
 }
+
+void TensorTest::InitTensorControls() {
+    SetTargetApiVersion(VK_API_VERSION_1_4);
+    AddRequiredExtensions(VK_ARM_TENSORS_EXTENSION_NAME);
+    AddRequiredExtensions(VK_ARM_TENSOR_CONTROLS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::tensors);
+    RETURN_IF_SKIP(Init());
+};
 
 // Trivial rank 1 tensor
 VkTensorDescriptionARM TensorTest::DefaultDesc() {
@@ -273,4 +282,64 @@ TEST_F(PositiveTensor, DescriptorTensorViewNull) {
     dgi.type = VK_DESCRIPTOR_TYPE_TENSOR_ARM;
 
     vk::GetDescriptorEXT(device(), &dgi, descriptor_buffer_properties.storageBufferDescriptorSize, &buffer);
+}
+
+/* VK_ARM_tensor_controls */
+
+TEST_F(PositiveTensor, Tilings) {
+    TEST_DESCRIPTION("Create tensors with BLOCK_U and BRICK tilings");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    const std::vector<int64_t> dimensions{ 1, 2, 3, 4 };
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.pDimensions = dimensions.data();
+    desc.dimensionCount = dimensions.size();
+    desc.pStrides = nullptr;  // required
+    desc.format = VK_FORMAT_R16_SINT;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    for (auto tiling : { VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM,
+                         VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM,
+                         VK_TENSOR_TILING_BRICK_16_WIDE_ARM,
+                         VK_TENSOR_TILING_BRICK_8_WIDE_ARM,
+                         VK_TENSOR_TILING_BRICK_4_WIDE_ARM }) {
+        desc.tiling = tiling;
+        VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+
+        vkt::Tensor tensor(*m_device, info);
+    }
+}
+
+TEST_F(PositiveTensor, Rolling) {
+    TEST_DESCRIPTION("Create rolling tensors with all valid tilings");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    // same as in layers/core_checks/cc_tensor.cpp
+    const std::vector<VkTensorTilingARM> valid_rolling_tilings = {
+        VK_TENSOR_TILING_LINEAR_ARM,
+        VK_TENSOR_TILING_BRICK_16_WIDE_ARM,
+        VK_TENSOR_TILING_BRICK_8_WIDE_ARM,
+        VK_TENSOR_TILING_BRICK_4_WIDE_ARM
+    };
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.format = VK_FORMAT_R64_SINT;
+    const std::vector<int64_t> dimensions{ 1, 32, 64, 4 };
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 16, 16, 4 }
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    for (auto tiling : valid_rolling_tilings) {
+        desc.tiling = tiling;
+        vkt::Tensor tensor(*m_device, info);
+    }
 }

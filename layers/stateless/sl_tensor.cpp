@@ -214,6 +214,28 @@ bool Device::manual_PreCallValidateCreateTensorARM(VkDevice device, const VkTens
                              string_VkTensorCreateFlagsARM(VK_TENSOR_CREATE_DESCRIPTOR_BUFFER_CAPTURE_REPLAY_BIT_ARM).c_str());
         }
     }
+
+    const Location desc_loc = create_info_loc.dot(Field::pDescription);
+    if ((VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM == description.tiling ||
+         VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM == description.tiling) &&
+         description.pDimensions[description.dimensionCount - 1] > 4) {
+        skip |= LogError(
+            "VUID-VkTensorDescriptionARM-tiling-09842", device, desc_loc.dot(Field::tiling),
+            "(%s) incompatible with pDimensions[dimensionCount-1] (%" PRIi64 ") > 4.",
+            string_VkTensorTilingARM(description.tiling), description.pDimensions[description.dimensionCount - 1]);
+    }
+    if ((VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM == description.tiling ||
+         VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM == description.tiling ||
+         VK_TENSOR_TILING_BRICK_16_WIDE_ARM == description.tiling ||
+         VK_TENSOR_TILING_BRICK_8_WIDE_ARM == description.tiling ||
+         VK_TENSOR_TILING_BRICK_4_WIDE_ARM == description.tiling) &&
+         nullptr != description.pStrides) {
+        skip |= LogError(
+            "VUID-VkTensorDescriptionARM-tiling-09843", device, desc_loc.dot(Field::tiling),
+            "(%s) incompatible with non-NULL pStrides (%p).",
+            string_VkTensorTilingARM(description.tiling), description.pStrides);
+    }
+
     if (auto external_memory_info = vku::FindStructInPNextChain<VkExternalMemoryTensorCreateInfoARM>(pCreateInfo->pNext)) {
         VkPhysicalDeviceExternalTensorInfoARM tensor_info = vku::InitStructHelper();
         tensor_info.pDescription = pCreateInfo->pDescription;

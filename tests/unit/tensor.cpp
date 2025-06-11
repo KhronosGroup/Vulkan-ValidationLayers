@@ -14,6 +14,7 @@
 #include "layer_validation_tests.h"
 #include "pipeline_helper.h"
 #include "data_graph_objects.h"
+#include "generated/pnext_chain_extraction.h"
 #include <vector>
 
 class NegativeTensor : public TensorTest {};
@@ -2736,5 +2737,259 @@ TEST_F(NegativeTensor, WriteDescriptorSetTensorInfoNullViews) {
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetTensorARM-nullDescriptor-09898");
     vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    m_errorMonitor->VerifyFound();
+}
+
+/* VK_ARM_tensor_controls */
+
+TEST_F(NegativeTensor, TilingsInnerDimensionTooBig) {
+    TEST_DESCRIPTION("Test creating a tensor with BLOCK_U tiling and pDimension[count-1] > 4");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    const std::vector<int64_t> dimensions{ 1, 2, 3, 5 };
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.pDimensions = dimensions.data();
+    desc.dimensionCount = dimensions.size();
+    desc.pStrides = nullptr;
+    desc.format = VK_FORMAT_R16_SINT;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    for (auto tiling : { VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM,
+                         VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM }) {
+        desc.tiling = tiling;
+        VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+
+        m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-tiling-09842");
+        vkt::Tensor tensor(*m_device, info);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeTensor, TilingsStridesNotNull) {
+    TEST_DESCRIPTION("Test creating a tensor with BLOCK_U or BRICK tiling and non-NULL pStrides");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    constexpr VkFormat format = VK_FORMAT_R32_SFLOAT;
+    const std::vector<int64_t> dimensions{ 1, 2, 3, 4 };
+    const std::vector<int64_t> strides{ 96, 48, 16, 4};
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.pDimensions = dimensions.data();
+    desc.dimensionCount = dimensions.size();
+    desc.pStrides = strides.data();
+    desc.format = format;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    for (auto tiling : { VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM ,
+                         VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM,
+                         VK_TENSOR_TILING_BRICK_16_WIDE_ARM,
+                         VK_TENSOR_TILING_BRICK_8_WIDE_ARM,
+                         VK_TENSOR_TILING_BRICK_4_WIDE_ARM }) {
+        desc.tiling = tiling;
+        VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+
+        m_errorMonitor->SetDesiredError("VUID-VkTensorDescriptionARM-tiling-09843");
+        vkt::Tensor tensor(*m_device, info);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeTensor, RollingInvalidTiling) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with an invalid tiling.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    /* This must be a complement of `valid_rolling_tilings` in tensor_positive.cpp and layers/core_checks/cc_tensor.cpp */
+    const std::vector<VkTensorTilingARM> invalid_tilings = {
+        VK_TENSOR_TILING_OPTIMAL_ARM,
+        VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_ARM,
+        VK_TENSOR_TILING_BLOCK_U_INTERLEAVED_64K_ARM,
+    };
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.format = VK_FORMAT_R16_SINT;
+    const std::vector<int64_t> dimensions{ 1, 32, 64, 4 };
+    desc.dimensionCount = dimensions.size();
+    desc.pDimensions = dimensions.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 16, 16, 4 }
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    for (auto invalid_tiling : invalid_tilings) {
+        desc.tiling = invalid_tiling;
+
+        m_errorMonitor->SetDesiredError("VUID-VkTensorCreateInfoARM-pNext-09833");
+        vkt::Tensor tensor(*m_device, info);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeTensor, RollingInvalidDimensions) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with dimensionality > max.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_BRICK_16_WIDE_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims = { 1, 2, 3, 4, 5 }; /* dimensionCount > 4 */
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 2, 2, 4 }
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    /* Currently, any dimension > 4 will also trigger this error, we have to silence it */
+    m_errorMonitor->SetAllowedFailureMsg("VUID-VkTensorDescriptionARM-dimensionCount-09733");
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorCreateInfoARM-pNext-09834");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, RollingWrapsGreatherThanDimensions) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with wraps > dimensions.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_BRICK_8_WIDE_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims{ 1, 2, 8 };
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 8, 8, 8 } /* w[1] > dim[1] */
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09835");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, RollingWrapsNEqDimensionAndGreatherThan2exp16) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with wraps != dimensions and >= 2^16.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+     VkPhysicalDeviceTensorPropertiesARM tensor_props = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(tensor_props);
+    if (tensor_props.maxPerDimensionTensorElements <= 65536 /*2^16*/) {
+        GTEST_SKIP() << "maxPerDimensionTensorElements (" << tensor_props.maxPerDimensionTensorElements << ") <= 2^16 (65536), VU 09836 cannot be triggered on this device.";
+    }
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_BRICK_8_WIDE_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims{ 1, 4, 100000 };
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 4, 70000, 64 } /* must all be < 2^16 */
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09836");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, RollingWrapsNEqDimensionAndNotPow2) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with wraps != dimensions and not power of 2.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_LINEAR_ARM;
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims{ 1, 4, 8 };
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 3, 7, 64 } /* 3, 7 not power of 2 */
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09837");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, RollingWrapsNotMultipleOfBrickOuterSize) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with wraps not multiple of brickOuterSize.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_BRICK_4_WIDE_ARM;  // brickOuterSize = 4
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims{ 1, 2, 8, 36 };
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 2, 6, 32 } /* 6 > brickOuterSize (4) and not a multiple of it */
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09838");
+    vkt::Tensor tensor(*m_device, info);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeTensor, RollingWrapsNotMultipleOf64DivBrickOuterSizeDivElementSize) {
+    TEST_DESCRIPTION("Try to create a rolling tensor with wraps not multiple of 64 / brickOuterSize / elementSize.");
+    RETURN_IF_SKIP(InitTensorControls());
+
+    VkTensorDescriptionARM desc = vku::InitStructHelper();
+    desc.tiling = VK_TENSOR_TILING_BRICK_4_WIDE_ARM;  // brickOuterSize = 4
+    desc.format = VK_FORMAT_R8_SINT;
+    std::vector<int64_t> dims{ 1, 2, 36 };
+    desc.dimensionCount = dims.size();
+    desc.pDimensions = dims.data();
+    desc.pStrides = nullptr;
+    desc.usage = VK_TENSOR_USAGE_SHADER_BIT_ARM;
+
+    VkTensorCreateInfoARM info = DefaultCreateInfo(&desc);
+    VkTensorRollingBackingCreateInfoARM rolling_info {
+        VK_STRUCTURE_TYPE_TENSOR_ROLLING_BACKING_CREATE_INFO_ARM,
+        nullptr,
+        { 1, 2, 34, 32 } /* 34 NOT a multiple of 16 = 64 / brickOuterSize (4) / elementSize (1) */
+    };
+    vvl::PnextChainAdd(&info, &rolling_info);
+
+    m_errorMonitor->SetDesiredError("VUID-VkTensorRollingBackingCreateInfoARM-wraps-09839");
+    vkt::Tensor tensor(*m_device, info);
     m_errorMonitor->VerifyFound();
 }
