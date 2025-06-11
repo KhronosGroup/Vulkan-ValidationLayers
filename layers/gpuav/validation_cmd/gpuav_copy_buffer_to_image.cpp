@@ -98,7 +98,7 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
     }
 
     ValidationCommandsCommon &val_cmd_common =
-        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
     valpipe::ComputePipeline<CopyBufferToImageValidationShader> &validation_pipeline =
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CopyBufferToImageValidationShader>>(
             gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);

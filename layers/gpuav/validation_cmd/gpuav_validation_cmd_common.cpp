@@ -64,7 +64,8 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
 }
 }  // namespace internal
 
-ValidationCommandsCommon::ValidationCommandsCommon(Validator &gpuav, CommandBufferSubState &cb) : gpuav_(gpuav) {
+ValidationCommandsCommon::ValidationCommandsCommon(Validator &gpuav, CommandBufferSubState &cb, const Location &loc)
+    : gpuav_(gpuav) {
     const std::vector<VkDescriptorSetLayoutBinding> validation_cmd_bindings = {
         // Error output buffer
         {glsl::kBindingDiagErrorBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
@@ -83,8 +84,7 @@ ValidationCommandsCommon::ValidationCommandsCommon(Validator &gpuav, CommandBuff
         const VkResult result = DispatchCreateDescriptorSetLayout(gpuav_.device, &validation_cmd_desc_set_layout_ci, nullptr,
                                                                   &error_logging_desc_set_layout_);
         if (result != VK_SUCCESS) {
-            gpuav_.InternalError(gpuav_.device, Location(vvl::Func::Empty),
-                                 "Unable to create descriptor set layout used for validation commands.");
+            gpuav_.InternalError(gpuav_.device, loc, "Unable to create descriptor set layout used for validation commands.");
             return;
         }
     }
@@ -94,8 +94,7 @@ ValidationCommandsCommon::ValidationCommandsCommon(Validator &gpuav, CommandBuff
         const VkResult result = gpuav_.desc_set_manager_->GetDescriptorSet(
             &validation_cmd_desc_pool_, error_logging_desc_set_layout_, &error_logging_desc_set_);
         if (result != VK_SUCCESS) {
-            gpuav_.InternalError(gpuav_.device, Location(vvl::Func::Empty),
-                                 "Unable to create descriptor set used for validation commands.");
+            gpuav_.InternalError(gpuav_.device, loc, "Unable to create descriptor set used for validation commands.");
             return;
         }
     }

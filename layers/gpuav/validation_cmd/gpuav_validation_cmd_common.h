@@ -21,6 +21,7 @@
 #include "gpuav/core/gpuav_validation_pipeline.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 
+struct Location;
 namespace gpuav {
 namespace valcmd {
 
@@ -49,7 +50,7 @@ bool BindShaderResources(gpuav::valpipe::ComputePipeline<ShaderResources>& valid
 
 class ValidationCommandsCommon {
   public:
-    ValidationCommandsCommon(Validator& gpuav, CommandBufferSubState& cb);
+    ValidationCommandsCommon(Validator& gpuav, CommandBufferSubState& cb, const Location& loc);
     ~ValidationCommandsCommon();
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;

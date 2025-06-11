@@ -69,7 +69,7 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
     }
 
     ValidationCommandsCommon &val_cmd_common =
-        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+        cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
 
     valpipe::ComputePipeline<DispatchValidationShader> &validation_pipeline =
         gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DispatchValidationShader>>(

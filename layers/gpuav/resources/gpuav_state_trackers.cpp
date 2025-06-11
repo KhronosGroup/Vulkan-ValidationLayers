@@ -173,8 +173,8 @@ std::string CommandBufferSubState::GetDebugLabelRegion(uint32_t label_command_i,
 bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc) {
     if (!on_pre_cb_submission_functions.empty()) {
         vko::CommandPool &cb_pool =
-            queue.shared_resources_cache.GetOrCreate<vko::CommandPool>(gpuav_, queue.base.queue_family_index);
-        auto [per_submission_cb, fence] = cb_pool.GetCommandBuffer();
+            queue.shared_resources_cache.GetOrCreate<vko::CommandPool>(gpuav_, queue.base.queue_family_index, loc);
+        auto [per_submission_cb, fence] = cb_pool.GetCommandBuffer(loc);
         if (per_submission_cb == VK_NULL_HANDLE) {
             return false;
         }
