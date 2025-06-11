@@ -41,8 +41,6 @@ class DescriptorSetManager {
     void PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set);
 
   private:
-    std::unique_lock<std::mutex> Lock() const { return std::unique_lock<std::mutex>(lock_); }
-
     struct PoolTracker {
         uint32_t size;
         uint32_t used;

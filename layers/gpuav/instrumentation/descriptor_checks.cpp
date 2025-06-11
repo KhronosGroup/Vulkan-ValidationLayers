@@ -63,7 +63,7 @@ DescriptorId DescriptorHeap::NextId(const VulkanTypedHandle& handle) {
 
     // NOTE: valid ids are in the range [1, max_descriptors_] (inclusive)
     // 0 is the invalid id.
-    auto guard = Lock();
+    std::lock_guard guard(lock_);
     if (alloc_map_.size() >= max_descriptors_) {
         return 0;
     }
@@ -80,7 +80,7 @@ DescriptorId DescriptorHeap::NextId(const VulkanTypedHandle& handle) {
 
 void DescriptorHeap::DeleteId(DescriptorId id) {
     if (max_descriptors_ > 0) {
-        auto guard = Lock();
+        std::lock_guard guard(lock_);
         // Note: We don't mess with next_id_ here because ids should be assigned in LRU order.
         gpu_heap_state_[id / 32] &= ~(1u << (id & 31));
         alloc_map_.erase(id);

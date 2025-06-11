@@ -14,9 +14,7 @@
  */
 #pragma once
 
-#include <atomic>
 #include <mutex>
-#include <vector>
 
 #include "containers/custom_containers.h"
 #include "error_message/error_location.h"
@@ -38,8 +36,6 @@ class DescriptorHeap {
     VkDeviceAddress GetDeviceAddress() const { return buffer_.Address(); }
 
   private:
-    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(lock_); }
-
     mutable std::mutex lock_;
 
     const uint32_t max_descriptors_;

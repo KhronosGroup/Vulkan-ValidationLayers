@@ -49,7 +49,6 @@ class DescriptorSetSubState : public vvl::DescriptorSetSubState {
 
   private:
     void BuildBindingLayouts();
-    std::lock_guard<std::mutex> Lock() const { return std::lock_guard<std::mutex>(state_lock_); }
 
     std::vector<gpuav::spirv::BindingLayout> binding_layouts_;
 
