@@ -26,7 +26,7 @@
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
 #include "state_tracker/event_map.h"
-#include "containers/qfo_transfer.h"
+#include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
 
 namespace vvl {
@@ -584,10 +584,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     VkQueueFlags GetQueueFlags() const { return command_pool->queue_flags; }
 
-    bool IsReleaseOp(const sync_utils::OwnershipTransferBarrier &barrier) const {
+    bool IsReleaseOp(const OwnershipTransferBarrier &barrier) const {
         return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.srcQueueFamilyIndex);
     }
-    bool IsAcquireOp(const sync_utils::OwnershipTransferBarrier &barrier) const {
+    bool IsAcquireOp(const OwnershipTransferBarrier &barrier) const {
         return (IsOwnershipTransfer(barrier)) && (command_pool->queueFamilyIndex == barrier.dstQueueFamilyIndex);
     }
 

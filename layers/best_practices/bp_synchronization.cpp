@@ -18,7 +18,6 @@
  */
 
 #include "best_practices/best_practices_validation.h"
-#include "sync/sync_utils.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/queue_state.h"
 #include "generated/dispatch_functions.h"

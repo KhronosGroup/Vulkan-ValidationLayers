@@ -15,9 +15,8 @@
  * limitations under the License.
  */
 
-#include "state_tracker/buffer_state.h"
-#include "state_tracker/cmd_buffer_state.h"
 #include "sync/sync_common.h"
+#include "state_tracker/buffer_state.h"
 
 extern const ResourceAccessRange kFullRange(std::numeric_limits<VkDeviceSize>::min(), std::numeric_limits<VkDeviceSize>::max());
 
@@ -34,12 +33,28 @@ SyncAccessFlags AccessScopeImpl(Flags flag_mask, const Map& map) {
     return scope;
 }
 
+static VkAccessFlags2 ExpandAccessFlags(VkAccessFlags2 access_mask) {
+    VkAccessFlags2 expanded = access_mask;
+
+    if (VK_ACCESS_2_SHADER_READ_BIT & access_mask) {
+        expanded = expanded & ~VK_ACCESS_2_SHADER_READ_BIT;
+        expanded |= kShaderReadExpandBits;
+    }
+
+    if (VK_ACCESS_2_SHADER_WRITE_BIT & access_mask) {
+        expanded = expanded & ~VK_ACCESS_2_SHADER_WRITE_BIT;
+        expanded |= kShaderWriteExpandBits;
+    }
+
+    return expanded;
+}
+
 SyncAccessFlags SyncStageAccess::AccessScopeByStage(VkPipelineStageFlags2 stages) {
     return AccessScopeImpl(stages, syncAccessMaskByStageBit());
 }
 
 SyncAccessFlags SyncStageAccess::AccessScopeByAccess(VkAccessFlags2 accesses) {
-    SyncAccessFlags sync_accesses = AccessScopeImpl(sync_utils::ExpandAccessFlags(accesses), syncAccessMaskByAccessBit());
+    SyncAccessFlags sync_accesses = AccessScopeImpl(ExpandAccessFlags(accesses), syncAccessMaskByAccessBit());
 
     // The above access expansion replaces SHADER_READ meta access with atomic accesses as defined by the specification.
     // ACCELERATION_STRUCTURE_BUILD and MICROMAP_BUILD stages are special in a way that they use SHADER_READ access directly.

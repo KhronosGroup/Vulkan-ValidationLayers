@@ -24,7 +24,6 @@
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "state_tracker/state_tracker.h"
-#include "sync/sync_utils.h"
 #include "state_tracker/shader_stage_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/buffer_state.h"
@@ -44,6 +43,7 @@
 // Used for debugging
 #include "utils/keyboard.h"
 
+#include "utils/sync_utils.h"
 #include "chassis/chassis.h"
 
 namespace vvl {
@@ -2950,9 +2950,9 @@ void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, V
 void DeviceState::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent event, const VkDependencyInfo *pDependencyInfo,
                                              const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    auto stage_masks = sync_utils::GetGlobalStageMasks(*pDependencyInfo);
+    auto exec_scopes = sync_utils::GetExecScopes(*pDependencyInfo);
 
-    cb_state->RecordSetEvent(record_obj.location.function, event, stage_masks.src,
+    cb_state->RecordSetEvent(record_obj.location.function, event, exec_scopes.src,
                              pDependencyInfo->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
@@ -2996,8 +2996,9 @@ void DeviceState::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
-        auto stage_masks = sync_utils::GetGlobalStageMasks(dep_info);
-        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], stage_masks.src, pDependencyInfos[i].dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
+        auto exec_scopes = sync_utils::GetExecScopes(dep_info);
+        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], exec_scopes.src,
+                                   pDependencyInfos[i].dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
         cb_state->RecordBarriers(dep_info);
     }
 }

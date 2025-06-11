@@ -24,7 +24,6 @@
 #include "generated/dispatch_functions.h"
 #include "chassis/chassis_modification_state.h"
 #include "utils/shader_utils.h"
-#include "sync/sync_utils.h"
 
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/shaders/gpuav_error_codes.h"
@@ -221,8 +220,8 @@ bool GpuShaderInstrumentor::PreCallValidateCmdWaitEvents2(VkCommandBuffer comman
     VkPipelineStageFlags2 src_stage_mask = 0;
 
     for (uint32_t i = 0; i < eventCount; i++) {
-        auto stage_masks = sync_utils::GetGlobalStageMasks(pDependencyInfos[i]);
-        src_stage_mask |= stage_masks.src;
+        auto exec_scopes = sync_utils::GetExecScopes(pDependencyInfos[i]);
+        src_stage_mask |= exec_scopes.src;
     }
 
     return ValidateCmdWaitEvents(commandBuffer, src_stage_mask, error_obj.location);

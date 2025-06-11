@@ -30,7 +30,6 @@
 #include "core_checks/core_validation.h"
 #include "containers/container_utils.h"
 #include "error_message/logging.h"
-#include "sync/sync_utils.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/fence_state.h"
@@ -44,12 +43,11 @@
 #include "state_tracker/wsi_state.h"
 #include "state_tracker/event_map.h"
 #include "generated/dispatch_functions.h"
+#include "generated/sync_validation_types.h"
 #include "utils/math_utils.h"
+#include "utils/sync_utils.h"
 
-using sync_utils::BufferBarrier;
-using sync_utils::ImageBarrier;
-using sync_utils::MemoryBarrier;
-using sync_utils::OwnershipTransferBarrier;
+constexpr VkQueueFlags kAllQueueTypes = VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT;
 
 ReadLockGuard CoreChecks::ReadLock() const {
     if (global_settings.fine_grained_locking) {
@@ -945,14 +943,12 @@ struct RenderPassDepState {
             const auto subpass_dep = GetSubPassDepBarrier(dependencies[self_dep_index]);
 
             const auto subpass_src_stages =
-                sync_utils::ExpandPipelineStages(subpass_dep.srcStageMask, sync_utils::kAllQueueTypes, disabled_features);
-            const auto barrier_src_stages =
-                sync_utils::ExpandPipelineStages(src_stage_mask, sync_utils::kAllQueueTypes, disabled_features);
+                sync_utils::ExpandPipelineStages(subpass_dep.srcStageMask, kAllQueueTypes, disabled_features);
+            const auto barrier_src_stages = sync_utils::ExpandPipelineStages(src_stage_mask, kAllQueueTypes, disabled_features);
 
             const auto subpass_dst_stages =
-                sync_utils::ExpandPipelineStages(subpass_dep.dstStageMask, sync_utils::kAllQueueTypes, disabled_features);
-            const auto barrier_dst_stages =
-                sync_utils::ExpandPipelineStages(dst_stage_mask, sync_utils::kAllQueueTypes, disabled_features);
+                sync_utils::ExpandPipelineStages(subpass_dep.dstStageMask, kAllQueueTypes, disabled_features);
+            const auto barrier_dst_stages = sync_utils::ExpandPipelineStages(dst_stage_mask, kAllQueueTypes, disabled_features);
 
             const bool is_subset = (barrier_src_stages == (subpass_src_stages & barrier_src_stages)) &&
                                    (barrier_dst_stages == (subpass_dst_stages & barrier_dst_stages));
@@ -1680,7 +1676,7 @@ bool CoreChecks::PreCallValidateGetSemaphoreCounterValueKHR(VkDevice device, VkS
 // Dependencies between subpasses can only use pipeline stages compatible with VK_QUEUE_GRAPHICS_BIT,
 // for external subpasses we don't have a yet command buffer so we have to assume all of them are valid.
 static inline VkQueueFlags SubpassToQueueFlags(uint32_t subpass) {
-    return subpass == VK_SUBPASS_EXTERNAL ? sync_utils::kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
+    return subpass == VK_SUBPASS_EXTERNAL ? kAllQueueTypes : static_cast<VkQueueFlags>(VK_QUEUE_GRAPHICS_BIT);
 }
 
 bool CoreChecks::ValidateSubpassDependency(const ErrorObject &error_obj, const Location &in_loc,
@@ -2502,7 +2498,7 @@ bool CoreChecks::ValidateBarriers(const Location &outer_loc, const vvl::CommandB
 
     for (uint32_t i = 0; i < memBarrierCount; ++i) {
         const Location barrier_loc = outer_loc.dot(Struct::VkMemoryBarrier, Field::pMemoryBarriers, i);
-        const MemoryBarrier barrier(pMemBarriers[i], src_stage_mask, dst_stage_mask);
+        const SyncMemoryBarrier barrier(pMemBarriers[i], src_stage_mask, dst_stage_mask);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
     }
     for (uint32_t i = 0; i < imageMemBarrierCount; ++i) {
@@ -2532,7 +2528,7 @@ bool CoreChecks::ValidateDependencyInfo(const LogObjectList &objects, const Loca
 
     for (uint32_t i = 0; i < dep_info.memoryBarrierCount; ++i) {
         const Location barrier_loc = dep_info_loc.dot(Struct::VkMemoryBarrier2, Field::pMemoryBarriers, i);
-        const MemoryBarrier barrier(dep_info.pMemoryBarriers[i]);
+        const SyncMemoryBarrier barrier(dep_info.pMemoryBarriers[i]);
         skip |= ValidateMemoryBarrier(objects, barrier_loc, cb_state, barrier);
     }
     for (uint32_t i = 0; i < dep_info.imageMemoryBarrierCount; ++i) {
@@ -2713,7 +2709,7 @@ bool CoreChecks::ValidateDynamicRenderingBarriersCommon(const LogObjectList &obj
 }
 
 bool CoreChecks::ValidateMemoryBarrier(const LogObjectList &objects, const Location &barrier_loc,
-                                       const vvl::CommandBuffer &cb_state, const MemoryBarrier &barrier,
+                                       const vvl::CommandBuffer &cb_state, const SyncMemoryBarrier &barrier,
                                        OwnershipTransferOp ownership_transfer_op, VkDependencyFlags dependency_flags) const {
     bool skip = false;
     const VkQueueFlags queue_flags = cb_state.GetQueueFlags();

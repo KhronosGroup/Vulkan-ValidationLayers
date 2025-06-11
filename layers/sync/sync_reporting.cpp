@@ -21,6 +21,8 @@
 #include "error_message/error_strings.h"
 #include "utils/math_utils.h"
 
+constexpr VkAccessFlags2 kAllAccesses = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+
 static const char *string_SyncHazard(SyncHazard hazard) {
     switch (hazard) {
         case SyncHazard::NONE:
@@ -198,6 +200,14 @@ static SyncAccessFlags FilterSyncAccessesByAllowedVkAccesses(const SyncAccessFla
     return filtered_accesses;
 }
 
+// If mask contains ALL of expand_bits, then clear these bits and add a meta_mask
+static void ReplaceExpandBitsWithMetaMask(VkFlags64 &mask, VkFlags64 expand_bits, VkFlags64 meta_mask) {
+    if (expand_bits && (mask & expand_bits) == expand_bits) {
+        mask &= ~expand_bits;
+        mask |= meta_mask;
+    }
+}
+
 static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSyncAccessesToCompactVkForm(
     const SyncAccessFlags &sync_accesses, const SyncValidator &device, VkQueueFlags allowed_queue_flags) {
     if (sync_accesses.none()) {
@@ -279,10 +289,10 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
             continue;
         }
 
-        sync_utils::ReplaceExpandBitsWithMetaMask(stages, all_transfer_expand_bits, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+        ReplaceExpandBitsWithMetaMask(stages, all_transfer_expand_bits, VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
 
         const VkAccessFlags2 all_shader_reads_supported_by_stages = all_shader_read_bits & all_accesses_supported_by_stages;
-        sync_utils::ReplaceExpandBitsWithMetaMask(accesses, all_shader_reads_supported_by_stages, VK_ACCESS_2_SHADER_READ_BIT);
+        ReplaceExpandBitsWithMetaMask(accesses, all_shader_reads_supported_by_stages, VK_ACCESS_2_SHADER_READ_BIT);
         result.emplace_back(stages, accesses);
     }
     if (stages_with_all_supported_accesses) {
@@ -290,9 +300,9 @@ static std::vector<std::pair<VkPipelineStageFlags2, VkAccessFlags2>> ConvertSync
             // For simple configurations (1 stage and at most 2 accesses) don't use ALL accesses shortcut
             result.emplace_back(stages_with_all_supported_accesses, all_accesses);
         } else {
-            sync_utils::ReplaceExpandBitsWithMetaMask(stages_with_all_supported_accesses, all_transfer_expand_bits,
-                                                      VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
-            result.emplace_back(stages_with_all_supported_accesses, sync_utils::kAllAccesses);
+            ReplaceExpandBitsWithMetaMask(stages_with_all_supported_accesses, all_transfer_expand_bits,
+                                          VK_PIPELINE_STAGE_2_ALL_TRANSFER_BIT);
+            result.emplace_back(stages_with_all_supported_accesses, kAllAccesses);
         }
     }
     return result;
@@ -526,13 +536,13 @@ std::string FormatSyncAccesses(const SyncAccessFlags &sync_accesses, const SyncV
             out << (format_as_extra_property ? ":" : ", ");
         }
         if (format_as_extra_property) {
-            if (accesses == sync_utils::kAllAccesses) {
+            if (accesses == kAllAccesses) {
                 out << string_VkPipelineStageFlags2(stages) << "(ALL_ACCESSES)";
             } else {
                 out << string_VkPipelineStageFlags2(stages) << "(" << string_VkAccessFlags2(accesses) << ")";
             }
         } else {
-            if (accesses == sync_utils::kAllAccesses) {
+            if (accesses == kAllAccesses) {
                 out << "all accesses at " << string_VkPipelineStageFlags2(stages);
             } else {
                 out << string_VkAccessFlags2(accesses) << " accesses at " << string_VkPipelineStageFlags2(stages);
