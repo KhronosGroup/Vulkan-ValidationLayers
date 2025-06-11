@@ -330,7 +330,7 @@ void TracyVkCollector::Create(VkDevice device, VkQueue queue, uint32_t queue_fam
 
                 // No need to guard cmd buffer creation with a mutex,
                 // The VkFence is in charge of synchronizing accesses
-                std::lock_guard<std::mutex> collect_cb_lock(collector_ptr->collect_cb_mutex);
+                std::lock_guard collect_cb_lock(collector_ptr->collect_cb_mutex);
                 collector_ptr->collect_cb_ready = true;
             }
         }
@@ -350,7 +350,7 @@ void TracyVkCollector::Destroy(TracyVkCollector &collector) {
 #endif
     VVL_ZoneScoped;
     {
-        std::lock_guard<std::mutex> collect_lock(collector.collect_mutex);
+        std::lock_guard collect_lock(collector.collect_mutex);
         collector.should_abort = true;
         collector.collect_cv.notify_one();
     }
@@ -377,7 +377,7 @@ void TracyVkCollector::Destroy(TracyVkCollector &collector) {
 
 void TracyVkCollector::Collect() {
     VVL_ZoneScoped;
-    std::lock_guard<std::mutex> collect_lock(collect_mutex);
+    std::lock_guard collect_lock(collect_mutex);
     should_collect = true;
     collect_cv.notify_one();
 }
@@ -387,7 +387,7 @@ std::optional<std::pair<VkCommandBuffer, VkFence>> TracyVkCollector::TryGetColle
         return std::nullopt;
     }
 
-    std::lock_guard<std::mutex> collect_lock(collect_cb_mutex);
+    std::lock_guard collect_lock(collect_cb_mutex);
     if (collect_cb_ready) {
         collect_cb_ready = false;
         return std::make_pair(cmd_buf, fence);

@@ -20,6 +20,7 @@
 #include "gpuav/core/gpuav.h"
 #include "generated/dispatch_functions.h"
 #include "utils/math_utils.h"
+#include <mutex>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
 #include "profiling/profiling.h"
@@ -51,7 +52,7 @@ VkResult DescriptorSetManager::GetDescriptorSet(VkDescriptorPool *out_desc_pool,
 
 VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPool *out_pool, VkDescriptorSetLayout ds_layout,
                                                  std::vector<VkDescriptorSet> *out_desc_sets) {
-    auto guard = Lock();
+    std::lock_guard guard(lock_);
 
     VkResult result = VK_SUCCESS;
     VkDescriptorPool desc_pool_to_use = VK_NULL_HANDLE;
@@ -118,7 +119,7 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
 }
 
 void DescriptorSetManager::PutBackDescriptorSet(VkDescriptorPool desc_pool, VkDescriptorSet desc_set) {
-    auto guard = Lock();
+    std::lock_guard guard(lock_);
 
     auto iter = desc_pool_map_.find(desc_pool);
     assert(iter != desc_pool_map_.end());

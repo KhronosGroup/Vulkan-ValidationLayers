@@ -16,6 +16,7 @@
  */
 
 #include "gpuav/descriptor_validation/gpuav_descriptor_set.h"
+#include <mutex>
 
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
@@ -158,7 +159,7 @@ void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::Descripto
 }
 
 VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Location &loc) {
-    auto guard = Lock();
+    std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
 
     // Will be empty on first time getting the state
