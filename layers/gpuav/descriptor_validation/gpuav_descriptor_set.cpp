@@ -158,7 +158,7 @@ void FillBindingInData(const vvl::InlineUniformBinding &binding, glsl::Descripto
     data[index++] = glsl::DescriptorState(DescriptorClass::InlineUniform, glsl::kNullDescriptor, vvl::kU32Max);
 }
 
-VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Location &loc) {
+VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav) {
     std::lock_guard guard(state_lock_);
     const uint32_t current_version = current_version_.load();
 
@@ -222,7 +222,7 @@ VkDeviceAddress DescriptorSetSubState::GetTypeAddress(Validator &gpuav, const Lo
                 FillBindingInData(static_cast<const vvl::AccelerationStructureBinding &>(*binding), data, index);
                 break;
             case DescriptorClass::Invalid:
-                gpuav.InternalError(gpuav.device, loc, "Unknown DescriptorClass");
+                gpuav.InternalError(gpuav.device, Location(vvl::Func::Empty), "Unknown DescriptorClass");
         }
     }
 

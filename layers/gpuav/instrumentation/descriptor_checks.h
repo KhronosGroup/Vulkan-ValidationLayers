@@ -27,7 +27,7 @@ class CommandBufferSubState;
 using DescriptorId = uint32_t;
 class DescriptorHeap {
   public:
-    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors, const Location &loc);
+    DescriptorHeap(Validator &gpuav, uint32_t max_descriptors);
     ~DescriptorHeap();
 
     DescriptorId NextId(const VulkanTypedHandle &handle);

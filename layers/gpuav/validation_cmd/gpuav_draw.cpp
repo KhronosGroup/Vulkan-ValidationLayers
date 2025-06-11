@@ -147,7 +147,7 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
             return;
         }
         ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
         valpipe::ComputePipeline<FirstInstanceValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<FirstInstanceValidationShader>>(
                 gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
@@ -357,7 +357,7 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
             return;
         }
         ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
 
         valpipe::ComputePipeline<CountBufferValidationShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<CountBufferValidationShader>>(
@@ -533,7 +533,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                 return;
             }
             ValidationCommandsCommon &val_cmd_common =
-                cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+                cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
             valpipe::ComputePipeline<MeshValidationShader> &validation_pipeline =
                 gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<MeshValidationShader>>(
                     gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);
@@ -856,7 +856,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
             return;
         }
         ValidationCommandsCommon &val_cmd_common =
-            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state);
+            cb_state.shared_resources_cache.GetOrCreate<ValidationCommandsCommon>(gpuav, cb_state, loc);
         valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader> &validation_pipeline =
             gpuav.shared_resources_manager.GetOrCreate<valpipe::ComputePipeline<DrawIndexedIndirectIndexBufferShader>>(
                 gpuav, loc, val_cmd_common.error_logging_desc_set_layout_);

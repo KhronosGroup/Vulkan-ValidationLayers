@@ -25,6 +25,7 @@
 #include "containers/custom_containers.h"
 #include "containers/range.h"
 
+struct Location;
 namespace gpuav {
 class Validator;
 
@@ -228,11 +229,11 @@ class SharedResourcesCache {
 // Used to allocate and submit GPU-AV's own command buffers
 class CommandPool {
   public:
-    CommandPool(Validator &gpuav, uint32_t queue_family_i);
+    CommandPool(Validator &gpuav, uint32_t queue_family_i, const Location &loc);
     ~CommandPool();
     // Returned command buffer is ready to be used,
     // corresponding fence has been waited upon.
-    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer();
+    std::pair<VkCommandBuffer, VkFence> GetCommandBuffer(const Location &loc);
 
   private:
     Validator &gpuav_;

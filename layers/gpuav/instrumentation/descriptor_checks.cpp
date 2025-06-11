@@ -25,8 +25,7 @@ static uint32_t BitBufferSize(uint32_t num_bits) {
     return (((num_bits + (kBitsPerWord - 1)) & ~(kBitsPerWord - 1)) / kBitsPerWord) * sizeof(uint32_t);
 }
 
-DescriptorHeap::DescriptorHeap(Validator& gpuav, uint32_t max_descriptors, const Location& loc)
-    : max_descriptors_(max_descriptors), buffer_(gpuav) {
+DescriptorHeap::DescriptorHeap(Validator& gpuav, uint32_t max_descriptors) : max_descriptors_(max_descriptors), buffer_(gpuav) {
     // If max_descriptors_ is 0, GPU-AV aborted during vkCreateDevice(). We still need to
     // support calls into this class as no-ops if this happens.
     if (max_descriptors_ == 0) {
@@ -93,7 +92,7 @@ struct DescriptorChecksCbState {
 
 void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
     if (!gpuav.gpuav_settings.shader_instrumentation.descriptor_checks) {
-        gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, 0, Location(vvl::Func::Empty));
+        gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, 0);
         return;
     }
 
@@ -106,7 +105,7 @@ void DescriptorChecksOnFinishDeviceSetup(Validator& gpuav) {
         num_descs = glsl::kDebugInputBindlessMaxDescriptors;
     }
 
-    gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, num_descs, Location(vvl::Func::Empty));
+    gpuav.shared_resources_manager.GetOrCreate<DescriptorHeap>(gpuav, num_descs);
 }
 
 void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState& cb) {
@@ -137,8 +136,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     continue;
                 }
 
-                desc_state_ssbo->descriptor_set_types[bound_ds_i] =
-                    SubState(*bound_ds).GetTypeAddress(gpuav, Location(vvl::Func::Empty));
+                desc_state_ssbo->descriptor_set_types[bound_ds_i] = SubState(*bound_ds).GetTypeAddress(gpuav);
             }
 
             desc_binding_cmd.descritpor_state_ssbo = dc_cb_state.last_bound_desc_sets_state_ssbo;
@@ -180,8 +178,7 @@ void RegisterDescriptorChecksValidation(Validator& gpuav, CommandBufferSubState&
                     continue;
                 }
                 DescriptorSetSubState& desc_set_state = SubState(*bound_ds);
-                desc_state_ssbo_ptr->descriptor_set_types[bound_ds_i] =
-                    desc_set_state.GetTypeAddress(gpuav, Location(vvl::Func::Empty));
+                desc_state_ssbo_ptr->descriptor_set_types[bound_ds_i] = desc_set_state.GetTypeAddress(gpuav);
             }
         }
     });
