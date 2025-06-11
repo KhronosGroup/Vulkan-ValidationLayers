@@ -2772,8 +2772,7 @@ TEST_F(NegativeShaderSpirv, Bitwise32bitMaintenance9) {
         }
     )glsl";
 
-    // Will be VUID-RuntimeSpirv-None-10824 when spirv-tools is updated
-    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-Base-04781");
+    m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-10824");
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     m_errorMonitor->VerifyFound();
 }
