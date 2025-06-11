@@ -76,6 +76,7 @@ class Validator : public GpuShaderInstrumentor {
 
   private:
     void InitSettings(const Location& loc);
+    void DestroySubstate();
 
     // gpuav_record.cpp
     // --------------

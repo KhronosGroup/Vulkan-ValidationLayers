@@ -447,6 +447,11 @@ VKAPI_ATTR void VKAPI_CALL DestroyDevice(VkDevice device, const VkAllocationCall
 
     device_dispatch->DestroyDevice(device, pAllocator);
 
+    // The teardown order is
+    // 1. All active validation objects
+    // 2. All aborted validation objects (ex. if GPU-AV had to turn off mid run)
+    // 3. State Tracker validation object
+    // 4. Cleanup leaked handles that user didn't destroy
     vvl::base::Device* state_tracker = nullptr;
     for (auto& vo : device_dispatch->object_dispatch) {
         if (!vo) {

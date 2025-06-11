@@ -544,6 +544,7 @@ class DeviceState : public vvl::base::Device {
 
     void AddProxy(DeviceProxy& proxy);
     void RemoveProxy(LayerObjectTypeId id);
+    void RemoveSubState(LayerObjectTypeId id);
 
     template <typename State, typename HandleType = typename state_object::Traits<State>::HandleType>
     void Add(std::shared_ptr<State>&& state_object) {
