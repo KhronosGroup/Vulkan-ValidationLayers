@@ -151,6 +151,21 @@ void Swapchain::Destroy() {
         // NOTE: We don't have access to dev_data.fake_memory.Free() here, but it is currently a no-op
     }
     images.clear();
+
+    // When SHARED present mode is used it's possible to have a semaphore that stores
+    // swapchain reference but the semaphore itself is not referenced by the swapchain
+    // image (so ResetPresentWaitSemaphores above won't find it).
+    if (create_info.presentMode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR ||
+        create_info.presentMode == VK_PRESENT_MODE_SHARED_CONTINUOUS_REFRESH_KHR) {
+        dev_data.ForEachShared<vvl::Semaphore>([this](std::shared_ptr<vvl::Semaphore> semaphore_state) {
+            if (const auto swapchain_info = semaphore_state->GetSwapchainWaitInfo(); swapchain_info.has_value()) {
+                if (swapchain_info->swapchain && swapchain_info->swapchain.get() == this) {
+                    semaphore_state->ClearSwapchainWaitInfo();
+                }
+            }
+        });
+    }
+
     if (surface) {
         surface->RemoveParent(this);
         surface = nullptr;
