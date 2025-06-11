@@ -440,6 +440,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpFinishWritingNodePayloadAMDX:
         case spv::OpNodePayloadArrayLengthAMDX:
         case spv::OpIsNodePayloadValidAMDX:
+        case spv::OpConvertHandleToImageINTEL:
+        case spv::OpConvertHandleToSamplerINTEL:
+        case spv::OpConvertHandleToSampledImageINTEL:
 #endif
             return true;
         default:
@@ -880,6 +883,9 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpIsNodePayloadValidAMDX:
         case spv::OpConstantStringAMDX:
         case spv::OpSpecConstantStringAMDX:
+        case spv::OpConvertHandleToImageINTEL:
+        case spv::OpConvertHandleToSamplerINTEL:
+        case spv::OpConvertHandleToSampledImageINTEL:
 #endif
             return true;
         default:

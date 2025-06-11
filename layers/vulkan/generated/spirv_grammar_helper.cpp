@@ -1085,6 +1085,12 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpConstantStringAMDX";
         case spv::OpSpecConstantStringAMDX:
             return "OpSpecConstantStringAMDX";
+        case spv::OpConvertHandleToImageINTEL:
+            return "OpConvertHandleToImageINTEL";
+        case spv::OpConvertHandleToSamplerINTEL:
+            return "OpConvertHandleToSamplerINTEL";
+        case spv::OpConvertHandleToSampledImageINTEL:
+            return "OpConvertHandleToSampledImageINTEL";
 #endif
         default:
             return "Unknown Opcode";
@@ -1499,6 +1505,8 @@ const char* string_SpvDecoration(uint32_t decoration) {
             return "AlignmentId";
         case spv::DecorationMaxByteOffsetId:
             return "MaxByteOffsetId";
+        case spv::DecorationSaturatedToLargestFloat8NormalConversionEXT:
+            return "SaturatedToLargestFloat8NormalConversionEXT";
         case spv::DecorationNoSignedWrap:
             return "NoSignedWrap";
         case spv::DecorationNoUnsignedWrap:

@@ -280,10 +280,8 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityTensorsARM, {0, &DeviceFeatures::shaderTensorAccess, nullptr, ""}},
         {spv::CapabilityStorageTensorArrayDynamicIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayDynamicIndexing, nullptr, ""}},
         {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayNonUniformIndexing, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
+        {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
+        {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -549,6 +547,10 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "StorageTensorArrayNonUniformIndexingARM";
         case spv::CapabilityCooperativeMatrixLayoutsARM:
             return "CooperativeMatrixLayoutsARM";
+        case spv::CapabilityFloat8EXT:
+            return "Float8EXT";
+        case spv::CapabilityFloat8CooperativeMatrixEXT:
+            return "Float8CooperativeMatrixEXT";
         case spv::CapabilityFragmentShadingRateKHR:
             return "FragmentShadingRateKHR";
         case spv::CapabilitySubgroupBallotKHR:
@@ -829,6 +831,10 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "GroupUniformArithmeticKHR";
         case spv::CapabilityTensorFloat32RoundingINTEL:
             return "TensorFloat32RoundingINTEL";
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+        case spv::CapabilityBindlessImagesINTEL:
+            return "BindlessImagesINTEL";
+#endif
         default:
             return "Unhandled OpCapability";
     };
@@ -1192,6 +1198,8 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityTensorsARM, "VkPhysicalDeviceTensorFeaturesARM::shaderTensorAccess"},
     {spv::CapabilityStorageTensorArrayDynamicIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayDynamicIndexing"},
     {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayNonUniformIndexing"},
+    {spv::CapabilityFloat8EXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8"},
+    {spv::CapabilityFloat8CooperativeMatrixEXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8CooperativeMatrix"},
     };
 
     // VUs before catch unknown capabilities
