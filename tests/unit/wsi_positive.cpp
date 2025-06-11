@@ -2406,6 +2406,7 @@ TEST_F(PositiveWsi, ProgressOnPresentOnlyQueue) {
 }
 
 TEST_F(PositiveWsi, SharedPresentAndPresentSemaphoreReuse) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10201
     TEST_DESCRIPTION("Present semaphore in-use check is disabled when shared present mode is used without swapchain maintenance1");
     AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
     AddSurfaceExtension();
@@ -2415,10 +2416,7 @@ TEST_F(PositiveWsi, SharedPresentAndPresentSemaphoreReuse) {
 
     bool found = false;
     for (VkPresentModeKHR present_mode : m_surface_present_modes) {
-        if (present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR) {
-            found = true;
-            break;
-        }
+        found |= (present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR);
     }
     if (!found) {
         GTEST_SKIP() << "Cannot find shared present mode";
@@ -2456,5 +2454,83 @@ TEST_F(PositiveWsi, SharedPresentAndPresentSemaphoreReuse) {
     // If supported, swapchain_maintenance1 should be used in such scenario.
     m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
     m_default_queue->Present(swapchain, image_index, semaphore);
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, SharedPresentReuseSemaphoreAfterDestroy) {
+    TEST_DESCRIPTION("After swapchain with shared present mode is destroyed the present semaphore can be reused");
+    AddRequiredExtensions(VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME);
+    AddSurfaceExtension();
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSurface());
+    InitSwapchainInfo();
+
+    bool found = false;
+    for (VkPresentModeKHR present_mode : m_surface_present_modes) {
+        found |= (present_mode == VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR);
+    }
+    if (!found) {
+        GTEST_SKIP() << "Cannot find shared present mode";
+    }
+
+    VkSwapchainCreateInfoKHR swapchain_ci = vku::InitStructHelper();
+    swapchain_ci.surface = m_surface.Handle();
+    swapchain_ci.minImageCount = 1;
+    swapchain_ci.imageFormat = m_surface_formats[0].format;
+    swapchain_ci.imageColorSpace = m_surface_formats[0].colorSpace;
+    swapchain_ci.imageExtent = m_surface_capabilities.minImageExtent;
+    swapchain_ci.imageArrayLayers = 1;
+    swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;  // implementations must support
+    swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    swapchain_ci.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+    swapchain_ci.compositeAlpha = m_surface_composite_alpha;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_SHARED_DEMAND_REFRESH_KHR;
+
+    vkt::Swapchain swapchain(*m_device, swapchain_ci);
+    const auto images = swapchain.GetImages();
+    for (auto image : images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::Fence fence(*m_device);
+    const uint32_t image_index = swapchain.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    fence.Reset();
+
+    vkt::Semaphore semaphore(*m_device);
+    vkt::Semaphore semaphore2(*m_device);
+
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore));
+    m_default_queue->Present(swapchain, image_index, semaphore);
+    m_default_queue->Submit(vkt::no_cmd, vkt::Signal(semaphore2));
+    m_default_queue->Present(swapchain, image_index, semaphore2);
+
+    swapchain_ci.minImageCount = m_surface_capabilities.minImageCount;
+    swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    swapchain_ci.oldSwapchain = swapchain;
+    vkt::Swapchain swapchain2(*m_device, swapchain_ci);
+    const auto images2 = swapchain2.GetImages();
+
+    const uint32_t image_index2 = swapchain2.AcquireNextImage(fence, kWaitTimeout);
+    fence.Wait(kWaitTimeout);
+    fence.Reset();
+
+    // Destroy swapchain!
+    swapchain.destroy();
+
+    // Transition layout manually, because SetImageLayoutPresentSrc calls QueueWaitIdle which
+    // resets semaphore swapchain state and this is not what we want for this test.
+    const VkImageMemoryBarrier present_transition = TransitionToPresent(images2[image_index2], VK_IMAGE_LAYOUT_UNDEFINED, 0);
+    m_command_buffer.Begin();
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &present_transition);
+    m_command_buffer.End();
+
+    // Test that semaphore does not assume it is still in use by swapchain that was just deleted.
+    // Swapchain2 is created with FIFO mode in order to enable semaphore-in-use-by-swapchain check
+    // (it is disabled for shared present modes)
+    m_default_queue->Submit(m_command_buffer, vkt::Signal(semaphore));
+    m_default_queue->Present(swapchain2, image_index2, semaphore);
+
     m_default_queue->Wait();
 }
