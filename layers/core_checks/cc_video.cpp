@@ -5148,11 +5148,11 @@ bool CoreChecks::PreCallValidateCmdDecodeVideoKHR(VkCommandBuffer commandBuffer,
         skip |= ValidateProtectedBuffer(*cb_state, *buffer_state, decode_info_loc.dot(Field::srcBuffer),
                                         "VUID-vkCmdDecodeVideoKHR-commandBuffer-07136");
 
-        if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR) == 0) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pDecodeInfo->srcBuffer);
             skip |= LogError("VUID-VkVideoDecodeInfoKHR-srcBuffer-07165", objlist, decode_info_loc.dot(Field::srcBuffer),
                              "(%s) was not created with "
-                             "VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR.",
+                             "VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR.",
                              FormatHandle(pDecodeInfo->srcBuffer).c_str());
         }
 
@@ -5690,11 +5690,11 @@ bool CoreChecks::PreCallValidateCmdEncodeVideoKHR(VkCommandBuffer commandBuffer,
         skip |= ValidateUnprotectedBuffer(*cb_state, *buffer_state, encode_info_loc.dot(Field::dstBuffer),
                                           "VUID-vkCmdEncodeVideoKHR-commandBuffer-08203");
 
-        if ((buffer_state->usage & VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR) == 0) {
             const LogObjectList objlist(commandBuffer, vs_state->Handle(), pEncodeInfo->dstBuffer);
             skip |= LogError("VUID-VkVideoEncodeInfoKHR-dstBuffer-08236", objlist, encode_info_loc.dot(Field::dstBuffer),
                              "(%s) was not created with "
-                             "VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR.",
+                             "VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR.",
                              FormatHandle(pEncodeInfo->dstBuffer).c_str());
         }
 

@@ -31,8 +31,9 @@
 
 // Helper function to validate usage flags for buffers. For given buffer_state send actual vs. desired usage off to helper above
 // where an error will be flagged if usage is not correct
-bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buffer const &buffer_state, VkBufferUsageFlags desired,
-                                          bool strict, const char *vuid, const Location &buffer_loc) const {
+bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buffer const &buffer_state,
+                                          VkBufferUsageFlags2 desired, bool strict, const char *vuid,
+                                          const Location &buffer_loc) const {
     bool skip = false;
     bool correct_usage = false;
     if (strict) {
@@ -44,7 +45,7 @@ bool CoreChecks::ValidateBufferUsageFlags(const LogObjectList &objlist, vvl::Buf
     if (!correct_usage) {
         skip |= LogError(vuid, objlist, buffer_loc, "(%s) was created with %s but requires %s.",
                          FormatHandle(buffer_state.Handle()).c_str(), string_VkBufferUsageFlags2(buffer_state.usage).c_str(),
-                         string_VkBufferUsageFlags(desired).c_str());
+                         string_VkBufferUsageFlags2(desired).c_str());
     }
     return skip;
 }
@@ -87,21 +88,21 @@ bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const
     bool skip = false;
     const VkFormat format = create_info.format;
     const VkFormatProperties3KHR format_properties = GetPDFormatProperties(format);
-    const VkBufferUsageFlags2KHR usage = buffer_state.usage;
-    if ((usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) &&
+    const VkBufferUsageFlags2 usage = buffer_state.usage;
+    if ((usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08778", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
-                         "Format (%s) doesn't support VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                         "was created with usage (%s) containing VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                         "Format (%s) doesn't support VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
                          "(supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
-    if ((usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) &&
+    if ((usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT) &&
         !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT)) {
         skip |= LogError("VUID-VkBufferViewCreateInfo-format-08779", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
-                         "Format (%s) doesn't support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT.\n"
+                         "was created with usage (%s) containing VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
+                         "Format (%s) doesn't support VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
                          "(supported bufferFeatures: %s)",
                          string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
                          string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
@@ -113,7 +114,7 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
                                                       const Location &create_info_loc) const {
     bool skip = false;
 
-    if (usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+    if (usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
         if (create_info.size + device_state->samplerDescriptorBufferAddressSpaceSize >
             phys_dev_ext_props.descriptor_buffer_props.samplerDescriptorBufferAddressSpaceSize) {
             skip |= LogError(
@@ -132,7 +133,7 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
         }
     }
 
-    if (usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+    if (usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
         if (create_info.size + device_state->resourceDescriptorBufferAddressSpaceSize >
             phys_dev_ext_props.descriptor_buffer_props.resourceDescriptorBufferAddressSpaceSize) {
             skip |= LogError(
@@ -168,20 +169,22 @@ bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &
         }
     }
 
-    if (usage & VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
+    if (usage & VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT) {
         if (!enabled_features.descriptorBufferPushDescriptors) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-08101", device, create_info_loc.dot(Field::usage),
-                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the "
+                             "has VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the "
                              "descriptorBufferPushDescriptors device feature is not enabled.");
         }
 
         if (phys_dev_ext_props.descriptor_buffer_props.bufferlessPushDescriptors) {
-            skip |= LogError("VUID-VkBufferCreateInfo-usage-08102", device, create_info_loc.dot(Field::usage),
-                             "has VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the bufferlessPushDescriptors "
-                             "device feature is enabled.");
+            skip |=
+                LogError("VUID-VkBufferCreateInfo-usage-08102", device, create_info_loc.dot(Field::usage),
+                         "has VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT set but the bufferlessPushDescriptors "
+                         "device feature is enabled.");
         }
 
-        if (!(usage & (VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))) {
+        if (!(usage &
+              (VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))) {
             skip |= LogError("VUID-VkBufferCreateInfo-usage-08103", device, create_info_loc.dot(Field::usage), "is (%s).",
                              string_VkBufferUsageFlags2(usage).c_str());
         }
@@ -203,10 +206,10 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
     }
 
     const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext);
-    const VkBufferUsageFlags2KHR usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
+    const VkBufferUsageFlags2 usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
 
-    const bool has_decode_usage = usage & (VK_BUFFER_USAGE_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_DECODE_DST_BIT_KHR);
-    const bool has_encode_usage = usage & (VK_BUFFER_USAGE_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_VIDEO_ENCODE_DST_BIT_KHR);
+    const bool has_decode_usage = usage & (VK_BUFFER_USAGE_2_VIDEO_DECODE_SRC_BIT_KHR | VK_BUFFER_USAGE_2_VIDEO_DECODE_DST_BIT_KHR);
+    const bool has_encode_usage = usage & (VK_BUFFER_USAGE_2_VIDEO_ENCODE_SRC_BIT_KHR | VK_BUFFER_USAGE_2_VIDEO_ENCODE_DST_BIT_KHR);
     const bool video_profile_independent = pCreateInfo->flags & VK_BUFFER_CREATE_VIDEO_PROFILE_INDEPENDENT_BIT_KHR;
 
     if (video_profile_independent && !enabled_features.videoMaintenance1) {
@@ -230,7 +233,7 @@ bool CoreChecks::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCrea
         const uint32_t any_type = 1u << MostSignificantBit(external_memory_info->handleTypes);
         VkPhysicalDeviceExternalBufferInfo external_buffer_info = vku::InitStructHelper();
         external_buffer_info.flags = pCreateInfo->flags;
-        // for now no VkBufferUsageFlags2KHR flag can be used, so safe to pass in as 32-bit version
+        // for now no VkBufferUsageFlags2 flag can be used, so safe to pass in as 32-bit version
         external_buffer_info.usage = VkBufferUsageFlags(pCreateInfo->usage);
         external_buffer_info.handleType = static_cast<VkExternalMemoryHandleTypeFlagBits>(any_type);
         VkExternalBufferProperties external_buffer_properties = vku::InitStructHelper();
@@ -269,7 +272,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     // In order to create a valid buffer view, the buffer must have been created with at least one of the following flags:
     // UNIFORM_TEXEL_BUFFER_BIT or STORAGE_TEXEL_BUFFER_BIT
     skip |= ValidateBufferUsageFlags(objlist, buffer_state,
-                                     VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, false,
+                                     VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, false,
                                      "VUID-VkBufferViewCreateInfo-buffer-00932", create_info_loc.dot(Field::buffer));
 
     // Buffer view offset must be less than the size of buffer
@@ -284,14 +287,14 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         if ((texel_block_size % 3) == 0) {
             texel_block_size /= 3;
         }
-        if (buffer_state.usage & VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT) {
+        if (buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT) {
             VkDeviceSize alignment_requirement = phys_dev_props_core13.storageTexelBufferOffsetAlignmentBytes;
             if (phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment) {
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
                 skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02750", objlist, create_info_loc.dot(Field::buffer),
-                                 "was created with VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
+                                 "was created with VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
                                  ") must be a multiple of the lesser of "
                                  "storageTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
                                  ") or, if storageTexelBufferOffsetSingleTexelAlignment "
@@ -303,14 +306,14 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
                                  phys_dev_props_core13.storageTexelBufferOffsetSingleTexelAlignment);
             }
         }
-        if (buffer_state.usage & VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT) {
+        if (buffer_state.usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT) {
             VkDeviceSize alignment_requirement = phys_dev_props_core13.uniformTexelBufferOffsetAlignmentBytes;
             if (phys_dev_props_core13.uniformTexelBufferOffsetSingleTexelAlignment) {
                 alignment_requirement = std::min(alignment_requirement, texel_block_size);
             }
             if (SafeModulo(pCreateInfo->offset, alignment_requirement) != 0) {
                 skip |= LogError("VUID-VkBufferViewCreateInfo-buffer-02751", objlist, create_info_loc.dot(Field::buffer),
-                                 "was created with VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
+                                 "was created with VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT, so the offset (%" PRIuLEAST64
                                  ") must be a multiple of the lesser of "
                                  "uniformTexelBufferOffsetAlignmentBytes (%" PRIuLEAST64
                                  ") or, if uniformTexelBufferOffsetSingleTexelAlignment "
@@ -325,7 +328,7 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
     }
 
     if (auto buffer_usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
-        const VkBufferUsageFlags2KHR usage = buffer_usage_flags2->usage;
+        const VkBufferUsageFlags2 usage = buffer_usage_flags2->usage;
         if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
                              create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage), "is %s.",
@@ -375,7 +378,7 @@ bool CoreChecks::PreCallValidateCmdFillBuffer(VkCommandBuffer commandBuffer, VkB
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc, "VUID-vkCmdFillBuffer-dstBuffer-00031");
     skip |= ValidateCmd(cb_state, error_obj.location);
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+    skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdFillBuffer-dstBuffer-00029", buffer_loc);
 
     skip |= ValidateProtectedBuffer(cb_state, *buffer_state, buffer_loc, "VUID-vkCmdFillBuffer-commandBuffer-01811");

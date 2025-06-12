@@ -1198,8 +1198,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateImageSubresourceLayers(HandleT handle, const vvl::Image& image_state,
                                         const VkImageSubresourceLayers& subresource_layers, const Location& subresource_loc) const;
 
-    bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkFlags desired, bool strict,
-                                  const char* vuid, const Location& buffer_loc) const;
+    bool ValidateBufferUsageFlags(const LogObjectList& objlist, const vvl::Buffer& buffer_state, VkBufferUsageFlags2 desired,
+                                  bool strict, const char* vuid, const Location& buffer_loc) const;
     bool ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo& create_info, const VkBufferUsageFlags2& usage,
                                               const Location& create_info_loc) const;
 
