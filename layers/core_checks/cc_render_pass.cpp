@@ -3064,6 +3064,27 @@ bool CoreChecks::ValidateRenderingAttachmentInfo(VkCommandBuffer commandBuffer, 
                          "is %s.", string_VkImageLayout(attachment_info.imageLayout));
     }
 
+    const auto attachment_feedback_loop_info = vku::FindStructInPNextChain<VkAttachmentFeedbackLoopInfoEXT>(attachment_info.pNext);
+    if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT ||
+        (attachment_feedback_loop_info && attachment_feedback_loop_info->feedbackLoopEnable)) {
+        if ((image_view_state->inherited_usage & VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT) == 0 ||
+            (image_view_state->inherited_usage &
+             (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) == 0 ||
+            (image_view_state->inherited_usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT))) {
+            if (attachment_info.imageLayout == VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT) {
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-10780", commandBuffer,
+                                 attachment_loc.dot(Field::imageLayout),
+                                 "is VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT, but image view usage is %s.",
+                                 string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+            } else {
+                skip |= LogError("VUID-VkRenderingAttachmentInfo-imageView-10780", commandBuffer,
+                                 attachment_loc.pNext(Struct::VkAttachmentFeedbackLoopInfoEXT, Field::feedbackLoopEnable),
+                                 "is VK_TRUE, but image view usage is %s.",
+                                 string_VkImageUsageFlags(image_view_state->inherited_usage).c_str());
+            }
+        }
+    }
+
     return skip;
 }
 
