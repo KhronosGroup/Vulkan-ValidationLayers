@@ -785,7 +785,7 @@ struct DecodedTemplateUpdate {
     std::vector<VkWriteDescriptorSetAccelerationStructureKHR> inline_infos_khr;
     std::vector<VkWriteDescriptorSetAccelerationStructureNV> inline_infos_nv;
     DecodedTemplateUpdate(const DeviceState &device_data, VkDescriptorSet descriptorSet,
-                          const DescriptorUpdateTemplate *template_state, const void *pData,
+                          const DescriptorUpdateTemplate &template_state, const void *pData,
                           VkDescriptorSetLayout push_layout = VK_NULL_HANDLE);
 };
 

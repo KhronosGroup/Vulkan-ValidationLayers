@@ -783,7 +783,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                        const VkWriteDescriptorSet* pDescriptorWrites, const vvl::DslErrorSource& dsl_error_source,
                                        const Location& loc) const;
     // Descriptor Set Validation Functions
-    bool ValidateBufferUpdate(const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
+    bool ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
                               const Location& buffer_info_loc) const;
     bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
                                       const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
