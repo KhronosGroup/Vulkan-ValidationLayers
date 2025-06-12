@@ -1448,9 +1448,9 @@ bool CoreChecks::ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, con
 }
 
 vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device_data, VkDescriptorSet descriptorSet,
-                                                  const vvl::DescriptorUpdateTemplate *template_state, const void *pData,
+                                                  const vvl::DescriptorUpdateTemplate &template_state, const void *pData,
                                                   VkDescriptorSetLayout push_layout) {
-    auto const &create_info = template_state->create_info;
+    auto const &create_info = template_state.create_info;
     inline_infos.resize(create_info.descriptorUpdateEntryCount);  // Make sure we have one if we need it
     inline_infos_khr.resize(create_info.descriptorUpdateEntryCount);
     inline_infos_nv.resize(create_info.descriptorUpdateEntryCount);
@@ -1463,16 +1463,17 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
 
     // Create a WriteDescriptorSet struct for each template update entry
     for (uint32_t i = 0; i < create_info.descriptorUpdateEntryCount; i++) {
-        auto binding_count = ds_layout_state->GetDescriptorCountFromBinding(create_info.pDescriptorUpdateEntries[i].dstBinding);
-        auto binding_being_updated = create_info.pDescriptorUpdateEntries[i].dstBinding;
-        auto dst_array_element = create_info.pDescriptorUpdateEntries[i].dstArrayElement;
+        const auto &descriptor_update_entry = create_info.pDescriptorUpdateEntries[i];
+        uint32_t binding_count = ds_layout_state->GetDescriptorCountFromBinding(descriptor_update_entry.dstBinding);
+        uint32_t binding_being_updated = descriptor_update_entry.dstBinding;
+        uint32_t dst_array_element = descriptor_update_entry.dstArrayElement;
 
-        desc_writes.reserve(desc_writes.size() + create_info.pDescriptorUpdateEntries[i].descriptorCount);
-        for (uint32_t j = 0; j < create_info.pDescriptorUpdateEntries[i].descriptorCount; j++) {
+        desc_writes.reserve(desc_writes.size() + descriptor_update_entry.descriptorCount);
+        for (uint32_t j = 0; j < descriptor_update_entry.descriptorCount; j++) {
             desc_writes.emplace_back();
             auto &write_entry = desc_writes.back();
 
-            size_t offset = create_info.pDescriptorUpdateEntries[i].offset + j * create_info.pDescriptorUpdateEntries[i].stride;
+            size_t offset = descriptor_update_entry.offset + j * descriptor_update_entry.stride;
             char *update_entry = (char *)(pData) + offset;
 
             if (dst_array_element >= binding_count) {
@@ -1486,9 +1487,9 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
             write_entry.dstBinding = binding_being_updated;
             write_entry.dstArrayElement = dst_array_element;
             write_entry.descriptorCount = 1;
-            write_entry.descriptorType = create_info.pDescriptorUpdateEntries[i].descriptorType;
+            write_entry.descriptorType = descriptor_update_entry.descriptorType;
 
-            switch (create_info.pDescriptorUpdateEntries[i].descriptorType) {
+            switch (descriptor_update_entry.descriptorType) {
                 case VK_DESCRIPTOR_TYPE_SAMPLER:
                 case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
                 case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -1512,31 +1513,35 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
                     VkWriteDescriptorSetInlineUniformBlock *inline_info = &inline_infos[i];
                     inline_info->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_INLINE_UNIFORM_BLOCK_EXT;
                     inline_info->pNext = nullptr;
-                    inline_info->dataSize = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info->dataSize = descriptor_update_entry.descriptorCount;
                     inline_info->pData = update_entry;
                     write_entry.pNext = inline_info;
                     // descriptorCount must match the dataSize member of the VkWriteDescriptorSetInlineUniformBlock structure
                     write_entry.descriptorCount = inline_info->dataSize;
                     // skip the rest of the array, they just represent bytes in the update
-                    j = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    j = descriptor_update_entry.descriptorCount;
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR: {
                     VkWriteDescriptorSetAccelerationStructureKHR *inline_info_khr = &inline_infos_khr[i];
                     inline_info_khr->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                     inline_info_khr->pNext = nullptr;
-                    inline_info_khr->accelerationStructureCount = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info_khr->accelerationStructureCount = descriptor_update_entry.descriptorCount;
                     inline_info_khr->pAccelerationStructures = reinterpret_cast<VkAccelerationStructureKHR *>(update_entry);
                     write_entry.pNext = inline_info_khr;
+                    // descriptorCount must match the accelerationStructureCount
+                    write_entry.descriptorCount = inline_info_khr->accelerationStructureCount;
                     break;
                 }
                 case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV: {
                     VkWriteDescriptorSetAccelerationStructureNV *inline_info_nv = &inline_infos_nv[i];
                     inline_info_nv->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
                     inline_info_nv->pNext = nullptr;
-                    inline_info_nv->accelerationStructureCount = create_info.pDescriptorUpdateEntries[i].descriptorCount;
+                    inline_info_nv->accelerationStructureCount = descriptor_update_entry.descriptorCount;
                     inline_info_nv->pAccelerationStructures = reinterpret_cast<VkAccelerationStructureNV *>(update_entry);
                     write_entry.pNext = inline_info_nv;
+                    // descriptorCount must match the accelerationStructureCount
+                    write_entry.descriptorCount = inline_info_nv->accelerationStructureCount;
                     break;
                 }
                 default:
@@ -1544,6 +1549,13 @@ vvl::DecodedTemplateUpdate::DecodedTemplateUpdate(const vvl::DeviceState &device
                     break;
             }
             dst_array_element++;
+
+            // If acceleration structure, we only create a single VkWriteDescriptorSet and map the actually AS into
+            // VkWriteDescriptorSetAccelerationStructureKHR
+            if (descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR ||
+                descriptor_update_entry.descriptorType == VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV) {
+                break;
+            }
         }
     }
 }
@@ -1559,31 +1571,27 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const vvl::DescriptorSet &push_se
     return skip;
 }
 
-bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info, VkDescriptorType type,
-                                      const Location &buffer_info_loc) const {
+bool CoreChecks::ValidateBufferUpdate(const vvl::Buffer &buffer_state, const VkDescriptorBufferInfo &buffer_info,
+                                      VkDescriptorType type, const Location &buffer_info_loc) const {
     bool skip = false;
-    // Invalid handles should be caught by the object tracker, but lets make sure not to crash anyways.
-    if (buffer_info.buffer == VK_NULL_HANDLE) return skip;
-    const auto buffer_state = Get<vvl::Buffer>(buffer_info.buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
 
-    skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, buffer_info_loc.dot(Field::buffer),
+    skip |= ValidateMemoryIsBoundToBuffer(device, buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
 
-    if (buffer_info.offset >= buffer_state->create_info.size) {
+    if (buffer_info.offset >= buffer_state.create_info.size) {
         skip |= LogError("VUID-VkDescriptorBufferInfo-offset-00340", buffer_info.buffer, buffer_info_loc.dot(Field::offset),
                          "(%" PRIu64 ") is greater than or equal to buffer size (%" PRIu64 ").", buffer_info.offset,
-                         buffer_state->create_info.size);
+                         buffer_state.create_info.size);
     }
     if (buffer_info.range != VK_WHOLE_SIZE) {
         if (buffer_info.range == 0) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00341", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "is not VK_WHOLE_SIZE and is zero.");
         }
-        if (buffer_info.range > (buffer_state->create_info.size - buffer_info.offset)) {
+        if (buffer_info.range > (buffer_state.create_info.size - buffer_info.offset)) {
             skip |= LogError("VUID-VkDescriptorBufferInfo-range-00342", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                              "(%" PRIu64 ") is larger than buffer size (%" PRIu64 ") - offset (%" PRIu64 ").", buffer_info.range,
-                             buffer_state->create_info.size, buffer_info.offset);
+                             buffer_state.create_info.size, buffer_info.offset);
         }
     }
 
@@ -1594,19 +1602,19 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "(%" PRIu64 ") is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_info.range, max_ub_range, string_VkDescriptorType(type));
-        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state->create_info.size - buffer_info.offset) > max_ub_range) {
+        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_ub_range) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00332", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                          "] is greater than maxUniformBufferRange (%" PRIu32 ") for descriptorType %s.",
-                         buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
+                         buffer_state.create_info.size, buffer_info.offset, buffer_state.create_info.size - buffer_info.offset,
                          max_ub_range, string_VkDescriptorType(type));
         }
 
-        if (!(buffer_state->usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT)) {
+        if (!(buffer_state.usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT)) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00330", buffer_info.buffer,
                              buffer_info_loc.dot(Field::buffer), "was created with %s, but descriptorType is %s.",
-                             string_VkBufferUsageFlags2(buffer_state->usage).c_str(), string_VkDescriptorType(type));
+                             string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
         }
     } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
         const uint32_t max_sb_range = phys_dev_props.limits.maxStorageBufferRange;
@@ -1615,19 +1623,19 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "(%" PRIu64 ") is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_info.range, max_sb_range, string_VkDescriptorType(type));
-        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state->create_info.size - buffer_info.offset) > max_sb_range) {
+        } else if (buffer_info.range == VK_WHOLE_SIZE && (buffer_state.create_info.size - buffer_info.offset) > max_sb_range) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSet-descriptorType-00333", buffer_info.buffer, buffer_info_loc.dot(Field::range),
                          "is VK_WHOLE_SIZE, but the effective range [size (%" PRIu64 ") - offset (%" PRIu64 ") = %" PRIu64
                          "] is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
-                         buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
+                         buffer_state.create_info.size, buffer_info.offset, buffer_state.create_info.size - buffer_info.offset,
                          max_sb_range, string_VkDescriptorType(type));
         }
 
-        if (!(buffer_state->usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT)) {
+        if (!(buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT)) {
             skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00331", buffer_info.buffer,
                              buffer_info_loc.dot(Field::buffer), "was created with %s, but descriptorType is %s.",
-                             string_VkBufferUsageFlags2(buffer_state->usage).c_str(), string_VkDescriptorType(type));
+                             string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
         }
     }
     return skip;
@@ -1951,15 +1959,28 @@ bool CoreChecks::ValidateWriteUpdateAccelerationStructureKHR(const VkWriteDescri
     }
 
     for (uint32_t j = 0; j < pnext_struct->accelerationStructureCount; ++j) {
-        if (pnext_struct->pAccelerationStructures[j] == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
+        VkAccelerationStructureKHR as = pnext_struct->pAccelerationStructures[j];
+        if (as == VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
             skip |=
                 LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
                          write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
                          "is VK_NULL_HANDLE but the nullDescriptor feature was not enabled.");
+            continue;
         }
 
-        auto as_state = Get<vvl::AccelerationStructureKHR>(pnext_struct->pAccelerationStructures[j]);
-        if (!as_state) continue;
+        auto as_state = Get<vvl::AccelerationStructureKHR>(as);
+        if (!as_state) {
+            // This is to catch Template updates, normal updates can be caught in ObjectTracker
+            skip |=
+                LogError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580", device,
+                         write_loc.pNext(Struct::VkWriteDescriptorSetAccelerationStructureKHR, Field::pAccelerationStructures, j),
+                         "found in the template update has an invalid %s (while trying to update a descriptorType of "
+                         "VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR). Make sure your pData is pointing to "
+                         "vkAccelerationStructureKHR and not VkWriteDescriptorSetAccelerationStructureKHR.",
+                         FormatHandle(as).c_str());
+            continue;
+        }
+
         if (as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR &&
             as_state->create_info.type != VK_ACCELERATION_STRUCTURE_TYPE_GENERIC_KHR) {
             skip |=
@@ -2026,7 +2047,6 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 }
                 const vvl::ImageSamplerDescriptor &desc = (const vvl::ImageSamplerDescriptor &)*iter;
                 const Location image_info_loc = write_loc.dot(Field::pImageInfo, di);
-                // Validate image
                 const VkImageView image_view = update.pImageInfo[di].imageView;
                 if (image_view == VK_NULL_HANDLE) {
                     if (desc.IsImmutableSampler()) {
@@ -2040,14 +2060,23 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 const VkImageLayout image_layout = update.pImageInfo[di].imageLayout;
                 const VkSampler sampler = update.pImageInfo[di].sampler;
                 auto iv_state = Get<vvl::ImageView>(image_view);
-                ASSERT_AND_CONTINUE(iv_state);
+                if (!iv_state) {
+                    // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02996", device,
+                                     write_loc.dot(Field::pImageInfo, di).dot(Field::imageView),
+                                     "found in the template update has an invalid %s (while trying to update a descriptorType of "
+                                     "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER).",
+                                     FormatHandle(image_view).c_str());
+                    continue;
+                }
 
                 const auto *image_state = iv_state->image_state.get();
                 skip |= ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, image_info_loc);
 
+                // Samplers can't be VK_NULL_HANDLE from nullDescriptor, but if there is an immutble sampler, it can be set as
+                // VK_NULL_HANDLE when updating the imageView
                 if (desc.IsImmutableSampler()) {
-                    auto sampler_state = Get<vvl::Sampler>(desc.GetSampler());
-                    if (iv_state && sampler_state) {
+                    if (auto sampler_state = Get<vvl::Sampler>(desc.GetSampler())) {
                         if (iv_state->samplerConversion != sampler_state->samplerConversion) {
                             const LogObjectList objlist(update.dstSet, desc.GetSampler(), iv_state->Handle());
                             skip |= LogError(
@@ -2057,44 +2086,57 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                                 FormatHandle(sampler_state->samplerConversion).c_str());
                         }
                     }
-                } else if (iv_state && (iv_state->samplerConversion != VK_NULL_HANDLE)) {
-                    const LogObjectList objlist(update.dstSet, iv_state->Handle());
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
-                                     "is bound to image view that includes a YCbCr conversion, it must have been allocated "
-                                     "with a layout that includes an immutable sampler.");
-                }
-
-                // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
-                if (sampler && !desc.IsImmutableSampler() && vkuFormatIsMultiplane(image_state->create_info.format)) {
-                    // multiplane formats must be created with mutable format bit
-                    const VkFormat image_format = image_state->create_info.format;
-                    if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
-                        const LogObjectList objlist(update.dstSet, image_state->Handle());
-                        skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                         "combined image sampler is a multi-planar format %s and was created with %s.",
-                                         string_VkFormat(image_format),
-                                         string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                } else {
+                    if (iv_state->samplerConversion != VK_NULL_HANDLE) {
+                        const LogObjectList objlist(update.dstSet, iv_state->Handle());
+                        skip |=
+                            LogError("VUID-VkWriteDescriptorSet-descriptorType-02738", objlist, write_loc.dot(Field::dstSet),
+                                     "is bound to %s which was built with %s, this VkDescriptorSet must have been allocated "
+                                     "with a VkDescriptorSetLayout that includes a non-null pImmutableSampler for this binding.",
+                                     FormatHandle(iv_state->Handle()).c_str(), FormatHandle(iv_state->samplerConversion).c_str());
                     }
-                    const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
-                    if (!IsValidPlaneAspect(image_format, image_aspect)) {
-                        const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
-                        skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
-                                         "combined image sampler is a multi-planar format %s and imageView aspectMask is %s.",
-                                         string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());
-                    }
-                }
 
-                // Verify portability
-                if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
-                    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
-                        if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
-                            (VK_FALSE != sampler_state->create_info.compareEnable)) {
-                            skip |= LogError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", device, write_loc,
-                                             "(portability error): sampler comparison not available.");
+                    if (auto sampler_state = Get<vvl::Sampler>(sampler)) {
+                        // If there is an immutable sampler then |sampler| isn't used, so the following VU does not apply.
+                        if (vkuFormatIsMultiplane(image_state->create_info.format)) {
+                            // multiplane formats must be created with mutable format bit
+                            const VkFormat image_format = image_state->create_info.format;
+                            if (0 == (image_state->create_info.flags & VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT)) {
+                                const LogObjectList objlist(update.dstSet, image_state->Handle());
+                                skip |= LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
+                                                 "combined image sampler is a multi-planar format %s and was created with %s.",
+                                                 string_VkFormat(image_format),
+                                                 string_VkImageCreateFlags(image_state->create_info.flags).c_str());
+                            }
+                            const VkImageAspectFlags image_aspect = iv_state->create_info.subresourceRange.aspectMask;
+                            if (!IsValidPlaneAspect(image_format, image_aspect)) {
+                                const LogObjectList objlist(update.dstSet, image_state->Handle(), iv_state->Handle());
+                                skip |=
+                                    LogError("VUID-VkDescriptorImageInfo-sampler-01564", objlist, write_loc,
+                                             "combined image sampler is a multi-planar format %s and imageView aspectMask is %s.",
+                                             string_VkFormat(image_format), string_VkImageAspectFlags(image_aspect).c_str());
+                            }
                         }
+
+                        if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
+                            if ((VK_FALSE == enabled_features.mutableComparisonSamplers) &&
+                                (VK_FALSE != sampler_state->create_info.compareEnable)) {
+                                skip |= LogError("VUID-VkDescriptorImageInfo-mutableComparisonSamplers-04450", device, write_loc,
+                                                 "(portability error): sampler comparison not available.");
+                            }
+                        }
+                    } else {
+                        // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                        skip |=
+                            LogError("VUID-VkWriteDescriptorSet-descriptorType-00325", device,
+                                     write_loc.dot(Field::pImageInfo, di).dot(Field::sampler),
+                                     "found in the template update has an invalid %s (while trying to update a descriptorType of "
+                                     "VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER).",
+                                     FormatHandle(sampler).c_str());
                     }
                 }
             }
+
             break;
         }
         case VK_DESCRIPTOR_TYPE_SAMPLER: {
@@ -2113,6 +2155,25 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                              "is VK_DESCRIPTOR_TYPE_SAMPLER but can't update the immutable sampler from %s.",
                              FormatHandle(dst_set.GetLayout().get()->Handle()).c_str());
             }
+
+            if (!update.pImageInfo) {
+                break;
+            }
+            for (uint32_t di = 0; di < update.descriptorCount; ++di) {
+                const VkSampler sampler = update.pImageInfo[di].sampler;
+                // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                if (!Get<vvl::Sampler>(sampler)) {
+                    if (sampler != VK_NULL_HANDLE || !dst_set.IsPushDescriptor()) {
+                        skip |=
+                            LogError("VUID-VkWriteDescriptorSet-descriptorType-00325", device,
+                                     write_loc.dot(Field::pImageInfo, di).dot(Field::sampler),
+                                     "found in the template update has an invalid %s (while trying to update a descriptorType of "
+                                     "VK_DESCRIPTOR_TYPE_SAMPLER).",
+                                     FormatHandle(sampler).c_str());
+                    }
+                }
+            }
+
             break;
         }
         case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
@@ -2127,6 +2188,14 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 if (auto iv_state = Get<vvl::ImageView>(image_view)) {
                     skip |=
                         ValidateImageUpdate(*iv_state, image_layout, update.descriptorType, write_loc.dot(Field::pImageInfo, di));
+                } else if (image_view != VK_NULL_HANDLE && !enabled_features.nullDescriptor) {
+                    // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                    const char *vuid = image_view == VK_NULL_HANDLE ? "VUID-VkWriteDescriptorSet-descriptorType-02997"
+                                                                    : "VUID-VkWriteDescriptorSet-descriptorType-02996";
+                    skip |=
+                        LogError(vuid, device, write_loc.dot(Field::pImageInfo, di).dot(Field::imageView),
+                                 "found in the template update has an invalid %s (while trying to update a descriptorType of %s).",
+                                 FormatHandle(image_view).c_str(), string_VkDescriptorType(update.descriptorType));
                 }
             }
             break;
@@ -2139,10 +2208,11 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
 
                 auto bv_state = Get<vvl::BufferView>(buffer_view_handle);
                 if (!bv_state) {
-                    skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", device,
-                                     write_loc.dot(Field::pTexelBufferView, di),
-                                     "(%s) is an invalid VkBufferView (while trying to update a descriptorType of %s).",
-                                     FormatHandle(buffer_view_handle).c_str(), string_VkDescriptorType(update.descriptorType));
+                    // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                    skip |= LogError(
+                        "VUID-VkWriteDescriptorSet-descriptorType-02994", device, write_loc.dot(Field::pTexelBufferView, di),
+                        "found in the template update has an invalid %s (while trying to update a descriptorType of %s).",
+                        FormatHandle(buffer_view_handle).c_str(), string_VkDescriptorType(update.descriptorType));
                     break;
                 }
                 const VkBuffer buffer_handle = bv_state->create_info.buffer;
@@ -2151,7 +2221,7 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                 if (!buffer_state) {
                     skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-02994", buffer_view_handle,
                                      write_loc.dot(Field::pTexelBufferView, di),
-                                     "was created with an invalid buffer %s (while trying to update a descriptorType of %s).",
+                                     "was created with an invalid %s (while trying to update a descriptorType of %s).",
                                      FormatHandle(buffer_handle).c_str(), string_VkDescriptorType(update.descriptorType));
                     break;
                 }
@@ -2191,7 +2261,23 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
         case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC: {
             if (!update.pBufferInfo) break;
             for (uint32_t di = 0; di < update.descriptorCount; ++di) {
-                skip |= ValidateBufferUpdate(update.pBufferInfo[di], update.descriptorType, write_loc.dot(Field::pBufferInfo, di));
+                const auto &buffer_info = update.pBufferInfo[di];
+                if (buffer_info.buffer == VK_NULL_HANDLE && enabled_features.nullDescriptor) {
+                    continue;
+                }
+
+                const auto buffer_state = Get<vvl::Buffer>(buffer_info.buffer);
+                if (buffer_state) {
+                    skip |= ValidateBufferUpdate(*buffer_state, buffer_info, update.descriptorType,
+                                                 write_loc.dot(Field::pBufferInfo, di));
+                } else {
+                    // This is to catch Template updates, normal updates can be caught in ObjectTracker
+                    skip |=
+                        LogError("VUID-VkDescriptorBufferInfo-buffer-parameter", device,
+                                 write_loc.dot(Field::pBufferInfo, di).dot(Field::buffer),
+                                 "found in the template update has an invalid %s (while trying to update a descriptorType of %s).",
+                                 FormatHandle(buffer_info.buffer).c_str(), string_VkDescriptorType(update.descriptorType));
+                }
             }
             break;
         }
@@ -3758,9 +3844,9 @@ bool CoreChecks::PreCallValidateUpdateDescriptorSetWithTemplate(VkDevice device,
     if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
         // decode the templatized data and leverage the non-template UpdateDescriptor helper functions.
         // Translate the templated update into a normal update for validation...
-        vvl::DecodedTemplateUpdate decoded_update(*device_state, descriptorSet, template_state.get(), pData);
-        return ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()),
-                                            decoded_update.desc_writes.data(), 0, nullptr, error_obj.location);
+        vvl::DecodedTemplateUpdate decoded_template(*device_state, descriptorSet, *template_state, pData);
+        skip |= ValidateUpdateDescriptorSets(static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                             decoded_template.desc_writes.data(), 0, nullptr, error_obj.location);
     }
     return skip;
 }
@@ -3854,7 +3940,7 @@ bool CoreChecks::ValidateCmdPushDescriptorSetWithTemplate(VkCommandBuffer comman
         // Create an empty proxy in order to use the existing descriptor set update validation
         vvl::DescriptorSet proxy_ds(VK_NULL_HANDLE, nullptr, dsl, 0, const_cast<vvl::DeviceState *>(device_state));
         // Decode the template into a set of write updates
-        vvl::DecodedTemplateUpdate decoded_template(*device_state, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
+        vvl::DecodedTemplateUpdate decoded_template(*device_state, VK_NULL_HANDLE, *template_state, pData, dsl->VkHandle());
         // Validate the decoded update against the proxy_ds
         vvl::DslErrorSource dsl_error_source(loc, layout, set);
         skip |= ValidatePushDescriptorsUpdate(proxy_ds, static_cast<uint32_t>(decoded_template.desc_writes.size()),

@@ -5926,3 +5926,285 @@ TEST_F(NegativeDescriptors, UpdateDescriptorSetWithAccelerationStructure) {
     vk::UpdateDescriptorSets(device(), 1u, &descriptor_write, 0u, nullptr);
     m_errorMonitor->VerifyFound();
 }
+
+TEST_F(NegativeDescriptors, AccelerationStructureTemplates) {
+    TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7472");
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                       });
+
+    {
+        struct SimpleTemplateData {
+            VkAccelerationStructureKHR as;
+        };
+
+        VkDescriptorUpdateTemplateEntry update_template_entry = {};
+        update_template_entry.dstBinding = 0;
+        update_template_entry.dstArrayElement = 0;
+        update_template_entry.descriptorCount = 1;
+        update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        update_template_entry.offset = 0;
+        update_template_entry.stride = sizeof(SimpleTemplateData);
+
+        VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+        update_template_ci.descriptorUpdateEntryCount = 1;
+        update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+        update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+        vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+        SimpleTemplateData update_template_data;
+        update_template_data.as = VK_NULL_HANDLE;
+        m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580");
+        vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+        m_errorMonitor->VerifyFound();
+
+        auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+        tlas->Create();
+        tlas->Destroy();
+        update_template_data.as = tlas->handle();
+        m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580");
+        vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+        m_errorMonitor->VerifyFound();
+    }
+
+    {
+        struct SimpleTemplateData {
+            VkWriteDescriptorSetAccelerationStructureKHR as_info;  // wrong, should be VkAccelerationStructureKHR
+        };
+
+        auto tlas = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+        tlas->Create();
+        VkWriteDescriptorSetAccelerationStructureKHR as_descriptor = vku::InitStructHelper();
+        as_descriptor.accelerationStructureCount = 1;
+        as_descriptor.pAccelerationStructures = &tlas->handle();
+
+        VkDescriptorUpdateTemplateEntry update_template_entry = {};
+        update_template_entry.dstBinding = 0;
+        update_template_entry.dstArrayElement = 0;
+        update_template_entry.descriptorCount = 1;
+        update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        update_template_entry.offset = 0;
+        update_template_entry.stride = sizeof(SimpleTemplateData);
+
+        VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+        update_template_ci.descriptorUpdateEntryCount = 1;
+        update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+        update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+        vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+        SimpleTemplateData update_template_data;
+        update_template_data.as_info = as_descriptor;
+        m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSetAccelerationStructureKHR-pAccelerationStructures-03580");
+        vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeDescriptors, TemplatesInvalidBuffer) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    struct SimpleTemplateData {
+        VkDescriptorBufferInfo buffer_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 0;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    VkBuffer invalid_handle = CastToHandle<VkBuffer, uintptr_t>(0xbaadbeef);
+    SimpleTemplateData update_template_data;
+    update_template_data.buffer_info = {invalid_handle, 0, VK_WHOLE_SIZE};
+    m_errorMonitor->SetDesiredError("VUID-VkDescriptorBufferInfo-buffer-parameter");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, TemplatesInvalidBufferView) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    struct SimpleTemplateData {
+        VkBufferView buffer_view;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 0;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    VkBufferView invalid_handle = CastToHandle<VkBufferView, uintptr_t>(0xbaadbeef);
+    SimpleTemplateData update_template_data;
+    update_template_data.buffer_view = invalid_handle;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02994");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, TemplatesInvalidStorageImage) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    struct SimpleTemplateData {
+        VkDescriptorImageInfo image_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 0;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    VkImageView invalid_handle = CastToHandle<VkImageView, uintptr_t>(0xbaadbeef);
+    SimpleTemplateData update_template_data;
+    update_template_data.image_info = {VK_NULL_HANDLE, invalid_handle, VK_IMAGE_LAYOUT_GENERAL};
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02996");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, TemplatesInvalidSampler) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    struct SimpleTemplateData {
+        VkDescriptorImageInfo image_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 0;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    VkSampler invalid_handle = CastToHandle<VkSampler, uintptr_t>(0xbaadbeef);
+    SimpleTemplateData update_template_data;
+    update_template_data.image_info = {invalid_handle, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL};
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, TemplatesInvalidCombinedImageSampler) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    struct SimpleTemplateData {
+        VkDescriptorImageInfo image_info;
+    };
+
+    VkDescriptorUpdateTemplateEntry update_template_entry = {};
+    update_template_entry.dstBinding = 0;
+    update_template_entry.dstArrayElement = 0;
+    update_template_entry.descriptorCount = 1;
+    update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    update_template_entry.offset = 0;
+    update_template_entry.stride = 0;
+
+    VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+    update_template_ci.descriptorUpdateEntryCount = 1;
+    update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+    update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+    update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+    vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler invalid_sampler = CastToHandle<VkSampler, uintptr_t>(0xbaadbeef);
+    VkImageView invalid_view = CastToHandle<VkImageView, uintptr_t>(0xbaadbeee);
+
+    SimpleTemplateData update_template_data;
+    update_template_data.image_info = {invalid_sampler, image_view, VK_IMAGE_LAYOUT_GENERAL};
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+
+    update_template_data.image_info = {sampler, invalid_view, VK_IMAGE_LAYOUT_GENERAL};
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02996");
+    vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, InvalidCombinedImageSampler) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    RETURN_IF_SKIP(Init());
+
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr}});
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    VkSampler invalid_sampler = CastToHandle<VkSampler, uintptr_t>(0xbaadbeef);
+    VkImageView invalid_view = CastToHandle<VkImageView, uintptr_t>(0xbaadbeee);
+
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, invalid_sampler);
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00325");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+
+    descriptor_set.Clear();
+    descriptor_set.WriteDescriptorImageInfo(0, invalid_view, sampler);
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-02996");
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}

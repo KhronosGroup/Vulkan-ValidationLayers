@@ -4468,7 +4468,7 @@ void DeviceState::PreCallRecordUpdateDescriptorSetWithTemplate(VkDevice device, 
     if (auto const template_state = Get<DescriptorUpdateTemplate>(descriptorUpdateTemplate)) {
         // TODO: Record template push descriptor updates
         if (template_state->create_info.templateType == VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET) {
-            PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, template_state.get(), pData);
+            PerformUpdateDescriptorSetsWithTemplateKHR(descriptorSet, *template_state, pData);
         }
     }
 }
@@ -4492,11 +4492,10 @@ void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate(VkCommandBuffer 
 
     cb_state->RecordCmd(record_obj.location.function);
     auto dsl = pipeline_layout->set_layouts[set];
-    const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
-    DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pData, dsl->VkHandle());
-    cb_state->PushDescriptorSetState(template_ci.pipelineBindPoint, pipeline_layout, record_obj.location.function, set,
-                                     static_cast<uint32_t>(decoded_template.desc_writes.size()),
+    DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, *template_state, pData, dsl->VkHandle());
+    cb_state->PushDescriptorSetState(template_state->create_info.pipelineBindPoint, pipeline_layout, record_obj.location.function,
+                                     set, static_cast<uint32_t>(decoded_template.desc_writes.size()),
                                      decoded_template.desc_writes.data());
 }
 
@@ -4519,13 +4518,13 @@ void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate2(
 
     cb_state->RecordCmd(record_obj.location.function);
     auto dsl = pipeline_layout->set_layouts[pPushDescriptorSetWithTemplateInfo->set];
-    const auto &template_ci = template_state->create_info;
     // Decode the template into a set of write updates
-    DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, template_state.get(), pPushDescriptorSetWithTemplateInfo->pData,
+    DecodedTemplateUpdate decoded_template(*this, VK_NULL_HANDLE, *template_state, pPushDescriptorSetWithTemplateInfo->pData,
                                            dsl->VkHandle());
-    cb_state->PushDescriptorSetState(
-        template_ci.pipelineBindPoint, pipeline_layout, record_obj.location.function, pPushDescriptorSetWithTemplateInfo->set,
-        static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data());
+    cb_state->PushDescriptorSetState(template_state->create_info.pipelineBindPoint, pipeline_layout, record_obj.location.function,
+                                     pPushDescriptorSetWithTemplateInfo->set,
+                                     static_cast<uint32_t>(decoded_template.desc_writes.size()),
+                                     decoded_template.desc_writes.data());
 }
 
 void DeviceState::PreCallRecordCmdPushDescriptorSetWithTemplate2KHR(
@@ -4701,10 +4700,10 @@ void DeviceState::PostCallRecordResetQueryPool(VkDevice device, VkQueryPool quer
 }
 
 void DeviceState::PerformUpdateDescriptorSetsWithTemplateKHR(VkDescriptorSet descriptorSet,
-                                                             const DescriptorUpdateTemplate *template_state, const void *pData) {
+                                                             const DescriptorUpdateTemplate &template_state, const void *pData) {
     // Translate the templated update into a normal update for validation...
-    DecodedTemplateUpdate decoded_update(*this, descriptorSet, template_state, pData);
-    PerformUpdateDescriptorSets(static_cast<uint32_t>(decoded_update.desc_writes.size()), decoded_update.desc_writes.data(), 0,
+    DecodedTemplateUpdate decoded_template(*this, descriptorSet, template_state, pData);
+    PerformUpdateDescriptorSets(static_cast<uint32_t>(decoded_template.desc_writes.size()), decoded_template.desc_writes.data(), 0,
                                 NULL);
 }
 

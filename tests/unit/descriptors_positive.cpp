@@ -607,6 +607,84 @@ TEST_F(PositiveDescriptors, CopyAccelerationStructureMutableDescriptors) {
     vk::UpdateDescriptorSets(device(), 0, nullptr, 1, &copy_set);
 }
 
+TEST_F(PositiveDescriptors, AccelerationStructureTemplates) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    RETURN_IF_SKIP(Init());
+
+    auto tlas_0 = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+    tlas_0->Create();
+    auto tlas_1 = vkt::as::blueprint::AccelStructSimpleOnDeviceTopLevel(*m_device, 4096);
+    tlas_1->Create();
+    VkAccelerationStructureKHR accel_structures[2] = {*tlas_0, *tlas_1};
+
+    {
+        OneOffDescriptorSet descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                               {1, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           });
+
+        struct SimpleTemplateData {
+            VkAccelerationStructureKHR as[2];
+        };
+
+        VkDescriptorUpdateTemplateEntry update_template_entry = {};
+        update_template_entry.dstBinding = 0;
+        update_template_entry.dstArrayElement = 0;
+        update_template_entry.descriptorCount = 2;
+        update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        update_template_entry.offset = 0;
+        update_template_entry.stride = sizeof(VkAccelerationStructureKHR);
+
+        VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+        update_template_ci.descriptorUpdateEntryCount = 1;
+        update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+        update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+        vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+        SimpleTemplateData update_template_data;
+        update_template_data.as[0] = accel_structures[0];
+        update_template_data.as[1] = accel_structures[1];
+        vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, &update_template_data);
+    }
+
+    {
+        OneOffDescriptorSet descriptor_set(m_device,
+                                           {
+                                               {0, VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 2, VK_SHADER_STAGE_ALL, nullptr},
+                                           });
+
+        struct SimpleTemplateData {
+            VkAccelerationStructureKHR as;
+        };
+
+        VkDescriptorUpdateTemplateEntry update_template_entry = {};
+        update_template_entry.dstBinding = 0;
+        update_template_entry.dstArrayElement = 0;
+        update_template_entry.descriptorCount = 2;
+        update_template_entry.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        update_template_entry.offset = 0;
+        update_template_entry.stride = sizeof(SimpleTemplateData);
+
+        VkDescriptorUpdateTemplateCreateInfo update_template_ci = vku::InitStructHelper();
+        update_template_ci.descriptorUpdateEntryCount = 1;
+        update_template_ci.pDescriptorUpdateEntries = &update_template_entry;
+        update_template_ci.templateType = VK_DESCRIPTOR_UPDATE_TEMPLATE_TYPE_DESCRIPTOR_SET;
+        update_template_ci.descriptorSetLayout = descriptor_set.layout_;
+        vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
+
+        SimpleTemplateData update_template_data[2];
+        update_template_data[0].as = accel_structures[0];
+        update_template_data[1].as = accel_structures[1];
+        vk::UpdateDescriptorSetWithTemplate(device(), descriptor_set.set_, update_template, update_template_data);
+    }
+}
+
 TEST_F(PositiveDescriptors, ImageViewAsDescriptorReadAndInputAttachment) {
     TEST_DESCRIPTION("Test reading from a descriptor that uses same image view as framebuffer input attachment");
 
