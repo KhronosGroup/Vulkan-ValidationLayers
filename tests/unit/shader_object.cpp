@@ -4991,11 +4991,7 @@ TEST_F(NegativeShaderObject, Mismatched64BitAttributeType) {
     InitDynamicRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64_SINT;
-
-    VkFormatProperties2 format_properties = vku::InitStructHelper();
-    vk::GetPhysicalDeviceFormatProperties2(m_device->Physical(), format, &format_properties);
-
-    if ((format_properties.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
         GTEST_SKIP() << "format not supported.";
     }
 
@@ -5091,11 +5087,7 @@ TEST_F(NegativeShaderObject, MismatchedFormat64Components) {
     InitDynamicRenderTarget();
 
     const VkFormat format = VK_FORMAT_R64G64B64_SINT;
-
-    VkFormatProperties2 format_properties = vku::InitStructHelper();
-    vk::GetPhysicalDeviceFormatProperties2(m_device->Physical(), format, &format_properties);
-
-    if ((format_properties.formatProperties.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT) == 0) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
         GTEST_SKIP() << "format not supported.";
     }
 

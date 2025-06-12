@@ -1640,10 +1640,7 @@ TEST_F(NegativeDescriptorBuffer, MaxTexelBufferElements) {
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptor_buffer_properties = vku::InitStructHelper();
     GetPhysicalDeviceProperties2(descriptor_buffer_properties);
 
-    const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
     VkDeviceSize format_size = static_cast<VkDeviceSize>(vkuFormatTexelBlockSize(VK_FORMAT_R8G8B8A8_UNORM));

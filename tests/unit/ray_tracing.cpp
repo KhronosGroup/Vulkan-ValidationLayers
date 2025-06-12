@@ -2831,9 +2831,8 @@ TEST_F(NegativeRayTracing, BuildAccelerationStructuresInvalidUpdatesToGeometryTr
     blas.SetDstAS(vkt::as::blueprint::AccelStructSimpleOnDeviceBottomLevel(*m_device, 4096));
     blas.GetGeometries()[0].SetTrianglesVertexFormat(second_triangles_vertex_format);
 
-    VkFormatProperties vertex_format_props{};
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), second_triangles_vertex_format, &vertex_format_props);
-    if (!(vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), second_triangles_vertex_format,
+                                          VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
         m_errorMonitor->SetDesiredError("VUID-VkAccelerationStructureGeometryTrianglesDataKHR-vertexFormat-03797");
     }
     m_errorMonitor->SetDesiredError("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03763");
@@ -2854,10 +2853,8 @@ TEST_F(NegativeRayTracing, TrianglesFormatMissingFeature) {
     RETURN_IF_SKIP(InitState());
 
     const VkFormat triangles_vertex_format = VK_FORMAT_R32_UINT;
-    VkFormatProperties vertex_format_props{};
-    vk::GetPhysicalDeviceFormatProperties(m_device->Physical(), triangles_vertex_format, &vertex_format_props);
-
-    if (vertex_format_props.bufferFeatures & VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), triangles_vertex_format,
+                                          VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR)) {
         GTEST_SKIP()
             << "Hard coded vertex format has VK_FORMAT_FEATURE_ACCELERATION_STRUCTURE_VERTEX_BUFFER_BIT_KHR, skipping test.";
     }

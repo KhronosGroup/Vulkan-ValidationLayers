@@ -109,12 +109,9 @@ TEST_F(PositiveDescriptors, IgnoreUnrelatedDescriptor) {
 
     RETURN_IF_SKIP(Init());
 
-    // Verify VK_FORMAT_R8_UNORM supports VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT
     const VkFormat format_texel_case = VK_FORMAT_R8_UNORM;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format_texel_case, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
-        GTEST_SKIP() << "Test requires to support VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format_texel_case, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
     // Image Case
@@ -964,11 +961,9 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), buffer_format, &format_properties);
-    if (!(format_properties.bufferFeatures &
-          (VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))) {
-        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_*_TEXEL_BUFFER_BIT for this format";
+    if (!BufferFormatAndFeaturesSupported(
+            Gpu(), buffer_format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+        GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
     OneOffDescriptorSet descriptor_set(m_device, {

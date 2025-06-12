@@ -1519,9 +1519,7 @@ TEST_F(NegativeAtomic, BufferViewInt64Drawtime32) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat format = VK_FORMAT_R64_UINT;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
     }
 
@@ -1565,9 +1563,7 @@ TEST_F(NegativeAtomic, BufferViewInt64Drawtime64) {
     RETURN_IF_SKIP(Init());
 
     const VkFormat format = VK_FORMAT_R32_UINT;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format, VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT";
     }
 

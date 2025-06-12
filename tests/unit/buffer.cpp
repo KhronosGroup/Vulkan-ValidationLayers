@@ -153,9 +153,7 @@ TEST_F(NegativeBuffer, BufferViewCreateInfoEntries) {
     }
 
     const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format_with_uniform_texel_support, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format_with_uniform_texel_support, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
@@ -249,9 +247,7 @@ TEST_F(NegativeBuffer, BufferViewMaxTexelBufferElements) {
     }
 
     const VkFormat format_with_uniform_texel_support = VK_FORMAT_R8G8B8A8_UNORM;
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), format_with_uniform_texel_support, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), format_with_uniform_texel_support, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
@@ -285,10 +281,7 @@ TEST_F(NegativeBuffer, TexelBufferAlignmentIn12) {
     if (minTexelBufferOffsetAlignment == 1) {
         GTEST_SKIP() << "Test requires minTexelOffsetAlignment to not be equal to 1";
     }
-
-    VkFormatProperties format_properties;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT)) {
         GTEST_SKIP() << "Test requires support for VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT";
     }
 
