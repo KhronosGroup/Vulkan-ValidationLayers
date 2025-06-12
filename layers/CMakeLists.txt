@@ -110,6 +110,12 @@ endif()
 if (USE_CUSTOM_HASH_MAP)
     message(STATUS "Using parallel_hashmap as custom hash maps")
     target_compile_definitions(VkLayer_utils PUBLIC USE_CUSTOM_HASH_MAP)
+    find_package(phmap CONFIG)
+    if (TARGET phmap)
+        target_link_libraries(VkLayer_utils PRIVATE phmap)
+    else()
+        add_subdirectory(external/parallel_hashmap)
+    endif()
 else()
     message(STATUS "Using STL maps instead of custom hash maps")
 endif()
@@ -244,15 +250,6 @@ target_sources(vvl PRIVATE
     error_message/spirv_logging.cpp
     external/vma/vma.h
     external/vma/vma.cpp
-    external/parallel_hashmap/btree.h
-    external/parallel_hashmap/meminfo.h
-    external/parallel_hashmap/phmap_base.h
-    external/parallel_hashmap/phmap_bits.h
-    external/parallel_hashmap/phmap_config.h
-    external/parallel_hashmap/phmap_dump.h
-    external/parallel_hashmap/phmap_fwd_decl.h
-    external/parallel_hashmap/phmap_utils.h
-    external/parallel_hashmap/phmap.h
     ${API_TYPE}/generated/best_practices.cpp
     ${API_TYPE}/generated/best_practices_device_methods.h
     ${API_TYPE}/generated/best_practices_instance_methods.h
