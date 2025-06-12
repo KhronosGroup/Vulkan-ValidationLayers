@@ -512,7 +512,7 @@ bool core::Instance::ValidateGetPhysicalDeviceImageFormatProperties2(VkPhysicalD
                              "pImageFormatProperties includes a chained "
                              "VkHostImageCopyDevicePerformanceQuery struct, but pImageFormatInfo->usage (%s) does not contain "
                              "VK_IMAGE_USAGE_HOST_TRANSFER_BIT",
-                             string_VkBufferUsageFlags(pImageFormatInfo->usage).c_str());
+                             string_VkImageUsageFlags(pImageFormatInfo->usage).c_str());
         }
     }
     return skip;

@@ -56,16 +56,17 @@ bool Device::manual_PreCallValidateCreateBuffer(VkDevice device, const VkBufferC
                                       AllVkBufferUsageFlagBits, pCreateInfo->usage, kRequiredFlags,
                                       "VUID-VkBufferCreateInfo-None-09499", "VUID-VkBufferCreateInfo-None-09500");
     }
-    const VkBufferUsageFlags2KHR usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
+    const VkBufferUsageFlags2 usage = usage_flags2 ? usage_flags2->usage : pCreateInfo->usage;
 
     if (pCreateInfo->flags & VK_BUFFER_CREATE_PROTECTED_BIT) {
-        const VkBufferUsageFlags invalid =
-            VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT | VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT |
-            VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
-            VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR |
-            VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
-            VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT |
-            VK_BUFFER_USAGE_MICROMAP_STORAGE_BIT_EXT;
+        const VkBufferUsageFlags2 invalid =
+            VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_2_CONDITIONAL_RENDERING_BIT_EXT |
+            VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR |
+            VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR |
+            VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_2_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT |
+            VK_BUFFER_USAGE_2_MICROMAP_BUILD_INPUT_READ_ONLY_BIT_EXT | VK_BUFFER_USAGE_2_MICROMAP_STORAGE_BIT_EXT;
         if (usage & invalid) {
             skip |= LogError("VUID-VkBufferCreateInfo-flags-09641", device, create_info_loc.dot(Field::flags),
                              "includes VK_BUFFER_CREATE_PROTECTED_BIT, but the usage is %s.",

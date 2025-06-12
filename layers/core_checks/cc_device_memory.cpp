@@ -940,7 +940,7 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         if (mem_info->IsExport()) {
             VkPhysicalDeviceExternalBufferInfo external_info = vku::InitStructHelper();
             external_info.flags = buffer_state->create_info.flags;
-            // TODO: for now, there is no VkBufferUsageFlags2KHR flag that exceeds 32-bit but should be revisited later
+            // TODO: for now, there is no VkBufferUsageFlags2 flag that exceeds 32-bit but should be revisited later
             external_info.usage = VkBufferUsageFlags(buffer_state->usage);
             VkExternalBufferProperties external_properties = vku::InitStructHelper();
             bool export_supported = true;
@@ -1049,13 +1049,13 @@ bool CoreChecks::ValidateBindBufferMemory(VkBuffer buffer, VkDeviceMemory memory
         }
 
         auto chained_flags_struct = vku::FindStructInPNextChain<VkMemoryAllocateFlagsInfo>(mem_info->allocate_info.pNext);
-        if (enabled_features.bufferDeviceAddress && (buffer_state->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) &&
+        if (enabled_features.bufferDeviceAddress && (buffer_state->usage & VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT) &&
             (!chained_flags_struct || !(chained_flags_struct->flags & VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT))) {
             const LogObjectList objlist(buffer, memory);
             const char *vuid = bind_buffer_mem_2 ? "VUID-VkBindBufferMemoryInfo-bufferDeviceAddress-03339"
                                                  : "VUID-vkBindBufferMemory-bufferDeviceAddress-03339";
             skip |= LogError(vuid, objlist, loc.dot(Field::buffer),
-                             "was created with VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, "
+                             "was created with VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, "
                              "but the memory was not allocated with VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT%s.",
                              chained_flags_struct ? "" : " (Need to add VkMemoryAllocateFlagsInfo to VkMemoryAllocateInfo::pNext)");
         }
@@ -2561,7 +2561,7 @@ bool CoreChecks::PreCallValidateGetBufferDeviceAddress(VkDevice device, const Vk
                                                   "VUID-vkGetBufferDeviceAddress-bufferDeviceAddress-03324");
         }
 
-        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, true,
                                          "VUID-VkBufferDeviceAddressInfo-buffer-02601", info_loc.dot(Field::buffer));
     }
 
@@ -2601,7 +2601,7 @@ bool CoreChecks::PreCallValidateGetBufferOpaqueCaptureAddress(VkDevice device, c
                              "was not created with VK_BUFFER_CREATE_DEVICE_ADDRESS_CAPTURE_REPLAY_BIT.");
         }
 
-        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, true,
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, true,
                                          "VUID-VkBufferDeviceAddressInfo-buffer-02601", info_loc.dot(Field::buffer));
     }
 

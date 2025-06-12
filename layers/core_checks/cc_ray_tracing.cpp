@@ -63,7 +63,7 @@ bool CoreChecks::PreCallValidateCreateAccelerationStructureKHR(VkDevice device,
     auto buffer_state = Get<vvl::Buffer>(pCreateInfo->buffer);
     ASSERT_AND_RETURN_SKIP(buffer_state);
 
-    if (!(buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
+    if (!(buffer_state->usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR)) {
         skip |= LogError("VUID-VkAccelerationStructureCreateInfoKHR-buffer-03614", buffer_state->Handle(),
                          error_obj.location.dot(Field::pCreateInfo).dot(Field::buffer), "was created with %s.",
                          string_VkBufferUsageFlags2(buffer_state->usage).c_str());
@@ -475,7 +475,7 @@ bool CoreChecks::PreCallValidateGetAccelerationStructureDeviceAddressKHR(VkDevic
                                               info_loc.dot(Field::accelerationStructure).dot(Field::buffer),
                                               "VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09541");
 
-        if (!(accel_struct->buffer_state->usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+        if (!(accel_struct->buffer_state->usage & VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT)) {
             skip |= LogError("VUID-vkGetAccelerationStructureDeviceAddressKHR-pInfo-09542", LogObjectList(device),
                              info_loc.dot(Field::accelerationStructure).dot(Field::buffer), "was created with usage flag(s) %s.",
                              string_VkBufferUsageFlags2(accel_struct->buffer_state->usage).c_str());
@@ -500,7 +500,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
         const auto buffer_states = GetBuffersByAddress(address.deviceAddress);
         const bool no_valid_buffer_found =
             !buffer_states.empty() && std::none_of(buffer_states.begin(), buffer_states.end(), [](const vvl::Buffer *buffer_state) {
-                return buffer_state->usage & VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+                return buffer_state->usage & VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             });
         if (no_valid_buffer_found) {
             LogObjectList objlist(device);
@@ -511,7 +511,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                 pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-geometry-03673",
                           "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-geometry-03673"),
                 objlist, geom_loc,
-                "has no buffer which created with VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.");
+                "has no buffer which created with VK_BUFFER_USAGE_2_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR.");
         }
 
         return false;
@@ -777,7 +777,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
             {pick_vuid("VUID-vkCmdBuildAccelerationStructuresKHR-pInfos-03674",
                        "VUID-vkCmdBuildAccelerationStructuresIndirectKHR-pInfos-03674"),
              [](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
-                 if (!(buffer_state->usage & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)) {
+                 if (!(buffer_state->usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT)) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer usage is " + string_VkBufferUsageFlags2(buffer_state->usage) + '\n';
                      }
@@ -785,7 +785,7 @@ bool CoreChecks::ValidateAccelerationBuffers(VkCommandBuffer cmd_buffer, uint32_
                  }
                  return true;
              },
-             []() { return "The following buffers are missing VK_BUFFER_USAGE_STORAGE_BUFFER_BIT usage flag:"; }},
+             []() { return "The following buffers are missing VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT usage flag:"; }},
 
             {scratch_address_range_vuid,
              [scratch_address_range](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
@@ -1466,13 +1466,13 @@ bool CoreChecks::PreCallValidateCmdBuildAccelerationStructureNV(VkCommandBuffer 
     if (instanceData != VK_NULL_HANDLE) {
         if (auto buffer_state = Get<vvl::Buffer>(instanceData)) {
             skip |= ValidateBufferUsageFlags(
-                LogObjectList(commandBuffer, instanceData), *buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+                LogObjectList(commandBuffer, instanceData), *buffer_state, VK_BUFFER_USAGE_2_RAY_TRACING_BIT_NV, true,
                 "VUID-VkAccelerationStructureInfoNV-instanceData-02782", error_obj.location.dot(Field::instanceData));
         }
     }
     if (scratch_buffer_state) {
         skip |= ValidateBufferUsageFlags(
-            LogObjectList(commandBuffer, scratch), *scratch_buffer_state, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, true,
+            LogObjectList(commandBuffer, scratch), *scratch_buffer_state, VK_BUFFER_USAGE_2_RAY_TRACING_BIT_NV, true,
             "VUID-VkAccelerationStructureInfoNV-scratch-02781", error_obj.location.dot(Field::scratch));
     }
     return skip;
@@ -2181,7 +2181,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &
 
             {vuid_binding_table_flag,
              [](vvl::Buffer *const buffer_state, std::string *out_error_msg) {
-                 if (!(static_cast<uint32_t>(buffer_state->usage) & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR)) {
+                 if (!(static_cast<uint32_t>(buffer_state->usage) & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR)) {
                      if (out_error_msg) {
                          *out_error_msg += "buffer has usage " + string_VkBufferUsageFlags2(buffer_state->usage);
                      }
@@ -2190,7 +2190,7 @@ bool CoreChecks::ValidateRaytracingShaderBindingTable(const vvl::CommandBuffer &
                  return true;
              },
              []() {
-                 return "The following buffers have not been created with the VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR "
+                 return "The following buffers have not been created with the VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR "
                         "usage flag:";
              }},
 

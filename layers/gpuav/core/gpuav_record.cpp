@@ -45,7 +45,7 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
     // Ray tracing acceleration structure instance buffers also need the storage buffer usage as
     // acceleration structure build validation will find and replace invalid acceleration structure
     // handles inside of a compute shader.
-    if (in_usage & VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR) {
+    if (in_usage & VK_BUFFER_USAGE_2_SHADER_BINDING_TABLE_BIT_KHR) {
         if (flags2) {
             const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
         } else {
@@ -55,7 +55,7 @@ void Validator::PreCallRecordCreateBuffer(VkDevice device, const VkBufferCreateI
 
     // Indirect buffers will require validation shader to bind the indirect buffers as a storage buffer.
     if (gpuav_settings.IsBufferValidationEnabled() &&
-        (in_usage & (VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT))) {
+        (in_usage & (VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT))) {
         if (flags2) {
             const_cast<VkBufferUsageFlags2CreateInfo *>(flags2)->usage |= VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT;
         } else {

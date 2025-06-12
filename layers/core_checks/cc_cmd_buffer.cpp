@@ -394,7 +394,8 @@ bool CoreChecks::ValidateCmdBindIndexBuffer(const vvl::CommandBuffer &cb_state, 
     const LogObjectList objlist(cb_state.Handle(), buffer);
 
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08784" : "VUID-vkCmdBindIndexBuffer-buffer-08784";
-    skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
+    skip |=
+        ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_INDEX_BUFFER_BIT, true, vuid, loc.dot(Field::buffer));
     vuid = is_2 ? "VUID-vkCmdBindIndexBuffer2-buffer-08785" : "VUID-vkCmdBindIndexBuffer-buffer-08785";
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.Handle(), *buffer_state, loc.dot(Field::buffer), vuid);
 
@@ -468,7 +469,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers(VkCommandBuffer commandBuff
         if (!buffer_state) continue;  // if using nullDescriptors
 
         const LogObjectList objlist(commandBuffer, buffer_state->Handle());
-        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers-pBuffers-00627", error_obj.location.dot(Field::pBuffers, i));
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, error_obj.location.dot(Field::pBuffers, i),
                                               "VUID-vkCmdBindVertexBuffers-pBuffers-00628");
@@ -493,7 +494,7 @@ bool CoreChecks::PreCallValidateCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
 
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-dstBuffer-00035");
     // Validate that DST buffer has correct usage flags set
-    skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true,
+    skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true,
                                      "VUID-vkCmdUpdateBuffer-dstBuffer-00034", buffer_loc);
     skip |= ValidateCmd(*cb_state, error_obj.location);
     skip |= ValidateProtectedBuffer(*cb_state, *dst_buffer_state, buffer_loc, "VUID-vkCmdUpdateBuffer-commandBuffer-01813");
@@ -1587,7 +1588,7 @@ bool CoreChecks::PreCallValidateCmdBindTransformFeedbackBuffersEXT(VkCommandBuff
                              pOffsets[i], i, buffer_state->create_info.size);
         }
 
-        if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT) == 0) {
             const LogObjectList objlist(commandBuffer, pBuffers[i]);
             skip |= LogError("VUID-vkCmdBindTransformFeedbackBuffersEXT-pBuffers-02360", objlist, buffer_loc,
                              "was created with %s.", string_VkBufferUsageFlags2(buffer_state->usage).c_str());
@@ -1694,7 +1695,7 @@ bool CoreChecks::PreCallValidateCmdBeginTransformFeedbackEXT(VkCommandBuffer com
                                  pCounterBufferOffsets[i]);
             }
 
-            if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+            if ((buffer_state->usage & VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                 skip |= LogError("VUID-vkCmdBeginTransformFeedbackEXT-pCounterBuffers-02372", objlist,
                                  error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
@@ -1734,7 +1735,7 @@ bool CoreChecks::PreCallValidateCmdEndTransformFeedbackEXT(VkCommandBuffer comma
                                  pCounterBufferOffsets[i]);
             }
 
-            if ((buffer_state->usage & VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
+            if ((buffer_state->usage & VK_BUFFER_USAGE_2_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, pCounterBuffers[i]);
                 skip |= LogError("VUID-vkCmdEndTransformFeedbackEXT-pCounterBuffers-02380", objlist,
                                  error_obj.location.dot(Field::pCounterBuffers, i), "was created with %s.",
@@ -1760,7 +1761,7 @@ bool CoreChecks::PreCallValidateCmdBindVertexBuffers2(VkCommandBuffer commandBuf
 
         const LogObjectList objlist(commandBuffer, pBuffers[i]);
         const Location buffer_loc = error_obj.location.dot(Field::pBuffers, i);
-        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, true,
+        skip |= ValidateBufferUsageFlags(objlist, *buffer_state, VK_BUFFER_USAGE_2_VERTEX_BUFFER_BIT, true,
                                          "VUID-vkCmdBindVertexBuffers2-pBuffers-03359", buffer_loc);
         skip |=
             ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, buffer_loc, "VUID-vkCmdBindVertexBuffers2-pBuffers-03360");
@@ -1818,7 +1819,7 @@ bool CoreChecks::PreCallValidateCmdBeginConditionalRenderingEXT(
             skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *buffer_state, conditional_loc.dot(Field::buffer),
                                                   "VUID-VkConditionalRenderingBeginInfoEXT-buffer-01981");
 
-            if ((buffer_state->usage & VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
+            if ((buffer_state->usage & VK_BUFFER_USAGE_2_CONDITIONAL_RENDERING_BIT_EXT) == 0) {
                 const LogObjectList objlist(commandBuffer, buffer_state->Handle());
                 skip |=
                     LogError("VUID-VkConditionalRenderingBeginInfoEXT-buffer-01982", objlist, conditional_loc.dot(Field::buffer),

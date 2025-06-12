@@ -1201,7 +1201,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, error_obj.location.dot(Field::countBuffer),
                                           vuid.indirect_count_contiguous_memory_02714);
     skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, countBuffer), *count_buffer_state,
-                                     VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
+                                     VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
                                      error_obj.location.dot(Field::countBuffer));
     skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
                                             Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
@@ -1592,7 +1592,7 @@ bool CoreChecks::ValidateIndirectCmd(const vvl::CommandBuffer &cb_state, const v
 
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), buffer_state, loc.dot(Field::buffer),
                                           vuid.indirect_contiguous_memory_02708);
-    skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+    skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_buffer_bit_02290, loc.dot(Field::buffer));
     if (cb_state.unprotected == false) {
         skip |= LogError(vuid.indirect_protected_cb_02711, objlist, loc,
@@ -1610,7 +1610,7 @@ bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, co
 
     skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), count_buffer_state, loc.dot(Field::countBuffer),
                                           vuid.indirect_count_contiguous_memory_02714);
-    skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, true,
+    skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true,
                                      vuid.indirect_count_buffer_bit_02715, loc.dot(Field::countBuffer));
     if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.create_info.size) {
         skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,

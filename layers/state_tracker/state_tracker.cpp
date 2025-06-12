@@ -455,17 +455,17 @@ void DeviceState::PostCallRecordCreateBuffer(VkDevice device, const VkBufferCrea
         sparse_container::infill_update_range(buffer_address_map_, address_range, ops);
     }
 
-    const VkBufferUsageFlags descriptor_buffer_usages =
-        VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+    const VkBufferUsageFlags2 descriptor_buffer_usages =
+        VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
     if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
         descriptorBufferAddressSpaceSize += pCreateInfo->size;
 
-        if ((buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
             resourceDescriptorBufferAddressSpaceSize += pCreateInfo->size;
         }
 
-        if ((buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
+        if ((buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) != 0) {
             samplerDescriptorBufferAddressSpaceSize += pCreateInfo->size;
         }
     }
@@ -582,17 +582,17 @@ void DeviceState::PreCallRecordDestroyBuffer(VkDevice device, VkBuffer buffer, c
     if (auto buffer_state = Get<Buffer>(buffer)) {
         WriteLockGuard guard(buffer_address_lock_);
 
-        const VkBufferUsageFlags descriptor_buffer_usages =
-            VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
+        const VkBufferUsageFlags2 descriptor_buffer_usages =
+            VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT | VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
         if ((buffer_state->usage & descriptor_buffer_usages) != 0) {
             descriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
 
-            if (buffer_state->usage & VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
+            if (buffer_state->usage & VK_BUFFER_USAGE_2_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT) {
                 resourceDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
             }
 
-            if (buffer_state->usage & VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
+            if (buffer_state->usage & VK_BUFFER_USAGE_2_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT) {
                 samplerDescriptorBufferAddressSpaceSize -= buffer_state->create_info.size;
             }
         }

@@ -885,7 +885,7 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
 
         vuid = is_2 ? "VUID-VkCopyBufferInfo2-srcBuffer-00118" : "VUID-vkCmdCopyBuffer-srcBuffer-00118";
         skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, srcBuffer), *src_buffer_state,
-                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
+                                         VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
 
         vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01822" : "VUID-vkCmdCopyBuffer-commandBuffer-01822";
         skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
@@ -899,7 +899,7 @@ bool CoreChecks::ValidateCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer s
 
         vuid = is_2 ? "VUID-VkCopyBufferInfo2-dstBuffer-00120" : "VUID-vkCmdCopyBuffer-dstBuffer-00120";
         skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, dstBuffer), *dst_buffer_state,
-                                         VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
+                                         VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
 
         vuid = is_2 ? "VUID-vkCmdCopyBuffer2-commandBuffer-01823" : "VUID-vkCmdCopyBuffer-commandBuffer-01823";
         skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
@@ -2184,7 +2184,8 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *dst_buffer_state, dst_buffer_loc, vuid);
 
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-dstBuffer-00191" : "VUID-vkCmdCopyImageToBuffer-dstBuffer-00191";
-        skip |= ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
+        skip |=
+            ValidateBufferUsageFlags(objlist, *dst_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_DST_BIT, true, vuid, dst_buffer_loc);
 
         vuid = is_2 ? "VUID-vkCmdCopyImageToBuffer2-commandBuffer-01832" : "VUID-vkCmdCopyImageToBuffer-commandBuffer-01832";
         skip |= ValidateProtectedBuffer(cb_state, *dst_buffer_state, dst_buffer_loc, vuid);
@@ -2329,7 +2330,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *src_buffer_state, src_buffer_loc, vuid);
 
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-srcBuffer-00174" : "VUID-vkCmdCopyBufferToImage-srcBuffer-00174";
-        skip |= ValidateBufferUsageFlags(objlist, *src_buffer_state, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
+        skip |=
+            ValidateBufferUsageFlags(objlist, *src_buffer_state, VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT, true, vuid, src_buffer_loc);
 
         vuid = is_2 ? "VUID-vkCmdCopyBufferToImage2-commandBuffer-01828" : "VUID-vkCmdCopyBufferToImage-commandBuffer-01828";
         skip |= ValidateProtectedBuffer(cb_state, *src_buffer_state, src_buffer_loc, vuid);
