@@ -783,7 +783,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                        const VkWriteDescriptorSet* pDescriptorWrites, const vvl::DslErrorSource& dsl_error_source,
                                        const Location& loc) const;
     // Descriptor Set Validation Functions
-    bool ValidateBufferUsage(const vvl::Buffer& buffer_state, VkDescriptorType type, const Location& buffer_loc) const;
     bool ValidateBufferUpdate(const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
                               const Location& buffer_info_loc) const;
     bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
@@ -985,8 +984,6 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateHostCopyMultiplane(const ImageCopyRegion& region, const Location& region_loc) const;
     bool ValidateBufferViewRange(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
                                  const Location& loc) const;
-    bool ValidateBufferViewBuffer(const vvl::Buffer& buffer_state, const VkBufferViewCreateInfo& create_info,
-                                  const Location& loc) const;
 
     bool ValidateImageFormatFeatures(const VkImageCreateInfo& create_info, const Location& loc) const;
     bool ValidateImageAlignmentControlCreateInfo(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;

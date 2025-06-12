@@ -83,33 +83,6 @@ bool CoreChecks::ValidateBufferViewRange(const vvl::Buffer &buffer_state, const 
     return skip;
 }
 
-bool CoreChecks::ValidateBufferViewBuffer(const vvl::Buffer &buffer_state, const VkBufferViewCreateInfo &create_info,
-                                          const Location &loc) const {
-    bool skip = false;
-    const VkFormat format = create_info.format;
-    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(format);
-    const VkBufferUsageFlags2 usage = buffer_state.usage;
-    if ((usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-format-08778", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
-                         "Format (%s) doesn't support VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
-                         "(supported bufferFeatures: %s)",
-                         string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
-                         string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
-    }
-    if ((usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT) &&
-        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT)) {
-        skip |= LogError("VUID-VkBufferViewCreateInfo-format-08779", buffer_state.Handle(), loc.dot(Field::buffer),
-                         "was created with usage (%s) containing VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
-                         "Format (%s) doesn't support VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
-                         "(supported bufferFeatures: %s)",
-                         string_VkBufferUsageFlags2(usage).c_str(), string_VkFormat(format),
-                         string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateCreateBufferDescriptorBuffer(const VkBufferCreateInfo &create_info, const VkBufferUsageFlags2 &usage,
                                                       const Location &create_info_loc) const {
     bool skip = false;
@@ -327,23 +300,52 @@ bool CoreChecks::PreCallValidateCreateBufferView(VkDevice device, const VkBuffer
         }
     }
 
-    if (auto buffer_usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext)) {
-        const VkBufferUsageFlags2 usage = buffer_usage_flags2->usage;
-        if ((usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) != 0) {
+    // vkspec.html#resources-buffer-views-usage
+    auto usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(pCreateInfo->pNext);
+    VkBufferUsageFlags2 buffer_view_usage = usage_flags2 ? usage_flags2->usage : buffer_state.usage;
+
+    if (usage_flags2) {
+        if ((buffer_view_usage & ~(VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) != 0) {
             skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08780", objlist,
                              create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage), "is %s.",
-                             string_VkBufferUsageFlags2(usage).c_str());
-        } else if ((usage & buffer_state.usage) != usage) {
-            skip |= LogError("VUID-VkBufferViewCreateInfo-pNext-08781", objlist,
-                             create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage),
-                             "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2(usage).c_str(),
-                             string_VkBufferUsageFlags2(buffer_state.usage).c_str());
+                             string_VkBufferUsageFlags2(buffer_view_usage).c_str());
+        } else if ((buffer_view_usage & buffer_state.usage) != buffer_view_usage) {
+            skip |=
+                LogError("VUID-VkBufferViewCreateInfo-pNext-08781", objlist,
+                         create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage),
+                         "(%s) is not a subset of the buffer's usage (%s).", string_VkBufferUsageFlags2(buffer_view_usage).c_str(),
+                         string_VkBufferUsageFlags2(buffer_state.usage).c_str());
         }
+    }
+
+    const VkFormatProperties3KHR format_properties = GetPDFormatProperties(pCreateInfo->format);
+    if ((buffer_view_usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT) &&
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
+        const Location usage_loc = usage_flags2 ? create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage)
+                                                : create_info_loc.dot(Field::buffer);
+        skip |=
+            LogError("VUID-VkBufferViewCreateInfo-format-08778", objlist, usage_loc,
+                     "%s(%s) containing VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                     "Format (%s) doesn't support VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT.\n"
+                     "(supported bufferFeatures: %s)",
+                     usage_flags2 ? "" : "was created with usage ", string_VkBufferUsageFlags2(buffer_view_usage).c_str(),
+                     string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
+    }
+    if ((buffer_view_usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT) &&
+        !(format_properties.bufferFeatures & VK_FORMAT_FEATURE_2_STORAGE_TEXEL_BUFFER_BIT)) {
+        const Location usage_loc = usage_flags2 ? create_info_loc.pNext(Struct::VkBufferUsageFlags2CreateInfo, Field::usage)
+                                                : create_info_loc.dot(Field::buffer);
+        skip |=
+            LogError("VUID-VkBufferViewCreateInfo-format-08779", objlist, usage_loc,
+                     "%s(%s) containing VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
+                     "Format (%s) doesn't support VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT.\n"
+                     "(supported bufferFeatures: %s)",
+                     usage_flags2 ? "" : "was created with usage ", string_VkBufferUsageFlags2(buffer_view_usage).c_str(),
+                     string_VkFormat(pCreateInfo->format), string_VkFormatFeatureFlags2(format_properties.bufferFeatures).c_str());
     }
 
     skip |= ValidateBufferViewRange(buffer_state, *pCreateInfo, create_info_loc);
 
-    skip |= ValidateBufferViewBuffer(buffer_state, *pCreateInfo, create_info_loc);
     return skip;
 }
 

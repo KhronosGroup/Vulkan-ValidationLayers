@@ -25,6 +25,7 @@
 
 #include "core_validation.h"
 #include "error_message/error_location.h"
+#include "error_message/logging.h"
 #include "generated/error_location_helper.h"
 #include "generated/vk_object_types.h"
 #include "state_tracker/descriptor_sets.h"
@@ -1558,47 +1559,6 @@ bool CoreChecks::ValidatePushDescriptorsUpdate(const vvl::DescriptorSet &push_se
     return skip;
 }
 
-// For the given buffer, verify that its creation parameters are appropriate for the given type
-//  If there's an error, update the error_msg string with details and return false, else return true
-bool CoreChecks::ValidateBufferUsage(const vvl::Buffer &buffer_state, VkDescriptorType type, const Location &buffer_loc) const {
-    bool skip = false;
-    switch (type) {
-        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-            if (!(buffer_state.usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-08765", buffer_state.Handle(), buffer_loc,
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER.",
-                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str());
-            }
-            break;
-        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-            if (!(buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-08766", buffer_state.Handle(), buffer_loc,
-                                 "was created with %s, but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER.",
-                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str());
-            }
-            break;
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-            if (!(buffer_state.usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT)) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00330", buffer_state.Handle(), buffer_loc,
-                                 "was created with %s, but descriptorType is %s.",
-                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
-            }
-            break;
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-            if (!(buffer_state.usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT)) {
-                skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00331", buffer_state.Handle(), buffer_loc,
-                                 "was created with %s, but descriptorType is %s.",
-                                 string_VkBufferUsageFlags2(buffer_state.usage).c_str(), string_VkDescriptorType(type));
-            }
-            break;
-        default:
-            break;
-    }
-    return skip;
-}
-
 bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info, VkDescriptorType type,
                                       const Location &buffer_info_loc) const {
     bool skip = false;
@@ -1609,7 +1569,6 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
 
     skip |= ValidateMemoryIsBoundToBuffer(device, *buffer_state, buffer_info_loc.dot(Field::buffer),
                                           "VUID-VkWriteDescriptorSet-descriptorType-00329");
-    skip |= ValidateBufferUsage(*buffer_state, type, buffer_info_loc.dot(Field::buffer));
 
     if (buffer_info.offset >= buffer_state->create_info.size) {
         skip |= LogError("VUID-VkDescriptorBufferInfo-offset-00340", buffer_info.buffer, buffer_info_loc.dot(Field::offset),
@@ -1628,7 +1587,7 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
         }
     }
 
-    if (VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER == type || VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC == type) {
+    if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER || type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC) {
         const uint32_t max_ub_range = phys_dev_props.limits.maxUniformBufferRange;
         if (buffer_info.range != VK_WHOLE_SIZE && buffer_info.range > max_ub_range) {
             skip |=
@@ -1643,7 +1602,13 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                          buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
                          max_ub_range, string_VkDescriptorType(type));
         }
-    } else if (VK_DESCRIPTOR_TYPE_STORAGE_BUFFER == type || VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC == type) {
+
+        if (!(buffer_state->usage & VK_BUFFER_USAGE_2_UNIFORM_BUFFER_BIT)) {
+            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00330", buffer_info.buffer,
+                             buffer_info_loc.dot(Field::buffer), "was created with %s, but descriptorType is %s.",
+                             string_VkBufferUsageFlags2(buffer_state->usage).c_str(), string_VkDescriptorType(type));
+        }
+    } else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER || type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
         const uint32_t max_sb_range = phys_dev_props.limits.maxStorageBufferRange;
         if (buffer_info.range != VK_WHOLE_SIZE && buffer_info.range > max_sb_range) {
             skip |=
@@ -1657,6 +1622,12 @@ bool CoreChecks::ValidateBufferUpdate(const VkDescriptorBufferInfo &buffer_info,
                          "] is greater than maxStorageBufferRange (%" PRIu32 ") for descriptorType %s.",
                          buffer_state->create_info.size, buffer_info.offset, buffer_state->create_info.size - buffer_info.offset,
                          max_sb_range, string_VkDescriptorType(type));
+        }
+
+        if (!(buffer_state->usage & VK_BUFFER_USAGE_2_STORAGE_BUFFER_BIT)) {
+            skip |= LogError("VUID-VkWriteDescriptorSet-descriptorType-00331", buffer_info.buffer,
+                             buffer_info_loc.dot(Field::buffer), "was created with %s, but descriptorType is %s.",
+                             string_VkBufferUsageFlags2(buffer_state->usage).c_str(), string_VkDescriptorType(type));
         }
     }
     return skip;
@@ -2184,8 +2155,34 @@ bool CoreChecks::VerifyWriteUpdateContents(const vvl::DescriptorSet &dst_set, co
                                      FormatHandle(buffer_handle).c_str(), string_VkDescriptorType(update.descriptorType));
                     break;
                 }
-                skip |= ValidateBufferUsage(*buffer_state, update.descriptorType, write_loc.dot(Field::pTexelBufferView, di));
+
+                // vkspec.html#resources-buffer-views-usage
+                const auto *usage_flags2 = vku::FindStructInPNextChain<VkBufferUsageFlags2CreateInfo>(bv_state->create_info.pNext);
+                VkBufferUsageFlags2 buffer_view_usage = usage_flags2 ? usage_flags2->usage : buffer_state->usage;
+
+                if (update.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
+                    if (!(buffer_view_usage & VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT)) {
+                        const LogObjectList objlist(buffer_view_handle, buffer_handle);
+                        skip |= LogError(
+                            "VUID-VkWriteDescriptorSet-descriptorType-08765", objlist, write_loc.dot(Field::pTexelBufferView, di),
+                            "was created with %s (found from %s), but descriptorType is VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER.",
+                            string_VkBufferUsageFlags2(buffer_view_usage).c_str(),
+                            usage_flags2 ? "VkBufferViewCreateInfo::pNext->VkBufferUsageFlags2CreateInfo::usage"
+                                         : "VkBufferCreateInfo::usage");
+                    }
+                } else if (update.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER) {
+                    if (!(buffer_view_usage & VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT)) {
+                        const LogObjectList objlist(buffer_view_handle, buffer_handle);
+                        skip |= LogError(
+                            "VUID-VkWriteDescriptorSet-descriptorType-08766", objlist, write_loc.dot(Field::pTexelBufferView, di),
+                            "was created with %s (found from %s), but descriptorType is VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER.",
+                            string_VkBufferUsageFlags2(buffer_view_usage).c_str(),
+                            usage_flags2 ? "VkBufferViewCreateInfo::pNext->VkBufferUsageFlags2CreateInfo::usage"
+                                         : "VkBufferCreateInfo::usage");
+                    }
+                }
             }
+
             break;
         }
         case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
