@@ -387,9 +387,7 @@ TEST_F(PositiveVertexInput, CreatePipeline64BitAttributes) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
-    if (!(format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_R64G64B64A64_SFLOAT vertex buffers";
     }
 
@@ -472,9 +470,7 @@ TEST_F(PositiveVertexInput, AttributeStructTypeBlockLocation64bit) {
     RETURN_IF_SKIP(Init());
     InitRenderTarget();
 
-    VkFormatProperties format_props;
-    vk::GetPhysicalDeviceFormatProperties(Gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, &format_props);
-    if (!(format_props.bufferFeatures & VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
+    if (!BufferFormatAndFeaturesSupported(Gpu(), VK_FORMAT_R64G64B64A64_SFLOAT, VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT)) {
         GTEST_SKIP() << "Device does not support VK_FORMAT_R64G64B64A64_SFLOAT vertex buffers";
     }
 
