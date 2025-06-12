@@ -2423,18 +2423,45 @@ TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
-
-    VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstSet = descriptor_set.set_;
-    descriptor_write.dstBinding = 0;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-    descriptor_write.pTexelBufferView = &buffer_view.handle();
-    descriptor_write.pImageInfo = nullptr;
-    descriptor_write.pBufferInfo = nullptr;
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view);
 
     m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-08766");
-    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    descriptor_set.UpdateDescriptorSets();
+    m_errorMonitor->VerifyFound();
+}
+
+TEST_F(NegativeDescriptors, DSUsageBitsFlags2SubSet) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_5_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance5);
+    RETURN_IF_SKIP(Init());
+
+    const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
+    VkFormatProperties format_properties;
+    vk::GetPhysicalDeviceFormatProperties(Gpu(), buffer_format, &format_properties);
+    if (!(format_properties.bufferFeatures &
+          (VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_*_TEXEL_BUFFER_BIT for this format";
+    }
+
+    vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+
+    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_UNIFORM_TEXEL_BUFFER_BIT;
+
+    VkBufferViewCreateInfo bvci = vku::InitStructHelper(&buffer_usage_flags);
+    bvci.buffer = buffer;
+    bvci.format = buffer_format;
+    bvci.range = VK_WHOLE_SIZE;
+    vkt::BufferView buffer_view(*m_device, bvci);
+
+    OneOffDescriptorSet descriptor_set(m_device, {
+                                                     {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                                 });
+
+    descriptor_set.WriteDescriptorBufferView(0, buffer_view, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER);
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-08766");
+    descriptor_set.UpdateDescriptorSets();
     m_errorMonitor->VerifyFound();
 }
 

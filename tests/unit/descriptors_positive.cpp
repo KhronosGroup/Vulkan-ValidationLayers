@@ -966,24 +966,44 @@ TEST_F(PositiveDescriptors, DSUsageBitsFlags2) {
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
     VkFormatProperties format_properties;
     vk::GetPhysicalDeviceFormatProperties(Gpu(), buffer_format, &format_properties);
-    if (!(format_properties.bufferFeatures & VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT)) {
-        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT for this format";
+    if (!(format_properties.bufferFeatures &
+          (VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT | VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT))) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_FEATURE_*_TEXEL_BUFFER_BIT for this format";
     }
-
-    VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
-    buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT;
-
-    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&buffer_usage_flags);
-    buffer_create_info.size = 1024;
-    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;  // would be wrong, but ignored
-    vkt::Buffer buffer(*m_device, buffer_create_info);
-    vkt::BufferView buffer_view(*m_device, buffer, buffer_format);
 
     OneOffDescriptorSet descriptor_set(m_device, {
                                                      {0, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
                                                  });
-    descriptor_set.WriteDescriptorBufferView(0, buffer_view);
-    descriptor_set.UpdateDescriptorSets();
+
+    {
+        VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT;
+
+        VkBufferCreateInfo buffer_create_info = vku::InitStructHelper(&buffer_usage_flags);
+        buffer_create_info.size = 1024;
+        buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT;  // would be wrong, but ignored
+        vkt::Buffer buffer(*m_device, buffer_create_info);
+        vkt::BufferView buffer_view(*m_device, buffer, buffer_format);
+
+        descriptor_set.WriteDescriptorBufferView(0, buffer_view);
+        descriptor_set.UpdateDescriptorSets();
+    }
+    {
+        vkt::Buffer buffer(*m_device, 1024, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
+
+        VkBufferUsageFlags2CreateInfo buffer_usage_flags = vku::InitStructHelper();
+        buffer_usage_flags.usage = VK_BUFFER_USAGE_2_STORAGE_TEXEL_BUFFER_BIT;
+
+        VkBufferViewCreateInfo bvci = vku::InitStructHelper(&buffer_usage_flags);
+        bvci.buffer = buffer;
+        bvci.format = buffer_format;
+        bvci.range = VK_WHOLE_SIZE;
+        vkt::BufferView buffer_view(*m_device, bvci);
+
+        descriptor_set.Clear();
+        descriptor_set.WriteDescriptorBufferView(0, buffer_view);
+        descriptor_set.UpdateDescriptorSets();
+    }
 }
 
 TEST_F(PositiveDescriptors, AttachmentFeedbackLoopLayout) {
