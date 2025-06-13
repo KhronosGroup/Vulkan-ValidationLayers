@@ -663,7 +663,14 @@ TEST_F(NegativeGpuAV, LeakedResource) {
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    vkt::ImageView image_view = image.CreateView();
+
+    VkImageViewCreateInfo view_ci = vku::InitStructHelper();
+    view_ci.image = image;
+    view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_ci.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view_ci.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    VkImageView image_view;
+    vk::CreateImageView(device(), &view_ci, nullptr, &image_view);
 
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
     VkSampler sampler;
@@ -688,7 +695,8 @@ TEST_F(NegativeGpuAV, LeakedResource) {
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
-    m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");  // sampler
+    m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");  // imageView
 }
 
 TEST_F(NegativeGpuAV, ValidationAbortAndLeakedResource) {
@@ -716,4 +724,25 @@ TEST_F(NegativeGpuAV, ValidationAbortAndLeakedResource) {
     m_default_queue->SubmitAndWait(m_command_buffer);
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkDestroyDevice-device-05137");
+}
+
+TEST_F(NegativeGpuAV, LeakDeviceMemory) {
+    RETURN_IF_SKIP(InitGpuAvFramework());
+    RETURN_IF_SKIP(InitState());
+
+    VkBufferCreateInfo buff_ci = vku::InitStructHelper();
+    buff_ci.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+    buff_ci.size = 256u;
+    vkt::Buffer buffer(*m_device, buff_ci, vkt::no_mem);
+
+    VkMemoryRequirements mem_reqs;
+    vk::GetBufferMemoryRequirements(device(), buffer, &mem_reqs);
+
+    VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
+    alloc_info.allocationSize = mem_reqs.size;
+    m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    VkDeviceMemory device_memory;
+    vk::AllocateMemory(device(), &alloc_info, nullptr, &device_memory);
+
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
 }
