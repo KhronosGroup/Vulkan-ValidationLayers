@@ -1926,7 +1926,7 @@ bool CoreChecks::PreCallValidateCmdBindShadingRateImageNV(VkCommandBuffer comman
                 LogError("VUID-vkCmdBindShadingRateImageNV-imageLayout-02063", objlist, error_obj.location.dot(Field::imageView),
                          "(%s) layout is %s.", FormatHandle(image_state->Handle()).c_str(), string_VkImageLayout(imageLayout));
         }
-        skip |= VerifyImageLayoutSubresource(*cb_state, *image_state, subresource, imageLayout,
+        skip |= VerifyImageLayoutSubresource(*cb_state, *image_state, subresource, 0, 0, imageLayout,
                                              error_obj.location.dot(Field::imageView),
                                              "VUID-vkCmdBindShadingRateImageNV-imageView-02062");
     }

@@ -103,8 +103,9 @@ bool CoreChecks::VerifyImageLayoutRange(const vvl::CommandBuffer &cb_state, cons
 }
 
 bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state, const vvl::Image &image_state,
-                                              const VkImageSubresourceLayers &subresource_layers, VkImageLayout explicit_layout,
-                                              const Location &loc, const char *vuid) const {
+                                              const VkImageSubresourceLayers &subresource_layers, int32_t depth_offset,
+                                              uint32_t depth_extent, VkImageLayout explicit_layout, const Location &loc,
+                                              const char *vuid) const {
     if (disabled[image_layout_validation]) {
         return false;
     }
@@ -113,8 +114,14 @@ bool CoreChecks::VerifyImageLayoutSubresource(const vvl::CommandBuffer &cb_state
         return false;
     }
 
-    const VkImageSubresourceRange normalized_subresource_range =
+    VkImageSubresourceRange normalized_subresource_range =
         image_state.NormalizeSubresourceRange(RangeFromLayers(subresource_layers));
+
+    if (IsExtEnabled(extensions.vk_khr_maintenance9) && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
+        (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+        normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
+        normalized_subresource_range.layerCount = depth_extent;
+    }
 
     RangeGenerator range_gen = image_state.subresource_encoder.InRange(normalized_subresource_range)
                                    ? RangeGenerator(image_state.subresource_encoder, normalized_subresource_range)
