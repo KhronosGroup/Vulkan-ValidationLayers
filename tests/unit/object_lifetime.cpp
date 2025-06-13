@@ -1291,6 +1291,22 @@ TEST_F(NegativeObjectLifetime, LeakABuffer) {
     m_errorMonitor->SetUnexpectedError("VUID-vkDestroyInstance-instance-00629");
 }
 
+TEST_F(NegativeObjectLifetime, LeakImageAndSampler) {
+    RETURN_IF_SKIP(Init());
+
+    VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
+    VkSampler sampler;
+    vk::CreateSampler(device(), &sampler_ci, nullptr, &sampler);
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    VkImage image;
+    vk::CreateImage(device(), &image_ci, nullptr, &image);
+
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
+    m_errorMonitor->SetUnexpectedError("VUID-vkDestroyDevice-device-05137");
+}
+
 TEST_F(NegativeObjectLifetime, FreeCommandBuffersNull) {
     TEST_DESCRIPTION("Can pass NULL for vkFreeCommandBuffers");
     RETURN_IF_SKIP(Init());

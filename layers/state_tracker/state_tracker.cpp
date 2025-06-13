@@ -923,8 +923,12 @@ void DeviceState::DestroyObjectMaps() {
     command_pool_map_.clear();
     assert(command_buffer_map_.empty());
     pipeline_map_.clear();
+    pipeline_cache_map_.clear();
+    pipeline_layout_map_.clear();
     shader_object_map_.clear();
     render_pass_map_.clear();
+    shader_module_map_.clear();
+    frame_buffer_map_.clear();
 
     // This will also delete all sets in the pool & remove them from setMap
     descriptor_pool_map_.clear();
@@ -943,11 +947,25 @@ void DeviceState::DestroyObjectMaps() {
     image_map_.clear();
     buffer_view_map_.clear();
     buffer_map_.clear();
+    sampler_map_.clear();
+    sampler_ycbcr_conversion_map_.clear();
+    acceleration_structure_nv_map_.clear();
+    acceleration_structure_khr_map_.clear();
+    mem_obj_map_.clear();
+
     // Queues persist until device is destroyed
     for (auto &entry : queue_map_.snapshot()) {
         entry.second->Destroy();
     }
     queue_map_.clear();
+    fence_map_.clear();
+    semaphore_map_.clear();
+    event_map_.clear();
+    indirect_execution_set_ext_map_.clear();
+    indirect_commands_layout_ext_map_.clear();
+    query_pool_map_.clear();
+    video_session_map_.clear();
+    video_session_parameters_map_.clear();
 }
 
 void DeviceState::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCallbacks *pAllocator,
