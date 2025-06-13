@@ -94,7 +94,7 @@ class Swapchain : public StateObject, public SubStateManager<SwapchainSubState> 
 
     // Image acquire history
     static constexpr uint32_t acquire_history_max_length = 16;
-    std::array<uint32_t, acquire_history_max_length> acquire_history;  // ring buffer contanis the last acquired images
+    std::array<uint32_t, acquire_history_max_length> acquire_history;  // ring buffer contains the last acquired images
     uint32_t acquire_count = 0;                                        // total number of image acquire requests
 
     Swapchain(DeviceState &dev_data, const VkSwapchainCreateInfoKHR *pCreateInfo, VkSwapchainKHR handle);

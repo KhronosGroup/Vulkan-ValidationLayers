@@ -3890,6 +3890,7 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
     }
 
     const auto *present_id_info = vku::FindStructInPNextChain<VkPresentIdKHR>(pPresentInfo->pNext);
+    const auto *present_id_info_2 = vku::FindStructInPNextChain<VkPresentId2KHR>(pPresentInfo->pNext);
     for (uint32_t i = 0; i < pPresentInfo->swapchainCount; ++i) {
         // For multi-swapchain present pResults are always available (chassis adds pResults if necessary)
         assert(pPresentInfo->swapchainCount < 2 || pPresentInfo->pResults);
@@ -3897,7 +3898,14 @@ void DeviceState::PostCallRecordQueuePresentKHR(VkQueue queue, const VkPresentIn
         if (local_result != VK_SUCCESS && local_result != VK_SUBOPTIMAL_KHR) continue;  // this present didn't actually happen.
         // Mark the image as having been released to the WSI
         if (auto swapchain_data = Get<Swapchain>(pPresentInfo->pSwapchains[i])) {
-            uint64_t present_id = (present_id_info && i < present_id_info->swapchainCount) ? present_id_info->pPresentIds[i] : 0;
+            uint64_t present_id = 0;
+            // TODO - need to know what happens if both are included
+            // https://gitlab.khronos.org/vulkan/vulkan/-/issues/4317
+            if (present_id_info_2 && i < present_id_info_2->swapchainCount) {
+                present_id = present_id_info_2->pPresentIds[i];
+            } else if (present_id_info && i < present_id_info->swapchainCount) {
+                present_id = present_id_info->pPresentIds[i];
+            }
             swapchain_data->PresentImage(pPresentInfo->pImageIndices[i], present_id, present_submission_ref,
                                          present_wait_semaphores);
         }

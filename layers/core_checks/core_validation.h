@@ -2128,6 +2128,9 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t presentId, uint64_t timeout,
                                           const ErrorObject& error_obj) const override;
+    bool PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                           const VkPresentWait2InfoKHR* pPresentWait2Info,
+                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, const VkDescriptorUpdateTemplateCreateInfo* pCreateInfo,
                                                        const VkAllocationCallbacks* pAllocator,
                                                        VkDescriptorUpdateTemplate* pDescriptorUpdateTemplate,
