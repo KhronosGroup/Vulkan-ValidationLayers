@@ -240,6 +240,7 @@ IGNORED_INCLUDES = {
     b'vulkan_xcb.h',
     b'vulkan_xlib.h',
     b'vulkan_xlib_xrandr.h',
+    b'vulkan_ohos.h',
     # rapidjson adds these include stubs into their documentation
     # comments. Since the script doesn't skip comments they are
     # erroneously marked as valid includes

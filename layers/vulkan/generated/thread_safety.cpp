@@ -5771,14 +5771,16 @@ void Device::PostCallRecordReleasePerformanceConfigurationINTEL(VkDevice device,
 
 void Device::PreCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                 const RecordObject& record_obj) {
-    StartReadObject(queue, record_obj.location);
+    StartWriteObject(queue, record_obj.location);
     StartReadObject(configuration, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PostCallRecordQueueSetPerformanceConfigurationINTEL(VkQueue queue, VkPerformanceConfigurationINTEL configuration,
                                                                  const RecordObject& record_obj) {
-    FinishReadObject(queue, record_obj.location);
+    FinishWriteObject(queue, record_obj.location);
     FinishReadObject(configuration, record_obj.location);
+    // Host access to queue must be externally synchronized
 }
 
 void Device::PreCallRecordGetPerformanceParameterINTEL(VkDevice device, VkPerformanceParameterTypeINTEL parameter,
@@ -8331,6 +8333,23 @@ void Device::PostCallRecordUpdateIndirectExecutionSetShaderEXT(VkDevice device, 
     // Host access to indirectExecutionSet must be externally synchronized
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+void Instance::PreCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                              const RecordObject& record_obj) {
+    StartReadObject(instance, record_obj.location);
+}
+
+void Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                               const RecordObject& record_obj) {
+    FinishReadObject(instance, record_obj.location);
+    if (record_obj.result == VK_SUCCESS) {
+        CreateObject(*pSurface);
+    }
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 #ifdef VK_USE_PLATFORM_METAL_EXT
 void Device::PreCallRecordGetMemoryMetalHandleEXT(VkDevice device, const VkMemoryGetMetalHandleInfoEXT* pGetMetalHandleInfo,
                                                   void** pHandle, const RecordObject& record_obj) {

@@ -32574,6 +32574,53 @@ VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(VkDevice device, 
     }
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(instance);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateSurfaceOHOS, VulkanTypedHandle(instance, kVulkanObjectTypeInstance));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateSurfaceOHOS");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateCreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateSurfaceOHOS);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateSurfaceOHOS");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordCreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateSurfaceOHOS");
+        result = instance_dispatch->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateSurfaceOHOS");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordCreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface, record_obj);
+        }
+    }
+    return result;
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
     VVL_ZoneScoped;
@@ -34759,6 +34806,9 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkDestroyIndirectExecutionSetEXT", {kFuncTypeDev, (void*)DestroyIndirectExecutionSetEXT}},
         {"vkUpdateIndirectExecutionSetPipelineEXT", {kFuncTypeDev, (void*)UpdateIndirectExecutionSetPipelineEXT}},
         {"vkUpdateIndirectExecutionSetShaderEXT", {kFuncTypeDev, (void*)UpdateIndirectExecutionSetShaderEXT}},
+#ifdef VK_USE_PLATFORM_OHOS
+        {"vkCreateSurfaceOHOS", {kFuncTypeInst, (void*)CreateSurfaceOHOS}},
+#endif  // VK_USE_PLATFORM_OHOS
         {"vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV",
          {kFuncTypePdev, (void*)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV}},
 #ifdef VK_USE_PLATFORM_METAL_EXT

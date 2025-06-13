@@ -427,12 +427,14 @@ vvl::Extension GetExtension(std::string extension) {
         {"VK_EXT_device_generated_commands", vvl::Extension::_VK_EXT_device_generated_commands},
         {"VK_MESA_image_alignment_control", vvl::Extension::_VK_MESA_image_alignment_control},
         {"VK_EXT_depth_clamp_control", vvl::Extension::_VK_EXT_depth_clamp_control},
+        {"VK_OHOS_surface", vvl::Extension::_VK_OHOS_surface},
         {"VK_HUAWEI_hdr_vivid", vvl::Extension::_VK_HUAWEI_hdr_vivid},
         {"VK_NV_cooperative_matrix2", vvl::Extension::_VK_NV_cooperative_matrix2},
         {"VK_ARM_pipeline_opacity_micromap", vvl::Extension::_VK_ARM_pipeline_opacity_micromap},
         {"VK_EXT_external_memory_metal", vvl::Extension::_VK_EXT_external_memory_metal},
         {"VK_EXT_vertex_attribute_robustness", vvl::Extension::_VK_EXT_vertex_attribute_robustness},
         {"VK_ARM_format_pack", vvl::Extension::_VK_ARM_format_pack},
+        {"VK_VALVE_fragment_density_map_layered", vvl::Extension::_VK_VALVE_fragment_density_map_layered},
         {"VK_NV_present_metering", vvl::Extension::_VK_NV_present_metering},
         {"VK_EXT_fragment_density_map_offset", vvl::Extension::_VK_EXT_fragment_density_map_offset},
         {"VK_EXT_zero_initialize_device_memory", vvl::Extension::_VK_EXT_zero_initialize_device_memory},
@@ -843,6 +845,10 @@ static const InstanceExtensionsInfoMap& GetInstanceInfoMap() {
          Info(&InstanceExtensions::vk_nv_display_stereo,
               {{{&InstanceExtensions::vk_khr_display, VK_KHR_DISPLAY_EXTENSION_NAME},
                 {&InstanceExtensions::vk_khr_get_display_properties2, VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME}}})},
+#ifdef VK_USE_PLATFORM_OHOS
+        {vvl::Extension::_VK_OHOS_surface,
+         Info(&InstanceExtensions::vk_ohos_surface, {{{&InstanceExtensions::vk_khr_surface, VK_KHR_SURFACE_EXTENSION_NAME}}})},
+#endif  // VK_USE_PLATFORM_OHOS
 
     };
 
@@ -1929,6 +1935,10 @@ static const DeviceExtensionsInfoMap& GetDeviceInfoMap() {
          Info(&DeviceExtensions::vk_ext_vertex_attribute_robustness, {{{&DeviceExtensions::vk_khr_get_physical_device_properties2,
                                                                         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME}}})},
         {vvl::Extension::_VK_ARM_format_pack, Info(&DeviceExtensions::vk_arm_format_pack, {})},
+        {vvl::Extension::_VK_VALVE_fragment_density_map_layered,
+         Info(&DeviceExtensions::vk_valve_fragment_density_map_layered,
+              {{{&DeviceExtensions::vk_khr_maintenance5, VK_KHR_MAINTENANCE_5_EXTENSION_NAME},
+                {&DeviceExtensions::vk_ext_fragment_density_map, VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME}}})},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
         {vvl::Extension::_VK_NV_present_metering, Info(&DeviceExtensions::vk_nv_present_metering, {})},
 #endif  // VK_ENABLE_BETA_EXTENSIONS

@@ -1379,6 +1379,12 @@ static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetPipelineEXT(VkDe
                                                                             const VkWriteIndirectExecutionSetPipelineEXT*) {}
 static VKAPI_ATTR void VKAPI_CALL StubUpdateIndirectExecutionSetShaderEXT(VkDevice, VkIndirectExecutionSetEXT, uint32_t,
                                                                           const VkWriteIndirectExecutionSetShaderEXT*) {}
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateSurfaceOHOS(VkInstance, const VkSurfaceCreateInfoOHOS*,
+                                                            const VkAllocationCallbacks*, VkSurfaceKHR*) {
+    return VK_SUCCESS;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice, uint32_t*, VkCooperativeMatrixFlexibleDimensionsPropertiesNV*) {
     return VK_SUCCESS;
@@ -5056,6 +5062,12 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
         table->GetPhysicalDeviceCooperativeVectorPropertiesNV =
             (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)StubGetPhysicalDeviceCooperativeVectorPropertiesNV;
     }
+#ifdef VK_USE_PLATFORM_OHOS
+    table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(instance, "vkCreateSurfaceOHOS");
+    if (table->CreateSurfaceOHOS == nullptr) {
+        table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)StubCreateSurfaceOHOS;
+    }
+#endif  // VK_USE_PLATFORM_OHOS
     table->GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV =
         (PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV)gpa(
             instance, "vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV");

@@ -742,6 +742,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
                     return {vvl::Extension::_VK_QCOM_render_pass_transform};
                 }
             }
+            if (value & (VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)) {
+                if (!IsExtEnabled(extensions.vk_valve_fragment_density_map_layered)) {
+                    return {vvl::Extension::_VK_VALVE_fragment_density_map_layered};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkSubpassDescriptionFlagBits:
             if (value &
@@ -849,6 +854,11 @@ vvl::Extensions stateless::Context::IsValidFlagValue(vvl::FlagBitmask flag_bitma
             if (value & (VK_RENDERING_CONTENTS_INLINE_BIT_KHR)) {
                 if (!IsExtEnabled(extensions.vk_khr_maintenance7) && !IsExtEnabled(extensions.vk_ext_nested_command_buffer)) {
                     return {vvl::Extension::_VK_KHR_maintenance7, vvl::Extension::_VK_EXT_nested_command_buffer};
+                }
+            }
+            if (value & (VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)) {
+                if (!IsExtEnabled(extensions.vk_valve_fragment_density_map_layered)) {
+                    return {vvl::Extension::_VK_VALVE_fragment_density_map_layered};
                 }
             }
             return {};
@@ -1119,6 +1129,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
             if (value & (VK_PIPELINE_CREATE_2_INDIRECT_BINDABLE_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
                     return {vvl::Extension::_VK_EXT_device_generated_commands};
+                }
+            }
+            if (value & (VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)) {
+                if (!IsExtEnabled(extensions.vk_valve_fragment_density_map_layered)) {
+                    return {vvl::Extension::_VK_VALVE_fragment_density_map_layered};
                 }
             }
             return {};

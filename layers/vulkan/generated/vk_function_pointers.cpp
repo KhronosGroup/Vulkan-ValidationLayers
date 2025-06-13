@@ -845,6 +845,9 @@ PFN_vkCreateIndirectExecutionSetEXT CreateIndirectExecutionSetEXT;
 PFN_vkDestroyIndirectExecutionSetEXT DestroyIndirectExecutionSetEXT;
 PFN_vkUpdateIndirectExecutionSetPipelineEXT UpdateIndirectExecutionSetPipelineEXT;
 PFN_vkUpdateIndirectExecutionSetShaderEXT UpdateIndirectExecutionSetShaderEXT;
+#ifdef VK_USE_PLATFORM_OHOS
+PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif  // VK_USE_PLATFORM_OHOS
 PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 #ifdef VK_USE_PLATFORM_METAL_EXT
 PFN_vkGetMemoryMetalHandleEXT GetMemoryMetalHandleEXT;
@@ -1607,6 +1610,13 @@ void InitInstanceExtension(VkInstance instance, const char* extension_name) {
             }
         },
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_OHOS
+        {
+            "VK_OHOS_surface", [](VkInstance instance) {
+                CreateSurfaceOHOS = reinterpret_cast<PFN_vkCreateSurfaceOHOS>(GetInstanceProcAddr(instance, "vkCreateSurfaceOHOS"));
+            }
+        },
+#endif  // VK_USE_PLATFORM_OHOS
 
     };
 
@@ -3214,6 +3224,9 @@ void ResetAllExtensions() {
     DestroyIndirectExecutionSetEXT = nullptr;
     UpdateIndirectExecutionSetPipelineEXT = nullptr;
     UpdateIndirectExecutionSetShaderEXT = nullptr;
+#ifdef VK_USE_PLATFORM_OHOS
+    CreateSurfaceOHOS = nullptr;
+#endif  // VK_USE_PLATFORM_OHOS
     GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV = nullptr;
 #ifdef VK_USE_PLATFORM_METAL_EXT
     GetMemoryMetalHandleEXT = nullptr;

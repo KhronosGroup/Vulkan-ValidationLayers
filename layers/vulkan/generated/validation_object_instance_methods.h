@@ -1286,6 +1286,19 @@ virtual void PreCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysi
 virtual void PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                           VkCooperativeVectorPropertiesNV* pProperties,
                                                                           const RecordObject& record_obj) {}
+#ifdef VK_USE_PLATFORM_OHOS
+virtual bool PreCallValidateCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                              const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                              const ErrorObject& error_obj) const {
+    return false;
+}
+virtual void PreCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                            const RecordObject& record_obj) {}
+virtual void PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                             const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                             const RecordObject& record_obj) {}
+#endif  // VK_USE_PLATFORM_OHOS
 virtual bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const ErrorObject& error_obj) const {

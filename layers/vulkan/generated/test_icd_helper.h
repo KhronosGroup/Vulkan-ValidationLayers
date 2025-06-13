@@ -100,6 +100,9 @@ static const std::unordered_map<std::string, uint32_t> instance_extension_map = 
     {VK_LUNARG_DIRECT_DRIVER_LOADING_EXTENSION_NAME, VK_LUNARG_DIRECT_DRIVER_LOADING_SPEC_VERSION},
     {VK_EXT_LAYER_SETTINGS_EXTENSION_NAME, VK_EXT_LAYER_SETTINGS_SPEC_VERSION},
     {VK_NV_DISPLAY_STEREO_EXTENSION_NAME, VK_NV_DISPLAY_STEREO_SPEC_VERSION},
+#ifdef VK_USE_PLATFORM_OHOS
+    {VK_OHOS_SURFACE_EXTENSION_NAME, VK_OHOS_SURFACE_SPEC_VERSION},
+#endif  // VK_USE_PLATFORM_OHOS
 };
 
 // Map of device extension name to version
@@ -507,6 +510,7 @@ static const std::unordered_map<std::string, uint32_t> device_extension_map = {
 #endif  // VK_USE_PLATFORM_METAL_EXT
     {VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_EXTENSION_NAME, VK_EXT_VERTEX_ATTRIBUTE_ROBUSTNESS_SPEC_VERSION},
     {VK_ARM_FORMAT_PACK_EXTENSION_NAME, VK_ARM_FORMAT_PACK_SPEC_VERSION},
+    {VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME, VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_SPEC_VERSION},
 #ifdef VK_ENABLE_BETA_EXTENSIONS
     {VK_NV_PRESENT_METERING_EXTENSION_NAME, VK_NV_PRESENT_METERING_SPEC_VERSION},
 #endif  // VK_ENABLE_BETA_EXTENSIONS
@@ -2077,6 +2081,10 @@ static VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetPipelineEXT(
 static VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(
     VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
     const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites);
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties);
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -2937,6 +2945,9 @@ static const std::unordered_map<std::string, void*> name_to_func_ptr_map = {
     {"vkDestroyIndirectExecutionSetEXT", (void*)DestroyIndirectExecutionSetEXT},
     {"vkUpdateIndirectExecutionSetPipelineEXT", (void*)UpdateIndirectExecutionSetPipelineEXT},
     {"vkUpdateIndirectExecutionSetShaderEXT", (void*)UpdateIndirectExecutionSetShaderEXT},
+#ifdef VK_USE_PLATFORM_OHOS
+    {"vkCreateSurfaceOHOS", (void*)CreateSurfaceOHOS},
+#endif  // VK_USE_PLATFORM_OHOS
     {"vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV",
      (void*)GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV},
 #ifdef VK_USE_PLATFORM_METAL_EXT
@@ -5731,6 +5742,15 @@ static VKAPI_ATTR void VKAPI_CALL UpdateIndirectExecutionSetShaderEXT(
     VkDevice device, VkIndirectExecutionSetEXT indirectExecutionSet, uint32_t executionSetWriteCount,
     const VkWriteIndirectExecutionSetShaderEXT* pExecutionSetWrites) {}
 
+#ifdef VK_USE_PLATFORM_OHOS
+static VKAPI_ATTR VkResult VKAPI_CALL CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                        const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    unique_lock_t lock(global_lock);
+    *pSurface = (VkSurfaceKHR)global_unique_handle++;
+    return VK_SUCCESS;
+}
+
+#endif  // VK_USE_PLATFORM_OHOS
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {
     return VK_SUCCESS;

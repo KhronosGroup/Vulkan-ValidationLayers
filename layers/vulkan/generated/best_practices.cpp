@@ -1903,6 +1903,14 @@ void BestPractices::PostCallRecordCreateIndirectExecutionSetEXT(VkDevice device,
     bp_state::LogResult(*this, device, record_obj);
 }
 
+#ifdef VK_USE_PLATFORM_OHOS
+void bp_state::Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                         const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                         const RecordObject& record_obj) {
+    bp_state::LogResult(*this, instance, record_obj);
+}
+#endif  // VK_USE_PLATFORM_OHOS
+
 void bp_state::Instance::PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) {

@@ -8225,6 +8225,18 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device,
 
     return skip;
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+// vkCreateSurfaceOHOS:
+// Checked by chassis: instance: "VUID-vkCreateSurfaceOHOS-instance-parameter"
+
+void Instance::PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                               const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                               const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pSurface, kVulkanObjectTypeSurfaceKHR, pAllocator, record_obj.location, instance);
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 // vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV:
 // Checked by chassis: physicalDevice:
