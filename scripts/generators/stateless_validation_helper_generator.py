@@ -521,20 +521,25 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
             classname = 'Instance' if command.instance else 'Device'
             out.append(f'bool {classname}::PreCallValidate{prototype} const {{\n')
             out.append('    bool skip = false;\n')
+
+            # Temporarily hold on, if there is no validation, will discard
+            context = ''
+
             # For vkCreateDevice, the extensions member has already been set up properly
             # for other VkPhysicalDevice calls, we need to use their supported extensions rather
             # than the extensions members, which is how the VkInstance was configured.
             if command.params[0].type == 'VkPhysicalDevice' and command.name != 'vkCreateDevice':
-                out.append('''
+                context = '''
                     const auto &physdev_extensions = physical_device_extensions.at(physicalDevice);
                     Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
-                ''')
+                '''
             else:
-                out.append('    Context context(*this, error_obj, extensions);\n')
+                context = '    Context context(*this, error_obj, extensions);\n'
 
             # Create a copy here to make the logic simpler passing into ValidatePnextStructContents
-            out.append('    [[maybe_unused]] const Location loc = error_obj.location;\n')
+            location = '    [[maybe_unused]] const Location loc = error_obj.location;\n'
 
+            functionBody = []
             # Cannot validate extension dependencies for device extension APIs having a physical device as their dispatchable object
             if command.extensions and command.name not in self.layerExtensionFunctions and (not any(self.vk.extensions[x].device for x in command.extensions) or command.params[0].type != 'VkPhysicalDevice'):
                 cExpression =  []
@@ -549,7 +554,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
                 if command.name in alias_but_not_core:
                     cExpression += f' && loc.function == vvl::Func::{command.name}'
-                out.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, {{{", ".join(outExpression)}}});\n')
+                functionBody.append(f'if (!{cExpression}) skip |= OutputExtensionError(loc, {{{", ".join(outExpression)}}});\n')
 
             if command.alias and command.alias in self.vk.commands:
                 # For alias that are promoted, just point to new function, ErrorObject will allow us to distinguish the caller
@@ -557,7 +562,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 paramList = [param.name for param in command.params]
                 paramList.append('error_obj')
                 params = ', '.join(paramList)
-                out.append(f'skip |= PreCallValidate{command.alias[2:]}({params});')
+                functionBody.append(f'skip |= PreCallValidate{command.alias[2:]}({params});')
             else:
                 # Skip first parameter if it is a dispatch handle (everything except vkCreateInstance)
                 startIndex = 0 if command.name == 'vkCreateInstance' else 1
@@ -565,14 +570,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
                 if command.instance and command.version:
                     # check function name so KHR version doesn't trigger flase positive
-                    out.append(f'if (loc.function == vvl::Func::{command.name} && CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
+                    functionBody.append(f'if (loc.function == vvl::Func::{command.name} && CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
 
                 for line in lines:
                     if isinstance(line, list):
                         for sub in line:
-                            out.append(sub)
+                            functionBody.append(sub)
                     else:
-                        out.append(line)
+                        functionBody.append(line)
                 # Insert call to custom-written function if present
                 if command.name in self.functionsWithManualChecks:
                     manualCheckCmd = command.name
@@ -584,7 +589,17 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                 if manualCheckCmd:
                     # Generate parameter list for manual fcn and down-chain calls
                     params_text = ', '.join([x.name for x in command.params]) + ', context'
-                    out.append(f'    if (!skip) skip |= manual_PreCallValidate{manualCheckCmd[2:]}({params_text});\n')
+                    functionBody.append(f'    if (!skip) skip |= manual_PreCallValidate{manualCheckCmd[2:]}({params_text});\n')
+
+            # Only apply if there is actually validation
+            if functionBody:
+                # Will remove a few exta declartion of the Context when not needed
+                if len(functionBody) > 1 or 'context' in functionBody[0]:
+                    out.append(context)
+                if len(functionBody) > 1 or 'loc' in functionBody[0]:
+                    out.append(location)
+                out.extend(functionBody)
+
             out.append('return skip;\n')
             out.append('}\n')
         out.extend(guard_helper.add_guard(None, extra_newline=True))
@@ -753,6 +768,8 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
 
     # Process struct validation code for inclusion in function or parent struct validation code
     def expandStructCode(self, item_type, funcName, errorLoc, memberNamePrefix, memberDisplayNamePrefix, output, context):
+        if item_type not in self.validatedStructs:
+            return ""
         lines = self.validatedStructs[item_type]
         for line in lines:
             if output:
@@ -1047,8 +1064,7 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     usedLines = [checkedExpr]
 
                 lines += usedLines
-        if not lines:
-            lines.append('// No xml-driven validation\n')
+
         return lines
 
     # Joins strings in English fashion
