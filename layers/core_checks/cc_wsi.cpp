@@ -994,6 +994,63 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             }
         }
 
+        const auto *present_id_2_info = vku::FindStructInPNextChain<VkPresentId2KHR>(pPresentInfo->pNext);
+        if (present_id_2_info) {
+            if (!enabled_features.presentId2) {
+                for (uint32_t i = 0; i < present_id_2_info->swapchainCount; i++) {
+                    if (present_id_2_info->pPresentIds[i] != 0) {
+                        skip |= LogError("VUID-VkPresentInfoKHR-pNext-10821", pPresentInfo->pSwapchains[0],
+                                         present_info_loc.pNext(Struct::VkPresentId2KHR, Field::pPresentIds, i),
+                                         "%" PRIu64 " is not 0, but presentId2 feature is not enabled.",
+                                         present_id_2_info->pPresentIds[i]);
+                        break;
+                    }
+                }
+            }
+            if (pPresentInfo->swapchainCount != present_id_2_info->swapchainCount) {
+                skip |= LogError("VUID-VkPresentId2KHR-swapchainCount-10818", pPresentInfo->pSwapchains[0],
+                                 present_info_loc.pNext(Struct::VkPresentId2KHR, Field::swapchainCount),
+                                 "(%" PRIu32 ") is not equal to pPresentInfo->swapchainCount (%" PRIu32 ").",
+                                 present_id_2_info->swapchainCount, pPresentInfo->swapchainCount);
+            } else {
+                for (uint32_t i = 0; i < present_id_2_info->swapchainCount; i++) {
+                    const auto swapchain_state = Get<vvl::Swapchain>(pPresentInfo->pSwapchains[i]);
+                    VkSurfaceCapabilitiesPresentId2KHR present_id_2_capabilities = vku::InitStructHelper();
+                    VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&present_id_2_capabilities);
+                    VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+                    surface_info.surface = swapchain_state->surface.get()->VkHandle();
+                    DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info,
+                                                                     &capabilities2);
+                    if (!present_id_2_capabilities.presentId2Supported) {
+                        skip |=
+                            LogError("VUID-VkPresentInfoKHR-presentId2Supported-10822", pPresentInfo->pSwapchains[i],
+                                     present_info_loc.pNext(Struct::VkPresentId2KHR, Field::pPresentIds, i),
+                                     "is %" PRIu64
+                                     ", but VkSurfaceCapabilitiesPresentId2KHR::presentId2Supported for surface %s is VK_FALSE.",
+                                     present_id_2_info->pPresentIds[i], FormatHandle(surface_info.surface).c_str());
+                    }
+
+                    if ((present_id_2_info->pPresentIds[i] != 0) &&
+                        (present_id_2_info->pPresentIds[i] <= swapchain_state->max_present_id)) {
+                        skip |=
+                            LogError("VUID-VkPresentId2KHR-presentIds-10819", pPresentInfo->pSwapchains[i],
+                                     present_info_loc.pNext(Struct::VkPresentId2KHR, Field::pPresentIds, i),
+                                     "%" PRIu64 " and the largest presentId sent for this swapchain is %" PRIu64
+                                     ". Each presentIds entry must be greater than any previous presentIds entry passed for the "
+                                     "associated pSwapchains entry",
+                                     present_id_2_info->pPresentIds[i], swapchain_state->max_present_id);
+                    }
+
+                    if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_ID_2_BIT_KHR) == 0) {
+                        skip |= LogError("VUID-VkPresentId2KHR-None-10820", pPresentInfo->pSwapchains[i],
+                                         present_info_loc.dot(Field::pSwapchain, i),
+                                         "was created with %s, but VkPresentInfoKHR::pNext contains VkPresentId2KHR.",
+                                         string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
+                    }
+                }
+            }
+        }
+
         const auto *swapchain_present_fence_info = vku::FindStructInPNextChain<VkSwapchainPresentFenceInfoEXT>(pPresentInfo->pNext);
         if (swapchain_present_fence_info) {
             if (pPresentInfo->swapchainCount != swapchain_present_fence_info->swapchainCount) {
@@ -1227,6 +1284,43 @@ bool CoreChecks::PreCallValidateWaitForPresentKHR(VkDevice device, VkSwapchainKH
         if (swapchain_state->retired) {
             skip |= LogError("VUID-vkWaitForPresentKHR-swapchain-04997", swapchain, error_obj.location,
                              "called with a retired swapchain.");
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::PreCallValidateWaitForPresent2KHR(VkDevice device, VkSwapchainKHR swapchain,
+                                                   const VkPresentWait2InfoKHR *pPresentWait2Info,
+                                                   const ErrorObject &error_obj) const {
+    bool skip = false;
+    if (!enabled_features.presentWait2) {
+        skip |= LogError("VUID-vkWaitForPresent2KHR-presentWait2-10814", swapchain, error_obj.location,
+                         "presentWait feature is not enabled.");
+    }
+
+    if (auto swapchain_state = Get<vvl::Swapchain>(swapchain)) {
+        VkSurfaceCapabilitiesPresentWait2KHR present_wait_2_capabilities = vku::InitStructHelper();
+        VkSurfaceCapabilities2KHR capabilities2 = vku::InitStructHelper(&present_wait_2_capabilities);
+        VkPhysicalDeviceSurfaceInfo2KHR surface_info = vku::InitStructHelper();
+        surface_info.surface = swapchain_state->surface.get()->VkHandle();
+        DispatchGetPhysicalDeviceSurfaceCapabilities2KHR(physical_device_state->VkHandle(), &surface_info, &capabilities2);
+        if (!present_wait_2_capabilities.presentWait2Supported) {
+            skip |= LogError("VUID-vkWaitForPresent2KHR-None-10815", swapchain, error_obj.location,
+                             "VkSurfaceCapabilitiesPresentWait2KHR::presentWait2Supported for surface %s is VK_FALSE.",
+                             FormatHandle(surface_info.surface).c_str());
+        }
+
+        if ((swapchain_state->create_info.flags & VK_SWAPCHAIN_CREATE_PRESENT_WAIT_2_BIT_KHR) == 0) {
+            skip |= LogError("VUID-vkWaitForPresent2KHR-None-10816", swapchain, error_obj.location.dot(Field::swapchain),
+                             "was created with %s.", string_VkSwapchainCreateFlagsKHR(swapchain_state->create_info.flags).c_str());
+        }
+        // We cannot reasonably track all values that have been presented
+        // Therefore we only validate that a presentId with equal or higher value has been submitted to vkQueuePresent
+        if (pPresentWait2Info->presentId > swapchain_state->max_present_id) {
+            skip |= LogError("VUID-vkWaitForPresent2KHR-presentId-10817", swapchain,
+                             error_obj.location.dot(Field::pPresentWait2Info).dot(Field::presentId),
+                             "is %" PRIu64 ", but this value was never associated with the VkPresentWait2InfoKHR::presentId on %s.",
+                             pPresentWait2Info->presentId, FormatHandle(swapchain).c_str());
         }
     }
     return skip;
