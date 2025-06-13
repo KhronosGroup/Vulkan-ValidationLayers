@@ -278,6 +278,10 @@ VkResult GetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDev
                                                     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties);
 VkResult GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                         VkCooperativeVectorPropertiesNV* pProperties);
+#ifdef VK_USE_PLATFORM_OHOS
+VkResult CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo, const VkAllocationCallbacks* pAllocator,
+                           VkSurfaceKHR* pSurface);
+#endif  // VK_USE_PLATFORM_OHOS
 VkResult GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties);
 

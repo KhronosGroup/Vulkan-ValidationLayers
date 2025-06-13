@@ -174,6 +174,9 @@ typedef struct VkLayerInstanceDispatchTable_ {
     PFN_vkGetPhysicalDeviceExternalTensorPropertiesARM GetPhysicalDeviceExternalTensorPropertiesARM;
     PFN_vkGetPhysicalDeviceOpticalFlowImageFormatsNV GetPhysicalDeviceOpticalFlowImageFormatsNV;
     PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV GetPhysicalDeviceCooperativeVectorPropertiesNV;
+#ifdef VK_USE_PLATFORM_OHOS
+    PFN_vkCreateSurfaceOHOS CreateSurfaceOHOS;
+#endif  // VK_USE_PLATFORM_OHOS
     PFN_vkGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV
         GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV;
 } VkLayerInstanceDispatchTable;

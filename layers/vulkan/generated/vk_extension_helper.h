@@ -125,6 +125,7 @@ struct InstanceExtensions {
     ExtEnabled vk_lunarg_direct_driver_loading{kNotEnabled};
     ExtEnabled vk_ext_layer_settings{kNotEnabled};
     ExtEnabled vk_nv_display_stereo{kNotEnabled};
+    ExtEnabled vk_ohos_surface{kNotEnabled};
 
     struct Requirement {
         const ExtEnabled InstanceExtensions::*enabled;
@@ -515,6 +516,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_external_memory_metal{kNotEnabled};
     ExtEnabled vk_ext_vertex_attribute_robustness{kNotEnabled};
     ExtEnabled vk_arm_format_pack{kNotEnabled};
+    ExtEnabled vk_valve_fragment_density_map_layered{kNotEnabled};
     ExtEnabled vk_nv_present_metering{kNotEnabled};
     ExtEnabled vk_ext_fragment_density_map_offset{kNotEnabled};
     ExtEnabled vk_ext_zero_initialize_device_memory{kNotEnabled};
@@ -591,6 +593,7 @@ constexpr bool IsInstanceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_LUNARG_direct_driver_loading:
         case vvl::Extension::_VK_EXT_layer_settings:
         case vvl::Extension::_VK_NV_display_stereo:
+        case vvl::Extension::_VK_OHOS_surface:
             return true;
         default:
             return false;
@@ -965,6 +968,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_external_memory_metal:
         case vvl::Extension::_VK_EXT_vertex_attribute_robustness:
         case vvl::Extension::_VK_ARM_format_pack:
+        case vvl::Extension::_VK_VALVE_fragment_density_map_layered:
         case vvl::Extension::_VK_NV_present_metering:
         case vvl::Extension::_VK_EXT_fragment_density_map_offset:
         case vvl::Extension::_VK_EXT_zero_initialize_device_memory:

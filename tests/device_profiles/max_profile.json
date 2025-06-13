@@ -2183,6 +2183,7 @@
                 "VK_EXT_shader_atomic_float": 1,
                 "VK_EXT_shader_atomic_float2": 1,
                 "VK_EXT_shader_demote_to_helper_invocation": 1,
+                "VK_EXT_shader_float8": 1,
                 "VK_EXT_shader_image_atomic_int64": 1,
                 "VK_EXT_shader_module_identifier": 1,
                 "VK_EXT_shader_object": 1,

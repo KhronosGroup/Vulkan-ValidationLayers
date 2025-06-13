@@ -8556,6 +8556,19 @@ void Device::UpdateIndirectExecutionSetShaderEXT(VkDevice device, VkIndirectExec
         device, indirectExecutionSet, executionSetWriteCount,
         (const VkWriteIndirectExecutionSetShaderEXT*)local_pExecutionSetWrites);
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+VkResult Instance::CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    if (!wrap_handles) return instance_dispatch_table.CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+
+    VkResult result = instance_dispatch_table.CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+    if (result == VK_SUCCESS) {
+        *pSurface = WrapNew(*pSurface);
+    }
+    return result;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 VkResult Instance::GetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {

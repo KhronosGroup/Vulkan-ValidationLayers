@@ -408,6 +408,7 @@ const char* String(Func func) {
     {"vkCreateShadersEXT", 19},
     {"vkCreateSharedSwapchainsKHR", 28},
     {"vkCreateStreamDescriptorSurfaceGGP", 35},
+    {"vkCreateSurfaceOHOS", 20},
     {"vkCreateSwapchainKHR", 21},
     {"vkCreateTensorARM", 18},
     {"vkCreateTensorViewARM", 22},
@@ -1260,6 +1261,7 @@ const char* String(Struct structure) {
     {"VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM", 53},
     {"VkMutableDescriptorTypeCreateInfoEXT", 37},
     {"VkMutableDescriptorTypeListEXT", 31},
+    {"VkOHSurfaceCreateInfoOHOS", 26},
     {"VkOffset2D", 11},
     {"VkOffset3D", 11},
     {"VkOpaqueCaptureDescriptorDataCreateInfoEXT", 43},
@@ -1390,6 +1392,8 @@ const char* String(Struct structure) {
     {"VkPhysicalDeviceFragmentDensityMap2FeaturesEXT", 47},
     {"VkPhysicalDeviceFragmentDensityMap2PropertiesEXT", 49},
     {"VkPhysicalDeviceFragmentDensityMapFeaturesEXT", 46},
+    {"VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE", 55},
+    {"VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE", 57},
     {"VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT", 52},
     {"VkPhysicalDeviceFragmentDensityMapOffsetPropertiesEXT", 54},
     {"VkPhysicalDeviceFragmentDensityMapPropertiesEXT", 48},
@@ -1675,6 +1679,7 @@ const char* String(Struct structure) {
     {"VkPipelineExecutablePropertiesKHR", 34},
     {"VkPipelineExecutableStatisticKHR", 33},
     {"VkPipelineExecutableStatisticValueKHR", 38},
+    {"VkPipelineFragmentDensityMapLayeredCreateInfoVALVE", 51},
     {"VkPipelineFragmentShadingRateEnumStateCreateInfoNV", 51},
     {"VkPipelineFragmentShadingRateStateCreateInfoKHR", 48},
     {"VkPipelineIndirectDeviceAddressInfoNV", 38},
@@ -2674,6 +2679,7 @@ const char* String(Field field) {
     {"fragmentDensityMapAttachment", 29},
     {"fragmentDensityMapDeferred", 27},
     {"fragmentDensityMapDynamic", 26},
+    {"fragmentDensityMapLayered", 26},
     {"fragmentDensityMapNonSubsampledImages", 38},
     {"fragmentDensityMapOffset", 25},
     {"fragmentDensityOffsetCount", 27},
@@ -3091,6 +3097,7 @@ const char* String(Field field) {
     {"maxExtraPrimitiveOverestimationSize", 36},
     {"maxFPS", 7},
     {"maxFragmentCombinedOutputResources", 35},
+    {"maxFragmentDensityMapLayers", 28},
     {"maxFragmentDensityTexelSize", 28},
     {"maxFragmentDualSrcAttachments", 30},
     {"maxFragmentInputComponents", 27},
@@ -5754,6 +5761,7 @@ const char* String(Extension extension) {
     {"VK_NV_viewport_array2", 22},
     {"VK_NV_viewport_swizzle", 23},
     {"VK_NV_win32_keyed_mutex", 24},
+    {"VK_OHOS_surface", 16},
     {"VK_QCOM_filter_cubic_clamp", 27},
     {"VK_QCOM_filter_cubic_weights", 29},
     {"VK_QCOM_fragment_density_map_offset", 36},
@@ -5773,6 +5781,7 @@ const char* String(Extension extension) {
     {"VK_QNX_screen_surface", 22},
     {"VK_SEC_amigo_profiling", 23},
     {"VK_VALVE_descriptor_set_host_mapping", 37},
+    {"VK_VALVE_fragment_density_map_layered", 38},
     {"VK_VALVE_mutable_descriptor_type", 33},
     };
     return table[(int)extension].data();
@@ -8412,6 +8421,8 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceDepthClampControlFeaturesEXT;
     case VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLAMP_CONTROL_CREATE_INFO_EXT:
        return Struct::VkPipelineViewportDepthClampControlCreateInfoEXT;
+    case VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS:
+       return Struct::VkOHSurfaceCreateInfoOHOS;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI:
        return Struct::VkPhysicalDeviceHdrVividFeaturesHUAWEI;
     case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI:
@@ -8434,6 +8445,12 @@ Struct StypeToStruct(VkStructureType stype) {
        return Struct::VkPhysicalDeviceVertexAttributeRobustnessFeaturesEXT;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM:
        return Struct::VkPhysicalDeviceFormatPackFeaturesARM;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_FEATURES_VALVE:
+       return Struct::VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_PROPERTIES_VALVE:
+       return Struct::VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE;
+    case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_DENSITY_MAP_LAYERED_CREATE_INFO_VALVE:
+       return Struct::VkPipelineFragmentDensityMapLayeredCreateInfoVALVE;
     case VK_STRUCTURE_TYPE_SET_PRESENT_CONFIG_NV:
        return Struct::VkSetPresentConfigNV;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV:

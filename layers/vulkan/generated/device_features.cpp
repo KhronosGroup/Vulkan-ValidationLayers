@@ -1782,6 +1782,12 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->formatPack |= enabled->formatPack == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_FEATURES_VALVE: {
+                const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE *>(pNext);
+                features->fragmentDensityMapLayered |= enabled->fragmentDensityMapLayered == VK_TRUE;
+                break;
+            }
 #ifdef VK_ENABLE_BETA_EXTENSIONS
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PRESENT_METERING_FEATURES_NV: {
                 const VkPhysicalDevicePresentMeteringFeaturesNV *enabled =

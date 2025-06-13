@@ -4359,6 +4359,14 @@ static inline void DispatchUpdateIndirectExecutionSetShaderEXT(VkDevice device, 
     auto dispatch = vvl::dispatch::GetData(device);
     dispatch->UpdateIndirectExecutionSetShaderEXT(device, indirectExecutionSet, executionSetWriteCount, pExecutionSetWrites);
 }
+#ifdef VK_USE_PLATFORM_OHOS
+
+static inline VkResult DispatchCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                 const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface) {
+    auto dispatch = vvl::dispatch::GetData(instance);
+    return dispatch->CreateSurfaceOHOS(instance, pCreateInfo, pAllocator, pSurface);
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 static inline VkResult DispatchGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties) {

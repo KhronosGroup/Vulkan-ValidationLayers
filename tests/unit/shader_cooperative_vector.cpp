@@ -30,6 +30,7 @@ void NegativeShaderCooperativeVector::SetupConvertCooperativeVectorMatrixNVTest(
     SetTargetApiVersion(VK_API_VERSION_1_3);
     AddRequiredExtensions(VK_NV_COOPERATIVE_VECTOR_EXTENSION_NAME);
     AddRequiredExtensions(VK_EXT_SHADER_REPLICATED_COMPOSITES_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::vulkanMemoryModel);
     AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
     AddRequiredFeature(vkt::Feature::shaderInt8);

@@ -446,6 +446,8 @@ struct DeviceFeatures {
     bool fragmentDensityMapDynamic;
     // VkPhysicalDeviceFragmentDensityMapFeaturesEXT
     bool fragmentDensityMapNonSubsampledImages;
+    // VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE
+    bool fragmentDensityMapLayered;
     // VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT
     bool fragmentDensityMapOffset;
     // VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR

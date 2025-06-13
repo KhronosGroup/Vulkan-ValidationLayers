@@ -3099,6 +3099,9 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                 skip |= ValidateBool32(pNext_loc.dot(Field::formatPack), structure->formatPack);
             }
         } break;
+
+        // No Validation code for VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE structure members  -- Covers
+        // VUID-VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE-sType-sType
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // Validation code for VkPhysicalDevicePresentMeteringFeaturesNV structure members
@@ -7342,6 +7345,9 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 #endif  // VK_USE_PLATFORM_METAL_EXT
+
+        // No Validation code for VkPipelineFragmentDensityMapLayeredCreateInfoVALVE structure members  -- Covers
+        // VUID-VkPipelineFragmentDensityMapLayeredCreateInfoVALVE-sType-sType
 #ifdef VK_ENABLE_BETA_EXTENSIONS
 
         // No Validation code for VkSetPresentConfigNV structure members  -- Covers VUID-VkSetPresentConfigNV-sType-sType
@@ -7581,6 +7587,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FORMAT_PACK_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_FEATURES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_INTERLOCK_FEATURES_EXT,
@@ -8931,6 +8938,7 @@ bool Device::PreCallValidateCreateGraphicsPipelines(VkDevice device, VkPipelineC
                 VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO,
                 VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO,
                 VK_STRUCTURE_TYPE_PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT,
+                VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_DENSITY_MAP_LAYERED_CREATE_INFO_VALVE,
                 VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_ENUM_STATE_CREATE_INFO_NV,
                 VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR,
                 VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR,
@@ -10974,6 +10982,7 @@ bool Instance::PreCallValidateGetPhysicalDeviceProperties2(VkPhysicalDevice phys
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_MEMORY_HOST_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FLOAT_CONTROLS_PROPERTIES,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_2_PROPERTIES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_LAYERED_PROPERTIES_VALVE,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_OFFSET_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_DENSITY_MAP_PROPERTIES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_PROPERTIES_KHR,
@@ -25802,6 +25811,34 @@ bool Device::PreCallValidateUpdateIndirectExecutionSetShaderEXT(VkDevice device,
     }
     return skip;
 }
+
+#ifdef VK_USE_PLATFORM_OHOS
+bool Instance::PreCallValidateCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                                const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                                const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_ohos_surface)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_OHOS_surface});
+    skip |=
+        context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS, true,
+                                   "VUID-vkCreateSurfaceOHOS-pCreateInfo-parameter", "VUID-VkOHSurfaceCreateInfoOHOS-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkOHSurfaceCreateInfoOHOS-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateReservedFlags(pCreateInfo_loc.dot(Field::flags), pCreateInfo->flags,
+                                              "VUID-VkOHSurfaceCreateInfoOHOS-flags-zerobitmask");
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pSurface), pSurface, "VUID-vkCreateSurfaceOHOS-pSurface-parameter");
+    return skip;
+}
+#endif  // VK_USE_PLATFORM_OHOS
 
 bool Instance::PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,

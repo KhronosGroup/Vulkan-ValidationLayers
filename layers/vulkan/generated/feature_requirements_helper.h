@@ -436,6 +436,8 @@ enum class Feature {
     fragmentDensityMapDynamic,
     // VkPhysicalDeviceFragmentDensityMapFeaturesEXT
     fragmentDensityMapNonSubsampledImages,
+    // VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE
+    fragmentDensityMapLayered,
     // VkPhysicalDeviceFragmentDensityMapOffsetFeaturesEXT
     fragmentDensityMapOffset,
     // VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR

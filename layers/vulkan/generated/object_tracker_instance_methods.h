@@ -228,6 +228,11 @@ void PostCallRecordCreateScreenSurfaceQNX(VkInstance instance, const VkScreenSur
                                           const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
                                           const RecordObject& record_obj) override;
 #endif  // VK_USE_PLATFORM_SCREEN_QNX
+#ifdef VK_USE_PLATFORM_OHOS
+void PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                     const RecordObject& record_obj) override;
+#endif  // VK_USE_PLATFORM_OHOS
 
 void PostCallRecordDestroyInstance(VkInstance instance, const VkAllocationCallbacks* pAllocator,
                                    const RecordObject& record_obj) override;

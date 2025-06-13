@@ -373,6 +373,11 @@ bool PreCallValidateGetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice 
 bool PreCallValidateGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                                    VkCooperativeVectorPropertiesNV* pProperties,
                                                                    const ErrorObject& error_obj) const override;
+#ifdef VK_USE_PLATFORM_OHOS
+bool PreCallValidateCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                      const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                      const ErrorObject& error_obj) const override;
+#endif  // VK_USE_PLATFORM_OHOS
 bool PreCallValidateGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const ErrorObject& error_obj) const override;

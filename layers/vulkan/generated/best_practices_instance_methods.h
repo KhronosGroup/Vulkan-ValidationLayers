@@ -329,6 +329,12 @@ void PostCallRecordGetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevi
                                                                   VkCooperativeVectorPropertiesNV* pProperties,
                                                                   const RecordObject& record_obj) override;
 
+#ifdef VK_USE_PLATFORM_OHOS
+void PostCallRecordCreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo,
+                                     const VkAllocationCallbacks* pAllocator, VkSurfaceKHR* pSurface,
+                                     const RecordObject& record_obj) override;
+
+#endif  // VK_USE_PLATFORM_OHOS
 void PostCallRecordGetPhysicalDeviceCooperativeMatrixFlexibleDimensionsPropertiesNV(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixFlexibleDimensionsPropertiesNV* pProperties,
     const RecordObject& record_obj) override;
