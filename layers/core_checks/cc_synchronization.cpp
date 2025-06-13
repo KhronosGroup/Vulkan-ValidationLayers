@@ -1817,7 +1817,7 @@ bool CoreChecks::ValidateImageBarrierAgainstImage(const vvl::CommandBuffer &cb_s
     const auto &vuid_aspect = GetImageBarrierVUID(barrier_loc, vvl::ImageError::kAspectMask);
     skip |= ValidateImageAspectMask(image_state.VkHandle(), image_ci.format, barrier.subresourceRange.aspectMask,
                                     image_state.disjoint, image_loc, vuid_aspect.c_str());
-    skip |= ValidateImageBarrierSubresourceRange(image_ci, barrier.subresourceRange, cb_state.Handle(),
+    skip |= ValidateImageBarrierSubresourceRange(image_ci, barrier.subresourceRange, image_state, cb_state.Handle(),
                                                  barrier_loc.dot(Field::subresourceRange));
 
     if ((barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex) || (old_layout != new_layout)) {

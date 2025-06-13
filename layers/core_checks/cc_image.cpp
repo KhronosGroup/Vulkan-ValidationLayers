@@ -1694,18 +1694,36 @@ bool CoreChecks::ValidateCmdClearDepthSubresourceRange(const VkImageCreateInfo &
 }
 
 bool CoreChecks::ValidateImageBarrierSubresourceRange(const VkImageCreateInfo &create_info,
-                                                      const VkImageSubresourceRange &subresourceRange, const LogObjectList &objlist,
+                                                      const VkImageSubresourceRange &subresource_range,
+                                                      const vvl::Image &image_state, const LogObjectList &objlist,
                                                       const Location &loc) const {
+    bool skip = false;
+
+    // Warning about forward compatibility issue: https://gitlab.khronos.org/vulkan/vulkan/-/issues/4308
+    if (!IsExtEnabled(extensions.vk_khr_maintenance9) && create_info.imageType == VK_IMAGE_TYPE_3D &&
+        (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+        const bool forward_compatibility_issue = (subresource_range.layerCount == 1 && create_info.extent.depth > 1);
+        if (forward_compatibility_issue) {
+            skip |= LogWarning("WARNING-VkImageSubresourceRange-layerCount-compatibility", objlist, loc.dot(Field::layerCount),
+                               "is 1 for a 3D image (%s) created with VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT. The "
+                               "maintenance9 feature is not currently enabled, so layerCount refers to all depth slices. When "
+                               "maintenance9 is enabled, it instead refers to a single depth slice. To remain forward-compatible, "
+                               "layerCount should be set to VK_REMAINING_ARRAY_LAYERS.",
+                               FormatHandle(image_state.Handle()).c_str());
+        }
+    }
+
     auto image_layer_count_var = Field::arrayLayers;
     uint32_t image_layer_count = create_info.arrayLayers;
     if (enabled_features.maintenance9 && (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
         image_layer_count_var = Field::depth;
-        const auto layers = LayersFromRange(subresourceRange);
+        const auto layers = LayersFromRange(subresource_range);
         const auto extent = GetEffectiveExtent(create_info, layers.aspectMask, layers.mipLevel);
         image_layer_count = extent.depth;
     }
-    return ValidateImageSubresourceRange(create_info.mipLevels, image_layer_count, subresourceRange, image_layer_count_var, objlist,
-                                         loc.dot(Field::subresourceRange));
+    skip |= ValidateImageSubresourceRange(create_info.mipLevels, image_layer_count, subresource_range, image_layer_count_var,
+                                         objlist, loc.dot(Field::subresourceRange));
+    return skip;
 }
 
 bool CoreChecks::ValidateImageViewFormatFeatures(const vvl::Image &image_state, const VkFormat view_format,
