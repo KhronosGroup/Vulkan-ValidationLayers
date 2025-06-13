@@ -299,9 +299,10 @@ class AccessContext {
     template <typename ResolveOp>
     void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
                             const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
-    template <typename ResolveOp, typename RangeGenerator>
-    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
-                            const ResourceAccessState *infill_state = nullptr, bool recur_to_infill = false);
+    template <typename ResolveOp>
+    void ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
+                            subresource_adapter::ImageRangeGenerator range_gen, const ResourceAccessState *infill_state = nullptr,
+                            bool recur_to_infill = false);
 
     void UpdateAccessState(const vvl::Buffer &buffer, SyncAccessIndex current_usage, SyncOrdering ordering_rule,
                            const ResourceAccessRange &range, ResourceUsageTagEx tag_ex);
@@ -707,9 +708,14 @@ void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessConte
     from_context.ResolveAccessRange(kFullRange, resolve_op, &access_state_map_, infill_state, recur_to_infill);
 }
 
-template <typename ResolveOp, typename RangeGenerator>
-void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context, RangeGenerator range_gen,
-                                       const ResourceAccessState *infill_state, bool recur_to_infill) {
+// TODO: ImageRangeGenerator is a huge object. Here we make a copy. There is at least one place where it is
+// already constructed on the stack and can be modified directly without copy. In other cases we need
+// to copy. It's important to reduce size of ImageRangeGenerator (potentially for performance, not memory usage,
+// the latter is a bounus).
+template <typename ResolveOp>
+void AccessContext::ResolveFromContext(ResolveOp &&resolve_op, const AccessContext &from_context,
+                                       subresource_adapter::ImageRangeGenerator range_gen, const ResourceAccessState *infill_state,
+                                       bool recur_to_infill) {
     for (; range_gen->non_empty(); ++range_gen) {
         from_context.ResolveAccessRange(*range_gen, resolve_op, &access_state_map_, infill_state, recur_to_infill);
     }

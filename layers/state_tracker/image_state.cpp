@@ -133,7 +133,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-      subresource_encoder(full_range),
+      subresource_encoder(GetSubresourceEncoderRange(dev_data, full_range)),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -172,7 +172,7 @@ Image::Image(const vvl::DeviceState &dev_data, VkImage img, const VkImageCreateI
       metal_image_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_TEXTURE_BIT_EXT)),
       metal_io_surface_export(GetMetalExport(pCreateInfo, VK_EXPORT_METAL_OBJECT_TYPE_METAL_IOSURFACE_BIT_EXT)),
 #endif  // VK_USE_PLATFORM_METAL_EXT
-      subresource_encoder(full_range),
+      subresource_encoder(GetSubresourceEncoderRange(dev_data, full_range)),
       store_device_as_workaround(dev_data.device),  // TODO REMOVE WHEN encoder can be const
       supported_video_profiles(dev_data.video_profile_cache_.Get(
           dev_data.physical_device, vku::FindStructInPNextChain<VkVideoProfileListInfoKHR>(pCreateInfo->pNext))) {
@@ -406,6 +406,16 @@ VkImageSubresourceRange Image::MakeImageFullRange() {
                                 (vkuFormatHasStencil(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
     }
     return NormalizeSubresourceRange(init_range);
+}
+
+VkImageSubresourceRange Image::GetSubresourceEncoderRange(const DeviceState &device_state,
+                                                          const VkImageSubresourceRange &full_range) {
+    VkImageSubresourceRange encoder_range = full_range;
+    if (device_state.extensions.vk_khr_maintenance9 && create_info.imageType == VK_IMAGE_TYPE_3D &&
+        (create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0) {
+        encoder_range.layerCount = create_info.extent.depth;
+    }
+    return encoder_range;
 }
 
 void Image::SetInitialLayoutMap() {

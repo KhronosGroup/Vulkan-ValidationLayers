@@ -240,6 +240,11 @@ class Image : public Bindable, public SubStateManager<ImageSubState> {
   private:
     VkImageSubresourceRange MakeImageFullRange();
 
+    // Subresource encoder need to take into account that 3d image can have a separate layout
+    // per slice, if supported by the implementation. This adjusts the layout range so
+    // layouts map can address each slice.
+    VkImageSubresourceRange GetSubresourceEncoderRange(const DeviceState &device_state, const VkImageSubresourceRange &full_range);
+
     std::variant<std::monostate, BindableNoMemoryTracker, BindableLinearMemoryTracker, BindableSparseMemoryTracker,
                  BindableMultiplanarMemoryTracker>
         tracker_;

@@ -1755,7 +1755,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // src
         {
             vuid = is_2 ? "VUID-VkCopyImageInfo2-srcImageLayout-00128" : "VUID-vkCmdCopyImage-srcImageLayout-00128";
-            skip |= VerifyImageLayoutSubresource(cb_state, region.src_state, src_subresource, srcImageLayout, src_image_loc, vuid);
+            skip |= VerifyImageLayoutSubresource(cb_state, region.src_state, src_subresource, region.src_offset.z,
+                                                 region.extent.depth, srcImageLayout, src_image_loc, vuid);
 
             if (src_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
                 vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10217" : "VUID-vkCmdCopyImage-commandBuffer-10217";
@@ -1767,7 +1768,8 @@ bool CoreChecks::ValidateCmdCopyImage(VkCommandBuffer commandBuffer, VkImage src
         // dst
         {
             vuid = is_2 ? "VUID-VkCopyImageInfo2-dstImageLayout-00133" : "VUID-vkCmdCopyImage-dstImageLayout-00133";
-            skip |= VerifyImageLayoutSubresource(cb_state, region.dst_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
+            skip |= VerifyImageLayoutSubresource(cb_state, region.dst_state, dst_subresource, region.dst_offset.z,
+                                                 region.extent.depth, dstImageLayout, dst_image_loc, vuid);
 
             if (dst_aspect == VK_IMAGE_ASPECT_COLOR_BIT) {
                 vuid = is_2 ? "VUID-vkCmdCopyImage2-commandBuffer-10218" : "VUID-vkCmdCopyImage-commandBuffer-10218";
@@ -2236,8 +2238,8 @@ bool CoreChecks::ValidateCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkI
         skip |= ValidateBufferImageCopyData(cb_state, region, *src_image_state, objlist, region_loc);
         skip |= ValidateImageSubresourceLayers(commandBuffer, *src_image_state, region.imageSubresource, subresource_loc);
         vuid = is_2 ? "VUID-VkCopyImageToBufferInfo2-srcImageLayout-00189" : "VUID-vkCmdCopyImageToBuffer-srcImageLayout-00189";
-        skip |=
-            VerifyImageLayoutSubresource(cb_state, *src_image_state, region.imageSubresource, srcImageLayout, src_image_loc, vuid);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, region.imageSubresource, region.imageOffset.z,
+                                             region.imageExtent.depth, srcImageLayout, src_image_loc, vuid);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *src_image_state, region, objlist, region_loc);
 
         skip |= ValidateBufferBounds(cb_state, *src_image_state, *dst_buffer_state, region, region_loc);
@@ -2382,8 +2384,8 @@ bool CoreChecks::ValidateCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkB
         skip |= ValidateBufferImageCopyData(cb_state, region, *dst_image_state, objlist, region_loc);
         skip |= ValidateImageSubresourceLayers(commandBuffer, *dst_image_state, region.imageSubresource, subresource_loc);
         vuid = is_2 ? "VUID-VkCopyBufferToImageInfo2-dstImageLayout-00180" : "VUID-vkCmdCopyBufferToImage-dstImageLayout-00180";
-        skip |=
-            VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.imageSubresource, dstImageLayout, dst_image_loc, vuid);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, region.imageSubresource, region.imageOffset.z,
+                                             region.imageExtent.depth, dstImageLayout, dst_image_loc, vuid);
         skip |= ValidateCopyBufferImageTransferGranularityRequirements(cb_state, *dst_image_state, region, objlist, region_loc);
 
         skip |= ValidateBufferBounds(cb_state, *dst_image_state, *src_buffer_state, region, region_loc);
@@ -3031,9 +3033,15 @@ bool CoreChecks::ValidateCmdBlitImage(VkCommandBuffer commandBuffer, VkImage src
         }
 
         vuid = is_2 ? "VUID-VkBlitImageInfo2-srcImageLayout-00221" : "VUID-vkCmdBlitImage-srcImageLayout-00221";
-        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
+        const int32_t src_depth_offset = (int32_t)std::min(region.srcOffsets[0].z, region.srcOffsets[1].z);
+        const uint32_t src_depth_extent = (uint32_t)std::abs(region.srcOffsets[1].z - region.srcOffsets[0].z);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, src_depth_offset, src_depth_extent,
+                                             srcImageLayout, src_image_loc, vuid);
         vuid = is_2 ? "VUID-VkBlitImageInfo2-dstImageLayout-00226" : "VUID-vkCmdBlitImage-dstImageLayout-00226";
-        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
+        const int32_t dst_depth_offset = (int32_t)std::min(region.dstOffsets[0].z, region.dstOffsets[1].z);
+        const uint32_t dst_depth_extent = (uint32_t)std::abs(region.dstOffsets[1].z - region.dstOffsets[0].z);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dst_depth_offset, dst_depth_extent,
+                                             dstImageLayout, dst_image_loc, vuid);
         skip |= ValidateImageSubresourceLayers(commandBuffer, *src_image_state, src_subresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(commandBuffer, *dst_image_state, dst_subresource, dst_subresource_loc);
 
@@ -3468,9 +3476,11 @@ bool CoreChecks::ValidateCmdResolveImage(VkCommandBuffer commandBuffer, VkImage 
         skip |= ValidateImageSubresourceLayers(commandBuffer, *src_image_state, src_subresource, src_subresource_loc);
         skip |= ValidateImageSubresourceLayers(commandBuffer, *dst_image_state, dst_subresource, dst_subresource_loc);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-srcImageLayout-00260" : "VUID-vkCmdResolveImage-srcImageLayout-00260";
-        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, srcImageLayout, src_image_loc, vuid);
+        skip |= VerifyImageLayoutSubresource(cb_state, *src_image_state, src_subresource, region.srcOffset.z, region.extent.depth,
+                                             srcImageLayout, src_image_loc, vuid);
         vuid = is_2 ? "VUID-VkResolveImageInfo2-dstImageLayout-00262" : "VUID-vkCmdResolveImage-dstImageLayout-00262";
-        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, dstImageLayout, dst_image_loc, vuid);
+        skip |= VerifyImageLayoutSubresource(cb_state, *dst_image_state, dst_subresource, region.dstOffset.z, region.extent.depth,
+                                             dstImageLayout, dst_image_loc, vuid);
 
         if (src_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS || dst_subresource.layerCount == VK_REMAINING_ARRAY_LAYERS) {
             if (src_subresource.layerCount != VK_REMAINING_ARRAY_LAYERS) {
