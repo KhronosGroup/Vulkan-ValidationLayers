@@ -3568,3 +3568,144 @@ TEST_F(NegativeFragmentShadingRate, FragmentDensityMapOffsetDifferentOffsets) {
     m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
+
+TEST_F(NegativeFragmentShadingRate, FragmentDensityMapLayeredFeatures) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    RETURN_IF_SKIP(Init());
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.flags = VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+    m_errorMonitor->SetDesiredError("VUID-VkRenderPassCreateInfo-fragmentDensityMapLayered-10828");
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    m_errorMonitor->VerifyFound();
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 1;
+    rendering_info.colorAttachmentCount = 0;
+
+    m_command_buffer.Begin();
+    m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-fragmentDensityMapLayered-10827");
+    m_command_buffer.BeginRendering(rendering_info);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayers) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapLayered);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE fdm_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fdm_properties);
+
+    {
+        const VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+        RenderPassSingleSubpass rp(*this);
+        rp.AddAttachmentDescription(format, VK_IMAGE_LAYOUT_UNDEFINED);
+        rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+        rp.AddColorAttachment(0);
+        rp.CreateRenderPass(nullptr, VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE);
+
+        auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, fdm_properties.maxFragmentDensityMapLayers + 1,
+                                                      VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        vkt::Image image(*m_device, image_ci);
+        vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS);
+
+        VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
+        fb_info.renderPass = rp.Handle();
+        fb_info.attachmentCount = 1;
+        fb_info.pAttachments = &image_view.handle();
+        fb_info.width = 32;
+        fb_info.height = 32;
+        fb_info.layers = fdm_properties.maxFragmentDensityMapLayers + 1;
+        m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-renderPass-10830");
+        vkt::Framebuffer fb(*m_device, fb_info);
+        m_errorMonitor->VerifyFound();
+    }
+    {
+        VkRenderingInfo rendering_info = vku::InitStructHelper();
+        rendering_info.flags = VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+        rendering_info.renderArea = {{0, 0}, {32, 32}};
+        rendering_info.layerCount = fdm_properties.maxFragmentDensityMapLayers + 1;
+        rendering_info.colorAttachmentCount = 0;
+
+        m_command_buffer.Begin();
+        m_errorMonitor->SetDesiredError("VUID-VkRenderingInfo-flags-10826");
+        m_command_buffer.BeginRendering(rendering_info);
+        m_errorMonitor->VerifyFound();
+        m_command_buffer.End();
+    }
+    {
+        VkPipelineFragmentDensityMapLayeredCreateInfoVALVE fdm_layered_ci = vku::InitStructHelper();
+        fdm_layered_ci.maxFragmentDensityMapLayers = fdm_properties.maxFragmentDensityMapLayers + 1;
+        CreatePipelineHelper pipe(*this, &fdm_layered_ci);
+        m_errorMonitor->SetDesiredError(
+            "VUID-VkPipelineFragmentDensityMapLayeredCreateInfoVALVE-maxFragmentDensityMapLayers-10825");
+        pipe.CreateGraphicsPipeline();
+        m_errorMonitor->VerifyFound();
+    }
+}
+
+TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayersDraw) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapLayered);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE fdm_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fdm_properties);
+    if (fdm_properties.maxFragmentDensityMapLayers <= 2) {
+        GTEST_SKIP() << "Need maxFragmentDensityMapLayers above 2";
+    }
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&pipe_flags2);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineFragmentDensityMapLayeredCreateInfoVALVE fdm_layered_ci = vku::InitStructHelper(&pipeline_rendering_info);
+    fdm_layered_ci.maxFragmentDensityMapLayers = 1;
+    CreatePipelineHelper pipe(*this, &fdm_layered_ci);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image color_image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = 2;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-layers-10831");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

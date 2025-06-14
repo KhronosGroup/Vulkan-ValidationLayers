@@ -176,6 +176,21 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
         skip |= ValidateGraphicsPipelineFragmentShadingRateState(pipeline, *fragment_shading_rate_state, create_info_loc);
     }
 
+    if (const auto *fragment_density_map_layered =
+            vku::FindStructInPNextChain<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>(pipeline_pnext)) {
+        if (fragment_density_map_layered->maxFragmentDensityMapLayers >
+            phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
+            skip |= LogError(
+                "VUID-VkPipelineFragmentDensityMapLayeredCreateInfoVALVE-maxFragmentDensityMapLayers-10825", device,
+                create_info_loc.pNext(Struct::VkPipelineFragmentDensityMapLayeredCreateInfoVALVE,
+                                      Field::maxFragmentDensityMapLayers),
+                "is %" PRIu32
+                " but the VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE::maxFragmentDensityMapLayers is %" PRIu32 ".",
+                fragment_density_map_layered->maxFragmentDensityMapLayers,
+                phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers);
+        }
+    }
+
     return skip;
 }
 
@@ -3302,6 +3317,7 @@ bool CoreChecks::ValidateDrawPipeline(const LastBound &last_bound_state, const v
 
     skip |= ValidateDrawPipelineFramebuffer(cb_state, pipeline, vuid);
     skip |= ValidateDrawPipelineVertexBinding(cb_state, pipeline, vuid);
+    skip |= ValidateDrawPipelineFragmentDensityMapLayered(cb_state, pipeline, *rp_state, vuid);
     skip |= ValidateDrawPipelineRasterizationState(last_bound_state, pipeline, vuid);
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) && rp_state->UsesDynamicRendering()) {
@@ -4196,6 +4212,45 @@ bool CoreChecks::ValidateDrawPipelineFramebuffer(const vvl::CommandBuffer &cb_st
                                       "Shader stage %s writes to Layer (gl_Layer) but the framebuffer was created with "
                                       "VkFramebufferCreateInfo::layer of 1, this write will have an undefined value set to it.",
                                       string_VkShaderStageFlags(stage).c_str());
+        }
+    }
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawPipelineFragmentDensityMapLayered(const vvl::CommandBuffer &cb_state, const vvl::Pipeline &pipeline,
+                                                               const vvl::RenderPass &rp_state,
+                                                               const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+    if (!(pipeline.create_flags & VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE)) {
+        return skip;
+    }
+
+    if (const auto *fragment_density_map_layered =
+            vku::FindStructInPNextChain<VkPipelineFragmentDensityMapLayeredCreateInfoVALVE>(pipeline.GetCreateInfoPNext())) {
+        if (rp_state.UsesDynamicRendering()) {
+            if (rp_state.dynamic_rendering_begin_rendering_info.flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+                if (rp_state.dynamic_rendering_begin_rendering_info.layerCount >
+                    fragment_density_map_layered->maxFragmentDensityMapLayers) {
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
+                    skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
+                                     "the vkCmdBeginRendering set layerCount to %" PRIu32
+                                     " which is greater than the bound pipline maxFragmentDensityMapLayers %" PRIu32 ".",
+                                     rp_state.dynamic_rendering_begin_rendering_info.layerCount,
+                                     fragment_density_map_layered->maxFragmentDensityMapLayers);
+                }
+            }
+        } else if (cb_state.active_framebuffer) {
+            if (rp_state.create_info.flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+                if (cb_state.active_framebuffer->create_info.layers > fragment_density_map_layered->maxFragmentDensityMapLayers) {
+                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state.Handle(),
+                                                cb_state.active_framebuffer->Handle());
+                    skip |= LogError(vuid.fdm_layered_10831, objlist, vuid.loc(),
+                                     "the bound VkFramebuffer was created with %" PRIu32
+                                     " layers which is greater than the bound pipline maxFragmentDensityMapLayers %" PRIu32 ".",
+                                     cb_state.active_framebuffer->create_info.layers,
+                                     fragment_density_map_layered->maxFragmentDensityMapLayers);
+                }
+            }
         }
     }
     return skip;

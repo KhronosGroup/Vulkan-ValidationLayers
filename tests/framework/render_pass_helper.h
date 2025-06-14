@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023 The Khronos Group Inc.
- * Copyright (c) 2023 Valve Corporation
- * Copyright (c) 2023 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ class InterfaceRenderPassSingleSubpass {
                                       VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                       VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT) = 0;
 
-    virtual void CreateRenderPass(void *pNext = nullptr) = 0;
+    virtual void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0) = 0;
 
     // Explicit destroy for those tests that need to test render pass lifetime
     void Destroy() { render_pass_.destroy(); };
@@ -103,7 +103,7 @@ class RenderPassSingleSubpass : public InterfaceRenderPassSingleSubpass {
                               VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
-    void CreateRenderPass(void *pNext = nullptr);
+    void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0);
 
   private:
     VkRenderPassCreateInfo rp_create_info_;
@@ -162,7 +162,7 @@ class RenderPass2SingleSubpass : public InterfaceRenderPassSingleSubpass {
                               VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                               VkDependencyFlags dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT);
 
-    void CreateRenderPass(void *pNext = nullptr);
+    void CreateRenderPass(void *pNext = nullptr, VkRenderPassCreateFlags flags = 0);
 
   private:
     VkRenderPassCreateInfo2 rp_create_info_;
