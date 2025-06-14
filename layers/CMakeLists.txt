@@ -110,6 +110,8 @@ endif()
 if (USE_CUSTOM_HASH_MAP)
     message(STATUS "Using parallel_hashmap as custom hash maps")
     target_compile_definitions(VkLayer_utils PUBLIC USE_CUSTOM_HASH_MAP)
+    # Prefer using a locally installed parallel-hashmap package before using the in-tree sources.
+    # This approach supports installation with package managers such as conan
     find_package(phmap CONFIG)
     if (TARGET phmap)
         target_link_libraries(VkLayer_utils PRIVATE phmap)
