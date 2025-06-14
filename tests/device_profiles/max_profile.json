@@ -803,6 +803,9 @@
                 "VkPhysicalDeviceDescriptorSetHostMappingFeaturesVALVE": {
                     "descriptorSetHostMapping": true
                 },
+                "VkPhysicalDeviceFragmentDensityMapLayeredFeaturesVALVE": {
+                    "fragmentDensityMapLayered": true
+                },
                 "VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT": {
                     "shaderModuleIdentifier": true
                 },
@@ -1319,6 +1322,9 @@
                         "VK_SHADER_STAGE_CALLABLE_BIT_KHR"
                     ],
                     "maxCooperativeVectorComponents": 4096
+                },
+                "VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE": {
+                    "maxFragmentDensityMapLayers": 4
                 },
                 "VkPhysicalDeviceDriverProperties": {},
                 "VkPhysicalDeviceIDProperties": {},
@@ -2429,6 +2435,7 @@
                 "VK_SEC_amigo_profiling": 1,
                 "VK_VALVE_descriptor_set_host_mapping": 1,
                 "VK_VALVE_mutable_descriptor_type": 1,
+                "VK_VALVE_fragment_density_map_layered": 1,
                 "VK_EXT_image_sliced_view_of_3d": 1,
                 "VK_EXT_shader_tile_image": 1,
                 "VK_EXT_dynamic_rendering_unused_attachments": 1,

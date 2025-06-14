@@ -4424,6 +4424,15 @@ bool CoreChecks::PreCallValidateCreateFramebuffer(VkDevice device, const VkFrame
                      FormatHandle(pCreateInfo->renderPass).c_str());
     }
 
+    if (rp_state->create_info.flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+        if (pCreateInfo->layers > phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
+            skip |=
+                LogError("VUID-VkFramebufferCreateInfo-renderPass-10830", pCreateInfo->renderPass,
+                         create_info_loc.dot(Field::layers), "is %" PRIu32 " but the maxFragmentDensityMapLayers is %" PRIu32 ".",
+                         pCreateInfo->layers, phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers);
+        }
+    }
+
     return skip;
 }
 

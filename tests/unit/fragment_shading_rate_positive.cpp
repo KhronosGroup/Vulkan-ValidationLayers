@@ -11,7 +11,7 @@
 
 #include "../framework/layer_validation_tests.h"
 #include "../framework/render_pass_helper.h"
-#include "utils/math_utils.h"
+#include "../framework/pipeline_helper.h"
 
 class PositiveFragmentShadingRate : public VkLayerTest {};
 
@@ -402,5 +402,51 @@ TEST_F(PositiveFragmentShadingRate, FragmentDensityMapOffsetWidthGranularityDyna
     VkRenderingEndInfoEXT rendering_end_info = vku::InitStructHelper(&fdm_offset_end_info);
     vk::CmdEndRendering2EXT(m_command_buffer, &rendering_end_info);
 
+    m_command_buffer.End();
+}
+
+TEST_F(PositiveFragmentShadingRate, FragmentDensityMapLayered) {
+    SetTargetApiVersion(VK_API_VERSION_1_2);
+    AddRequiredExtensions(VK_VALVE_FRAGMENT_DENSITY_MAP_LAYERED_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::fragmentDensityMapLayered);
+    RETURN_IF_SKIP(Init());
+
+    VkPhysicalDeviceFragmentDensityMapLayeredPropertiesVALVE fdm_properties = vku::InitStructHelper();
+    GetPhysicalDeviceProperties2(fdm_properties);
+
+    VkPipelineCreateFlags2CreateInfo pipe_flags2 = vku::InitStructHelper();
+    pipe_flags2.flags = VK_PIPELINE_CREATE_2_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_info = vku::InitStructHelper(&pipe_flags2);
+    pipeline_rendering_info.colorAttachmentCount = 1;
+    pipeline_rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineFragmentDensityMapLayeredCreateInfoVALVE fdm_layered_ci = vku::InitStructHelper(&pipeline_rendering_info);
+    fdm_layered_ci.maxFragmentDensityMapLayers = fdm_properties.maxFragmentDensityMapLayers;
+    CreatePipelineHelper pipe(*this, &fdm_layered_ci);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    vkt::Image color_image(*m_device, 32, 32, color_format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView color_image_view = color_image.CreateView();
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color_attachment.imageView = color_image_view;
+
+    VkRenderingInfo rendering_info = vku::InitStructHelper();
+    rendering_info.flags = VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE;
+    rendering_info.renderArea = {{0, 0}, {32, 32}};
+    rendering_info.layerCount = fdm_properties.maxFragmentDensityMapLayers;
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(rendering_info);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }

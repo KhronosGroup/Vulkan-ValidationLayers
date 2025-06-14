@@ -2273,8 +2273,11 @@ bool CoreChecks::PreCallValidateCreateImageView(VkDevice device, const VkImageVi
             skip |=
                 LogError("VUID-VkImageViewCreateInfo-imageViewType-04974", pCreateInfo->image, create_info_loc.dot(Field::viewType),
                          "is %s and the subresourceRange.layerCount "
-                         "is VK_REMAINING_ARRAY_LAYERS (%d) but must be 1 (try looking into VK_IMAGE_VIEW_TYPE_*_ARRAY).",
-                         string_VkImageViewType(view_type), remaining_layers);
+                         "is VK_REMAINING_ARRAY_LAYERS (%d) but must be 1 (try looking into VK_IMAGE_VIEW_TYPE_%s_ARRAY).",
+                         string_VkImageViewType(view_type), remaining_layers,
+                         view_type == VK_IMAGE_VIEW_TYPE_1D   ? "1D"
+                         : view_type == VK_IMAGE_VIEW_TYPE_2D ? "2D"
+                                                              : "CUBE");
         }
     } else {
         if ((pCreateInfo->subresourceRange.layerCount != 1) &&

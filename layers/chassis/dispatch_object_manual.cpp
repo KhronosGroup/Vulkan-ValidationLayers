@@ -384,6 +384,8 @@ StatelessDeviceData::StatelessDeviceData(vvl::dispatch::Instance *instance, VkPh
                                              &phys_dev_ext_props.fragment_density_map2_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_fragment_density_map_offset,
                                              &phys_dev_ext_props.fragment_density_map_offset_props);
+    instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_valve_fragment_density_map_layered,
+                                             &phys_dev_ext_props.fragment_density_map_layered_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_khr_performance_query,
                                              &phys_dev_ext_props.performance_query_props);
     instance->GetPhysicalDeviceExtProperties(physical_device, extensions.vk_ext_sample_locations,
