@@ -373,6 +373,15 @@ bool Device::ValidateCreateRenderPass(VkDevice device, const VkRenderPassCreateI
                                              create_info_loc.dot(Field::pDependencies, i).dot(Field::dstSubpass));
     }
 
+    if ((pCreateInfo->flags & VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) != 0 &&
+        !enabled_features.fragmentDensityMapLayered) {
+        vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-fragmentDensityMapLayered-10829"
+                       : "VUID-VkRenderPassCreateInfo-fragmentDensityMapLayered-10828";
+        skip |= LogError(vuid, device, create_info_loc.dot(Field::flags),
+                         "contains VK_RENDER_PASS_CREATE_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE, but fragmentDensityMapLayered "
+                         "feature was not enabled.");
+    }
+
     return skip;
 }
 
@@ -628,6 +637,19 @@ bool Device::manual_PreCallValidateCmdBeginRendering(VkCommandBuffer commandBuff
     if (!enabled_features.multiview && (pRenderingInfo->viewMask != 0)) {
         skip |= LogError("VUID-VkRenderingInfo-multiview-06127", commandBuffer, rendering_info_loc.dot(Field::viewMask),
                          "is 0x%" PRIx32 " (non-zero) but the multiview feature is not enabled.", pRenderingInfo->viewMask);
+    }
+
+    if (pRenderingInfo->flags & VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE) {
+        if (!enabled_features.fragmentDensityMapLayered) {
+            skip |= LogError("VUID-VkRenderingInfo-fragmentDensityMapLayered-10827", commandBuffer,
+                             rendering_info_loc.dot(Field::flags),
+                             "contains VK_RENDERING_PER_LAYER_FRAGMENT_DENSITY_BIT_VALVE, but fragmentDensityMapLayeredfeature "
+                             "were not enabled.");
+        } else if (pRenderingInfo->layerCount > phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers) {
+            skip |= LogError("VUID-VkRenderingInfo-flags-10826", commandBuffer, rendering_info_loc.dot(Field::layerCount),
+                             "is %" PRIu32 " but the maxFragmentDensityMapLayers is %" PRIu32 ".", pRenderingInfo->layerCount,
+                             phys_dev_ext_props.fragment_density_map_layered_props.maxFragmentDensityMapLayers);
+        }
     }
 
     const auto rendering_fsr_attachment_info =

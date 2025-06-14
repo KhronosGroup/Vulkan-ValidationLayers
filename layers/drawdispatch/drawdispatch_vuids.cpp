@@ -250,6 +250,7 @@ struct DispatchVuidsCmdDraw : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDraw-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDraw-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDraw-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDraw-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDraw-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDraw-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDraw-pColorAttachments-08963";
@@ -520,6 +521,7 @@ struct DispatchVuidsCmdDrawMultiEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMultiEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMultiEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMultiEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMultiEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMultiEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMultiEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMultiEXT-pColorAttachments-08963";
@@ -791,6 +793,7 @@ struct DispatchVuidsCmdDrawIndexed : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexed-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexed-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexed-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndexed-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndexed-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndexed-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndexed-pColorAttachments-08963";
@@ -1062,6 +1065,7 @@ struct DispatchVuidsCmdDrawMultiIndexedEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMultiIndexedEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMultiIndexedEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMultiIndexedEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMultiIndexedEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMultiIndexedEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMultiIndexedEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMultiIndexedEXT-pColorAttachments-08963";
@@ -1333,6 +1337,7 @@ struct DispatchVuidsCmdDrawIndirect : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirect-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirect-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirect-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndirect-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndirect-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndirect-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndirect-pColorAttachments-08963";
@@ -1603,6 +1608,7 @@ struct DispatchVuidsCmdDrawIndexedIndirect : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexedIndirect-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexedIndirect-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexedIndirect-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndexedIndirect-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndexedIndirect-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndexedIndirect-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndexedIndirect-pColorAttachments-08963";
@@ -1972,6 +1978,7 @@ struct DispatchVuidsCmdDrawIndirectCount : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirectCount-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirectCount-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirectCount-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndirectCount-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndirectCount-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndirectCount-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndirectCount-pColorAttachments-08963";
@@ -2245,6 +2252,7 @@ struct DispatchVuidsCmdDrawIndexedIndirectCount : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndexedIndirectCount-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndexedIndirectCount-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndexedIndirectCount-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndexedIndirectCount-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndexedIndirectCount-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndexedIndirectCount-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndexedIndirectCount-pColorAttachments-08963";
@@ -2683,6 +2691,7 @@ struct DispatchVuidsCmdDrawMeshTasksNV: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksNV-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksNV-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksNV-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksNV-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksNV-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksNV-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksNV-pColorAttachments-08963";
@@ -2938,6 +2947,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectNV: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectNV-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectNV-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectNV-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksIndirectNV-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksIndirectNV-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksIndirectNV-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksIndirectNV-pColorAttachments-08963";
@@ -3196,6 +3206,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountNV : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectCountNV-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksIndirectCountNV-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksIndirectCountNV-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksIndirectCountNV-pColorAttachments-08963";
@@ -3448,6 +3459,7 @@ struct DispatchVuidsCmdDrawMeshTasksEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksEXT-pColorAttachments-08963";
@@ -3703,6 +3715,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksIndirectEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksIndirectEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksIndirectEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksIndirectEXT-pColorAttachments-08963";
@@ -3961,6 +3974,7 @@ struct DispatchVuidsCmdDrawMeshTasksIndirectCountEXT : DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawMeshTasksIndirectCountEXT-pColorAttachments-08963";
@@ -4232,6 +4246,7 @@ struct DispatchVuidsCmdDrawIndirectByteCountEXT: DrawDispatchVuid {
         set_fragment_shading_rate_09238          = "VUID-vkCmdDrawIndirectByteCountEXT-pipelineFragmentShadingRate-09238";
         rasterization_samples_07935              = "VUID-vkCmdDrawIndirectByteCountEXT-pNext-07935";
         mesh_shader_queries_07073                = "VUID-vkCmdDrawIndirectByteCountEXT-stage-07073";
+        fdm_layered_10831                        = "VUID-vkCmdDrawIndirectByteCountEXT-layers-10831";
         blend_advanced_07480                     = "VUID-vkCmdDrawIndirectByteCountEXT-advancedBlendMaxColorAttachments-07480";
         blend_feature_07470                      = "VUID-vkCmdDrawIndirectByteCountEXT-pColorBlendEnables-07470";
         color_attachment_08963                   = "VUID-vkCmdDrawIndirectByteCountEXT-pColorAttachments-08963";

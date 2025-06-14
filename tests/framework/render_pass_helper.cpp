@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2023-2024 The Khronos Group Inc.
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 The Khronos Group Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,9 +103,10 @@ void RenderPassSingleSubpass::AddSubpassDependency(VkPipelineStageFlags srcStage
     rp_create_info_.dependencyCount = 1;
 }
 
-void RenderPassSingleSubpass::CreateRenderPass(void* pNext) {
+void RenderPassSingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateFlags flags) {
     VkRenderPassCreateInfo rp_create_info = GetCreateInfo();
     rp_create_info.pNext = pNext;
+    rp_create_info.flags = flags;
     render_pass_.init(*device_, rp_create_info);
 }
 
@@ -219,8 +220,9 @@ void RenderPass2SingleSubpass::AddSubpassDependency(VkPipelineStageFlags srcStag
     rp_create_info_.dependencyCount = 1;
 }
 
-void RenderPass2SingleSubpass::CreateRenderPass(void* pNext) {
+void RenderPass2SingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateFlags flags) {
     VkRenderPassCreateInfo2 rp_create_info = GetCreateInfo();
     rp_create_info.pNext = pNext;
+    rp_create_info.flags = flags;
     render_pass_.init(*device_, rp_create_info);
 }

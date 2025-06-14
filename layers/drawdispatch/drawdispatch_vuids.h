@@ -274,6 +274,7 @@ struct DrawDispatchVuid {
     const char* set_fragment_shading_rate_09238 = kVUIDUndefined;
     const char* rasterization_samples_07935 = kVUIDUndefined;
     const char* mesh_shader_queries_07073 = kVUIDUndefined;
+    const char* fdm_layered_10831 = kVUIDUndefined;
     const char* blend_advanced_07480 = kVUIDUndefined;
     const char* blend_feature_07470 = kVUIDUndefined;
     const char* color_attachment_08963 = kVUIDUndefined;
