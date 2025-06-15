@@ -5311,3 +5311,71 @@ TEST_F(NegativeSyncObject, AsymmetricWaitEvent2) {
     m_errorMonitor->VerifyFound();
     m_default_queue->Wait();
 }
+
+TEST_F(NegativeSyncObject, MismatchedDependencyInfo) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.memoryBarrierCount = 1u;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    const vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
+
+    barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-10788");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
+
+TEST_F(NegativeSyncObject, InvalidAssymetricSrcStagemask) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::geometryShader);
+    RETURN_IF_SKIP(Init());
+
+    VkMemoryBarrier2 barrier = vku::InitStructHelper();
+    barrier.srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+
+    VkDependencyInfo dependency_info = vku::InitStructHelper();
+    dependency_info.dependencyFlags = VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR;
+    dependency_info.memoryBarrierCount = 1u;
+    dependency_info.pMemoryBarriers = &barrier;
+
+    const vkt::Event event(*m_device);
+
+    m_command_buffer.Begin();
+
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
+
+    barrier.srcStageMask |= VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    vk::CmdWaitEvents2(m_command_buffer, 1, &event.handle(), &dependency_info);
+
+    m_command_buffer.End();
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents2-pEvents-10790");
+    m_default_queue->Submit(m_command_buffer);
+    m_errorMonitor->VerifyFound();
+    m_default_queue->Wait();
+}
