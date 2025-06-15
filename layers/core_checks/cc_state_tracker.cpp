@@ -44,16 +44,25 @@ CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb, CoreChecks&
 }
 
 void CommandBufferSubState::RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents,
-                                             VkPipelineStageFlags2KHR srcStageMask, bool asymmetric_bit) {
+                                             VkPipelineStageFlags2KHR srcStageMask, const VkDependencyInfo* dependency_info) {
     // vvl::CommandBuffer will add to the events vector. TODO this is now incorrect
     auto first_event_index = base.events.size();
     auto event_added_count = eventCount;
+
+    vku::safe_VkDependencyInfo safe_dependency_info = {};
+    if (dependency_info) {
+        safe_dependency_info.initialize(dependency_info);
+    } else {
+        // Set sType to invalid, so following code can check sType to see if the struct is valid
+        safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    }
+
     base.event_updates.emplace_back(
-        [command, event_added_count, first_event_index, srcStageMask, asymmetric_bit](
+        [command, event_added_count, first_event_index, srcStageMask, safe_dependency_info](
             vvl::CommandBuffer& cb_state, bool do_validate, EventMap& local_event_signal_info, VkQueue queue, const Location& loc) {
             if (!do_validate) return false;
             return CoreChecks::ValidateWaitEventsAtSubmit(command, cb_state, event_added_count, first_event_index, srcStageMask,
-                                                          asymmetric_bit, local_event_signal_info, queue, loc);
+                                                          safe_dependency_info, local_event_signal_info, queue, loc);
         });
 }
 

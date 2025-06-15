@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "error_message/logging.h"
 #include <vulkan/vk_enum_string_helper.h>
 #include <sstream>
 #include <string>
@@ -156,4 +157,199 @@
     ss << "usage (" << string_VkImageUsageFlags(info.usage) << ")\n";
     ss << "flags (" << string_VkImageCreateFlags(info.flags) << ")\n";
     return ss.str();
+}
+
+[[maybe_unused]] static std::string string_VkDependencyInfo(const Logger &logger, VkDependencyInfo set_dependency_info,
+                                                            VkDependencyInfo dependency_info) {
+    std::stringstream set;
+    std::stringstream wait;
+    if (set_dependency_info.dependencyFlags != dependency_info.dependencyFlags) {
+        set << std::string(string_VkDependencyFlags(set_dependency_info.dependencyFlags));
+        wait << std::string(string_VkDependencyFlags(dependency_info.dependencyFlags));
+    } else if (set_dependency_info.memoryBarrierCount != dependency_info.memoryBarrierCount) {
+        set << "memoryBarrierCount " << set_dependency_info.memoryBarrierCount;
+        wait << "memoryBarrierCount " << dependency_info.memoryBarrierCount;
+    } else if (set_dependency_info.bufferMemoryBarrierCount != dependency_info.bufferMemoryBarrierCount) {
+        set << "bufferMemoryBarrierCount " << set_dependency_info.bufferMemoryBarrierCount;
+        wait << "bufferMemoryBarrierCount " << dependency_info.bufferMemoryBarrierCount;
+    } else if (set_dependency_info.imageMemoryBarrierCount != dependency_info.imageMemoryBarrierCount) {
+        set << "imageMemoryBarrierCount " << set_dependency_info.imageMemoryBarrierCount;
+        wait << "imageMemoryBarrierCount " << dependency_info.imageMemoryBarrierCount;
+    } else {
+        for (uint32_t i = 0; i < dependency_info.memoryBarrierCount; ++i) {
+            bool found = true;
+            if (dependency_info.pMemoryBarriers[i].srcStageMask != set_dependency_info.pMemoryBarriers[i].srcStageMask) {
+                set << "pMemoryBarriers[" << i << "].srcStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pMemoryBarriers[i].srcStageMask);
+                wait << "pMemoryBarriers[" << i << "].srcStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pMemoryBarriers[i].srcStageMask);
+            } else if (dependency_info.pMemoryBarriers[i].srcAccessMask != set_dependency_info.pMemoryBarriers[i].srcAccessMask) {
+                set << "pMemoryBarriers[" << i << "].srcAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pMemoryBarriers[i].srcAccessMask);
+                wait << "pMemoryBarriers[" << i << "].srcAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pMemoryBarriers[i].srcAccessMask);
+            } else if (dependency_info.pMemoryBarriers[i].dstStageMask != set_dependency_info.pMemoryBarriers[i].dstStageMask) {
+                set << "pMemoryBarriers[" << i << "].dstStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pMemoryBarriers[i].dstStageMask);
+                wait << "pMemoryBarriers[" << i << "].dstStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pMemoryBarriers[i].dstStageMask);
+            } else if (dependency_info.pMemoryBarriers[i].dstAccessMask != set_dependency_info.pMemoryBarriers[i].dstAccessMask) {
+                set << "pMemoryBarriers[" << i << "].dstAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pMemoryBarriers[i].dstAccessMask);
+                wait << "pMemoryBarriers[" << i << "].dstAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pMemoryBarriers[i].dstAccessMask);
+            } else {
+                found = false;
+            }
+            if (found) {
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < dependency_info.bufferMemoryBarrierCount; ++i) {
+            bool found = true;
+            if (dependency_info.pBufferMemoryBarriers[i].srcStageMask !=
+                set_dependency_info.pBufferMemoryBarriers[i].srcStageMask) {
+                set << "pBufferMemoryBarriers[" << i << "].srcStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pBufferMemoryBarriers[i].srcStageMask);
+                wait << "pBufferMemoryBarriers[" << i << "].srcStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pBufferMemoryBarriers[i].srcStageMask);
+            } else if (dependency_info.pBufferMemoryBarriers[i].srcAccessMask !=
+                       set_dependency_info.pBufferMemoryBarriers[i].srcAccessMask) {
+                set << "pBufferMemoryBarriers[" << i << "].srcAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pBufferMemoryBarriers[i].srcAccessMask);
+                wait << "pBufferMemoryBarriers[" << i << "].srcAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pBufferMemoryBarriers[i].srcAccessMask);
+            } else if (dependency_info.pBufferMemoryBarriers[i].dstStageMask !=
+                       set_dependency_info.pBufferMemoryBarriers[i].dstStageMask) {
+                set << "pBufferMemoryBarriers[" << i << "].dstStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pBufferMemoryBarriers[i].dstStageMask);
+                wait << "pBufferMemoryBarriers[" << i << "].dstStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pBufferMemoryBarriers[i].dstStageMask);
+            } else if (dependency_info.pBufferMemoryBarriers[i].dstAccessMask !=
+                       set_dependency_info.pBufferMemoryBarriers[i].dstAccessMask) {
+                set << "pBufferMemoryBarriers[" << i << "].dstAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pBufferMemoryBarriers[i].dstAccessMask);
+                wait << "pBufferMemoryBarriers[" << i << "].dstAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pBufferMemoryBarriers[i].dstAccessMask);
+            } else if (dependency_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex !=
+                       set_dependency_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex) {
+                set << "pBufferMemoryBarriers[" << i << "].srcQueueFamilyIndex "
+                    << set_dependency_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex;
+                wait << "pBufferMemoryBarriers[" << i << "].srcQueueFamilyIndex "
+                     << dependency_info.pBufferMemoryBarriers[i].srcQueueFamilyIndex;
+            } else if (dependency_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex !=
+                       set_dependency_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex) {
+                set << "pBufferMemoryBarriers[" << i << "].dstQueueFamilyIndex "
+                    << set_dependency_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex;
+                wait << "pBufferMemoryBarriers[" << i << "].dstQueueFamilyIndex "
+                     << dependency_info.pBufferMemoryBarriers[i].dstQueueFamilyIndex;
+            } else if (dependency_info.pBufferMemoryBarriers[i].buffer != set_dependency_info.pBufferMemoryBarriers[i].buffer) {
+                set << "pBufferMemoryBarriers[" << i << "].buffer "
+                    << logger.FormatHandle(set_dependency_info.pBufferMemoryBarriers[i].buffer);
+                wait << "pBufferMemoryBarriers[" << i << "].buffer "
+                     << logger.FormatHandle(dependency_info.pBufferMemoryBarriers[i].buffer);
+            } else if (dependency_info.pBufferMemoryBarriers[i].offset != set_dependency_info.pBufferMemoryBarriers[i].offset) {
+                set << "pBufferMemoryBarriers[" << i << "].offset " << set_dependency_info.pBufferMemoryBarriers[i].offset;
+                wait << "pBufferMemoryBarriers[" << i << "].offset " << dependency_info.pBufferMemoryBarriers[i].offset;
+            } else if (dependency_info.pBufferMemoryBarriers[i].size != set_dependency_info.pBufferMemoryBarriers[i].size) {
+                set << "pBufferMemoryBarriers[" << i << "].size " << set_dependency_info.pBufferMemoryBarriers[i].size;
+                wait << "pBufferMemoryBarriers[" << i << "].size " << dependency_info.pBufferMemoryBarriers[i].size;
+            } else {
+                found = false;
+            }
+            if (found) {
+                break;
+            }
+        }
+        for (uint32_t i = 0; i < dependency_info.imageMemoryBarrierCount; ++i) {
+            bool found = true;
+            if (dependency_info.pImageMemoryBarriers[i].srcStageMask != set_dependency_info.pImageMemoryBarriers[i].srcStageMask) {
+                set << "pImageMemoryBarriers[" << i << "].srcStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pImageMemoryBarriers[i].srcStageMask);
+                wait << "pImageMemoryBarriers[" << i << "].srcStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pImageMemoryBarriers[i].srcStageMask);
+            } else if (dependency_info.pImageMemoryBarriers[i].srcAccessMask !=
+                       set_dependency_info.pImageMemoryBarriers[i].srcAccessMask) {
+                set << "pImageMemoryBarriers[" << i << "].srcAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].srcAccessMask);
+                wait << "pImageMemoryBarriers[" << i << "].srcAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].srcAccessMask);
+            } else if (dependency_info.pImageMemoryBarriers[i].dstStageMask !=
+                       set_dependency_info.pImageMemoryBarriers[i].dstStageMask) {
+                set << "pImageMemoryBarriers[" << i << "].dstStageMask "
+                    << string_VkPipelineStageFlags2(set_dependency_info.pImageMemoryBarriers[i].dstStageMask);
+                wait << "pImageMemoryBarriers[" << i << "].dstStageMask "
+                     << string_VkPipelineStageFlags2(dependency_info.pImageMemoryBarriers[i].dstStageMask);
+            } else if (dependency_info.pImageMemoryBarriers[i].dstAccessMask !=
+                       set_dependency_info.pImageMemoryBarriers[i].dstAccessMask) {
+                set << "pImageMemoryBarriers[" << i << "].dstAccessMask "
+                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].dstAccessMask);
+                wait << "pImageMemoryBarriers[" << i << "].dstAccessMask "
+                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].dstAccessMask);
+            } else if (dependency_info.pImageMemoryBarriers[i].oldLayout != set_dependency_info.pImageMemoryBarriers[i].oldLayout) {
+                set << "pImageMemoryBarriers[" << i << "].oldLayout "
+                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].oldLayout);
+                wait << "pImageMemoryBarriers[" << i << "].oldLayout "
+                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].oldLayout);
+            } else if (dependency_info.pImageMemoryBarriers[i].newLayout != set_dependency_info.pImageMemoryBarriers[i].newLayout) {
+                set << "pImageMemoryBarriers[" << i << "].newLayout "
+                    << string_VkAccessFlags2(set_dependency_info.pImageMemoryBarriers[i].newLayout);
+                wait << "pImageMemoryBarriers[" << i << "].newLayout "
+                     << string_VkAccessFlags2(dependency_info.pImageMemoryBarriers[i].newLayout);
+            } else if (dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex !=
+                       set_dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex) {
+                set << "pImageMemoryBarriers[" << i << "].srcQueueFamilyIndex "
+                    << set_dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex;
+                wait << "pImageMemoryBarriers[" << i << "].srcQueueFamilyIndex "
+                     << dependency_info.pImageMemoryBarriers[i].srcQueueFamilyIndex;
+            } else if (dependency_info.pImageMemoryBarriers[i].dstQueueFamilyIndex !=
+                       set_dependency_info.pImageMemoryBarriers[i].dstQueueFamilyIndex) {
+                set << "pImageMemoryBarriers[" << i << "].dstQueueFamilyIndex "
+                    << set_dependency_info.pImageMemoryBarriers[i].dstQueueFamilyIndex;
+                wait << "pImageMemoryBarriers[" << i << "].dstQueueFamilyIndex "
+                     << dependency_info.pImageMemoryBarriers[i].dstQueueFamilyIndex;
+            } else if (dependency_info.pImageMemoryBarriers[i].image != set_dependency_info.pImageMemoryBarriers[i].image) {
+                set << "pImageMemoryBarriers[" << i << "].image "
+                    << logger.FormatHandle(set_dependency_info.pImageMemoryBarriers[i].image);
+                wait << "pImageMemoryBarriers[" << i << "].image "
+                     << logger.FormatHandle(dependency_info.pImageMemoryBarriers[i].image);
+            } else if (dependency_info.pImageMemoryBarriers[i].subresourceRange.aspectMask !=
+                       set_dependency_info.pImageMemoryBarriers[i].subresourceRange.aspectMask) {
+                set << "pImageMemoryBarriers[" << i << "].subresourceRange.aspectMask "
+                    << string_VkImageAspectFlags(set_dependency_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+                wait << "pImageMemoryBarriers[" << i << "].subresourceRange.aspectMask "
+                     << string_VkImageAspectFlags(dependency_info.pImageMemoryBarriers[i].subresourceRange.aspectMask);
+            } else if (dependency_info.pImageMemoryBarriers[i].subresourceRange.baseMipLevel !=
+                       set_dependency_info.pImageMemoryBarriers[i].subresourceRange.baseMipLevel) {
+                set << "pImageMemoryBarriers[" << i << "].subresourceRange.baseMipLevel "
+                    << set_dependency_info.pImageMemoryBarriers[i].subresourceRange.baseMipLevel;
+                wait << "pImageMemoryBarriers[" << i << "].subresourceRange.baseMipLevel "
+                     << dependency_info.pImageMemoryBarriers[i].subresourceRange.baseMipLevel;
+            } else if (dependency_info.pImageMemoryBarriers[i].subresourceRange.levelCount !=
+                       set_dependency_info.pImageMemoryBarriers[i].subresourceRange.levelCount) {
+                set << "pImageMemoryBarriers[" << i << "].subresourceRange.levelCount "
+                    << set_dependency_info.pImageMemoryBarriers[i].subresourceRange.levelCount;
+                wait << "pImageMemoryBarriers[" << i << "].subresourceRange.levelCount "
+                     << dependency_info.pImageMemoryBarriers[i].subresourceRange.levelCount;
+            } else if (dependency_info.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer !=
+                       set_dependency_info.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer) {
+                set << "pImageMemoryBarriers[" << i << "].subresourceRange.baseArrayLayer "
+                    << set_dependency_info.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer;
+                wait << "pImageMemoryBarriers[" << i << "].subresourceRange.baseArrayLayer "
+                     << dependency_info.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer;
+            } else if (dependency_info.pImageMemoryBarriers[i].subresourceRange.layerCount !=
+                       set_dependency_info.pImageMemoryBarriers[i].subresourceRange.layerCount) {
+                set << "pImageMemoryBarriers[" << i << "].subresourceRange.layerCount "
+                    << set_dependency_info.pImageMemoryBarriers[i].subresourceRange.layerCount;
+                wait << "pImageMemoryBarriers[" << i << "].subresourceRange.layerCount "
+                     << dependency_info.pImageMemoryBarriers[i].subresourceRange.layerCount;
+            } else {
+                found = false;
+            }
+            if (found) {
+                break;
+            }
+        }
+    }
+    return "event was set with " + set.str() + " and is being waited on with " + wait.str();
 }

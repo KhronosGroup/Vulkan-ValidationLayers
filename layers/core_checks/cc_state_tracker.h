@@ -34,8 +34,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     CommandBufferSubState(vvl::CommandBuffer &cb, CoreChecks &validator);
 
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent* pEvents, VkPipelineStageFlags2KHR src_stage_mask,
-                          bool asymmetric_bit) override;
+    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
+                          const VkDependencyInfo *dependency_info) override;
 
     void Reset(const Location &loc) final;
     void Destroy() final;

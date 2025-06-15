@@ -154,3 +154,52 @@ bool CompareSamplerCreateInfo(const VkSamplerCreateInfo &a, const VkSamplerCreat
            (a.compareEnable == b.compareEnable) && (a.compareOp == b.compareOp) && (a.minLod == b.minLod) &&
            (a.maxLod == b.maxLod) && (a.borderColor == b.borderColor) && (a.unnormalizedCoordinates == b.unnormalizedCoordinates);
 }
+
+bool CompareDependencyInfo(const VkDependencyInfo &a, const VkDependencyInfo &b) {
+    if (a.dependencyFlags != b.dependencyFlags || a.memoryBarrierCount != b.memoryBarrierCount ||
+        a.bufferMemoryBarrierCount != b.bufferMemoryBarrierCount || a.imageMemoryBarrierCount != b.imageMemoryBarrierCount) {
+        return false;
+    }
+    for (uint32_t i = 0; i < b.memoryBarrierCount; ++i) {
+        if (b.pMemoryBarriers[i].srcStageMask != a.pMemoryBarriers[i].srcStageMask ||
+            b.pMemoryBarriers[i].srcAccessMask != a.pMemoryBarriers[i].srcAccessMask ||
+            b.pMemoryBarriers[i].dstStageMask != a.pMemoryBarriers[i].dstStageMask ||
+            b.pMemoryBarriers[i].dstAccessMask != a.pMemoryBarriers[i].dstAccessMask) {
+            return false;
+        }
+    }
+    for (uint32_t i = 0; i < b.bufferMemoryBarrierCount; ++i) {
+        if (b.pBufferMemoryBarriers[i].srcStageMask != a.pBufferMemoryBarriers[i].srcStageMask ||
+            b.pBufferMemoryBarriers[i].srcAccessMask != a.pBufferMemoryBarriers[i].srcAccessMask ||
+            b.pBufferMemoryBarriers[i].dstStageMask != a.pBufferMemoryBarriers[i].dstStageMask ||
+            b.pBufferMemoryBarriers[i].dstAccessMask != a.pBufferMemoryBarriers[i].dstAccessMask ||
+            b.pBufferMemoryBarriers[i].srcQueueFamilyIndex != a.pBufferMemoryBarriers[i].srcQueueFamilyIndex ||
+            b.pBufferMemoryBarriers[i].dstQueueFamilyIndex != a.pBufferMemoryBarriers[i].dstQueueFamilyIndex ||
+            b.pBufferMemoryBarriers[i].buffer != a.pBufferMemoryBarriers[i].buffer ||
+            b.pBufferMemoryBarriers[i].offset != a.pBufferMemoryBarriers[i].offset ||
+            b.pBufferMemoryBarriers[i].size != a.pBufferMemoryBarriers[i].size) {
+            return false;
+        }
+    }
+
+    for (uint32_t i = 0; i < b.imageMemoryBarrierCount; ++i) {
+        if (b.pImageMemoryBarriers[i].srcStageMask != a.pImageMemoryBarriers[i].srcStageMask ||
+            b.pImageMemoryBarriers[i].srcAccessMask != a.pImageMemoryBarriers[i].srcAccessMask ||
+            b.pImageMemoryBarriers[i].dstStageMask != a.pImageMemoryBarriers[i].dstStageMask ||
+            b.pImageMemoryBarriers[i].dstAccessMask != a.pImageMemoryBarriers[i].dstAccessMask ||
+            b.pImageMemoryBarriers[i].oldLayout != a.pImageMemoryBarriers[i].oldLayout ||
+            b.pImageMemoryBarriers[i].newLayout != a.pImageMemoryBarriers[i].newLayout ||
+            b.pImageMemoryBarriers[i].srcQueueFamilyIndex != a.pImageMemoryBarriers[i].srcQueueFamilyIndex ||
+            b.pImageMemoryBarriers[i].dstQueueFamilyIndex != a.pImageMemoryBarriers[i].dstQueueFamilyIndex ||
+            b.pImageMemoryBarriers[i].image != a.pImageMemoryBarriers[i].image ||
+            b.pImageMemoryBarriers[i].subresourceRange.aspectMask != a.pImageMemoryBarriers[i].subresourceRange.aspectMask ||
+            b.pImageMemoryBarriers[i].subresourceRange.baseMipLevel != a.pImageMemoryBarriers[i].subresourceRange.baseMipLevel ||
+            b.pImageMemoryBarriers[i].subresourceRange.levelCount != a.pImageMemoryBarriers[i].subresourceRange.levelCount ||
+            b.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer !=
+                a.pImageMemoryBarriers[i].subresourceRange.baseArrayLayer ||
+            b.pImageMemoryBarriers[i].subresourceRange.layerCount != a.pImageMemoryBarriers[i].subresourceRange.layerCount) {
+            return false;
+        }
+    }
+    return true;
+}
