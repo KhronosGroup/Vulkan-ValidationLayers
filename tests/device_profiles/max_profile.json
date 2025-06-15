@@ -107,12 +107,18 @@
                 "VkPhysicalDevicePresentIdFeaturesKHR": {
                     "presentId": true
                 },
+                "VkPhysicalDevicePresentId2FeaturesKHR": {
+                    "presentId2": true
+                },
                 "VkPhysicalDeviceComputeShaderDerivativesFeaturesKHR": {
                     "computeDerivativeGroupQuads": true,
                     "computeDerivativeGroupLinear": true
                 },
                 "VkPhysicalDevicePresentWaitFeaturesKHR": {
                     "presentWait": true
+                },
+                "VkPhysicalDevicePresentWait2FeaturesKHR": {
+                    "presentWait2": true
                 },
                 "VkPhysicalDeviceCooperativeMatrixFeaturesKHR": {
                     "cooperativeMatrix": true,
@@ -379,6 +385,10 @@
                 },
                 "VkPhysicalDeviceScalarBlockLayoutFeatures": {
                     "scalarBlockLayout": true
+                },
+                "VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR": {
+                    "unifiedImageLayouts": true,
+                    "unifiedImageLayoutsVideo": true
                 },
                 "VkPhysicalDeviceUniformBufferStandardLayoutFeatures": {
                     "uniformBufferStandardLayout": true
@@ -2299,7 +2309,9 @@
                 "VK_KHR_pipeline_library": 1,
                 "VK_KHR_portability_enumeration": 1,
                 "VK_KHR_present_id": 1,
+                "VK_KHR_present_id2": 1,
                 "VK_KHR_present_wait": 1,
+                "VK_KHR_present_wait2": 1,
                 "VK_KHR_push_descriptor": 1,
                 "VK_KHR_robustness2": 1,
                 "VK_KHR_ray_query": 1,
@@ -2335,6 +2347,7 @@
                 "VK_KHR_swapchain_mutable_format": 1,
                 "VK_KHR_synchronization2": 1,
                 "VK_KHR_timeline_semaphore": 1,
+                "VK_KHR_unified_image_layouts": 1,
                 "VK_KHR_uniform_buffer_standard_layout": 1,
                 "VK_KHR_variable_pointers": 1,
                 "VK_KHR_video_decode_av1": 1,
