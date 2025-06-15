@@ -2946,7 +2946,7 @@ void DeviceState::PostCallRecordCmdUpdateBuffer(VkCommandBuffer commandBuffer, V
 void DeviceState::PostCallRecordCmdSetEvent(VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask,
                                             const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordSetEvent(record_obj.location.function, event, stageMask, false);
+    cb_state->RecordSetEvent(record_obj.location.function, event, stageMask, nullptr);
 }
 
 void DeviceState::PostCallRecordCmdSetEvent2KHR(VkCommandBuffer commandBuffer, VkEvent event,
@@ -2959,8 +2959,7 @@ void DeviceState::PostCallRecordCmdSetEvent2(VkCommandBuffer commandBuffer, VkEv
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     auto exec_scopes = sync_utils::GetExecScopes(*pDependencyInfo);
 
-    cb_state->RecordSetEvent(record_obj.location.function, event, exec_scopes.src,
-                             pDependencyInfo->dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
+    cb_state->RecordSetEvent(record_obj.location.function, event, exec_scopes.src, pDependencyInfo);
     cb_state->RecordBarriers(*pDependencyInfo);
 }
 
@@ -2988,7 +2987,7 @@ void DeviceState::PostCallRecordCmdWaitEvents(VkCommandBuffer commandBuffer, uin
                                               uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier *pImageMemoryBarriers,
                                               const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask, false);
+    cb_state->RecordWaitEvents(record_obj.location.function, eventCount, pEvents, sourceStageMask, nullptr);
     cb_state->RecordBarriers(memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers,
                              imageMemoryBarrierCount, pImageMemoryBarriers);
 }
@@ -3004,8 +3003,7 @@ void DeviceState::PostCallRecordCmdWaitEvents2(VkCommandBuffer commandBuffer, ui
     for (uint32_t i = 0; i < eventCount; i++) {
         const auto &dep_info = pDependencyInfos[i];
         auto exec_scopes = sync_utils::GetExecScopes(dep_info);
-        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], exec_scopes.src,
-                                   pDependencyInfos[i].dependencyFlags & VK_DEPENDENCY_ASYMMETRIC_EVENT_BIT_KHR);
+        cb_state->RecordWaitEvents(record_obj.location.function, 1, &pEvents[i], exec_scopes.src, &pDependencyInfos[i]);
         cb_state->RecordBarriers(dep_info);
     }
 }

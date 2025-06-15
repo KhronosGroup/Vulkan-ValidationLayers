@@ -25,6 +25,6 @@
 struct EventInfo {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;
     bool signal = false;  // signal (SetEvent) or unsignal (ResetEvent)
-    bool asymmetric_bit = false;
+    vku::safe_VkDependencyInfo dependency_info = {};
 };
 using EventMap = vvl::unordered_map<VkEvent, EventInfo>;

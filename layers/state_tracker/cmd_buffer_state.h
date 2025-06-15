@@ -117,7 +117,7 @@ class Event : public StateObject {
     // Signaling state.
     // Gets updated at queue submission granularity or when signaled from the host.
     bool signaled = false;
-    bool asymmetric_bit = false;
+    vku::safe_VkDependencyInfo dependency_info = {};
 
     // Source stage specified by the "set event" command.
     // Gets updated at queue submission granularity.
@@ -628,10 +628,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
-    void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, bool asymmetric_bit);
+    void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
-                          bool asymmetric_bit);
+                          const VkDependencyInfo *dependency_info);
     void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
@@ -724,7 +724,7 @@ class CommandBufferSubState {
 
     virtual void RecordCmd(Func command) {}
     virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                  VkPipelineStageFlags2KHR src_stage_mask, bool asymmetric_bit) {}
+                                  VkPipelineStageFlags2KHR src_stage_mask, const VkDependencyInfo *dependency_info) {}
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
     virtual void ClearPushConstants() {}

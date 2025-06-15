@@ -725,8 +725,9 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateActionStateProtectedMemory(const LastBound& last_bound_state, const VkPipelineBindPoint bind_point,
                                             const vvl::Pipeline* pipeline, const vvl::DrawDispatchVuid& vuid) const;
     static bool ValidateWaitEventsAtSubmit(vvl::Func command, const vvl::CommandBuffer& cb_state, size_t eventCount,
-                                           size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask, bool asymmetric_bit,
-                                           const EventMap& local_event_signal_info, VkQueue waiting_queue, const Location& loc);
+                                           size_t firstEventIndex, VkPipelineStageFlags2 sourceStageMask,
+                                           vku::safe_VkDependencyInfo dependency_info, const EventMap& local_event_signal_info,
+                                           VkQueue waiting_queue, const Location& loc);
     bool ValidateQueueFamilyIndices(const Location& loc, const vvl::CommandBuffer& cb_state, const vvl::Queue& queue_state) const;
     VkResult CoreLayerCreateValidationCacheEXT(VkDevice device, const VkValidationCacheCreateInfoEXT* pCreateInfo,
                                                const VkAllocationCallbacks* pAllocator, VkValidationCacheEXT* pValidationCache);

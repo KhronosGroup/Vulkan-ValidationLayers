@@ -1533,7 +1533,8 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     }
 }
 
-void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, bool asymmetric_bit) {
+void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                                   const VkDependencyInfo *dependency_info) {
     RecordCmd(command);
     if (!dev_data.disabled[command_buffer_state]) {
         auto event_state = dev_data.Get<vvl::Event>(event);
@@ -1545,9 +1546,17 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
     if (!waited_events.count(event)) {
         write_events_before_wait.push_back(event);
     }
-    event_updates.emplace_back([event, stageMask, asymmetric_bit](CommandBuffer &, bool do_validate,
-                                                                  EventMap &local_event_signal_info, VkQueue, const Location &loc) {
-        local_event_signal_info[event] = EventInfo{stageMask, true, asymmetric_bit};
+    vku::safe_VkDependencyInfo safe_dependency_info = {};
+    if (dependency_info) {
+        safe_dependency_info.initialize(dependency_info);
+    } else {
+        // Set sType to invalid, so following code can check sType to see if the struct is valid
+        safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    }
+    event_updates.emplace_back([event, stageMask, safe_dependency_info](CommandBuffer &, bool do_validate,
+                                                                        EventMap &local_event_signal_info, VkQueue,
+                                                                        const Location &loc) {
+        local_event_signal_info[event] = EventInfo{stageMask, true, safe_dependency_info};
         return false;  // skip
     });
 }
@@ -1573,10 +1582,10 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
 }
 
 void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                     VkPipelineStageFlags2KHR src_stage_mask, bool asymmetric_bit) {
+                                     VkPipelineStageFlags2KHR src_stage_mask, const VkDependencyInfo *dependency_info) {
     RecordCmd(command);
     for (auto &item : sub_states_) {
-        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, asymmetric_bit);
+        item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, dependency_info);
     }
     for (uint32_t i = 0; i < eventCount; ++i) {
         if (!dev_data.disabled[command_buffer_state]) {
@@ -1693,7 +1702,7 @@ void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const 
         for (const auto &[event, info] : local_event_signal_info) {
             auto event_state = dev_data.Get<vvl::Event>(event);
             event_state->signaled = info.signal;
-            event_state->asymmetric_bit = info.asymmetric_bit;
+            event_state->dependency_info = info.dependency_info;
             event_state->signal_src_stage_mask = info.src_stage_mask;
             event_state->signaling_queue = queue_state.VkHandle();
         }
