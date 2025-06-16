@@ -32,6 +32,7 @@
 #include "state_tracker/pipeline_state.h"
 #include "core_validation.h"
 #include "generated/enum_flag_bits.h"
+#include "utils/image_layout_utils.h"
 #include "utils/math_utils.h"
 
 bool CoreChecks::ReportInvalidCommandBuffer(const vvl::CommandBuffer &cb_state, const Location &loc, const char *vuid) const {
@@ -681,7 +682,11 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer &
             } else {
                 continue;
             }
-            if (sub_layout != cb_layout) {
+
+            const VkImageLayout normalized_sub_layout =
+                NormalizeSynchronization2Layout(iter->pos_A->lower_bound->second.aspect_mask, sub_layout);
+            const VkImageLayout normalized_cb_layout = NormalizeSynchronization2Layout(cb_layout_state.aspect_mask, cb_layout);
+            if (normalized_sub_layout != normalized_cb_layout) {
                 // We can report all the errors for the intersected range directly
                 for (auto index = iter->range.begin; index < iter->range.end; index++) {
                     const LogObjectList objlist(cb_state.Handle(), secondary_cb_state.Handle());
