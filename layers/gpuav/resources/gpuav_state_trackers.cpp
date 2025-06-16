@@ -230,7 +230,9 @@ bool CommandBufferSubState::PreSubmit(QueueSubState &queue, const Location &loc)
         VkSubmitInfo submit_info = vku::InitStructHelper();
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &per_pre_submission_cb;
-        const VkResult result = DispatchQueueSubmit(queue.base.VkHandle(), 1, &submit_info, fence);
+        // By nature, no need to wait on a fence associated to the pre submission CB,
+        // GPU-AV already waits for the completion of the app submitted CB, which comes after.
+        const VkResult result = DispatchQueueSubmit(queue.base.VkHandle(), 1, &submit_info, VK_NULL_HANDLE);
         if (result != VK_SUCCESS) {
             gpuav_.InternalError(queue.Handle(), loc, "Failed to submit per pre submission command buffer");
         }
