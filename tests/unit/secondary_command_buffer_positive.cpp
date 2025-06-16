@@ -12,6 +12,8 @@
  */
 
 #include "../framework/layer_validation_tests.h"
+#include "../framework/descriptor_helper.h"
+#include "../framework/pipeline_helper.h"
 #include "../framework/render_pass_helper.h"
 
 class PositiveSecondaryCommandBuffer : public VkLayerTest {};
@@ -309,6 +311,57 @@ TEST_F(PositiveSecondaryCommandBuffer, ImageLayoutTransitions) {
     m_device->Wait();
     vk::FreeCommandBuffers(device(), m_command_pool, 1, &secondary_command_buffer);
     vk::FreeCommandBuffers(device(), m_command_pool, 1, &primary_command_buffer);
+}
+
+TEST_F(PositiveSecondaryCommandBuffer, Sync2ImageLayouts) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/7896
+    TEST_DESCRIPTION("Test comparison of expected and current layout on the boundary of secondary command buffer");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    RETURN_IF_SKIP(Init());
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_SAMPLED_BIT);
+    vkt::ImageView image_view = image.CreateView();
+
+    // Main command buffer transitions to READ_ONLY_OPTIMAL
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    // Secondary command buffer expects sampled image to be in READ_ONLY_OPTIMAL
+    vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
+    OneOffDescriptorSet descriptor_set(m_device, {{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_COMPUTE_BIT}});
+    descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                            VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
+    descriptor_set.UpdateDescriptorSets();
+    char const *cs_source = R"glsl(
+        #version 450
+        layout(set=0, binding=0) uniform sampler2D color_image;
+        void main() {
+            vec4 data = texture(color_image, vec2(0));
+        }
+    )glsl";
+    CreateComputePipelineHelper cs_pipe(*this);
+    cs_pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    cs_pipe.pipeline_layout_ = vkt::PipelineLayout(*m_device, {&descriptor_set.layout_});
+    cs_pipe.CreateComputePipeline();
+
+    vkt::CommandBuffer secondary(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+    secondary.Begin();
+    vk::CmdBindPipeline(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe);
+    vk::CmdBindDescriptorSets(secondary, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipe.pipeline_layout_, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
+    vk::CmdDispatch(secondary, 1, 1, 1);
+    secondary.End();
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
+    m_command_buffer.End();
 }
 
 TEST_F(PositiveSecondaryCommandBuffer, EventStageMask) {
