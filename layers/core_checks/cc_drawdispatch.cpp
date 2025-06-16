@@ -33,12 +33,12 @@
 using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
 
-bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, const Location &loc) const {
+bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer *index_buffer_state,
+                                            const Location &loc) const {
     bool skip = false;
     const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
-    const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
     // maintenance6 allows null buffers to be bound
-    if (!buffer_state && !cb_state.index_buffer_binding.bound) {
+    if (!index_buffer_state && !cb_state.index_buffer_binding.bound) {
         const char *extra =
             enabled_features.maintenance6
                 ? "Even with maintenance6, you need to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE, not "
@@ -47,7 +47,11 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
         skip |= LogError(
             vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
             "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw. %s", extra);
+    } else if (index_buffer_state) {
+        skip |= ValidateProtectedBuffer(cb_state, *index_buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
+                                        " (Buffer is the index buffer)");
     }
+
     return skip;
 }
 
@@ -205,31 +209,32 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
     return skip;
 }
 
-bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_state, uint32_t indexCount, uint32_t firstIndex,
-                                                  const Location &loc, const char *first_index_vuid) const {
+bool CoreChecks::ValidateCmdDrawIndexedBufferSize(const vvl::CommandBuffer &cb_state, const vvl::Buffer &index_buffer_state,
+                                                  uint32_t indexCount, uint32_t firstIndex, const Location &loc,
+                                                  const char *first_index_vuid) const {
     bool skip = false;
     if (enabled_features.robustBufferAccess2) {
         return skip;
     }
-    const auto &index_buffer_binding = cb_state.index_buffer_binding;
-    if (const auto buffer_state = Get<vvl::Buffer>(index_buffer_binding.buffer)) {
-        const uint32_t index_size = GetIndexAlignment(index_buffer_binding.index_type);
-        // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
-        // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
-        // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
-        VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
-        if (end_offset > index_buffer_binding.size) {
-            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-            objlist.add(buffer_state->Handle());
-            skip |= LogError(first_index_vuid, objlist, loc,
-                             "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
-                             ")) "
-                             "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
-                             " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
-                             index_size, firstIndex, indexCount, index_buffer_binding.offset,
-                             end_offset + index_buffer_binding.offset, index_buffer_binding.size + index_buffer_binding.offset);
-        }
+
+    const uint32_t index_size = GetIndexAlignment(cb_state.index_buffer_binding.index_type);
+    // This doesn't exactly match the pseudocode of the VUID, but the binding size is the *bound* size, such that the offset
+    // has already been accounted for (subtracted from the buffer size), and is consistent with the use of
+    // BufferBinding::size for vertex buffer bindings (which record the *bound* size, not the size of the bound buffer)
+    VkDeviceSize end_offset = static_cast<VkDeviceSize>(index_size * (firstIndex + indexCount));
+    if (end_offset > cb_state.index_buffer_binding.size) {
+        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        objlist.add(index_buffer_state.Handle());
+        skip |= LogError(first_index_vuid, objlist, loc,
+                         "index size (%" PRIu32 ") * (firstIndex (%" PRIu32 ") + indexCount (%" PRIu32
+                         ")) "
+                         "+ binding offset (%" PRIuLEAST64 ") = an ending offset of %" PRIuLEAST64
+                         " bytes, which is greater than the index buffer size (%" PRIuLEAST64 ").",
+                         index_size, firstIndex, indexCount, cb_state.index_buffer_binding.offset,
+                         end_offset + cb_state.index_buffer_binding.offset,
+                         cb_state.index_buffer_binding.size + cb_state.index_buffer_binding.offset);
     }
+
     return skip;
 }
 
@@ -240,11 +245,18 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
     skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateCmdDrawIndexedBufferSize(cb_state, indexCount, firstIndex, error_obj.location,
-                                             "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+
+    {
+        const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+        if (index_buffer_state) {
+            skip |= ValidateCmdDrawIndexedBufferSize(cb_state, *index_buffer_state, indexCount, firstIndex, error_obj.location,
+                                                     "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
+        }
+    }
+
     return skip;
 }
 
@@ -267,7 +279,6 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     }
 
     skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
@@ -279,11 +290,14 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     }
     skip |= invalid_stride;
 
+    const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
+    skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+
     // only index into pIndexInfo if we know parameters are sane
     if (drawCount != 0 && !pIndexInfo) {
         skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-drawCount-04940", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::drawCount), "is %" PRIu32 " but pIndexInfo is NULL.", drawCount);
-    } else {
+    } else if (index_buffer_state) {
         // Continuing on from this point invokes undefined behavior due to invalid stride size.
         if (invalid_stride) {
             return skip;
@@ -292,7 +306,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
         const auto info_bytes = reinterpret_cast<const char *>(pIndexInfo);
         for (uint32_t i = 0; i < drawCount; i++) {
             const auto info_ptr = reinterpret_cast<const VkMultiDrawIndexedInfoEXT *>(info_bytes + i * stride);
-            skip |= ValidateCmdDrawIndexedBufferSize(cb_state, info_ptr->indexCount, info_ptr->firstIndex,
+            skip |= ValidateCmdDrawIndexedBufferSize(cb_state, *index_buffer_state, info_ptr->indexCount, info_ptr->firstIndex,
                                                      error_obj.location.dot(Field::pIndexInfo, i),
                                                      "VUID-vkCmdDrawMultiIndexedEXT-robustBufferAccess2-08798");
         }
@@ -351,12 +365,16 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto buffer_state = Get<vvl::Buffer>(buffer);
     ASSERT_AND_RETURN_SKIP(buffer_state);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+
+    {
+        const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+    }
 
     if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-02718", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -617,13 +635,18 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                                                 maxDrawCount, offset, *buffer_state, error_obj.location);
     }
 
-    skip |= ValidateGraphicsIndexedCmd(cb_state, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+
+    {
+        const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+    }
+
     return skip;
 }
 
@@ -1680,11 +1703,6 @@ bool CoreChecks::ValidateDrawProtectedMemory(const LastBound &last_bound_state, 
             skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
                                             " (Buffer is the vertex buffer)");
         }
-    }
-
-    if (const auto buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer)) {
-        skip |= ValidateProtectedBuffer(cb_state, *buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
-                                        " (Buffer is the index buffer)");
     }
 
     return skip;
