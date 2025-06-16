@@ -320,10 +320,30 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+
+        if (drawCount > 1) {
+            skip |=
+                ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
+                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
+            skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
+                                                    Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), drawCount, offset,
+                                                    *indirect_buffer_state, error_obj.location);
+        } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > indirect_buffer_state->create_info.size) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(buffer);
+            skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-00487", objlist, error_obj.location.dot(Field::drawCount),
+                             "is 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64
+                             ") is not less than "
+                             "or equal to the size of buffer (%" PRIu64 ").",
+                             (offset + sizeof(VkDrawIndirectCommand)), indirect_buffer_state->create_info.size);
+        }
+    }
 
     if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
         skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-02718", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -340,21 +360,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
         skip |= LogError("VUID-vkCmdDrawIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
     }
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00476", stride,
-                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirect-drawCount-00488", stride,
-                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), drawCount, offset,
-                                                *buffer_state, error_obj.location);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndirectCommand)) > buffer_state->create_info.size) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer);
-        skip |= LogError("VUID-vkCmdDrawIndirect-drawCount-00487", objlist, error_obj.location.dot(Field::drawCount),
-                         "is 1 and (offset + sizeof(VkDrawIndirectCommand)) (%" PRIu64
-                         ") is not less than "
-                         "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawIndirectCommand)), buffer_state->create_info.size);
-    }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndirectCommand structures accessed by this command must be 0, which will require access to the contents of 'buffer'.
     return skip;
@@ -366,14 +371,37 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
 
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
         skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+    }
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+
+        if (drawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
+                                                    Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                    error_obj.location);
+            skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
+                                                    Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                    drawCount, offset, *indirect_buffer_state, error_obj.location);
+        } else if (offset & 3) {
+            skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+                             error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
+        } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > indirect_buffer_state->create_info.size) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(buffer);
+            skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-00539", objlist, error_obj.location.dot(Field::drawCount),
+                             "is 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
+                             ") is not less than "
+                             "or equal to the size of buffer (%" PRIu64 ").",
+                             (offset + sizeof(VkDrawIndexedIndirectCommand)), indirect_buffer_state->create_info.size);
+        }
     }
 
     if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
@@ -386,26 +414,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                          error_obj.location.dot(Field::drawCount),
                          "(%" PRIu32 ") is not less than or equal to the maximum allowed (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
-    }
-
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
-                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                                error_obj.location);
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00540", stride,
-                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                                drawCount, offset, *buffer_state, error_obj.location);
-    } else if (offset & 3) {
-        skip |= LogError("VUID-vkCmdDrawIndexedIndirect-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
-    } else if ((drawCount == 1) && (offset + sizeof(VkDrawIndexedIndirectCommand)) > buffer_state->create_info.size) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer);
-        skip |= LogError("VUID-vkCmdDrawIndexedIndirect-drawCount-00539", objlist, error_obj.location.dot(Field::drawCount),
-                         "is 1 and (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
-                         ") is not less than "
-                         "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawIndexedIndirectCommand)), buffer_state->create_info.size);
     }
     // TODO: If the drawIndirectFirstInstance feature is not enabled, all the firstInstance members of the
     // VkDrawIndexedIndirectCommand structures accessed by this command must be 0, which will require access to the contents of
@@ -534,21 +542,25 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
-    if (offset & 3) {
-        skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
-                         error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        if (offset & 3) {
+            skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
+                             error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
+        }
+        if ((offset + sizeof(VkDispatchIndirectCommand)) > indirect_buffer_state->create_info.size) {
+            skip |= LogError("VUID-vkCmdDispatchIndirect-offset-00407", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
+                             error_obj.location,
+                             "The (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
+                             ")  is greater than the "
+                             "size of the buffer (%" PRIu64 ").",
+                             offset + sizeof(VkDispatchIndirectCommand), indirect_buffer_state->create_info.size);
+        }
     }
-    if ((offset + sizeof(VkDispatchIndirectCommand)) > buffer_state->create_info.size) {
-        skip |= LogError("VUID-vkCmdDispatchIndirect-offset-00407", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
-                         error_obj.location,
-                         "The (offset + sizeof(VkDrawIndexedIndirectCommand)) (%" PRIu64
-                         ")  is greater than the "
-                         "size of the buffer (%" PRIu64 ").",
-                         offset + sizeof(VkDispatchIndirectCommand), buffer_state->create_info.size);
-    }
+
     return skip;
 }
 bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -575,22 +587,26 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                          "Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
                          "call this command.");
     }
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
-                                            Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
-    if (maxDrawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
-                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), maxDrawCount, offset,
-                                                *buffer_state, error_obj.location);
-    }
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
+                                                Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
+        if (maxDrawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndirectCount-maxDrawCount-03111", stride,
+                                                    Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), maxDrawCount,
+                                                    offset, *indirect_buffer_state, error_obj.location);
+        }
+    }
+
     return skip;
 }
 
@@ -624,19 +640,8 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                          "Starting in Vulkan 1.2 the VkPhysicalDeviceVulkan12Features::drawIndirectCount must be enabled to "
                          "call this command.");
     }
-    skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
-                                            Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                            error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    if (maxDrawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
-                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
-                                                maxDrawCount, offset, *buffer_state, error_obj.location);
-    }
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
@@ -645,6 +650,20 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
         skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+    }
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        if (maxDrawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-maxDrawCount-03143", stride,
+                                                    Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                    maxDrawCount, offset, *indirect_buffer_state, error_obj.location);
+        }
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
+                                                Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
+                                                error_obj.location);
     }
 
     return skip;
@@ -701,9 +720,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
 
     skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto counter_buffer_state = Get<vvl::Buffer>(counterBuffer);
-    ASSERT_AND_RETURN_SKIP(counter_buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *counter_buffer_state, error_obj.location);
     skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
 }
@@ -1024,33 +1040,39 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
 
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride,
-                                                Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                drawCount, offset, *buffer_state, error_obj.location);
-        if (!enabled_features.multiDrawIndirect) {
-            skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
-                             cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
-                             "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+
+        if (drawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithBuffer(
+                cb_state, "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02157", stride, Struct::VkDrawMeshTasksIndirectCommandNV,
+                sizeof(VkDrawMeshTasksIndirectCommandNV), drawCount, offset, *indirect_buffer_state, error_obj.location);
+            if (!enabled_features.multiDrawIndirect) {
+                skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02718",
+                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::drawCount),
+                                 "(%" PRIu32 ") must be 0 or 1 if multiDrawIndirect feature is not enabled.", drawCount);
+            }
+            if ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
+                skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146",
+                                 cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), error_obj.location.dot(Field::stride),
+                                 "(0x%" PRIxLEAST32
+                                 "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).",
+                                 stride);
+            }
+        } else if (drawCount == 1 &&
+                   ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > indirect_buffer_state.get()->create_info.size)) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(buffer);
+            skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156", objlist, error_obj.location,
+                             "(offset + sizeof(VkDrawMeshTasksIndirectNV)) (%" PRIu64
+                             ") is greater than the size of buffer (%" PRIu64 ").",
+                             offset + sizeof(VkDrawMeshTasksIndirectCommandNV), indirect_buffer_state->create_info.size);
         }
-        if ((stride & 3) || stride < sizeof(VkDrawMeshTasksIndirectCommandNV)) {
-            skip |= LogError(
-                "VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02146", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
-                error_obj.location.dot(Field::stride),
-                "(0x%" PRIxLEAST32 "), is not a multiple of 4 or smaller than sizeof (VkDrawMeshTasksIndirectCommandNV).", stride);
-        }
-    } else if (drawCount == 1 && ((offset + sizeof(VkDrawMeshTasksIndirectCommandNV)) > buffer_state.get()->create_info.size)) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer);
-        skip |=
-            LogError("VUID-vkCmdDrawMeshTasksIndirectNV-drawCount-02156", objlist, error_obj.location,
-                     "(offset + sizeof(VkDrawMeshTasksIndirectNV)) (%" PRIu64 ") is greater than the size of buffer (%" PRIu64 ").",
-                     offset + sizeof(VkDrawMeshTasksIndirectCommandNV), buffer_state->create_info.size);
     }
+
     if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectNV-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
                          error_obj.location.dot(Field::offset), "(%" PRIu64 "), is not a multiple of 4.", offset);
@@ -1084,19 +1106,26 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
     }
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state && count_buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
-    skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
-                                            Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                            error_obj.location);
-    if (maxDrawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
+    ASSERT_AND_RETURN_SKIP(count_buffer_state);
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
-                                                maxDrawCount, offset, *buffer_state, error_obj.location);
+                                                error_obj.location);
+
+        if (maxDrawCount > 1) {
+            skip |=
+                ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-maxDrawCount-02183", stride,
+                                                Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
+                                                maxDrawCount, offset, *indirect_buffer_state, error_obj.location);
+        }
     }
+
+    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
     skip |= ValidateMeshShaderStage(cb_state, error_obj.location, true);
     return skip;
 }
@@ -1169,27 +1198,32 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
 
-    if (drawCount > 1) {
-        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088", stride,
-                                                Struct::VkDrawMeshTasksIndirectCommandEXT,
-                                                sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
-        skip |= ValidateCmdDrawStrideWithBuffer(
-            cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride, Struct::VkDrawMeshTasksIndirectCommandEXT,
-            sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, *buffer_state, error_obj.location);
-    }
-    if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > buffer_state->create_info.size) {
-        LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        objlist.add(buffer);
-        skip |= LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089", objlist, error_obj.location.dot(Field::drawCount),
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+
+        if (drawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088", stride,
+                                                    Struct::VkDrawMeshTasksIndirectCommandEXT,
+                                                    sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
+            skip |= ValidateCmdDrawStrideWithBuffer(
+                cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07090", stride, Struct::VkDrawMeshTasksIndirectCommandEXT,
+                sizeof(VkDrawMeshTasksIndirectCommandEXT), drawCount, offset, *indirect_buffer_state, error_obj.location);
+        }
+        if ((drawCount == 1) && (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)) > indirect_buffer_state->create_info.size) {
+            LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            objlist.add(buffer);
+            skip |=
+                LogError("VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07089", objlist, error_obj.location.dot(Field::drawCount),
                          "is 1 and (offset + sizeof(vkCmdDrawMeshTasksIndirectEXT)) (%" PRIu64
                          ") is not less than "
                          "or equal to the size of buffer (%" PRIu64 ").",
-                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), buffer_state->create_info.size);
+                         (offset + sizeof(VkDrawMeshTasksIndirectCommandEXT)), indirect_buffer_state->create_info.size);
+        }
     }
+
     // TODO: vkMapMemory() and check the contents of buffer at offset
     // issue #4547 (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/4547)
     if (!enabled_features.multiDrawIndirect && ((drawCount > 1))) {
@@ -1217,25 +1251,31 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
 
     skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    auto buffer_state = Get<vvl::Buffer>(buffer);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    ASSERT_AND_RETURN_SKIP(buffer_state && count_buffer_state);
-    skip |= ValidateIndirectCmd(cb_state, *buffer_state, error_obj.location);
+    ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, error_obj.location.dot(Field::countBuffer),
                                           vuid.indirect_count_contiguous_memory_02714);
     skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, countBuffer), *count_buffer_state,
                                      VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
                                      error_obj.location.dot(Field::countBuffer));
-    skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
-                                            Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                            error_obj.location);
-    if (maxDrawCount > 1) {
-        skip |=
-            ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
-                                            Struct::VkDrawMeshTasksIndirectCommandEXT, sizeof(VkDrawMeshTasksIndirectCommandEXT),
-                                            maxDrawCount, offset, *buffer_state, error_obj.location);
-    }
     skip |= ValidateMeshShaderStage(cb_state, error_obj.location, false);
+
+    {
+        auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
+        ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
+
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
+                                                Struct::VkDrawMeshTasksIndirectCommandEXT,
+                                                sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
+        if (maxDrawCount > 1) {
+            skip |= ValidateCmdDrawStrideWithBuffer(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-maxDrawCount-07097", stride,
+                                                    Struct::VkDrawMeshTasksIndirectCommandEXT,
+                                                    sizeof(VkDrawMeshTasksIndirectCommandEXT), maxDrawCount, offset,
+                                                    *indirect_buffer_state, error_obj.location);
+        }
+    }
+
     return skip;
 }
 
