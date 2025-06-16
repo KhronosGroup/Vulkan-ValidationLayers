@@ -930,23 +930,22 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
     const auto dst_set = Get<vvl::DescriptorSet>(update.dstSet);
     ASSERT_AND_RETURN_SKIP(src_set && dst_set);
 
-    const auto *src_layout = src_set->GetLayout().get();
-    uint32_t src_start_idx = 0;
+    const vvl::DescriptorSetLayout &src_layout = *src_set->GetLayout();
     {
-        if (src_layout->Destroyed()) {
-            const LogObjectList objlist(update.srcSet, src_layout->Handle());
+        if (src_layout.Destroyed()) {
+            const LogObjectList objlist(update.srcSet, src_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-srcSet-parameter", objlist, copy_loc.dot(Field::srcSet),
-                            "(%s) has been destroyed.", FormatHandle(src_layout->Handle()).c_str());
+                            "(%s) has been destroyed.", FormatHandle(src_layout.Handle()).c_str());
         }
         if (!src_set->HasBinding(update.srcBinding)) {
-            const LogObjectList objlist(update.srcSet, src_layout->Handle());
+            const LogObjectList objlist(update.srcSet, src_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-srcBinding-00345", objlist, copy_loc.dot(Field::srcBinding),
                             "(%" PRIu32 ") does not exist in %s.", update.srcBinding, FormatHandle(src_set->Handle()).c_str());
         }
 
-        src_start_idx = src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).start + update.srcArrayElement;
+        uint32_t src_start_idx = src_set->GetGlobalIndexRangeFromBinding(update.srcBinding).start + update.srcArrayElement;
         if ((src_start_idx + update.descriptorCount) > src_set->GetTotalDescriptorCount()) {
-            const LogObjectList objlist(update.srcSet, src_layout->Handle());
+            const LogObjectList objlist(update.srcSet, src_layout.Handle());
             skip |= LogError(
                 "VUID-VkCopyDescriptorSet-srcArrayElement-00346", objlist, copy_loc.dot(Field::srcArrayElement),
                 "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
@@ -956,23 +955,22 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
         }
     }
 
-    const auto *dst_layout = dst_set->GetLayout().get();
-    uint32_t dst_start_idx = 0;
+    const vvl::DescriptorSetLayout &dst_layout = *dst_set->GetLayout();
     {
-        if (dst_layout->Destroyed()) {
-            const LogObjectList objlist(update.dstSet, dst_layout->Handle());
+        if (dst_layout.Destroyed()) {
+            const LogObjectList objlist(update.dstSet, dst_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-dstSet-parameter", objlist, copy_loc.dot(Field::dstSet),
-                            "(%s) has been destroyed.", FormatHandle(dst_layout->Handle()).c_str());
+                            "(%s) has been destroyed.", FormatHandle(dst_layout.Handle()).c_str());
         }
-        if (!dst_layout->HasBinding(update.dstBinding)) {
-            const LogObjectList objlist(update.dstSet, dst_layout->Handle());
+        if (!dst_layout.HasBinding(update.dstBinding)) {
+            const LogObjectList objlist(update.dstSet, dst_layout.Handle());
             return LogError("VUID-VkCopyDescriptorSet-dstBinding-00347", objlist, copy_loc.dot(Field::dstBinding),
                             "(%" PRIu32 ") does not exist in %s.", update.dstBinding, FormatHandle(dst_set->Handle()).c_str());
         }
 
-        dst_start_idx = dst_layout->GetGlobalIndexRangeFromBinding(update.dstBinding).start + update.dstArrayElement;
-        if ((dst_start_idx + update.descriptorCount) > dst_layout->GetTotalDescriptorCount()) {
-            const LogObjectList objlist(update.dstSet, dst_layout->Handle());
+        uint32_t dst_start_idx = dst_layout.GetGlobalIndexRangeFromBinding(update.dstBinding).start + update.dstArrayElement;
+        if ((dst_start_idx + update.descriptorCount) > dst_layout.GetTotalDescriptorCount()) {
+            const LogObjectList objlist(update.dstSet, dst_layout.Handle());
             skip |= LogError(
                 "VUID-VkCopyDescriptorSet-dstArrayElement-00348", objlist, copy_loc.dot(Field::dstArrayElement),
                 "(%" PRIu32 ") + descriptorCount (%" PRIu32 ") + offset index (%" PRIu32
@@ -982,9 +980,9 @@ bool CoreChecks::ValidateCopyUpdate(const VkCopyDescriptorSet &update, const Loc
         }
     }
 
-    skip |= ValidateCopyUpdateDescriptorSetLayoutFlags(update, *src_layout, *dst_layout, copy_loc);
+    skip |= ValidateCopyUpdateDescriptorSetLayoutFlags(update, src_layout, dst_layout, copy_loc);
     skip |= ValidateCopyUpdateDescriptorPoolFlags(update, *src_set, *dst_set, copy_loc);
-    skip |= ValidateCopyUpdateDescriptorTypes(update, *src_set, *dst_set, *src_layout, *dst_layout, copy_loc);
+    skip |= ValidateCopyUpdateDescriptorTypes(update, *src_set, *dst_set, src_layout, dst_layout, copy_loc);
 
     if (skip) {
         return skip;  // consistency will likley be wrong if already bad
