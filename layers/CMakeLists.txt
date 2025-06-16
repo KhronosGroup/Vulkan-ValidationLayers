@@ -526,7 +526,7 @@ if (VVL_ENABLE_TRACY)
     FetchContent_Declare(
         tracy
         GIT_REPOSITORY https://github.com/arno-lunarg/tracy.git
-        GIT_TAG v0.11.1-arno
+        GIT_TAG v0.12.1-arno
         GIT_SHALLOW TRUE
         GIT_PROGRESS TRUE)
 
