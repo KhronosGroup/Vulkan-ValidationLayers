@@ -2148,17 +2148,16 @@ void DeviceState::PreCallRecordFreeDescriptorSets(VkDevice device, VkDescriptorP
 void DeviceState::PerformUpdateDescriptorSets(uint32_t write_count, const VkWriteDescriptorSet *p_wds, uint32_t copy_count,
                                               const VkCopyDescriptorSet *p_cds) {
     // Write updates first
-    uint32_t i = 0;
-    for (i = 0; i < write_count; ++i) {
-        auto dest_set = p_wds[i].dstSet;
-        if (auto set_node = Get<DescriptorSet>(dest_set)) {
+    for (uint32_t i = 0; i < write_count; ++i) {
+        const VkDescriptorSet dst_set = p_wds[i].dstSet;
+        if (auto set_node = Get<DescriptorSet>(dst_set)) {
             set_node->PerformWriteUpdate(p_wds[i]);
         }
     }
     // Now copy updates
-    for (i = 0; i < copy_count; ++i) {
-        auto dst_set = p_cds[i].dstSet;
-        auto src_set = p_cds[i].srcSet;
+    for (uint32_t i = 0; i < copy_count; ++i) {
+        const VkDescriptorSet dst_set = p_cds[i].dstSet;
+        const VkDescriptorSet src_set = p_cds[i].srcSet;
         auto src_node = Get<DescriptorSet>(src_set);
         auto dst_node = Get<DescriptorSet>(dst_set);
         if (src_node && dst_node) {
