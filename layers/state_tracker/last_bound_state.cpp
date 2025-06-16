@@ -482,7 +482,7 @@ const vvl::ShaderObject *LastBound::GetShaderStateIfValid(ShaderObjectStage stag
     return shader_object_states[static_cast<uint32_t>(stage)];
 }
 
-const vvl::ShaderObject *LastBound::GetFirstShader(VkPipelineBindPoint bind_point) const {
+const vvl::ShaderObject *LastBound::GetFirstShader() const {
     if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
         return GetShaderStateIfValid(ShaderObjectStage::COMPUTE);
     } else if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {

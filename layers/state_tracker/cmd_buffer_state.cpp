@@ -184,7 +184,9 @@ CommandBuffer::CommandBuffer(DeviceState &dev, VkCommandBuffer handle, const VkC
       command_pool(pool),
       dev_data(dev),
       unprotected(pool->unprotected),
-      lastBound({*this, *this, *this}) {
+      lastBound({{{*this, VK_PIPELINE_BIND_POINT_GRAPHICS},
+                  {*this, VK_PIPELINE_BIND_POINT_COMPUTE},
+                  {*this, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR}}}) {
     ResetCBState();
 }
 
