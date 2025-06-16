@@ -353,9 +353,9 @@ TEST_F(NegativeSecondaryCommandBuffer, ExecuteWithLayoutMismatch) {
     pipeline(secondary, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     secondary.End();
 
-    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001");
     m_command_buffer.Begin();
     pipeline(m_command_buffer, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    m_errorMonitor->SetDesiredError("UNASSIGNED-vkCmdExecuteCommands-commandBuffer-00001");
     vk::CmdExecuteCommands(m_command_buffer, 1, &secondary.handle());
     m_errorMonitor->VerifyFound();
 
