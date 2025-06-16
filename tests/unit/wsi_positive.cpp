@@ -2258,11 +2258,6 @@ TEST_F(PositiveWsi, ExampleHowToReusePresentSemaphores) {
     // Use single fence to wait for every frame (not very effective but it's fine for testing purposes)
     vkt::Fence frame_fence(*m_device, VK_FENCE_CREATE_SIGNALED_BIT);
 
-    // The acquire semaphore should be buffered according to the command buffer buffering scheme (double, tripple, etc).
-    // In this example we synchronize after each frame (no buffering), that's why it's enough
-    // to have a single acquire semaphore (it is available after frame fence wait finished).
-    // For double buffered command buffer there should be two acquire semaphores.
-    //
     // The acquire semaphore should be indexed by the current frame buffering index (0 in this case, 0/1 for double buffering).
     vkt::Semaphore acquire_semaphore(*m_device);
 
@@ -2286,6 +2281,57 @@ TEST_F(PositiveWsi, ExampleHowToReusePresentSemaphores) {
         m_default_queue->Present(m_swapchain, image_index, present_semaphores[image_index]);
     }
 
+    m_default_queue->Wait();
+}
+
+TEST_F(PositiveWsi, ExampleHowToReusePresentSemaphores2) {
+    TEST_DESCRIPTION("Example of how to safely reuse present semaphores by using presentation fence");
+    AddSurfaceExtension();
+    AddRequiredExtensions(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::swapchainMaintenance1);
+    RETURN_IF_SKIP(Init());
+    RETURN_IF_SKIP(InitSwapchain());
+
+    const auto swapchain_images = m_swapchain.GetImages();
+    for (auto image : swapchain_images) {
+        SetImageLayoutPresentSrc(image);
+    }
+
+    vkt::CommandBuffer command_buffers[2] = {vkt::CommandBuffer{*m_device, m_command_pool},
+                                             vkt::CommandBuffer(*m_device, m_command_pool)};
+
+    // The acquire semaphores should be indexed by the current frame buffering index.
+    vkt::Semaphore acquire_semaphores[2] = {*m_device, *m_device};
+
+    // The present semaphores can also be indexed by the current frame index if we use presentation fence
+    // and associate presentation fence with each buffered frame.
+    vkt::Semaphore present_semaphores[2] = {*m_device, *m_device};
+
+    vkt::Fence present_fences[2] = {{*m_device, VK_FENCE_CREATE_SIGNALED_BIT}, {*m_device, VK_FENCE_CREATE_SIGNALED_BIT}};
+
+    int frame_index = 0;
+    for (uint32_t i = 0; i < 10; i++) {
+        vkt::Fence &present_fence = present_fences[frame_index];
+        vkt::CommandBuffer &command_buffer = command_buffers[frame_index];
+        vkt::Semaphore &acquire_semaphore = acquire_semaphores[frame_index];
+        vkt::Semaphore &present_semaphore = present_semaphores[frame_index];
+
+        present_fence.Wait(kWaitTimeout);
+        present_fence.Reset();
+
+        command_buffer.Begin();
+        command_buffer.End();
+
+        uint32_t image_index = m_swapchain.AcquireNextImage(acquire_semaphore, kWaitTimeout);
+        m_default_queue->Submit(command_buffer, vkt::Wait(acquire_semaphore), vkt::Signal(present_semaphore));
+
+        VkSwapchainPresentFenceInfoEXT present_fence_info = vku::InitStructHelper();
+        present_fence_info.swapchainCount = 1;
+        present_fence_info.pFences = &present_fence.handle();
+
+        m_default_queue->Present(m_swapchain, image_index, present_semaphore, &present_fence_info);
+        frame_index = 1 - frame_index;  // 0 or 1
+    }
     m_default_queue->Wait();
 }
 
