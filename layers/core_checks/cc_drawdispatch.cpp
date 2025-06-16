@@ -34,9 +34,8 @@ using vvl::DrawDispatchVuid;
 using vvl::GetDrawDispatchVuid;
 
 bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer *index_buffer_state,
-                                            const Location &loc) const {
+                                            const DrawDispatchVuid &vuid) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     // maintenance6 allows null buffers to be bound
     if (!index_buffer_state && !cb_state.index_buffer_binding.bound) {
         const char *extra =
@@ -45,7 +44,7 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
                   "calling vkCmdBindIndexBuffer still has the buffer as undeclared."
                 : "With maintenance6, you are allowed to set the buffer in vkCmdBindIndexBuffer to be VK_NULL_HANDLE.";
         skip |= LogError(
-            vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+            vuid.index_binding_07312, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
             "no vkCmdBindIndexBuffer call has bound an index buffer to this command buffer prior to this indexed draw. %s", extra);
     } else if (index_buffer_state) {
         skip |= ValidateProtectedBuffer(cb_state, *index_buffer_state, vuid.loc(), vuid.unprotected_command_buffer_02707,
@@ -56,9 +55,8 @@ bool CoreChecks::ValidateGraphicsIndexedCmd(const vvl::CommandBuffer &cb_state, 
 }
 
 bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uint32_t instanceCount, uint32_t firstInstance,
-                                         const Location &loc) const {
+                                         const DrawDispatchVuid &vuid) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
     const auto *pipeline_state = last_bound_state.pipeline_state;
@@ -67,10 +65,11 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
     if (cb_state.active_render_pass && cb_state.active_render_pass->has_multiview_enabled &&
         ((static_cast<uint64_t>(instanceCount) + static_cast<uint64_t>(firstInstance)) >
          static_cast<uint64_t>(phys_dev_props_core11.maxMultiviewInstanceIndex))) {
-        skip |= LogError(vuid.max_multiview_instance_index_02688, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                         "render pass instance has multiview enabled, and maxMultiviewInstanceIndex: %" PRIu32
-                         ", but instanceCount: %" PRIu32 " and firstInstance: %" PRIu32 ".",
-                         phys_dev_props_core11.maxMultiviewInstanceIndex, instanceCount, firstInstance);
+        skip |=
+            LogError(vuid.max_multiview_instance_index_02688, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                     "render pass instance has multiview enabled, and maxMultiviewInstanceIndex: %" PRIu32
+                     ", but instanceCount: %" PRIu32 " and firstInstance: %" PRIu32 ".",
+                     phys_dev_props_core11.maxMultiviewInstanceIndex, instanceCount, firstInstance);
     }
 
     // supportsNonZeroFirstInstance was added from the EXT to KHR (not 1.4) version of VK_KHR_vertex_attribute_divisor
@@ -83,11 +82,11 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                 firstInstance != 0u) {
                 for (uint32_t i = 0; i < vertex_input_divisor_state->vertexBindingDivisorCount; ++i) {
                     if (vertex_input_divisor_state->pVertexBindingDivisors[i].divisor != 1u) {
-                        skip |= LogError(vuid.vertex_input_09461, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                         "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32
-                                         "].divisor is %" PRIu32 " and firstInstance is %" PRIu32
-                                         ", but supportsNonZeroFirstInstance is VK_FALSE.",
-                                         i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
+                        skip |= LogError(
+                            vuid.vertex_input_09461, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                            "VkPipelineVertexInputDivisorStateCreateInfo::pVertexBindingDivisors[%" PRIu32 "].divisor is %" PRIu32
+                            " and firstInstance is %" PRIu32 ", but supportsNonZeroFirstInstance is VK_FALSE.",
+                            i, vertex_input_divisor_state->pVertexBindingDivisors[i].divisor, firstInstance);
                         break;  // only report first instance of the error
                     }
                 }
@@ -100,11 +99,12 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
                 for (const auto &binding_state : cb_state.dynamic_state_value.vertex_bindings) {
                     const auto &desc = binding_state.second.desc;
                     if (desc.divisor != 1u) {
-                        skip |= LogError(vuid.vertex_input_09462, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
-                                         "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
-                                         ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
-                                         " and supportsNonZeroFirstInstance is VK_FALSE.",
-                                         binding_state.second.index, desc.binding, desc.divisor, firstInstance);
+                        skip |=
+                            LogError(vuid.vertex_input_09462, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
+                                     "vkCmdSetVertexInputEXT set pVertexBindingDivisors[%" PRIu32 "] (binding %" PRIu32
+                                     ") divisor as %" PRIu32 ", but firstInstance is %" PRIu32
+                                     " and supportsNonZeroFirstInstance is VK_FALSE.",
+                                     binding_state.second.index, desc.binding, desc.divisor, firstInstance);
                         break;
                     }
                 }
@@ -116,28 +116,28 @@ bool CoreChecks::ValidateCmdDrawInstance(const vvl::CommandBuffer &cb_state, uin
 }
 
 // VTG = Vertex Tessellation Geometry
-bool CoreChecks::ValidateVTGShaderStages(const vvl::CommandBuffer &cb_state, const Location &loc) const {
+bool CoreChecks::ValidateVTGShaderStages(const LastBound &last_bound_state, const DrawDispatchVuid &vuid) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
 
-    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    if (pipeline_state && pipeline_state->active_shaders & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
+    if (last_bound_state.pipeline_state &&
+        last_bound_state.pipeline_state->active_shaders & (VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT)) {
         skip |= LogError(
-            vuid.invalid_mesh_shader_stages_06481, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+            vuid.invalid_mesh_shader_stages_06481, last_bound_state.cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
+            vuid.loc(),
             "The bound graphics pipeline must not have been created with "
             "VK_SHADER_STAGE_TASK_BIT_EXT or VK_SHADER_STAGE_MESH_BIT_EXT. Active shader stages on the bound pipeline are %s.",
-            string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
+            string_VkShaderStageFlags(last_bound_state.pipeline_state->active_shaders).c_str());
     }
     return skip;
 }
 
-bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, const Location &loc, bool is_NV) const {
+bool CoreChecks::ValidateMeshShaderStage(const LastBound &last_bound_state, const DrawDispatchVuid &vuid, bool is_NV) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    const auto *pipeline_state = last_bound_state.pipeline_state;
 
-    const auto *pipeline_state = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
     if (pipeline_state && !(pipeline_state->active_shaders & VK_SHADER_STAGE_MESH_BIT_EXT)) {
-        skip |= LogError(vuid.missing_mesh_shader_stages_07080, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+        skip |= LogError(vuid.missing_mesh_shader_stages_07080, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The current pipeline bound to VK_PIPELINE_BIND_POINT_GRAPHICS must contain a shader stage using the "
                          "%s Execution Model. Active shader stages on the bound pipeline are %s.",
                          is_NV ? "MeshNV" : "MeshEXT", string_VkShaderStageFlags(pipeline_state->active_shaders).c_str());
@@ -145,7 +145,7 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
     if (pipeline_state &&
         (pipeline_state->active_shaders & (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT |
                                            VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT | VK_SHADER_STAGE_GEOMETRY_BIT))) {
-        skip |= LogError(vuid.mesh_shader_stages_06480, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+        skip |= LogError(vuid.mesh_shader_stages_06480, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                          "The bound graphics pipeline must not have been created with "
                          "VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT, "
                          "VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT or VK_SHADER_STAGE_GEOMETRY_BIT. Active shader stages on the "
@@ -156,11 +156,11 @@ bool CoreChecks::ValidateMeshShaderStage(const vvl::CommandBuffer &cb_state, con
         const auto query_pool_state = Get<vvl::QueryPool>(query.pool);
         if (!query_pool_state) continue;
         if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_TRANSFORM_FEEDBACK_STREAM_EXT) {
-            skip |= LogError(vuid.xfb_queries_07074, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+            skip |= LogError(vuid.xfb_queries_07074, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                              "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
         }
         if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PRIMITIVES_GENERATED_EXT) {
-            skip |= LogError(vuid.pg_queries_07075, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), loc,
+            skip |= LogError(vuid.pg_queries_07075, cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS), vuid.loc(),
                              "Query with type %s is active.", string_VkQueryType(query_pool_state->create_info.queryType));
         }
     }
@@ -171,10 +171,12 @@ bool CoreChecks::PreCallValidateCmdDraw(VkCommandBuffer commandBuffer, uint32_t 
                                         uint32_t firstVertex, uint32_t firstInstance, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
     return skip;
 }
 
@@ -183,6 +185,12 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
                                                 uint32_t firstInstance, uint32_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     if (!enabled_features.multiDraw) {
         skip |= LogError("VUID-vkCmdDrawMultiEXT-None-04933", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -203,9 +211,6 @@ bool CoreChecks::PreCallValidateCmdDrawMultiEXT(VkCommandBuffer commandBuffer, u
                          error_obj.location.dot(Field::drawCount), "is %" PRIu32 " but pVertexInfo is NULL.", drawCount);
     }
 
-    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
 }
 
@@ -243,14 +248,16 @@ bool CoreChecks::PreCallValidateCmdDrawIndexed(VkCommandBuffer commandBuffer, ui
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
-        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), vuid);
         if (index_buffer_state) {
             skip |= ValidateCmdDrawIndexedBufferSize(cb_state, *index_buffer_state, indexCount, firstIndex, error_obj.location,
                                                      "VUID-vkCmdDrawIndexed-robustBufferAccess2-08798");
@@ -266,6 +273,12 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
                                                        const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     if (!enabled_features.multiDraw) {
         skip |= LogError("VUID-vkCmdDrawMultiIndexedEXT-None-04937", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -278,10 +291,6 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
                          drawCount, phys_dev_ext_props.multi_draw_props.maxMultiDrawCount);
     }
 
-    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
-
     bool invalid_stride = false;
     if (drawCount > 1) {
         invalid_stride = ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMultiIndexedEXT-drawCount-09629", stride,
@@ -291,7 +300,7 @@ bool CoreChecks::PreCallValidateCmdDrawMultiIndexedEXT(VkCommandBuffer commandBu
     skip |= invalid_stride;
 
     const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
-    skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+    skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), vuid);
 
     // only index into pIndexInfo if we know parameters are sane
     if (drawCount != 0 && !pIndexInfo) {
@@ -318,14 +327,16 @@ bool CoreChecks::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, V
                                                 uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
 
         if (drawCount > 1) {
             skip |=
@@ -369,19 +380,21 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirect(VkCommandBuffer commandBu
                                                        uint32_t drawCount, uint32_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
-        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), vuid);
     }
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
 
         if (drawCount > 1) {
             skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirect-drawCount-00528", stride,
@@ -425,7 +438,9 @@ bool CoreChecks::PreCallValidateCmdDispatch(VkCommandBuffer commandBuffer, uint3
                                             uint32_t groupCountZ, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, vuid);
 
     if (groupCountX > phys_dev_props.limits.maxComputeWorkGroupCount[0]) {
         skip |= LogError("VUID-vkCmdDispatch-groupCountX-00386", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
@@ -456,7 +471,9 @@ bool CoreChecks::PreCallValidateCmdDispatchBase(VkCommandBuffer commandBuffer, u
                                                 uint32_t groupCountZ, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, vuid);
 
     // Paired if {} else if {} tests used to avoid any possible uint underflow
     uint32_t limit = phys_dev_props.limits.maxComputeWorkGroupCount[0];
@@ -541,12 +558,15 @@ bool CoreChecks::PreCallValidateCmdDispatchIndirect(VkCommandBuffer commandBuffe
                                                     const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, error_obj.location);
+    // const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_COMPUTE)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_COMPUTE, vuid);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
         if (offset & 3) {
             skip |= LogError("VUID-vkCmdDispatchIndirect-offset-02710", cb_state.GetObjectList(VK_SHADER_STAGE_COMPUTE_BIT),
                              error_obj.location.dot(Field::offset), "(%" PRIu64 ") must be a multiple of 4.", offset);
@@ -568,6 +588,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                                                      uint32_t stride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -588,16 +613,14 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                          "call this command.");
     }
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
+    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndirectCount-stride-03110", stride,
                                                 Struct::VkDrawIndirectCommand, sizeof(VkDrawIndirectCommand), error_obj.location);
         if (maxDrawCount > 1) {
@@ -623,6 +646,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     if (offset & 3) {
         skip |= LogError("VUID-vkCmdDrawIndexedIndirectCount-offset-02710", cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS),
@@ -641,15 +669,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                          "call this command.");
     }
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
-
+    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
-        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), error_obj.location);
+        skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), vuid);
     }
 
     {
@@ -660,7 +685,7 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                                                     Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                                     maxDrawCount, offset, *indirect_buffer_state, error_obj.location);
         }
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawIndexedIndirectCount-stride-03142", stride,
                                                 Struct::VkDrawIndexedIndirectCommand, sizeof(VkDrawIndexedIndirectCommand),
                                                 error_obj.location);
@@ -683,6 +708,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                                                             uint32_t vertexStride, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, vuid);
+    skip |= ValidateVTGShaderStages(last_bound_state, vuid);
 
     if (!enabled_features.transformFeedback) {
         skip |= LogError("VUID-vkCmdDrawIndirectByteCountEXT-transformFeedback-02287",
@@ -718,9 +749,6 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectByteCountEXT(VkCommandBuffer comm
                          "(%" PRIu32 ") must be a multiple of 4.", vertexStride);
     }
 
-    skip |= ValidateCmdDrawInstance(cb_state, instanceCount, firstInstance, error_obj.location);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateVTGShaderStages(cb_state, error_obj.location);
     return skip;
 }
 
@@ -734,6 +762,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                                                const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vuid);
 
     if (SafeModulo(callableShaderBindingOffset, phys_dev_ext_props.ray_tracing_props_nv.shaderGroupBaseAlignment) != 0) {
         skip |= LogError("VUID-vkCmdTraceRaysNV-callableShaderBindingOffset-02462",
@@ -827,7 +858,6 @@ bool CoreChecks::PreCallValidateCmdTraceRaysNV(VkCommandBuffer commandBuffer, Vk
                          "must be less than or equal to VkPhysicalDeviceLimits::maxComputeWorkGroupCount[2].");
     }
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, error_obj.location);
     auto callable_shader_buffer_state = Get<vvl::Buffer>(callableShaderBindingTableBuffer);
     if (callable_shader_buffer_state && callableShaderBindingOffset >= callable_shader_buffer_state->create_info.size) {
         LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
@@ -987,8 +1017,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysKHR(VkCommandBuffer commandBuffer,
                                                 uint32_t height, uint32_t depth, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vuid);
     skip |= ValidateCmdTraceRaysKHR(error_obj.location, cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                     pHitShaderBindingTable, pCallableShaderBindingTable);
     return skip;
@@ -1002,7 +1033,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirectKHR(VkCommandBuffer commandB
                                                         VkDeviceAddress indirectDeviceAddress, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vuid);
     skip |= ValidateCmdTraceRaysKHR(error_obj.location, cb_state, pRaygenShaderBindingTable, pMissShaderBindingTable,
                                     pHitShaderBindingTable, pCallableShaderBindingTable);
     return skip;
@@ -1012,7 +1045,9 @@ bool CoreChecks::PreCallValidateCmdTraceRaysIndirect2KHR(VkCommandBuffer command
                                                          const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, error_obj.location);
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vuid);
     return skip;
 }
 
@@ -1020,6 +1055,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
                                                    const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
 
     if (taskCount > phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount) {
         skip |= LogError(
@@ -1029,8 +1069,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksNV(VkCommandBuffer commandBuffer
             "), must be less than or equal to VkPhysicalDeviceMeshShaderPropertiesNV::maxDrawMeshTasksCount (0x%" PRIxLEAST32 ").",
             taskCount, phys_dev_ext_props.mesh_shader_props_nv.maxDrawMeshTasksCount);
     }
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, true);
     return skip;
 }
 
@@ -1039,12 +1077,16 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                                                            const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
 
         if (drawCount > 1) {
             skip |= ValidateCmdDrawStrideWithBuffer(
@@ -1083,7 +1125,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectNV(VkCommandBuffer comma
                          "(%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, true);
     return skip;
 }
 
@@ -1093,6 +1134,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                                                                 const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
+
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, true);
 
     if (offset & 3) {
         skip |=
@@ -1105,14 +1151,13 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                          "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
     }
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountNV-stride-02182", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandNV, sizeof(VkDrawMeshTasksIndirectCommandNV),
                                                 error_obj.location);
@@ -1125,8 +1170,7 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
         }
     }
 
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, error_obj.location);
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, true);
+    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
     return skip;
 }
 
@@ -1134,9 +1178,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksEXT(VkCommandBuffer commandBuffe
                                                     uint32_t groupCountZ, const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, false);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
 
     if (groupCountX > phys_dev_ext_props.mesh_shader_props_ext.maxTaskWorkGroupCount[0]) {
         skip |= LogError(
@@ -1196,13 +1242,16 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
                                                             const ErrorObject &error_obj) const {
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
 
         if (drawCount > 1) {
             skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectEXT-drawCount-07088", stride,
@@ -1237,7 +1286,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectEXT(VkCommandBuffer comm
                          "%" PRIu32 ") is not less than or equal to maxDrawIndirectCount (%" PRIu32 ").", drawCount,
                          phys_dev_props.limits.maxDrawIndirectCount);
     }
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, false);
     return skip;
 }
 
@@ -1245,12 +1293,14 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
                                                                  VkDeviceSize offset, VkBuffer countBuffer,
                                                                  VkDeviceSize countBufferOffset, uint32_t maxDrawCount,
                                                                  uint32_t stride, const ErrorObject &error_obj) const {
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
-
     bool skip = false;
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    const auto &last_bound_state = cb_state.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(error_obj.location.function);
 
-    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, error_obj.location);
+    skip |= ValidateActionState(cb_state, VK_PIPELINE_BIND_POINT_GRAPHICS, vuid);
+    skip |= ValidateMeshShaderStage(last_bound_state, vuid, false);
+
     auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
     ASSERT_AND_RETURN_SKIP(count_buffer_state);
     skip |= ValidateMemoryIsBoundToBuffer(commandBuffer, *count_buffer_state, error_obj.location.dot(Field::countBuffer),
@@ -1258,13 +1308,12 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
     skip |= ValidateBufferUsageFlags(LogObjectList(commandBuffer, countBuffer), *count_buffer_state,
                                      VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true, vuid.indirect_count_buffer_bit_02715,
                                      error_obj.location.dot(Field::countBuffer));
-    skip |= ValidateMeshShaderStage(cb_state, error_obj.location, false);
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
         ASSERT_AND_RETURN_SKIP(indirect_buffer_state);
 
-        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, error_obj.location);
+        skip |= ValidateIndirectCmd(cb_state, *indirect_buffer_state, vuid);
         skip |= ValidateCmdDrawStrideWithStruct(cb_state, "VUID-vkCmdDrawMeshTasksIndirectCountEXT-stride-07096", stride,
                                                 Struct::VkDrawMeshTasksIndirectCommandEXT,
                                                 sizeof(VkDrawMeshTasksIndirectCommandEXT), error_obj.location);
@@ -1282,8 +1331,8 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer
 // Action command == vkCmdDraw*, vkCmdDispatch*, vkCmdTraceRays*
 // This is the main logic shared by all action commands
 bool CoreChecks::ValidateActionState(const vvl::CommandBuffer &cb_state, const VkPipelineBindPoint bind_point,
-                                     const Location &loc) const {
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
+                                     const DrawDispatchVuid &vuid) const {
+    const Location &loc = vuid.loc();
     const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
     const auto &last_bound_state = cb_state.lastBound[lv_bind_point];
     const vvl::Pipeline *pipeline = last_bound_state.pipeline_state;
@@ -1647,36 +1696,34 @@ bool CoreChecks::MatchSampleLocationsInfo(const VkSampleLocationsInfoEXT &info_1
 }
 
 bool CoreChecks::ValidateIndirectCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer &buffer_state,
-                                     const Location &loc) const {
+                                     const DrawDispatchVuid &vuid) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
     objlist.add(buffer_state.Handle());
 
-    skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), buffer_state, loc.dot(Field::buffer),
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), buffer_state, vuid.loc().dot(Field::buffer),
                                           vuid.indirect_contiguous_memory_02708);
     skip |= ValidateBufferUsageFlags(objlist, buffer_state, VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true,
-                                     vuid.indirect_buffer_bit_02290, loc.dot(Field::buffer));
+                                     vuid.indirect_buffer_bit_02290, vuid.loc().dot(Field::buffer));
     if (cb_state.unprotected == false) {
-        skip |= LogError(vuid.indirect_protected_cb_02711, objlist, loc,
+        skip |= LogError(vuid.indirect_protected_cb_02711, objlist, vuid.loc(),
                          "Indirect commands can't be used in protected command buffers.");
     }
     return skip;
 }
 
 bool CoreChecks::ValidateIndirectCountCmd(const vvl::CommandBuffer &cb_state, const vvl::Buffer &count_buffer_state,
-                                          VkDeviceSize count_buffer_offset, const Location &loc) const {
+                                          VkDeviceSize count_buffer_offset, const DrawDispatchVuid &vuid) const {
     bool skip = false;
-    const DrawDispatchVuid &vuid = GetDrawDispatchVuid(loc.function);
     LogObjectList objlist = cb_state.GetObjectList(VK_PIPELINE_BIND_POINT_GRAPHICS);
     objlist.add(count_buffer_state.Handle());
 
-    skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), count_buffer_state, loc.dot(Field::countBuffer),
+    skip |= ValidateMemoryIsBoundToBuffer(cb_state.VkHandle(), count_buffer_state, vuid.loc().dot(Field::countBuffer),
                                           vuid.indirect_count_contiguous_memory_02714);
     skip |= ValidateBufferUsageFlags(objlist, count_buffer_state, VK_BUFFER_USAGE_2_INDIRECT_BUFFER_BIT, true,
-                                     vuid.indirect_count_buffer_bit_02715, loc.dot(Field::countBuffer));
+                                     vuid.indirect_count_buffer_bit_02715, vuid.loc().dot(Field::countBuffer));
     if (count_buffer_offset + sizeof(uint32_t) > count_buffer_state.create_info.size) {
-        skip |= LogError(vuid.indirect_count_offset_04129, objlist, loc,
+        skip |= LogError(vuid.indirect_count_offset_04129, objlist, vuid.loc(),
                          "countBufferOffset (%" PRIu64 ") + sizeof(uint32_t) is greater than the buffer size of %" PRIu64 ".",
                          count_buffer_offset, count_buffer_state.create_info.size);
     }
