@@ -40,9 +40,11 @@ struct EntryPoint;
 
 // Track last states that are bound per pipeline bind point (Gfx & Compute)
 struct LastBound {
-    LastBound(vvl::CommandBuffer &cb) : cb_state(cb) {}
+    LastBound(vvl::CommandBuffer &cb, const VkPipelineBindPoint bind_point) : cb_state(cb), bind_point(bind_point) {}
 
     vvl::CommandBuffer &cb_state;
+    const VkPipelineBindPoint bind_point;
+
     vvl::Pipeline *pipeline_state = nullptr;
     // All shader stages for a used pipeline bind point must be bound to with a valid shader or VK_NULL_HANDLE
     // We have to track shader_object_bound, because shader_object_states will be nullptr when VK_NULL_HANDLE is used
@@ -120,12 +122,11 @@ struct LastBound {
     VkCoverageModulationModeNV GetCoverageModulationMode() const;
     uint32_t GetViewportSwizzleCount() const;
 
-    bool ValidShaderObjectCombination(const VkPipelineBindPoint bind_point, const DeviceFeatures &device_features) const;
     VkShaderEXT GetShader(ShaderObjectStage stage) const;
     vvl::ShaderObject *GetShaderState(ShaderObjectStage stage) const;
     const vvl::ShaderObject *GetShaderStateIfValid(ShaderObjectStage stage) const;
     // Return compute shader for compute pipeline, vertex or mesh shader for graphics
-    const vvl::ShaderObject *GetFirstShader(VkPipelineBindPoint bind_point) const;
+    const vvl::ShaderObject *GetFirstShader() const;
     bool HasShaderObjects() const;
     bool IsValidShaderBound(ShaderObjectStage stage) const;
     bool IsValidShaderOrNullBound(ShaderObjectStage stage) const;
