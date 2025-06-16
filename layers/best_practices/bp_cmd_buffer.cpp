@@ -47,15 +47,6 @@ bool BestPractices::PreCallValidateAllocateCommandBuffers(VkDevice device, const
     return skip;
 }
 
-void BestPractices::PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                                    const RecordObject& record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& sub_state = bp_state::SubState(*cb_state);
-    // reset
-    sub_state.num_submits = 0;
-    sub_state.small_indexed_draw_call_count = 0;
-}
-
 bool BestPractices::PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                                       const ErrorObject& error_obj) const {
     bool skip = false;

@@ -26,6 +26,7 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/push_constant_data.h"
 
 class BestPractices;
 
@@ -154,13 +155,22 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint64_t num_submits = 0;
     uint32_t small_indexed_draw_call_count = 0;
 
+    std::vector<PushConstantData> push_constant_data_chunks;
+
     // This function used to not be empty. It has been left empty because
     // the logic to decide to call this function is not simple, so adding this
     // function back could tedious.
     void UnbindResources() {}
 
+    void Destroy() final;
+    void Reset(const Location& loc) final;
+
     void ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) final;
     void RecordCmd(vvl::Func command) final;
+
+    void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
+                             const void* values) final;
+    void ClearPushConstants() final;
 
     struct SignalingInfo {
         // True, if the event's first state change within a command buffer is a signal (SetEvent)
@@ -175,6 +185,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         explicit SignalingInfo(bool signal) : first_state_change_is_signal(signal), signaled(signal) {}
     };
     vvl::unordered_map<VkEvent, SignalingInfo> event_signaling_state;
+
+  private:
+    void ResetCBState();
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {

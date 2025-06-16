@@ -32,6 +32,7 @@
 #include "state_tracker/sampler_state.h"
 #include "state_tracker/ray_tracing_state.h"
 #include "state_tracker/shader_object_state.h"
+#include "state_tracker/push_constant_data.h"
 
 namespace gpuav {
 
@@ -73,6 +74,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t trace_rays_index = 0;
     uint32_t action_command_count = 0;
 
+    std::vector<PushConstantData> push_constant_data_chunks;
+    std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout{};
+
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();
 
@@ -103,6 +107,10 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     void Destroy() final;
     void Reset(const Location &loc) final;
+
+    void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
+                             const void *values) final;
+    void ClearPushConstants() final;
 
     vko::GpuResourcesManager gpu_resources_manager;
     // Using stdext::inplace_function over std::function to allocate memory in place

@@ -148,11 +148,11 @@ class BestPractices : public vvl::DeviceProxy {
 
     std::string GetAPIVersionName(uint32_t version) const;
 
-    bool ValidateCmdDrawType(VkCommandBuffer cmd_buffer, const Location& loc) const;
+    bool ValidateCmdDrawType(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const;
 
-    bool ValidateCmdDispatchType(VkCommandBuffer cmd_buffer, const Location& loc) const;
+    bool ValidateCmdDispatchType(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const;
 
-    bool ValidatePushConstants(VkCommandBuffer cmd_buffer, const Location& loc) const;
+    bool ValidatePushConstants(const bp_state::CommandBufferSubState& cb_state, const Location& loc) const;
 
     void RecordCmdDrawType(bp_state::CommandBufferSubState& cb_state, uint32_t draw_count);
 
@@ -245,8 +245,6 @@ class BestPractices : public vvl::DeviceProxy {
                                         const ErrorObject& error_obj) const override;
     bool PreCallValidateQueueSubmit2(VkQueue queue, uint32_t submitCount, const VkSubmitInfo2* pSubmits, VkFence fence,
                                      const ErrorObject& error_obj) const override;
-    void PreCallRecordBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
-                                         const RecordObject& record_obj) override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                            const ErrorObject& error_obj) const override;
     bool CheckEventSignalingState(const bp_state::CommandBufferSubState& command_buffer, VkEvent event,

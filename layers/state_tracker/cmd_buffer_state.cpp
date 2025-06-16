@@ -307,8 +307,6 @@ void CommandBuffer::ResetCBState() {
     label_stack_depth_ = 0;
     label_commands_.clear();
 
-    push_constant_data_chunks.clear();
-    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
     push_constant_ranges_layout.reset();
 
     transform_feedback_active = false;
@@ -325,23 +323,6 @@ void CommandBuffer::Reset(const Location &loc) {
     for (auto &item : sub_states_) {
         item.second->Reset(loc);
     }
-}
-
-// Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
-// Internal discussion and CTS were written to prove that this is not called after an incompatible vkCmdBindPipeline
-// "Binding a pipeline with a layout that is not compatible with the push constant layout does not disturb the push constant values"
-//
-// vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
-//
-// Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will be triggered
-void CommandBuffer::ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state) {
-    if (push_constant_ranges_layout == pipeline_layout_state.push_constant_ranges_layout) {
-        return;
-    }
-
-    push_constant_data_chunks.clear();
-    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
-    push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
 }
 
 void CommandBuffer::Destroy() {
@@ -1656,6 +1637,29 @@ void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR 
     EndQuery(query_obj);
 }
 
+void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags,
+                                        uint32_t offset, uint32_t size, const void *values) {
+    // Discussed in details in https://github.com/KhronosGroup/Vulkan-Docs/issues/1081
+    // Internal discussion and CTS were written to prove that this is not called after an incompatible vkCmdBindPipeline
+    // "Binding a pipeline with a layout that is not compatible with the push constant layout does not disturb the push constant
+    // values"
+    //
+    // vkCmdBindDescriptorSet has nothing to do with push constants and don't need to call this after neither
+    //
+    // Part of this assumes apps at draw/dispatch/traceRays/etc time will have it properly compatible or else other VU will be
+    // triggered
+    if (push_constant_ranges_layout != pipeline_layout_state.push_constant_ranges_layout) {
+        push_constant_ranges_layout = pipeline_layout_state.push_constant_ranges_layout;
+        for (auto &item : sub_states_) {
+            item.second->ClearPushConstants();
+        }
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
+    }
+}
+
 void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {
     for (auto& func : queue_submit_functions) {
         func(queue_state, *this);
@@ -1797,8 +1801,6 @@ void CommandBuffer::UnbindResources() {
     current_vertex_buffer_binding_info.clear();
 
     // Push constants
-    push_constant_data_chunks.clear();
-    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
     push_constant_ranges_layout.reset();
 
     // Reset status of graphics cb to force rebinding of all resources

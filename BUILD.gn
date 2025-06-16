@@ -276,6 +276,7 @@ vvl_sources = [
   "layers/state_tracker/pipeline_state.h",
   "layers/state_tracker/pipeline_sub_state.cpp",
   "layers/state_tracker/pipeline_sub_state.h",
+  "layers/state_tracker/push_constant_data.h",
   "layers/state_tracker/query_state.h",
   "layers/state_tracker/queue_state.cpp",
   "layers/state_tracker/queue_state.h",
