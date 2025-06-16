@@ -2,7 +2,7 @@
 
 The [Tracy](https://github.com/wolfpld/tracy) profiler has been setup. Get the doc [here](https://github.com/wolfpld/tracy/releases/latest/download/tracy.pdf).
 
-Used Tracy version: 0.11.2 (alpha)
+Used Tracy version: 0.12.1 (alpha)
 
 Relevant CMake options:
 - `-D VVL_ENABLE_TRACY` Enable Tracy
