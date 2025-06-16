@@ -611,9 +611,11 @@ bool CoreChecks::PreCallValidateCmdDrawIndirectCount(VkCommandBuffer commandBuff
                          "call this command.");
     }
 
-    auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    ASSERT_AND_RETURN_SKIP(count_buffer_state);
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
+    {
+        auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
+        ASSERT_AND_RETURN_SKIP(count_buffer_state);
+        skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
+    }
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -667,9 +669,12 @@ bool CoreChecks::PreCallValidateCmdDrawIndexedIndirectCount(VkCommandBuffer comm
                          "call this command.");
     }
 
-    auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    ASSERT_AND_RETURN_SKIP(count_buffer_state);
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
+    {
+        auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
+        ASSERT_AND_RETURN_SKIP(count_buffer_state);
+        skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
+    }
+
     {
         const auto index_buffer_state = Get<vvl::Buffer>(cb_state.index_buffer_binding.buffer);
         skip |= ValidateGraphicsIndexedCmd(cb_state, index_buffer_state.get(), vuid);
@@ -1154,8 +1159,11 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
                          "(%" PRIu64 "), is not a multiple of 4.", countBufferOffset);
     }
 
-    auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
-    ASSERT_AND_RETURN_SKIP(count_buffer_state);
+    {
+        auto count_buffer_state = Get<vvl::Buffer>(countBuffer);
+        ASSERT_AND_RETURN_SKIP(count_buffer_state);
+        skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
+    }
 
     {
         auto indirect_buffer_state = Get<vvl::Buffer>(buffer);
@@ -1173,7 +1181,6 @@ bool CoreChecks::PreCallValidateCmdDrawMeshTasksIndirectCountNV(VkCommandBuffer 
         }
     }
 
-    skip |= ValidateIndirectCountCmd(cb_state, *count_buffer_state, countBufferOffset, vuid);
     return skip;
 }
 
