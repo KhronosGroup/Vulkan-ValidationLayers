@@ -2848,37 +2848,11 @@ void DeviceState::PostCallRecordCmdPushConstants(VkCommandBuffer commandBuffer, 
                                                  VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void *pValues,
                                                  const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    ASSERT_AND_RETURN(cb_state);
+    auto pipeline_layout_state = Get<PipelineLayout>(layout);
+    ASSERT_AND_RETURN(cb_state && pipeline_layout_state);
 
     cb_state->RecordCmd(record_obj.location.function);
-    auto layout_state = Get<PipelineLayout>(layout);
-    cb_state->ResetPushConstantRangesLayoutIfIncompatible(*layout_state);
-
-    if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        cb_state->push_constant_latest_used_layout[BindPoint_Graphics] = layout;
-    } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        cb_state->push_constant_latest_used_layout[BindPoint_Compute] = layout;
-    } else if (IsStageInPipelineBindPoint(stageFlags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        cb_state->push_constant_latest_used_layout[BindPoint_Ray_Tracing] = layout;
-    } else {
-        // Need to handle new binding point
-        assert(false);
-    }
-
-    PushConstantData push_constant_data;
-    push_constant_data.layout = layout;
-    push_constant_data.stage_flags = stageFlags;
-    push_constant_data.offset = offset;
-    push_constant_data.values.resize(size);
-    auto byte_values = static_cast<const std::byte *>(pValues);
-    std::copy(byte_values, byte_values + size, push_constant_data.values.data());
-    // Always add submitted push constant values, even if the same data is already stored.
-    // Storing duplicated data, or data submitted by one vkCmdPushConstants call
-    // and overridden by a subsequent one is not a problem.
-    // push_constant_data_chunks is intended to be parsed from 0 to N,
-    // thus going through the history in order, so even though it is
-    // possibly suboptimal push constant data is correct.
-    cb_state->push_constant_data_chunks.emplace_back(push_constant_data);
+    cb_state->RecordPushConstants(*pipeline_layout_state, stageFlags, offset, size, pValues);
 }
 
 void DeviceState::PostCallRecordCmdPushConstants2(VkCommandBuffer commandBuffer, const VkPushConstantsInfo *pPushConstantsInfo,

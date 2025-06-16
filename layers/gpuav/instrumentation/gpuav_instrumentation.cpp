@@ -273,7 +273,7 @@ void UpdateInstrumentationDescSet(Validator &gpuav, CommandBufferSubState &cb_st
                                   VkDescriptorSet instrumentation_desc_set, const Location &loc,
                                   InstrumentationErrorBlob &out_instrumentation_error_blob) {
     small_vector<VkWriteDescriptorSet, 8> desc_writes = {};
-    
+
     VkDescriptorBufferInfo error_output_desc_buffer_info = {};
     VkDescriptorBufferInfo vertex_attribute_fetch_limits_buffer_bi = {};
     VkDescriptorBufferInfo indices_desc_buffer_info = {};
@@ -511,9 +511,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     } else if (last_bound.desc_set_pipeline_layout) {
         inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
         inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
-    } else if (cb_state.base.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
-        inst_binding_pipe_layout_state =
-            gpuav.Get<vvl::PipelineLayout>(cb_state.base.push_constant_latest_used_layout[lv_bind_point]);
+    } else if (cb_state.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
+        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(cb_state.push_constant_latest_used_layout[lv_bind_point]);
         inst_binding_pipe_layout_src = PipelineLayoutSource::LastPushedConstants;
     }
 

@@ -159,7 +159,7 @@ void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipeline
     desc_set_pipeline_layout_ =
         last_bound.desc_set_pipeline_layout ? last_bound.desc_set_pipeline_layout->VkHandle() : VK_NULL_HANDLE;
 
-    push_constants_data_ = cb_state.base.push_constant_data_chunks;
+    push_constants_data_ = cb_state.push_constant_data_chunks;
 
     descriptor_sets_.reserve(last_bound.ds_slots.size());
     for (std::size_t set_i = 0; set_i < last_bound.ds_slots.size(); set_i++) {

@@ -95,6 +95,40 @@ void CommandBufferSubState::Reset(const Location &loc) {
     AllocateResources(loc);
 }
 
+void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset,
+                                                uint32_t size, const void *values) {
+    if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        push_constant_latest_used_layout[BindPoint_Graphics] = layout;
+    } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
+        push_constant_latest_used_layout[BindPoint_Compute] = layout;
+    } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
+        push_constant_latest_used_layout[BindPoint_Ray_Tracing] = layout;
+    } else {
+        // Need to handle new binding point
+        assert(false);
+    }
+
+    PushConstantData push_constant_data;
+    push_constant_data.layout = layout;
+    push_constant_data.stage_flags = stage_flags;
+    push_constant_data.offset = offset;
+    push_constant_data.values.resize(size);
+    auto byte_values = static_cast<const std::byte *>(values);
+    std::copy(byte_values, byte_values + size, push_constant_data.values.data());
+    // Always add submitted push constant values, even if the same data is already stored.
+    // Storing duplicated data, or data submitted by one vkCmdPushConstants call
+    // and overridden by a subsequent one is not a problem.
+    // push_constant_data_chunks is intended to be parsed from 0 to N,
+    // thus going through the history in order, so even though it is
+    // possibly suboptimal push constant data is correct.
+    push_constant_data_chunks.emplace_back(push_constant_data);
+}
+
+void CommandBufferSubState::ClearPushConstants() {
+    push_constant_data_chunks.clear();
+    push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
+}
+
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources
 
@@ -127,6 +161,8 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     compute_index = 0;
     trace_rays_index = 0;
     action_command_count = 0;
+
+    ClearPushConstants();
 }
 
 void CommandBufferSubState::IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc) {

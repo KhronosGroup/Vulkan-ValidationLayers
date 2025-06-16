@@ -71,6 +71,30 @@ void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_comman
     }
 }
 
+void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset,
+                                                uint32_t size, const void* values) {
+    PushConstantData push_constant_data;
+    push_constant_data.layout = layout;
+    push_constant_data.stage_flags = stage_flags;
+    push_constant_data.offset = offset;
+    push_constant_data.values.resize(size);
+    auto byte_values = static_cast<const std::byte*>(values);
+    std::copy(byte_values, byte_values + size, push_constant_data.values.data());
+    push_constant_data_chunks.emplace_back(push_constant_data);
+}
+
+void CommandBufferSubState::ClearPushConstants() { push_constant_data_chunks.clear(); }
+
+void CommandBufferSubState::Destroy() { ResetCBState(); }
+
+void CommandBufferSubState::Reset(const Location&) { ResetCBState(); }
+
+void CommandBufferSubState::ResetCBState() {
+    num_submits = 0;
+    small_indexed_draw_call_count = 0;
+    ClearPushConstants();
+}
+
 void CommandBufferSubState::RecordCmd(vvl::Func command) {
     if (vvl::IsCommandDrawMesh(command) || vvl::IsCommandDrawVertex(command)) {
         render_pass_state.has_draw_cmd = true;

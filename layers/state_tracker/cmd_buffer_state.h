@@ -156,13 +156,6 @@ struct LabelCommand {
     std::string label_name;  // used when begin == true
 };
 
-struct PushConstantData {
-    VkPipelineLayout layout = VK_NULL_HANDLE;
-    VkShaderStageFlags stage_flags = 0;
-    uint32_t offset = 0;
-    std::vector<std::byte> values{};
-};
-
 class CommandBuffer : public RefcountedStateObject, public SubStateManager<CommandBufferSubState> {
     using Func = vvl::Func;
 
@@ -516,8 +509,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;
 
-    std::vector<PushConstantData> push_constant_data_chunks;
-    std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout{};
     PushConstantRangesId push_constant_ranges_layout;
 
     // Video coding related state tracking
@@ -568,8 +559,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     }
 
     void Reset(const Location &loc);
-
-    void ResetPushConstantRangesLayoutIfIncompatible(const vvl::PipelineLayout &pipeline_layout_state);
 
     std::shared_ptr<const CommandBufferImageLayoutMap> GetImageLayoutMap(VkImage image) const;
     std::shared_ptr<CommandBufferImageLayoutMap> GetOrCreateImageLayoutMap(const vvl::Image &image_state);
@@ -644,6 +633,8 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
                           bool asymmetric_bit);
     void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
+    void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
+                             uint32_t size, const void *values);
 
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
@@ -734,6 +725,9 @@ class CommandBufferSubState {
     virtual void RecordCmd(Func command) {}
     virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
                                   VkPipelineStageFlags2KHR src_stage_mask, bool asymmetric_bit) {}
+    virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
+                                     const void *values) {}
+    virtual void ClearPushConstants() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
 
     VulkanTypedHandle Handle() const;

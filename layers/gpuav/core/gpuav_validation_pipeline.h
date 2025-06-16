@@ -18,7 +18,7 @@
 #pragma once
 
 #include "containers/limits.h"
-#include "state_tracker/cmd_buffer_state.h"
+#include "state_tracker/push_constant_data.h"
 
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -121,7 +121,7 @@ class RestorablePipelineState {
     std::vector<std::vector<uint32_t>> dynamic_offsets_;
     uint32_t push_descriptor_set_index_ = 0;
     std::vector<vku::safe_VkWriteDescriptorSet> push_descriptor_set_writes_;
-    std::vector<vvl::PushConstantData> push_constants_data_;
+    std::vector<PushConstantData> push_constants_data_;
     std::vector<vvl::ShaderObject*> shader_objects_;
 };
 }  // namespace valpipe
