@@ -22,10 +22,6 @@
 #include <android_native_app_glue.h>
 #endif
 
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-#include "wayland-client.h"
-#endif
-
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/utility/vk_struct_helper.hpp>
 
@@ -378,18 +374,6 @@ class WsiTest : public VkLayerTest {
   protected:
     // Find physical device group that contains physical device selected by the test framework
     std::optional<VkPhysicalDeviceGroupProperties> FindPhysicalDeviceGroup();
-
-  protected:
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    struct WaylandContext {
-        wl_display *display = nullptr;
-        wl_registry *registry = nullptr;
-        wl_surface *surface = nullptr;
-        wl_compositor *compositor = nullptr;
-    };
-    void InitWaylandContext(WaylandContext& context);
-    void ReleaseWaylandContext(WaylandContext& context);
-#endif
 };
 
 class CooperativeMatrixTest : public VkLayerTest {

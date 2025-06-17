@@ -51,6 +51,9 @@ struct SurfaceContext {
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     xcb_connection_t *m_surface_xcb_conn{};
 #endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    WaylandContext m_wayland_context{};
+#endif
 #if defined(VK_USE_PLATFORM_METAL_EXT)
     void *caMetalLayer{};
 #endif

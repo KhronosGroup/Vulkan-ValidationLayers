@@ -797,6 +797,18 @@ VkResult VkRenderFramework::CreateSurface(SurfaceContext &surface_context, vkt::
     }
 #endif
 
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    if (IsExtensionsEnabled(VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME)) {
+        if (surface_context.m_wayland_context.Init()) {
+            VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
+            surface_create_info.flags = 0;
+            surface_create_info.display = surface_context.m_wayland_context.display;
+            surface_create_info.surface = surface_context.m_wayland_context.surface;
+            return surface.Init(surface_instance, surface_create_info);
+        }
+    }
+#endif
+
     return VK_ERROR_UNKNOWN;
 }
 
@@ -828,6 +840,11 @@ void SurfaceContext::Destroy() {
     if (m_surface_xcb_conn != nullptr) {
         xcb_disconnect(m_surface_xcb_conn);
         m_surface_xcb_conn = nullptr;
+    }
+#endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    if (m_wayland_context.display) {
+        m_wayland_context.Release();
     }
 #endif
 }

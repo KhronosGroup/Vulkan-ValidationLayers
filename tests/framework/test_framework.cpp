@@ -1,7 +1,7 @@
 ﻿/*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,67 @@ static void CheckAndSetEnvironmentVariables() {
         }
         SetEnvironment("VK_LAYER_PATH", VALIDATION_LAYERS_BUILD_PATH);
     }
+}
+#endif
+
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+bool WaylandContext::Init() {
+    display = wl_display_connect(nullptr);
+    if (!display) {
+        return false;
+    }
+
+    auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
+        (void)version;
+        const std::string_view interface_str = interface;
+        if (interface_str == "wl_compositor") {
+            auto compositor = reinterpret_cast<wl_compositor **>(data);
+            *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
+        }
+    };
+
+    auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
+        (void)data;
+        (void)registry;
+        (void)id;
+    };
+
+    registry = wl_display_get_registry(display);
+    if (!registry) {
+        return false;
+    }
+
+    const wl_registry_listener registry_listener = {global, global_remove};
+
+    wl_registry_add_listener(registry, &registry_listener, &compositor);
+
+    wl_display_dispatch(display);
+    if (!compositor) {
+        return false;
+    }
+
+    surface = wl_compositor_create_surface(compositor);
+    if (!surface) {
+        return false;
+    }
+
+    const uint32_t version = wl_surface_get_version(surface);
+    if (version == 0) {
+        return false;
+    }
+
+    return true;
+}
+
+void WaylandContext::Release() {
+    wl_surface_destroy(surface);
+    surface = nullptr;
+    wl_compositor_destroy(compositor);
+    compositor = nullptr;
+    wl_registry_destroy(registry);
+    registry = nullptr;
+    wl_display_disconnect(display);
+    display = nullptr;
 }
 #endif
 
