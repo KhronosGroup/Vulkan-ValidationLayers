@@ -171,7 +171,7 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, co
 // Used to detect out of bounds indices in index buffers.
 static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexAttributeFetchLimit>> GetVertexAttributeFetchLimits(
     const vvl::CommandBuffer &cb_state) {
-    const LastBound &last_bound = cb_state.lastBound[vvl::BindPointGraphics];
+    const LastBound &last_bound = cb_state.GetLastBoundGraphics();
     const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
 
     const bool dynamic_vertex_input = last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);

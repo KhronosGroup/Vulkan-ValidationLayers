@@ -1505,7 +1505,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     RecordCmd(command);
     RecordDynamicState(state);
 
-    vvl::Pipeline *pipeline = lastBound[vvl::BindPointGraphics].pipeline_state;
+    vvl::Pipeline *pipeline = GetLastBoundGraphics().pipeline_state;
     if (pipeline && !pipeline->IsDynamic(state)) {
         dirty_static_state = true;
     }

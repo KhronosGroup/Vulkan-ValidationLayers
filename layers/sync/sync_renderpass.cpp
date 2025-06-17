@@ -517,7 +517,7 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
     const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
-    const auto &last_bound_state = cmd_buffer.lastBound[vvl::BindPointGraphics];
+    const auto &last_bound_state = cmd_buffer.GetLastBoundGraphics();
     const auto *pipe = last_bound_state.pipeline_state;
 
     if (!pipe || pipe->RasterizationDisabled()) {
@@ -613,7 +613,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
 }
 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuffer &cmd_buffer, const ResourceUsageTag tag) {
-    const auto &last_bound_state = cmd_buffer.lastBound[vvl::BindPointGraphics];
+    const auto &last_bound_state = cmd_buffer.GetLastBoundGraphics();
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 
