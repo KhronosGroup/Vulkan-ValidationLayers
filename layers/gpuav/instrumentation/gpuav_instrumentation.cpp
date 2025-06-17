@@ -31,6 +31,7 @@
 
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/last_bound_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
@@ -170,8 +171,7 @@ static VkPipelineLayout CreateInstrumentationPipelineLayout(Validator &gpuav, co
 // Used to detect out of bounds indices in index buffers.
 static std::pair<std::optional<VertexAttributeFetchLimit>, std::optional<VertexAttributeFetchLimit>> GetVertexAttributeFetchLimits(
     const vvl::CommandBuffer &cb_state) {
-    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const LastBound &last_bound = cb_state.lastBound[lv_bind_point];
+    const LastBound &last_bound = cb_state.lastBound[vvl::BindPointGraphics];
     const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
 
     const bool dynamic_vertex_input = last_bound.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
@@ -449,8 +449,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
         return;
     }
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
+    const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(bind_point);
+    const LastBound &last_bound = cb_state.base.lastBound[vvl_bind_point];
 
     // If nothing was updated, we don't want to bind anything
     if (!WasInstrumented(last_bound)) {
@@ -510,8 +510,8 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     } else if (last_bound.desc_set_pipeline_layout) {
         inst_binding_pipe_layout_state = last_bound.desc_set_pipeline_layout;
         inst_binding_pipe_layout_src = PipelineLayoutSource::LastBoundDescriptorSet;
-    } else if (cb_state.push_constant_latest_used_layout[lv_bind_point] != VK_NULL_HANDLE) {
-        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(cb_state.push_constant_latest_used_layout[lv_bind_point]);
+    } else if (cb_state.push_constant_latest_used_layout[vvl_bind_point] != VK_NULL_HANDLE) {
+        inst_binding_pipe_layout_state = gpuav.Get<vvl::PipelineLayout>(cb_state.push_constant_latest_used_layout[vvl_bind_point]);
         inst_binding_pipe_layout_src = PipelineLayoutSource::LastPushedConstants;
     }
 
@@ -619,8 +619,7 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
     assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
            bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
 
-    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
+    const LastBound &last_bound = cb_state.base.lastBound[ConvertToVvlBindPoint(bind_point)];
 
     // If nothing was updated, we don't want to bind anything
     if (!WasInstrumented(last_bound)) {

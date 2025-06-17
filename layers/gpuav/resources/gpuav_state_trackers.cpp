@@ -98,11 +98,11 @@ void CommandBufferSubState::Reset(const Location &loc) {
 void CommandBufferSubState::RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset,
                                                 uint32_t size, const void *values) {
     if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_GRAPHICS)) {
-        push_constant_latest_used_layout[BindPoint_Graphics] = layout;
+        push_constant_latest_used_layout[vvl::BindPointGraphics] = layout;
     } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_COMPUTE)) {
-        push_constant_latest_used_layout[BindPoint_Compute] = layout;
+        push_constant_latest_used_layout[vvl::BindPointCompute] = layout;
     } else if (IsStageInPipelineBindPoint(stage_flags, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)) {
-        push_constant_latest_used_layout[BindPoint_Ray_Tracing] = layout;
+        push_constant_latest_used_layout[vvl::BindPointRayTracing] = layout;
     } else {
         // Need to handle new binding point
         assert(false);

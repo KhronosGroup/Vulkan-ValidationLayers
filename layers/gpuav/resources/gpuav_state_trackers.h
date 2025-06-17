@@ -75,7 +75,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     uint32_t action_command_count = 0;
 
     std::vector<PushConstantData> push_constant_data_chunks;
-    std::array<VkPipelineLayout, BindPoint_Count> push_constant_latest_used_layout{};
+    std::array<VkPipelineLayout, vvl::BindPointCount> push_constant_latest_used_layout{};
 
     CommandBufferSubState(Validator &gpuav, vvl::CommandBuffer &cb);
     ~CommandBufferSubState();

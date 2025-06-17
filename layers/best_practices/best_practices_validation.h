@@ -42,6 +42,7 @@ struct DeprecationData {
 };
 
 struct ShaderStageState;
+struct LastBound;
 
 namespace spirv {
 struct EntryPoint;
@@ -349,7 +350,8 @@ class BestPractices : public vvl::DeviceProxy {
                                           const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo,
                                              const ErrorObject& error_obj) const override;
-    void ValidateBoundDescriptorSets(bp_state::CommandBufferSubState& commandBuffer, VkPipelineBindPoint bind_point, Func command);
+    void ValidateBoundDescriptorSets(bp_state::CommandBufferSubState& commandBuffer, const LastBound& last_bound_state,
+                                     Func command);
     bool PreCallValidateCmdEndRendering(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject& error_obj) const override;
 

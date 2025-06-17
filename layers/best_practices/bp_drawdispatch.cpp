@@ -20,6 +20,7 @@
 #include "best_practices/best_practices_validation.h"
 #include "best_practices/bp_state.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/last_bound_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include <bitset>
@@ -206,7 +207,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBufferSubState
 
     const void* ib_mem = ib_memory_state->p_driver_data;
 
-    const auto& last_bound_state = cb_state.base.lastBound[ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS)];
+    const auto& last_bound_state = cb_state.base.lastBound[vvl::BindPointGraphics];
     const bool primitive_restart_enable = last_bound_state.IsPrimitiveRestartEnable();
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
@@ -347,13 +348,13 @@ void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, 
                                                  const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, indexCount * instanceCount);
 
     if ((indexCount * instanceCount) <= kSmallIndexedDrawcallIndices) {
         sub_state.small_indexed_draw_call_count++;
     }
-
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
 }
 
 bool BestPractices::PreCallValidateCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
@@ -589,12 +590,9 @@ void BestPractices::PostCallRecordCmdDrawMultiEXT(VkCommandBuffer commandBuffer,
     RecordCmdDrawType(sub_state, count);
 }
 
-void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBufferSubState& cb_state, VkPipelineBindPoint bind_point,
+void BestPractices::ValidateBoundDescriptorSets(bp_state::CommandBufferSubState& cb_state, const LastBound& last_bound_state,
                                                 Func command) {
-    auto lvl_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto& last_bound = cb_state.base.lastBound[lvl_bind_point];
-
-    for (const auto& ds_slot : last_bound.ds_slots) {
+    for (const auto& ds_slot : last_bound_state.ds_slots) {
         if (!ds_slot.ds_state) continue;
         for (const auto& binding : *ds_slot.ds_state) {
             // For bindless scenarios, we should not attempt to track descriptor set state.
@@ -644,7 +642,9 @@ void BestPractices::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_
                                           uint32_t firstVertex, uint32_t firstInstance, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, vertexCount * instanceCount);
 }
 
@@ -652,7 +652,8 @@ void BestPractices::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer,
                                                   uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, drawCount);
 }
 
@@ -660,7 +661,8 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
                                                          uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_GRAPHICS, record_obj.location.function);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, drawCount);
 }
 
@@ -718,12 +720,14 @@ void BestPractices::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uin
                                               const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointCompute];
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
 }
 
 void BestPractices::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset,
                                                       const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    ValidateBoundDescriptorSets(sub_state, VK_PIPELINE_BIND_POINT_COMPUTE, record_obj.location.function);
+    auto& last_bound_state = cb_state->lastBound[vvl::BindPointCompute];
+    ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
 }

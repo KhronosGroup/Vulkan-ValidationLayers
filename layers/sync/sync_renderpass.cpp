@@ -516,9 +516,8 @@ void RenderPassAccessContext::RecordLayoutTransitions(const vvl::RenderPass &rp_
 // TODO: SyncError reporting places in this function are not covered by the tests.
 bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferAccessContext &cb_context, vvl::Func command) const {
     bool skip = false;
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
     const vvl::CommandBuffer &cmd_buffer = cb_context.GetCBState();
-    const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
+    const auto &last_bound_state = cmd_buffer.lastBound[vvl::BindPointGraphics];
     const auto *pipe = last_bound_state.pipeline_state;
 
     if (!pipe || pipe->RasterizationDisabled()) {
@@ -614,8 +613,7 @@ bool RenderPassAccessContext::ValidateDrawSubpassAttachment(const CommandBufferA
 }
 
 void RenderPassAccessContext::RecordDrawSubpassAttachment(const vvl::CommandBuffer &cmd_buffer, const ResourceUsageTag tag) {
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto &last_bound_state = cmd_buffer.lastBound[lv_bind_point];
+    const auto &last_bound_state = cmd_buffer.lastBound[vvl::BindPointGraphics];
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 

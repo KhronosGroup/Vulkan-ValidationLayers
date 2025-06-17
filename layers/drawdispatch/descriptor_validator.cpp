@@ -566,7 +566,7 @@ bool DescriptorValidator::ValidateDescriptor(const spirv::ResourceInterfaceVaria
             }
 
             bool descriptor_written_to = false;
-            const auto pipeline = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+            const auto pipeline = cb_state.lastBound[vvl::BindPointGraphics].pipeline_state;
             for (const auto &stage : pipeline->stage_states) {
                 if (!stage.entrypoint) continue;
                 for (const auto &interface_variable : stage.entrypoint->resource_interface_variables) {

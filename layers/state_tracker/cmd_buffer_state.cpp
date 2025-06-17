@@ -1181,8 +1181,7 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 
     // We need a descriptor set to update the bindings with, compatible with the passed layout
     const auto &dsl = pipeline_layout->set_layouts[set];
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto &last_bound = lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
     auto &push_descriptor_set = last_bound.push_descriptor_set;
     // If we are disturbing the current push_desriptor_set clear it
     if (!push_descriptor_set || !last_bound.IsBoundSetCompatible(set, *pipeline_layout)) {
@@ -1209,8 +1208,7 @@ void CommandBuffer::UpdateTraceRayCmd(Func command) { UpdatePipelineState(comman
 void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point) {
     RecordCmd(command);
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto &last_bound = lastBound[ConvertToVvlBindPoint(bind_point)];
     vvl::Pipeline *pipe = last_bound.pipeline_state;
     if (!pipe) {
         return;
@@ -1308,9 +1306,7 @@ void CommandBuffer::UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_b
     const uint32_t last_binding_index = required_size - 1;
     ASSERT_AND_RETURN(last_binding_index < pipeline_layout->set_compat_ids.size());
 
-    // Some useful shorthand
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     last_bound.desc_set_bound_command = bound_command;
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
@@ -1390,9 +1386,7 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
     const uint32_t last_binding_index = required_size - 1;
     assert(last_binding_index < pipeline_layout->set_compat_ids.size());
 
-    // Some useful shorthand
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto &last_bound = lastBound[lv_bind_point];
+    auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     last_bound.desc_set_pipeline_layout = pipeline_layout;
     auto &pipe_compat_ids = pipeline_layout->set_compat_ids;
     // Resize binding arrays
@@ -1511,7 +1505,7 @@ void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
     RecordCmd(command);
     RecordDynamicState(state);
 
-    vvl::Pipeline *pipeline = GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    vvl::Pipeline *pipeline = lastBound[vvl::BindPointGraphics].pipeline_state;
     if (pipeline && !pipeline->IsDynamic(state)) {
         dirty_static_state = true;
     }
@@ -1788,8 +1782,7 @@ bool CommandBuffer::HasExternalFormatResolveAttachment() const {
 }
 
 void CommandBuffer::BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state) {
-    const VkPipelineBindPoint pipeline_bind_point = ConvertToPipelineBindPoint(shader_stage);
-    auto &last_bound_state = lastBound[ConvertToLvlBindPoint(pipeline_bind_point)];
+    auto &last_bound_state = lastBound[ConvertStageToVvlBindPoint(shader_stage)];
     const auto stage_index = static_cast<uint32_t>(ConvertToShaderObjectStage(shader_stage));
     last_bound_state.shader_object_bound[stage_index] = true;
     last_bound_state.shader_object_states[stage_index] = shader_object_state;
@@ -1811,13 +1804,12 @@ void CommandBuffer::UnbindResources() {
     dynamic_state_status.history.reset();
 
     // Pipeline and descriptor sets
-    lastBound[BindPoint_Graphics].Reset();
+    lastBound[vvl::BindPointGraphics].Reset();
 }
 
 LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
     LogObjectList objlist(handle_);
-    const auto lv_bind_point = ConvertToLvlBindPoint(stage);
-    const auto &last_bound = lastBound[lv_bind_point];
+    const auto &last_bound = lastBound[ConvertStageToVvlBindPoint(stage)];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
@@ -1830,8 +1822,8 @@ LogObjectList CommandBuffer::GetObjectList(VkShaderStageFlagBits stage) const {
 
 LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_point) const {
     LogObjectList objlist(handle_);
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    const auto &last_bound = lastBound[lv_bind_point];
+
+    const auto &last_bound = lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
     const auto *pipeline_state = last_bound.pipeline_state;
 
     if (pipeline_state) {
@@ -1871,20 +1863,6 @@ LogObjectList CommandBuffer::GetObjectList(VkPipelineBindPoint pipeline_bind_poi
     }
 
     return objlist;
-}
-
-vvl::Pipeline *CommandBuffer::GetCurrentPipeline(VkPipelineBindPoint pipelineBindPoint) const {
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    return lastBound[lv_bind_point].pipeline_state;
-}
-
-void CommandBuffer::GetCurrentPipelineAndDesriptorSets(VkPipelineBindPoint pipelineBindPoint, const vvl::Pipeline **rtn_pipe,
-                                                       const std::vector<LastBound::DescriptorSetSlot> **rtn_sets) const {
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipelineBindPoint);
-    const auto &last_bound = lastBound[lv_bind_point];
-    if (!last_bound.pipeline_state) return;
-    *rtn_pipe = last_bound.pipeline_state;
-    *rtn_sets = &(last_bound.ds_slots);
 }
 
 void CommandBuffer::BeginLabel(const char *label_name) {

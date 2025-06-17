@@ -1004,7 +1004,7 @@ void Validator::PreCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer comm
         InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
         return;
     }
-    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
     auto &sub_state = SubState(*cb_state);
     PreCallActionCommand(*this, sub_state, bind_point, record_obj.location);
 };
@@ -1018,7 +1018,7 @@ void Validator::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer com
         return;
     }
     auto &sub_state = SubState(*cb_state);
-    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
     PostCallActionCommand(*this, sub_state, bind_point, record_obj.location);
 }
 

@@ -35,8 +35,7 @@ void UpdateBoundDescriptors(Validator &gpuav, CommandBufferSubState &cb_state, V
         return;
     }
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(pipeline_bind_point);
-    auto const &last_bound = cb_state.base.lastBound[lv_bind_point];
+    auto const &last_bound = cb_state.base.lastBound[ConvertToVvlBindPoint(pipeline_bind_point)];
 
     const size_t number_of_sets = last_bound.ds_slots.size();
     if (number_of_sets == 0) {
