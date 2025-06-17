@@ -1299,6 +1299,8 @@ TEST_F(NegativeGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
+    m_command_buffer.FullMemoryBarrier();
+
     // Forgot to set descriptor set
     // need to make sure GPU-AV is patching last descriptor set even though there was a dispatch inbetween
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms);

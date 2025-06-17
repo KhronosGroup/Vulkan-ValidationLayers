@@ -365,6 +365,8 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSets) 
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
+    m_command_buffer.FullMemoryBarrier();
+
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout1, 0, 1, &descriptor_set1.set_, 0,
                               nullptr);
@@ -448,10 +450,14 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageMultisampleDescriptorSetsPa
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
 
+    m_command_buffer.FullMemoryBarrier();
+
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe_ms);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout1, 0, 1, &descriptor_set1.set_, 0,
                               nullptr);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
+
+    m_command_buffer.FullMemoryBarrier();
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout0, 0, 1, &descriptor_set0.set_, 0,
