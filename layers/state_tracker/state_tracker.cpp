@@ -5180,10 +5180,7 @@ void DeviceState::PostCallRecordCmdBindVertexBuffers2(VkCommandBuffer commandBuf
         vertex_buffer_binding.bound = true;
         vertex_buffer_binding.buffer = pBuffers[i];
         vertex_buffer_binding.offset = pOffsets[i];
-        vertex_buffer_binding.effective_size = pSizes ? pSizes[i] : VK_WHOLE_SIZE;
-        if (vertex_buffer_binding.effective_size == VK_WHOLE_SIZE) {
-            vertex_buffer_binding.effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], VK_WHOLE_SIZE);
-        }
+        vertex_buffer_binding.effective_size = Buffer::GetRegionSize(buffer_state, pOffsets[i], pSizes ? pSizes[i] : VK_WHOLE_SIZE);
 
         if (pStrides) {
             vertex_buffer_binding.stride = pStrides[i];
