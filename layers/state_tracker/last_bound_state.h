@@ -143,70 +143,33 @@ struct LastBound {
     const spirv::EntryPoint *GetFragmentEntryPoint() const;
 };
 
-enum LvlBindPoint {
-    BindPoint_Graphics = VK_PIPELINE_BIND_POINT_GRAPHICS,
-    BindPoint_Compute = VK_PIPELINE_BIND_POINT_COMPUTE,
-    BindPoint_Ray_Tracing = 2,
-    BindPoint_Count = 3,
+namespace vvl {
+// Need to be values that can be used to access an array for each bind point
+enum BindPoint {
+    BindPointGraphics = VK_PIPELINE_BIND_POINT_GRAPHICS,
+    BindPointCompute = VK_PIPELINE_BIND_POINT_COMPUTE,
+    BindPointRayTracing = 2,
+    BindPointCount = 3,
 };
+}  // namespace vvl
 
-static VkPipelineBindPoint inline ConvertToPipelineBindPoint(LvlBindPoint bind_point) {
-    switch (bind_point) {
-        case BindPoint_Graphics:
-            return VK_PIPELINE_BIND_POINT_GRAPHICS;
-        case BindPoint_Compute:
-            return VK_PIPELINE_BIND_POINT_COMPUTE;
-        case BindPoint_Ray_Tracing:
-            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-        default:
-            break;
-    }
-    assert(false);
-    return VK_PIPELINE_BIND_POINT_GRAPHICS;
-}
-
-static LvlBindPoint inline ConvertToLvlBindPoint(VkPipelineBindPoint bind_point) {
+static vvl::BindPoint inline ConvertToVvlBindPoint(VkPipelineBindPoint bind_point) {
     switch (bind_point) {
         case VK_PIPELINE_BIND_POINT_GRAPHICS:
-            return BindPoint_Graphics;
+            return vvl::BindPointGraphics;
         case VK_PIPELINE_BIND_POINT_COMPUTE:
-            return BindPoint_Compute;
+            return vvl::BindPointCompute;
         case VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR:
-            return BindPoint_Ray_Tracing;
+            return vvl::BindPointRayTracing;
         default:
             break;
     }
     assert(false);
-    return BindPoint_Graphics;
+    return vvl::BindPointGraphics;
 }
 
-static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlagBits stage) {
-    switch (stage) {
-        case VK_SHADER_STAGE_VERTEX_BIT:
-        case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
-        case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:
-        case VK_SHADER_STAGE_GEOMETRY_BIT:
-        case VK_SHADER_STAGE_FRAGMENT_BIT:
-        case VK_SHADER_STAGE_TASK_BIT_EXT:
-        case VK_SHADER_STAGE_MESH_BIT_EXT:
-            return VK_PIPELINE_BIND_POINT_GRAPHICS;
-        case VK_SHADER_STAGE_COMPUTE_BIT:
-            return VK_PIPELINE_BIND_POINT_COMPUTE;
-        case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
-        case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
-        case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
-        case VK_SHADER_STAGE_MISS_BIT_KHR:
-        case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
-        case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
-            return VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
-        default:
-            break;
-    }
-    assert(false);
-    return VK_PIPELINE_BIND_POINT_GRAPHICS;
-}
-
-static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlags stage) {
+// Used for things like Device Generated Commands which supply multiple stages (but all need to be in a single bind point)
+static VkPipelineBindPoint inline ConvertStageToBindPoint(VkShaderStageFlags stage) {
     // Assumes the call has checked stages have not been mixed
     if (stage & kShaderStageAllGraphics) {
         return VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -219,7 +182,9 @@ static VkPipelineBindPoint inline ConvertToPipelineBindPoint(VkShaderStageFlags 
         return VK_PIPELINE_BIND_POINT_GRAPHICS;
     }
 }
-static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
+
+// Used to get last bound for shader object which only has a single stage
+static vvl::BindPoint inline ConvertStageToVvlBindPoint(VkShaderStageFlagBits stage) {
     switch (stage) {
         case VK_SHADER_STAGE_VERTEX_BIT:
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:
@@ -228,19 +193,19 @@ static LvlBindPoint inline ConvertToLvlBindPoint(VkShaderStageFlagBits stage) {
         case VK_SHADER_STAGE_FRAGMENT_BIT:
         case VK_SHADER_STAGE_TASK_BIT_EXT:
         case VK_SHADER_STAGE_MESH_BIT_EXT:
-            return BindPoint_Graphics;
+            return vvl::BindPointGraphics;
         case VK_SHADER_STAGE_COMPUTE_BIT:
-            return BindPoint_Compute;
+            return vvl::BindPointCompute;
         case VK_SHADER_STAGE_RAYGEN_BIT_KHR:
         case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:
         case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:
         case VK_SHADER_STAGE_MISS_BIT_KHR:
         case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:
         case VK_SHADER_STAGE_CALLABLE_BIT_KHR:
-            return BindPoint_Ray_Tracing;
+            return vvl::BindPointRayTracing;
         default:
             break;
     }
     assert(false);
-    return BindPoint_Graphics;
+    return vvl::BindPointGraphics;
 }

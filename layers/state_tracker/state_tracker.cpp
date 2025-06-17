@@ -1599,7 +1599,7 @@ void DeviceState::PostCallRecordCmdBindShadersEXT(VkCommandBuffer commandBuffer,
 
         // We use this to mark any previous pipeline bounds are invalidated now
         // vkspec.html#shaders-objects-pipeline-interaction
-        cb_state->BindPipeline(ConvertToLvlBindPoint(pStages[i]), nullptr);
+        cb_state->BindPipeline(ConvertStageToVvlBindPoint(pStages[i]), nullptr);
     }
 }
 
@@ -2285,7 +2285,7 @@ void DeviceState::PostCallRecordCmdBindPipeline(VkCommandBuffer commandBuffer, V
         }
     }
 
-    cb_state->BindPipeline(ConvertToLvlBindPoint(pipelineBindPoint), pipe_state.get());
+    cb_state->BindPipeline(ConvertToVvlBindPoint(pipelineBindPoint), pipe_state.get());
     if (!disabled[command_buffer_state]) {
         cb_state->AddChild(pipe_state);
     }
@@ -4928,7 +4928,7 @@ void DeviceState::PostCallRecordCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
                                                                const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
                                                                const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(pGeneratedCommandsInfo->shaderStages);
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(pGeneratedCommandsInfo->shaderStages);
     if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
         cb_state->UpdateDrawCmd(record_obj.location.function);
     } else if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
@@ -5428,8 +5428,7 @@ void DeviceState::PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuff
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto pipeline_state = cb_state->lastBound[lv_bind_point].pipeline_state;
+    const auto pipeline_state = cb_state->lastBound[vvl::BindPointGraphics].pipeline_state;
     if (pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
         cb_state->RecordDynamicState(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }

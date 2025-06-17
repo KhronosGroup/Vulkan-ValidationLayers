@@ -22,6 +22,7 @@
 #include "error_message/error_strings.h"
 #include "generated/dispatch_functions.h"
 #include "state_tracker/device_generated_commands_state.h"
+#include "state_tracker/last_bound_state.h"
 #include "state_tracker/pipeline_layout_state.h"
 #include "state_tracker/descriptor_sets.h"
 #include "state_tracker/render_pass_state.h"
@@ -381,7 +382,7 @@ bool CoreChecks::ValidateGeneratedCommandsInfo(const vvl::CommandBuffer& cb_stat
 
     if (indirect_commands_layout.has_vertex_buffer_token) {
         // If had vertex buffer token, it had to be graphic bind point (else would hit error earlier)
-        const auto pipeline = cb_state.GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+        const auto pipeline = cb_state.lastBound[vvl::BindPointGraphics].pipeline_state;
         if (pipeline && !pipeline->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
             const LogObjectList objlist(cb_state.Handle(), pipeline->Handle());
             skip |= LogError("VUID-VkGeneratedCommandsInfoEXT-indirectCommandsLayout-11079", objlist,
@@ -605,8 +606,7 @@ bool CoreChecks::PreCallValidateCmdExecuteGeneratedCommandsEXT(VkCommandBuffer c
                                                             error_obj.location.dot(Field::commandBuffer));
     }
 
-    const auto lv_bind_point = ConvertToLvlBindPoint(indirect_commands_layout->bind_point);
-    const auto& last_bound_state = cb_state.lastBound[lv_bind_point];
+    const auto& last_bound_state = cb_state.lastBound[ConvertToVvlBindPoint(indirect_commands_layout->bind_point)];
     VkShaderStageFlags bound_stages = last_bound_state.GetAllActiveBoundStages();
     if ((bound_stages | props.supportedIndirectCommandsShaderStages) != props.supportedIndirectCommandsShaderStages) {
         skip |= LogError("VUID-vkCmdExecuteGeneratedCommandsEXT-supportedIndirectCommandsShaderStages-11060",
@@ -637,9 +637,8 @@ bool CoreChecks::ValidateGeneratedCommandsInitialShaderState(const vvl::CommandB
                            ? "VUID-vkCmdPreprocessGeneratedCommandsEXT-indirectCommandsLayout-11084"
                            : "VUID-vkCmdExecuteGeneratedCommandsEXT-indirectCommandsLayout-11053";
 
-    const VkPipelineBindPoint bind_point = ConvertToPipelineBindPoint(shader_stage_flags);
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
-    const LastBound& last_bound = cb_state.lastBound[lv_bind_point];
+    const VkPipelineBindPoint bind_point = ConvertStageToBindPoint(shader_stage_flags);
+    const LastBound& last_bound = cb_state.lastBound[ConvertToVvlBindPoint(bind_point)];
 
     if (indirect_execution_set.is_pipeline) {
         const vvl::Pipeline* pipeline = last_bound.pipeline_state;

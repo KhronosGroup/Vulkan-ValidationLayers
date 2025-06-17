@@ -138,17 +138,17 @@ void BindShaderResourcesHelper(Validator &gpuav, CommandBufferSubState &cb_state
 
 void RestorablePipelineState::Create(CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point) {
     pipeline_bind_point_ = bind_point;
-    const auto lv_bind_point = ConvertToLvlBindPoint(bind_point);
+    const vvl::BindPoint vvl_bind_point = ConvertToVvlBindPoint(bind_point);
 
-    LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
+    LastBound &last_bound = cb_state.base.lastBound[vvl_bind_point];
     if (last_bound.pipeline_state) {
         pipeline_ = last_bound.pipeline_state->VkHandle();
 
     } else {
         assert(shader_objects_.empty());
-        if (lv_bind_point == BindPoint_Graphics) {
+        if (vvl_bind_point == vvl::BindPointGraphics) {
             shader_objects_ = last_bound.GetAllBoundGraphicsShaders();
-        } else if (lv_bind_point == BindPoint_Compute) {
+        } else if (vvl_bind_point == vvl::BindPointCompute) {
             auto compute_shader = last_bound.GetShaderState(ShaderObjectStage::COMPUTE);
             if (compute_shader) {
                 shader_objects_.emplace_back(compute_shader);

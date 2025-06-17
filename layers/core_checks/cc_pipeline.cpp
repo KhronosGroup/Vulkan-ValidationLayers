@@ -403,8 +403,8 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                                                      error_obj.location);
             }
 
-            if (cb_state->GetCurrentPipeline(pipelineBindPoint) &&
-                pipeline == cb_state->GetCurrentPipeline(pipelineBindPoint)->VkHandle() && cb_state->dirty_static_state &&
+            const auto old_pipeline = cb_state->lastBound[vvl::BindPointGraphics].pipeline_state;
+            if (old_pipeline && pipeline == old_pipeline->VkHandle() && cb_state->dirty_static_state &&
                 IsBeforeCtsVersion(1, 3, 8)) {
                 const LogObjectList objlist(commandBuffer, pipeline);
                 // This catches a bug in some drivers with conformance version lower than 1.3.8

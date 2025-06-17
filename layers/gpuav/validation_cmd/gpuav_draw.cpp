@@ -516,8 +516,7 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
         return;
     }
 
-    const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
+    const LastBound &last_bound = cb_state.base.lastBound[vvl::BindPointGraphics];
     const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
     const VkShaderStageFlags stages = pipeline_state->create_info_shaders;
     const bool is_task_shader = (stages & VK_SHADER_STAGE_TASK_BIT_EXT) == VK_SHADER_STAGE_TASK_BIT_EXT;
@@ -814,8 +813,7 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
     }
 
     if (gpuav.enabled_features.pipelineRobustness) {
-        const LvlBindPoint lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-        const LastBound &last_bound = cb_state.base.lastBound[lv_bind_point];
+        const LastBound &last_bound = cb_state.base.lastBound[vvl::BindPointGraphics];
         const vvl::Pipeline *pipeline_state = last_bound.pipeline_state;
         if (pipeline_state) {
             const auto robustness_ci =

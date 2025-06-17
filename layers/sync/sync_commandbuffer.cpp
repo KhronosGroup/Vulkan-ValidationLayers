@@ -444,10 +444,10 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
     if (!sync_state_.syncval_settings.shader_accesses_heuristic) {
         return skip;
     }
-    const vvl::Pipeline *pipe = nullptr;
-    const std::vector<LastBound::DescriptorSetSlot> *ds_slots = nullptr;
-    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &ds_slots);
-    if (!pipe || !ds_slots) {
+    const auto &last_bound_state = cb_state_->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
+    const vvl::Pipeline *pipe = last_bound_state.pipeline_state;
+    const std::vector<LastBound::DescriptorSetSlot> &ds_slots = last_bound_state.ds_slots;
+    if (!pipe) {
         return skip;
     }
 
@@ -463,11 +463,11 @@ bool CommandBufferAccessContext::ValidateDispatchDrawDescriptorSet(VkPipelineBin
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
-            if (variable.decorations.set >= ds_slots->size()) {
+            if (variable.decorations.set >= ds_slots.size()) {
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto &ds_slot = (*ds_slots)[variable.decorations.set];
+            const auto &ds_slot = ds_slots[variable.decorations.set];
             const auto *descriptor_set = ds_slot.ds_state.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
@@ -611,10 +611,11 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
     if (!sync_state_.syncval_settings.shader_accesses_heuristic) {
         return;
     }
-    const vvl::Pipeline *pipe = nullptr;
-    const std::vector<LastBound::DescriptorSetSlot> *ds_slots = nullptr;
-    cb_state_->GetCurrentPipelineAndDesriptorSets(pipelineBindPoint, &pipe, &ds_slots);
-    if (!pipe || !ds_slots) {
+
+    const auto &last_bound_state = cb_state_->lastBound[ConvertToVvlBindPoint(pipelineBindPoint)];
+    const vvl::Pipeline *pipe = last_bound_state.pipeline_state;
+    const std::vector<LastBound::DescriptorSetSlot> &ds_slots = last_bound_state.ds_slots;
+    if (!pipe) {
         return;
     }
 
@@ -630,11 +631,11 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
             continue;
         }
         for (const auto &variable : stage_state.entrypoint->resource_interface_variables) {
-            if (variable.decorations.set >= ds_slots->size()) {
+            if (variable.decorations.set >= ds_slots.size()) {
                 // This should be caught by Core validation, but if core checks are disabled SyncVal should not crash.
                 continue;
             }
-            const auto &ds_slot = (*ds_slots)[variable.decorations.set];
+            const auto &ds_slot = ds_slots[variable.decorations.set];
             const auto *descriptor_set = ds_slot.ds_state.get();
             if (!descriptor_set) continue;
             auto binding = descriptor_set->GetBinding(variable.decorations.binding);
@@ -734,7 +735,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                     const Location &loc) const {
     bool skip = false;
-    const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state;
     if (!pipe) {
         return skip;
     }
@@ -775,7 +776,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
 void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                   const ResourceUsageTag tag) {
-    const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS);
+    const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state;
     if (!pipe) {
         return;
     }
@@ -820,7 +821,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
         LogObjectList objlist(cb_state_->Handle(), index_buf_state->Handle());
-        if (const auto *pipe = cb_state_->GetCurrentPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS)) {
+        if (const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state) {
             objlist.add(pipe->Handle());
         }
         const std::string resource_description = "index " + sync_state_.FormatHandle(*index_buf_state);
@@ -865,8 +866,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     // TODO: Add tests. This is never called by existing tests.
     // TODO: Check for opportunities to improve error message after this covered by the tests.
     bool skip = false;
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto &last_bound_state = cb_state_->lastBound[lv_bind_point];
+    const auto &last_bound_state = cb_state_->lastBound[vvl::BindPointGraphics];
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return skip;
 
@@ -928,8 +928,7 @@ void CommandBufferAccessContext::RecordDrawAttachment(const ResourceUsageTag tag
 }
 
 void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag) {
-    const auto lv_bind_point = ConvertToLvlBindPoint(VK_PIPELINE_BIND_POINT_GRAPHICS);
-    const auto &last_bound_state = cb_state_->lastBound[lv_bind_point];
+    const auto &last_bound_state = cb_state_->lastBound[vvl::BindPointGraphics];
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 

@@ -25,6 +25,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "state_tracker/last_bound_state.h"
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
 #include "core_validation.h"
@@ -3256,7 +3257,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
 
     if (phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
         // Render passes only occur in graphics pipelines
-        const auto &last_bound = cb_state.lastBound[BindPoint_Graphics];
+        const auto &last_bound = cb_state.lastBound[vvl::BindPointGraphics];
         const vvl::Pipeline *old_pipeline_state = last_bound.pipeline_state;
         if (old_pipeline_state) {
             auto old_provoking_vertex_state_ci =
