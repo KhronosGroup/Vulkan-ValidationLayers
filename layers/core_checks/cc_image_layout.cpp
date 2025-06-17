@@ -912,6 +912,9 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
         if ((image_barrier.subresourceRange.aspectMask & test_aspect) == 0) {
             continue;
         }
+
+        // It is fine to store normalized oldLayout value inside LayoutUseCheckAndMessage. It is used only for
+        // comparison and won't appear in the error message (messages require original, non-normalized layouts)
         auto old_layout = NormalizeSynchronization2Layout(image_barrier.subresourceRange.aspectMask, image_barrier.oldLayout);
 
         LayoutUseCheckAndMessage layout_check(old_layout, test_aspect);
@@ -942,7 +945,7 @@ bool CoreChecks::VerifyImageBarrierLayouts(const vvl::CommandBuffer &cb_state, c
                 });
 
             UpdateCurrentLayout(*local_layout_map, RangeGenerator(image_state.subresource_encoder, normalized_isr),
-                                image_barrier.newLayout);
+                                image_barrier.newLayout, kInvalidLayout, normalized_isr.aspectMask);
         }
     }
     return skip;
@@ -1097,13 +1100,12 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     auto image_state = Get<vvl::Image>(mem_barrier.image);
     ASSERT_AND_RETURN(image_state);
 
-    auto normalized_subresource_range = image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
+    const VkImageSubresourceRange normalized_subresource_range =
+        image_state->NormalizeSubresourceRange(mem_barrier.subresourceRange);
 
-    VkImageLayout old_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.oldLayout);
-    VkImageLayout new_layout = NormalizeSynchronization2Layout(mem_barrier.subresourceRange.aspectMask, mem_barrier.newLayout);
-
-    // Layout transitions in external instance are not tracked, so don't validate previous layout.
+    VkImageLayout old_layout = mem_barrier.oldLayout;
     if (IsQueueFamilyExternal(mem_barrier.srcQueueFamilyIndex)) {
+        // Layout transitions in external instance are not tracked, so don't validate previous layout
         old_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 
@@ -1119,7 +1121,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     if (cb_state.IsReleaseOp(mem_barrier)) {
         cb_state.TrackImageFirstLayout(*image_state, normalized_subresource_range, old_layout);
     } else {
-        cb_state.SetImageLayout(*image_state, normalized_subresource_range, new_layout, old_layout);
+        cb_state.SetImageLayout(*image_state, normalized_subresource_range, mem_barrier.newLayout, old_layout);
     }
 }
 

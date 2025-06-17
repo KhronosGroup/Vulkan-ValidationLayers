@@ -1434,12 +1434,13 @@ void CommandBuffer::UpdateLastBoundDescriptorBuffers(VkPipelineBindPoint pipelin
 }
 
 // Set image layout for given subresource range
-void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
+void CommandBuffer::SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &normalized_subresource_range,
                                    VkImageLayout layout, VkImageLayout expected_layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
-        if (image_state.subresource_encoder.InRange(subresource_range)) {
-            RangeGenerator range_gen(image_state.subresource_encoder, subresource_range);
-            if (UpdateCurrentLayout(*image_layout_map, std::move(range_gen), layout, expected_layout)) {
+        if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
+            RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
+            if (UpdateCurrentLayout(*image_layout_map, std::move(range_gen), layout, expected_layout,
+                                    normalized_subresource_range.aspectMask)) {
                 image_layout_change_count++;  // Change the version of this data to force revalidation
             }
         }
@@ -1458,13 +1459,13 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, 
     }
 }
 
-void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &range,
-                                            VkImageLayout layout) {
+void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
+                                          VkImageLayout layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
-        const VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(range);
+        const VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
-            TrackFirstLayout(*image_layout_map, std::move(range_gen), layout);
+            TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask);
         }
     }
 }

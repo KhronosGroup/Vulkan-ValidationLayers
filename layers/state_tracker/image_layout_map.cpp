@@ -20,6 +20,7 @@
  */
 #include "state_tracker/image_layout_map.h"
 #include "state_tracker/image_state.h"
+#include "utils/image_layout_utils.h"
 
 using IndexRange = subresource_adapter::IndexRange;
 using RangeGenerator = subresource_adapter::RangeGenerator;
@@ -50,8 +51,8 @@ static bool UpdateLayoutMapRange(LayoutsMap& layout_map, const IndexRange& range
             // assuming that submit time validation will detect mismatch between first layout and global layout?
             // Are there contexts when this does not work?
 
-            const bool update_current =
-                new_entry.current_layout != kInvalidLayout && new_entry.current_layout != entry.current_layout;
+            const bool update_current = new_entry.current_layout != kInvalidLayout &&
+                                        !ImageLayoutMatches(entry.aspect_mask, new_entry.current_layout, entry.current_layout);
 
             auto intersected_range = pos->lower_bound->first & range;
 
@@ -108,11 +109,12 @@ static bool IterateLayoutMapRanges(
 }
 
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, RangeGenerator&& range_gen, VkImageLayout layout,
-                         VkImageLayout expected_layout) {
+                         VkImageLayout expected_layout, VkImageAspectFlags aspect_mask) {
     assert(layout != kInvalidLayout);
     ImageLayoutState entry{};
     entry.current_layout = layout;
     entry.first_layout = (expected_layout != kInvalidLayout) ? expected_layout : layout;
+    entry.aspect_mask = aspect_mask;
     return UpdateLayoutMap(image_layout_map, std::move(range_gen), entry);
 }
 
