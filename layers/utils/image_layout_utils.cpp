@@ -1,5 +1,5 @@
-/* Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+/* Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 #include "image_layout_utils.h"
 
-VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
+static VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
     switch (layout) {
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
         case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
@@ -31,7 +31,7 @@ VkImageLayout NormalizeDepthImageLayout(VkImageLayout layout) {
     }
 }
 
-VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
+static VkImageLayout NormalizeStencilImageLayout(VkImageLayout layout) {
     switch (layout) {
         case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
         case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
@@ -72,24 +72,26 @@ VkImageLayout NormalizeSynchronization2Layout(const VkImageAspectFlags aspect_ma
 }
 
 bool ImageLayoutMatches(const VkImageAspectFlags aspect_mask, VkImageLayout a, VkImageLayout b) {
-    bool matches = (a == b);
-    if (!matches) {
-        a = NormalizeSynchronization2Layout(aspect_mask, a);
-        b = NormalizeSynchronization2Layout(aspect_mask, b);
-        matches = (a == b);
-        if (!matches) {
-            // Relaxed rules when referencing *only* the depth or stencil aspects.
-            // When accessing both, normalize layouts for aspects separately.
-            if (aspect_mask == (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
-                matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b) &&
-                          NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
-            } else if (aspect_mask == VK_IMAGE_ASPECT_DEPTH_BIT) {
-                matches = NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
-            } else if (aspect_mask == VK_IMAGE_ASPECT_STENCIL_BIT) {
-                matches = NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
-            }
-        }
+    if (a == b) {
+        return true;
     }
-    return matches;
+    // Map sync2 generic layouts (ATTACHMENT_OPTIMAL, READ_ONLY_OPTIMAL) to equivalent basic layouts
+    a = NormalizeSynchronization2Layout(aspect_mask, a);
+    b = NormalizeSynchronization2Layout(aspect_mask, b);
+    if (a == b) {
+        return true;
+    }
+    // Relaxed rules when referencing *only* the depth or stencil aspects.
+    // When accessing both, normalize layouts for aspects separately.
+    if (aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) {
+        bool matches = true;
+        if ((aspect_mask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0) {
+            matches &= NormalizeDepthImageLayout(a) == NormalizeDepthImageLayout(b);
+        }
+        if ((aspect_mask & VK_IMAGE_ASPECT_STENCIL_BIT) != 0) {
+            matches &= NormalizeStencilImageLayout(a) == NormalizeStencilImageLayout(b);
+        }
+        return matches;
+    }
+    return false;
 }
-

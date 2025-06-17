@@ -41,7 +41,8 @@ struct ImageLayoutState {
     // and for image barrier it is the oldLayout.
     VkImageLayout first_layout;
 
-    // For relaxed matching rules (used with the first layout)
+    // Aspect mask is used to normalize layouts before comparison.
+    // TODO: consider storing two additional normalized layouts instead of this field
     VkImageAspectFlags aspect_mask;
 };
 
@@ -56,15 +57,15 @@ class CommandBufferImageLayoutMap : public subresource_adapter::BothRangeMap<Ima
 using ImageLayoutRegistry = vvl::unordered_map<VkImage, std::shared_ptr<CommandBufferImageLayoutMap>>;
 
 // Update image layout state during command buffer recording phase.
-// If API defines the expected layout it can be specified too.
+// The VkImageLayout parameters must be unnormalized values (as defined by the API) so they can be used in the error messages.
 bool UpdateCurrentLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                         VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
+                         VkImageLayout layout, VkImageLayout expected_layout, VkImageAspectFlags aspect_mask);
 
 // Track image layout at the beginning of the command buffer.
-// Typically called by APIs that specify the expected layout but do not perform a layout transition.
-// The aspect mask is used when the API restricts the subresource to a specific aspect (descriptor image views).
+// Typically called by the APIs that specify the expected layout but do not perform a layout transition.
+// The VkImageLayout parameter must be unnormalized value (as defined by the API) so it can be used in the error messages.
 void TrackFirstLayout(CommandBufferImageLayoutMap& image_layout_map, subresource_adapter::RangeGenerator&& range_gen,
-                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask = 0);
+                      VkImageLayout expected_layout, VkImageAspectFlags aspect_mask);
 
 // Iterate over layout map subresource ranges that intersect with the ranges defined by RangeGenerator.
 // Runs the callback on each matching layout map range.
