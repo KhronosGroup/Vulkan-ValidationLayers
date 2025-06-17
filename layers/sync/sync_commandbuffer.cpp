@@ -735,7 +735,7 @@ void CommandBufferAccessContext::RecordDispatchDrawDescriptorSet(VkPipelineBindP
 bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                     const Location &loc) const {
     bool skip = false;
-    const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state;
+    const auto *pipe = cb_state_->GetLastBoundGraphics().pipeline_state;
     if (!pipe) {
         return skip;
     }
@@ -776,7 +776,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
 
 void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertexCount, uint32_t firstVertex,
                                                   const ResourceUsageTag tag) {
-    const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state;
+    const auto *pipe = cb_state_->GetLastBoundGraphics().pipeline_state;
     if (!pipe) {
         return;
     }
@@ -821,7 +821,7 @@ bool CommandBufferAccessContext::ValidateDrawVertexIndex(uint32_t index_count, u
     auto hazard = current_context_->DetectHazard(*index_buf_state, SYNC_INDEX_INPUT_INDEX_READ, range);
     if (hazard.IsHazard()) {
         LogObjectList objlist(cb_state_->Handle(), index_buf_state->Handle());
-        if (const auto *pipe = cb_state_->lastBound[vvl::BindPointGraphics].pipeline_state) {
+        if (const auto *pipe = cb_state_->GetLastBoundGraphics().pipeline_state) {
             objlist.add(pipe->Handle());
         }
         const std::string resource_description = "index " + sync_state_.FormatHandle(*index_buf_state);
@@ -866,7 +866,7 @@ bool CommandBufferAccessContext::ValidateDrawDynamicRenderingAttachment(const Lo
     // TODO: Add tests. This is never called by existing tests.
     // TODO: Check for opportunities to improve error message after this covered by the tests.
     bool skip = false;
-    const auto &last_bound_state = cb_state_->lastBound[vvl::BindPointGraphics];
+    const auto &last_bound_state = cb_state_->GetLastBoundGraphics();
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return skip;
 
@@ -928,7 +928,7 @@ void CommandBufferAccessContext::RecordDrawAttachment(const ResourceUsageTag tag
 }
 
 void CommandBufferAccessContext::RecordDrawDynamicRenderingAttachment(ResourceUsageTag tag) {
-    const auto &last_bound_state = cb_state_->lastBound[vvl::BindPointGraphics];
+    const auto &last_bound_state = cb_state_->GetLastBoundGraphics();
     const auto *pipe = last_bound_state.pipeline_state;
     if (!pipe || pipe->RasterizationDisabled()) return;
 

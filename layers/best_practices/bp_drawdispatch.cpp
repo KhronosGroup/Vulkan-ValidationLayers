@@ -207,7 +207,7 @@ bool BestPractices::ValidateIndexBufferArm(const bp_state::CommandBufferSubState
 
     const void* ib_mem = ib_memory_state->p_driver_data;
 
-    const auto& last_bound_state = cb_state.base.lastBound[vvl::BindPointGraphics];
+    const auto& last_bound_state = cb_state.base.GetLastBoundGraphics();
     const bool primitive_restart_enable = last_bound_state.IsPrimitiveRestartEnable();
 
     // no point checking index buffer if the memory is nonexistant/unmapped, or if there is no graphics pipeline bound to this CB
@@ -348,7 +348,7 @@ void BestPractices::PostCallRecordCmdDrawIndexed(VkCommandBuffer commandBuffer, 
                                                  const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    auto& last_bound_state = cb_state->GetLastBoundGraphics();
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, indexCount * instanceCount);
 
@@ -642,7 +642,7 @@ void BestPractices::PostCallRecordCmdDraw(VkCommandBuffer commandBuffer, uint32_
                                           uint32_t firstVertex, uint32_t firstInstance, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    auto& last_bound_state = cb_state->GetLastBoundGraphics();
 
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, vertexCount * instanceCount);
@@ -652,7 +652,7 @@ void BestPractices::PostCallRecordCmdDrawIndirect(VkCommandBuffer commandBuffer,
                                                   uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    auto& last_bound_state = cb_state->GetLastBoundGraphics();
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, drawCount);
 }
@@ -661,7 +661,7 @@ void BestPractices::PostCallRecordCmdDrawIndexedIndirect(VkCommandBuffer command
                                                          uint32_t drawCount, uint32_t stride, const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointGraphics];
+    auto& last_bound_state = cb_state->GetLastBoundGraphics();
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
     RecordCmdDrawType(sub_state, drawCount);
 }
@@ -720,7 +720,7 @@ void BestPractices::PostCallRecordCmdDispatch(VkCommandBuffer commandBuffer, uin
                                               const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointCompute];
+    auto& last_bound_state = cb_state->GetLastBoundCompute();
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
 }
 
@@ -728,6 +728,6 @@ void BestPractices::PostCallRecordCmdDispatchIndirect(VkCommandBuffer commandBuf
                                                       const RecordObject& record_obj) {
     const auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
     auto& sub_state = bp_state::SubState(*cb_state);
-    auto& last_bound_state = cb_state->lastBound[vvl::BindPointCompute];
+    auto& last_bound_state = cb_state->GetLastBoundCompute();
     ValidateBoundDescriptorSets(sub_state, last_bound_state, record_obj.location.function);
 }

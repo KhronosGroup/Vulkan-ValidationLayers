@@ -5428,7 +5428,7 @@ void DeviceState::PostCallRecordCmdSetVertexInputEXT(VkCommandBuffer commandBuff
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordStateCmd(record_obj.location.function, CB_DYNAMIC_STATE_VERTEX_INPUT_EXT);
 
-    const auto pipeline_state = cb_state->lastBound[vvl::BindPointGraphics].pipeline_state;
+    const auto pipeline_state = cb_state->GetLastBoundGraphics().pipeline_state;
     if (pipeline_state && pipeline_state->IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE)) {
         cb_state->RecordDynamicState(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE);
     }

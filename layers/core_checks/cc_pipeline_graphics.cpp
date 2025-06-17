@@ -3257,7 +3257,7 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
 
     if (phys_dev_ext_props.provoking_vertex_props.provokingVertexModePerPipeline == VK_FALSE) {
         // Render passes only occur in graphics pipelines
-        const auto &last_bound = cb_state.lastBound[vvl::BindPointGraphics];
+        const auto &last_bound = cb_state.GetLastBoundGraphics();
         const vvl::Pipeline *old_pipeline_state = last_bound.pipeline_state;
         if (old_pipeline_state) {
             auto old_provoking_vertex_state_ci =

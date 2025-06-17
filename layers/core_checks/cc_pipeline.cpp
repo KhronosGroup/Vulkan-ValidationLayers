@@ -403,7 +403,7 @@ bool CoreChecks::PreCallValidateCmdBindPipeline(VkCommandBuffer commandBuffer, V
                                                                      error_obj.location);
             }
 
-            const auto old_pipeline = cb_state->lastBound[vvl::BindPointGraphics].pipeline_state;
+            const auto old_pipeline = cb_state->GetLastBoundGraphics().pipeline_state;
             if (old_pipeline && pipeline == old_pipeline->VkHandle() && cb_state->dirty_static_state &&
                 IsBeforeCtsVersion(1, 3, 8)) {
                 const LogObjectList objlist(commandBuffer, pipeline);

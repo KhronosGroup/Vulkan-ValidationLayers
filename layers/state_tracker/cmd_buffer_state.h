@@ -379,6 +379,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     //  each individual CMD_NODE referencing its own "lastBound" state
     // Store last bound state for Gfx & Compute pipeline bind points
     std::array<LastBound, vvl::BindPointCount> lastBound;
+    const LastBound &GetLastBoundGraphics() const { return lastBound[vvl::BindPointGraphics]; }
+    const LastBound &GetLastBoundCompute() const { return lastBound[vvl::BindPointCompute]; }
+    const LastBound &GetLastBoundRayTracing() const { return lastBound[vvl::BindPointRayTracing]; }
 
     // Use the casting boilerplate from StateObject to implement the derived shared_from_this
     std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }
