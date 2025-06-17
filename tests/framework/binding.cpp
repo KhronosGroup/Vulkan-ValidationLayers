@@ -2282,4 +2282,11 @@ VkResult Surface::Init(VkInstance instance, const VkXcbSurfaceCreateInfoKHR &inf
     return result;
 }
 #endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+VkResult Surface::Init(VkInstance instance, const VkWaylandSurfaceCreateInfoKHR &info) {
+    VkResult result = vk::CreateWaylandSurfaceKHR(instance, &info, nullptr, &handle_);
+    instance_ = instance;
+    return result;
+}
+#endif
 }  // namespace vkt

@@ -74,54 +74,6 @@ std::optional<VkPhysicalDeviceGroupProperties> WsiTest::FindPhysicalDeviceGroup(
     return {};
 }
 
-#ifdef VK_USE_PLATFORM_WAYLAND_KHR
-void WsiTest::InitWaylandContext(WaylandContext &context) {
-    context.display = wl_display_connect(nullptr);
-    if (!context.display) {
-        GTEST_SKIP() << "couldn't create wayland surface";
-    }
-
-    auto global = [](void *data, struct wl_registry *registry, uint32_t id, const char *interface, uint32_t version) {
-        (void)version;
-        const std::string_view interface_str = interface;
-        if (interface_str == "wl_compositor") {
-            auto compositor = reinterpret_cast<wl_compositor **>(data);
-            *compositor = reinterpret_cast<wl_compositor *>(wl_registry_bind(registry, id, &wl_compositor_interface, 1));
-        }
-    };
-
-    auto global_remove = [](void *data, struct wl_registry *registry, uint32_t id) {
-        (void)data;
-        (void)registry;
-        (void)id;
-    };
-
-    context.registry = wl_display_get_registry(context.display);
-    ASSERT_TRUE(context.registry != nullptr);
-
-    const wl_registry_listener registry_listener = {global, global_remove};
-
-    wl_registry_add_listener(context.registry, &registry_listener, &context.compositor);
-
-    wl_display_dispatch(context.display);
-    ASSERT_TRUE(context.compositor);
-
-    context.surface = wl_compositor_create_surface(context.compositor);
-    ASSERT_TRUE(context.surface);
-
-    const uint32_t version = wl_surface_get_version(context.surface);
-    ASSERT_TRUE(version > 0);
-}
-
-void WsiTest::ReleaseWaylandContext(WaylandContext &context) {
-    wl_surface_destroy(context.surface);
-    wl_compositor_destroy(context.compositor);
-    wl_registry_destroy(context.registry);
-    wl_display_disconnect(context.display);
-    context = WaylandContext{};
-}
-#endif  // VK_USE_PLATFORM_WAYLAND_KHR
-
 class PositiveWsi : public WsiTest {};
 
 TEST_F(PositiveWsi, CreateWaylandSurface) {
@@ -135,7 +87,9 @@ TEST_F(PositiveWsi, CreateWaylandSurface) {
     RETURN_IF_SKIP(Init());
 
     WaylandContext wayland_ctx;
-    RETURN_IF_SKIP(InitWaylandContext(wayland_ctx));
+    if (!wayland_ctx.Init()) {
+        GTEST_SKIP() << "Failed to create wayland context.";
+    }
 
     VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
     surface_create_info.display = wayland_ctx.display;
@@ -145,7 +99,7 @@ TEST_F(PositiveWsi, CreateWaylandSurface) {
     vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &vulkan_surface);
 
     vk::DestroySurfaceKHR(instance(), vulkan_surface, nullptr);
-    ReleaseWaylandContext(wayland_ctx);
+    wayland_ctx.Release();
 #endif
 }
 
@@ -1654,7 +1608,9 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     RETURN_IF_SKIP(Init());
 
     WaylandContext wayland_ctx;
-    RETURN_IF_SKIP(InitWaylandContext(wayland_ctx));
+    if (!wayland_ctx.Init()) {
+        GTEST_SKIP() << "Failed to create wayland context.";
+    }
 
     VkWaylandSurfaceCreateInfoKHR surface_create_info = vku::InitStructHelper();
     surface_create_info.display = wayland_ctx.display;
@@ -1679,7 +1635,7 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
 
     if (per_present_mode_min_image_count >= general_min_image_count) {
         vk::DestroySurfaceKHR(instance(), surface, nullptr);
-        ReleaseWaylandContext(wayland_ctx);
+        wayland_ctx.Release();
         GTEST_SKIP() << "Can't find present mode that uses less images than a general case";
     }
 
@@ -1707,7 +1663,7 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     { vkt::Swapchain swapchain(*m_device, swapchain_create_info); }
 
     vk::DestroySurfaceKHR(instance(), surface, nullptr);
-    ReleaseWaylandContext(wayland_ctx);
+    wayland_ctx.Release();
 #endif
 }
 

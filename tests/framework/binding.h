@@ -1379,6 +1379,9 @@ class Surface {
 #if defined(VK_USE_PLATFORM_XCB_KHR)
     VkResult Init(VkInstance, const VkXcbSurfaceCreateInfoKHR &);
 #endif
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    VkResult Init(VkInstance, const VkWaylandSurfaceCreateInfoKHR &);
+#endif
 
     ~Surface() noexcept { Destroy(); }
     void Destroy() noexcept {

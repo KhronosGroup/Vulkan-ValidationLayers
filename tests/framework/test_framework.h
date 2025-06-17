@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2015-2024 The Khronos Group Inc.
- * Copyright (c) 2015-2024 Valve Corporation
- * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (c) 2015-2025 The Khronos Group Inc.
+ * Copyright (c) 2015-2025 Valve Corporation
+ * Copyright (c) 2015-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,21 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#endif
+
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+#include "wayland-client.h"
+// TODO - probably worth creating a framework/wsi_helper.h file dedicated for WSI that everyone can access as it is independent of
+// the Vulkan instance
+struct WaylandContext {
+    wl_display *display = nullptr;
+    wl_registry *registry = nullptr;
+    wl_surface *surface = nullptr;
+    wl_compositor *compositor = nullptr;
+
+    bool Init();
+    void Release();
+};
 #endif
 
 // Can be used by tests to record additional details / description of test

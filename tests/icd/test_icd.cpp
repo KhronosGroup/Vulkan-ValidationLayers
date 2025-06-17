@@ -1548,6 +1548,13 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceSurfaceCapabilities2KHR(V
         // "VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT must be included in the set but implementations may support additional usages."
         shared_present_capabilities->sharedPresentSupportedUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
+    if (auto* wait2_capabilities = vku::FindStructInPNextChain<VkSurfaceCapabilitiesPresentWait2KHR>(pSurfaceCapabilities->pNext)) {
+        wait2_capabilities->presentWait2Supported = VK_TRUE;
+    }
+    if (auto* id2_capabilities = vku::FindStructInPNextChain<VkSurfaceCapabilitiesPresentId2KHR>(pSurfaceCapabilities->pNext)) {
+        id2_capabilities->presentId2Supported = VK_TRUE;
+    }
+
     return VK_SUCCESS;
 }
 
