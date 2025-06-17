@@ -24,16 +24,7 @@
 namespace vvl {
 class Buffer;
 class BufferView;
-struct VertexBufferBinding;
-struct IndexBufferBinding;
 }  // namespace vvl
-
-namespace syncval_state {
-class Swapchain;
-}  // namespace syncval_state
-
-class HazardResult;
-class SyncValidator;
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
 
@@ -59,19 +50,11 @@ struct ResourceUsageTagEx {
     uint32_t handle_index = vvl::kNoIndex32;
 };
 
-template <typename T>
-ResourceAccessRange MakeRange(const T &has_offset_and_size) {
-    return ResourceAccessRange(has_offset_and_size.offset, (has_offset_and_size.offset + has_offset_and_size.effective_size));
-}
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
-ResourceAccessRange MakeRange(const vvl::BufferView &buf_view_state);
-ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride);
 
 extern const ResourceAccessRange kFullRange;
 
-constexpr VkImageAspectFlags kColorAspects =
-    VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
 // Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing

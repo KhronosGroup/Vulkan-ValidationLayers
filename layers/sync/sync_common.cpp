@@ -89,18 +89,17 @@ SyncAccessFlags SyncStageAccess::AccessScope(const SyncAccessFlags& stage_scope,
     return access_scope;
 }
 
-ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, (start + size)); }
+ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size) { return ResourceAccessRange(start, start + size); }
 
 ResourceAccessRange MakeRange(const vvl::Buffer& buffer, VkDeviceSize offset, VkDeviceSize size) {
-    return MakeRange(offset, buffer.GetRegionSize(offset, size));
-}
-
-ResourceAccessRange MakeRange(const vvl::BufferView& buf_view_state) {
-    return MakeRange(*buf_view_state.buffer_state.get(), buf_view_state.create_info.offset, buf_view_state.create_info.range);
-}
-
-ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride) {
-    const VkDeviceSize range_start = offset + (first_index * stride);
-    const VkDeviceSize range_size = count * stride;
-    return MakeRange(range_start, range_size);
+    if (offset >= buffer.create_info.size) {
+        return {};
+    }
+    VkDeviceSize end;
+    if (size == VK_WHOLE_SIZE) {
+        end = buffer.create_info.size;
+    } else {
+        end = std::min(offset + size, buffer.create_info.size);
+    }
+    return ResourceAccessRange(offset, end);
 }

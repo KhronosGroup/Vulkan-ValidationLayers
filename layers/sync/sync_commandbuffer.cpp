@@ -31,6 +31,9 @@
 #include "utils/math_utils.h"
 #include "utils/text_utils.h"
 
+constexpr VkImageAspectFlags kColorAspects =
+    VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_PLANE_0_BIT | VK_IMAGE_ASPECT_PLANE_1_BIT | VK_IMAGE_ASPECT_PLANE_2_BIT;
+
 struct ShaderStageAccesses {
     SyncAccessIndex sampled_read;
     SyncAccessIndex storage_read;
@@ -148,9 +151,19 @@ static ShaderStageAccesses GetShaderStageAccesses(VkShaderStageFlagBits shader_s
     return it->second;
 }
 
-SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
-                                                        const spirv::ResourceInterfaceVariable &variable,
-                                                        VkShaderStageFlagBits stage_flag) {
+static ResourceAccessRange MakeRange(VkDeviceSize offset, uint32_t first_index, uint32_t count, uint32_t stride) {
+    const VkDeviceSize range_start = offset + (first_index * stride);
+    const VkDeviceSize range_size = count * stride;
+    return MakeRange(range_start, range_size);
+}
+
+static ResourceAccessRange MakeRange(const vvl::BufferView &buf_view_state) {
+    return MakeRange(*buf_view_state.buffer_state.get(), buf_view_state.create_info.offset, buf_view_state.create_info.range);
+}
+
+static SyncAccessIndex GetSyncStageAccessIndexsByDescriptorSet(VkDescriptorType descriptor_type,
+                                                               const spirv::ResourceInterfaceVariable &variable,
+                                                               VkShaderStageFlagBits stage_flag) {
     if (!variable.IsAccessed()) {
         return SYNC_ACCESS_INDEX_NONE;
     }
@@ -751,7 +764,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
             // TODO: add support to determine range of instance level attributes
             continue;
         }
-        if (const auto *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
+        if (const vvl::VertexBufferBinding *vertex_buffer = vvl::Find(binding_buffers, binding_desc.binding)) {
             const auto buf_state = sync_state_.Get<vvl::Buffer>(vertex_buffer->buffer);
             if (!buf_state) continue;  // also skips if using nullDescriptor
 
@@ -759,7 +772,7 @@ bool CommandBufferAccessContext::ValidateDrawVertex(std::optional<uint32_t> vert
             if (vertexCount.has_value()) {  // the range is specified
                 range = MakeRange(vertex_buffer->offset, firstVertex, *vertexCount, binding_desc.stride);
             } else {  // entire vertex buffer
-                range = MakeRange(*vertex_buffer);
+                range = MakeRange(vertex_buffer->offset, vertex_buffer->effective_size);
             }
 
             auto hazard = current_context_->DetectHazard(*buf_state, SYNC_VERTEX_ATTRIBUTE_INPUT_VERTEX_ATTRIBUTE_READ, range);
@@ -799,7 +812,7 @@ void CommandBufferAccessContext::RecordDrawVertex(std::optional<uint32_t> vertex
             if (vertexCount.has_value()) {  // the range is specified
                 range = MakeRange(vertex_buffer->offset, firstVertex, *vertexCount, binding_desc.stride);
             } else {  // entire vertex buffer
-                range = MakeRange(*vertex_buffer);
+                range = MakeRange(vertex_buffer->offset, vertex_buffer->effective_size);
             }
 
             const ResourceUsageTagEx tag_ex = AddCommandHandle(tag, buf_state->Handle());

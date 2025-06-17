@@ -24,6 +24,7 @@ class CommandBufferAccessContext;
 class CommandExecutionContext;
 class RenderPassAccessContext;
 class ReplayState;
+class SyncValidator;
 
 namespace vvl {
 class ImageView;
