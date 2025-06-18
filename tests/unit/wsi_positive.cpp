@@ -2124,6 +2124,9 @@ TEST_F(PositiveWsi, OldSwapchainFromAnotherSurface) {
     TEST_DESCRIPTION("https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10112");
     AddSurfaceExtension();
     RETURN_IF_SKIP(Init());
+    if (IsPlatformMockICD()) {
+        GTEST_SKIP() << "Will leak in ANSN because headless machine uses xvfb, but can only handle a single surface";
+    }
     RETURN_IF_SKIP(InitSurface());
     InitSwapchainInfo();
 
