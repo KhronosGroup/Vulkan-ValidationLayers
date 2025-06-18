@@ -81,6 +81,7 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
 
     if (rp_state && rp_state->UsesDynamicRendering()) {
         skip |= ValidateGraphicsPipelineExternalFormatResolveDynamicRendering(pipeline, create_info_loc);
+        skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     } else if (rp_state && !rp_state->UsesDynamicRendering()) {
         const uint32_t subpass = pipeline.Subpass();
         if (subpass >= rp_state->create_info.subpassCount) {
@@ -123,7 +124,6 @@ bool CoreChecks::ValidateGraphicsPipeline(const vvl::Pipeline &pipeline, const v
     skip |= ValidateGraphicsPipelineNullState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineRasterizationOrderAttachmentAccess(pipeline, subpass_desc, create_info_loc);
     skip |= ValidateGraphicsPipelineDynamicState(pipeline, create_info_loc);
-    skip |= ValidateGraphicsPipelineDynamicRendering(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineShaderState(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineBlendEnable(pipeline, create_info_loc);
     skip |= ValidateGraphicsPipelineMeshTask(pipeline, create_info_loc);
@@ -1215,16 +1215,21 @@ bool CoreChecks::ValidateGraphicsPipelineLibrary(const vvl::Pipeline &pipeline, 
 bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeline, const Location &create_info_loc) const {
     bool skip = false;
     const auto rp_state = pipeline.RenderPassState();
-    if (!rp_state || rp_state->UsesDynamicRendering()) return skip;
-    const Location color_loc = create_info_loc.dot(Field::pColorBlendState);
+    if (!rp_state || rp_state->UsesDynamicRendering()) {
+        return skip;
+    }
 
     const auto subpass = pipeline.Subpass();
     const auto *subpass_desc = &rp_state->create_info.pSubpasses[subpass];
-    if (!subpass_desc) return skip;
+    if (!subpass_desc) {
+        return skip;
+    }
 
     for (uint32_t i = 0; i < pipeline.AttachmentStates().size() && i < subpass_desc->colorAttachmentCount; ++i) {
         const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-        if (attachment == VK_ATTACHMENT_UNUSED) continue;
+        if (attachment == VK_ATTACHMENT_UNUSED) {
+            continue;
+        }
 
         const auto attachment_desc = rp_state->create_info.pAttachments[attachment];
         VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(attachment_desc.format);
@@ -1232,10 +1237,23 @@ bool CoreChecks::ValidateGraphicsPipelineBlendEnable(const vvl::Pipeline &pipeli
         if (!pipeline.RasterizationDisabled() && pipeline.AttachmentStates()[i].blendEnable &&
             !(format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT)) {
             skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06041", device,
-                             color_loc.dot(Field::pAttachments, i).dot(Field::blendEnable),
+                             create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, i).dot(Field::blendEnable),
                              "is VK_TRUE but format %s of the corresponding attachment description (subpass %" PRIu32
                              ", attachment %" PRIu32 ") does not support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.",
                              string_VkFormat(attachment_desc.format), subpass, attachment);
+        }
+
+        if (attachment_desc.format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 &&
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+            const VkColorComponentFlags &color_write_mask = pipeline.AttachmentStates()[i].colorWriteMask;
+            VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+            if ((color_write_mask & rgb) != rgb && (color_write_mask & rgb) != 0) {
+                skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09043", device, create_info_loc.dot(Field::renderPass),
+                                 "was created with pAttachments[%" PRIu32
+                                 "].format of VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but pColorBlendState->pAttachments[%" PRIu32
+                                 "].colorWriteMask is %s.",
+                                 attachment, i, string_VkColorComponentFlags(color_write_mask).c_str());
+            }
         }
     }
 
@@ -3138,24 +3156,42 @@ bool CoreChecks::ValidateGraphicsPipelineDynamicRendering(const vvl::Pipeline &p
     if (pipeline.OwnsSubState(pipeline.fragment_output_state)) {
         for (uint32_t color_index = 0; color_index < rendering_struct->colorAttachmentCount; color_index++) {
             const VkFormat color_format = rendering_struct->pColorAttachmentFormats[color_index];
-            if (color_format != VK_FORMAT_UNDEFINED) {
-                VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
-                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) &&
-                    (color_blend_state && (color_index < color_blend_state->attachmentCount) &&
-                     (color_blend_state->pAttachments[color_index].blendEnable != VK_FALSE))) {
+            if (color_format == VK_FORMAT_UNDEFINED) {
+                continue;
+            }
+
+            VkFormatFeatureFlags2KHR format_features = GetPotentialFormatFeatures(color_format);
+            if ((format_features &
+                 (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
+                skip |= LogError(
+                    "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
+                    create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, color_index),
+                    "(%s) potential format features are %s.", string_VkFormat(color_format),
+                    string_VkFormatFeatureFlags2(format_features).c_str());
+            }
+
+            if (color_blend_state && color_index < color_blend_state->attachmentCount) {
+                const auto &color_blend_attachment = color_blend_state->pAttachments[color_index];
+
+                if (((format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) && color_blend_attachment.blendEnable) {
                     skip |= LogError(
                         "VUID-VkGraphicsPipelineCreateInfo-renderPass-06062", device,
                         create_info_loc.dot(Field::pColorBlendState).dot(Field::pAttachments, color_index).dot(Field::blendEnable),
                         "is VK_TRUE.");
                 }
 
-                if ((format_features &
-                     (VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_LINEAR_COLOR_ATTACHMENT_BIT_NV)) == 0) {
-                    skip |= LogError(
-                        "VUID-VkGraphicsPipelineCreateInfo-renderPass-06582", device,
-                        create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo, Field::pColorAttachmentFormats, color_index),
-                        "(%s) potential format features are %s.", string_VkFormat(color_format),
-                        string_VkFormatFeatureFlags2(format_features).c_str());
+                if (color_format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 &&
+                    !pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
+                    VkColorComponentFlags rgb = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+                    if ((color_blend_attachment.colorWriteMask & rgb) != rgb &&
+                        (color_blend_attachment.colorWriteMask & rgb) != 0) {
+                        skip |= LogError("VUID-VkGraphicsPipelineCreateInfo-None-09043", device,
+                                         create_info_loc.pNext(Struct::VkPipelineRenderingCreateInfo,
+                                                               Field::pColorAttachmentFormats, color_index),
+                                         "is VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, but pColorBlendState->pAttachments[%" PRIu32
+                                         "].colorWriteMask is %s.",
+                                         color_index, string_VkColorComponentFlags(color_blend_attachment.colorWriteMask).c_str());
+                    }
                 }
             }
         }
