@@ -119,8 +119,8 @@ static std::string FormatAccessProperty(const SyncAccessInfo &access) {
 static void GetAccessProperties(const HazardResult &hazard_result, const SyncValidator &device, VkQueueFlags allowed_queue_flags,
                                 ReportProperties &properties) {
     const HazardResult::HazardState &hazard = hazard_result.State();
-    const SyncAccessInfo &access_info = GetSyncAccessInfos()[hazard.access_index];
-    const SyncAccessInfo &prior_access_info = GetSyncAccessInfos()[hazard.prior_access_index];
+    const SyncAccessInfo &access_info = GetAccessInfo(hazard.access_index);
+    const SyncAccessInfo &prior_access_info = GetAccessInfo(hazard.prior_access_index);
 
     if (!hazard.recorded_access.get()) {
         properties.Add(kPropertyAccess, FormatAccessProperty(access_info));
@@ -378,8 +378,8 @@ std::string FormatErrorMessage(const HazardResult &hazard, const CommandExecutio
     const SyncHazard hazard_type = hazard.Hazard();
     const SyncHazardInfo hazard_info = GetSyncHazardInfo(hazard_type);
 
-    const SyncAccessInfo &access = GetSyncAccessInfos()[hazard.State().access_index];
-    const SyncAccessInfo &prior_access = GetSyncAccessInfos()[hazard.State().prior_access_index];
+    const SyncAccessInfo &access = GetAccessInfo(hazard.State().access_index);
+    const SyncAccessInfo &prior_access = GetAccessInfo(hazard.State().prior_access_index);
 
     const SyncAccessFlags write_barriers = hazard.State().access_state->GetWriteBarriers();
     const VkPipelineStageFlags2 read_barriers = hazard.State().access_state->GetReadBarriers(hazard.State().prior_access_index);
