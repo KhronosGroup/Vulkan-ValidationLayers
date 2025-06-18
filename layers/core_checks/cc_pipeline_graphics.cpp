@@ -3551,12 +3551,10 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
                                                                         const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
-    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-    ASSERT_AND_RETURN_SKIP(rp_state);
 
     if (!enabled_features.dynamicRenderingUnusedAttachments) {
         const auto color_attachment_count = pipeline_rendering_ci.colorAttachmentCount;
-        const auto rendering_color_attachment_count = rp_state->GetDynamicRenderingColorAttachmentCount();
+        const auto rendering_color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
         if (color_attachment_count && (color_attachment_count != rendering_color_attachment_count)) {
             const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
             skip |= LogError(vuid.dynamic_rendering_color_count_06179, objlist, vuid.loc(),
@@ -3614,6 +3612,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassUnusedAttachments(const La
         }
     }
 
+    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
+    ASSERT_AND_RETURN_SKIP(rp_state);
     if (rendering_info.pDepthAttachment) {
         if (enabled_features.dynamicRenderingUnusedAttachments) {
             if (rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {

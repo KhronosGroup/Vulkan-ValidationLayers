@@ -160,7 +160,8 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable", "logicOpEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT" : {
-        "command" : ["vkCmdSetColorWriteEnableEXT"]
+        "command" : ["vkCmdSetColorWriteEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_TESSELLATION_DOMAIN_ORIGIN_EXT" : {
         "command" : ["vkCmdSetTessellationDomainOriginEXT"]
@@ -190,13 +191,16 @@ dynamic_state_map = {
         "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT" : {
-        "command" : ["vkCmdSetColorBlendEnableEXT"]
+        "command" : ["vkCmdSetColorBlendEnableEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT" : {
-        "command" : ["vkCmdSetColorBlendEquationEXT"]
+        "command" : ["vkCmdSetColorBlendEquationEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT" : {
-        "command" : ["vkCmdSetColorWriteMaskEXT"]
+        "command" : ["vkCmdSetColorWriteMaskEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT" : {
         "command" : ["vkCmdSetRasterizationStreamEXT"]
@@ -218,6 +222,7 @@ dynamic_state_map = {
     },
     "VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT" : {
         "command" : ["vkCmdSetColorBlendAdvancedEXT"],
+        "dependency" : ["rasterizerDiscardEnable"]
     },
     "VK_DYNAMIC_STATE_PROVOKING_VERTEX_MODE_EXT" : {
         "command" : ["vkCmdSetProvokingVertexModeEXT"],

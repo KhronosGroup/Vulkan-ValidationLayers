@@ -226,11 +226,8 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09371 = kVUIDUndefined;
     const char* set_color_blend_enable_08643 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
-    const char* set_color_write_enable_08646 = kVUIDUndefined;
     const char* set_color_write_enable_08647 = kVUIDUndefined;
-    const char* set_color_blend_enable_08657 = kVUIDUndefined;
     const char* set_color_blend_equation_08658 = kVUIDUndefined;
-    const char* set_color_write_mask_08659 = kVUIDUndefined;
     const char* set_blend_operation_advance_09416 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08666 = kVUIDUndefined;
     const char* set_line_rasterization_mode_08667 = kVUIDUndefined;

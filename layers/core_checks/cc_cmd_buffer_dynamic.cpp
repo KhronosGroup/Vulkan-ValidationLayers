@@ -130,6 +130,15 @@ bool CoreChecks::ValidateDynamicStateIsSet(const LastBound& last_bound_state, co
             case CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT:
                 vuid_str = vuid.dynamic_attachment_feedback_loop_08877;
                 break;
+            case CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:
+                vuid_str = vuid.dynamic_color_write_enable_07749;
+                break;
+            case CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT:
+                vuid_str = vuid.color_blend_enable_07627;
+                break;
+            case CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:
+                vuid_str = vuid.color_write_mask_07629;
+                break;
             case CB_DYNAMIC_STATE_DEPTH_CLIP_NEGATIVE_ONE_TO_ONE_EXT:
                 vuid_str = vuid.dynamic_depth_clip_negative_one_to_one_07639;
                 break;
@@ -472,6 +481,15 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
                 skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb,
                                                   CB_DYNAMIC_STATE_ATTACHMENT_FEEDBACK_LOOP_ENABLE_EXT, vuid);
             }
+            if (enabled_features.colorWriteEnable) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, vuid);
+            }
+
+            const uint32_t color_attachment_count = cb_state.GetColorAttachmentCount();
+            if (color_attachment_count > 0) {
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, vuid);
+                skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, vuid);
+            }
         }
     }  // !IsRasterizationDisabled()
 
@@ -579,18 +597,8 @@ bool CoreChecks::ValidateGraphicsDynamicStatePipelineSetStatus(const LastBound& 
     {
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_equation_07628);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.color_blend_enable_07627);
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, cb_state, objlist, loc,
-                                          vuid.color_write_mask_07629);
         skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT, cb_state, objlist, loc,
                                           vuid.color_blend_advanced_07635);
-    }
-
-    // VK_EXT_color_write_enable
-    {
-        skip |= ValidateDynamicStateIsSet(state_status_cb, CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT, cb_state, objlist, loc,
-                                          vuid.dynamic_color_write_enable_07749);
     }
 
     if (pipeline.RasterizationState()) {
@@ -1694,22 +1702,15 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                           vuid.set_line_width_08619);
     }
 
-    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (fragment_shader_bound) {
         if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-            // TODO - Add test to understand when this would be a null render pass
-            const uint32_t attachment_count = rp_state ? rp_state->GetDynamicRenderingColorAttachmentCount() : 0;
-            if (attachment_count > 0) {
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT,
-                                                  cb_state, objlist, loc, vuid.set_color_blend_enable_08657);
-                skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT, cb_state,
-                                                  objlist, loc, vuid.set_color_write_mask_08659);
-            }
+            // Shader Object only works with dynamic rendering
+            const uint32_t color_attachment_count = cb_state.GetDynamicRenderingColorAttachmentCount();
 
             const std::array<VkBlendFactor, 4> const_factors = {
                 VK_BLEND_FACTOR_CONSTANT_COLOR, VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR, VK_BLEND_FACTOR_CONSTANT_ALPHA,
                 VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA};
-            for (uint32_t i = 0; i < attachment_count; ++i) {
+            for (uint32_t i = 0; i < color_attachment_count; ++i) {
                 if (!cb_state.dynamic_state_value.color_blend_enable_attachments[i]) {
                     skip |= LogError(vuid.set_blend_advanced_09417, objlist, loc,
                                      "%s state not set for this command buffer for attachment %" PRIu32 ".",
@@ -1751,27 +1752,19 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                 }
             }
             if (enabled_features.colorWriteEnable) {
-                if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-                    if (!cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT)) {
-                        skip |= LogError(vuid.set_color_write_enable_08646, cb_state.Handle(), loc,
-                                         "Fragment shader object is bound and rasterization is enabled, but "
-                                         "vkCmdSetColorWriteEnableEXT() was not called.");
-                    }
-                }
                 if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT) &&
-                    cb_state.dynamic_state_value.color_write_enable_attachment_count <
-                        cb_state.GetDynamicRenderingColorAttachmentCount()) {
+                    cb_state.dynamic_state_value.color_write_enable_attachment_count < color_attachment_count) {
                     skip |= LogError(vuid.set_color_write_enable_08647, cb_state.Handle(), loc,
                                      "vkCmdSetColorWriteEnableEXT() was called with attachmentCount %" PRIu32
-                                     ", but current render pass attachmnet count is %" PRIu32 ".",
-                                     cb_state.dynamic_state_value.color_write_enable_attachment_count,
-                                     cb_state.GetDynamicRenderingColorAttachmentCount());
+                                     ", but current render pass color attachmnet count is %" PRIu32 ".",
+                                     cb_state.dynamic_state_value.color_write_enable_attachment_count, color_attachment_count);
                 }
             }
         }
     }
 
-    // Resolve mode only for dynamic rendering
+    // Resolve mode only for dynamic
+    const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (rp_state && rp_state->UsesDynamicRendering() && cb_state.HasExternalFormatResolveAttachment()) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&
             cb_state.dynamic_state_value.color_blend_enable_attachments.test(0)) {

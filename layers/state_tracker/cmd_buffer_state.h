@@ -661,6 +661,9 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     }
     // used for non-color types
     uint32_t GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type type) const;
+    // For dynamic rendering, get count from vkCmdBeginRendering
+    // For non-dynamic rendering, get count from current subpass
+    uint32_t GetColorAttachmentCount() const;
 
     bool HasValidDynamicDepthAttachment() const;
     bool HasValidDynamicStencilAttachment() const;

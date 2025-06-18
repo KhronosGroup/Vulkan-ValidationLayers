@@ -120,7 +120,6 @@ class RenderPass : public StateObject {
     // prefer this to checking the individual flags unless you REALLY need to check one or the other
     // Same as checking if the handle != VK_NULL_HANDLE
     bool UsesDynamicRendering() const { return use_dynamic_rendering || use_dynamic_rendering_inherited; }
-    uint32_t GetDynamicRenderingColorAttachmentCount() const;
     uint32_t GetDynamicRenderingViewMask() const;
     uint32_t GetViewMaskBits(uint32_t subpass) const;
     const VkMultisampledRenderToSingleSampledInfoEXT *GetMSRTSSInfo(uint32_t subpass) const;
