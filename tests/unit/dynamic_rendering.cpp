@@ -733,6 +733,29 @@ TEST_F(NegativeDynamicRendering, GraphicsPipelineCreateInfo) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativeDynamicRendering, ColorWriteMaskE5B9G9R9) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_E5B9G9R9_UFLOAT_PACK32";
+    }
+
+    VkFormat color_format = {VK_FORMAT_E5B9G9R9_UFLOAT_PACK32};
+    VkPipelineRenderingCreateInfo rendering_info = vku::InitStructHelper();
+    rendering_info.colorAttachmentCount = 1;
+    rendering_info.pColorAttachmentFormats = &color_format;
+
+    VkPipelineColorBlendAttachmentState cb_attachments = DefaultColorBlendAttachmentState();
+    cb_attachments.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_A_BIT;
+    cb_attachments.blendEnable = VK_FALSE;
+    CreatePipelineHelper pipe(*this, &rendering_info);
+    pipe.cb_ci_.pAttachments = &cb_attachments;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09043");
+    // Format Features
+    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06582");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDynamicRendering, ColorAttachmentMismatch) {
     TEST_DESCRIPTION("colorAttachmentCount and attachmentCount don't match");
     RETURN_IF_SKIP(InitBasicDynamicRendering());

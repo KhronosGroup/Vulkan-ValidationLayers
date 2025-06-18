@@ -172,6 +172,27 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     m_errorMonitor->VerifyFound();
 }
 
+TEST_F(NegativePipeline, ColorWriteMaskE5B9G9R9) {
+    RETURN_IF_SKIP(Init());
+    if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_E5B9G9R9_UFLOAT_PACK32";
+    }
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_A_BIT;
+    ;
+    m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09043");
+    pipe.CreateGraphicsPipeline();
+    m_errorMonitor->VerifyFound();
+}
+
 // Is the Pipeline compatible with the expectations of the Renderpass/subpasses?
 TEST_F(NegativePipeline, PipelineRenderpassCompatibility) {
     TEST_DESCRIPTION(
