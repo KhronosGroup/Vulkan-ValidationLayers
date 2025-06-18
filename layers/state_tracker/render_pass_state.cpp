@@ -362,15 +362,6 @@ bool RenderPass::UsesNoAttachment(uint32_t subpass) const {
     return !UsesColorAttachment(subpass) && !UsesDepthStencilAttachment(subpass) && !UsesDynamicRendering();
 }
 
-uint32_t RenderPass::GetDynamicRenderingColorAttachmentCount() const {
-    if (use_dynamic_rendering_inherited) {
-        return inheritance_rendering_info.colorAttachmentCount;
-    } else if (use_dynamic_rendering) {
-        return dynamic_rendering_begin_rendering_info.colorAttachmentCount;
-    }
-    return 0;
-}
-
 uint32_t RenderPass::GetDynamicRenderingViewMask() const {
     if (use_dynamic_rendering_inherited) {
         return inheritance_rendering_info.viewMask;

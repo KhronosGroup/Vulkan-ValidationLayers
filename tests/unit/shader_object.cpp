@@ -1478,7 +1478,7 @@ TEST_F(NegativeShaderObject, MissingColorWriteEnable) {
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08646");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07749");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1810,8 +1810,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorBlendEnableEXT) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08657");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09417");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07627");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1963,8 +1962,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetColorWriteMaskEXT) {
     SetDefaultDynamicStatesExclude({VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT});
     m_command_buffer.BindShaders(m_vert_shader, m_frag_shader);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08659");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizerDiscardEnable-09419");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07629");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
