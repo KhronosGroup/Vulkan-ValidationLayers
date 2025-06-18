@@ -1917,3 +1917,37 @@ TEST_F(PositivePipeline, GetPipelinePropertiesEXT) {
     VkBaseOutStructure out_struct = {VK_STRUCTURE_TYPE_PIPELINE_PROPERTIES_IDENTIFIER_EXT, nullptr};
     vk::GetPipelinePropertiesEXT(device(), &pipeline_info, &out_struct);
 }
+
+TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
+    RETURN_IF_SKIP(Init());
+    if (!(m_device->FormatFeaturesOptimal(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT)) {
+        GTEST_SKIP() << "Device does not support VK_FORMAT_E5B9G9R9_UFLOAT_PACK32";
+    }
+
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_E5B9G9R9_UFLOAT_PACK32, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
+
+    CreatePipelineHelper pipe(*this);
+    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_A_BIT;
+    {
+        pipe.CreateGraphicsPipeline();
+        pipe.Destroy();
+    }
+
+    pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+    {
+        pipe.CreateGraphicsPipeline();
+        pipe.Destroy();
+    }
+
+    pipe.cb_attachments_.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    {
+        pipe.CreateGraphicsPipeline();
+        pipe.Destroy();
+    }
+}
