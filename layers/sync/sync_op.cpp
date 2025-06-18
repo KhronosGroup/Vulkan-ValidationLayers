@@ -659,19 +659,13 @@ bool SyncOpWaitEvents::DoValidate(const CommandExecutionContext &exec_context, c
     // Note that we can't check for HOST in pEvents as we don't track that set event type
     const auto extra_stage_bits = (barrier_mask_params & ~VK_PIPELINE_STAGE_2_HOST_BIT) & ~event_stage_masks;
     if (extra_stage_bits) {
+        assert(vvl::Func::vkCmdWaitEvents == command_);
         // Issue error message that event waited for is not in wait events scope
-        // NOTE: This isn't exactly the right VUID for WaitEvents2, but it's as close as we currently have support for
-        const char *const vuid = (vvl::Func::vkCmdWaitEvents == command_) ? "VUID-vkCmdWaitEvents-srcStageMask-01158"
-                                                                          : "VUID-vkCmdWaitEvents2-pEvents-03838";
         const char *const message =
             "srcStageMask 0x%" PRIx64 " contains stages not present in pEvents stageMask. Extra stages are %s.%s";
         const auto handle = exec_context.Handle();
-        if (events_not_found) {
-            sync_state.LogInfo(vuid, handle, loc, message, barrier_mask_params,
-                               sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(),
-                               " vkCmdSetEvent may be in previously submitted command buffer.");
-        } else {
-            skip |= sync_state.LogError(vuid, handle, loc, message, barrier_mask_params,
+        if (!events_not_found) {
+            skip |= sync_state.LogError("VUID-vkCmdWaitEvents-srcStageMask-01158", handle, loc, message, barrier_mask_params,
                                         sync_utils::StringPipelineStageFlags(extra_stage_bits).c_str(), "");
         }
     }
