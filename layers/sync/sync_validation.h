@@ -37,7 +37,7 @@ class Instance : public vvl::InstanceProxy {
 };
 }  // namespace syncval
 
-class SyncValidator : public vvl::DeviceProxy, public SyncStageAccess {
+class SyncValidator : public vvl::DeviceProxy {
     using BaseClass = vvl::DeviceProxy;
 
   public:

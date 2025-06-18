@@ -394,11 +394,7 @@ class AccessContext {
         void operator()(const Iterator &pos) const;
         UpdateMemoryAccessStateFunctor(const AccessContext &context_, SyncAccessIndex usage_, SyncOrdering ordering_rule_,
                                        ResourceUsageTagEx tag_ex, SyncFlags flags = 0)
-            : context(context_),
-              usage_info(SyncStageAccess::AccessInfo(usage_)),
-              ordering_rule(ordering_rule_),
-              tag_ex(tag_ex),
-              flags(flags) {}
+            : context(context_), usage_info(GetAccessInfo(usage_)), ordering_rule(ordering_rule_), tag_ex(tag_ex), flags(flags) {}
         const AccessContext &context;
         const SyncAccessInfo &usage_info;
         const SyncOrdering ordering_rule;

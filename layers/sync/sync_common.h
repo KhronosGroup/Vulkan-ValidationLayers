@@ -23,7 +23,6 @@
 
 namespace vvl {
 class Buffer;
-class BufferView;
 }  // namespace vvl
 
 using ImageRangeGen = subresource_adapter::ImageRangeGenerator;
@@ -52,21 +51,10 @@ struct ResourceUsageTagEx {
 
 ResourceAccessRange MakeRange(VkDeviceSize start, VkDeviceSize size);
 ResourceAccessRange MakeRange(const vvl::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size);
+inline const SyncAccessInfo &GetAccessInfo(SyncAccessIndex access) { return GetSyncAccessInfos()[access]; }
 
 extern const ResourceAccessRange kFullRange;
-
 constexpr VkImageAspectFlags kDepthStencilAspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-
-// Useful Utilites for manipulating StageAccess parameters, suitable as base class to save typing
-struct SyncStageAccess {
-    static const SyncAccessInfo &AccessInfo(SyncAccessIndex access_index) { return GetSyncAccessInfos()[access_index]; }
-    static bool IsRead(const SyncAccessInfo &info) { return syncAccessReadMask[info.access_index]; }
-    static bool IsWrite(const SyncAccessInfo &info) { return syncAccessWriteMask[info.access_index]; }
-
-    static SyncAccessFlags AccessScopeByStage(VkPipelineStageFlags2 stages);
-    static SyncAccessFlags AccessScopeByAccess(VkAccessFlags2 access);
-    static SyncAccessFlags AccessScope(const SyncAccessFlags &stage_scope, VkAccessFlags2 accesses);
-};
 
 // Notes:
 //  * Design goal is performance optimized set creation during specific SyncVal operations

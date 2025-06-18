@@ -161,32 +161,13 @@ struct SyncBarrier {
     SyncAccessFlags src_access_scope;
     SyncExecScope dst_exec_scope;
     SyncAccessFlags dst_access_scope;
+
     SyncBarrier() = default;
-    SyncBarrier(const SyncBarrier &other) = default;
-    SyncBarrier &operator=(const SyncBarrier &) = default;
-
-    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst);
-    SyncBarrier(const SyncExecScope &src, const SyncExecScope &dst, const AllAccess &);
-    SyncBarrier(const SyncExecScope &src_exec, const SyncAccessFlags &src_access, const SyncExecScope &dst_exec,
-                const SyncAccessFlags &dst_access)
-        : src_exec_scope(src_exec), src_access_scope(src_access), dst_exec_scope(dst_exec), dst_access_scope(dst_access) {}
-
-    template <typename Barrier>
-    SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst);
-
+    SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec);
+    SyncBarrier(const SyncExecScope &src_exec, const SyncExecScope &dst_exec, const AllAccess &);
+    SyncBarrier(const SyncExecScope &src_exec, VkAccessFlags2 src_access_mask, const SyncExecScope &dst_exec,
+                VkAccessFlags2 dst_access_mask);
     SyncBarrier(VkQueueFlags queue_flags, const VkSubpassDependency2 &barrier);
-    // template constructor for sync2 barriers
-    template <typename Barrier>
-    SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier);
-
-    void Merge(const SyncBarrier &other) {
-        // Note that after merge, only the exec_scope and access_scope fields are fully valid
-        // TODO: Do we need to update any of the other fields?  Merging has limited application.
-        src_exec_scope.exec_scope |= other.src_exec_scope.exec_scope;
-        src_access_scope |= other.src_access_scope;
-        dst_exec_scope.exec_scope |= other.dst_exec_scope.exec_scope;
-        dst_access_scope |= other.dst_access_scope;
-    }
     SyncBarrier(const std::vector<SyncBarrier> &barriers);
 };
 
@@ -353,7 +334,7 @@ class WriteState {
     friend ResourceAccessState;
 };
 
-class ResourceAccessState : public SyncStageAccess {
+class ResourceAccessState {
   protected:
     using OrderingBarriers = std::array<OrderingBarrier, static_cast<size_t>(SyncOrdering::kNumOrderings)>;
     using FirstAccesses = small_vector<ResourceFirstAccess, 3>;
@@ -381,7 +362,7 @@ class ResourceAccessState : public SyncStageAccess {
     void ClearFirstUse();
     void Resolve(const ResourceAccessState &other);
     void ApplyBarriers(const std::vector<SyncBarrier> &barriers, bool layout_transition);
-    void ApplyBarriersImmediate(const std::vector<SyncBarrier> &barriers);
+    void ApplyBarriersImmediate(const SyncBarrier &barriers);
     template <typename ScopeOps>
     void ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barrier, bool layout_transition,
                       uint32_t layout_transition_handle_index = vvl::kNoIndex32);
@@ -563,7 +544,7 @@ void ResourceAccessState::ApplyBarrier(ScopeOps &&scope, const SyncBarrier &barr
     //       transistion *as* a write and in scope with the barrier (it's before visibility).
     if (layout_transition) {
         if (!last_write.has_value()) {
-            last_write.emplace(AccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
+            last_write.emplace(GetAccessInfo(SYNC_ACCESS_INDEX_NONE), ResourceUsageTagEx{0U});
         }
         last_write->UpdatePendingBarriers(barrier);
         last_write->UpdatePendingLayoutOrdering(barrier);
@@ -660,22 +641,4 @@ bool ResourceAccessState::ApplyPredicatedWait(Predicate &predicate) {
         }
     }
     return all_clear;
-}
-
-template <typename Barrier>
-SyncBarrier::SyncBarrier(const Barrier &barrier, const SyncExecScope &src, const SyncExecScope &dst)
-    : src_exec_scope(src),
-      src_access_scope(SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask)),
-      dst_exec_scope(dst),
-      dst_access_scope(SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask)) {}
-
-template <typename Barrier>
-SyncBarrier::SyncBarrier(VkQueueFlags queue_flags, const Barrier &barrier) {
-    auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
-    src_exec_scope = src.exec_scope;
-    src_access_scope = SyncStageAccess::AccessScope(src.valid_accesses, barrier.srcAccessMask);
-
-    auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
-    dst_exec_scope = dst.exec_scope;
-    dst_access_scope = SyncStageAccess::AccessScope(dst.valid_accesses, barrier.dstAccessMask);
 }

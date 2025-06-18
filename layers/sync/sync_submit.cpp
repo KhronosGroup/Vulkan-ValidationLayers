@@ -201,8 +201,7 @@ class ApplySemaphoreBarrierAction {
 class ApplyAcquireNextSemaphoreAction {
   public:
     ApplyAcquireNextSemaphoreAction(const SyncExecScope& wait_scope, ResourceUsageTag acquire_tag)
-        : barrier_(1, SyncBarrier(getPresentSrcScope(), getPresentValidAccesses(), wait_scope, SyncAccessFlags())),
-          acq_tag_(acquire_tag) {}
+        : barrier_(GetAcquireBarrier(wait_scope)), acq_tag_(acquire_tag) {}
     void operator()(ResourceAccessState* access) const {
         // Note that the present operations may or may not be present, given that the fence wait may have cleared them out.
         // Also, if a subsequent present has happened, we *don't* want to protect that...
@@ -212,25 +211,32 @@ class ApplyAcquireNextSemaphoreAction {
     }
 
   private:
+    static SyncBarrier GetAcquireBarrier(const SyncExecScope& wait_scope) {
+        SyncBarrier barrier;
+        barrier.src_exec_scope = getPresentSrcScope();
+        barrier.src_access_scope = getPresentValidAccesses();
+        barrier.dst_exec_scope = wait_scope;
+        return barrier;
+    }
     // kPresentSrcScope/kPresentValidAccesses cannot be regular global variables, because they use global
     // variables from another compilation unit (through syncStageAccessMaskByStageBit() call) for initialization,
     // and initialization of globals between compilation units is undefined. Instead they get initialized
     // on the first use (it's important to ensure this first use is also not initialization of some global!).
-    const SyncExecScope& getPresentSrcScope() const {
+    static const SyncExecScope& getPresentSrcScope() {
         static const SyncExecScope kPresentSrcScope =
             SyncExecScope(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // mask_param (unused)
                           VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL,  // exec_scope
                           getPresentValidAccesses());                      // valid_accesses
         return kPresentSrcScope;
     }
-    const SyncAccessFlags& getPresentValidAccesses() const {
-        static const SyncAccessFlags kPresentValidAccesses =
-            SyncAccessFlags(SyncStageAccess::AccessScopeByStage(VK_PIPELINE_STAGE_2_PRESENT_ENGINE_BIT_SYNCVAL));
+    static const SyncAccessFlags& getPresentValidAccesses() {
+        static const SyncAccessFlags kPresentValidAccesses = SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_ACQUIRE_READ_BIT_SYNCVAL |
+                                                             SYNC_PRESENT_ENGINE_BIT_SYNCVAL_PRESENT_PRESENTED_BIT_SYNCVAL;
         return kPresentValidAccesses;
     }
 
   private:
-    std::vector<SyncBarrier> barrier_;
+    SyncBarrier barrier_;
     ResourceUsageTag acq_tag_;
 };
 

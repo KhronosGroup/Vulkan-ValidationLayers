@@ -34,7 +34,7 @@ class HazardDetector {
                              QueueId queue_id) const {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
-    explicit HazardDetector(SyncAccessIndex access_index) : access_info_(SyncStageAccess::AccessInfo(access_index)) {}
+    explicit HazardDetector(SyncAccessIndex access_index) : access_info_(GetAccessInfo(access_index)) {}
 };
 
 class HazardDetectorWithOrdering {
@@ -52,7 +52,7 @@ class HazardDetectorWithOrdering {
         return pos->second.DetectAsyncHazard(access_info_, start_tag, queue_id);
     }
     HazardDetectorWithOrdering(SyncAccessIndex access_index, SyncOrdering ordering, SyncFlags flags = 0)
-        : access_info_(SyncStageAccess::AccessInfo(access_index)), ordering_rule_(ordering), flags_(flags) {}
+        : access_info_(GetAccessInfo(access_index)), ordering_rule_(ordering), flags_(flags) {}
 };
 
 class HazardDetectFirstUse {
@@ -399,7 +399,7 @@ HazardResult AccessContext::DetectHazard(const vvl::Image &image, const VkImageS
 class BarrierHazardDetector {
   public:
     BarrierHazardDetector(SyncAccessIndex access_index, VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope)
-        : access_info_(SyncStageAccess::AccessInfo(access_index)),
+        : access_info_(GetAccessInfo(access_index)),
           src_exec_scope_(src_exec_scope),
           src_access_scope_(src_access_scope) {}
 
@@ -422,7 +422,7 @@ class EventBarrierHazardDetector {
   public:
     EventBarrierHazardDetector(SyncAccessIndex access_index, VkPipelineStageFlags2 src_exec_scope, SyncAccessFlags src_access_scope,
                                const AccessContext::ScopeMap &event_scope, QueueId queue_id, ResourceUsageTag scope_tag)
-        : access_info_(SyncStageAccess::AccessInfo(access_index)),
+        : access_info_(GetAccessInfo(access_index)),
           src_exec_scope_(src_exec_scope),
           src_access_scope_(src_access_scope),
           event_scope_(event_scope),

@@ -286,7 +286,7 @@ void BarrierSet::MakeMemoryBarriers(const SyncExecScope &src, const SyncExecScop
                                     const VkMemoryBarrier *barriers) {
     memory_barriers.reserve(std::max<uint32_t>(1, memory_barrier_count));
     for (const VkMemoryBarrier &barrier : vvl::make_span(barriers, memory_barrier_count)) {
-        SyncBarrier sync_barrier(barrier, src, dst);
+        SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
         memory_barriers.emplace_back(sync_barrier);
     }
     if (memory_barrier_count == 0) {
@@ -302,7 +302,7 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, const
     for (const VkBufferMemoryBarrier &barrier : vvl::make_span(barriers, barrier_count)) {
         if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
             const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
-            const SyncBarrier sync_barrier(barrier, src, dst);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             buffer_memory_barriers.emplace_back(buffer, sync_barrier, range);
         }
     }
@@ -313,7 +313,7 @@ void BarrierSet::MakeMemoryBarriers(VkQueueFlags queue_flags, uint32_t memory_ba
     for (const VkMemoryBarrier2 &barrier : vvl::make_span(barriers, memory_barrier_count)) {
         auto src = SyncExecScope::MakeSrc(queue_flags, barrier.srcStageMask);
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
-        SyncBarrier sync_barrier(barrier, src, dst);
+        SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
         memory_barriers.emplace_back(sync_barrier);
     }
     single_exec_scope = false;
@@ -327,7 +327,7 @@ void BarrierSet::MakeBufferMemoryBarriers(const SyncValidator &sync_state, VkQue
         auto dst = SyncExecScope::MakeDst(queue_flags, barrier.dstStageMask);
         if (auto buffer = sync_state.Get<vvl::Buffer>(barrier.buffer)) {
             const auto range = MakeRange(*buffer, barrier.offset, barrier.size);
-            const SyncBarrier sync_barrier(barrier, src, dst);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             buffer_memory_barriers.emplace_back(buffer, sync_barrier, range);
         }
     }
@@ -339,7 +339,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, const 
     for (const auto [index, barrier] : vvl::enumerate(barriers, barrier_count)) {
         if (auto image = sync_state.Get<vvl::Image>(barrier.image)) {
             auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
-            const SyncBarrier sync_barrier(barrier, src, dst);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
         }
@@ -355,7 +355,7 @@ void BarrierSet::MakeImageMemoryBarriers(const SyncValidator &sync_state, VkQueu
         auto image = sync_state.Get<vvl::Image>(barrier.image);
         if (image) {
             auto subresource_range = image->NormalizeSubresourceRange(barrier.subresourceRange);
-            const SyncBarrier sync_barrier(barrier, src, dst);
+            const SyncBarrier sync_barrier(src, barrier.srcAccessMask, dst, barrier.dstAccessMask);
             const bool layout_transition = barrier.oldLayout != barrier.newLayout;
             image_memory_barriers.emplace_back(image, sync_barrier, subresource_range, layout_transition, index);
         }
