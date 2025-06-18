@@ -1647,7 +1647,7 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
 
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&swapchain_present_mode_create_info);
     swapchain_create_info.surface = surface;
-    swapchain_create_info.minImageCount = surface_caps.surfaceCapabilities.minImageCount;
+    swapchain_create_info.minImageCount = general_min_image_count;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = surface_caps.surfaceCapabilities.minImageExtent;

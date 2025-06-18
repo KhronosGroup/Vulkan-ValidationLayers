@@ -559,7 +559,8 @@ TEST_F(NegativeShaderObject, GraphicsShadersNotSupportedByCommandPool) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08477");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
+    // Hit if queue also doesn't support compute
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
     vk::CmdBindShadersEXT(command_buffer, 1u, &create_info.stage, &shader.handle());
     m_errorMonitor->VerifyFound();
 
@@ -586,7 +587,8 @@ TEST_F(NegativeShaderObject, GraphicsMeshShadersNotSupportedByCommandPool) {
     command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-pShaders-08478");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
+    // Hit if queue also doesn't support compute
+    m_errorMonitor->SetUnexpectedError("VUID-vkCmdBindShadersEXT-commandBuffer-cmdpool");
     vk::CmdBindShadersEXT(command_buffer, 1u, &create_info.stage, &shader.handle());
     m_errorMonitor->VerifyFound();
 
@@ -3218,7 +3220,7 @@ TEST_F(NegativeShaderObject, MissingCmdSetDepthBiasEXT) {
 
 TEST_F(NegativeShaderObject, MissingCmdSetBlendConstantsEXT) {
     TEST_DESCRIPTION("Draw with shader objects without setting vkCmdSetBlendConstantsEXT.");
-
+    AddRequiredExtensions(VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME);
     RETURN_IF_SKIP(InitBasicShaderObject());
     InitDynamicRenderTarget();
     CreateMinimalShaders();
