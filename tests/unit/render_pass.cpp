@@ -3027,7 +3027,7 @@ TEST_F(NegativeRenderPass, MultisampledRenderToSingleSampled) {
     m_command_buffer.EndRendering();
     color_attachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
 
-    // Positive Test: Same as previous test but using render pass and should not get error 07284
+    // Positive Test: Same as previous test but using render pass and should not get error 08644
     CreatePipelineHelper test_pipe(*this);
     test_pipe.ms_ci_ = ms_state;
     test_pipe.CreateGraphicsPipeline();

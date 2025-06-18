@@ -2413,8 +2413,7 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08644");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2423,6 +2422,37 @@ TEST_F(NegativeDynamicState, RasterizationSamples) {
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
+
+TEST_F(NegativeDynamicState, RasterizationSamplesMismatch) {
+    AddRequiredExtensions(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::dynamicRendering);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3RasterizationSamples);
+    RETURN_IF_SKIP(Init());
+    InitDynamicRenderTarget();
+
+    VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
+    VkPipelineRenderingCreateInfo pipeline_rendering_ci = vku::InitStructHelper();
+    pipeline_rendering_ci.colorAttachmentCount = 1;
+    pipeline_rendering_ci.pColorAttachmentFormats = &color_format;
+
+    CreatePipelineHelper pipe(*this, &pipeline_rendering_ci);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+    pipe.gp_ci_.renderPass = VK_NULL_HANDLE;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
+    vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_2_BIT);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08644");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    m_command_buffer.EndRendering();
     m_command_buffer.End();
 }
 
@@ -5369,8 +5399,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
 
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08644");
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
 
     m_errorMonitor->VerifyFound();
@@ -5772,23 +5801,23 @@ TEST_F(NegativeDynamicState, ColorBlendEnableNotSet) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
     RETURN_IF_SKIP(Init());
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32u, 32u);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07627");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -5834,23 +5863,23 @@ TEST_F(NegativeDynamicState, ColorWriteMaskNotSet) {
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorWriteMask);
     RETURN_IF_SKIP(Init());
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    RenderPassSingleSubpass rp(*this);
+    rp.AddAttachmentDescription(VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+    rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
+    rp.AddColorAttachment(0);
+    rp.CreateRenderPass();
 
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
+    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.gp_ci_.renderPass = rp.Handle();
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32u, 32u);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07629");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -5970,8 +5999,7 @@ TEST_F(NegativeDynamicState, RasterizationSamplesDynamicRendering) {
     m_command_buffer.BeginRendering(rendering_info);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_2_BIT);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-rasterizationSamples-07474");
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07285");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08644");
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRendering();

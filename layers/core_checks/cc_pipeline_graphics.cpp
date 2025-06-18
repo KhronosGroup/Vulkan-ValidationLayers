@@ -3923,7 +3923,8 @@ bool CoreChecks::ValidateDrawPipelineDynamicRenderpassSampleCount(const LastBoun
                 }
             }
         }
-    } else if (!enabled_features.multisampledRenderToSingleSampled && !enabled_features.externalFormatResolve) {
+    } else if (!enabled_features.multisampledRenderToSingleSampled && !enabled_features.externalFormatResolve &&
+               !last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
         for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
             if (rendering_info.pColorAttachments[i].imageView == VK_NULL_HANDLE) {
@@ -4385,13 +4386,12 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
         const auto render_pass_info = rp_state->create_info.ptr();
         const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
         uint32_t i;
-        unsigned subpass_num_samples = 0;
 
         for (i = 0; i < subpass_desc->colorAttachmentCount; i++) {
             const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-            if (attachment == VK_ATTACHMENT_UNUSED) continue;
-
-            subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
+            if (attachment == VK_ATTACHMENT_UNUSED) {
+                continue;
+            }
 
             const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
             const auto *color_blend_state = pipeline.ColorBlendState();
@@ -4406,23 +4406,6 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
                                      attachment, attachment);
                 }
             }
-        }
-
-        if (subpass_desc->pDepthStencilAttachment && subpass_desc->pDepthStencilAttachment->attachment != VK_ATTACHMENT_UNUSED) {
-            const auto attachment = subpass_desc->pDepthStencilAttachment->attachment;
-            subpass_num_samples |= static_cast<unsigned>(render_pass_info->pAttachments[attachment].samples);
-        }
-
-        const VkSampleCountFlagBits rasterization_samples = last_bound_state.GetRasterizationSamples();
-        if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) ||
-              IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) || enabled_features.multisampledRenderToSingleSampled) &&
-            ((subpass_num_samples & static_cast<unsigned>(rasterization_samples)) != subpass_num_samples)) {
-            const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-            skip |= LogError(vuid.msrtss_rasterization_samples_07284, objlist, vuid.loc(),
-                             "In %s the sample count is %s while the current %s has %s and they need to be the same.",
-                             FormatHandle(pipeline).c_str(), string_VkSampleCountFlagBits(rasterization_samples),
-                             FormatHandle(*rp_state).c_str(),
-                             string_VkSampleCountFlags(static_cast<VkSampleCountFlags>(subpass_num_samples)).c_str());
         }
 
         const bool dynamic_line_raster_mode = pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);

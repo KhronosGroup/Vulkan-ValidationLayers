@@ -815,46 +815,6 @@ TEST_F(NegativePipeline, PipelineCreationFlagsMix) {
     m_errorMonitor->VerifyFound();
 }
 
-TEST_F(NegativePipeline, NumSamplesMismatch) {
-    // Create CommandBuffer where MSAA samples doesn't match RenderPass
-    // sampleCount
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-multisampledRenderToSingleSampled-07284");
-
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    OneOffDescriptorSet descriptor_set(m_device, {
-                                                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
-                                                 });
-
-    VkPipelineMultisampleStateCreateInfo pipe_ms_state_ci = vku::InitStructHelper();
-    pipe_ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
-    pipe_ms_state_ci.sampleShadingEnable = 0;
-    pipe_ms_state_ci.minSampleShading = 1.0;
-    pipe_ms_state_ci.pSampleMask = NULL;
-
-    const vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
-
-    CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.layout = pipeline_layout;
-    pipe.ms_ci_ = pipe_ms_state_ci;
-    m_errorMonitor->SetUnexpectedError("VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853");
-    pipe.CreateGraphicsPipeline();
-
-    m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-
-    // Render triangle (the error should trigger on the attempt to draw).
-    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
-
-    // Finalize recording of the command buffer
-    m_command_buffer.EndRenderPass();
-    m_command_buffer.End();
-
-    m_errorMonitor->VerifyFound();
-}
-
 TEST_F(NegativePipeline, NumBlendAttachMismatch) {
     // Create Pipeline where the number of blend attachments doesn't match the
     // number of color attachments.  In this case, we don't add any color
