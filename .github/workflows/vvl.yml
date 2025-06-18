@@ -65,7 +65,7 @@ jobs:
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-address-${{matrix.custom_hash_map}}
-      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}}'
         env:
           CFLAGS: -fsanitize=address
@@ -85,6 +85,10 @@ jobs:
         run: python scripts/tests.py --test
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/min_core.json
+      - name: Test WSI
+        run: python scripts/tests.py --test --wsi
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 
   linux-tsan:
     needs: check_vvl
@@ -102,7 +106,7 @@ jobs:
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
           key: ${{ matrix.config }}-thread-${{matrix.custom_hash_map}}
-      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev
+      - run: sudo apt-get -qq update && sudo apt-get install -y libwayland-dev xorg-dev xvfb
       - run: python scripts/tests.py --build --config ${{ matrix.config }} --cmake='-DUSE_CUSTOM_HASH_MAP=${{matrix.custom_hash_map}}'
         env:
           CFLAGS: -fsanitize=thread
@@ -115,6 +119,10 @@ jobs:
       # In effort to reduce the bottle neck time in testing, skipping these for Thread Sanitize.
       - name: Test Max Profile
         run: python scripts/tests.py --test --tsan
+        env:
+          VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
+      - name: Test WSI
+        run: python scripts/tests.py --test --tsan --wsi
         env:
           VK_KHRONOS_PROFILES_PROFILE_FILE: ${{ github.workspace }}/tests/device_profiles/max_profile.json
 

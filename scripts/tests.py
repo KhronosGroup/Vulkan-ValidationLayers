@@ -189,14 +189,32 @@ def RunVVLTests(args):
         # a manual vkCreateDevice call and need to investigate more why
         common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*AndroidHardwareBuffer.*:*AndroidExternalResolve.*", env=lvt_env)
         return
+    if args.tsan and args.wsi:
+        # Combo of both below
+        common_ci.RunShellCmd(f'xvfb-run --auto-servernum {lvt_cmd} --gtest_filter=*Wsi.*', env=lvt_env)
+        return
     if args.tsan:
         # These are tests we have decided are worth using Thread Sanitize as it will take about 9x longer to run a test
         # We have also seen TSAN turn bug out and make each test incrementally take longer
         # (https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/8931)
-        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*SyncVal.*:*Threading.*:*SyncObject.*:*Wsi.*:-*Video*", env=lvt_env)
+        common_ci.RunShellCmd(lvt_cmd + " --gtest_filter=*SyncVal.*:*Threading.*:*SyncObject.*:-*Video*", env=lvt_env)
+        return
+    if args.wsi:
+        # We need to use xvfb to get github action runners to be able to create a surface context
+        # Adding to other tests is a slow, unnecessary, overheader
+        common_ci.RunShellCmd(f'xvfb-run --auto-servernum {lvt_cmd} --gtest_filter=*Wsi.*', env=lvt_env)
         return
 
-    common_ci.RunShellCmd(lvt_cmd, env=lvt_env)
+    # these will 100% be skipped by default on CI machine, save time filtering them out first
+    skip_list = [
+        # AHB as it is ran separately
+        '*AndroidHardwareBuffer.*',
+        '*AndroidExternalResolve.*',
+        # WSI as it is ran separately
+        '*Wsi.*'
+    ]
+    # The "default" run
+    common_ci.RunShellCmd(f'{lvt_cmd} --gtest_filter=-{":".join(skip_list)}', env=lvt_env)
 
     print("Re-Running syncval tests with core validation disabled (--syncval-disable-core)")
     common_ci.RunShellCmd(lvt_cmd + ' --gtest_filter=*SyncVal* --syncval-disable-core', env=lvt_env)
@@ -245,6 +263,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--tsan', dest='tsan',
         action='store_true', help='Filter out tests for TSAN')
+    parser.add_argument(
+        '--wsi', dest='wsi',
+        action='store_true', help='Filter out tests for WSI (which uses xvfb and will slow down other tests)')
 
     args = parser.parse_args()
 
