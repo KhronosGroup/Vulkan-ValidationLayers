@@ -857,26 +857,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
         }
     }
 
-    if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) && !enabled_features.multisampledRenderToSingleSampled) {
-            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-                const AttachmentInfo& attachment_info = cb_state.active_attachments[i];
-                const auto* attachment = attachment_info.image_view;
-                if (attachment && !attachment_info.IsInput() && !attachment_info.IsResolve() &&
-                    cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
-                    skip |=
-                        LogError(vuid.rasterization_sampled_07474, cb_state.Handle(), vuid.loc(),
-                                 "%s attachment samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().%s",
-                                 attachment_info.Describe(cb_state.attachment_source, i).c_str(),
-                                 string_VkSampleCountFlagBits(attachment->samples),
-                                 string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples),
-                                 cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT).c_str());
-                }
-            }
-        }
-    }
-
     if (pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_STREAM_EXT) &&
         !enabled_features.primitivesGeneratedQueryWithNonZeroStreams && cb_state.dynamic_state_value.rasterization_stream != 0) {
         bool pgq_active = false;
@@ -1392,6 +1372,27 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
                 }
             }
         }
+
+        // The VU might "seem" like its not for dynamic, but if not using VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT this check
+        // is picked up by VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853 and
+        // VUID-vkCmdDraw-multisampledRenderToSingleSampled-07285 already
+        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
+            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) && !enabled_features.multisampledRenderToSingleSampled &&
+            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+            const VkSampleCountFlagBits rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
+            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+                const auto& attachment_info = cb_state.active_attachments[i];
+                const auto* attachment = attachment_info.image_view;
+                if (attachment && !attachment_info.IsInput() && !attachment_info.IsResolve() &&
+                    rasterization_samples != attachment->samples) {
+                    skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), vuid.loc(),
+                                     "%s was created with %s but the last call to vkCmdSetRasterizationSamplesEXT was set to %s.",
+                                     attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                                     string_VkSampleCountFlagBits(attachment->samples),
+                                     string_VkSampleCountFlagBits(rasterization_samples));
+                }
+            }
+        }
     }
 
     if (last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT)) {
@@ -1668,22 +1669,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
                                  i, string_VkFormat(attachment->create_info.format), i);
             }
         }
-        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) &&
-            enabled_features.multisampledRenderToSingleSampled == VK_FALSE &&
-            cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-            for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-                const auto* attachment = cb_state.active_attachments[i].image_view;
-                if (attachment && cb_state.dynamic_state_value.rasterization_samples != attachment->samples) {
-                    skip |= LogError(vuid.set_rasterization_samples_08644, cb_state.Handle(), loc,
-                                     "Render pass attachment %" PRIu32
-                                     " samples %s does not match samples %s set with vkCmdSetRasterizationSamplesEXT().",
-                                     i, string_VkSampleCountFlagBits(attachment->samples),
-                                     string_VkSampleCountFlagBits(cb_state.dynamic_state_value.rasterization_samples));
-                }
-            }
-        }
-
         if (vertex_shader_bound) {
             if (IsLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist,
@@ -1763,7 +1748,7 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         }
     }
 
-    // Resolve mode only for dynamic
+    // Resolve mode only for dynamic rendering
     const vvl::RenderPass* rp_state = cb_state.active_render_pass.get();
     if (rp_state && rp_state->UsesDynamicRendering() && cb_state.HasExternalFormatResolveAttachment()) {
         if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT) &&

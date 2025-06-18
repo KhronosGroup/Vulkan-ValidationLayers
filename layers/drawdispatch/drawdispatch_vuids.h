@@ -70,7 +70,6 @@ struct DrawDispatchVuid {
     const char* sampler_bias_offset_08611 = kVUIDUndefined;
     const char* vertex_binding_attribute_02721 = kVUIDUndefined;
     const char* dynamic_state_setting_commands_08608 = kVUIDUndefined;
-    const char* msrtss_rasterization_samples_07284 = kVUIDUndefined;
     const char* unprotected_command_buffer_02707 = kVUIDUndefined;
     const char* protected_command_buffer_02712 = kVUIDUndefined;
     const char* compute_not_bound_10743 = kVUIDUndefined;
@@ -293,7 +292,6 @@ struct DrawDispatchVuid {
     const char* convervative_rasterization_07499 = kVUIDUndefined;
     const char* sample_mask_07472 = kVUIDUndefined;
     const char* sample_mask_07473 = kVUIDUndefined;
-    const char* rasterization_sampled_07474 = kVUIDUndefined;
     const char* sample_locations_enable_07484 = kVUIDUndefined;
     const char* sample_locations_enable_07485 = kVUIDUndefined;
     const char* sample_locations_enable_07486 = kVUIDUndefined;

@@ -1621,3 +1621,32 @@ TEST_F(PositiveDynamicState, DrawNotSetLineStippleEnable) {
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
+
+TEST_F(PositiveDynamicState, ColorBlendEnableNotSet) {
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
+    RETURN_IF_SKIP(Init());
+
+    // Subpass has zero color attachments so we can ignore setting vkCmdSetColorBlendEnableEXT
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
+    render_pass_ci.subpassCount = 1u;
+    render_pass_ci.pSubpasses = &subpass;
+
+    vkt::RenderPass render_pass(*m_device, render_pass_ci);
+    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+
+    CreatePipelineHelper pipe(*this);
+    pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe.gp_ci_.renderPass = render_pass;
+    pipe.CreateGraphicsPipeline();
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_command_buffer.EndRenderPass();
+    m_command_buffer.End();
+}
