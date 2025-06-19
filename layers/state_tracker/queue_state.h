@@ -33,6 +33,7 @@ namespace vvl {
 
 class CommandBuffer;
 class DeviceState;
+class Image;
 class Queue;
 class QueueSubState;
 
@@ -69,6 +70,7 @@ struct QueueSubmission {
     bool has_external_fence = false;
     // Swapchain handle if this submission represents QueuePresent request
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    std::shared_ptr<const vvl::Image> swapchain_image;
 
     LocationCapture loc;
     uint64_t seq{0};

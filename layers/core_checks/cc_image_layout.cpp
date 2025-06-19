@@ -1006,28 +1006,6 @@ bool CoreChecks::VerifyDynamicRenderingImageBarrierLayouts(const vvl::CommandBuf
     return skip;
 }
 
-bool CoreChecks::FindLayouts(const vvl::Image &image_state, std::vector<VkImageLayout> &layouts) const {
-    if (!image_state.layout_map) {
-        return false;
-    }
-    const auto &layout_map = *image_state.layout_map;
-
-    auto guard = image_state.LayoutMapReadLock();
-    // TODO: FindLayouts function should mutate into a ValidatePresentableLayout with the loop wrapping the LogError
-    //       from the caller. You can then use decode to add the subresource of the range::begin to the error message.
-
-    // TODO: what is this test and what is it supposed to do?! -- the logic doesn't match the comment below?!
-
-    // TODO: Make this robust for >1 aspect mask. Now it will just say ignore potential errors in this case.
-    if (layout_map.size() >= (image_state.create_info.arrayLayers * image_state.create_info.mipLevels + 1)) {
-        return false;
-    }
-    for (const auto &entry : layout_map) {
-        layouts.emplace_back(entry.second);
-    }
-    return true;
-}
-
 void CoreChecks::EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer &cb_state,
                                                                     const ImageBarrier &image_barrier) {
     if (!cb_state.active_render_pass || !cb_state.active_render_pass->UsesDynamicRendering()) {

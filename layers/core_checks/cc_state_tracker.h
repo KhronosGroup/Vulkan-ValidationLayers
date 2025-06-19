@@ -150,7 +150,7 @@ static inline const CommandBufferSubState &SubState(const vvl::CommandBuffer &cb
 
 class QueueSubState : public vvl::QueueSubState {
   public:
-    QueueSubState(Logger& logger, vvl::Queue& q);
+    QueueSubState(CoreChecks &core_checks, vvl::Queue& q);
 
     void PreSubmit(std::vector<vvl::QueueSubmission> &submissions) override;
 

@@ -296,13 +296,13 @@ vvl::QueueSubmission *vvl::Queue::NextSubmission() {
 }
 
 void vvl::Queue::Retire(QueueSubmission &submission) {
-    for (auto &item : sub_states_) {
-        item.second->Retire(submission);
-    }
     submission.EndUse();
     for (auto &wait : submission.wait_semaphores) {
         wait.semaphore->RetireWait(this, wait.payload, submission.loc.Get(), true);
         timeline_wait_count_ -= (wait.semaphore->type == VK_SEMAPHORE_TYPE_TIMELINE) ? 1 : 0;
+    }
+    for (auto &item : sub_states_) {
+        item.second->Retire(submission);
     }
     for (auto &signal : submission.signal_semaphores) {
         signal.semaphore->RetireSignal(signal.payload);
