@@ -1356,7 +1356,7 @@ bool GpuShaderInstrumentor::InstrumentShader(const vvl::span<const uint32_t> &in
     // 2. We might want to debug the above passes and want to inject our own debug printf calls
     if (gpuav_settings.debug_printf_enabled) {
         // binding slot allows debug printf to be slotted in the same set as GPU-AV if needed
-        spirv::DebugPrintfPass pass(module, intenral_only_debug_printf_, glsl::kBindingInstDebugPrintf);
+        spirv::DebugPrintfPass pass(module, intenral_only_debug_printf_);
         modified |= pass.Run();
     }
 

@@ -46,7 +46,6 @@ typedef enum InterceptId {
     InterceptIdPreCallRecordDeviceWaitIdle,
     InterceptIdPostCallRecordDeviceWaitIdle,
     InterceptIdPreCallValidateAllocateMemory,
-    InterceptIdPreCallRecordAllocateMemory,
     InterceptIdPostCallRecordAllocateMemory,
     InterceptIdPreCallValidateFreeMemory,
     InterceptIdPreCallRecordFreeMemory,

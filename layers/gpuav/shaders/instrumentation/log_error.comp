@@ -18,32 +18,32 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+#include "root_node.h"
 #include "error_payload.h"
 
 void inst_log_error(const uvec4 stage_info) {
     if (error_payload.inst_num != 0) {
-        const uint cmd_id = inst_error_logger_index_buffer.index[0];
-        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+        const uint cmd_id = root_node.inst_error_logger_index_buffer.index[0];
+        const uint cmd_errors_count = atomicAdd(root_node.inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
         if (!max_cmd_errors_count_reached) {
 
-            uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-            const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+            uint write_pos = atomicAdd(root_node.inst_errors_buffer.written_count, kErrorRecordSize);
+            const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(root_node.inst_errors_buffer.size);
 
             if (errors_buffer_not_filled) {
-                inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-                inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = error_payload.shader_error_encoding;
-                inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = error_payload.inst_num | (stage_info.x << kStageIdShift);
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
-                inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
+                root_node.inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+                root_node.inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = error_payload.shader_error_encoding;
+                root_node.inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = error_payload.inst_num | (stage_info.x << kStageIdShift);
+                root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info.y;
+                root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info.z;
+                root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info.w;
 
-                inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_error_logger_index_buffer.index[0];
+                root_node.inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (root_node.inst_action_index_buffer.index[0] << kActionIdShift) | root_node.inst_error_logger_index_buffer.index[0];
 
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_0] = error_payload.parameter_0;
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_1] = error_payload.parameter_1;
-                inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_2] = error_payload.parameter_2;
+                root_node.inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_0] = error_payload.parameter_0;
+                root_node.inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_1] = error_payload.parameter_1;
+                root_node.inst_errors_buffer.data[write_pos + kInstLogErrorParameterOffset_2] = error_payload.parameter_2;
             }
         }
     }

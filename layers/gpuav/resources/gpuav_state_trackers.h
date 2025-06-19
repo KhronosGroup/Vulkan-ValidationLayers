@@ -40,6 +40,10 @@
 
 namespace gpuav {
 
+namespace glsl {
+struct RootNode;
+}
+
 class Validator;
 class QueueSubState;
 
@@ -50,9 +54,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     };
 
     using OnInstrumentionDescSetUpdate =
-        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point,
-                                      VkDescriptorBufferInfo &out_buffer_info, uint32_t &out_dst_binding),
-                                 48>;
+        stdext::inplace_function<void(CommandBufferSubState &cb, VkPipelineBindPoint bind_point, glsl::RootNode *root_node), 48>;
     using OnCommandBufferSubmission =
         stdext::inplace_function<void(Validator &gpuav, CommandBufferSubState &cb, VkCommandBuffer per_submission_cb)>;
     using OnCommandBufferCompletion =
@@ -99,9 +101,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
     VkDeviceSize GetCmdErrorsCountsBufferByteSize() const { return 8192 * sizeof(uint32_t); }
 
-    const VkBuffer &GetCmdErrorsCountsBuffer() const {
+    const vko::Buffer &GetCmdErrorsCountsBuffer() const {
         assert(cmd_errors_counts_buffer_.VkHandle() != VK_NULL_HANDLE);
-        return cmd_errors_counts_buffer_.VkHandle();
+        return cmd_errors_counts_buffer_;
     }
 
     void IncrementCommandCount(VkPipelineBindPoint bind_point, const Location &loc);
