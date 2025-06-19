@@ -217,6 +217,7 @@ vvl_sources = [
   "layers/gpuav/shaders/gpuav_error_codes.h",
   "layers/gpuav/shaders/gpuav_error_header.h",
   "layers/gpuav/shaders/gpuav_shaders_constants.h",
+  "layers/gpuav/shaders/root_node.h",
   "layers/gpuav/spirv/descriptor_indexing_oob_pass.cpp",
   "layers/gpuav/spirv/descriptor_indexing_oob_pass.h",
   "layers/gpuav/spirv/descriptor_class_general_buffer_pass.cpp",

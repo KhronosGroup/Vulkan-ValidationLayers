@@ -29,8 +29,8 @@ struct Type;
 // Create a pass to instrument NonSemantic.DebugPrintf (GL_EXT_debug_printf) instructions
 class DebugPrintfPass : public Pass {
   public:
-    DebugPrintfPass(Module& module, std::vector<InternalOnlyDebugPrintf>& debug_printf, uint32_t binding_slot = 0)
-        : Pass(module, kNullOffline), intenral_only_debug_printf_(debug_printf), binding_slot_(binding_slot) {}
+    DebugPrintfPass(Module& module, std::vector<InternalOnlyDebugPrintf>& debug_printf)
+        : Pass(module, kNullOffline), intenral_only_debug_printf_(debug_printf) {}
     const char* Name() const final { return "DebugPrintfPass"; }
 
     bool Instrument() final;
@@ -65,8 +65,9 @@ class DebugPrintfPass : public Pass {
 
     // for debugging instrumented shaders
     std::vector<InternalOnlyDebugPrintf>& intenral_only_debug_printf_;
+    const Type* printf_struct_pointer_type_ = nullptr;
+    const Type* root_node_struct_pointer_type_ = nullptr;
 
-    const uint32_t binding_slot_;
     uint32_t ext_import_id_ = 0;
 
     // <number of arguments in the function call, function id>

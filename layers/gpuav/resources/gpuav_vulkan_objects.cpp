@@ -78,14 +78,10 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         // hardcoded like so, should be dynamic depending on the descriptor sets
         // to be created. Not too dramatic as Vulkan will gracefully fail if there is a
         // mismatch between this and created descriptor sets.
-        const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 },
-                                                                 {
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 }}};
+        const std::array<VkDescriptorPoolSize, 1> pool_sizes = {{{
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            max_sets * num_bindings_in_set,
+        }}};
 
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -276,8 +272,9 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
     {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-        device_local_indirect_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                   alloc_ci);
+        device_local_indirect_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            alloc_ci);
     }
 
     {
@@ -322,7 +319,7 @@ VkDescriptorSet GpuResourcesManager::GetManagedDescriptorSet(VkDescriptorSetLayo
 }
 
 // Arbitrary, big enough
-constexpr VkDeviceSize buffer_address_alignment = 128;
+constexpr VkDeviceSize buffer_address_alignment = 256;
 
 vko::BufferRange GpuResourcesManager::GetHostVisibleBufferRange(VkDeviceSize size) {
     // Kind of arbitrary, considered "big enough"

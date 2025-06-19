@@ -18,7 +18,8 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+
+#include "root_node.h"
 #include "error_payload.h"
 
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorSetType {
@@ -34,10 +35,10 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer InitializedS
     uint data[];
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, std430) buffer BoundDescriptorSetsStateSSBO {
+layout(buffer_reference) buffer BoundDescriptorSetsStateSSBO {
     InitializedStatus descriptor_init_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
-} gpuav;
+};
 
 // Unlike the bindless version, we don't need to check for Uninitialized and Destroyed descriptors.
 // At draw time on the CPU we can verify that information.
@@ -68,7 +69,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_
     if (desc_index >= binding_layout_size) {
         error = kErrorSubCodeDescriptorIndexingBounds;
     } else {
-        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+        DescriptorSetType descriptor_set_type = root_node.bound_desc_sets_state_ssbo.descriptor_set_types[desc_set];
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
@@ -79,7 +80,7 @@ bool inst_descriptor_indexing_oob_bindless(const uint inst_num, const uint desc_
             // check that the resource is still valid (and not using nullDescriptor)
             uint desc_index = desc_id / 32;
             uint desc_bit = 1 << (desc_id & 31);
-            if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
+            if ((root_node.bound_desc_sets_state_ssbo.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                 error = kErrorSubCodeDescriptorIndexingDestroyed;
             }
         }
@@ -107,7 +108,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
     if (desc_index >= binding_layout_size) {
         error = kErrorSubCodeDescriptorIndexingBounds;
     } else {
-        DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+        DescriptorSetType descriptor_set_type = root_node.bound_desc_sets_state_ssbo.descriptor_set_types[desc_set];
 
         // check if the descriptor was ever initialized
         const uint global_descriptor_index = binding_layout_offset + desc_index;
@@ -119,7 +120,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
             // check that the resource is still valid (and not using nullDescriptor)
             uint desc_index = desc_id / 32;
             uint desc_bit = 1 << (desc_id & 31);
-            if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
+            if ((root_node.bound_desc_sets_state_ssbo.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                 error = kErrorSubCodeDescriptorIndexingDestroyed;
             }
         }
@@ -135,7 +136,7 @@ bool inst_descriptor_indexing_oob_bindless_combined_image_sampler(const uint ins
                 // check that the resource is still valid
                 uint desc_index = desc_id / 32;
                 uint desc_bit = 1 << (desc_id & 31);
-                if ((gpuav.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
+                if ((root_node.bound_desc_sets_state_ssbo.descriptor_init_status.data[desc_index] & desc_bit) == 0) {
                     error = kErrorSubCodeDescriptorIndexingDestroyed;
                 }
             }
