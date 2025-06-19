@@ -795,7 +795,7 @@ TEST_F(NegativeObjectLifetime, FramebufferImageInUseDestroyedSignaled) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle(), 256, 256);
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle(), 256, 256);
 
     // Create Null cmd buffer for submit
     m_command_buffer.Begin();

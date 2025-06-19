@@ -1204,7 +1204,7 @@ TEST_F(NegativeSubpass, FramebufferNoAttachmentsSampleCounts) {
     ms_state.alphaToOneEnable = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ms_ci_ = ms_state;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-subpass-00758");
     pipe.CreateGraphicsPipeline();

@@ -467,7 +467,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pl.handle();
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
 
@@ -560,7 +560,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -580,7 +580,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -601,7 +601,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -621,7 +621,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentArray) {
         const auto set_info = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
             helper.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
         };
         CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
     }
@@ -669,7 +669,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentRuntimeArray) {
         helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 2, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                 {3, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-        helper.gp_ci_.renderPass = rp.Handle();
+        helper.gp_ci_.renderPass = rp;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 
@@ -717,7 +717,7 @@ TEST_F(PositiveShaderInterface, InputAttachmentDepthStencil) {
         helper.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                 {1, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                                 {2, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
-        helper.gp_ci_.renderPass = rp.Handle();
+        helper.gp_ci_.renderPass = rp;
     };
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit);
 }
@@ -1359,7 +1359,7 @@ TEST_F(PositiveShaderInterface, MultipleFragmentAttachment) {
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = cb_as;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1421,7 +1421,7 @@ TEST_F(PositiveShaderInterface, MissingInputAttachmentIndex) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
 

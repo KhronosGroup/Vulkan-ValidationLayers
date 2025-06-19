@@ -274,20 +274,20 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view.handle(), ds_view.handle()};
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
+    vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     ds_state.depthWriteEnable = VK_TRUE;
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
 
@@ -317,19 +317,19 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view.handle(), ds_view.handle()};
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
+    vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
     vk::CmdSetDepthWriteEnableEXT(m_command_buffer, VK_TRUE);
@@ -360,19 +360,19 @@ TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
     VkImageView views[2] = {color_view.handle(), ds_view.handle()};
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
+    vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = ds_state;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb.handle());
+    m_command_buffer.BeginRenderPass(rp, fb.handle());
 
     vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
     // never call vkCmdSetDepthWriteEnableEXT as not needed
@@ -928,15 +928,15 @@ TEST_F(PositiveDynamicState, RasterizationSamples) {
     rp.CreateRenderPass();
 
     VkImageView attachments[2] = {image_view, resolve_image_view};
-    const vkt::Framebuffer fb(*m_device, rp.Handle(), 2, attachments);
+    const vkt::Framebuffer fb(*m_device, rp, 2, attachments);
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32u, 32u);
+    m_command_buffer.BeginRenderPass(rp, fb, 32u, 32u);
     vk::CmdSetRasterizationSamplesEXT(m_command_buffer, VK_SAMPLE_COUNT_4_BIT);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);

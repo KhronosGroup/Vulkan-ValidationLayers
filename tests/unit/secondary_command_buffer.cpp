@@ -51,7 +51,7 @@ TEST_F(NegativeSecondaryCommandBuffer, Barrier) {
     // Second image that img_barrier will incorrectly use
     vkt::Image image2(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &imageView.handle());
 
     m_command_buffer.Begin();
 
@@ -64,7 +64,7 @@ TEST_F(NegativeSecondaryCommandBuffer, Barrier) {
 
     VkCommandBufferInheritanceInfo cbii = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO,
                                            nullptr,
-                                           rp.Handle(),
+                                           rp,
                                            0,
                                            VK_NULL_HANDLE,  // Set to NULL FB handle intentionally to flesh out any errors
                                            VK_FALSE,

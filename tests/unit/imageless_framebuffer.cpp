@@ -59,7 +59,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = nullptr;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
 
     VkImageFormatListCreateInfo imageFormatListCreateInfo = vku::InitStructHelper();
     imageFormatListCreateInfo.viewFormatCount = 2;
@@ -100,7 +100,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageViewMismatch) {
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = image_views;
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
-    renderPassBeginInfo.renderPass = rp.Handle();
+    renderPassBeginInfo.renderPass = rp;
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
     renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
 
@@ -342,7 +342,7 @@ TEST_F(NegativeImagelessFramebuffer, FeatureEnable) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
     framebufferCreateInfo.attachmentCount = 1;
 
     // Imageless framebuffer creation bit not present
@@ -388,7 +388,7 @@ TEST_F(NegativeImagelessFramebuffer, BasicUsage) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
     framebufferCreateInfo.attachmentCount = 1;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -515,7 +515,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentImageUsageMismatch) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
     framebufferCreateInfo.attachmentCount = 4;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -624,7 +624,7 @@ TEST_F(NegativeImagelessFramebuffer, AttachmentMultiviewImageLayerCountMismatch)
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
     framebufferCreateInfo.attachmentCount = 4;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
@@ -708,7 +708,7 @@ TEST_F(NegativeImagelessFramebuffer, DepthStencilResolveAttachment) {
     framebufferCreateInfo.width = attachmentWidth;
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
     framebufferCreateInfo.attachmentCount = 2;
     framebufferCreateInfo.pAttachments = nullptr;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
@@ -767,7 +767,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateUsage) {
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info);
     fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-    fb_info.renderPass = rp.Handle();
+    fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = NULL;
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
@@ -813,7 +813,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensions) {
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info);
     fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-    fb_info.renderPass = rp.Handle();
+    fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = NULL;
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
@@ -881,7 +881,7 @@ TEST_F(NegativeImagelessFramebuffer, FragmentShadingRateDimensionsMultiview) {
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper(&fba_info);
     fb_info.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-    fb_info.renderPass = rp.Handle();
+    fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = NULL;
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
@@ -947,7 +947,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     framebufferCreateInfo.height = attachmentHeight;
     framebufferCreateInfo.layers = 1;
     framebufferCreateInfo.attachmentCount = 1;
-    framebufferCreateInfo.renderPass = rp.Handle();
+    framebufferCreateInfo.renderPass = rp;
 
     // Try to use 3D Image View without imageless flag
     {
@@ -969,7 +969,7 @@ TEST_F(NegativeImagelessFramebuffer, RenderPassBeginImageView3D) {
     renderPassAttachmentBeginInfo.attachmentCount = 1;
     renderPassAttachmentBeginInfo.pAttachments = &imageView3D.handle();
     VkRenderPassBeginInfo renderPassBeginInfo = vku::InitStructHelper(&renderPassAttachmentBeginInfo);
-    renderPassBeginInfo.renderPass = rp.Handle();
+    renderPassBeginInfo.renderPass = rp;
     renderPassBeginInfo.renderArea.extent.width = attachmentWidth;
     renderPassBeginInfo.renderArea.extent.height = attachmentHeight;
     renderPassBeginInfo.framebuffer = framebuffer;
@@ -1115,7 +1115,7 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     fb_ci.attachmentCount = 1;
 
     fb_ci.pAttachments = nullptr;

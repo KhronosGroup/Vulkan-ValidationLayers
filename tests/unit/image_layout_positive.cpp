@@ -172,7 +172,7 @@ TEST_F(PositiveImageLayout, ImagelessTracking) {
     VkFramebufferCreateInfo framebufferCreateInfo = {VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
                                                      &framebufferAttachmentsCreateInfo,
                                                      VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT,
-                                                     rp.Handle(),
+                                                     rp,
                                                      1,
                                                      reinterpret_cast<const VkImageView *>(1),
                                                      attachmentWidth,

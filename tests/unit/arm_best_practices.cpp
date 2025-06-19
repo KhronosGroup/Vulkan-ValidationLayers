@@ -240,14 +240,14 @@ TEST_F(VkArmBestPracticesLayerTest, AttachmentNeedsReadback) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdBeginRenderPass-attachment-needs-readback");
 
     // NOTE: VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT should be set for all tests in this file because
     // otherwise BestPractices-vkBeginCommandBuffer-one-time-submit will be triggered.
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     m_errorMonitor->VerifyFound();
 }

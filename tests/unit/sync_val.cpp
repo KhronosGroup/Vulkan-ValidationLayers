@@ -1323,7 +1323,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     rp.AddSubpassDependency(external_subpass_dependency);
     rp.CreateRenderPass();
     VkImageView views[2] = {rt_image_view_0, rt_image_view_1};
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, views);
+    vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     // Other buffers with which to interact
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -1348,7 +1348,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     vk::CmdCopyImage(cb, image_a, VK_IMAGE_LAYOUT_GENERAL, rt_image_0, VK_IMAGE_LAYOUT_GENERAL, 1, &region_to_copy);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);  // This fails so the driver call is skip and no end is valid
+    m_command_buffer.BeginRenderPass(rp, fb);  // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
     // Use the barrier to clean up the WAW, and try again. (and show that validation is accounting for the barrier effect too.)
@@ -1365,7 +1365,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
     vk::CmdCopyImage(cb, rt_image_1, VK_IMAGE_LAYOUT_GENERAL, image_b, VK_IMAGE_LAYOUT_GENERAL, 1, &region_to_copy);
 
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-READ");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);  // This fails so the driver call is skip and no end is valid
+    m_command_buffer.BeginRenderPass(rp, fb);  // This fails so the driver call is skip and no end is valid
     m_errorMonitor->VerifyFound();
 
     // A global execution barrier that the implict external dependency can chain with should work...
@@ -1374,7 +1374,7 @@ TEST_F(NegativeSyncVal, RenderPassBeginTransitionHazard) {
 
     // With the barrier above, the layout transition has a chained execution sync operation, and the default
     // implict VkSubpassDependency safes the load op clear vs. the layout transition...
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
     m_command_buffer.EndRenderPass();
 }
 
@@ -1396,7 +1396,7 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &attachment_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &attachment_view.handle());
 
     VkImageCopy region = {};
     region.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -1414,7 +1414,7 @@ TEST_F(NegativeSyncVal, AttachmentLoadHazard) {
 
     // Attachment load operation collides with copy
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }
@@ -1436,7 +1436,7 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &dst_image_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &dst_image_view.handle());
 
     vkt::Image image(*m_device, m_width, m_height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
@@ -1446,7 +1446,7 @@ TEST_F(NegativeSyncVal, AttachmentStoreHazard) {
     region.extent = {m_width, m_height, 1};
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     // Initiate attachment store
     m_command_buffer.EndRenderPass();
@@ -2860,13 +2860,13 @@ TEST_F(NegativeSyncVal, FinalLayoutTransitionHazard) {
     vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM,
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::ImageView image_view = image.CreateView();
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle(), 64, 64);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
 
     const VkClearColorValue clear_value{};
     VkImageSubresourceRange subresource_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 64, 64);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
     m_command_buffer.EndRenderPass();
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_value, 1, &subresource_range);
@@ -2889,7 +2889,7 @@ TEST_F(NegativeSyncVal, InputAttachmentReadHazard) {
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle(), 64, 64);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_write(this, kFragmentMinimalGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2897,20 +2897,20 @@ TEST_F(NegativeSyncVal, InputAttachmentReadHazard) {
 
     CreatePipelineHelper pipe_write(*this);
     pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
-    pipe_write.gp_ci_.renderPass = rp.Handle();
+    pipe_write.gp_ci_.renderPass = rp;
     pipe_write.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_read(*this);
     pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
     pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe_read.gp_ci_.renderPass = rp.Handle();
+    pipe_read.gp_ci_.renderPass = rp;
     pipe_read.CreateGraphicsPipeline();
     pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                                         VK_IMAGE_LAYOUT_GENERAL);
     pipe_read.descriptor_set_->UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 64, 64);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_write);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
@@ -2943,7 +2943,7 @@ TEST_F(NegativeSyncVal, InputAttachmentReadHazard2) {
                      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle(), 64, 64);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle(), 64, 64);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs_read(this, kFragmentSubpassLoadGlsl, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -2952,7 +2952,7 @@ TEST_F(NegativeSyncVal, InputAttachmentReadHazard2) {
     CreatePipelineHelper pipe_read(*this);
     pipe_read.shader_stages_ = {vs.GetStageCreateInfo(), fs_read.GetStageCreateInfo()};
     pipe_read.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT};
-    pipe_read.gp_ci_.renderPass = rp.Handle();
+    pipe_read.gp_ci_.renderPass = rp;
     pipe_read.CreateGraphicsPipeline();
     pipe_read.descriptor_set_->WriteDescriptorImageInfo(0, image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
                                                         VK_IMAGE_LAYOUT_GENERAL);
@@ -2960,11 +2960,11 @@ TEST_F(NegativeSyncVal, InputAttachmentReadHazard2) {
 
     CreatePipelineHelper pipe_write(*this);
     pipe_write.shader_stages_ = {vs.GetStageCreateInfo(), fs_write.GetStageCreateInfo()};
-    pipe_write.gp_ci_.renderPass = rp.Handle();
+    pipe_write.gp_ci_.renderPass = rp;
     pipe_write.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 64, 64);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 64, 64);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe_read.pipeline_layout_, 0, 1,
@@ -3990,10 +3990,10 @@ TEST_F(NegativeSyncVal, StoreOpAndLayoutTransitionHazard) {
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
     m_errorMonitor->SetDesiredError("SYNC-HAZARD-WRITE-AFTER-WRITE");
     m_command_buffer.EndRenderPass();
     m_errorMonitor->VerifyFound();
@@ -5346,7 +5346,7 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
 
     vkt::Image image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
     VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
     // Form an execution dependency with loadOp (EARLY_FRAGMENT_TESTS) but not with draw command (FRAGMENT_SHADER)
@@ -5371,11 +5371,11 @@ TEST_F(NegativeSyncVal, RenderPassStoreOpNone) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);

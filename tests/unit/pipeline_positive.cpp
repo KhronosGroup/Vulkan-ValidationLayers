@@ -752,7 +752,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pl.handle();
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.pMultisampleState = &msaa;
 
@@ -778,7 +778,7 @@ TEST_F(PositivePipeline, RasterizationDiscardEnableTrue) {
     pipe.gp_ci_.pMultisampleState = nullptr;
     pipe.gp_ci_.pDepthStencilState = nullptr;
     pipe.gp_ci_.pColorBlendState = nullptr;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
 
     // When rasterizer discard is enabled, fragment shader state must not be present.
     pipe.VertexShaderOnly();
@@ -869,10 +869,10 @@ TEST_F(PositivePipeline, ConditionalRendering) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView imageView = image.CreateView();
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &imageView.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
 
     VkImageMemoryBarrier imb = vku::InitStructHelper();
     imb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -1568,7 +1568,7 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
         CreatePipelineHelper pipe(*this);
         pipe.VertexShaderOnly();
         pipe.rs_state_ci_.rasterizerDiscardEnable = VK_TRUE;
-        pipe.gp_ci_.renderPass = rp.Handle();
+        pipe.gp_ci_.renderPass = rp;
         pipe.CreateGraphicsPipeline();
     }
 
@@ -1582,7 +1582,7 @@ TEST_F(PositivePipeline, DepthStencilStateIgnored) {
         pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_OP);
         pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_BOUNDS);
-        pipe.gp_ci_.renderPass = rp.Handle();
+        pipe.gp_ci_.renderPass = rp;
         pipe.CreateGraphicsPipeline();
     }
 }
@@ -1852,7 +1852,7 @@ TEST_F(PositivePipeline, PipelineMissingFeaturesDynamic) {
     pipe.rs_state_ci_.depthClampEnable = VK_TRUE;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
 
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
 
@@ -1931,7 +1931,7 @@ TEST_F(PositivePipeline, ColorWriteMaskE5B9G9R9) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_A_BIT;
     {
         pipe.CreateGraphicsPipeline();

@@ -789,7 +789,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferUsage) {
     vkt::ImageView imageView = image.CreateView();
 
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04548");
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle(),
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &imageView.handle(),
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     m_errorMonitor->VerifyFound();
@@ -823,7 +823,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     const auto imageView = vkt::ImageView(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = rp.Handle();
+    fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width * 2;
@@ -879,7 +879,7 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensionsMultiview) {
     const auto imageView = vkt::ImageView(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-    fb_info.renderPass = rp.Handle();
+    fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
     fb_info.pAttachments = &imageView.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
@@ -3625,7 +3625,7 @@ TEST_F(NegativeFragmentShadingRate, MaxFragmentDensityMapLayers) {
         vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS);
 
         VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
-        fb_info.renderPass = rp.Handle();
+        fb_info.renderPass = rp;
         fb_info.attachmentCount = 1;
         fb_info.pAttachments = &image_view.handle();
         fb_info.width = 32;

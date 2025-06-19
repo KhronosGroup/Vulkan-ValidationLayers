@@ -109,10 +109,10 @@ TEST_F(PositiveAndroidExternalResolve, RenderPassAndFramebuffer) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
+    vkt::Framebuffer framebuffer(*m_device, rp, 2, attachments);
 
     CreatePipelineHelper pipe(*this, &external_format);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
 
@@ -209,7 +209,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     fb_ci.height = 32;
     fb_ci.layers = 1;
     fb_ci.attachmentCount = 2;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     m_errorMonitor->SetAllowedFailureMsg("VUID-VkFramebufferCreateInfo-flags-03201");
     vkt::Framebuffer framebuffer(*m_device, fb_ci);
 
@@ -221,7 +221,7 @@ TEST_F(PositiveAndroidExternalResolve, ImagelessFramebuffer) {
     render_pass_attachment_bi.pAttachments = attachments;
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
-    render_pass_bi.renderPass = rp.Handle();
+    render_pass_bi.renderPass = rp;
     render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea.extent = {1, 1};
     render_pass_bi.clearValueCount = 1;
@@ -379,14 +379,14 @@ TEST_F(PositiveAndroidExternalResolve, PipelineBarrier) {
     attachments[0] = color_view.handle();
     attachments[1] = resolve_view.handle();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, attachments);
+    vkt::Framebuffer framebuffer(*m_device, rp, 2, attachments);
 
     CreatePipelineHelper pipe(*this, &external_format);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer);
+    m_command_buffer.BeginRenderPass(rp, framebuffer);
 
     VkImageMemoryBarrier image_barrier = vku::InitStructHelper();
     image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;

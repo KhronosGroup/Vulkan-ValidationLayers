@@ -59,10 +59,10 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &imageView.handle());
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper();
-    render_pass_bi.renderPass = rp.Handle();
+    render_pass_bi.renderPass = rp;
     render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea.extent.width = 32u;
     render_pass_bi.renderArea.extent.height = 32u;
@@ -70,7 +70,7 @@ TEST_F(NegativeMultiview, MaxInstanceIndex) {
     render_pass_bi.pClearValues = m_renderPassClearValues.data();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -116,7 +116,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     vkt::Image image(*m_device, image_create_info, vkt::set_layout);
     vkt::ImageView imageView = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY);
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &imageView.handle());
 
     // Start no RenderPass
     m_command_buffer.Begin();
@@ -133,7 +133,7 @@ TEST_F(NegativeMultiview, ClearColorAttachments) {
     clear_rect.rect.extent.width = 32;
     clear_rect.rect.extent.height = 32;
 
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-baseArrayLayer-00018");
     m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-pRects-06937");
     clear_rect.layerCount = 2;
@@ -629,14 +629,14 @@ TEST_F(NegativeMultiview, BeginTransformFeedback) {
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
     const vkt::ImageView imageView(*m_device, image_view_ci);
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &imageView.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT);
@@ -1101,7 +1101,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkPipelineTessellationStateCreateInfo tsci{VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO, nullptr, 0, 3};
 
         CreatePipelineHelper pipe(*this);
-        pipe.gp_ci_.renderPass = rp.Handle();
+        pipe.gp_ci_.renderPass = rp;
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
         pipe.gp_ci_.pTessellationState = &tsci;
@@ -1130,7 +1130,7 @@ TEST_F(NegativeMultiview, FeaturesDisabled) {
         VkShaderObj gs(this, gsSource, VK_SHADER_STAGE_GEOMETRY_BIT);
 
         CreatePipelineHelper pipe(*this);
-        pipe.gp_ci_.renderPass = rp.Handle();
+        pipe.gp_ci_.renderPass = rp;
         pipe.gp_ci_.subpass = 0;
         pipe.cb_ci_.attachmentCount = 1;
         pipe.shader_stages_ = {vs.GetStageCreateInfo(), gs.GetStageCreateInfo(), pipe.fs_->GetStageCreateInfo()};
