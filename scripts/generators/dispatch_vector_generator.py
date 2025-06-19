@@ -54,6 +54,7 @@ class DispatchVectorGenerator(BaseGenerator):
     skip_intercept_id_pre_record = (
         'vkCreatePipelineLayout',
         'vkCreateBuffer',
+        'vkAllocateMemory',
         'vkGetShaderBinaryDataEXT',
     )
     skip_intercept_id_post_record = (

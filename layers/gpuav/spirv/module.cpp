@@ -736,7 +736,8 @@ void Module::LinkFunctions(const LinkInfo& info) {
 
 // Things that need to be done once if there is any instrumentation.
 void Module::PostProcess() {
-    if (use_bda_) {
+    // #ARNO_TODO I think that because of the new root node logic, this logic always needs to be done?
+    {
         // Adjust the original addressing model to be PhysicalStorageBuffer64 if not already.
         // A module can only have one OpMemoryModel
         memory_model_[0]->UpdateWord(1, spv::AddressingModelPhysicalStorageBuffer64);
