@@ -28,12 +28,13 @@ namespace vvl {
 struct QueueSubmission;
 }  // namespace vvl
 
-class Logger;
+class CoreChecks;
 
 // Performs validationn when QueueSubmision is ready to retire.
 struct QueueSubmissionValidator {
-    const Logger &error_logger;
+    CoreChecks &core_checks;
 
-    QueueSubmissionValidator(const Logger &error_logger) : error_logger(error_logger) {}
-    void Validate(const vvl::QueueSubmission& submission) const;
+    QueueSubmissionValidator(CoreChecks &core_checks) : core_checks(core_checks) {}
+    void Validate(const vvl::QueueSubmission &submission) const;
+    void Update(vvl::QueueSubmission &submission);
 };

@@ -1071,8 +1071,6 @@ class CoreChecks : public vvl::DeviceProxy {
                                                  const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
                                                  const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
 
-    bool FindLayouts(const vvl::Image& image_state, std::vector<VkImageLayout>& layouts) const;
-
     bool VerifyFramebufferAndRenderPassLayouts(const vvl::CommandBuffer& cb_state, const VkRenderPassBeginInfo& begin_info,
                                                const vvl::RenderPass& render_pass_state, const vvl::Framebuffer& framebuffer_state,
                                                const Location& rp_begin_loc) const;

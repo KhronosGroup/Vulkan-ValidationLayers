@@ -843,19 +843,6 @@ bool CoreChecks::PreCallValidateQueuePresentKHR(VkQueue queue, const VkPresentIn
             const auto *image_state = swapchain_data->images[pPresentInfo->pImageIndices[i]].image_state;
             ASSERT_AND_CONTINUE(image_state);
 
-            std::vector<VkImageLayout> layouts;
-            if (FindLayouts(*image_state, layouts)) {
-                for (auto layout : layouts) {
-                    if ((layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) && (!IsExtEnabled(extensions.vk_khr_shared_presentable_image) ||
-                                                                        (layout != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR))) {
-                        skip |= LogError("VUID-VkPresentInfoKHR-pImageIndices-01430", queue, swapchain_loc,
-                                         "images passed to present must be in layout "
-                                         "VK_IMAGE_LAYOUT_PRESENT_SRC_KHR or "
-                                         "VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR but is in %s.",
-                                         string_VkImageLayout(layout));
-                    }
-                }
-            }
             const auto *display_present_info = vku::FindStructInPNextChain<VkDisplayPresentInfoKHR>(pPresentInfo->pNext);
             if (display_present_info) {
                 if (display_present_info->srcRect.offset.x < 0 || display_present_info->srcRect.offset.y < 0 ||

@@ -60,7 +60,6 @@ struct CommandBufferSubmitState {
 
     bool Validate(const Location &loc, const vvl::CommandBuffer &cb_state, uint32_t perf_pass) {
         bool skip = false;
-        skip |= core.ValidateCmdBufImageLayouts(loc, cb_state, local_image_layout_state);
         const VkCommandBuffer cmd = cb_state.VkHandle();
         current_cmds.push_back(cmd);
         skip |= core.ValidatePrimaryCommandBufferState(
@@ -411,10 +410,8 @@ void CoreChecks::PostCallRecordQueueSubmit(VkQueue queue, uint32_t submitCount, 
             ASSERT_AND_CONTINUE(cb_state);
 
             for (auto *secondary_cmd_buffer : cb_state->linked_command_buffers) {
-                UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
                 RecordQueuedQFOTransfers(*secondary_cmd_buffer);
             }
-            UpdateCmdBufImageLayouts(*cb_state);
             RecordQueuedQFOTransfers(*cb_state);
         }
     }
@@ -433,10 +430,8 @@ void CoreChecks::RecordQueueSubmit2(VkQueue queue, uint32_t submitCount, const V
             ASSERT_AND_CONTINUE(cb_state);
 
             for (auto *secondary_cmd_buffer : cb_state->linked_command_buffers) {
-                UpdateCmdBufImageLayouts(*secondary_cmd_buffer);
                 RecordQueuedQFOTransfers(*secondary_cmd_buffer);
             }
-            UpdateCmdBufImageLayouts(*cb_state);
             RecordQueuedQFOTransfers(*cb_state);
         }
     }
