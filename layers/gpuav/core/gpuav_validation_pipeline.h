@@ -37,11 +37,6 @@ class CommandBufferSubState;
 
 namespace valpipe {
 
-struct BoundStorageBuffer {
-    uint32_t binding = vvl::kU32Max;
-    VkDescriptorBufferInfo info{VK_NULL_HANDLE, vvl::kU64Max, 0};
-};
-
 namespace internal {
 [[nodiscard]] bool CreateComputePipelineHelper(Validator& gpuav, const Location& loc,
                                                const std::vector<VkDescriptorSetLayoutBinding> specific_bindings,
