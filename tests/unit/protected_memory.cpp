@@ -786,7 +786,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
                             VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_WRITE_BIT);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, image_views, 8, 8);
+    vkt::Framebuffer framebuffer(*m_device, rp, 2, image_views, 8, 8);
 
     // Various structs used for commands
     VkImageSubresourceLayers image_subresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
@@ -834,7 +834,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
     VkPipelineColorBlendAttachmentState cb_attachments[2] = {};
     memset(cb_attachments, 0, sizeof(VkPipelineColorBlendAttachmentState) * 2);
     CreatePipelineHelper g_pipe(*this);
-    g_pipe.gp_ci_.renderPass = rp.Handle();
+    g_pipe.gp_ci_.renderPass = rp;
     g_pipe.shader_stages_ = {g_pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     g_pipe.dsl_bindings_ = {{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
                             {1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr}};
@@ -914,7 +914,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdUpdateBuffer(m_command_buffer, buffer_protected, 0, 4, (void *)update_data);
         m_errorMonitor->VerifyFound();
 
-        m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, render_area.extent.width, render_area.extent.height);
+        m_command_buffer.BeginRenderPass(rp, framebuffer, render_area.extent.width, render_area.extent.height);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-commandBuffer-02504");
         vk::CmdClearAttachments(m_command_buffer, 2, clear_attachments, 2, clear_rect);
@@ -985,7 +985,7 @@ TEST_F(NegativeProtectedMemory, MixingProtectedResources) {
         vk::CmdUpdateBuffer(protectedCommandBuffer, buffer_unprotected, 0, 4, (void *)update_data);
         m_errorMonitor->VerifyFound();
 
-        protectedCommandBuffer.BeginRenderPass(rp.Handle(), framebuffer, render_area.extent.width, render_area.extent.height);
+        protectedCommandBuffer.BeginRenderPass(rp, framebuffer, render_area.extent.width, render_area.extent.height);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-commandBuffer-02505");
         vk::CmdClearAttachments(protectedCommandBuffer, 2, clear_attachments, 2, clear_rect);

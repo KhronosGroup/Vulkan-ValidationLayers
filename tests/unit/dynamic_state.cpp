@@ -3248,7 +3248,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     vkt::ImageView depth_view = depth_image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
     const std::array<VkImageView, 2> attachments = {color_view, depth_view};
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), static_cast<uint32_t>(attachments.size()), attachments.data(), 128, 128);
+    vkt::Framebuffer fb(*m_device, rp, static_cast<uint32_t>(attachments.size()), attachments.data(), 128, 128);
 
     VkMultisamplePropertiesEXT multisample_prop = vku::InitStructHelper();
     vk::GetPhysicalDeviceMultisamplePropertiesEXT(Gpu(), VK_SAMPLE_COUNT_1_BIT, &multisample_prop);
@@ -3284,7 +3284,7 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     {
         CreatePipelineHelper pipe(*this);
         pipe.ms_ci_ = pipe_ms_state_ci;
-        pipe.gp_ci_.renderPass = rp.Handle();
+        pipe.gp_ci_.renderPass = rp;
         pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
 
         // Set invalid grid size width
@@ -3341,14 +3341,14 @@ TEST_F(NegativeDynamicState, SampleLocations) {
     CreatePipelineHelper dynamic_pipe(*this);
     dynamic_pipe.ms_ci_ = pipe_ms_state_ci;
     dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
-    dynamic_pipe.gp_ci_.renderPass = rp.Handle();
+    dynamic_pipe.gp_ci_.renderPass = rp;
     dynamic_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
     dynamic_pipe.CreateGraphicsPipeline();
 
     vkt::Buffer vbo(*m_device, sizeof(float) * 3, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 128, 128);
+    m_command_buffer.BeginRenderPass(rp, fb, 128, 128);
     vk::CmdBindVertexBuffers(m_command_buffer, 1, 1, &vbo.handle(), &kZeroDeviceSize);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, dynamic_pipe);
 
@@ -5101,15 +5101,15 @@ TEST_F(NegativeDynamicState, MissingColorAttachmentBlendBit) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer);
+    m_command_buffer.BeginRenderPass(rp, framebuffer);
     VkBool32 enable = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0u, 1u, &enable);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -5361,7 +5361,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     VkPipelineMultisampleStateCreateInfo ms_state_ci = vku::InitStructHelper();
     ms_state_ci.rasterizationSamples = VK_SAMPLE_COUNT_2_BIT;
@@ -5369,14 +5369,14 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     CreatePipelineHelper pipe1(*this);
     pipe1.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     pipe1.ms_ci_ = ms_state_ci;
-    pipe1.gp_ci_.renderPass = rp.Handle();
+    pipe1.gp_ci_.renderPass = rp;
     pipe1.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe2(*this);
     pipe2.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
     pipe2.AddDynamicState(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
     pipe2.ms_ci_ = ms_state_ci;
-    pipe2.gp_ci_.renderPass = rp.Handle();
+    pipe2.gp_ci_.renderPass = rp;
     pipe2.CreateGraphicsPipeline();
 
     VkSampleMask sample_mask = 1u;
@@ -5385,7 +5385,7 @@ TEST_F(NegativeDynamicState, InvalidSampleMaskSamples) {
     clear_value.color = {{0, 0, 0, 0}};
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, &clear_value);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, &clear_value);
     vk::CmdSetSampleMaskEXT(m_command_buffer, VK_SAMPLE_COUNT_1_BIT, &sample_mask);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe1);
@@ -5469,7 +5469,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     VkClearValue clear_value;
     clear_value.depthStencil = {1.0f, 0u};
@@ -5477,7 +5477,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_ENABLE_EXT);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_SAMPLE_LOCATIONS_EXT);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.CreateGraphicsPipeline();
 
@@ -5489,7 +5489,7 @@ TEST_F(NegativeDynamicState, DynamicSampleLocationsEnable) {
     sample_locations_info.pSampleLocations = &sample_location;
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, &clear_value);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, &clear_value);
     vk::CmdSetSampleLocationsEnableEXT(m_command_buffer, VK_TRUE);
     vk::CmdSetSampleLocationsEXT(m_command_buffer, &sample_locations_info);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -5809,15 +5809,15 @@ TEST_F(NegativeDynamicState, ColorBlendEnableNotSet) {
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32u, 32u);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07627");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
@@ -5871,15 +5871,15 @@ TEST_F(NegativeDynamicState, ColorWriteMaskNotSet) {
 
     vkt::Image image(*m_device, 32u, 32u, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView image_view = image.CreateView();
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32u, 32u);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07629");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);

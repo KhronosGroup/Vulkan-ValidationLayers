@@ -211,10 +211,10 @@ TEST_F(NegativeCommand, ClearAttachment64Bit) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     VkClearAttachment attachment;
     attachment.colorAttachment = 0;
@@ -2968,33 +2968,33 @@ TEST_F(NegativeCommand, DepthStencilStateForReadOnlyLayout) {
 
     CreatePipelineHelper depth_pipe(*this);
     depth_pipe.LateBindPipelineInfo();
-    depth_pipe.gp_ci_.renderPass = rp.Handle();
+    depth_pipe.gp_ci_.renderPass = rp;
     depth_pipe.gp_ci_.pDepthStencilState = &depth_state_info;
     depth_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_pipe(*this);
     stencil_pipe.LateBindPipelineInfo();
-    stencil_pipe.gp_ci_.renderPass = rp.Handle();
+    stencil_pipe.gp_ci_.renderPass = rp;
     stencil_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_disabled_pipe(*this);
     stencil_disabled_pipe.LateBindPipelineInfo();
-    stencil_disabled_pipe.gp_ci_.renderPass = rp.Handle();
+    stencil_disabled_pipe.gp_ci_.renderPass = rp;
     stencil_disabled_pipe.gp_ci_.pDepthStencilState = &stencil_disabled_state_info;
     stencil_disabled_pipe.CreateGraphicsPipeline(false);
 
     CreatePipelineHelper stencil_dynamic_pipe(*this);
     stencil_dynamic_pipe.AddDynamicState(VK_DYNAMIC_STATE_STENCIL_WRITE_MASK);
     stencil_dynamic_pipe.LateBindPipelineInfo();
-    stencil_dynamic_pipe.gp_ci_.renderPass = rp.Handle();
+    stencil_dynamic_pipe.gp_ci_.renderPass = rp;
     stencil_dynamic_pipe.gp_ci_.pDepthStencilState = &stencil_state_info;
     stencil_dynamic_pipe.CreateGraphicsPipeline(false);
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, depth_pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06886");
@@ -3654,7 +3654,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         rp.AddDepthStencilAttachment(0);
         rp.CreateRenderPass();
 
-        vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+        vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
         VkClearValue clear_value = {};
         clear_value.depthStencil = {0};
@@ -3669,7 +3669,7 @@ TEST_F(NegativeCommand, ClearDsImageWithInvalidAspect) {
         clear_rect.layerCount = 1u;
 
         m_command_buffer.Begin();
-        m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, &clear_value);
+        m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, &clear_value);
         if (missing_depth) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdClearAttachments-aspectMask-07884");
         } else {

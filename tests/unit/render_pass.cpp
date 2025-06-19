@@ -1431,11 +1431,11 @@ TEST_F(NegativeRenderPass, BeginLayoutsStencilBufferImageUsageMismatches) {
 
         const uint32_t fb_width = input_image.Width();
         const uint32_t fb_height = input_image.Height();
-        vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &input_view.handle(), fb_width, fb_height);
+        vkt::Framebuffer fb(*m_device, rp, 1, &input_view.handle(), fb_width, fb_height);
 
         // Begin render pass and trigger errors
         VkRenderPassBeginInfo rp_begin = vku::InitStructHelper();
-        rp_begin.renderPass = rp.Handle();
+        rp_begin.renderPass = rp;
         rp_begin.framebuffer = fb;
         rp_begin.renderArea.extent = {fb_width, fb_height};
 
@@ -1619,14 +1619,14 @@ TEST_F(NegativeRenderPass, DestroyWhileInUse) {
     rp.CreateRenderPass();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), Framebuffer());
+    m_command_buffer.BeginRenderPass(rp, Framebuffer());
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkDestroyRenderPass-renderPass-00873");
-    vk::DestroyRenderPass(device(), rp.Handle(), nullptr);
+    vk::DestroyRenderPass(device(), rp, nullptr);
     m_errorMonitor->VerifyFound();
 
     // Wait for queue to complete so we can safely destroy rp
@@ -1685,7 +1685,7 @@ TEST_F(NegativeRenderPass, FramebufferDepthStencilResolveAttachment) {
 
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-00880");
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-pAttachments-02634");
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 2, image_views, attachmentWidth, attachmentHeight);
+    vkt::Framebuffer framebuffer(*m_device, rp, 2, image_views, attachmentWidth, attachmentHeight);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1706,7 +1706,7 @@ TEST_F(NegativeRenderPass, FramebufferIncompatible) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::ImageView view = image.CreateView();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1u, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1u, &view.handle());
 
     VkCommandBufferAllocateInfo cbai = vku::InitStructHelper();
     cbai.commandPool = m_command_pool;
@@ -1795,7 +1795,7 @@ TEST_F(NegativeRenderPass, FramebufferAttachmentPointers) {
     fb_ci.width = 100;
     fb_ci.height = 100;
     fb_ci.layers = 1;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     fb_ci.attachmentCount = 2;
 
     fb_ci.pAttachments = nullptr;
@@ -1868,11 +1868,11 @@ TEST_F(NegativeRenderPass, DrawWithPipelineIncompatibleWithRenderPass) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     VkCommandBufferInheritanceInfo cbii = vku::InitStructHelper();
-    cbii.renderPass = rp.Handle();
+    cbii.renderPass = rp;
     cbii.subpass = 0;
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
     cbbi.pInheritanceInfo = &cbii;
@@ -1985,13 +1985,13 @@ TEST_F(NegativeRenderPass, MissingAttachment) {
 
     vkt::ImageView iv = m_renderTargets[0]->CreateView();
     // Create the framebuffer then destroy the view it uses.
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &iv.handle(), 100, 100);
+    vkt::Framebuffer fb(*m_device, rp, 1, &iv.handle(), 100, 100);
     iv.destroy();
 
     m_errorMonitor->SetDesiredError("VUID-VkRenderPassBeginInfo-framebuffer-parameter");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     // Don't call vk::CmdEndRenderPass; as the begin has been "skipped" based on the error condition
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
@@ -2515,7 +2515,7 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
     VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
     char const *fsSource = R"glsl(
             #version 450
@@ -2538,14 +2538,14 @@ TEST_F(NegativeRenderPass, SamplingFromReadOnlyDepthStencilAttachment) {
 
     CreatePipelineHelper pipe(*this);
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = vku::InitStruct<VkPipelineDepthStencilStateCreateInfo>();
     pipe.ds_ci_.depthTestEnable = VK_TRUE;
     pipe.ds_ci_.stencilTestEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, width, height, 1, m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, framebuffer, width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
@@ -4038,7 +4038,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view.handle());
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view.handle());
 
     VkClearValue clear_value;
     clear_value.color = {{0, 0, 0, 0}};
@@ -4055,7 +4055,7 @@ TEST_F(NegativeRenderPass, AttachmentLayout) {
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0u,
                            0u, nullptr, 0u, nullptr, 1u, &ImageMemoryBarrier);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginRenderPass-initialLayout-00900");
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, &clear_value);
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, &clear_value);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

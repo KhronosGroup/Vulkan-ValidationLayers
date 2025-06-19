@@ -48,7 +48,7 @@ TEST_F(PositiveImagelessFramebuffer, BasicUsage) {
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     fb_ci.attachmentCount = 1;
 
     fb_ci.pAttachments  = nullptr;
@@ -107,7 +107,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
 
     VkFramebufferCreateInfo framebuffer_ci = vku::InitStructHelper(&framebuffer_attachments);
     framebuffer_ci.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
-    framebuffer_ci.renderPass = rp.Handle();
+    framebuffer_ci.renderPass = rp;
     framebuffer_ci.attachmentCount = 1;
     framebuffer_ci.pAttachments = &imageView.handle();
     framebuffer_ci.width = 32;
@@ -124,7 +124,7 @@ TEST_F(PositiveImagelessFramebuffer, Image3D) {
     render_pass_attachment_bi.pAttachments = &imageView.handle();
 
     VkRenderPassBeginInfo render_pass_bi = vku::InitStructHelper(&render_pass_attachment_bi);
-    render_pass_bi.renderPass = rp.Handle();
+    render_pass_bi.renderPass = rp;
     render_pass_bi.framebuffer = framebuffer;
     render_pass_bi.renderArea.extent = {1, 1};
     render_pass_bi.clearValueCount = 1;
@@ -172,7 +172,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     fb_ci.width = attachment_width;
     fb_ci.height = attachment_height;
     fb_ci.layers = 1;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     fb_ci.attachmentCount = 1;
 
     fb_ci.pAttachments = nullptr;
@@ -184,7 +184,7 @@ TEST_F(PositiveImagelessFramebuffer, SecondaryCmdBuffer) {
     vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 
     VkCommandBufferInheritanceInfo inheritanceInfo = vku::InitStructHelper();
-    inheritanceInfo.renderPass = rp.Handle();
+    inheritanceInfo.renderPass = rp;
     inheritanceInfo.framebuffer = framebuffer_null;
 
     VkCommandBufferBeginInfo beginInfo = vku::InitStructHelper();

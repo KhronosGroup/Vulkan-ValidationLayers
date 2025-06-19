@@ -3695,7 +3695,7 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2u, attachments, 64, 64);
+    vkt::Framebuffer fb(*m_device, rp, 2u, attachments, 64, 64);
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
     char const *fsSource = R"glsl(
@@ -3729,7 +3729,7 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
     pipe_ds_state_ci.stencilTestEnable = VK_FALSE;
 
     g_pipe.gp_ci_.pDepthStencilState = &pipe_ds_state_ci;
-    g_pipe.gp_ci_.renderPass = rp.Handle();
+    g_pipe.gp_ci_.renderPass = rp;
     g_pipe.CreateGraphicsPipeline();
 
     g_pipe.descriptor_set_->WriteDescriptorImageInfo(0, view_input, sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
@@ -3747,7 +3747,7 @@ TEST_F(NegativeDescriptors, DISABLED_ImageSubresourceOverlapBetweenAttachmentsAn
 
     m_command_buffer.Begin();
     m_renderPassBeginInfo.renderArea = {{0, 0}, {64, 64}};
-    m_renderPassBeginInfo.renderPass = rp.Handle();
+    m_renderPassBeginInfo.renderPass = rp;
     m_renderPassBeginInfo.framebuffer = fb;
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -4332,7 +4332,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     vkt::ImageView image_view = image.CreateView();
     VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
     char const *fsSource = R"glsl(
             #version 450
@@ -4353,7 +4353,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -4362,7 +4362,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06537");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
@@ -4393,7 +4393,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     vkt::ImageView image_view = image.CreateView();
     VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle);
 
     // used as a "would be valid" image
     vkt::Image image_2(*m_device, image_create_info, vkt::set_layout);
@@ -4466,7 +4466,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     descriptor_set.WriteDescriptorImageInfo(0, image_view, sampler, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_IMAGE_LAYOUT_GENERAL);
@@ -4476,7 +4476,7 @@ TEST_F(NegativeDescriptors, ImageSubresourceOverlapBetweenRenderPassAndDescripto
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-06537");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, 32, 32, 1, m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, framebuffer, 32, 32, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
@@ -4511,7 +4511,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
     VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
     char const *fsSource = R"glsl(
             #version 450
@@ -4536,7 +4536,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set(m_device,
@@ -4558,7 +4558,7 @@ TEST_F(NegativeDescriptors, DISABLED_DescriptorReadFromWriteAttachment) {
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09000");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, width, height, 1, m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, framebuffer, width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               nullptr);
@@ -4592,7 +4592,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     VkImageView image_view_handle = image_view;
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &image_view_handle, width, height);
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &image_view_handle, width, height);
 
     char const *fsSource = R"glsl(
             #version 450
@@ -4625,7 +4625,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     OneOffDescriptorSet descriptor_set_storage_image(
@@ -4644,7 +4644,7 @@ TEST_F(NegativeDescriptors, DescriptorWriteFromReadAttachment) {
     descriptor_set_input_attachment.UpdateDescriptorSets();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), framebuffer, width, height, 1, m_renderPassClearValues.data());
+    m_command_buffer.BeginRenderPass(rp, framebuffer, width, height, 1, m_renderPassClearValues.data());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
                               &descriptor_set_storage_image.set_, 0, nullptr);

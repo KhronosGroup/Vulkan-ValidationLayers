@@ -182,7 +182,7 @@ TEST_F(PositiveCommand, FramebufferBindingDestroyCommandPool) {
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
     vkt::ImageView view = image.CreateView();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     // Explicitly create a command buffer to bind the FB to so that we can then
     //  destroy the command pool in order to implicitly free command buffer
@@ -242,7 +242,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         rp.CreateRenderPass();
 
         VkFramebufferCreateInfo fbci = vku::InitStructHelper();
-        fbci.renderPass = rp.Handle();
+        fbci.renderPass = rp;
         fbci.attachmentCount = 1;
         fbci.pAttachments = &image_view.handle();
         fbci.width = image_ci.extent.width;
@@ -263,7 +263,7 @@ TEST_F(PositiveCommand, ClearRectWith2DArray) {
         clearValue.color = {{0, 0, 0, 0}};
 
         VkRenderPassBeginInfo rpbi = vku::InitStructHelper();
-        rpbi.renderPass = rp.Handle();
+        rpbi.renderPass = rp;
         rpbi.framebuffer = framebuffer;
         rpbi.renderArea = {{0, 0}, {image_ci.extent.width, image_ci.extent.height}};
         rpbi.clearValueCount = 1;

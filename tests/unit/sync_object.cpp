@@ -255,7 +255,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     // Add a token self-dependency for this test to avoid unexpected errors
     rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &color_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &color_view.handle());
 
     auto depth_format = FindSupportedDepthStencilFormat(Gpu());
 
@@ -296,7 +296,7 @@ TEST_F(NegativeSyncObject, Barriers) {
     conc_test("");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     // Can't send buffer memory barrier during a render pass
     m_command_buffer.EndRenderPass();
@@ -774,7 +774,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     // Add a token self-dependency for this test to avoid unexpected errors
     rp.AddSubpassDependency(stage_flags, stage_flags, access_flags, access_flags);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &color_view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &color_view.handle());
 
     const uint32_t submit_family = m_device->graphics_queue_node_index_;
     const uint32_t invalid = static_cast<uint32_t>(m_device->Physical().queue_properties_.size());
@@ -812,7 +812,7 @@ TEST_F(NegativeSyncObject, Sync2Barriers) {
     conc_test("");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
 
     // Can't send buffer memory barrier during a render pass
     m_command_buffer.EndRenderPass();
@@ -3834,10 +3834,10 @@ TEST_F(NegativeSyncObject, RenderPassPipelineBarrierGraphicsStage) {
 
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb);
+    m_command_buffer.BeginRenderPass(rp, fb);
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07889");
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-None-07892");

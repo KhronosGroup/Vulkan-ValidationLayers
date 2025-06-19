@@ -1839,7 +1839,7 @@ TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWrittenArray) {
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = color_blends;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -2280,7 +2280,7 @@ TEST_F(NegativeShaderInterface, DISABLED_MultipleFragmentAttachment) {
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.cb_ci_.attachmentCount = 3;
     pipe.cb_ci_.pAttachments = color_blends;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     m_errorMonitor->SetDesiredWarning("Undefined-Value-ShaderOutputNotProduced");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -2399,7 +2399,7 @@ TEST_F(NegativeShaderInterface, MissingInputAttachmentIndex) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {pipe.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr};
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     m_errorMonitor->SetDesiredError("VUID-RuntimeSpirv-None-09558");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

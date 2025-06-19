@@ -529,7 +529,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle(), m_width, m_height);
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), m_width, m_height);
 
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-vkCmdClearAttachments-clear-after-load-color");
 
@@ -541,7 +541,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoad) {
     m_errorMonitor->SetAllowedFailureMsg("BestPractices-RenderPass-inefficient-clear");
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, m_width, m_height);
+    m_command_buffer.BeginRenderPass(rp, fb, m_width, m_height);
 
     VkClearAttachment color_attachment;
     color_attachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -578,15 +578,15 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     rp.AddAttachmentReference({0, VK_IMAGE_LAYOUT_GENERAL});
     rp.AddColorAttachment(0);
     rp.CreateRenderPass();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &image_view.handle(), m_width, m_height);
+    vkt::Framebuffer fb(*m_device, rp, 1, &image_view.handle(), m_width, m_height);
 
     CreatePipelineHelper pipe_masked(*this);
-    pipe_masked.gp_ci_.renderPass = rp.Handle();
+    pipe_masked.gp_ci_.renderPass = rp;
     pipe_masked.cb_attachments_.colorWriteMask = 0;
     pipe_masked.CreateGraphicsPipeline();
 
     CreatePipelineHelper pipe_writes(*this);
-    pipe_writes.gp_ci_.renderPass = rp.Handle();
+    pipe_writes.gp_ci_.renderPass = rp;
     pipe_writes.cb_attachments_.colorWriteMask = 0xf;
     pipe_writes.CreateGraphicsPipeline();
 
@@ -602,7 +602,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     VkClearRect clear_rect = {{{0, 0}, {m_width, m_height}}, 0, 1};
 
     VkRenderPassBeginInfo render_pass_begin_info = vku::InitStructHelper();
-    render_pass_begin_info.renderPass = rp.Handle();
+    render_pass_begin_info.renderPass = rp;
     render_pass_begin_info.framebuffer = fb;
     // need full clear
     render_pass_begin_info.renderArea.extent.width = m_width;
@@ -644,7 +644,7 @@ TEST_F(VkBestPracticesLayerTest, ClearAttachmentsAfterLoadSecondary) {
     VkCommandBufferInheritanceInfo inherit_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO};
     begin_info.pInheritanceInfo = &inherit_info;
     inherit_info.subpass = 0;
-    inherit_info.renderPass = rp.Handle();
+    inherit_info.renderPass = rp;
 
     vkt::CommandBuffer secondary_clear(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     vkt::CommandBuffer secondary_draw_masked(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);

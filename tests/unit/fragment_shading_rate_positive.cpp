@@ -95,7 +95,7 @@ TEST_F(PositiveFragmentShadingRate, Attachments) {
     vkt::Image image(*m_device, 1, 1, VK_FORMAT_R8_UINT, VK_IMAGE_USAGE_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR);
     vkt::ImageView imageView = image.CreateView();
 
-    vkt::Framebuffer framebuffer(*m_device, rp.Handle(), 1, &imageView.handle(),
+    vkt::Framebuffer framebuffer(*m_device, rp, 1, &imageView.handle(),
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.width,
                                  fsr_properties.minFragmentShadingRateAttachmentTexelSize.height);
     ASSERT_TRUE(framebuffer.initialized());

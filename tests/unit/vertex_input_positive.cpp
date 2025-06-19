@@ -368,7 +368,7 @@ TEST_F(PositiveVertexInput, AttributeComponents) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = cb_attachments;
     pipe.vi_ci_.pVertexBindingDescriptions = &input_binding;

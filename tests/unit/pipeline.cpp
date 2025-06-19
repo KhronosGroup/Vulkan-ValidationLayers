@@ -126,7 +126,7 @@ TEST_F(NegativePipeline, DisabledIndependentBlend) {
     cb_attachments[1].blendEnable = VK_FALSE;
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.cb_ci_.attachmentCount = 2;
     pipe.cb_ci_.pAttachments = cb_attachments;
 
@@ -164,7 +164,7 @@ TEST_F(NegativePipeline, BlendingOnFormatWithoutBlendingSupport) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.cb_attachments_.dstAlphaBlendFactor = VK_BLEND_FACTOR_CONSTANT_COLOR;
     pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
@@ -185,7 +185,7 @@ TEST_F(NegativePipeline, ColorWriteMaskE5B9G9R9) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.cb_attachments_.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_A_BIT;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-None-09043");
     pipe.CreateGraphicsPipeline();
@@ -1070,7 +1070,7 @@ TEST_F(NegativePipeline, DepthStencilRequired) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_errorMonitor->VerifyFound();
@@ -1254,7 +1254,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesNV) {
             helper.ms_ci_.rasterizationSamples = test_case.raster_samples;
             helper.ms_ci_.sampleShadingEnable = test_case.sample_shading;
 
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -1314,7 +1314,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamples) {
         const auto break_samples = [&rp, &ds, &test_case](CreatePipelineHelper &helper) {
             helper.ms_ci_.rasterizationSamples = test_case.raster_samples;
 
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
             helper.gp_ci_.pDepthStencilState = &ds;
         };
 
@@ -1427,7 +1427,7 @@ TEST_F(NegativePipeline, FramebufferMixedSamplesCoverageReduction) {
 
             helper.ms_ci_.pNext = &crs;
             helper.ms_ci_.rasterizationSamples = test_case.raster_samples;
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
             helper.gp_ci_.pDepthStencilState = (test_case.depth_samples) ? &dss : nullptr;
         };
 
@@ -3081,7 +3081,7 @@ TEST_F(NegativePipeline, ShaderTileImage) {
         // Check if the colorAttachmentRead capability enable, renderpass should be null
         auto pipeline_createinfo = [&](CreatePipelineHelper &helper) {
             helper.shader_stages_ = {helper.vs_->GetStageCreateInfo(), fs.GetStageCreateInfo()};
-            helper.gp_ci_.renderPass = rp.Handle();
+            helper.gp_ci_.renderPass = rp;
         };
 
         CreatePipelineHelper::OneshotTest(*this, pipeline_createinfo, kErrorBit,
@@ -3283,7 +3283,7 @@ TEST_F(NegativePipeline, PipelineMissingFeatures) {
     CreatePipelineHelper pipe(*this);
     pipe.ds_ci_ = vku::InitStructHelper();
     pipe.ds_ci_.depthBoundsTestEnable = VK_TRUE;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineDepthStencilStateCreateInfo-depthBoundsTestEnable-00598");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();

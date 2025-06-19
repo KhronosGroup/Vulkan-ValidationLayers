@@ -43,7 +43,7 @@ TEST_F(PositiveMultiview, RenderPassQueries) {
     vkt::Image image(*m_device, image_ci, vkt::set_layout);
     vkt::ImageView view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, 3);
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -52,7 +52,7 @@ TEST_F(PositiveMultiview, RenderPassQueries) {
     m_command_buffer.Begin();
     vk::CmdResetQueryPool(m_command_buffer, query_pool, 0, 2);
 
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
     vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.EndRenderPass();

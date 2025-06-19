@@ -35,7 +35,8 @@ class InterfaceRenderPassSingleSubpass {
     InterfaceRenderPassSingleSubpass(VkLayerTest &test, vkt::Device *device = nullptr);
     virtual ~InterfaceRenderPassSingleSubpass() { Destroy(); }
 
-    VkRenderPass Handle() { return render_pass_; }
+    const VkRenderPass &Handle() const { return render_pass_.handle(); }
+    operator VkRenderPass() const { return render_pass_; }
 
     // Parameters are ordered from most likely to be custom values
     // Most tests don't need to worry about the Load/Store ops as we never read the values

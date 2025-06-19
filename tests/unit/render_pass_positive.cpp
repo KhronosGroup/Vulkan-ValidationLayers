@@ -48,16 +48,16 @@ TEST_F(PositiveRenderPass, InitialLayoutUndefined) {
     // A compatible framebuffer.
     vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     vkt::ImageView view = image.CreateView();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     // Record a single command buffer which uses this renderpass twice. The
     // bug is triggered at the beginning of the second renderpass, when the
     // command buffer already has a layout recorded for the attachment.
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_errorMonitor->SetAllowedFailureMsg("SYNC-HAZARD-WRITE-AFTER-WRITE");
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -117,14 +117,14 @@ TEST_F(PositiveRenderPass, BeginSubpassZeroTransitionsApplied) {
     image.SetLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     vkt::ImageView view = image.CreateView();
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     // Record a single command buffer which issues a pipeline barrier w/
     // image memory barrier for the attachment. This detects the previously
     // missing tracking of the subpass layout by throwing a validation error
     // if it doesn't occur.
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
 
     image.ImageMemoryBarrier(m_command_buffer, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                              VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -186,10 +186,10 @@ TEST_F(PositiveRenderPass, BeginStencilLoadOp) {
     clear.depthStencil.stencil = 0;
 
     vkt::ImageView depth_image_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_image_view.handle(), 100, 100);
+    vkt::Framebuffer fb(*m_device, rp, 1, &depth_image_view.handle(), 100, 100);
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 100, 100, 1, &clear);
+    m_command_buffer.BeginRenderPass(rp, fb, 100, 100, 1, &clear);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 
@@ -259,10 +259,10 @@ TEST_F(PositiveRenderPass, BeginDepthStencilLayoutTransitionFromUndefined) {
     vkt::Image image(*m_device, 32, 32, depth_format, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image.SetLayout(VK_IMAGE_LAYOUT_GENERAL);
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -282,7 +282,7 @@ TEST_F(PositiveRenderPass, DestroyPipeline) {
     rp.CreateRenderPass();
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
@@ -340,7 +340,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     fb_ci.layers = 1;
     fb_ci.attachmentCount = 1;
     fb_ci.pAttachments = nullptr;
-    fb_ci.renderPass = rp.Handle();
+    fb_ci.renderPass = rp;
     vkt::Framebuffer fb(*m_device, fb_ci);
     ASSERT_TRUE(fb.initialized());
 
@@ -355,7 +355,7 @@ TEST_F(PositiveRenderPass, ImagelessFramebufferNonZeroBaseMip) {
     rp_attachment_begin_info.attachmentCount = 1;
     rp_attachment_begin_info.pAttachments = &image_view;
     VkRenderPassBeginInfo rp_begin_info = vku::InitStructHelper(&rp_attachment_begin_info);
-    rp_begin_info.renderPass = rp.Handle();
+    rp_begin_info.renderPass = rp;
     rp_begin_info.renderArea.extent.width = width >> base_mip;
     rp_begin_info.renderArea.extent.height = height;
     rp_begin_info.framebuffer = fb;
@@ -469,7 +469,7 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
 
     VkImageView fullViews[] = {fullView0, fullView1};
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 2, baseViews);
+    vkt::Framebuffer fb(*m_device, rp, 2, baseViews);
 
     // Create shader modules
 
@@ -504,14 +504,14 @@ TEST_F(PositiveRenderPass, SingleMipTransition) {
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
     pipe.gp_ci_.layout = pipeline_layout;
-    pipe.gp_ci_.renderPass = rp.Handle();
+    pipe.gp_ci_.renderPass = rp;
     pipe.ds_ci_ = ds_ci;
     pipe.CreateGraphicsPipeline();
 
     // Start pushing commands.
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+    m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
     vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                               NULL);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
@@ -554,7 +554,7 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     rp.AddDepthStencilAttachment(0);
     rp.CreateRenderPass();
 
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &ds_view.handle(), ds_image.Width(), ds_image.Height());
+    vkt::Framebuffer fb(*m_device, rp, 1, &ds_view.handle(), ds_image.Width(), ds_image.Height());
 
     // Use helper to create graphics pipeline
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
@@ -564,11 +564,11 @@ TEST_F(PositiveRenderPass, BeginDedicatedStencilLayout) {
     ds_state.back.writeMask = 0x1;
     CreatePipelineHelper helper(*this);
     helper.gp_ci_.pDepthStencilState = &ds_state;
-    helper.gp_ci_.renderPass = rp.Handle();
+    helper.gp_ci_.renderPass = rp;
     helper.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(rp.Handle(), fb, ds_image.Width(), ds_image.Height());
+    m_command_buffer.BeginRenderPass(rp, fb, ds_image.Width(), ds_image.Height());
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
     // If the stencil layout was not specified separately using the separateDepthStencilLayouts feature,
     // and used in the validation code, 06887 would trigger with the following draw call
@@ -613,7 +613,7 @@ TEST_F(PositiveRenderPass, FramebufferCreateDepthStencilLayoutTransitionForDepth
     image.SetLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     vkt::ImageView view = image.CreateView(VK_IMAGE_ASPECT_DEPTH_BIT);
-    vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &view.handle());
+    vkt::Framebuffer fb(*m_device, rp, 1, &view.handle());
 
     m_command_buffer.Begin();
 
@@ -1058,11 +1058,11 @@ TEST_F(PositiveRenderPass, TestDepthStencilRenderPassTransition) {
         rp.AddDepthStencilAttachment(0);
         rp.CreateRenderPass();
 
-        const vkt::Framebuffer fb(*m_device, rp.Handle(), 1, &depth_or_stencil_view.handle());
+        const vkt::Framebuffer fb(*m_device, rp, 1, &depth_or_stencil_view.handle());
 
         m_command_buffer.Begin();
 
-        m_command_buffer.BeginRenderPass(rp.Handle(), fb, 32, 32);
+        m_command_buffer.BeginRenderPass(rp, fb, 32, 32);
         m_command_buffer.EndRenderPass();
 
         VkImageMemoryBarrier img_barrier = vku::InitStructHelper();
