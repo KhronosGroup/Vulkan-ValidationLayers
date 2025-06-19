@@ -18,7 +18,7 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+#include "root_node.h"
 #include "error_payload.h"
 
 // Represent a [begin, end) range, where end is one past the last element held in range
@@ -27,18 +27,17 @@ struct Range {
     uint64_t end;
 };
 
-
-layout(buffer_reference, buffer_reference_align = 8, std430) buffer BufferDeviceAddressRanges {
-    uint bda_range_count;
+layout(buffer_reference) buffer BDARanges {
+    uint ranges_count;
     uint padding_unused;
-    Range bda_ranges[];
+    Range ranges[];
 };
 
 // Ranges are supposed to:
 // 1) be stored from low to high
 // 2) not overlap
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstBufferDeviceAddress, std430) buffer BuffAddrInputBuffer {
-    BufferDeviceAddressRanges bda_ranges_ptr;
+layout(buffer_reference) buffer BDAInputBuffer {
+    BDARanges bda_ranges_ptr;
 };
 
 // It is common that an app only has a single BDA address and it is used to poke inside a struct.
@@ -60,16 +59,15 @@ bool inst_buffer_device_address_range(
     const uint access_type,
     const uint access_byte_size)
 {
-    const Range cache_range = bda_ranges_ptr.bda_ranges[index_cache];
+    const Range cache_range = root_node.bda_input_buffer.bda_ranges_ptr.ranges[index_cache];
     if (addr >= cache_range.begin && ((addr + access_byte_size) <= cache_range.end)) {
         return true;
     }
 
     // Find out if addr is valid
     // ---
-    for (uint range_i = 0; range_i < bda_ranges_ptr.bda_range_count; ++range_i) {
-        
-        const Range range = bda_ranges_ptr.bda_ranges[range_i];
+    for (uint range_i = 0; range_i < root_node.bda_input_buffer.bda_ranges_ptr.ranges_count; ++range_i) {
+        const Range range = root_node.bda_input_buffer.bda_ranges_ptr.ranges[range_i];
         if (addr < range.begin) {
             // Invalid address, proceed to error logging
             break;

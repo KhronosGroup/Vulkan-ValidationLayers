@@ -1125,11 +1125,12 @@ void ProcessConfigAndEnvSettings(ConfigAndEnvSettings *settings_data) {
     if (vkuHasLayerSetting(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE)) {
         const uint32_t default_buffer_size = gpuav_settings.debug_printf_buffer_size;
         vkuGetLayerSettingValue(layer_setting_set, VK_LAYER_PRINTF_BUFFER_SIZE, gpuav_settings.debug_printf_buffer_size);
-        if (gpuav_settings.debug_printf_buffer_size == 0) {
-            gpuav_settings.debug_printf_buffer_size = default_buffer_size;
-            setting_warnings.emplace_back(std::string(VK_LAYER_PRINTF_BUFFER_SIZE) +
-                                          " was set to zero, which is invalid, setting to the default of " +
+        if (gpuav_settings.debug_printf_buffer_size < default_buffer_size) {
+            setting_warnings.emplace_back(std::string(VK_LAYER_PRINTF_BUFFER_SIZE) + " was set to " +
+                                          std::to_string(gpuav_settings.debug_printf_buffer_size) +
+                                          ", a value below the minimum allowed, forcing it to " +
                                           std::to_string(default_buffer_size));
+            gpuav_settings.debug_printf_buffer_size = default_buffer_size;
         }
     }
 

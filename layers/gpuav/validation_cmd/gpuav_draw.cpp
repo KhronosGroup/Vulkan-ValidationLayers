@@ -44,7 +44,7 @@ struct SharedDrawValidationResources {
     SharedDrawValidationResources(Validator &gpuav) : dummy_buffer(gpuav) {
         VkBufferCreateInfo dummy_buffer_info = vku::InitStructHelper();
         dummy_buffer_info.size = 64;// whatever
-        dummy_buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        dummy_buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
         const bool success = dummy_buffer.Create(&dummy_buffer_info, &alloc_info);
@@ -83,41 +83,6 @@ struct FirstInstanceValidationShader {
     static const uint32_t *GetSpirv() { return validation_cmd_first_instance_comp; }
 
     glsl::FirstInstancePushData push_constants{};
-    valpipe::BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
-    valpipe::BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // indirect buffer
-            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // count buffer
-        };
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(2);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = draw_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
-
-        desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
-        desc_writes[1].dstBinding = count_buffer_binding.binding;
-        desc_writes[1].dstArrayElement = 0;
-        desc_writes[1].descriptorCount = 1;
-        desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[1].pBufferInfo = &count_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 // Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
@@ -169,17 +134,18 @@ void FirstInstance(Validator &gpuav, CommandBufferSubState &cb_state, const Loca
             shader_resources.push_constants.api_draw_count = api_draw_count;
             shader_resources.push_constants.first_instance_member_pos = first_instance_member_pos;
 
-            shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
+            shader_resources.push_constants.draw_indexed_indirect_cmds_addr =
+                gpuav.device_state->GetBufferDeviceAddressHelper(api_buffer, &gpuav.modified_extensions);
             shader_resources.push_constants.api_offset_dwords = (uint32_t)api_offset / sizeof(uint32_t);
             if (api_count_buffer) {
                 shader_resources.push_constants.flags |= glsl::kFirstInstanceFlags_DrawCountFromBuffer;
-                shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                shader_resources.push_constants.count_buffer_addr =
+                    gpuav.device_state->GetBufferDeviceAddressHelper(api_count_buffer, &gpuav.modified_extensions);
                 shader_resources.push_constants.api_count_buffer_offset_dwords =
                     uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
             } else {
-                shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(), 0,
-                                                              VK_WHOLE_SIZE};
+                shader_resources.push_constants.count_buffer_addr = shared_draw_validation_resources.dummy_buffer.Address();
             }
 
             if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
@@ -299,30 +265,6 @@ struct CountBufferValidationShader {
     static const uint32_t *GetSpirv() { return validation_cmd_count_buffer_comp; }
 
     glsl::CountBufferPushData push_constants{};
-    valpipe::BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // count buffer
-        };
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(1);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = count_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &count_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
@@ -370,13 +312,14 @@ void CountBuffer(Validator &gpuav, CommandBufferSubState &cb_state, const Locati
         // ---
         {
             CountBufferValidationShader shader_resources;
+            shader_resources.push_constants.count_buffer_addr =
+                gpuav.device_state->GetBufferDeviceAddressHelper(api_count_buffer, &gpuav.modified_extensions);
             shader_resources.push_constants.api_stride = api_stride;
             shader_resources.push_constants.api_offset = api_offset;
             shader_resources.push_constants.draw_buffer_size = draw_buffer_size;
             shader_resources.push_constants.api_struct_size_byte = api_struct_size_byte;
             shader_resources.push_constants.device_limit_max_draw_indirect_count = gpuav.phys_dev_props.limits.maxDrawIndirectCount;
-
-            shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+            // #ARNO_TODO could offset count_buffer_addr directly
             shader_resources.push_constants.api_count_buffer_offset_dwords = uint32_t(api_count_buffer_offset / sizeof(uint32_t));
 
             if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
@@ -462,41 +405,6 @@ struct MeshValidationShader {
     static const uint32_t *GetSpirv() { return validation_cmd_draw_mesh_indirect_comp; }
 
     glsl::DrawMeshPushData push_constants{};
-    valpipe::BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
-    valpipe::BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // indirect buffer
-            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // count buffer
-        };
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(2);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = draw_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
-
-        desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
-        desc_writes[1].dstBinding = count_buffer_binding.binding;
-        desc_writes[1].dstArrayElement = 0;
-        desc_writes[1].descriptorCount = 1;
-        desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[1].pBufferInfo = &count_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const Location &loc, VkBuffer api_buffer,
@@ -558,16 +466,17 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                     shader_resources.push_constants.max_workgroup_total_count = properties.maxMeshWorkGroupTotalCount;
                 }
 
-                shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
+                shader_resources.push_constants.draw_mesh_task_indirect_cmds_addr =
+                    gpuav.device_state->GetBufferDeviceAddressHelper(api_buffer, &gpuav.modified_extensions);
                 shader_resources.push_constants.api_offset_dwords = uint32_t(api_offset / sizeof(uint32_t));
                 if (api_count_buffer != VK_NULL_HANDLE) {
                     shader_resources.push_constants.flags |= glsl::kDrawMeshFlags_DrawCountFromBuffer;
-                    shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                    shader_resources.push_constants.count_buffer_addr =
+                        gpuav.device_state->GetBufferDeviceAddressHelper(api_count_buffer, &gpuav.modified_extensions);
                     shader_resources.push_constants.api_count_buffer_offset_dwords =
                         uint32_t(api_count_buffer_offset / sizeof(uint32_t));
                 } else {
-                    shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(), 0,
-                                                                  VK_WHOLE_SIZE};
+                    shader_resources.push_constants.count_buffer_addr = shared_draw_validation_resources.dummy_buffer.Address();
                 }
 
                 if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, shader_resources)) {
@@ -590,7 +499,6 @@ void DrawMeshIndirect(Validator &gpuav, CommandBufferSubState &cb_state, const L
                     }
                 }
                 const uint32_t work_group_count = std::min(api_draw_count, max_held_draw_cmds);
-                VVL_TracyPlot("gpuav::valcmd::DrawMeshIndirect Dispatch size", int64_t(work_group_count));
                 DispatchCmdDispatch(cb_state.VkHandle(), work_group_count, 1, 1);
 
                 // synchronize draw buffer validation (read) against subsequent writes
@@ -722,39 +630,6 @@ struct DrawIndexedIndirectIndexBufferShader {
     static const uint32_t *GetSpirv() { return validation_cmd_draw_indexed_indirect_index_buffer_comp; }
 
     glsl::DrawIndexedIndirectIndexBufferPushData push_constants{};
-    valpipe::BoundStorageBuffer draw_buffer_binding = {glsl::kPreDrawBinding_IndirectBuffer};
-    valpipe::BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDrawBinding_IndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {glsl::kPreDrawBinding_IndexBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr}};
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(2);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = draw_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &draw_buffer_binding.info;
-
-        desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
-        desc_writes[1].dstBinding = count_buffer_binding.binding;
-        desc_writes[1].dstArrayElement = 0;
-        desc_writes[1].descriptorCount = 1;
-        desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[1].pBufferInfo = &count_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 struct SetupDrawCountDispatchIndirectShader {
@@ -762,40 +637,6 @@ struct SetupDrawCountDispatchIndirectShader {
     static const uint32_t *GetSpirv() { return validation_cmd_setup_draw_indexed_indirect_index_buffer_comp; }
 
     glsl::DrawIndexedIndirectIndexBufferPushData push_constants{};
-    valpipe::BoundStorageBuffer count_buffer_binding = {glsl::kPreDrawBinding_CountBuffer};
-    valpipe::BoundStorageBuffer dispatch_indirect_buffer_binding = {glsl::kPreDrawBinding_DispatchIndirectBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDrawBinding_CountBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
-            {glsl::kPreDrawBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},
-        };
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(2);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = count_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &count_buffer_binding.info;
-
-        desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
-        desc_writes[1].dstBinding = dispatch_indirect_buffer_binding.binding;
-        desc_writes[1].dstArrayElement = 0;
-        desc_writes[1].descriptorCount = 1;
-        desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[1].pBufferInfo = &dispatch_indirect_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 // Use "api_" prefix to make it clear which buffer/offset/etc we are talking about
@@ -887,15 +728,15 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
             SetupDrawCountDispatchIndirectShader setup_validation_shader_resources;
             setup_validation_shader_resources.push_constants = push_constants;
             if (api_count_buffer != VK_NULL_HANDLE) {
-                setup_validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                setup_validation_shader_resources.push_constants.count_buffer_addr =
+                    gpuav.device_state->GetBufferDeviceAddressHelper(api_count_buffer, &gpuav.modified_extensions);
             } else {
-                setup_validation_shader_resources.count_buffer_binding.info = {
-                    shared_draw_validation_resources.dummy_buffer.VkHandle(), 0, VK_WHOLE_SIZE};
+                setup_validation_shader_resources.push_constants.count_buffer_addr =
+                    shared_draw_validation_resources.dummy_buffer.Address();
             }
 
-            setup_validation_shader_resources.dispatch_indirect_buffer_binding.info = {
-                validation_dispatch_params_buffer_range.buffer, validation_dispatch_params_buffer_range.offset,
-                validation_dispatch_params_buffer_range.size};
+            setup_validation_shader_resources.push_constants.dispatch_indirect_addr =
+                validation_dispatch_params_buffer_range.offset_address;
 
             if (!setup_validation_dispatch_pipeline.BindShaderResources(gpuav, cb_state, setup_validation_shader_resources)) {
                 return;
@@ -941,12 +782,15 @@ void DrawIndexedIndirectIndexBuffer(Validator &gpuav, CommandBufferSubState &cb_
             DrawIndexedIndirectIndexBufferShader validation_shader_resources;
             validation_shader_resources.push_constants = push_constants;
             if (api_count_buffer != VK_NULL_HANDLE) {
-                validation_shader_resources.count_buffer_binding.info = {api_count_buffer, 0, sizeof(uint32_t)};
+                validation_shader_resources.push_constants.count_buffer_addr =
+                    gpuav.device_state->GetBufferDeviceAddressHelper(api_count_buffer, &gpuav.modified_extensions);
+
             } else {
-                validation_shader_resources.count_buffer_binding.info = {shared_draw_validation_resources.dummy_buffer.VkHandle(),
-                                                                         0, VK_WHOLE_SIZE};
+                validation_shader_resources.push_constants.count_buffer_addr =
+                    shared_draw_validation_resources.dummy_buffer.Address();
             }
-            validation_shader_resources.draw_buffer_binding.info = {api_buffer, 0, VK_WHOLE_SIZE};
+            validation_shader_resources.push_constants.draw_indexed_indirect_cmds_addr =
+                gpuav.device_state->GetBufferDeviceAddressHelper(api_buffer, &gpuav.modified_extensions);
 
             if (!BindShaderResources(validation_pipeline, gpuav, cb_state, draw_i, error_logger_i, validation_shader_resources)) {
                 return;

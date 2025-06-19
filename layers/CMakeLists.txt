@@ -332,6 +332,7 @@ target_sources(vvl PRIVATE
     gpuav/shaders/gpuav_error_codes.h
     gpuav/shaders/gpuav_error_header.h
     gpuav/shaders/gpuav_shaders_constants.h
+    gpuav/shaders/root_node.h
     gpuav/shaders/validation_cmd/push_data.h
     object_tracker/object_lifetime_validation.h
     object_tracker/object_tracker_utils.cpp

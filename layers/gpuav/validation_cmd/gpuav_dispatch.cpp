@@ -31,31 +31,6 @@ struct DispatchValidationShader {
     static const uint32_t *GetSpirv() { return validation_cmd_dispatch_comp; }
 
     glsl::DispatchPushData push_constants{};
-    valpipe::BoundStorageBuffer indirect_buffer_binding = {glsl::kPreDispatchBinding_DispatchIndirectBuffer};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreDispatchBinding_DispatchIndirectBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},  // indirect buffer
-
-        };
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(1);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = indirect_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &indirect_buffer_binding.info;
-
-        return desc_writes;
-    }
 };
 
 void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state, VkBuffer indirect_buffer,
@@ -84,12 +59,15 @@ void DispatchIndirect(Validator &gpuav, const Location &loc, CommandBufferSubSta
     // ---
     {
         DispatchValidationShader shader_resources;
+        shader_resources.push_constants.dispatch_indirect_buffer_addr =
+            gpuav.device_state->GetBufferDeviceAddressHelper(indirect_buffer, &gpuav.modified_extensions);
         shader_resources.push_constants.limit_x = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[0];
         shader_resources.push_constants.limit_y = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[1];
         shader_resources.push_constants.limit_z = gpuav.phys_dev_props.limits.maxComputeWorkGroupCount[2];
         shader_resources.push_constants.indirect_x_offset = static_cast<uint32_t>((indirect_offset / sizeof(uint32_t)));
 
-        shader_resources.indirect_buffer_binding.info = {indirect_buffer, 0, VK_WHOLE_SIZE};
+        shader_resources.push_constants.dispatch_indirect_buffer_addr =
+            gpuav.device_state->GetBufferDeviceAddressHelper(indirect_buffer, &gpuav.modified_extensions);
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
                                  uint32_t(cb_state.per_command_error_loggers.size()), shader_resources)) {

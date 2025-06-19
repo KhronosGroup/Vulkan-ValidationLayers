@@ -623,54 +623,6 @@ VKAPI_ATTR VkResult VKAPI_CALL DeviceWaitIdle(VkDevice device) {
     return result;
 }
 
-VKAPI_ATTR VkResult VKAPI_CALL AllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo,
-                                              const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory) {
-    VVL_ZoneScoped;
-
-    auto device_dispatch = vvl::dispatch::GetData(device);
-    bool skip = false;
-    ErrorObject error_obj(vvl::Func::vkAllocateMemory, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
-    {
-        VVL_ZoneScopedN("PreCallValidate_vkAllocateMemory");
-        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateAllocateMemory]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->ReadLock();
-            skip |= vo->PreCallValidateAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, error_obj);
-            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
-        }
-    }
-    RecordObject record_obj(vvl::Func::vkAllocateMemory);
-    {
-        VVL_ZoneScopedN("PreCallRecord_vkAllocateMemory");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordAllocateMemory]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PreCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
-        }
-    }
-    VkResult result;
-    {
-        VVL_ZoneScopedN("Dispatch_vkAllocateMemory");
-        result = device_dispatch->AllocateMemory(device, pAllocateInfo, pAllocator, pMemory);
-    }
-    record_obj.result = result;
-    {
-        VVL_ZoneScopedN("PostCallRecord_vkAllocateMemory");
-        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordAllocateMemory]) {
-            if (!vo) {
-                continue;
-            }
-            auto lock = vo->WriteLock();
-            vo->PostCallRecordAllocateMemory(device, pAllocateInfo, pAllocator, pMemory, record_obj);
-        }
-    }
-    return result;
-}
-
 VKAPI_ATTR void VKAPI_CALL FreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator) {
     VVL_ZoneScoped;
 

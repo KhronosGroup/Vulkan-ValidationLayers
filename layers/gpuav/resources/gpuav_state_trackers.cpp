@@ -63,10 +63,8 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
         }
 
         memset(error_output_buffer_range_.offset_mapped_ptr, 0, (size_t)error_output_buffer_range_.size);
-        if (gpuav_.gpuav_settings.shader_instrumentation.descriptor_checks) {
-            ((uint32_t *)error_output_buffer_range_.offset_mapped_ptr)[cst::stream_output_flags_offset] =
-                cst::inst_buffer_oob_enabled;
-        }
+        ((uint32_t *)error_output_buffer_range_.offset_mapped_ptr)[cst::error_output_buffer_size_offset] =
+            (uint32_t)error_output_buffer_range_.size;
     }
 
     // Commands errors counts buffer
@@ -74,7 +72,7 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
         if (cmd_errors_counts_buffer_.IsDestroyed()) {
             VkBufferCreateInfo buffer_info = vku::InitStructHelper();
             buffer_info.size = GetCmdErrorsCountsBufferByteSize();
-            buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             VmaAllocationCreateInfo alloc_info = {};
             alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -315,14 +313,14 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
         // The number of words actually written by the shaders is determined by the size of the buffer
         // we provide via the descriptor. So, we process only the number of words that can fit in the
         // buffer.
-        const uint32_t total_words = error_output_buffer_ptr[cst::stream_output_size_offset];
+        const uint32_t total_words = error_output_buffer_ptr[cst::error_output_buffer_written_words_count_offset];
 
         // A zero here means that the shader instrumentation didn't write anything.
         if (total_words != 0) {
-            uint32_t *const error_records_start = &error_output_buffer_ptr[cst::stream_output_data_offset];
-            assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
+            uint32_t *const error_records_start = &error_output_buffer_ptr[cst::error_output_buffer_error_records_offset];
+            assert(glsl::kErrorBufferByteSize > cst::error_output_buffer_error_records_offset);
             uint32_t *const error_records_end =
-                error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::stream_output_data_offset);
+                error_output_buffer_ptr + (glsl::kErrorBufferByteSize - cst::error_output_buffer_error_records_offset);
 
             uint32_t *error_record_ptr = error_records_start;
             uint32_t record_size = error_record_ptr[glsl::kHeaderErrorRecordSizeOffset];
@@ -343,11 +341,11 @@ void CommandBufferSubState::OnCompletion(VkQueue queue, const std::vector<std::s
             VVL_TracyPlot("GPU-AV errors count", int64_t(total_words / glsl::kErrorRecordSize));
 
             // Clear the written size and any error messages. Note that this preserves the first word, which contains flags.
-            assert(glsl::kErrorBufferByteSize > cst::stream_output_data_offset);
-            memset(&error_output_buffer_ptr[cst::stream_output_flags_offset + 1], 0,
+            assert(glsl::kErrorBufferByteSize > cst::error_output_buffer_error_records_offset);
+            memset(&error_output_buffer_ptr[cst::error_output_buffer_size_offset + 1], 0,
                    size_t(error_output_buffer_range_.size) - sizeof(uint32_t));
         }
-        error_output_buffer_ptr[cst::stream_output_size_offset] = 0;
+        error_output_buffer_ptr[cst::error_output_buffer_written_words_count_offset] = 0;
     }
 
     cmd_errors_counts_buffer_.Clear();

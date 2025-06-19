@@ -16,9 +16,9 @@
 #include "gpuav/instrumentation/buffer_device_address.h"
 
 #include "gpuav/core/gpuav.h"
-#include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include "gpuav/shaders/root_node.h"
 
 namespace gpuav {
 
@@ -36,13 +36,11 @@ void RegisterBufferDeviceAddressValidation(Validator& gpuav, CommandBufferSubSta
     }
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
-        [](CommandBufferSubState& cb, VkPipelineBindPoint, VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) {
+        [](CommandBufferSubState& cb, VkPipelineBindPoint, glsl::RootNode* root_node) {
             BufferDeviceAddressCbState& bda_cb_state = cb.shared_resources_cache.GetOrCreate<BufferDeviceAddressCbState>(cb);
-            out_buffer_info.buffer = bda_cb_state.bda_ranges_snapshot_ptr.buffer;
-            out_buffer_info.offset = bda_cb_state.bda_ranges_snapshot_ptr.offset;
-            out_buffer_info.range = bda_cb_state.bda_ranges_snapshot_ptr.size;
-
-            out_dst_binding = glsl::kBindingInstBufferDeviceAddress;
+            // #ARNO_TODO inconsistent naming scheme, the same thing is renamed
+            root_node->bda_input_buffer = bda_cb_state.bda_ranges_snapshot_ptr.offset_address;
+            assert(root_node->bda_input_buffer);
         });
 
     cb.on_pre_cb_submission_functions.emplace_back([](Validator& gpuav, CommandBufferSubState& cb,

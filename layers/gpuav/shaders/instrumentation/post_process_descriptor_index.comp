@@ -18,7 +18,7 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+#include "root_node.h"
 
 layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIndexPostProcess {
     // size of descriptor count (including all array elements)
@@ -26,7 +26,7 @@ layout(buffer_reference, buffer_reference_align = 8, std430) buffer DescriptorIn
     uvec2 slot[]; // PostProcessDescriptorIndexSlot
 };
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std430) buffer PostProcessSSBO {
+layout(buffer_reference) buffer PostProcessSSBO {
     // There is a chance 2 sets are aliased to the same pointer
     // ex - descriptor_index_post_process_buffers[0] == descriptor_index_post_process_buffers[1]
     // But that is ok as we use the variable_id to extract thet set on the CPU
@@ -34,9 +34,9 @@ layout(set = kInstDefaultDescriptorSet, binding = kBindingInstPostProcess, std43
 } gpuav;
 
 void inst_post_process_descriptor_index(const uint desc_set, const uint binding, const uint desc_index, const uint binding_layout_offset, const uint variable_id) {
-    DescriptorIndexPostProcess descriptor_index_post_process = gpuav.descriptor_index_post_process_buffers[desc_set];
+    DescriptorIndexPostProcess descriptor_index_post_process = root_node.post_process_ssbo.descriptor_index_post_process_buffers[desc_set];
 
-    const uint cmd_id = inst_action_index_buffer.index[0] << kPostProcessMetaShiftActionIndex;
+    const uint cmd_id = root_node.inst_action_index_buffer.index[0] << kPostProcessMetaShiftActionIndex;
 
     // The index has been accessed, write out for post processing
     const uint binding_layout_index = binding_layout_offset + desc_index;

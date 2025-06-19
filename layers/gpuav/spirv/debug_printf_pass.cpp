@@ -17,11 +17,14 @@
 #include "generated/spirv_grammar_helper.h"
 #include "module.h"
 #include "gpuav/shaders/gpuav_error_header.h"
+#include "gpuav/shaders/gpuav_shaders_constants.h"
 #include <spirv/unified1/NonSemanticDebugPrintf.h>
+#include <spirv/unified1/spirv.hpp>
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <spirv/unified1/spirv.hpp>
+#include <optional>
 #include <string>
 
 #include "generated/device_features.h"
@@ -299,6 +302,9 @@ uint32_t DebugPrintfPass::CreateDescriptorSet() {
     //     uint data[];
     // } output_buffer;
 
+    module_.AddCapability(spv::CapabilityPhysicalStorageBufferAddresses);
+    module_.AddExtension("SPV_KHR_physical_storage_buffer");
+
     const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
     const uint32_t runtime_array_type_id = module_.type_manager_.GetTypeRuntimeArray(uint32_type).Id();
 
@@ -315,16 +321,40 @@ uint32_t DebugPrintfPass::CreateDescriptorSet() {
         module_.AddDecoration(runtime_array_type_id, spv::DecorationArrayStride, {4});
     }
 
-    const uint32_t struct_type_id = module_.TakeNextId();
-    auto new_struct_inst = std::make_unique<Instruction>(4, spv::OpTypeStruct);
-    new_struct_inst->Fill({struct_type_id, uint32_type.Id(), runtime_array_type_id});
-    const Type& struct_type = module_.type_manager_.AddType(std::move(new_struct_inst), SpvType::kStruct);
-    module_.AddDecoration(struct_type_id, spv::DecorationBlock, {});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferDWordsCount, spv::DecorationOffset, {0});
-    module_.AddMemberDecoration(struct_type_id, gpuav::kDebugPrintfOutputBufferData, spv::DecorationOffset, {4});
+    const uint32_t printf_struct_type_id = module_.TakeNextId();
+    auto printf_op_type_struct = std::make_unique<Instruction>(5, spv::OpTypeStruct);
+    printf_op_type_struct->Fill({printf_struct_type_id, uint32_type.Id(), uint32_type.Id(), runtime_array_type_id});
+    const Type& printf_struct_type = module_.type_manager_.AddType(std::move(printf_op_type_struct), SpvType::kStruct);
+    module_.AddDecoration(printf_struct_type_id, spv::DecorationBlock, {});
+    module_.AddMemberDecoration(printf_struct_type_id, gpuav::kDebugPrintfOutputBufferSize, spv::DecorationOffset, {0});
+    module_.AddMemberDecoration(printf_struct_type_id, gpuav::kDebugPrintfOutputBufferDWordsCount, spv::DecorationOffset, {4});
+    module_.AddMemberDecoration(printf_struct_type_id, gpuav::kDebugPrintfOutputBufferData, spv::DecorationOffset, {8});
+
+    printf_struct_pointer_type_ = &module_.type_manager_.GetTypePointer(spv::StorageClassPhysicalStorageBuffer, printf_struct_type);
+
+    const uint32_t root_node_struct_type_id = module_.TakeNextId();
+    auto root_node_op_type_struct = std::make_unique<Instruction>(3, spv::OpTypeStruct);
+    root_node_op_type_struct->Fill({root_node_struct_type_id, printf_struct_pointer_type_->Id()});
+    const Type& root_node_struct_type = module_.type_manager_.AddType(std::move(root_node_op_type_struct), SpvType::kStruct);
+    module_.AddDecoration(root_node_struct_type_id, spv::DecorationBlock, {});
+    module_.AddMemberDecoration(root_node_struct_type_id, 0, spv::DecorationOffset, {0});
+
+    root_node_struct_pointer_type_ =
+        &module_.type_manager_.GetTypePointer(spv::StorageClassPhysicalStorageBuffer, root_node_struct_type);
 
     // create a storage buffer interface variable
-    const Type& pointer_type = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, struct_type);
+
+    const uint32_t storage_buffer_printf_struct_ptr_struct_id = module_.TakeNextId();
+    auto storage_buffer_printf_struct_ptr_struct = std::make_unique<Instruction>(3, spv::OpTypeStruct);
+    storage_buffer_printf_struct_ptr_struct->Fill(
+        {storage_buffer_printf_struct_ptr_struct_id, root_node_struct_pointer_type_->Id()});
+    const Type& storage_buffer_printf_struct_ptr_struct_type =
+        module_.type_manager_.AddType(std::move(storage_buffer_printf_struct_ptr_struct), SpvType::kStruct);
+    module_.AddDecoration(storage_buffer_printf_struct_ptr_struct_id, spv::DecorationBlock, {});
+    module_.AddMemberDecoration(storage_buffer_printf_struct_ptr_struct_id, 0, spv::DecorationOffset, {0});
+
+    const Type& pointer_type =
+        module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, storage_buffer_printf_struct_ptr_struct_type);
     const uint32_t output_buffer_variable_id = module_.TakeNextId();
     auto new_inst = std::make_unique<Instruction>(4, spv::OpVariable);
     new_inst->Fill({pointer_type.Id(), output_buffer_variable_id, spv::StorageClassStorageBuffer});
@@ -333,12 +363,13 @@ uint32_t DebugPrintfPass::CreateDescriptorSet() {
 
     module_.AddDecoration(output_buffer_variable_id, spv::DecorationDescriptorSet,
                           {module_.settings_.output_buffer_descriptor_set});
-    module_.AddDecoration(output_buffer_variable_id, spv::DecorationBinding, {binding_slot_});
+    module_.AddDecoration(output_buffer_variable_id, spv::DecorationBinding, {glsl::kBindingInstRootNode});
 
     return output_buffer_variable_id;
 }
 
-void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id, uint32_t output_buffer_variable_id) {
+void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_t function_id,
+                                                uint32_t output_desc_set_variable_id) {
     // Currently this is generated by the number of arguments
     // The following is what the GLSL would look like
     //
@@ -395,33 +426,71 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
     BasicBlock& store_block = new_function->InsertNewBlockEnd();
     BasicBlock& merge_block = new_function->InsertNewBlockEnd();
 
-    const Type& uint32_type = module_.type_manager_.GetTypeInt(32, false);
-    const uint32_t pointer_type_id = module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, uint32_type).Id();
-    const uint32_t zero_id = module_.type_manager_.GetConstantZeroUint32().Id();
+    const uint32_t root_node_pointer_type_id =
+        module_.type_manager_.GetTypePointer(spv::StorageClassStorageBuffer, *root_node_struct_pointer_type_).Id();
+    const uint32_t printf_pointer_type_id =
+        module_.type_manager_.GetTypePointer(spv::StorageClassPhysicalStorageBuffer, *printf_struct_pointer_type_).Id();
+    const uint32_t uint_pointer_type_id =
+        module_.type_manager_.GetTypePointer(spv::StorageClassPhysicalStorageBuffer, module_.type_manager_.GetTypeInt(32, false))
+            .Id();
+    const uint32_t zero_id = module_.type_manager_.GetConstantUInt32(0).Id();
     const uint32_t one_id = module_.type_manager_.GetConstantUInt32(1).Id();
     const uint32_t byte_written_id = module_.type_manager_.GetConstantUInt32(byte_written).Id();
     uint32_t atomic_add_id = 0;
 
+    auto add_printf_buffer_access_chain = [=, module = &this->module_](
+                                              BasicBlock& block, uint32_t member,
+                                              std::optional<uint32_t> buffer_offset_id = std::nullopt) -> uint32_t {
+        const uint32_t root_node_access_chain_id = module->TakeNextId();
+        block.CreateInstruction(spv::OpAccessChain,
+                                {root_node_pointer_type_id, root_node_access_chain_id, output_desc_set_variable_id, zero_id});
+
+        const uint32_t load_root_node_id = module->TakeNextId();
+        block.CreateInstruction(spv::OpLoad, {root_node_struct_pointer_type_->Id(), load_root_node_id, root_node_access_chain_id});
+
+        const uint32_t printf_addr_access_chaind_id = module->TakeNextId();
+        block.CreateInstruction(spv::OpAccessChain,
+                                {printf_pointer_type_id, printf_addr_access_chaind_id, load_root_node_id, zero_id});
+
+        const uint32_t load_printf_addr_id = module->TakeNextId();
+        block.CreateInstruction(spv::OpLoad, {printf_struct_pointer_type_->Id(), load_printf_addr_id, printf_addr_access_chaind_id,
+                                              0x2 /*Memory operand: Aligned*/, 16});
+
+        const uint32_t printf_buffer_member_access_chain_id = module->TakeNextId();
+        const uint32_t member_id = module->type_manager_.GetConstantUInt32(member).Id();
+        std::vector<uint32_t> access_chain_words = {uint_pointer_type_id, printf_buffer_member_access_chain_id, load_printf_addr_id,
+                                                    member_id};
+        if (buffer_offset_id.has_value()) {
+            access_chain_words.emplace_back(*buffer_offset_id);
+        }
+        block.CreateInstruction(spv::OpAccessChain, access_chain_words);
+
+        return printf_buffer_member_access_chain_id;
+    };
+
     // Atomically get a write index in the output buffer, and check if this index is with buffer's bounds
     {
-        const uint32_t access_chain_id = module_.TakeNextId();
-        check_block.CreateInstruction(spv::OpAccessChain, {pointer_type_id, access_chain_id, output_buffer_variable_id, zero_id});
+        const uint32_t printf_buffer_dwords_count_access_chain_id =
+            add_printf_buffer_access_chain(check_block, gpuav::kDebugPrintfOutputBufferDWordsCount);
 
         atomic_add_id = module_.TakeNextId();
         const uint32_t scope_invok_id = module_.type_manager_.GetConstantUInt32(spv::ScopeInvocation).Id();
         const uint32_t mask_none_id = module_.type_manager_.GetConstantUInt32(spv::MemoryAccessMaskNone).Id();
-        check_block.CreateInstruction(
-            spv::OpAtomicIAdd, {uint32_type_id, atomic_add_id, access_chain_id, scope_invok_id, mask_none_id, byte_written_id});
+        check_block.CreateInstruction(spv::OpAtomicIAdd, {uint32_type_id, atomic_add_id, printf_buffer_dwords_count_access_chain_id,
+                                                          scope_invok_id, mask_none_id, byte_written_id});
 
         const uint32_t int_add_id = module_.TakeNextId();
         check_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, byte_written_id});
-
-        const uint32_t array_length_id = module_.TakeNextId();
-        check_block.CreateInstruction(spv::OpArrayLength, {uint32_type_id, array_length_id, output_buffer_variable_id, 1});
+        const uint32_t printf_buffer_size_access_chain_id =
+            add_printf_buffer_access_chain(check_block, gpuav::kDebugPrintfOutputBufferSize);
+        const uint32_t load_printf_buffer_size_id = module_.TakeNextId();
+        check_block.CreateInstruction(spv::OpLoad, {uint32_type_id, load_printf_buffer_size_id, printf_buffer_size_access_chain_id,
+                                                    0x2 /*Memory operand: Aligned*/, 0x4});
 
         const uint32_t less_than_equal_id = module_.TakeNextId();
         const uint32_t bool_type_id = module_.type_manager_.GetTypeBool().Id();
-        check_block.CreateInstruction(spv::OpULessThanEqual, {bool_type_id, less_than_equal_id, int_add_id, array_length_id});
+        check_block.CreateInstruction(spv::OpULessThanEqual,
+                                      {bool_type_id, less_than_equal_id, int_add_id, load_printf_buffer_size_id});
 
         const uint32_t merge_block_label_id = merge_block.GetLabelId();
         check_block.CreateInstruction(spv::OpSelectionMerge, {merge_block_label_id, spv::SelectionControlMaskNone});
@@ -435,11 +504,10 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         const uint32_t int_add_id = module_.TakeNextId();
         store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, zero_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
-        store_block.CreateInstruction(spv::OpAccessChain,
-                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
-
-        store_block.CreateInstruction(spv::OpStore, {access_chain_id, byte_written_id});
+        const uint32_t printf_buffer_access_chain_id =
+            add_printf_buffer_access_chain(store_block, gpuav::kDebugPrintfOutputBufferData, int_add_id);
+        store_block.CreateInstruction(spv::OpStore,
+                                      {printf_buffer_access_chain_id, byte_written_id, 0x2 /*Memory operand: Aligned*/, 0x4});
     }
 
     // Store Shader Stage ID
@@ -447,12 +515,12 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         const uint32_t int_add_id = module_.TakeNextId();
         store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, one_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
-        store_block.CreateInstruction(spv::OpAccessChain,
-                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
+        const uint32_t printf_buffer_access_chain_id =
+            add_printf_buffer_access_chain(store_block, gpuav::kDebugPrintfOutputBufferData, int_add_id);
 
         const uint32_t shader_id = module_.type_manager_.GetConstantUInt32(module_.settings_.shader_id).Id();
-        store_block.CreateInstruction(spv::OpStore, {access_chain_id, shader_id});
+        store_block.CreateInstruction(spv::OpStore,
+                                      {printf_buffer_access_chain_id, shader_id, 0x2 /*Memory operand: Aligned*/, 0x4});
     }
 
     // Write a 32-bit word to the output buffer for each argument
@@ -462,11 +530,11 @@ void DebugPrintfPass::CreateBufferWriteFunction(uint32_t argument_count, uint32_
         const uint32_t offset_id = module_.type_manager_.GetConstantUInt32(i + argument_id_offset).Id();
         store_block.CreateInstruction(spv::OpIAdd, {uint32_type_id, int_add_id, atomic_add_id, offset_id});
 
-        const uint32_t access_chain_id = module_.TakeNextId();
-        store_block.CreateInstruction(spv::OpAccessChain,
-                                      {pointer_type_id, access_chain_id, output_buffer_variable_id, one_id, int_add_id});
+        const uint32_t printf_buffer_access_chain_id =
+            add_printf_buffer_access_chain(store_block, gpuav::kDebugPrintfOutputBufferData, int_add_id);
 
-        store_block.CreateInstruction(spv::OpStore, {access_chain_id, function_param_ids[i]});
+        store_block.CreateInstruction(spv::OpStore,
+                                      {printf_buffer_access_chain_id, function_param_ids[i], 0x2 /*Memory operand: Aligned*/, 0x4});
     }
 
     // merge block of the above if() check
