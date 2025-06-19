@@ -1376,9 +1376,7 @@ bool CoreChecks::ValidateDrawDynamicStateValue(const LastBound& last_bound_state
         // The VU might "seem" like its not for dynamic, but if not using VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT this check
         // is picked up by VUID-VkGraphicsPipelineCreateInfo-multisampledRenderToSingleSampled-06853 and
         // VUID-vkCmdDraw-multisampledRenderToSingleSampled-07285 already
-        if (!IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) &&
-            !IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) && !enabled_features.multisampledRenderToSingleSampled &&
-            last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        if (!IsMixSamplingSupported() && last_bound_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
             const VkSampleCountFlagBits rasterization_samples = cb_state.dynamic_state_value.rasterization_samples;
             for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
                 const auto& attachment_info = cb_state.active_attachments[i];

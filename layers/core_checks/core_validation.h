@@ -226,6 +226,9 @@ class CoreChecks : public vvl::DeviceProxy {
     ReadLockGuard ReadLock() const override;
     WriteLockGuard WriteLock() override;
 
+    // We query these 3 extensions/features often, easier to have a single spot
+    bool IsMixSamplingSupported() const;
+
     bool ValidateSetMemBinding(const vvl::DeviceMemory& memory_state, const vvl::Bindable& mem_binding, const Location& loc) const;
     bool ValidateDeviceQueueFamily(uint32_t queue_family, const Location& loc, const char* vuid, bool optional) const;
     bool ValidateIdleDescriptorSet(VkDescriptorSet set, const Location& loc) const;
@@ -1603,9 +1606,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                              const ErrorObject& error_obj) const override;
     bool PreCallValidateBeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo* pBeginInfo,
                                            const ErrorObject& error_obj) const override;
-    bool ValidateRenderingInfoAttachment(const std::shared_ptr<const vvl::ImageView>& image_view,
-                                         const VkRenderingInfo* pRenderingInfo, const LogObjectList& objlist,
-                                         const Location& loc) const;
+    bool ValidateRenderingInfoAttachmentDeviceGroup(const vvl::Image& image_state, const VkRenderingInfo& rendering_info,
+                                                    const LogObjectList& objlist, const Location& loc) const;
     bool ValidateBeginRenderingFragmentDensityMap(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                                   const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
@@ -1614,6 +1616,8 @@ class CoreChecks : public vvl::DeviceProxy {
         VkCommandBuffer commandBuffer, const vvl::ImageView& view_state,
         const VkRenderingFragmentShadingRateAttachmentInfoKHR& fsr_attachment_info, const VkRenderingInfo& rendering_info,
         const Location& rendering_info_loc) const;
+    bool ValidateBeginRenderingSampleCount(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
+                                           const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingDeviceGroup(VkCommandBuffer commandBuffer, const VkRenderingInfo& rendering_info,
                                            const Location& rendering_info_loc) const;
     bool ValidateBeginRenderingMultisampledRenderToSingleSampled(VkCommandBuffer commandBuffer,
