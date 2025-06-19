@@ -1595,7 +1595,8 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentSemaphores) {
     vk::WaitForFences(*m_device, 1, &present_fences_handles[1], VK_TRUE, kWaitTimeout);
 }
 
-TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
+// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10285
+TEST_F(PositiveWsi, DISABLED_DifferentPerPresentModeImageCount) {
     TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
     GTEST_SKIP() << "Test requires wayland platform support";
@@ -1647,7 +1648,7 @@ TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
 
     VkSwapchainCreateInfoKHR swapchain_create_info = vku::InitStructHelper(&swapchain_present_mode_create_info);
     swapchain_create_info.surface = surface;
-    swapchain_create_info.minImageCount = general_min_image_count;
+    swapchain_create_info.minImageCount = per_present_mode_min_image_count;
     swapchain_create_info.imageFormat = info.surface_formats[0].format;
     swapchain_create_info.imageColorSpace = info.surface_formats[0].colorSpace;
     swapchain_create_info.imageExtent = surface_caps.surfaceCapabilities.minImageExtent;
