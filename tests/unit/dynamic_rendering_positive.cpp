@@ -157,6 +157,41 @@ TEST_F(PositiveDynamicRendering, PipeWithDiscard) {
     pipe.CreateGraphicsPipeline();
 }
 
+TEST_F(PositiveDynamicRendering, MismatchedSamplesColors) {
+    AddRequiredExtensions(VK_EXT_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::multisampledRenderToSingleSampled);
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+
+    VkImageCreateInfo image_ci =
+        vkt::Image::ImageCreateInfo2D(64, 64, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_ci.samples = VK_SAMPLE_COUNT_4_BIT;
+    vkt::Image sampled_image(*m_device, image_ci);
+    vkt::ImageView sampled_image_view = sampled_image.CreateView();
+
+    image_ci.samples = VK_SAMPLE_COUNT_1_BIT;
+    vkt::Image unsampled_image(*m_device, image_ci);
+    vkt::ImageView unsampled_image_view = unsampled_image.CreateView();
+
+    VkRenderingAttachmentInfo color_attachments[2];
+    color_attachments[0] = vku::InitStructHelper();
+    color_attachments[0].imageView = sampled_image_view;
+    color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    color_attachments[1] = vku::InitStructHelper();
+    color_attachments[1].imageView = unsampled_image_view;
+    color_attachments[1].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 1;
+    begin_rendering_info.colorAttachmentCount = 2;
+    begin_rendering_info.pColorAttachments = color_attachments;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}
+
 TEST_F(PositiveDynamicRendering, UseStencilAttachmentWithIntegerFormatAndDepthStencilResolve) {
     TEST_DESCRIPTION("Use stencil attachment with integer format and depth stencil resolve extension");
     AddRequiredExtensions(VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME);

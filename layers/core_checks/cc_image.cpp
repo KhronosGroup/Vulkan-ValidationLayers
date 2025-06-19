@@ -39,6 +39,11 @@
 #include "utils/math_utils.h"
 #include "utils/image_utils.h"
 
+bool CoreChecks::IsMixSamplingSupported() const {
+    return IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) || IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) ||
+           enabled_features.multisampledRenderToSingleSampled;
+}
+
 bool CoreChecks::ValidateImageFormatFeatures(const VkImageCreateInfo &create_info, const Location &loc) const {
     bool skip = false;
 

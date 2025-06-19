@@ -2119,8 +2119,7 @@ bool CoreChecks::ValidateGraphicsPipelineMultisampleState(const vvl::Pipeline &p
 
     if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
         const uint32_t raster_samples = SampleCountSize(multisample_state->rasterizationSamples);
-        if (!(IsExtEnabled(extensions.vk_amd_mixed_attachment_samples) ||
-              IsExtEnabled(extensions.vk_nv_framebuffer_mixed_samples) || (enabled_features.multisampledRenderToSingleSampled))) {
+        if (!IsMixSamplingSupported()) {
             uint32_t subpass_num_samples = 0;
 
             accum_color_samples(subpass_num_samples);
