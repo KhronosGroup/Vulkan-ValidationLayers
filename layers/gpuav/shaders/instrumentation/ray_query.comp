@@ -18,7 +18,8 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+
+#include "root_node.h"
 #include "error_payload.h"
 
 bool inst_ray_query_comp(const uint inst_num, const uint ray_flags, const vec3 ray_origin, const float ray_tmin, const vec3 ray_direction, const float ray_tmax)

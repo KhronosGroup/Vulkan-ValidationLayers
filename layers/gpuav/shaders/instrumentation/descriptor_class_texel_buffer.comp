@@ -18,7 +18,7 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+#include "root_node.h"
 #include "error_payload.h"
 
 layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorSetType {
@@ -29,16 +29,16 @@ layout(buffer_reference, buffer_reference_align = 8, scalar) buffer DescriptorSe
     uvec2 data[];
 };
 
-layout(buffer_reference, buffer_reference_align = 8, scalar) buffer UnusedInitializedStatus;
+layout(buffer_reference, scalar) buffer UnusedInitializedStatus;
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstDescriptorIndexingOOB, scalar) buffer BoundDescriptorSetsStateSSBO {
+layout(buffer_reference, buffer_reference_align = 8, scalar) buffer BoundDescriptorSetsStateSSBO {
     UnusedInitializedStatus unused_initialized_status;
     DescriptorSetType descriptor_set_types[kDebugInputBindlessMaxDescSets];
-} gpuav;
+};
 
 // Matches the vvl::DescriptorClass::TexelBuffer
 void inst_descriptor_class_texel_buffer(const uint inst_num, const uint desc_set, const uint desc_index, const uint byte_offset, const uint binding_layout_offset) {
-    DescriptorSetType descriptor_set_type = gpuav.descriptor_set_types[desc_set];
+    DescriptorSetType descriptor_set_type = root_node.bound_desc_sets_state_ssbo.descriptor_set_types[desc_set];
     const uint global_descriptor_index = binding_layout_offset + desc_index;
     // check that the offset is in bounds
     uint resource_size = descriptor_set_type.data[global_descriptor_index].y;

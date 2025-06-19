@@ -18,10 +18,9 @@
 
 #version 450
 #extension GL_GOOGLE_include_directive : enable
-#include "common_descriptor_sets.h"
+#include "root_node.h"
 
-layout(set = kInstDefaultDescriptorSet, binding = kBindingInstVertexAttributeFetchLimits, scalar)
-readonly buffer VertexAttributeFetchLimits {
+layout(buffer_reference, buffer_reference_align = 4, scalar) buffer VertexAttributeFetchLimits {
     uint has_max_vbb_vertex_input_rate;
     uint vertex_attribute_fetch_limit_vertex_input_rate;
 
@@ -37,35 +36,39 @@ void inst_vertex_attribute_fetch_oob(const uvec4 stage_info)
     bool valid_vertex_attribute_fetch_vertex_input_rate = true;
     bool valid_vertex_attribute_fetch_instance_input_rate = true;
 
-    if (has_max_vbb_vertex_input_rate == 1u) {
-        valid_vertex_attribute_fetch_vertex_input_rate = vertex_index < vertex_attribute_fetch_limit_vertex_input_rate;
+    if (root_node.vertex_attribute_fetch_limits_buffer.has_max_vbb_vertex_input_rate == 1u) {
+        valid_vertex_attribute_fetch_vertex_input_rate =
+            vertex_index < root_node.vertex_attribute_fetch_limits_buffer.vertex_attribute_fetch_limit_vertex_input_rate;
     }
-    if (has_max_vbb_instance_input_rate == 1u) {
-        valid_vertex_attribute_fetch_instance_input_rate = instance_index < vertex_attribute_fetch_limit_instance_input_rate;
+    if (root_node.vertex_attribute_fetch_limits_buffer.has_max_vbb_instance_input_rate == 1u) {
+        valid_vertex_attribute_fetch_instance_input_rate =
+            instance_index < root_node.vertex_attribute_fetch_limits_buffer.vertex_attribute_fetch_limit_instance_input_rate;
     }
 
     if (!valid_vertex_attribute_fetch_vertex_input_rate || !valid_vertex_attribute_fetch_instance_input_rate) {
-        const uint cmd_id = inst_error_logger_index_buffer.index[0];
-        const uint cmd_errors_count = atomicAdd(inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
+        const uint cmd_id = root_node.inst_error_logger_index_buffer.index[0];
+        const uint cmd_errors_count = atomicAdd(root_node.inst_cmd_errors_count_buffer.errors_count[cmd_id], 1);
         const bool max_cmd_errors_count_reached = cmd_errors_count >= kMaxErrorsPerCmd;
 
-        if (max_cmd_errors_count_reached) return;
+        if (max_cmd_errors_count_reached) {
+            return;
+        }
 
-        uint write_pos = atomicAdd(inst_errors_buffer.written_count, kErrorRecordSize);
-        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(inst_errors_buffer.data.length());
+        uint write_pos = atomicAdd(root_node.inst_errors_buffer.written_count, kErrorRecordSize);
+        const bool errors_buffer_not_filled = (write_pos + kErrorRecordSize) <= uint(root_node.inst_errors_buffer.size);
 
         if (errors_buffer_not_filled) {
             const uint error = valid_vertex_attribute_fetch_vertex_input_rate ? kErrorSubCode_IndexedDraw_OOBInstanceIndex : kErrorSubCode_IndexedDraw_OOBVertexIndex;
 
-            inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
-            inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstIndexedDraw << kErrorGroupShift) | (error << kErrorSubCodeShift);
+            root_node.inst_errors_buffer.data[write_pos + kHeaderErrorRecordSizeOffset] = kErrorRecordSize;
+            root_node.inst_errors_buffer.data[write_pos + kHeaderShaderIdErrorOffset] = SpecConstantLinkShaderId | (kErrorGroupInstIndexedDraw << kErrorGroupShift) | (error << kErrorSubCodeShift);
             // The shader stage is irrelevant because we know it is a vertex shader
-            inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = stage_info[0] << kStageIdShift;
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info[1];
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info[2];
-            inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info[3];
+            root_node.inst_errors_buffer.data[write_pos + kHeaderStageInstructionIdOffset] = stage_info[0] << kStageIdShift;
+            root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_0] = stage_info[1];
+            root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_1] = stage_info[2];
+            root_node.inst_errors_buffer.data[write_pos + kHeaderStageInfoOffset_2] = stage_info[3];
 
-            inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (inst_action_index_buffer.index[0] << kActionIdShift) | inst_error_logger_index_buffer.index[0];
+            root_node.inst_errors_buffer.data[write_pos + kHeaderActionIdErrorLoggerIdOffset] = (root_node.inst_action_index_buffer.index[0] << kActionIdShift) | root_node.inst_error_logger_index_buffer.index[0];
         }
     }
 }

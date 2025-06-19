@@ -139,4 +139,9 @@ struct CreateBuffer {
     VkBufferCreateInfo modified_create_info;
 };
 
+struct AllocateMemory {
+    VkMemoryAllocateInfo allocate_info{};
+    VkMemoryAllocateFlagsInfo allocate_flags_info{};
+};
+
 }  // namespace chassis

@@ -32,42 +32,7 @@ struct CopyBufferToImageValidationShader {
     static size_t GetSpirvSize() { return validation_cmd_copy_buffer_to_image_comp_size * sizeof(uint32_t); }
     static const uint32_t *GetSpirv() { return validation_cmd_copy_buffer_to_image_comp; }
 
-    struct EmptyPushData {
-    } push_constants;
-    valpipe::BoundStorageBuffer src_buffer_binding = {glsl::kPreCopyBufferToImageBinding_SrcBuffer};
-    valpipe::BoundStorageBuffer copy_src_regions_buffer_binding = {glsl::kPreCopyBufferToImageBinding_CopySrcRegions};
-
-    static std::vector<VkDescriptorSetLayoutBinding> GetDescriptorSetLayoutBindings() {
-        std::vector<VkDescriptorSetLayoutBinding> bindings = {
-            {glsl::kPreCopyBufferToImageBinding_SrcBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr},
-            {glsl::kPreCopyBufferToImageBinding_CopySrcRegions, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
-             nullptr}};
-
-        return bindings;
-    }
-
-    std::vector<VkWriteDescriptorSet> GetDescriptorWrites(VkDescriptorSet desc_set) const {
-        std::vector<VkWriteDescriptorSet> desc_writes(2);
-
-        desc_writes[0] = vku::InitStructHelper();
-        desc_writes[0].dstSet = desc_set;
-        desc_writes[0].dstBinding = src_buffer_binding.binding;
-        desc_writes[0].dstArrayElement = 0;
-        desc_writes[0].descriptorCount = 1;
-        desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[0].pBufferInfo = &src_buffer_binding.info;
-
-        desc_writes[1] = vku::InitStructHelper();
-        desc_writes[1].dstSet = desc_set;
-        desc_writes[1].dstBinding = copy_src_regions_buffer_binding.binding;
-        desc_writes[1].dstArrayElement = 0;
-        desc_writes[1].descriptorCount = 1;
-        desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        desc_writes[1].pBufferInfo = &copy_src_regions_buffer_binding.info;
-
-        return desc_writes;
-    }
+    glsl::CopyBufferToImagePushData push_constants;
 };
 
 void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubState &cb_state,
@@ -203,10 +168,9 @@ void CopyBufferToImage(Validator &gpuav, const Location &loc, CommandBufferSubSt
         gpu_regions_u32_ptr[6] = 0;
         gpu_regions_u32_ptr[7] = 0;
 
-        shader_resources.src_buffer_binding.info = {copy_buffer_to_img_info->srcBuffer, 0, VK_WHOLE_SIZE};
-        shader_resources.copy_src_regions_buffer_binding.info = {copy_src_regions_mem_buffer_range.buffer,
-                                                                 copy_src_regions_mem_buffer_range.offset,
-                                                                 copy_src_regions_mem_buffer_range.size};
+        shader_resources.push_constants.src_buffer_addr =
+            gpuav.device_state->GetBufferDeviceAddressHelper(copy_buffer_to_img_info->srcBuffer, &gpuav.modified_extensions);
+        shader_resources.push_constants.copy_src_regions_addr = copy_src_regions_mem_buffer_range.offset_address;
 
         if (!BindShaderResources(validation_pipeline, gpuav, cb_state, cb_state.compute_index,
                                  uint32_t(cb_state.command_error_loggers.size()), shader_resources)) {

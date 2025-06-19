@@ -92,6 +92,7 @@ class LayerChassisOutputGenerator(BaseGenerator):
         'vkGetShaderBinaryDataEXT',
         'vkAllocateDescriptorSets',
         'vkCreateBuffer',
+        'vkAllocateMemory',
         'vkQueuePresentKHR',
         # Need to inject HandleData logic
         'vkBeginCommandBuffer',

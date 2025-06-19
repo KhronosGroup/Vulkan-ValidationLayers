@@ -35,7 +35,7 @@ struct VertexAttributeFetchOff {
     VertexAttributeFetchOff(Validator& gpuav) : buffer(gpuav) {
         VkBufferCreateInfo buffer_info = vku::InitStructHelper();
         buffer_info.size = 4 * sizeof(uint32_t);
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VmaAllocationCreateInfo alloc_info = {};
         alloc_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         alloc_info.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;

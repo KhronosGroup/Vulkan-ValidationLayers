@@ -19,6 +19,7 @@
 #include "gpuav/core/gpuav.h"
 #include "gpuav/resources/gpuav_shader_resources.h"
 #include "gpuav/resources/gpuav_state_trackers.h"
+#include "gpuav/shaders/root_node.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/shader_module.h"
 #include "state_tracker/shader_object_state.h"
@@ -51,12 +52,10 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
 
     cb.on_instrumentation_desc_set_update_functions.emplace_back(
         [dummy_buffer_range = vko::BufferRange{}](CommandBufferSubState& cb, VkPipelineBindPoint,
-                                                  VkDescriptorBufferInfo& out_buffer_info, uint32_t& out_dst_binding) mutable {
+                                                  glsl::RootNode* root_node) mutable {
             PostProcessingCbState* pp_cb_state = cb.shared_resources_cache.TryGet<PostProcessingCbState>();
             if (pp_cb_state) {
-                out_buffer_info.buffer = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.buffer;
-                out_buffer_info.offset = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset;
-                out_buffer_info.range = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.size;
+                root_node->post_process_ssbo = pp_cb_state->last_desc_set_binding_to_post_process_buffers_lut.offset_address;
             } else {
                 // Eventually, no descriptor set was bound in command buffer.
                 // Instrumenation descriptor set is already defined at this point and needs a binding,
@@ -64,12 +63,9 @@ void RegisterPostProcessingValidation(Validator& gpuav, CommandBufferSubState& c
                 if (dummy_buffer_range.buffer == VK_NULL_HANDLE) {
                     dummy_buffer_range = cb.gpu_resources_manager.GetDeviceLocalBufferRange(64);
                 }
-                out_buffer_info.buffer = dummy_buffer_range.buffer;
-                out_buffer_info.offset = dummy_buffer_range.offset;
-                out_buffer_info.range = dummy_buffer_range.size;
+                root_node->post_process_ssbo = dummy_buffer_range.offset_address;
             }
-
-            out_dst_binding = glsl::kBindingInstPostProcess;
+            assert(root_node->post_process_ssbo);
         });
 
     auto bound_desc_sets_to_pp_buffer_map =

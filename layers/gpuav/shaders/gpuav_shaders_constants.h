@@ -44,31 +44,13 @@ const uint kMaxErrorsPerCmd = 6;
 // (Basically our own implementaiton of Specialization Constant)
 const uint kLinkShaderId = 0x0DEAD001;
 
-// This is just a placeholder, honestly could be anything, will be replaced when linking to the runtime descriptor set choosen
-const int kInstDefaultDescriptorSet = 7;
+const int kInstDefaultDescriptorSet = 0;
 
-// Binding index inside the descriptor set used by instrumentation validation.
-// Set to front as people might want to use only DebugPrintf and this can allow us to reduce overhead not binding the other buffers
-const int kBindingInstDebugPrintf = 0;
-// binding #1 is reserved for the output all non-DebugPrintf shaders write out too.
-const int kBindingInstErrorBuffer = 1;
-// An output binding to get info off the GPU and run on the CPU
-const int kBindingInstPostProcess = 2;
-// Each check that requires additional input to be sent must reserve its own binding slot
-const int kBindingInstDescriptorIndexingOOB = 3;
-const int kBindingInstBufferDeviceAddress = 4;
-const int kBindingInstActionIndex = 5;
-const int kBindingInstCmdResourceIndex = 6;
-const int kBindingInstCmdErrorsCount = 7;
-const int kBindingInstVertexAttributeFetchLimits = 8;
+const int kBindingInstRootNode = 0;
 
 // Validation pipelines
 // ---
 const int kValPipeDescSet = 0;
-
-// Diagnostic calls
-// ---
-const int kDiagCommonDescriptorSet = kValPipeDescSet + 1;
 
 // Diagnostic calls bindings in common descriptor set
 const int kBindingDiagErrorBuffer = 0;

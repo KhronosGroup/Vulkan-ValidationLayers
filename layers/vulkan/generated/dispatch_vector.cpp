@@ -144,7 +144,6 @@ void Device::InitObjectDispatchVectors() {
     BUILD_DISPATCH_VECTOR(PreCallRecordDeviceWaitIdle);
     BUILD_DISPATCH_VECTOR(PostCallRecordDeviceWaitIdle);
     BUILD_DISPATCH_VECTOR(PreCallValidateAllocateMemory);
-    BUILD_DISPATCH_VECTOR(PreCallRecordAllocateMemory);
     BUILD_DISPATCH_VECTOR(PostCallRecordAllocateMemory);
     BUILD_DESTROY_DISPATCH_VECTOR(PreCallValidateFreeMemory);
     BUILD_DESTROY_DISPATCH_VECTOR(PreCallRecordFreeMemory);

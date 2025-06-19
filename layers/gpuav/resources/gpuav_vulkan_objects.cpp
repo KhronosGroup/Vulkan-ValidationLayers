@@ -78,14 +78,10 @@ VkResult DescriptorSetManager::GetDescriptorSets(uint32_t count, VkDescriptorPoo
         // hardcoded like so, should be dynamic depending on the descriptor sets
         // to be created. Not too dramatic as Vulkan will gracefully fail if there is a
         // mismatch between this and created descriptor sets.
-        const std::array<VkDescriptorPoolSize, 2> pool_sizes = {{{
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 },
-                                                                 {
-                                                                     VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-                                                                     max_sets * num_bindings_in_set,
-                                                                 }}};
+        const std::array<VkDescriptorPoolSize, 1> pool_sizes = {{{
+            VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            max_sets * num_bindings_in_set,
+        }}};
 
         VkDescriptorPoolCreateInfo desc_pool_info = vku::InitStructHelper();
         desc_pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
@@ -251,18 +247,16 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
         alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        host_visible_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                              VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                          alloc_ci);
+        host_visible_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, alloc_ci);
     }
 
     {
         VmaAllocationCreateInfo alloc_ci = {};
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
         alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        host_cached_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                         alloc_ci);
+        host_cached_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, alloc_ci);
     }
 
     {
@@ -282,8 +276,9 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
         if (gpuav.phys_dev_props.deviceType == VK_PHYSICAL_DEVICE_TYPE_CPU) {
             alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
         }
-        device_local_indirect_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
-                                                   alloc_ci);
+        device_local_indirect_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            alloc_ci);
     }
 
     {
@@ -291,9 +286,8 @@ GpuResourcesManager::GpuResourcesManager(Validator &gpuav) : gpuav_(gpuav) {
         alloc_ci.usage = VMA_MEMORY_USAGE_AUTO;
         alloc_ci.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT |
                          VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-        staging_buffer_cache_.Create(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT |
-                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                                     alloc_ci);
+        staging_buffer_cache_.Create(
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, alloc_ci);
     }
 }
 
@@ -412,7 +406,7 @@ void GpuResourcesManager::DestroyResources() {
 }
 
 void GpuResourcesManager::BufferCache::Create(VkBufferUsageFlags buffer_usage_flags, const VmaAllocationCreateInfo allocation_ci) {
-    buffer_usage_flags_ = buffer_usage_flags;
+    buffer_usage_flags_ = buffer_usage_flags | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     allocation_ci_ = allocation_ci;
 }
 
@@ -427,22 +421,23 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
             CachedBufferBlock &cached_buffer = cached_buffers_blocks_[cached_buffer_i];
 
             // Is there enough space in the current cached buffer to fit the aligned sub-allocation?
-            const VkDeviceSize aligned_free_range_begin = Align(cached_buffer.used_range.end, alignment);
-            const vvl::range<VkDeviceSize> aligned_free_range = {aligned_free_range_begin, cached_buffer.total_range.end};
+            const VkDeviceSize aligned_free_range_begin = Align(cached_buffer.used_addr_range.end, alignment);
+            const vvl::range<VkDeviceSize> aligned_free_range = {aligned_free_range_begin, cached_buffer.total_addr_range.end};
             if (aligned_free_range.non_empty() && aligned_free_range.size() >= byte_size) {
                 // There is enough space, sub-allocate
-                const vvl::range<VkDeviceSize> returned_range = {aligned_free_range_begin, aligned_free_range_begin + byte_size};
-                assert(returned_range.non_empty());
-                const vvl::range<VkDeviceSize> pad_range = {cached_buffer.used_range.end, aligned_free_range.begin};
+                const vvl::range<VkDeviceSize> returned_addr_range = {aligned_free_range_begin,
+                                                                      aligned_free_range_begin + byte_size};
+                assert(returned_addr_range.non_empty());
+                const vvl::range<VkDeviceSize> pad_range = {cached_buffer.used_addr_range.end, aligned_free_range.begin};
                 assert(pad_range.valid());
-                total_available_byte_size_ -= returned_range.size() + pad_range.size();
+                total_available_byte_size_ -= returned_addr_range.size() + pad_range.size();
 
-                cached_buffer.used_range.end = returned_range.end;
+                cached_buffer.used_addr_range.end = returned_addr_range.end;
 
                 // Heuristic: next call to the cache will ask for the same size and alignment.
                 // => If current block is big enough, hint at it. Else, hint at next block.
-                const vvl::range<VkDeviceSize> available_aligned_byte_range = {Align(cached_buffer.used_range.end, alignment),
-                                                                               cached_buffer.total_range.end};
+                const vvl::range<VkDeviceSize> available_aligned_byte_range = {Align(cached_buffer.used_addr_range.end, alignment),
+                                                                               cached_buffer.total_addr_range.end};
                 if (available_aligned_byte_range.non_empty() && available_aligned_byte_range.size() >= byte_size) {
                     next_avail_buffer_pos_hint_ = cached_buffer_i;
                 } else {
@@ -450,19 +445,14 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
                 }
                 uint8_t *offset_mapped_ptr = nullptr;
                 if (cached_buffer.buffer.GetMappedPtr()) {
-                    offset_mapped_ptr = (uint8_t *)cached_buffer.buffer.GetMappedPtr() + returned_range.begin;
-                }
-                VkDeviceAddress offset_address = 0;
-                if (cached_buffer.buffer.Address()) {
-                    offset_address = cached_buffer.buffer.Address() + returned_range.begin;
+                    offset_mapped_ptr = (uint8_t *)cached_buffer.buffer.GetMappedPtr() +
+                                        (returned_addr_range.begin - cached_buffer.total_addr_range.begin);
                 }
 
-                return {cached_buffer.buffer.VkHandle(),
-                        returned_range.begin,
-                        returned_range.size(),
-                        offset_mapped_ptr,
-                        offset_address,
-                        cached_buffer.buffer.Allocation()};
+                assert(returned_addr_range.begin % alignment == 0);
+                return {cached_buffer.buffer.VkHandle(), returned_addr_range.begin - cached_buffer.total_addr_range.begin,
+                        returned_addr_range.size(),      offset_mapped_ptr,
+                        returned_addr_range.begin,       cached_buffer.buffer.Allocation()};
             }
         }
     }
@@ -470,30 +460,41 @@ vko::BufferRange GpuResourcesManager::BufferCache::GetBufferRange(Validator &gpu
     // Did not find a cached buffer, create one, cache it and return its handle
     Buffer buffer(gpuav);
     VkBufferCreateInfo buffer_ci = vku::InitStructHelper();
-    buffer_ci.size = std::max(min_buffer_block_byte_size, byte_size);
+    buffer_ci.size = std::max(min_buffer_block_byte_size, byte_size) + alignment;
     buffer_ci.usage = buffer_usage_flags_;
     const bool success = buffer.Create(&buffer_ci, &allocation_ci_);
     if (!success) {
         return {};
     }
-    CachedBufferBlock cached_buffer_block{buffer, {0, buffer_ci.size}, {0, byte_size}};
+    assert(buffer.Address() != 0);
+
+    const VkDeviceAddress aligned_address = Align<VkDeviceSize>(buffer.Address(), alignment);
+    assert(aligned_address % alignment == 0);
+
+    CachedBufferBlock cached_buffer_block{
+        buffer, {buffer.Address(), buffer.Address() + buffer.Size()}, {aligned_address, aligned_address + byte_size}};
+
     cached_buffers_blocks_.emplace_back(cached_buffer_block);
 
-    total_available_byte_size_ += buffer_ci.size - byte_size;
+    assert(buffer_ci.size >= (cached_buffer_block.used_addr_range.end - cached_buffer_block.total_addr_range.begin));
+    total_available_byte_size_ +=
+        buffer_ci.size - (cached_buffer_block.used_addr_range.end - cached_buffer_block.total_addr_range.begin);
 
+    const VkDeviceSize align_pad = aligned_address - buffer.Address();
     return {buffer.VkHandle(),
-            cached_buffer_block.used_range.begin,
-            cached_buffer_block.used_range.size(),
-            cached_buffer_block.buffer.GetMappedPtr(),
-            cached_buffer_block.buffer.Address(),
+            cached_buffer_block.used_addr_range.begin - cached_buffer_block.total_addr_range.begin,
+            cached_buffer_block.used_addr_range.size(),
+            (uint8_t *)cached_buffer_block.buffer.GetMappedPtr() + align_pad,
+            aligned_address,
             cached_buffer_block.buffer.Allocation()};
 }
 
 void GpuResourcesManager::BufferCache::ReturnBuffers() {
     total_available_byte_size_ = 0;
     for (CachedBufferBlock &cached_buffer_block : cached_buffers_blocks_) {
-        cached_buffer_block.used_range = {0, 0};
-        total_available_byte_size_ += cached_buffer_block.total_range.size();
+        cached_buffer_block.used_addr_range = {cached_buffer_block.total_addr_range.begin,
+                                               cached_buffer_block.total_addr_range.begin};
+        total_available_byte_size_ += cached_buffer_block.total_addr_range.size();
     }
 }
 

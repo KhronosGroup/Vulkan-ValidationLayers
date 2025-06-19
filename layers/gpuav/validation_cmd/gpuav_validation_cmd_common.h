@@ -27,8 +27,7 @@ namespace valcmd {
 
 namespace internal {
 void BindShaderResourcesHelper(Validator& gpuav, CommandBufferSubState& cb_state, uint32_t cmd_index, uint32_t error_logger_index,
-                               VkPipelineLayout pipeline_layout, VkDescriptorSet desc_set,
-                               const std::vector<VkWriteDescriptorSet>& descriptor_writes, const uint32_t push_constants_byte_size,
+                               VkPipelineLayout pipeline_layout, const uint32_t push_constants_byte_size,
                                const void* push_constants);
 }
 
@@ -36,15 +35,8 @@ template <typename ShaderResources>
 bool BindShaderResources(gpuav::valpipe::ComputePipeline<ShaderResources>& validation_pipeline, Validator& gpuav,
                          CommandBufferSubState& cb_state, uint32_t cmd_index, uint32_t error_logger_index,
                          const ShaderResources& shader_resources) {
-    const VkDescriptorSet desc_set =
-        cb_state.gpu_resources_manager.GetManagedDescriptorSet(validation_pipeline.specific_desc_set_layout);
-    if (!desc_set) {
-        return false;
-    }
-    const std::vector<VkWriteDescriptorSet> desc_writes = shader_resources.GetDescriptorWrites(desc_set);
     internal::BindShaderResourcesHelper(gpuav, cb_state, cmd_index, error_logger_index, validation_pipeline.pipeline_layout,
-                                        desc_set, desc_writes, sizeof(shader_resources.push_constants),
-                                        &shader_resources.push_constants);
+                                        sizeof(shader_resources.push_constants), &shader_resources.push_constants);
     return true;
 }
 
@@ -54,8 +46,6 @@ class ValidationCommandsCommon {
     ~ValidationCommandsCommon();
 
     VkDescriptorSetLayout error_logging_desc_set_layout_ = VK_NULL_HANDLE;
-    VkDescriptorSet error_logging_desc_set_ = VK_NULL_HANDLE;
-    VkDescriptorPool validation_cmd_desc_pool_ = VK_NULL_HANDLE;
 
   private:
     Validator& gpuav_;

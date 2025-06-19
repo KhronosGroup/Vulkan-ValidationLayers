@@ -169,8 +169,9 @@ const int kErrorBufferByteSize = 4 * kErrorRecordSize * kErrorRecordCounts + 2 *
 
 // DebugPrintf
 // ---
-const int kDebugPrintfOutputBufferDWordsCount = 0;
-const int kDebugPrintfOutputBufferData = 1;
+const int kDebugPrintfOutputBufferSize = 0;
+const int kDebugPrintfOutputBufferDWordsCount = 1;
+const int kDebugPrintfOutputBufferData = 2;
 
 #ifdef __cplusplus
 }  // namespace gpuav
