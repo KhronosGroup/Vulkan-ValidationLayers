@@ -1431,6 +1431,10 @@ static bool NeedDrawStateValidated(const vvl::CommandBuffer &cb_state, const vvl
 bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bound_state, const VkPipelineBindPoint bind_point,
                                                         const vvl::Pipeline &pipeline, const vvl::DrawDispatchVuid &vuid) const {
     bool skip = false;
+    // If the pipeline is not using any descriptors, then any descriptor state set can be ignored
+    if (pipeline.active_slots.empty()) {
+        return skip;
+    }
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
 
     for (const auto &ds_slot : last_bound_state.ds_slots) {
@@ -1463,7 +1467,7 @@ bool CoreChecks::ValidateActionStateDescriptorsPipeline(const LastBound &last_bo
     }
 
     const auto pipeline_layout = pipeline.PipelineLayoutState();
-    if (!pipeline.active_slots.empty() && !last_bound_state.IsBoundSetCompatible(pipeline.max_active_slot, *pipeline_layout)) {
+    if (!last_bound_state.IsBoundSetCompatible(pipeline.max_active_slot, *pipeline_layout)) {
         // If they never bound any descriptors
         if (!last_bound_state.desc_set_pipeline_layout) {
             skip |= LogError(vuid.compatible_pipeline_08600, cb_state.GetObjectList(bind_point), vuid.loc(),
@@ -1543,12 +1547,12 @@ bool CoreChecks::ValidateActionStateDescriptorsShaderObject(const LastBound &las
 
     // Check if the current shader objects are compatible for the maximum used set with the bound sets.
     for (const auto &shader_state : last_bound_state.shader_object_states) {
-        if (!shader_state) {
+        // If the shader is not using any descriptors, then any descriptor state set can be ignored
+        if (!shader_state || shader_state->active_slots.empty()) {
             continue;
         }
 
-        if (!shader_state->active_slots.empty() &&
-            !last_bound_state.IsBoundSetCompatible(shader_state->max_active_slot, *shader_state)) {
+        if (!last_bound_state.IsBoundSetCompatible(shader_state->max_active_slot, *shader_state)) {
             LogObjectList objlist(cb_state.Handle(), shader_state->Handle());
 
             if (!last_bound_state.desc_set_pipeline_layout) {
