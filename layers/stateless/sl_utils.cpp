@@ -354,6 +354,14 @@ bool Context::ValidateReservedFlags(const Location &loc, VkFlags value, const ch
     return skip;
 }
 
+bool Context::ValidateReservedFlags(const Location &loc, VkFlags64 value, const char *vuid) const {
+    bool skip = false;
+    if (value != 0) {
+        skip |= log.LogError(vuid, error_obj.handle, loc, "is %" PRIu64 ", but must be 0.", value);
+    }
+    return skip;
+}
+
 // helper to implement validation of both 32 bit and 64 bit flags.
 template <typename FlagTypedef>
 bool Context::ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags,

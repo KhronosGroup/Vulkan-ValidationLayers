@@ -275,6 +275,8 @@ class Context {
 
     bool ValidateReservedFlags(const Location &loc, VkFlags value, const char *vuid) const;
 
+    bool ValidateReservedFlags(const Location &loc, VkFlags64 value, const char *vuid) const;
+
     // helper to implement validation of both 32 bit and 64 bit flags.
     template <typename FlagTypedef>
     bool ValidateFlagsImplementation(const Location &loc, vvl::FlagBitmask flag_bitmask, FlagTypedef all_flags, FlagTypedef value,
@@ -496,7 +498,8 @@ class Device : public vvl::base::Device {
     bool ValidateAccelerationStructureInfoNV(const Context &context, const VkAccelerationStructureInfoNV &info,
                                              VkAccelerationStructureNV object_handle, const Location &loc) const;
     bool ValidateSwapchainCreateInfoMaintenance1(const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
-    bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info, const Location &loc) const;
+    bool ValidateSwapchainCreateInfo(const Context &context, const VkSwapchainCreateInfoKHR &create_info,
+                                     const Location &loc) const;
 
     bool manual_PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkQueryPool *pQueryPool,
