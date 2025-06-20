@@ -82,10 +82,11 @@ typedef enum VulkanObjectType {
     kVulkanObjectTypeTensorViewARM = 51,
     kVulkanObjectTypeOpticalFlowSessionNV = 52,
     kVulkanObjectTypeShaderEXT = 53,
-    kVulkanObjectTypeExternalComputeQueueNV = 54,
-    kVulkanObjectTypeIndirectExecutionSetEXT = 55,
-    kVulkanObjectTypeIndirectCommandsLayoutEXT = 56,
-    kVulkanObjectTypeMax = 57
+    kVulkanObjectTypeDataGraphPipelineSessionARM = 54,
+    kVulkanObjectTypeExternalComputeQueueNV = 55,
+    kVulkanObjectTypeIndirectExecutionSetEXT = 56,
+    kVulkanObjectTypeIndirectCommandsLayoutEXT = 57,
+    kVulkanObjectTypeMax = 58
 } VulkanObjectType;
 
 VkDebugReportObjectTypeEXT GetDebugReport(VulkanObjectType type);
@@ -201,6 +202,8 @@ static constexpr VkObjectType ConvertVulkanObjectToCoreObject(VulkanObjectType i
             return VK_OBJECT_TYPE_OPTICAL_FLOW_SESSION_NV;
         case kVulkanObjectTypeShaderEXT:
             return VK_OBJECT_TYPE_SHADER_EXT;
+        case kVulkanObjectTypeDataGraphPipelineSessionARM:
+            return VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM;
         case kVulkanObjectTypeExternalComputeQueueNV:
             return VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV;
         case kVulkanObjectTypeIndirectExecutionSetEXT:
@@ -321,6 +324,8 @@ static constexpr VulkanObjectType ConvertCoreObjectToVulkanObject(VkObjectType v
             return kVulkanObjectTypeOpticalFlowSessionNV;
         case VK_OBJECT_TYPE_SHADER_EXT:
             return kVulkanObjectTypeShaderEXT;
+        case VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM:
+            return kVulkanObjectTypeDataGraphPipelineSessionARM;
         case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
             return kVulkanObjectTypeExternalComputeQueueNV;
         case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
@@ -1203,6 +1208,18 @@ struct VkHandleInfo<VkShaderEXT> {
 template <>
 struct VulkanObjectTypeInfo<kVulkanObjectTypeShaderEXT> {
     typedef VkShaderEXT Type;
+};
+
+template <>
+struct VkHandleInfo<VkDataGraphPipelineSessionARM> {
+    static const VulkanObjectType kVulkanObjectType = kVulkanObjectTypeDataGraphPipelineSessionARM;
+    static const VkDebugReportObjectTypeEXT kDebugReportObjectType = VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT;
+    static const VkObjectType kVkObjectType = VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM;
+    static const char* Typename() { return "VkDataGraphPipelineSessionARM"; }
+};
+template <>
+struct VulkanObjectTypeInfo<kVulkanObjectTypeDataGraphPipelineSessionARM> {
+    typedef VkDataGraphPipelineSessionARM Type;
 };
 
 template <>

@@ -1020,6 +1020,82 @@ FeatureAndName AddFeature(APIVersion api_version, vkt::Feature feature, void **i
             return {&vk_struct->customBorderColors, "VkPhysicalDeviceCustomBorderColorFeaturesEXT::customBorderColors"};
         }
 
+        case Feature::dataGraph: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraph, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph"};
+        }
+
+        case Feature::dataGraphDescriptorBuffer: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphDescriptorBuffer, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraphDescriptorBuffer"};
+        }
+
+        case Feature::dataGraphShaderModule: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphShaderModule, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraphShaderModule"};
+        }
+
+        case Feature::dataGraphSpecializationConstants: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphSpecializationConstants,
+                    "VkPhysicalDeviceDataGraphFeaturesARM::dataGraphSpecializationConstants"};
+        }
+
+        case Feature::dataGraphUpdateAfterBind: {
+            auto vk_struct = const_cast<VkPhysicalDeviceDataGraphFeaturesARM *>(
+                vku::FindStructInPNextChain<VkPhysicalDeviceDataGraphFeaturesARM>(*inout_pnext_chain));
+            if (!vk_struct) {
+                vk_struct = new VkPhysicalDeviceDataGraphFeaturesARM;
+                *vk_struct = vku::InitStructHelper();
+                if (*inout_pnext_chain) {
+                    vvl::PnextChainAdd(*inout_pnext_chain, vk_struct);
+                } else {
+                    *inout_pnext_chain = vk_struct;
+                }
+            }
+            return {&vk_struct->dataGraphUpdateAfterBind, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraphUpdateAfterBind"};
+        }
+
         case Feature::dedicatedAllocationImageAliasing: {
             auto vk_struct = const_cast<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV *>(
                 vku::FindStructInPNextChain<VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV>(*inout_pnext_chain));

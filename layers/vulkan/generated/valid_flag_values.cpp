@@ -1052,6 +1052,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_NV_cooperative_vector};
                 }
             }
+            if (value & (VK_PIPELINE_STAGE_2_DATA_GRAPH_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_data_graph)) {
+                    return {vvl::Extension::_VK_ARM_data_graph};
+                }
+            }
             return {};
         case vvl::FlagBitmask::VkAccessFlagBits2:
             if (value & (VK_ACCESS_2_VIDEO_DECODE_READ_BIT_KHR | VK_ACCESS_2_VIDEO_DECODE_WRITE_BIT_KHR)) {
@@ -1092,6 +1097,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
             if (value & (VK_ACCESS_2_OPTICAL_FLOW_READ_BIT_NV | VK_ACCESS_2_OPTICAL_FLOW_WRITE_BIT_NV)) {
                 if (!IsExtEnabled(extensions.vk_nv_optical_flow)) {
                     return {vvl::Extension::_VK_NV_optical_flow};
+                }
+            }
+            if (value & (VK_ACCESS_2_DATA_GRAPH_READ_BIT_ARM | VK_ACCESS_2_DATA_GRAPH_WRITE_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_data_graph)) {
+                    return {vvl::Extension::_VK_ARM_data_graph};
                 }
             }
             return {};
@@ -1143,6 +1153,11 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
                     return {vvl::Extension::_VK_AMDX_shader_enqueue};
                 }
             }
+            if (value & (VK_BUFFER_USAGE_2_DATA_GRAPH_FOREIGN_DESCRIPTOR_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_data_graph)) {
+                    return {vvl::Extension::_VK_ARM_data_graph};
+                }
+            }
             if (value & (VK_BUFFER_USAGE_2_TILE_MEMORY_BIT_QCOM)) {
                 if (!IsExtEnabled(extensions.vk_qcom_tile_memory_heap)) {
                     return {vvl::Extension::_VK_QCOM_tile_memory_heap};
@@ -1151,6 +1166,13 @@ vvl::Extensions stateless::Context::IsValidFlag64Value(vvl::FlagBitmask flag_bit
             if (value & (VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT)) {
                 if (!IsExtEnabled(extensions.vk_ext_device_generated_commands)) {
                     return {vvl::Extension::_VK_EXT_device_generated_commands};
+                }
+            }
+            return {};
+        case vvl::FlagBitmask::VkTensorUsageFlagBitsARM:
+            if (value & (VK_TENSOR_USAGE_DATA_GRAPH_BIT_ARM)) {
+                if (!IsExtEnabled(extensions.vk_arm_data_graph)) {
+                    return {vvl::Extension::_VK_ARM_data_graph};
                 }
             }
             return {};
@@ -1413,6 +1435,8 @@ std::string stateless::Context::DescribeFlagBitmaskValue64(vvl::FlagBitmask flag
             return string_VkTensorViewCreateFlagsARM(value);
         case vvl::FlagBitmask::VkTensorUsageFlagBitsARM:
             return string_VkTensorUsageFlagsARM(value);
+        case vvl::FlagBitmask::VkDataGraphPipelineSessionCreateFlagBitsARM:
+            return string_VkDataGraphPipelineSessionCreateFlagsARM(value);
 
         default:
             std::stringstream ss;

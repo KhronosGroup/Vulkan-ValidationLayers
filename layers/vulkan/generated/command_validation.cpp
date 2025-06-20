@@ -1837,6 +1837,13 @@ static const vvl::unordered_map<Func, CommandValidationInfo> kCommandValidationT
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdConvertCooperativeVectorMatrixNV-renderpass",
     CMD_SCOPE_OUTSIDE, "VUID-vkCmdConvertCooperativeVectorMatrixNV-videocoding",
 }},
+{Func::vkCmdDispatchDataGraphARM, {
+    "VUID-vkCmdDispatchDataGraphARM-commandBuffer-recording",
+    nullptr,
+    0, "VUID-vkCmdDispatchDataGraphARM-commandBuffer-cmdpool",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdDispatchDataGraphARM-renderpass",
+    CMD_SCOPE_OUTSIDE, "VUID-vkCmdDispatchDataGraphARM-videocoding",
+}},
 {Func::vkCmdSetAttachmentFeedbackLoopEnableEXT, {
     "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-recording",
     nullptr,

@@ -138,6 +138,16 @@ enum class Feature {
     customBorderColorWithoutFormat,
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
     customBorderColors,
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    dataGraph,
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    dataGraphDescriptorBuffer,
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    dataGraphShaderModule,
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    dataGraphSpecializationConstants,
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    dataGraphUpdateAfterBind,
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     dedicatedAllocationImageAliasing,
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT

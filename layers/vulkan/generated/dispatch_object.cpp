@@ -544,6 +544,13 @@ void HandleWrapper::UnwrapPnextChainHandles(const void* pNext) {
                     safe_struct->tensorView = Unwrap(safe_struct->tensorView);
                 }
             } break;
+            case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM: {
+                auto* safe_struct = reinterpret_cast<vku::safe_VkDataGraphPipelineShaderModuleCreateInfoARM*>(cur_pnext);
+
+                if (safe_struct->module) {
+                    safe_struct->module = Unwrap(safe_struct->module);
+                }
+            } break;
             case VK_STRUCTURE_TYPE_GENERATED_COMMANDS_PIPELINE_INFO_EXT: {
                 auto* safe_struct = reinterpret_cast<vku::safe_VkGeneratedCommandsPipelineInfoEXT*>(cur_pnext);
 
@@ -8321,6 +8328,226 @@ void Device::GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGe
 
 void Device::QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo) {
     device_dispatch_table.QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
+}
+
+VkResult Device::CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                             VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                             const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                             const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    if (!wrap_handles)
+        return device_dispatch_table.CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                 pCreateInfos, pAllocator, pPipelines);
+    vku::safe_VkDataGraphPipelineCreateInfoARM* local_pCreateInfos = nullptr;
+    {
+        deferredOperation = Unwrap(deferredOperation);
+        pipelineCache = Unwrap(pipelineCache);
+        if (pCreateInfos) {
+            local_pCreateInfos = new vku::safe_VkDataGraphPipelineCreateInfoARM[createInfoCount];
+            for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+                local_pCreateInfos[index0].initialize(&pCreateInfos[index0]);
+                UnwrapPnextChainHandles(local_pCreateInfos[index0].pNext);
+
+                if (pCreateInfos[index0].layout) {
+                    local_pCreateInfos[index0].layout = Unwrap(pCreateInfos[index0].layout);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                        (const VkDataGraphPipelineCreateInfoARM*)local_pCreateInfos,
+                                                                        pAllocator, pPipelines);
+    if (local_pCreateInfos) {
+        // Fix check for deferred ray tracing pipeline creation
+        // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/5817
+        const bool is_operation_deferred = (deferredOperation != VK_NULL_HANDLE) && (result == VK_OPERATION_DEFERRED_KHR);
+        if (is_operation_deferred) {
+            std::vector<std::function<void()>> cleanup{[local_pCreateInfos]() { delete[] local_pCreateInfos; }};
+            deferred_operation_post_completion.insert(deferredOperation, cleanup);
+        } else {
+            delete[] local_pCreateInfos;
+        }
+    }
+    if (result == VK_SUCCESS) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; index0++) {
+            pPipelines[index0] = WrapNew(pPipelines[index0]);
+        }
+    }
+    return result;
+}
+
+VkResult Device::CreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                   const VkAllocationCallbacks* pAllocator,
+                                                   VkDataGraphPipelineSessionARM* pSession) {
+    if (!wrap_handles) return device_dispatch_table.CreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession);
+    vku::safe_VkDataGraphPipelineSessionCreateInfoARM var_local_pCreateInfo;
+    vku::safe_VkDataGraphPipelineSessionCreateInfoARM* local_pCreateInfo = nullptr;
+    {
+        if (pCreateInfo) {
+            local_pCreateInfo = &var_local_pCreateInfo;
+            local_pCreateInfo->initialize(pCreateInfo);
+
+            if (pCreateInfo->dataGraphPipeline) {
+                local_pCreateInfo->dataGraphPipeline = Unwrap(pCreateInfo->dataGraphPipeline);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.CreateDataGraphPipelineSessionARM(
+        device, (const VkDataGraphPipelineSessionCreateInfoARM*)local_pCreateInfo, pAllocator, pSession);
+    if (result == VK_SUCCESS) {
+        *pSession = WrapNew(*pSession);
+    }
+    return result;
+}
+
+VkResult Device::GetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetDataGraphPipelineSessionBindPointRequirementsARM(device, pInfo, pBindPointRequirementCount,
+                                                                                         pBindPointRequirements);
+    vku::safe_VkDataGraphPipelineSessionBindPointRequirementsInfoARM var_local_pInfo;
+    vku::safe_VkDataGraphPipelineSessionBindPointRequirementsInfoARM* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->session) {
+                local_pInfo->session = Unwrap(pInfo->session);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetDataGraphPipelineSessionBindPointRequirementsARM(
+        device, (const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*)local_pInfo, pBindPointRequirementCount,
+        pBindPointRequirements);
+
+    return result;
+}
+
+void Device::GetDataGraphPipelineSessionMemoryRequirementsARM(VkDevice device,
+                                                              const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo,
+                                                              VkMemoryRequirements2* pMemoryRequirements) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+    vku::safe_VkDataGraphPipelineSessionMemoryRequirementsInfoARM var_local_pInfo;
+    vku::safe_VkDataGraphPipelineSessionMemoryRequirementsInfoARM* local_pInfo = nullptr;
+    {
+        if (pInfo) {
+            local_pInfo = &var_local_pInfo;
+            local_pInfo->initialize(pInfo);
+
+            if (pInfo->session) {
+                local_pInfo->session = Unwrap(pInfo->session);
+            }
+        }
+    }
+    device_dispatch_table.GetDataGraphPipelineSessionMemoryRequirementsARM(
+        device, (const VkDataGraphPipelineSessionMemoryRequirementsInfoARM*)local_pInfo, pMemoryRequirements);
+}
+
+VkResult Device::BindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                       const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
+    if (!wrap_handles) return device_dispatch_table.BindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos);
+    small_vector<vku::safe_VkBindDataGraphPipelineSessionMemoryInfoARM, DISPATCH_MAX_STACK_ALLOCATIONS> var_local_pBindInfos;
+    vku::safe_VkBindDataGraphPipelineSessionMemoryInfoARM* local_pBindInfos = nullptr;
+    {
+        if (pBindInfos) {
+            var_local_pBindInfos.resize(bindInfoCount);
+            local_pBindInfos = var_local_pBindInfos.data();
+            for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+                local_pBindInfos[index0].initialize(&pBindInfos[index0]);
+
+                if (pBindInfos[index0].session) {
+                    local_pBindInfos[index0].session = Unwrap(pBindInfos[index0].session);
+                }
+                if (pBindInfos[index0].memory) {
+                    local_pBindInfos[index0].memory = Unwrap(pBindInfos[index0].memory);
+                }
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.BindDataGraphPipelineSessionMemoryARM(
+        device, bindInfoCount, (const VkBindDataGraphPipelineSessionMemoryInfoARM*)local_pBindInfos);
+
+    return result;
+}
+
+void Device::DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                const VkAllocationCallbacks* pAllocator) {
+    if (!wrap_handles) return device_dispatch_table.DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
+    session = Erase(session);
+    device_dispatch_table.DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
+}
+
+void Device::CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                     const VkDataGraphPipelineDispatchInfoARM* pInfo) {
+    if (!wrap_handles) return device_dispatch_table.CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
+    { session = Unwrap(session); }
+    device_dispatch_table.CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
+}
+
+VkResult Device::GetDataGraphPipelineAvailablePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                            uint32_t* pPropertiesCount,
+                                                            VkDataGraphPipelinePropertyARM* pProperties) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount,
+                                                                                pProperties);
+    vku::safe_VkDataGraphPipelineInfoARM var_local_pPipelineInfo;
+    vku::safe_VkDataGraphPipelineInfoARM* local_pPipelineInfo = nullptr;
+    {
+        if (pPipelineInfo) {
+            local_pPipelineInfo = &var_local_pPipelineInfo;
+            local_pPipelineInfo->initialize(pPipelineInfo);
+
+            if (pPipelineInfo->dataGraphPipeline) {
+                local_pPipelineInfo->dataGraphPipeline = Unwrap(pPipelineInfo->dataGraphPipeline);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetDataGraphPipelineAvailablePropertiesARM(
+        device, (const VkDataGraphPipelineInfoARM*)local_pPipelineInfo, pPropertiesCount, pProperties);
+
+    return result;
+}
+
+VkResult Device::GetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                   uint32_t propertiesCount,
+                                                   VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
+    if (!wrap_handles)
+        return device_dispatch_table.GetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties);
+    vku::safe_VkDataGraphPipelineInfoARM var_local_pPipelineInfo;
+    vku::safe_VkDataGraphPipelineInfoARM* local_pPipelineInfo = nullptr;
+    {
+        if (pPipelineInfo) {
+            local_pPipelineInfo = &var_local_pPipelineInfo;
+            local_pPipelineInfo->initialize(pPipelineInfo);
+
+            if (pPipelineInfo->dataGraphPipeline) {
+                local_pPipelineInfo->dataGraphPipeline = Unwrap(pPipelineInfo->dataGraphPipeline);
+            }
+        }
+    }
+    VkResult result = device_dispatch_table.GetDataGraphPipelinePropertiesARM(
+        device, (const VkDataGraphPipelineInfoARM*)local_pPipelineInfo, propertiesCount, pProperties);
+
+    return result;
+}
+
+VkResult Instance::GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
+    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
+    VkResult result = instance_dispatch_table.GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties);
+
+    return result;
+}
+
+void Instance::GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice physicalDevice,
+    const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {
+    instance_dispatch_table.GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+        physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
 }
 
 void Device::CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {

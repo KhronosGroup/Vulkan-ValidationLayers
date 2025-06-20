@@ -115,7 +115,12 @@ class CommandValidationOutputGenerator(BaseGenerator):
             queue_flags.extend(["VK_QUEUE_VIDEO_DECODE_BIT_KHR"] if Queues.DECODE & command.queues else [])
             queue_flags.extend(["VK_QUEUE_VIDEO_ENCODE_BIT_KHR"] if Queues.ENCODE & command.queues else [])
             queue_flags.extend(["VK_QUEUE_OPTICAL_FLOW_BIT_NV"] if Queues.OPTICAL_FLOW & command.queues else [])
+            # TODO: queue_flags.extend(["VK_QUEUE_DATA_GRAPH_BIT_ARM"] if Queues.DATA_GRAPH & command.queues else [])
             queue_flags = ' | '.join(queue_flags)
+
+            if not queue_flags:
+                print('Warning: No queue flags found for command', command.name)
+                queue_flags = '0'
 
             vuid = getVUID(self.valid_vuids, f'VUID-{alias_name}-commandBuffer-cmdpool')
             out.append(f'    {queue_flags}, {vuid},\n')

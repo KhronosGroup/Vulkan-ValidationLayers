@@ -4234,6 +4234,87 @@ static inline void DispatchQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBa
     dispatch->QueueNotifyOutOfBandNV(queue, pQueueTypeInfo);
 }
 
+static inline VkResult DispatchCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                 pAllocator, pPipelines);
+}
+
+static inline VkResult DispatchCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                                 const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 VkDataGraphPipelineSessionARM* pSession) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->CreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession);
+}
+
+static inline VkResult DispatchGetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDataGraphPipelineSessionBindPointRequirementsARM(device, pInfo, pBindPointRequirementCount,
+                                                                         pBindPointRequirements);
+}
+
+static inline void DispatchGetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->GetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+}
+
+static inline VkResult DispatchBindDataGraphPipelineSessionMemoryARM(
+    VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->BindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos);
+}
+
+static inline void DispatchDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                              const VkAllocationCallbacks* pAllocator) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    dispatch->DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
+}
+
+static inline void DispatchCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                                   const VkDataGraphPipelineDispatchInfoARM* pInfo) {
+    auto dispatch = vvl::dispatch::GetData(commandBuffer);
+    dispatch->CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
+}
+
+static inline VkResult DispatchGetDataGraphPipelineAvailablePropertiesARM(VkDevice device,
+                                                                          const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                          uint32_t* pPropertiesCount,
+                                                                          VkDataGraphPipelinePropertyARM* pProperties) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount, pProperties);
+}
+
+static inline VkResult DispatchGetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                 uint32_t propertiesCount,
+                                                                 VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
+    auto dispatch = vvl::dispatch::GetData(device);
+    return dispatch->GetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties);
+}
+
+static inline VkResult DispatchGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
+    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    return dispatch->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+        physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties);
+}
+
+static inline void DispatchGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice physicalDevice,
+    const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {
+    auto dispatch = vvl::dispatch::GetData(physicalDevice);
+    dispatch->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+        physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
+}
+
 static inline void DispatchCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     auto dispatch = vvl::dispatch::GetData(commandBuffer);
     dispatch->CmdSetAttachmentFeedbackLoopEnableEXT(commandBuffer, aspectMask);

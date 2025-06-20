@@ -146,6 +146,16 @@ struct DeviceFeatures {
     bool customBorderColorWithoutFormat;
     // VkPhysicalDeviceCustomBorderColorFeaturesEXT
     bool customBorderColors;
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    bool dataGraph;
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    bool dataGraphDescriptorBuffer;
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    bool dataGraphShaderModule;
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    bool dataGraphSpecializationConstants;
+    // VkPhysicalDeviceDataGraphFeaturesARM
+    bool dataGraphUpdateAfterBind;
     // VkPhysicalDeviceDedicatedAllocationImageAliasingFeaturesNV
     bool dedicatedAllocationImageAliasing;
     // VkPhysicalDeviceDepthBiasControlFeaturesEXT

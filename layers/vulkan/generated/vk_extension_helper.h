@@ -487,6 +487,7 @@ struct DeviceExtensions : public InstanceExtensions {
     ExtEnabled vk_ext_pipeline_library_group_handles{kNotEnabled};
     ExtEnabled vk_ext_dynamic_rendering_unused_attachments{kNotEnabled};
     ExtEnabled vk_nv_low_latency2{kNotEnabled};
+    ExtEnabled vk_arm_data_graph{kNotEnabled};
     ExtEnabled vk_qcom_multiview_per_view_render_areas{kNotEnabled};
     ExtEnabled vk_nv_per_stage_descriptor_set{kNotEnabled};
     ExtEnabled vk_qcom_image_processing2{kNotEnabled};
@@ -939,6 +940,7 @@ constexpr bool IsDeviceExtension(vvl::Extension extension) {
         case vvl::Extension::_VK_EXT_pipeline_library_group_handles:
         case vvl::Extension::_VK_EXT_dynamic_rendering_unused_attachments:
         case vvl::Extension::_VK_NV_low_latency2:
+        case vvl::Extension::_VK_ARM_data_graph:
         case vvl::Extension::_VK_QCOM_multiview_per_view_render_areas:
         case vvl::Extension::_VK_NV_per_stage_descriptor_set:
         case vvl::Extension::_VK_QCOM_image_processing2:
