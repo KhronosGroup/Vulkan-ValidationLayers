@@ -1879,3 +1879,67 @@ TEST_F(PositiveRayTracing, BuildIndirectWithoutIndexBuffer) {
     out_build_info.BuildCmdBufferIndirect(m_command_buffer);
     m_command_buffer.End();
 }
+
+TEST_F(PositiveRayTracing, MultipleGeometries) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+
+    AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
+    AddRequiredFeature(vkt::Feature::accelerationStructure);
+    AddRequiredFeature(vkt::Feature::rayQuery);
+    RETURN_IF_SKIP(InitFrameworkForRayTracingTest());
+    RETURN_IF_SKIP(InitState());
+
+    m_command_buffer.Begin();
+    auto blas = vkt::as::blueprint::BuildGeometryInfoSimpleOnDeviceBottomLevel(*m_device);
+    blas.AddFlags(VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR);
+    std::vector<vkt::as::GeometryKHR> geometries;
+    geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 1));
+    geometries.emplace_back(vkt::as::blueprint::GeometrySimpleOnDeviceIndexedTriangleInfo(*m_device, 2));
+    geometries[0].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+    geometries[1].SetTrianglesIndexType(VK_INDEX_TYPE_NONE_KHR);
+    geometries[0].SetTrianglesMaxVertex(5);
+    geometries[1].SetTrianglesMaxVertex(5);
+    blas.SetGeometries(std::move(geometries));
+    auto build_range_infos = blas.GetBuildRangeInfosFromGeometries();
+    blas.SetBuildRanges(build_range_infos);
+
+    blas.SetupBuild(true);
+    std::vector<const VkAccelerationStructureGeometryKHR*> pGeometries;
+    pGeometries.resize(2);
+
+    std::vector<const VkAccelerationStructureBuildRangeInfoKHR*> pRange_infos(1);
+    VkAccelerationStructureBuildRangeInfoKHR range_infos[2];
+    range_infos[0].primitiveCount = 1u;
+    range_infos[0].primitiveOffset = 0u;
+    range_infos[0].firstVertex = 0u;
+    range_infos[0].transformOffset = 0u;
+    range_infos[1].primitiveCount = 1u;
+    range_infos[1].primitiveOffset = 0u;
+    range_infos[1].firstVertex = 0u;
+    range_infos[1].transformOffset = 0u;
+    pRange_infos[0] = range_infos;
+    for (size_t i = 0; i < 2; ++i) {
+        const auto& geometry = blas.GetGeometries()[i];
+        pGeometries[i] = &geometry.GetVkObj();
+    }
+
+    // Need bigger scratch buffer since there are more geometries to build
+    auto scratch_buffer = std::make_shared<vkt::Buffer>(
+        *m_device, 4 * 1024 * 1024, VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+        vkt::device_address);
+    blas.SetScratchBuffer(scratch_buffer);
+    blas.GetInfo().scratchData.deviceAddress = scratch_buffer->Address();
+
+    VkAccelerationStructureBuildGeometryInfoKHR vk_info = vku::InitStructHelper();
+    vk_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+    vk_info.dstAccelerationStructure = *blas.GetDstAS();
+    vk_info.geometryCount = 2u;
+    vk_info.ppGeometries = pGeometries.data();
+    vk_info.scratchData = blas.GetInfo().scratchData;
+
+    // Build acceleration structure
+    const VkAccelerationStructureBuildGeometryInfoKHR* pInfos = &vk_info;
+    const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos = pRange_infos.data();
+    vk::CmdBuildAccelerationStructuresKHR(m_command_buffer.handle(), 1u, pInfos, ppBuildRangeInfos);
+    m_command_buffer.End();
+}
