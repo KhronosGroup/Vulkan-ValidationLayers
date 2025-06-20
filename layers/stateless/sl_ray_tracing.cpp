@@ -1230,7 +1230,7 @@ bool Device::manual_PreCallValidateCmdBuildAccelerationStructuresKHR(
                                          as_geometry.geometry.triangles.transformData.deviceAddress);
                     }
 
-                    if (as_geometry.geometry.triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
+                    if (geom_i < infoCount && as_geometry.geometry.triangles.indexType == VK_INDEX_TYPE_NONE_KHR) {
                         for (const auto [build_range_i, build_range] :
                              vvl::enumerate(ppBuildRangeInfos[geom_i], info.geometryCount)) {
                             const uint64_t build_range_max_vertex =
