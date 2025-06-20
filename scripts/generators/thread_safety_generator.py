@@ -19,7 +19,7 @@
 # limitations under the License.
 
 import os
-from vulkan_object import Command, Param
+from vulkan_object import Command, Param, ExternSync
 from base_generator import BaseGenerator
 from generators.generator_utils import PlatformGuardHelper
 
@@ -164,7 +164,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         member = str(member).replace(".", "->")
                         suffix = 'ParentInstance' if 'surface' in member else ''
                         out.append(f'    {prefix}WriteObject{suffix}({member}, record_obj.location);\n')
-            elif param.externSync:
+            elif param.externSync is ExternSync.ALWAYS:
                 if param.length:
                     out.append(f'''
                         if ({param.name}) {{
@@ -232,7 +232,7 @@ class ThreadSafetyOutputGenerator(BaseGenerator):
                         out.append(f'{prefix}ReadObject{parent_instance}({param.name}, record_obj.location);\n')
 
 
-        for param in [x for x in command.params if x.externSync]:
+        for param in [x for x in command.params if x.externSync is ExternSync.ALWAYS]:
             out.append('// Host access to ')
             if param.externSyncPointer:
                 out.append(",".join(param.externSyncPointer))

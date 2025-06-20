@@ -1615,6 +1615,16 @@ void GetEnabledDeviceFeatures(const VkDeviceCreateInfo *pCreateInfo, DeviceFeatu
                 features->dynamicRenderingUnusedAttachments |= enabled->dynamicRenderingUnusedAttachments == VK_TRUE;
                 break;
             }
+            case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM: {
+                const VkPhysicalDeviceDataGraphFeaturesARM *enabled =
+                    reinterpret_cast<const VkPhysicalDeviceDataGraphFeaturesARM *>(pNext);
+                features->dataGraph |= enabled->dataGraph == VK_TRUE;
+                features->dataGraphUpdateAfterBind |= enabled->dataGraphUpdateAfterBind == VK_TRUE;
+                features->dataGraphSpecializationConstants |= enabled->dataGraphSpecializationConstants == VK_TRUE;
+                features->dataGraphDescriptorBuffer |= enabled->dataGraphDescriptorBuffer == VK_TRUE;
+                features->dataGraphShaderModule |= enabled->dataGraphShaderModule == VK_TRUE;
+                break;
+            }
             case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_RENDER_AREAS_FEATURES_QCOM: {
                 const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *enabled =
                     reinterpret_cast<const VkPhysicalDeviceMultiviewPerViewRenderAreasFeaturesQCOM *>(pNext);

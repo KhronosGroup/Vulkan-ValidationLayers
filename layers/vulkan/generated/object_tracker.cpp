@@ -90,6 +90,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
     skip |= ReportLeakedObjects(kVulkanObjectTypeTensorViewARM, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeOpticalFlowSessionNV, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeShaderEXT, error_code, loc);
+    skip |= ReportLeakedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, error_code, loc);
     skip |= ReportLeakedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, error_code, loc);
     return skip;
@@ -150,6 +151,7 @@ void Device::DestroyLeakedObjects() {
     DestroyUndestroyedObjects(kVulkanObjectTypeTensorViewARM, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeOpticalFlowSessionNV, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeShaderEXT, loc);
+    DestroyUndestroyedObjects(kVulkanObjectTypeDataGraphPipelineSessionARM, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectExecutionSetEXT, loc);
     DestroyUndestroyedObjects(kVulkanObjectTypeIndirectCommandsLayoutEXT, loc);
 }
@@ -7880,6 +7882,208 @@ bool Device::PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR 
 
 // vkQueueNotifyOutOfBandNV:
 // Checked by chassis: queue: "VUID-vkQueueNotifyOutOfBandNV-queue-parameter"
+
+bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                        VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                        const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateDataGraphPipelinesARM-device-parameter"
+    skip |=
+        ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true,
+                       "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parameter",
+                       "UNASSIGNED-vkCreateDataGraphPipelinesARM-commonparent", error_obj.location.dot(Field::deferredOperation));
+    skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true,
+                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parameter",
+                           "UNASSIGNED-vkCreateDataGraphPipelinesARM-commonparent", error_obj.location.dot(Field::pipelineCache));
+    if (pCreateInfos) {
+        for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
+            skip |= ValidateObject(pCreateInfos[index0].layout, kVulkanObjectTypePipelineLayout, false,
+                                   "VUID-VkDataGraphPipelineCreateInfoARM-layout-parameter",
+                                   "UNASSIGNED-VkDataGraphPipelineCreateInfoARM-layout-parent", index0_loc.dot(Field::layout));
+            if ([[maybe_unused]] auto pNext =
+                    vku::FindStructInPNextChain<VkDataGraphPipelineShaderModuleCreateInfoARM>(pCreateInfos[index0].pNext)) {
+                [[maybe_unused]] const Location pNext_loc = index0_loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM);
+                skip |= ValidateObject(pNext->module, kVulkanObjectTypeShaderModule, true,
+                                       "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-module-parameter",
+                                       "UNASSIGNED-VkDataGraphPipelineShaderModuleCreateInfoARM-module-parent",
+                                       pNext_loc.dot(Field::module));
+            }
+        }
+    }
+
+    return skip;
+}
+
+void Device::PostCallRecordCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                       VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                       const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                       const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                       const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    if (pPipelines) {
+        for (uint32_t index = 0; index < createInfoCount; index++) {
+            tracker.CreateObject(pPipelines[index], kVulkanObjectTypePipeline, pAllocator,
+                                 record_obj.location.dot(Field::pPipelines, index), device);
+        }
+    }
+}
+
+bool Device::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                              const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkDataGraphPipelineSessionARM* pSession,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkCreateDataGraphPipelineSessionARM-device-parameter"
+    if (pCreateInfo) {
+        [[maybe_unused]] const Location pCreateInfo_loc = error_obj.location.dot(Field::pCreateInfo);
+        skip |= ValidateObject(pCreateInfo->dataGraphPipeline, kVulkanObjectTypePipeline, false,
+                               "VUID-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-parameter",
+                               "UNASSIGNED-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-parent",
+                               pCreateInfo_loc.dot(Field::dataGraphPipeline));
+    }
+
+    return skip;
+}
+
+void Device::PostCallRecordCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                             const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             VkDataGraphPipelineSessionARM* pSession,
+                                                             const RecordObject& record_obj) {
+    if (record_obj.result < VK_SUCCESS) return;
+    tracker.CreateObject(*pSession, kVulkanObjectTypeDataGraphPipelineSessionARM, pAllocator, record_obj.location, device);
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements, const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                               "VUID-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-session-parameter",
+                               "UNASSIGNED-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-session-parent",
+                               pInfo_loc.dot(Field::session));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-device-parameter"
+    if (pInfo) {
+        [[maybe_unused]] const Location pInfo_loc = error_obj.location.dot(Field::pInfo);
+        skip |= ValidateObject(pInfo->session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                               "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parameter",
+                               "UNASSIGNED-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parent",
+                               pInfo_loc.dot(Field::session));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                                  const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkBindDataGraphPipelineSessionMemoryARM-device-parameter"
+    if (pBindInfos) {
+        for (uint32_t index0 = 0; index0 < bindInfoCount; ++index0) {
+            [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pBindInfos, index0);
+            skip |= ValidateObject(pBindInfos[index0].session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                                   "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-session-parameter",
+                                   "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-commonparent", index0_loc.dot(Field::session));
+            skip |= ValidateObject(pBindInfos[index0].memory, kVulkanObjectTypeDeviceMemory, false,
+                                   "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-memory-parameter",
+                                   "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-commonparent", index0_loc.dot(Field::memory));
+        }
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkDestroyDataGraphPipelineSessionARM-device-parameter"
+    skip |= ValidateObject(session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                           "VUID-vkDestroyDataGraphPipelineSessionARM-session-parameter",
+                           "VUID-vkDestroyDataGraphPipelineSessionARM-session-parent", error_obj.location.dot(Field::session));
+    skip |= ValidateDestroyObject(session, kVulkanObjectTypeDataGraphPipelineSessionARM, pAllocator, kVUIDUndefined, kVUIDUndefined,
+                                  error_obj.location);
+
+    return skip;
+}
+
+void Device::PreCallRecordDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                             const VkAllocationCallbacks* pAllocator,
+                                                             const RecordObject& record_obj) {
+    RecordDestroyObject(session, kVulkanObjectTypeDataGraphPipelineSessionARM, record_obj.location);
+}
+
+bool Device::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                                    const VkDataGraphPipelineDispatchInfoARM* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchDataGraphARM-commandBuffer-parameter"
+    // Checked by chassis: commandBuffer: "VUID-vkCmdDispatchDataGraphARM-commonparent"
+    skip |= ValidateObject(session, kVulkanObjectTypeDataGraphPipelineSessionARM, false,
+                           "VUID-vkCmdDispatchDataGraphARM-session-parameter", "VUID-vkCmdDispatchDataGraphARM-commonparent",
+                           error_obj.location.dot(Field::session));
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineAvailablePropertiesARM(VkDevice device,
+                                                                       const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                       uint32_t* pPropertiesCount,
+                                                                       VkDataGraphPipelinePropertyARM* pProperties,
+                                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetDataGraphPipelineAvailablePropertiesARM-device-parameter"
+    if (pPipelineInfo) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
+        skip |= ValidateObject(pPipelineInfo->dataGraphPipeline, kVulkanObjectTypePipeline, false,
+                               "VUID-VkDataGraphPipelineInfoARM-dataGraphPipeline-parameter",
+                               "UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent",
+                               pPipelineInfo_loc.dot(Field::dataGraphPipeline));
+    }
+
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                              uint32_t propertiesCount,
+                                                              VkDataGraphPipelinePropertyQueryResultARM* pProperties,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    // Checked by chassis: device: "VUID-vkGetDataGraphPipelinePropertiesARM-device-parameter"
+    if (pPipelineInfo) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = error_obj.location.dot(Field::pPipelineInfo);
+        skip |= ValidateObject(pPipelineInfo->dataGraphPipeline, kVulkanObjectTypePipeline, false,
+                               "VUID-VkDataGraphPipelineInfoARM-dataGraphPipeline-parameter",
+                               "UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent",
+                               pPipelineInfo_loc.dot(Field::dataGraphPipeline));
+    }
+
+    return skip;
+}
+
+// vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM:
+// Checked by chassis: physicalDevice: "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM-physicalDevice-parameter"
+
+// vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM:
+// Checked by chassis: physicalDevice:
+// "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM-physicalDevice-parameter"
 
 // vkCmdSetAttachmentFeedbackLoopEnableEXT:
 // Checked by chassis: commandBuffer: "VUID-vkCmdSetAttachmentFeedbackLoopEnableEXT-commandBuffer-parameter"

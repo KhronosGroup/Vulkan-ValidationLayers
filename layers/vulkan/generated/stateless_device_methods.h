@@ -1463,6 +1463,38 @@ bool PreCallValidateGetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchai
                                         const ErrorObject& error_obj) const override;
 bool PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo,
                                            const ErrorObject& error_obj) const override;
+bool PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                const ErrorObject& error_obj) const override;
+bool PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                      const VkAllocationCallbacks* pAllocator,
+                                                      VkDataGraphPipelineSessionARM* pSession,
+                                                      const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements, const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements,
+    const ErrorObject& error_obj) const override;
+bool PreCallValidateBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                          const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                          const ErrorObject& error_obj) const override;
+bool PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                       const VkAllocationCallbacks* pAllocator,
+                                                       const ErrorObject& error_obj) const override;
+bool PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                            const VkDataGraphPipelineDispatchInfoARM* pInfo,
+                                            const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDataGraphPipelineAvailablePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                               uint32_t* pPropertiesCount,
+                                                               VkDataGraphPipelinePropertyARM* pProperties,
+                                                               const ErrorObject& error_obj) const override;
+bool PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                      uint32_t propertiesCount,
+                                                      VkDataGraphPipelinePropertyQueryResultARM* pProperties,
+                                                      const ErrorObject& error_obj) const override;
 bool PreCallValidateCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask,
                                                           const ErrorObject& error_obj) const override;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX

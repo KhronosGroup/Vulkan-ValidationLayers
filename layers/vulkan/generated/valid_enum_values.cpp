@@ -184,6 +184,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkObjectType value) const {
             return IsExtEnabled(extensions.vk_ext_shader_object) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return IsExtEnabled(extensions.vk_khr_pipeline_binary) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
             return IsExtEnabled(extensions.vk_nv_external_compute_queue) ? ValidValue::Valid : ValidValue::NoExtension;
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
@@ -1030,6 +1032,8 @@ ValidValue stateless::Context::IsValidEnumValue(VkPipelineBindPoint value) const
                        : ValidValue::NoExtension;
         case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
             return IsExtEnabled(extensions.vk_huawei_subpass_shading) ? ValidValue::Valid : ValidValue::NoExtension;
+        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
+            return IsExtEnabled(extensions.vk_arm_data_graph) ? ValidValue::Valid : ValidValue::NoExtension;
         default:
             return ValidValue::NotFound;
     };
@@ -2118,6 +2122,57 @@ ValidValue stateless::Context::IsValidEnumValue(VkOutOfBandQueueTypeNV value) co
 }
 
 template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineSessionBindPointARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TRANSIENT_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelineSessionBindPointTypeARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_TYPE_MEMORY_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkDataGraphPipelinePropertyARM value) const {
+    switch (value) {
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_CREATION_LOG_ARM:
+        case VK_DATA_GRAPH_PIPELINE_PROPERTY_IDENTIFIER_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPhysicalDeviceDataGraphProcessingEngineTypeARM value) const {
+    switch (value) {
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_PROCESSING_ENGINE_TYPE_DEFAULT_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
+ValidValue stateless::Context::IsValidEnumValue(VkPhysicalDeviceDataGraphOperationTypeARM value) const {
+    switch (value) {
+        case VK_PHYSICAL_DEVICE_DATA_GRAPH_OPERATION_TYPE_SPIRV_EXTENDED_INSTRUCTION_SET_ARM:
+            return ValidValue::Valid;
+        default:
+            return ValidValue::NotFound;
+    };
+}
+
+template <>
 ValidValue stateless::Context::IsValidEnumValue(VkBlockMatchWindowCompareModeQCOM value) const {
     switch (value) {
         case VK_BLOCK_MATCH_WINDOW_COMPARE_MODE_MIN_QCOM:
@@ -2174,6 +2229,7 @@ ValidValue stateless::Context::IsValidEnumValue(VkClusterAccelerationStructureOp
         case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_NV:
         case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_BUILD_TRIANGLE_CLUSTER_TEMPLATE_NV:
         case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_INSTANTIATE_TRIANGLE_CLUSTER_NV:
+        case VK_CLUSTER_ACCELERATION_STRUCTURE_OP_TYPE_GET_CLUSTER_TEMPLATE_INDICES_NV:
             return ValidValue::Valid;
         default:
             return ValidValue::NotFound;
@@ -2378,6 +2434,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkObjectType value) const 
             return {vvl::Extension::_VK_EXT_shader_object};
         case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
             return {vvl::Extension::_VK_KHR_pipeline_binary};
+        case VK_OBJECT_TYPE_DATA_GRAPH_PIPELINE_SESSION_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph};
         case VK_OBJECT_TYPE_EXTERNAL_COMPUTE_QUEUE_NV:
             return {vvl::Extension::_VK_NV_external_compute_queue};
         case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
@@ -2924,6 +2982,8 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkPipelineBindPoint value)
             return {vvl::Extension::_VK_NV_ray_tracing, vvl::Extension::_VK_KHR_ray_tracing_pipeline};
         case VK_PIPELINE_BIND_POINT_SUBPASS_SHADING_HUAWEI:
             return {vvl::Extension::_VK_HUAWEI_subpass_shading};
+        case VK_PIPELINE_BIND_POINT_DATA_GRAPH_ARM:
+            return {vvl::Extension::_VK_ARM_data_graph};
         default:
             return {};
     };
@@ -3730,6 +3790,51 @@ vvl::Extensions stateless::Context::GetEnumExtensions(VkOutOfBandQueueTypeNV val
 }
 template <>
 const char* stateless::Context::DescribeEnum(VkOutOfBandQueueTypeNV value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineSessionBindPointARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphPipelineSessionBindPointARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelineSessionBindPointTypeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphPipelineSessionBindPointTypeARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkDataGraphPipelinePropertyARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkDataGraphPipelinePropertyARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPhysicalDeviceDataGraphProcessingEngineTypeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPhysicalDeviceDataGraphProcessingEngineTypeARM value) const {
+    return nullptr;
+}
+
+template <>
+vvl::Extensions stateless::Context::GetEnumExtensions(VkPhysicalDeviceDataGraphOperationTypeARM value) const {
+    return {};
+}
+template <>
+const char* stateless::Context::DescribeEnum(VkPhysicalDeviceDataGraphOperationTypeARM value) const {
     return nullptr;
 }
 

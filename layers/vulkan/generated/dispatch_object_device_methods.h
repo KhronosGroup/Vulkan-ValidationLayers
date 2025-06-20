@@ -924,6 +924,27 @@ VkResult LatencySleepNV(VkDevice device, VkSwapchainKHR swapchain, const VkLaten
 void SetLatencyMarkerNV(VkDevice device, VkSwapchainKHR swapchain, const VkSetLatencyMarkerInfoNV* pLatencyMarkerInfo);
 void GetLatencyTimingsNV(VkDevice device, VkSwapchainKHR swapchain, VkGetLatencyMarkerInfoNV* pLatencyMarkerInfo);
 void QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBandQueueTypeInfoNV* pQueueTypeInfo);
+VkResult CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache,
+                                     uint32_t createInfoCount, const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                     const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines);
+VkResult CreateDataGraphPipelineSessionARM(VkDevice device, const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                           const VkAllocationCallbacks* pAllocator, VkDataGraphPipelineSessionARM* pSession);
+VkResult GetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements);
+void GetDataGraphPipelineSessionMemoryRequirementsARM(VkDevice device,
+                                                      const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo,
+                                                      VkMemoryRequirements2* pMemoryRequirements);
+VkResult BindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                               const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos);
+void DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                        const VkAllocationCallbacks* pAllocator);
+void CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                             const VkDataGraphPipelineDispatchInfoARM* pInfo);
+VkResult GetDataGraphPipelineAvailablePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                    uint32_t* pPropertiesCount, VkDataGraphPipelinePropertyARM* pProperties);
+VkResult GetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                           uint32_t propertiesCount, VkDataGraphPipelinePropertyQueryResultARM* pProperties);
 void CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask);
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 VkResult GetScreenBufferPropertiesQNX(VkDevice device, const struct _screen_buffer* buffer,

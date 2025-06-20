@@ -31663,6 +31663,563 @@ VKAPI_ATTR void VKAPI_CALL QueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfBa
     }
 }
 
+VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                           VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                           const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                           const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateDataGraphPipelinesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateDataGraphPipelinesARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateDataGraphPipelinesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                                   pCreateInfos, pAllocator, pPipelines, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateDataGraphPipelinesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateDataGraphPipelinesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCreateDataGraphPipelinesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                         pAllocator, pPipelines, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateDataGraphPipelinesARM");
+        result = device_dispatch->CreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount,
+                                                              pCreateInfos, pAllocator, pPipelines);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateDataGraphPipelinesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDataGraphPipelinesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCreateDataGraphPipelinesARM(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos,
+                                                          pAllocator, pPipelines, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL CreateDataGraphPipelineSessionARM(VkDevice device,
+                                                                 const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                                 const VkAllocationCallbacks* pAllocator,
+                                                                 VkDataGraphPipelineSessionARM* pSession) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCreateDataGraphPipelineSessionARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCreateDataGraphPipelineSessionARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCreateDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCreateDataGraphPipelineSessionARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCreateDataGraphPipelineSessionARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCreateDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkCreateDataGraphPipelineSessionARM");
+        result = device_dispatch->CreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCreateDataGraphPipelineSessionARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCreateDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCreateDataGraphPipelineSessionARM(device, pCreateInfo, pAllocator, pSession, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineSessionBindPointRequirementsARM,
+                          VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDataGraphPipelineSessionBindPointRequirementsARM");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM(
+                device, pInfo, pBindPointRequirementCount, pBindPointRequirements, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDataGraphPipelineSessionBindPointRequirementsARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDataGraphPipelineSessionBindPointRequirementsARM");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDataGraphPipelineSessionBindPointRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDataGraphPipelineSessionBindPointRequirementsARM(device, pInfo, pBindPointRequirementCount,
+                                                                                 pBindPointRequirements, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDataGraphPipelineSessionBindPointRequirementsARM");
+        result = device_dispatch->GetDataGraphPipelineSessionBindPointRequirementsARM(device, pInfo, pBindPointRequirementCount,
+                                                                                      pBindPointRequirements);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDataGraphPipelineSessionBindPointRequirementsARM");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDataGraphPipelineSessionBindPointRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDataGraphPipelineSessionBindPointRequirementsARM(device, pInfo, pBindPointRequirementCount,
+                                                                                  pBindPointRequirements, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL GetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineSessionMemoryRequirementsARM,
+                          VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDataGraphPipelineSessionMemoryRequirementsARM");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |=
+                vo->PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDataGraphPipelineSessionMemoryRequirementsARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDataGraphPipelineSessionMemoryRequirementsARM");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDataGraphPipelineSessionMemoryRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDataGraphPipelineSessionMemoryRequirementsARM");
+        device_dispatch->GetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDataGraphPipelineSessionMemoryRequirementsARM");
+        for (auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDataGraphPipelineSessionMemoryRequirementsARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDataGraphPipelineSessionMemoryRequirementsARM(device, pInfo, pMemoryRequirements, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL BindDataGraphPipelineSessionMemoryARM(
+    VkDevice device, uint32_t bindInfoCount, const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkBindDataGraphPipelineSessionMemoryARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkBindDataGraphPipelineSessionMemoryARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateBindDataGraphPipelineSessionMemoryARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateBindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkBindDataGraphPipelineSessionMemoryARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkBindDataGraphPipelineSessionMemoryARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordBindDataGraphPipelineSessionMemoryARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordBindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkBindDataGraphPipelineSessionMemoryARM");
+        result = device_dispatch->BindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkBindDataGraphPipelineSessionMemoryARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordBindDataGraphPipelineSessionMemoryARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordBindDataGraphPipelineSessionMemoryARM(device, bindInfoCount, pBindInfos, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL DestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                              const VkAllocationCallbacks* pAllocator) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkDestroyDataGraphPipelineSessionARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkDestroyDataGraphPipelineSessionARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateDestroyDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateDestroyDataGraphPipelineSessionARM(device, session, pAllocator, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkDestroyDataGraphPipelineSessionARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkDestroyDataGraphPipelineSessionARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordDestroyDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordDestroyDataGraphPipelineSessionARM(device, session, pAllocator, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkDestroyDataGraphPipelineSessionARM");
+        device_dispatch->DestroyDataGraphPipelineSessionARM(device, session, pAllocator);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkDestroyDataGraphPipelineSessionARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordDestroyDataGraphPipelineSessionARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordDestroyDataGraphPipelineSessionARM(device, session, pAllocator, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR void VKAPI_CALL CmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                                   const VkDataGraphPipelineDispatchInfoARM* pInfo) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(commandBuffer);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkCmdDispatchDataGraphARM, VulkanTypedHandle(commandBuffer, kVulkanObjectTypeCommandBuffer));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkCmdDispatchDataGraphARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateCmdDispatchDataGraphARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateCmdDispatchDataGraphARM(commandBuffer, session, pInfo, error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkCmdDispatchDataGraphARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkCmdDispatchDataGraphARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordCmdDispatchDataGraphARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordCmdDispatchDataGraphARM(commandBuffer, session, pInfo, record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkCmdDispatchDataGraphARM");
+        device_dispatch->CmdDispatchDataGraphARM(commandBuffer, session, pInfo);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkCmdDispatchDataGraphARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordCmdDispatchDataGraphARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordCmdDispatchDataGraphARM(commandBuffer, session, pInfo, record_obj);
+        }
+    }
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelineAvailablePropertiesARM(VkDevice device,
+                                                                          const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                          uint32_t* pPropertiesCount,
+                                                                          VkDataGraphPipelinePropertyARM* pProperties) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelineAvailablePropertiesARM,
+                          VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDataGraphPipelineAvailablePropertiesARM");
+        for (const auto& vo :
+             device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDataGraphPipelineAvailablePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount,
+                                                                                  pProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDataGraphPipelineAvailablePropertiesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDataGraphPipelineAvailablePropertiesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDataGraphPipelineAvailablePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount, pProperties,
+                                                                        record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDataGraphPipelineAvailablePropertiesARM");
+        result = device_dispatch->GetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount, pProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDataGraphPipelineAvailablePropertiesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDataGraphPipelineAvailablePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDataGraphPipelineAvailablePropertiesARM(device, pPipelineInfo, pPropertiesCount, pProperties,
+                                                                         record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                 uint32_t propertiesCount,
+                                                                 VkDataGraphPipelinePropertyQueryResultARM* pProperties) {
+    VVL_ZoneScoped;
+
+    auto device_dispatch = vvl::dispatch::GetData(device);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetDataGraphPipelinePropertiesARM, VulkanTypedHandle(device, kVulkanObjectTypeDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetDataGraphPipelinePropertiesARM");
+        for (const auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallValidateGetDataGraphPipelinePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->ReadLock();
+            skip |= vo->PreCallValidateGetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties,
+                                                                         error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetDataGraphPipelinePropertiesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetDataGraphPipelinePropertiesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPreCallRecordGetDataGraphPipelinePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PreCallRecordGetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetDataGraphPipelinePropertiesARM");
+        result = device_dispatch->GetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetDataGraphPipelinePropertiesARM");
+        for (auto& vo : device_dispatch->intercept_vectors[InterceptIdPostCallRecordGetDataGraphPipelinePropertiesARM]) {
+            if (!vo) {
+                continue;
+            }
+            auto lock = vo->WriteLock();
+            vo->PostCallRecordGetDataGraphPipelinePropertiesARM(device, pPipelineInfo, propertiesCount, pProperties, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
+    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+                physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties, error_obj);
+            if (skip) return VK_ERROR_VALIDATION_FAILED_EXT;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+                physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties, record_obj);
+        }
+    }
+    VkResult result;
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
+        result = instance_dispatch->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+            physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties);
+    }
+    record_obj.result = result;
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+                physicalDevice, queueFamilyIndex, pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties, record_obj);
+        }
+    }
+    return result;
+}
+
+VKAPI_ATTR void VKAPI_CALL GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice physicalDevice,
+    const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties) {
+    VVL_ZoneScoped;
+
+    auto instance_dispatch = vvl::dispatch::GetData(physicalDevice);
+    bool skip = false;
+    ErrorObject error_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM,
+                          VulkanTypedHandle(physicalDevice, kVulkanObjectTypePhysicalDevice));
+    {
+        VVL_ZoneScopedN("PreCallValidate_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+        for (const auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            skip |= vo->PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+                physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties,
+                error_obj);
+            if (skip) return;
+        }
+    }
+    RecordObject record_obj(vvl::Func::vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM);
+    {
+        VVL_ZoneScopedN("PreCallRecord_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PreCallRecordGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+                physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties,
+                record_obj);
+        }
+    }
+    {
+        VVL_ZoneScopedN("Dispatch_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+        instance_dispatch->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+            physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties);
+    }
+    {
+        VVL_ZoneScopedN("PostCallRecord_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+        for (auto& vo : instance_dispatch->object_dispatch) {
+            if (!vo) {
+                continue;
+            }
+            vo->PostCallRecordGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+                physicalDevice, pQueueFamilyDataGraphProcessingEngineInfo, pQueueFamilyDataGraphProcessingEngineProperties,
+                record_obj);
+        }
+    }
+}
+
 VKAPI_ATTR void VKAPI_CALL CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer, VkImageAspectFlags aspectMask) {
     VVL_ZoneScoped;
 
@@ -34784,6 +35341,21 @@ const vvl::unordered_map<std::string, function_data>& GetNameToFuncPtrMap() {
         {"vkSetLatencyMarkerNV", {kFuncTypeDev, (void*)SetLatencyMarkerNV}},
         {"vkGetLatencyTimingsNV", {kFuncTypeDev, (void*)GetLatencyTimingsNV}},
         {"vkQueueNotifyOutOfBandNV", {kFuncTypeDev, (void*)QueueNotifyOutOfBandNV}},
+        {"vkCreateDataGraphPipelinesARM", {kFuncTypeDev, (void*)CreateDataGraphPipelinesARM}},
+        {"vkCreateDataGraphPipelineSessionARM", {kFuncTypeDev, (void*)CreateDataGraphPipelineSessionARM}},
+        {"vkGetDataGraphPipelineSessionBindPointRequirementsARM",
+         {kFuncTypeDev, (void*)GetDataGraphPipelineSessionBindPointRequirementsARM}},
+        {"vkGetDataGraphPipelineSessionMemoryRequirementsARM",
+         {kFuncTypeDev, (void*)GetDataGraphPipelineSessionMemoryRequirementsARM}},
+        {"vkBindDataGraphPipelineSessionMemoryARM", {kFuncTypeDev, (void*)BindDataGraphPipelineSessionMemoryARM}},
+        {"vkDestroyDataGraphPipelineSessionARM", {kFuncTypeDev, (void*)DestroyDataGraphPipelineSessionARM}},
+        {"vkCmdDispatchDataGraphARM", {kFuncTypeDev, (void*)CmdDispatchDataGraphARM}},
+        {"vkGetDataGraphPipelineAvailablePropertiesARM", {kFuncTypeDev, (void*)GetDataGraphPipelineAvailablePropertiesARM}},
+        {"vkGetDataGraphPipelinePropertiesARM", {kFuncTypeDev, (void*)GetDataGraphPipelinePropertiesARM}},
+        {"vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM",
+         {kFuncTypePdev, (void*)GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM}},
+        {"vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM",
+         {kFuncTypePdev, (void*)GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM}},
         {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {kFuncTypeDev, (void*)CmdSetAttachmentFeedbackLoopEnableEXT}},
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
         {"vkGetScreenBufferPropertiesQNX", {kFuncTypeDev, (void*)GetScreenBufferPropertiesQNX}},

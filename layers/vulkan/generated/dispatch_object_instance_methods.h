@@ -278,6 +278,13 @@ VkResult GetPhysicalDeviceOpticalFlowImageFormatsNV(VkPhysicalDevice physicalDev
                                                     VkOpticalFlowImageFormatPropertiesNV* pImageFormatProperties);
 VkResult GetPhysicalDeviceCooperativeVectorPropertiesNV(VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount,
                                                         VkCooperativeVectorPropertiesNV* pProperties);
+VkResult GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
+                                                            uint32_t* pQueueFamilyDataGraphPropertyCount,
+                                                            VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties);
+void GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice physicalDevice,
+    const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties);
 #ifdef VK_USE_PLATFORM_OHOS
 VkResult CreateSurfaceOHOS(VkInstance instance, const VkSurfaceCreateInfoOHOS* pCreateInfo, const VkAllocationCallbacks* pAllocator,
                            VkSurfaceKHR* pSurface);

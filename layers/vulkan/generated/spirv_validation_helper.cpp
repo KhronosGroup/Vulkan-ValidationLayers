@@ -282,6 +282,8 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayNonUniformIndexing, nullptr, ""}},
         {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
         {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
+        // Not found in current SPIR-V Headers
+        // {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -408,6 +410,7 @@ const std::unordered_multimap<std::string_view, RequiredSpirvInfo>& GetSpirvExte
         {"SPV_QCOM_tile_shading", {0, nullptr, &DeviceExtensions::vk_qcom_tile_shading, ""}},
         {"SPV_ARM_tensors", {0, nullptr, &DeviceExtensions::vk_arm_tensors, ""}},
         {"SPV_EXT_float8", {0, nullptr, &DeviceExtensions::vk_ext_shader_float8, ""}},
+        {"SPV_ARM_graph", {0, nullptr, &DeviceExtensions::vk_arm_data_graph, ""}},
     };
     // clang-format on
     return spirv_extensions;
@@ -1306,6 +1309,7 @@ static inline std::string SpvExtensionRequirements(std::string_view extension) {
     {"SPV_QCOM_tile_shading", {{vvl::Extension::_VK_QCOM_tile_shading}}},
     {"SPV_ARM_tensors", {{vvl::Extension::_VK_ARM_tensors}}},
     {"SPV_EXT_float8", {{vvl::Extension::_VK_EXT_shader_float8}}},
+    {"SPV_ARM_graph", {{vvl::Extension::_VK_ARM_data_graph}}},
     };
 
     // VUs before catch unknown extensions

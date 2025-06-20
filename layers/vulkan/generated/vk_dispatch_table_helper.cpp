@@ -1330,6 +1330,47 @@ static VKAPI_ATTR VkResult VKAPI_CALL StubLatencySleepNV(VkDevice, VkSwapchainKH
 static VKAPI_ATTR void VKAPI_CALL StubSetLatencyMarkerNV(VkDevice, VkSwapchainKHR, const VkSetLatencyMarkerInfoNV*) {}
 static VKAPI_ATTR void VKAPI_CALL StubGetLatencyTimingsNV(VkDevice, VkSwapchainKHR, VkGetLatencyMarkerInfoNV*) {}
 static VKAPI_ATTR void VKAPI_CALL StubQueueNotifyOutOfBandNV(VkQueue, const VkOutOfBandQueueTypeInfoNV*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDataGraphPipelinesARM(VkDevice, VkDeferredOperationKHR, VkPipelineCache, uint32_t,
+                                                                      const VkDataGraphPipelineCreateInfoARM*,
+                                                                      const VkAllocationCallbacks*, VkPipeline*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubCreateDataGraphPipelineSessionARM(VkDevice,
+                                                                            const VkDataGraphPipelineSessionCreateInfoARM*,
+                                                                            const VkAllocationCallbacks*,
+                                                                            VkDataGraphPipelineSessionARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL
+StubGetDataGraphPipelineSessionBindPointRequirementsARM(VkDevice, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM*,
+                                                        uint32_t*, VkDataGraphPipelineSessionBindPointRequirementARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubGetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM*, VkMemoryRequirements2*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL
+StubBindDataGraphPipelineSessionMemoryARM(VkDevice, uint32_t, const VkBindDataGraphPipelineSessionMemoryInfoARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubDestroyDataGraphPipelineSessionARM(VkDevice, VkDataGraphPipelineSessionARM,
+                                                                         const VkAllocationCallbacks*) {}
+static VKAPI_ATTR void VKAPI_CALL StubCmdDispatchDataGraphARM(VkCommandBuffer, VkDataGraphPipelineSessionARM,
+                                                              const VkDataGraphPipelineDispatchInfoARM*) {}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetDataGraphPipelineAvailablePropertiesARM(VkDevice, const VkDataGraphPipelineInfoARM*,
+                                                                                     uint32_t*, VkDataGraphPipelinePropertyARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetDataGraphPipelinePropertiesARM(VkDevice, const VkDataGraphPipelineInfoARM*, uint32_t,
+                                                                            VkDataGraphPipelinePropertyQueryResultARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR VkResult VKAPI_CALL StubGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(VkPhysicalDevice, uint32_t, uint32_t*,
+                                                                                             VkQueueFamilyDataGraphPropertiesARM*) {
+    return VK_SUCCESS;
+}
+static VKAPI_ATTR void VKAPI_CALL StubGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice, const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM*,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM*) {}
 static VKAPI_ATTR void VKAPI_CALL StubCmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer, VkImageAspectFlags) {}
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 static VKAPI_ATTR VkResult VKAPI_CALL StubGetScreenBufferPropertiesQNX(VkDevice, const struct _screen_buffer*,
@@ -1978,6 +2019,15 @@ const auto& GetApiExtensionMap() {
         {"vkSetLatencyMarkerNV", {vvl::Extension::_VK_NV_low_latency2}},
         {"vkGetLatencyTimingsNV", {vvl::Extension::_VK_NV_low_latency2}},
         {"vkQueueNotifyOutOfBandNV", {vvl::Extension::_VK_NV_low_latency2}},
+        {"vkCreateDataGraphPipelinesARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkCreateDataGraphPipelineSessionARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkGetDataGraphPipelineSessionBindPointRequirementsARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkGetDataGraphPipelineSessionMemoryRequirementsARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkBindDataGraphPipelineSessionMemoryARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkDestroyDataGraphPipelineSessionARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkCmdDispatchDataGraphARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkGetDataGraphPipelineAvailablePropertiesARM", {vvl::Extension::_VK_ARM_data_graph}},
+        {"vkGetDataGraphPipelinePropertiesARM", {vvl::Extension::_VK_ARM_data_graph}},
         {"vkCmdSetAttachmentFeedbackLoopEnableEXT", {vvl::Extension::_VK_EXT_attachment_feedback_loop_dynamic_state}},
         {"vkGetScreenBufferPropertiesQNX", {vvl::Extension::_VK_QNX_external_memory_screen_buffer}},
         {"vkCmdBindTileMemoryQCOM", {vvl::Extension::_VK_QCOM_tile_memory_heap}},
@@ -4273,6 +4323,54 @@ void layer_init_device_dispatch_table(VkDevice device, VkLayerDispatchTable* tab
     if (table->QueueNotifyOutOfBandNV == nullptr) {
         table->QueueNotifyOutOfBandNV = (PFN_vkQueueNotifyOutOfBandNV)StubQueueNotifyOutOfBandNV;
     }
+    table->CreateDataGraphPipelinesARM = (PFN_vkCreateDataGraphPipelinesARM)gpa(device, "vkCreateDataGraphPipelinesARM");
+    if (table->CreateDataGraphPipelinesARM == nullptr) {
+        table->CreateDataGraphPipelinesARM = (PFN_vkCreateDataGraphPipelinesARM)StubCreateDataGraphPipelinesARM;
+    }
+    table->CreateDataGraphPipelineSessionARM =
+        (PFN_vkCreateDataGraphPipelineSessionARM)gpa(device, "vkCreateDataGraphPipelineSessionARM");
+    if (table->CreateDataGraphPipelineSessionARM == nullptr) {
+        table->CreateDataGraphPipelineSessionARM = (PFN_vkCreateDataGraphPipelineSessionARM)StubCreateDataGraphPipelineSessionARM;
+    }
+    table->GetDataGraphPipelineSessionBindPointRequirementsARM = (PFN_vkGetDataGraphPipelineSessionBindPointRequirementsARM)gpa(
+        device, "vkGetDataGraphPipelineSessionBindPointRequirementsARM");
+    if (table->GetDataGraphPipelineSessionBindPointRequirementsARM == nullptr) {
+        table->GetDataGraphPipelineSessionBindPointRequirementsARM =
+            (PFN_vkGetDataGraphPipelineSessionBindPointRequirementsARM)StubGetDataGraphPipelineSessionBindPointRequirementsARM;
+    }
+    table->GetDataGraphPipelineSessionMemoryRequirementsARM =
+        (PFN_vkGetDataGraphPipelineSessionMemoryRequirementsARM)gpa(device, "vkGetDataGraphPipelineSessionMemoryRequirementsARM");
+    if (table->GetDataGraphPipelineSessionMemoryRequirementsARM == nullptr) {
+        table->GetDataGraphPipelineSessionMemoryRequirementsARM =
+            (PFN_vkGetDataGraphPipelineSessionMemoryRequirementsARM)StubGetDataGraphPipelineSessionMemoryRequirementsARM;
+    }
+    table->BindDataGraphPipelineSessionMemoryARM =
+        (PFN_vkBindDataGraphPipelineSessionMemoryARM)gpa(device, "vkBindDataGraphPipelineSessionMemoryARM");
+    if (table->BindDataGraphPipelineSessionMemoryARM == nullptr) {
+        table->BindDataGraphPipelineSessionMemoryARM =
+            (PFN_vkBindDataGraphPipelineSessionMemoryARM)StubBindDataGraphPipelineSessionMemoryARM;
+    }
+    table->DestroyDataGraphPipelineSessionARM =
+        (PFN_vkDestroyDataGraphPipelineSessionARM)gpa(device, "vkDestroyDataGraphPipelineSessionARM");
+    if (table->DestroyDataGraphPipelineSessionARM == nullptr) {
+        table->DestroyDataGraphPipelineSessionARM =
+            (PFN_vkDestroyDataGraphPipelineSessionARM)StubDestroyDataGraphPipelineSessionARM;
+    }
+    table->CmdDispatchDataGraphARM = (PFN_vkCmdDispatchDataGraphARM)gpa(device, "vkCmdDispatchDataGraphARM");
+    if (table->CmdDispatchDataGraphARM == nullptr) {
+        table->CmdDispatchDataGraphARM = (PFN_vkCmdDispatchDataGraphARM)StubCmdDispatchDataGraphARM;
+    }
+    table->GetDataGraphPipelineAvailablePropertiesARM =
+        (PFN_vkGetDataGraphPipelineAvailablePropertiesARM)gpa(device, "vkGetDataGraphPipelineAvailablePropertiesARM");
+    if (table->GetDataGraphPipelineAvailablePropertiesARM == nullptr) {
+        table->GetDataGraphPipelineAvailablePropertiesARM =
+            (PFN_vkGetDataGraphPipelineAvailablePropertiesARM)StubGetDataGraphPipelineAvailablePropertiesARM;
+    }
+    table->GetDataGraphPipelinePropertiesARM =
+        (PFN_vkGetDataGraphPipelinePropertiesARM)gpa(device, "vkGetDataGraphPipelinePropertiesARM");
+    if (table->GetDataGraphPipelinePropertiesARM == nullptr) {
+        table->GetDataGraphPipelinePropertiesARM = (PFN_vkGetDataGraphPipelinePropertiesARM)StubGetDataGraphPipelinePropertiesARM;
+    }
     table->CmdSetAttachmentFeedbackLoopEnableEXT =
         (PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT)gpa(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT");
     if (table->CmdSetAttachmentFeedbackLoopEnableEXT == nullptr) {
@@ -5061,6 +5159,20 @@ void layer_init_instance_dispatch_table(VkInstance instance, VkLayerInstanceDisp
     if (table->GetPhysicalDeviceCooperativeVectorPropertiesNV == nullptr) {
         table->GetPhysicalDeviceCooperativeVectorPropertiesNV =
             (PFN_vkGetPhysicalDeviceCooperativeVectorPropertiesNV)StubGetPhysicalDeviceCooperativeVectorPropertiesNV;
+    }
+    table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM)gpa(
+        instance, "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM");
+    if (table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM == nullptr) {
+        table->GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM =
+            (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM)StubGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
+    }
+    table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM =
+        (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM)gpa(
+            instance, "vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM");
+    if (table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM == nullptr) {
+        table->GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM =
+            (PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM)
+                StubGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
     }
 #ifdef VK_USE_PLATFORM_OHOS
     table->CreateSurfaceOHOS = (PFN_vkCreateSurfaceOHOS)gpa(instance, "vkCreateSurfaceOHOS");

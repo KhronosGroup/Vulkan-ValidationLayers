@@ -41,6 +41,7 @@ bool Context::IsDuplicatePnext(VkStructureType input_value) const {
         case VK_STRUCTURE_TYPE_EXPORT_METAL_IO_SURFACE_INFO_EXT:
         case VK_STRUCTURE_TYPE_EXPORT_METAL_SHARED_EVENT_INFO_EXT:
         case VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT:
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM:
             return true;
         default:
             return false;
@@ -2788,6 +2789,25 @@ bool Context::ValidatePnextFeatureStructContents(const Location& loc, const VkBa
                     (VkPhysicalDeviceDynamicRenderingUnusedAttachmentsFeaturesEXT*)header;
                 skip |= ValidateBool32(pNext_loc.dot(Field::dynamicRenderingUnusedAttachments),
                                        structure->dynamicRenderingUnusedAttachments);
+            }
+        } break;
+
+        // Validation code for VkPhysicalDeviceDataGraphFeaturesARM structure members
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM: {  // Covers
+                                                                           // VUID-VkPhysicalDeviceDataGraphFeaturesARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkPhysicalDeviceDataGraphFeaturesARM);
+                VkPhysicalDeviceDataGraphFeaturesARM* structure = (VkPhysicalDeviceDataGraphFeaturesARM*)header;
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraph), structure->dataGraph);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphUpdateAfterBind), structure->dataGraphUpdateAfterBind);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphSpecializationConstants),
+                                       structure->dataGraphSpecializationConstants);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphDescriptorBuffer), structure->dataGraphDescriptorBuffer);
+
+                skip |= ValidateBool32(pNext_loc.dot(Field::dataGraphShaderModule), structure->dataGraphShaderModule);
             }
         } break;
 
@@ -6832,6 +6852,34 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
             }
         } break;
 
+        // Validation code for VkTensorDescriptionARM structure members
+        case VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM: {  // Covers VUID-VkTensorDescriptionARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkTensorDescriptionARM);
+                VkTensorDescriptionARM* structure = (VkTensorDescriptionARM*)header;
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM, structure->tiling,
+                                           "VUID-VkTensorDescriptionARM-tiling-parameter");
+
+                skip |= ValidateRangedEnum(pNext_loc.dot(Field::format), vvl::Enum::VkFormat, structure->format,
+                                           "VUID-VkTensorDescriptionARM-format-parameter");
+
+                skip |= ValidateArray(pNext_loc.dot(Field::dimensionCount), pNext_loc.dot(Field::pDimensions),
+                                      structure->dimensionCount, &structure->pDimensions, true, true,
+                                      "VUID-VkTensorDescriptionARM-dimensionCount-arraylength",
+                                      "VUID-VkTensorDescriptionARM-pDimensions-parameter");
+
+                skip |=
+                    ValidateArray(pNext_loc.dot(Field::dimensionCount), pNext_loc.dot(Field::pStrides), structure->dimensionCount,
+                                  &structure->pStrides, true, false, "VUID-VkTensorDescriptionARM-dimensionCount-arraylength",
+                                  "VUID-VkTensorDescriptionARM-pStrides-parameter");
+
+                skip |= ValidateFlags(pNext_loc.dot(Field::usage), vvl::FlagBitmask::VkTensorUsageFlagBitsARM,
+                                      AllVkTensorUsageFlagBitsARM, structure->usage, kRequiredFlags,
+                                      "VUID-VkTensorDescriptionARM-usage-parameter",
+                                      "VUID-VkTensorDescriptionARM-usage-requiredbitmask");
+            }
+        } break;
+
         // Validation code for VkWriteDescriptorSetTensorARM structure members
         case VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_TENSOR_ARM: {  // Covers VUID-VkWriteDescriptorSetTensorARM-sType-sType
             if (is_const_param) {
@@ -7007,6 +7055,109 @@ bool Context::ValidatePnextStructContents(const Location& loc, const VkBaseOutSt
 
         // No Validation code for VkLatencySurfaceCapabilitiesNV structure members  -- Covers
         // VUID-VkLatencySurfaceCapabilitiesNV-sType-sType
+
+        // Validation code for VkDataGraphPipelineCompilerControlCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_COMPILER_CONTROL_CREATE_INFO_ARM: {  // Covers
+                                                                                        // VUID-VkDataGraphPipelineCompilerControlCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineCompilerControlCreateInfoARM);
+                VkDataGraphPipelineCompilerControlCreateInfoARM* structure =
+                    (VkDataGraphPipelineCompilerControlCreateInfoARM*)header;
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pVendorOptions), structure->pVendorOptions,
+                                                "VUID-VkDataGraphPipelineCompilerControlCreateInfoARM-pVendorOptions-parameter");
+            }
+        } break;
+
+        // Validation code for VkDataGraphPipelineShaderModuleCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM: {  // Covers
+                                                                                     // VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineShaderModuleCreateInfoARM);
+                VkDataGraphPipelineShaderModuleCreateInfoARM* structure = (VkDataGraphPipelineShaderModuleCreateInfoARM*)header;
+                skip |= ValidateRequiredPointer(pNext_loc.dot(Field::pName), structure->pName,
+                                                "VUID-VkDataGraphPipelineShaderModuleCreateInfoARM-pName-parameter");
+
+                if (structure->pSpecializationInfo != nullptr) {
+                    [[maybe_unused]] const Location pSpecializationInfo_loc = pNext_loc.dot(Field::pSpecializationInfo);
+                    skip |= ValidateArray(
+                        pSpecializationInfo_loc.dot(Field::mapEntryCount), pSpecializationInfo_loc.dot(Field::pMapEntries),
+                        structure->pSpecializationInfo->mapEntryCount, &structure->pSpecializationInfo->pMapEntries, false, true,
+                        kVUIDUndefined, "VUID-VkSpecializationInfo-pMapEntries-parameter");
+
+                    skip |= ValidateArray(pSpecializationInfo_loc.dot(Field::dataSize), pSpecializationInfo_loc.dot(Field::pData),
+                                          structure->pSpecializationInfo->dataSize, &structure->pSpecializationInfo->pData, false,
+                                          true, kVUIDUndefined, "VUID-VkSpecializationInfo-pData-parameter");
+                }
+
+                skip |= ValidateStructTypeArray(pNext_loc.dot(Field::constantCount), pNext_loc.dot(Field::pConstants),
+                                                structure->constantCount, structure->pConstants,
+                                                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_ARM, false, false,
+                                                "VUID-VkDataGraphPipelineConstantARM-sType-sType", kVUIDUndefined, kVUIDUndefined);
+
+                if (structure->pConstants != nullptr) {
+                    for (uint32_t constantIndex = 0; constantIndex < structure->constantCount; ++constantIndex) {
+                        [[maybe_unused]] const Location pConstants_loc = pNext_loc.dot(Field::pConstants, constantIndex);
+                        constexpr std::array allowed_structs_VkDataGraphPipelineConstantARM = {
+                            VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CONSTANT_TENSOR_SEMI_STRUCTURED_SPARSITY_INFO_ARM,
+                            VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM};
+
+                        skip |= ValidateStructPnext(pConstants_loc, structure->pConstants[constantIndex].pNext,
+                                                    allowed_structs_VkDataGraphPipelineConstantARM.size(),
+                                                    allowed_structs_VkDataGraphPipelineConstantARM.data(),
+                                                    GeneratedVulkanHeaderVersion, "VUID-VkDataGraphPipelineConstantARM-pNext-pNext",
+                                                    "VUID-VkDataGraphPipelineConstantARM-sType-unique", true);
+
+                        skip |= ValidateRequiredPointer(pConstants_loc.dot(Field::pConstantData),
+                                                        structure->pConstants[constantIndex].pConstantData,
+                                                        "VUID-VkDataGraphPipelineConstantARM-pConstantData-parameter");
+                    }
+                }
+            }
+        } break;
+
+        // Validation code for VkDataGraphPipelineIdentifierCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM: {  // Covers
+                                                                                  // VUID-VkDataGraphPipelineIdentifierCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphPipelineIdentifierCreateInfoARM);
+                VkDataGraphPipelineIdentifierCreateInfoARM* structure = (VkDataGraphPipelineIdentifierCreateInfoARM*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::identifierSize), pNext_loc.dot(Field::pIdentifier),
+                                      structure->identifierSize, &structure->pIdentifier, true, true,
+                                      "VUID-VkDataGraphPipelineIdentifierCreateInfoARM-identifierSize-arraylength",
+                                      "VUID-VkDataGraphPipelineIdentifierCreateInfoARM-pIdentifier-parameter");
+            }
+        } break;
+
+        // Validation code for VkDataGraphProcessingEngineCreateInfoARM structure members
+        case VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM: {  // Covers
+                                                                                // VUID-VkDataGraphProcessingEngineCreateInfoARM-sType-sType
+            if (is_const_param) {
+                [[maybe_unused]] const Location pNext_loc = loc.pNext(Struct::VkDataGraphProcessingEngineCreateInfoARM);
+                VkDataGraphProcessingEngineCreateInfoARM* structure = (VkDataGraphProcessingEngineCreateInfoARM*)header;
+                skip |= ValidateArray(pNext_loc.dot(Field::processingEngineCount), pNext_loc.dot(Field::pProcessingEngines),
+                                      structure->processingEngineCount, &structure->pProcessingEngines, true, true,
+                                      "VUID-VkDataGraphProcessingEngineCreateInfoARM-processingEngineCount-arraylength",
+                                      "VUID-VkDataGraphProcessingEngineCreateInfoARM-pProcessingEngines-parameter");
+
+                if (structure->pProcessingEngines != nullptr) {
+                    for (uint32_t processingEngineIndex = 0; processingEngineIndex < structure->processingEngineCount;
+                         ++processingEngineIndex) {
+                        [[maybe_unused]] const Location pProcessingEngines_loc =
+                            pNext_loc.dot(Field::pProcessingEngines, processingEngineIndex);
+                        skip |= ValidateRangedEnum(pProcessingEngines_loc.dot(Field::type),
+                                                   vvl::Enum::VkPhysicalDeviceDataGraphProcessingEngineTypeARM,
+                                                   structure->pProcessingEngines[processingEngineIndex].type,
+                                                   "VUID-VkPhysicalDeviceDataGraphProcessingEngineARM-type-parameter");
+
+                        skip |= ValidateBool32(pProcessingEngines_loc.dot(Field::isForeign),
+                                               structure->pProcessingEngines[processingEngineIndex].isForeign);
+                    }
+                }
+            }
+        } break;
+
+        // No Validation code for VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM structure members  -- Covers
+        // VUID-VkDataGraphPipelineConstantTensorSemiStructuredSparsityInfoARM-sType-sType
 
         // Validation code for VkMultiviewPerViewRenderAreasRenderPassBeginInfoQCOM structure members
         case VK_STRUCTURE_TYPE_MULTIVIEW_PER_VIEW_RENDER_AREAS_RENDER_PASS_BEGIN_INFO_QCOM: {  // Covers
@@ -7411,6 +7562,7 @@ bool Instance::PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, cons
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUBIC_WEIGHTS_FEATURES_QCOM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUDA_KERNEL_LAUNCH_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT,
+            VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DATA_GRAPH_FEATURES_ARM,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEDICATED_ALLOCATION_IMAGE_ALIASING_FEATURES_NV,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_BIAS_CONTROL_FEATURES_EXT,
             VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLAMP_CONTROL_FEATURES_EXT,
@@ -9116,6 +9268,7 @@ bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescri
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
         constexpr std::array allowed_structs_VkDescriptorPoolCreateInfo = {
+            VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM,
             VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_INLINE_UNIFORM_BLOCK_CREATE_INFO,
             VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT};
 
@@ -9551,8 +9704,13 @@ bool Device::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPo
                                    "VUID-vkCreateCommandPool-pCreateInfo-parameter", "VUID-VkCommandPoolCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
         [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
-        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
-                                            "VUID-VkCommandPoolCreateInfo-pNext-pNext", kVUIDUndefined, true);
+        constexpr std::array allowed_structs_VkCommandPoolCreateInfo = {
+            VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM};
+
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, allowed_structs_VkCommandPoolCreateInfo.size(),
+                                            allowed_structs_VkCommandPoolCreateInfo.data(), GeneratedVulkanHeaderVersion,
+                                            "VUID-VkCommandPoolCreateInfo-pNext-pNext", "VUID-VkCommandPoolCreateInfo-sType-unique",
+                                            true);
 
         skip |= context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkCommandPoolCreateFlagBits,
                                       AllVkCommandPoolCreateFlagBits, pCreateInfo->flags, kOptionalFlags,
@@ -23477,10 +23635,6 @@ bool Device::PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreat
 
         if (pCreateInfo->pDescription != nullptr) {
             [[maybe_unused]] const Location pDescription_loc = pCreateInfo_loc.dot(Field::pDescription);
-            skip |= context.ValidateStructPnext(pDescription_loc, pCreateInfo->pDescription->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
-                                                kVUIDUndefined, true);
-
             skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
                                                pCreateInfo->pDescription->tiling, "VUID-VkTensorDescriptionARM-tiling-parameter");
 
@@ -23676,10 +23830,6 @@ bool Device::PreCallValidateGetDeviceTensorMemoryRequirementsARM(VkDevice device
 
             if (pInfo->pCreateInfo->pDescription != nullptr) {
                 [[maybe_unused]] const Location pDescription_loc = pCreateInfo_loc.dot(Field::pDescription);
-                skip |= context.ValidateStructPnext(pDescription_loc, pInfo->pCreateInfo->pDescription->pNext, 0, nullptr,
-                                                    GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
-                                                    kVUIDUndefined, true);
-
                 skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
                                                    pInfo->pCreateInfo->pDescription->tiling,
                                                    "VUID-VkTensorDescriptionARM-tiling-parameter");
@@ -23803,10 +23953,6 @@ bool Instance::PreCallValidateGetPhysicalDeviceExternalTensorPropertiesARM(
 
         if (pExternalTensorInfo->pDescription != nullptr) {
             [[maybe_unused]] const Location pDescription_loc = pExternalTensorInfo_loc.dot(Field::pDescription);
-            skip |= context.ValidateStructPnext(pDescription_loc, pExternalTensorInfo->pDescription->pNext, 0, nullptr,
-                                                GeneratedVulkanHeaderVersion, "VUID-VkTensorDescriptionARM-pNext-pNext",
-                                                kVUIDUndefined, true);
-
             skip |= context.ValidateRangedEnum(pDescription_loc.dot(Field::tiling), vvl::Enum::VkTensorTilingARM,
                                                pExternalTensorInfo->pDescription->tiling,
                                                "VUID-VkTensorDescriptionARM-tiling-parameter");
@@ -24652,6 +24798,430 @@ bool Device::PreCallValidateQueueNotifyOutOfBandNV(VkQueue queue, const VkOutOfB
         [[maybe_unused]] const Location pQueueTypeInfo_loc = loc.dot(Field::pQueueTypeInfo);
         skip |= context.ValidateRangedEnum(pQueueTypeInfo_loc.dot(Field::queueType), vvl::Enum::VkOutOfBandQueueTypeNV,
                                            pQueueTypeInfo->queueType, "VUID-VkOutOfBandQueueTypeInfoNV-queueType-parameter");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDeferredOperationKHR deferredOperation,
+                                                        VkPipelineCache pipelineCache, uint32_t createInfoCount,
+                                                        const VkDataGraphPipelineCreateInfoARM* pCreateInfos,
+                                                        const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines,
+                                                        const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount,
+                                            pCreateInfos, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM, true, true,
+                                            "VUID-VkDataGraphPipelineCreateInfoARM-sType-sType",
+                                            "VUID-vkCreateDataGraphPipelinesARM-pCreateInfos-parameter",
+                                            "VUID-vkCreateDataGraphPipelinesARM-createInfoCount-arraylength");
+    if (pCreateInfos != nullptr) {
+        for (uint32_t createInfoIndex = 0; createInfoIndex < createInfoCount; ++createInfoIndex) {
+            [[maybe_unused]] const Location pCreateInfos_loc = loc.dot(Field::pCreateInfos, createInfoIndex);
+            constexpr std::array allowed_structs_VkDataGraphPipelineCreateInfoARM = {
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_COMPILER_CONTROL_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_IDENTIFIER_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SHADER_MODULE_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PROCESSING_ENGINE_CREATE_INFO_ARM,
+                VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO};
+
+            skip |= context.ValidateStructPnext(
+                pCreateInfos_loc, pCreateInfos[createInfoIndex].pNext, allowed_structs_VkDataGraphPipelineCreateInfoARM.size(),
+                allowed_structs_VkDataGraphPipelineCreateInfoARM.data(), GeneratedVulkanHeaderVersion,
+                "VUID-VkDataGraphPipelineCreateInfoARM-pNext-pNext", "VUID-VkDataGraphPipelineCreateInfoARM-sType-unique", true);
+
+            skip |= context.ValidateRequiredHandle(pCreateInfos_loc.dot(Field::layout), pCreateInfos[createInfoIndex].layout);
+
+            skip |= context.ValidateStructTypeArray(
+                pCreateInfos_loc.dot(Field::resourceInfoCount), pCreateInfos_loc.dot(Field::pResourceInfos),
+                pCreateInfos[createInfoIndex].resourceInfoCount, pCreateInfos[createInfoIndex].pResourceInfos,
+                VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_RESOURCE_INFO_ARM, true, true,
+                "VUID-VkDataGraphPipelineResourceInfoARM-sType-sType",
+                "VUID-VkDataGraphPipelineCreateInfoARM-pResourceInfos-parameter",
+                "VUID-VkDataGraphPipelineCreateInfoARM-resourceInfoCount-arraylength");
+
+            if (pCreateInfos[createInfoIndex].pResourceInfos != nullptr) {
+                for (uint32_t resourceInfoIndex = 0; resourceInfoIndex < pCreateInfos[createInfoIndex].resourceInfoCount;
+                     ++resourceInfoIndex) {
+                    [[maybe_unused]] const Location pResourceInfos_loc =
+                        pCreateInfos_loc.dot(Field::pResourceInfos, resourceInfoIndex);
+                    constexpr std::array allowed_structs_VkDataGraphPipelineResourceInfoARM = {
+                        VK_STRUCTURE_TYPE_TENSOR_DESCRIPTION_ARM};
+
+                    skip |= context.ValidateStructPnext(
+                        pResourceInfos_loc, pCreateInfos[createInfoIndex].pResourceInfos[resourceInfoIndex].pNext,
+                        allowed_structs_VkDataGraphPipelineResourceInfoARM.size(),
+                        allowed_structs_VkDataGraphPipelineResourceInfoARM.data(), GeneratedVulkanHeaderVersion,
+                        "VUID-VkDataGraphPipelineResourceInfoARM-pNext-pNext",
+                        "VUID-VkDataGraphPipelineResourceInfoARM-sType-unique", true);
+                }
+            }
+        }
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateArray(loc.dot(Field::createInfoCount), loc.dot(Field::pPipelines), createInfoCount, &pPipelines, true,
+                                  true, "VUID-vkCreateDataGraphPipelinesARM-createInfoCount-arraylength",
+                                  "VUID-vkCreateDataGraphPipelinesARM-pPipelines-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device,
+                                                              const VkDataGraphPipelineSessionCreateInfoARM* pCreateInfo,
+                                                              const VkAllocationCallbacks* pAllocator,
+                                                              VkDataGraphPipelineSessionARM* pSession,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo,
+                                       VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_CREATE_INFO_ARM, true,
+                                       "VUID-vkCreateDataGraphPipelineSessionARM-pCreateInfo-parameter",
+                                       "VUID-VkDataGraphPipelineSessionCreateInfoARM-sType-sType");
+    if (pCreateInfo != nullptr) {
+        [[maybe_unused]] const Location pCreateInfo_loc = loc.dot(Field::pCreateInfo);
+        skip |= context.ValidateStructPnext(pCreateInfo_loc, pCreateInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineSessionCreateInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |=
+            context.ValidateFlags(pCreateInfo_loc.dot(Field::flags), vvl::FlagBitmask::VkDataGraphPipelineSessionCreateFlagBitsARM,
+                                  AllVkDataGraphPipelineSessionCreateFlagBitsARM, pCreateInfo->flags, kOptionalFlags,
+                                  "VUID-VkDataGraphPipelineSessionCreateInfoARM-flags-parameter");
+
+        skip |= context.ValidateRequiredHandle(pCreateInfo_loc.dot(Field::dataGraphPipeline), pCreateInfo->dataGraphPipeline);
+    }
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    skip |= context.ValidateRequiredPointer(loc.dot(Field::pSession), pSession,
+                                            "VUID-vkCreateDataGraphPipelineSessionARM-pSession-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineSessionBindPointRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionBindPointRequirementsInfoARM* pInfo, uint32_t* pBindPointRequirementCount,
+    VkDataGraphPipelineSessionBindPointRequirementARM* pBindPointRequirements, const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo,
+                                       VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENTS_INFO_ARM, true,
+                                       "VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-pInfo-parameter",
+                                       "VUID-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-pNext-pNext",
+                                            kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::session), pInfo->session);
+    }
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pBindPointRequirementCount), loc.dot(Field::pBindPointRequirements), pBindPointRequirementCount,
+        pBindPointRequirements, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_BIND_POINT_REQUIREMENT_ARM, true, false, false,
+        "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-sType-sType", kVUIDUndefined,
+        "VUID-vkGetDataGraphPipelineSessionBindPointRequirementsARM-pBindPointRequirementCount-parameter", kVUIDUndefined);
+    if (pBindPointRequirements != nullptr) {
+        for (uint32_t pBindPointRequirementIndex = 0; pBindPointRequirementIndex < *pBindPointRequirementCount;
+             ++pBindPointRequirementIndex) {
+            [[maybe_unused]] const Location pBindPointRequirements_loc =
+                loc.dot(Field::pBindPointRequirements, pBindPointRequirementIndex);
+            skip |= context.ValidateStructPnext(
+                pBindPointRequirements_loc, pBindPointRequirements[pBindPointRequirementIndex].pNext, 0, nullptr,
+                GeneratedVulkanHeaderVersion, "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-pNext-pNext", kVUIDUndefined,
+                false);
+
+            skip |= context.ValidateRangedEnum(pBindPointRequirements_loc.dot(Field::bindPoint),
+                                               vvl::Enum::VkDataGraphPipelineSessionBindPointARM,
+                                               pBindPointRequirements[pBindPointRequirementIndex].bindPoint,
+                                               "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-bindPoint-parameter");
+
+            skip |= context.ValidateRangedEnum(pBindPointRequirements_loc.dot(Field::bindPointType),
+                                               vvl::Enum::VkDataGraphPipelineSessionBindPointTypeARM,
+                                               pBindPointRequirements[pBindPointRequirementIndex].bindPointType,
+                                               "VUID-VkDataGraphPipelineSessionBindPointRequirementARM-bindPointType-parameter");
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineSessionMemoryRequirementsARM(
+    VkDevice device, const VkDataGraphPipelineSessionMemoryRequirementsInfoARM* pInfo, VkMemoryRequirements2* pMemoryRequirements,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo,
+                                       VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_MEMORY_REQUIREMENTS_INFO_ARM, true,
+                                       "VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-pInfo-parameter",
+                                       "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-pNext-pNext", kVUIDUndefined,
+                                            true);
+
+        skip |= context.ValidateRequiredHandle(pInfo_loc.dot(Field::session), pInfo->session);
+
+        skip |= context.ValidateRangedEnum(pInfo_loc.dot(Field::bindPoint), vvl::Enum::VkDataGraphPipelineSessionBindPointARM,
+                                           pInfo->bindPoint,
+                                           "VUID-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-bindPoint-parameter");
+    }
+    skip |= context.ValidateStructType(loc.dot(Field::pMemoryRequirements), pMemoryRequirements,
+                                       VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2, true,
+                                       "VUID-vkGetDataGraphPipelineSessionMemoryRequirementsARM-pMemoryRequirements-parameter",
+                                       "VUID-VkMemoryRequirements2-sType-sType");
+    if (pMemoryRequirements != nullptr) {
+        [[maybe_unused]] const Location pMemoryRequirements_loc = loc.dot(Field::pMemoryRequirements);
+        constexpr std::array allowed_structs_VkMemoryRequirements2 = {VK_STRUCTURE_TYPE_MEMORY_DEDICATED_REQUIREMENTS,
+                                                                      VK_STRUCTURE_TYPE_TILE_MEMORY_REQUIREMENTS_QCOM};
+
+        skip |= context.ValidateStructPnext(
+            pMemoryRequirements_loc, pMemoryRequirements->pNext, allowed_structs_VkMemoryRequirements2.size(),
+            allowed_structs_VkMemoryRequirements2.data(), GeneratedVulkanHeaderVersion, "VUID-VkMemoryRequirements2-pNext-pNext",
+            "VUID-VkMemoryRequirements2-sType-unique", false);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateBindDataGraphPipelineSessionMemoryARM(VkDevice device, uint32_t bindInfoCount,
+                                                                  const VkBindDataGraphPipelineSessionMemoryInfoARM* pBindInfos,
+                                                                  const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::bindInfoCount), loc.dot(Field::pBindInfos), bindInfoCount, pBindInfos,
+                                            VK_STRUCTURE_TYPE_BIND_DATA_GRAPH_PIPELINE_SESSION_MEMORY_INFO_ARM, true, true,
+                                            "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-sType-sType",
+                                            "VUID-vkBindDataGraphPipelineSessionMemoryARM-pBindInfos-parameter",
+                                            "VUID-vkBindDataGraphPipelineSessionMemoryARM-bindInfoCount-arraylength");
+    if (pBindInfos != nullptr) {
+        for (uint32_t bindInfoIndex = 0; bindInfoIndex < bindInfoCount; ++bindInfoIndex) {
+            [[maybe_unused]] const Location pBindInfos_loc = loc.dot(Field::pBindInfos, bindInfoIndex);
+            skip |= context.ValidateStructPnext(
+                pBindInfos_loc, pBindInfos[bindInfoIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+            skip |= context.ValidateRequiredHandle(pBindInfos_loc.dot(Field::session), pBindInfos[bindInfoIndex].session);
+
+            skip |= context.ValidateRangedEnum(
+                pBindInfos_loc.dot(Field::bindPoint), vvl::Enum::VkDataGraphPipelineSessionBindPointARM,
+                pBindInfos[bindInfoIndex].bindPoint, "VUID-VkBindDataGraphPipelineSessionMemoryInfoARM-bindPoint-parameter");
+
+            skip |= context.ValidateRequiredHandle(pBindInfos_loc.dot(Field::memory), pBindInfos[bindInfoIndex].memory);
+        }
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateDestroyDataGraphPipelineSessionARM(VkDevice device, VkDataGraphPipelineSessionARM session,
+                                                               const VkAllocationCallbacks* pAllocator,
+                                                               const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::session), session);
+    if (pAllocator != nullptr) {
+        [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
+        skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateCmdDispatchDataGraphARM(VkCommandBuffer commandBuffer, VkDataGraphPipelineSessionARM session,
+                                                    const VkDataGraphPipelineDispatchInfoARM* pInfo,
+                                                    const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateRequiredHandle(loc.dot(Field::session), session);
+    skip |= context.ValidateStructType(loc.dot(Field::pInfo), pInfo, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_DISPATCH_INFO_ARM, false,
+                                       "VUID-vkCmdDispatchDataGraphARM-pInfo-parameter",
+                                       "VUID-VkDataGraphPipelineDispatchInfoARM-sType-sType");
+    if (pInfo != nullptr) {
+        [[maybe_unused]] const Location pInfo_loc = loc.dot(Field::pInfo);
+        skip |= context.ValidateStructPnext(pInfo_loc, pInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineDispatchInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateReservedFlags(pInfo_loc.dot(Field::flags), pInfo->flags,
+                                              "VUID-VkDataGraphPipelineDispatchInfoARM-flags-zerobitmask");
+    }
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelineAvailablePropertiesARM(VkDevice device,
+                                                                       const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                                       uint32_t* pPropertiesCount,
+                                                                       VkDataGraphPipelinePropertyARM* pProperties,
+                                                                       const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructType(loc.dot(Field::pPipelineInfo), pPipelineInfo, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_INFO_ARM,
+                                       true, "VUID-vkGetDataGraphPipelineAvailablePropertiesARM-pPipelineInfo-parameter",
+                                       "VUID-VkDataGraphPipelineInfoARM-sType-sType");
+    if (pPipelineInfo != nullptr) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = loc.dot(Field::pPipelineInfo);
+        skip |= context.ValidateStructPnext(pPipelineInfo_loc, pPipelineInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pPipelineInfo_loc.dot(Field::dataGraphPipeline), pPipelineInfo->dataGraphPipeline);
+    }
+    skip |= context.ValidatePointerArray(loc.dot(Field::pPropertiesCount), loc.dot(Field::pProperties), pPropertiesCount,
+                                         &pProperties, true, false, false,
+                                         "VUID-vkGetDataGraphPipelineAvailablePropertiesARM-pPropertiesCount-parameter",
+                                         kVUIDUndefined, "VUID-vkGetDataGraphPipelineAvailablePropertiesARM-pProperties-parameter");
+    return skip;
+}
+
+bool Device::PreCallValidateGetDataGraphPipelinePropertiesARM(VkDevice device, const VkDataGraphPipelineInfoARM* pPipelineInfo,
+                                                              uint32_t propertiesCount,
+                                                              VkDataGraphPipelinePropertyQueryResultARM* pProperties,
+                                                              const ErrorObject& error_obj) const {
+    bool skip = false;
+    Context context(*this, error_obj, extensions);
+    [[maybe_unused]] const Location loc = error_obj.location;
+    if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+    skip |= context.ValidateStructType(loc.dot(Field::pPipelineInfo), pPipelineInfo, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_INFO_ARM,
+                                       true, "VUID-vkGetDataGraphPipelinePropertiesARM-pPipelineInfo-parameter",
+                                       "VUID-VkDataGraphPipelineInfoARM-sType-sType");
+    if (pPipelineInfo != nullptr) {
+        [[maybe_unused]] const Location pPipelineInfo_loc = loc.dot(Field::pPipelineInfo);
+        skip |= context.ValidateStructPnext(pPipelineInfo_loc, pPipelineInfo->pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                                            "VUID-VkDataGraphPipelineInfoARM-pNext-pNext", kVUIDUndefined, true);
+
+        skip |= context.ValidateRequiredHandle(pPipelineInfo_loc.dot(Field::dataGraphPipeline), pPipelineInfo->dataGraphPipeline);
+    }
+    skip |= context.ValidateStructTypeArray(loc.dot(Field::propertiesCount), loc.dot(Field::pProperties), propertiesCount,
+                                            pProperties, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_PROPERTY_QUERY_RESULT_ARM, true,
+                                            true, "VUID-VkDataGraphPipelinePropertyQueryResultARM-sType-sType",
+                                            "VUID-vkGetDataGraphPipelinePropertiesARM-pProperties-parameter",
+                                            "VUID-vkGetDataGraphPipelinePropertiesARM-propertiesCount-arraylength");
+    if (pProperties != nullptr) {
+        for (uint32_t propertiesIndex = 0; propertiesIndex < propertiesCount; ++propertiesIndex) {
+            [[maybe_unused]] const Location pProperties_loc = loc.dot(Field::pProperties, propertiesIndex);
+            skip |= context.ValidateStructPnext(
+                pProperties_loc, pProperties[propertiesIndex].pNext, 0, nullptr, GeneratedVulkanHeaderVersion,
+                "VUID-VkDataGraphPipelinePropertyQueryResultARM-pNext-pNext", kVUIDUndefined, false);
+
+            skip |= context.ValidateRangedEnum(pProperties_loc.dot(Field::property), vvl::Enum::VkDataGraphPipelinePropertyARM,
+                                               pProperties[propertiesIndex].property,
+                                               "VUID-VkDataGraphPipelinePropertyQueryResultARM-property-parameter");
+
+            skip |= context.ValidateBool32(pProperties_loc.dot(Field::isText), pProperties[propertiesIndex].isText);
+        }
+    }
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM(
+    VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex, uint32_t* pQueueFamilyDataGraphPropertyCount,
+    VkQueueFamilyDataGraphPropertiesARM* pQueueFamilyDataGraphProperties, const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructTypeArray(
+        loc.dot(Field::pQueueFamilyDataGraphPropertyCount), loc.dot(Field::pQueueFamilyDataGraphProperties),
+        pQueueFamilyDataGraphPropertyCount, pQueueFamilyDataGraphProperties,
+        VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROPERTIES_ARM, true, false, false,
+        "VUID-VkQueueFamilyDataGraphPropertiesARM-sType-sType", kVUIDUndefined,
+        "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM-pQueueFamilyDataGraphPropertyCount-parameter", kVUIDUndefined);
+    if (pQueueFamilyDataGraphProperties != nullptr) {
+        for (uint32_t pQueueFamilyDataGraphPropertyIndex = 0;
+             pQueueFamilyDataGraphPropertyIndex < *pQueueFamilyDataGraphPropertyCount; ++pQueueFamilyDataGraphPropertyIndex) {
+            [[maybe_unused]] const Location pQueueFamilyDataGraphProperties_loc =
+                loc.dot(Field::pQueueFamilyDataGraphProperties, pQueueFamilyDataGraphPropertyIndex);
+            skip |= context.ValidateStructPnext(pQueueFamilyDataGraphProperties_loc,
+                                                pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].pNext, 0,
+                                                nullptr, GeneratedVulkanHeaderVersion,
+                                                "VUID-VkQueueFamilyDataGraphPropertiesARM-pNext-pNext", kVUIDUndefined, false);
+
+            skip |= context.ValidateRangedEnum(pQueueFamilyDataGraphProperties_loc.dot(Field::type),
+                                               vvl::Enum::VkPhysicalDeviceDataGraphProcessingEngineTypeARM,
+                                               pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].engine.type,
+                                               "VUID-VkPhysicalDeviceDataGraphProcessingEngineARM-type-parameter");
+
+            skip |= context.ValidateBool32(pQueueFamilyDataGraphProperties_loc.dot(Field::isForeign),
+                                           pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].engine.isForeign);
+
+            skip |= context.ValidateRangedEnum(
+                pQueueFamilyDataGraphProperties_loc.dot(Field::operationType), vvl::Enum::VkPhysicalDeviceDataGraphOperationTypeARM,
+                pQueueFamilyDataGraphProperties[pQueueFamilyDataGraphPropertyIndex].operation.operationType,
+                "VUID-VkPhysicalDeviceDataGraphOperationSupportARM-operationType-parameter");
+        }
+    }
+    return skip;
+}
+
+bool Instance::PreCallValidateGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM(
+    VkPhysicalDevice physicalDevice,
+    const VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM* pQueueFamilyDataGraphProcessingEngineInfo,
+    VkQueueFamilyDataGraphProcessingEnginePropertiesARM* pQueueFamilyDataGraphProcessingEngineProperties,
+    const ErrorObject& error_obj) const {
+    bool skip = false;
+
+    const auto& physdev_extensions = physical_device_extensions.at(physicalDevice);
+    Context context(*this, error_obj, physdev_extensions, IsExtEnabled(physdev_extensions.vk_khr_maintenance5));
+    [[maybe_unused]] const Location loc = error_obj.location;
+    skip |= context.ValidateStructType(loc.dot(Field::pQueueFamilyDataGraphProcessingEngineInfo),
+                                       pQueueFamilyDataGraphProcessingEngineInfo,
+                                       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_INFO_ARM, true,
+                                       "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM-"
+                                       "pQueueFamilyDataGraphProcessingEngineInfo-parameter",
+                                       "VUID-VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM-sType-sType");
+    if (pQueueFamilyDataGraphProcessingEngineInfo != nullptr) {
+        [[maybe_unused]] const Location pQueueFamilyDataGraphProcessingEngineInfo_loc =
+            loc.dot(Field::pQueueFamilyDataGraphProcessingEngineInfo);
+        skip |= context.ValidateStructPnext(
+            pQueueFamilyDataGraphProcessingEngineInfo_loc, pQueueFamilyDataGraphProcessingEngineInfo->pNext, 0, nullptr,
+            GeneratedVulkanHeaderVersion, "VUID-VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM-pNext-pNext",
+            kVUIDUndefined, true);
+
+        skip |= context.ValidateRangedEnum(pQueueFamilyDataGraphProcessingEngineInfo_loc.dot(Field::engineType),
+                                           vvl::Enum::VkPhysicalDeviceDataGraphProcessingEngineTypeARM,
+                                           pQueueFamilyDataGraphProcessingEngineInfo->engineType,
+                                           "VUID-VkPhysicalDeviceQueueFamilyDataGraphProcessingEngineInfoARM-engineType-parameter");
+    }
+    skip |= context.ValidateStructType(loc.dot(Field::pQueueFamilyDataGraphProcessingEngineProperties),
+                                       pQueueFamilyDataGraphProcessingEngineProperties,
+                                       VK_STRUCTURE_TYPE_QUEUE_FAMILY_DATA_GRAPH_PROCESSING_ENGINE_PROPERTIES_ARM, true,
+                                       "VUID-vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM-"
+                                       "pQueueFamilyDataGraphProcessingEngineProperties-parameter",
+                                       "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-sType-sType");
+    if (pQueueFamilyDataGraphProcessingEngineProperties != nullptr) {
+        [[maybe_unused]] const Location pQueueFamilyDataGraphProcessingEngineProperties_loc =
+            loc.dot(Field::pQueueFamilyDataGraphProcessingEngineProperties);
+        skip |= context.ValidateStructPnext(
+            pQueueFamilyDataGraphProcessingEngineProperties_loc, pQueueFamilyDataGraphProcessingEngineProperties->pNext, 0, nullptr,
+            GeneratedVulkanHeaderVersion, "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-pNext-pNext", kVUIDUndefined,
+            false);
+
+        skip |= context.ValidateFlags(
+            pQueueFamilyDataGraphProcessingEngineProperties_loc.dot(Field::foreignSemaphoreHandleTypes),
+            vvl::FlagBitmask::VkExternalSemaphoreHandleTypeFlagBits, AllVkExternalSemaphoreHandleTypeFlagBits,
+            pQueueFamilyDataGraphProcessingEngineProperties->foreignSemaphoreHandleTypes, kRequiredFlags,
+            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignSemaphoreHandleTypes-parameter",
+            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignSemaphoreHandleTypes-requiredbitmask");
+
+        skip |= context.ValidateFlags(
+            pQueueFamilyDataGraphProcessingEngineProperties_loc.dot(Field::foreignMemoryHandleTypes),
+            vvl::FlagBitmask::VkExternalMemoryHandleTypeFlagBits, AllVkExternalMemoryHandleTypeFlagBits,
+            pQueueFamilyDataGraphProcessingEngineProperties->foreignMemoryHandleTypes, kRequiredFlags,
+            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignMemoryHandleTypes-parameter",
+            "VUID-VkQueueFamilyDataGraphProcessingEnginePropertiesARM-foreignMemoryHandleTypes-requiredbitmask");
     }
     return skip;
 }

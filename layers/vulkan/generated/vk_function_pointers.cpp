@@ -824,6 +824,17 @@ PFN_vkLatencySleepNV LatencySleepNV;
 PFN_vkSetLatencyMarkerNV SetLatencyMarkerNV;
 PFN_vkGetLatencyTimingsNV GetLatencyTimingsNV;
 PFN_vkQueueNotifyOutOfBandNV QueueNotifyOutOfBandNV;
+PFN_vkCreateDataGraphPipelinesARM CreateDataGraphPipelinesARM;
+PFN_vkCreateDataGraphPipelineSessionARM CreateDataGraphPipelineSessionARM;
+PFN_vkGetDataGraphPipelineSessionBindPointRequirementsARM GetDataGraphPipelineSessionBindPointRequirementsARM;
+PFN_vkGetDataGraphPipelineSessionMemoryRequirementsARM GetDataGraphPipelineSessionMemoryRequirementsARM;
+PFN_vkBindDataGraphPipelineSessionMemoryARM BindDataGraphPipelineSessionMemoryARM;
+PFN_vkDestroyDataGraphPipelineSessionARM DestroyDataGraphPipelineSessionARM;
+PFN_vkCmdDispatchDataGraphARM CmdDispatchDataGraphARM;
+PFN_vkGetDataGraphPipelineAvailablePropertiesARM GetDataGraphPipelineAvailablePropertiesARM;
+PFN_vkGetDataGraphPipelinePropertiesARM GetDataGraphPipelinePropertiesARM;
+PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM;
+PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM;
 PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT CmdSetAttachmentFeedbackLoopEnableEXT;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
 PFN_vkGetScreenBufferPropertiesQNX GetScreenBufferPropertiesQNX;
@@ -2573,6 +2584,21 @@ void InitDeviceExtension(VkInstance instance, VkDevice device, const char* exten
             }
         },
         {
+            "VK_ARM_data_graph", [](VkInstance instance, VkDevice device) {
+                CreateDataGraphPipelinesARM = reinterpret_cast<PFN_vkCreateDataGraphPipelinesARM>(GetDeviceProcAddr(device, "vkCreateDataGraphPipelinesARM"));
+                CreateDataGraphPipelineSessionARM = reinterpret_cast<PFN_vkCreateDataGraphPipelineSessionARM>(GetDeviceProcAddr(device, "vkCreateDataGraphPipelineSessionARM"));
+                GetDataGraphPipelineSessionBindPointRequirementsARM = reinterpret_cast<PFN_vkGetDataGraphPipelineSessionBindPointRequirementsARM>(GetDeviceProcAddr(device, "vkGetDataGraphPipelineSessionBindPointRequirementsARM"));
+                GetDataGraphPipelineSessionMemoryRequirementsARM = reinterpret_cast<PFN_vkGetDataGraphPipelineSessionMemoryRequirementsARM>(GetDeviceProcAddr(device, "vkGetDataGraphPipelineSessionMemoryRequirementsARM"));
+                BindDataGraphPipelineSessionMemoryARM = reinterpret_cast<PFN_vkBindDataGraphPipelineSessionMemoryARM>(GetDeviceProcAddr(device, "vkBindDataGraphPipelineSessionMemoryARM"));
+                DestroyDataGraphPipelineSessionARM = reinterpret_cast<PFN_vkDestroyDataGraphPipelineSessionARM>(GetDeviceProcAddr(device, "vkDestroyDataGraphPipelineSessionARM"));
+                CmdDispatchDataGraphARM = reinterpret_cast<PFN_vkCmdDispatchDataGraphARM>(GetDeviceProcAddr(device, "vkCmdDispatchDataGraphARM"));
+                GetDataGraphPipelineAvailablePropertiesARM = reinterpret_cast<PFN_vkGetDataGraphPipelineAvailablePropertiesARM>(GetDeviceProcAddr(device, "vkGetDataGraphPipelineAvailablePropertiesARM"));
+                GetDataGraphPipelinePropertiesARM = reinterpret_cast<PFN_vkGetDataGraphPipelinePropertiesARM>(GetDeviceProcAddr(device, "vkGetDataGraphPipelinePropertiesARM"));
+                GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphPropertiesARM"));
+                GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM>(GetInstanceProcAddr(instance, "vkGetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM"));
+            }
+        },
+        {
             "VK_EXT_attachment_feedback_loop_dynamic_state", [](VkInstance , VkDevice device) {
                 CmdSetAttachmentFeedbackLoopEnableEXT = reinterpret_cast<PFN_vkCmdSetAttachmentFeedbackLoopEnableEXT>(GetDeviceProcAddr(device, "vkCmdSetAttachmentFeedbackLoopEnableEXT"));
             }
@@ -3203,6 +3229,17 @@ void ResetAllExtensions() {
     SetLatencyMarkerNV = nullptr;
     GetLatencyTimingsNV = nullptr;
     QueueNotifyOutOfBandNV = nullptr;
+    CreateDataGraphPipelinesARM = nullptr;
+    CreateDataGraphPipelineSessionARM = nullptr;
+    GetDataGraphPipelineSessionBindPointRequirementsARM = nullptr;
+    GetDataGraphPipelineSessionMemoryRequirementsARM = nullptr;
+    BindDataGraphPipelineSessionMemoryARM = nullptr;
+    DestroyDataGraphPipelineSessionARM = nullptr;
+    CmdDispatchDataGraphARM = nullptr;
+    GetDataGraphPipelineAvailablePropertiesARM = nullptr;
+    GetDataGraphPipelinePropertiesARM = nullptr;
+    GetPhysicalDeviceQueueFamilyDataGraphPropertiesARM = nullptr;
+    GetPhysicalDeviceQueueFamilyDataGraphProcessingEnginePropertiesARM = nullptr;
     CmdSetAttachmentFeedbackLoopEnableEXT = nullptr;
 #ifdef VK_USE_PLATFORM_SCREEN_QNX
     GetScreenBufferPropertiesQNX = nullptr;
