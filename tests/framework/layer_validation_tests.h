@@ -261,6 +261,11 @@ class AndroidExternalResolveTest : public VkLayerTest {
     bool nullColorAttachmentWithExternalFormatResolve;
 };
 
+class DeprecationTest : public VkLayerTest {
+  public:
+    void CreateRenderPass();
+};
+
 class DescriptorBufferTest : public VkLayerTest {
   public:
     void InitBasicDescriptorBuffer(void *instance_pnext = nullptr);
