@@ -945,7 +945,16 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     dbbi.address = buffer.Address();
     dbbi.usage = VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT;
 
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ufoo { uint index; };
+        void main() {
+            uint x = index; // static usage
+        }
+    )glsl";
+
     CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
@@ -958,6 +967,7 @@ TEST_F(NegativeDescriptorBuffer, InconsistentBuffer) {
     vk::CmdSetDescriptorBufferOffsetsEXT(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &index, &offset);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08117");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
 
@@ -977,32 +987,34 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     dslci.pBindings = &binding;
 
     vkt::DescriptorSetLayout dsl(*m_device, dslci);
-
-    VkDescriptorPoolSize ds_type_count = {};
-    ds_type_count.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ds_type_count.descriptorCount = 1;
+    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
 
     VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
     ds_pool_ci.maxSets = 1;
     ds_pool_ci.poolSizeCount = 1;
     ds_pool_ci.pPoolSizes = &ds_type_count;
-
     vkt::DescriptorPool pool(*m_device, ds_pool_ci);
-    ASSERT_TRUE(pool.initialized());
 
     std::unique_ptr<vkt::DescriptorSet> ds(pool.AllocateSets(*m_device, dsl));
-    ASSERT_TRUE(ds);
 
     VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
     plci.setLayoutCount = 1;
     plci.pSetLayouts = &dsl.handle();
 
     vkt::PipelineLayout pipeline_layout(*m_device, plci);
-    ASSERT_TRUE(pipeline_layout.initialized());
+
+    char const *shader_source = R"glsl(
+        #version 450
+        layout(set = 0, binding = 0) uniform ufoo { uint index; };
+        void main() {
+            uint x = index; // static usage
+        }
+    )glsl";
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cp_ci_.flags |= VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
-    ASSERT_EQ(VK_SUCCESS, pipe.CreateComputePipeline());
+    pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT);
+    pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
