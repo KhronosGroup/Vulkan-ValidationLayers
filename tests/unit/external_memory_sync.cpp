@@ -470,19 +470,19 @@ TEST_F(NegativeExternalMemorySync, ExportBufferHandleType) {
     VkMemoryRequirements buffer_mem_reqs = mem_reqs2.memoryRequirements;
     const auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                                                     &export_memory_info);
-    const auto memory = vkt::DeviceMemory(*m_device, alloc_info);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-memory-02726");
     if (memory_dedicated_requirements.requiresDedicatedAllocation) {
         m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-01444");
     }
-    vk::BindBufferMemory(device(), buffer, memory.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
     m_errorMonitor->VerifyFound();
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
     bind_buffer_info.buffer = buffer;
-    bind_buffer_info.memory = memory.handle();
+    bind_buffer_info.memory = memory;
 
     m_errorMonitor->SetAllowedFailureMsg("VUID-vkBindBufferMemory-buffer-01444");  // required dedicated
     m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-memory-02726");
