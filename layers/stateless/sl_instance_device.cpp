@@ -351,6 +351,8 @@ void Device::FinishDeviceSetup(const VkDeviceCreateInfo *pCreateInfo, const Loca
             scissor_exclusive_extension_version = prop.specVersion;
         }
     }
+
+    has_zero_queues = pCreateInfo->queueCreateInfoCount == 0;
 }
 
 bool Instance::manual_PreCallValidateCreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCreateInfo,
