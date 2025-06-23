@@ -1663,8 +1663,7 @@ bool CoreChecks::ValidateRenderpassAttachmentUsage(const VkRenderPassCreateInfo2
 
                 //  VK_QCOM_render_pass_shader_resolve check of resolve attachmnents
                 if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
-                    const char *vuid =
-                        use_rp2 ? "VUID-VkRenderPassCreateInfo2-flags-04907" : "VUID-VkSubpassDescription-flags-03341";
+                    const char *vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-04907" : "VUID-VkSubpassDescription-flags-03341";
                     skip |= LogError(vuid, device, resolve_loc,
                                      "contains a reference to attachment %" PRIu32 " instead of being VK_ATTACHMENT_UNUSED.",
                                      attachment_ref.attachment);
@@ -2228,7 +2227,7 @@ bool CoreChecks::ValidateRenderPassDAG(const VkRenderPassCreateInfo2 *pCreateInf
             }
         } else if ((dependency.srcSubpass < dependency.dstSubpass) &&
                    ((pCreateInfo->pSubpasses[dependency.srcSubpass].flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0)) {
-            vuid = use_rp2 ? "VUID-VkRenderPassCreateInfo2-flags-04909" : "VUID-VkSubpassDescription-flags-03343";
+            vuid = use_rp2 ? "VUID-VkSubpassDescription2-flags-04909" : "VUID-VkSubpassDescription-flags-03343";
             skip |= LogError(vuid, device, dependencies_loc,
                              "specifies that subpass %" PRIu32
                              " has a dependency on a later subpass"
@@ -2636,7 +2635,7 @@ bool CoreChecks::ValidateDepthStencilResolve(const VkRenderPassCreateInfo2 *pCre
 
         //  VK_QCOM_render_pass_shader_resolve check of depth/stencil attachmnent
         if ((subpass.flags & VK_SUBPASS_DESCRIPTION_SHADER_RESOLVE_BIT_QCOM) != 0) {
-            skip |= LogError("VUID-VkRenderPassCreateInfo2-flags-04908", device, subpass_loc,
+            skip |= LogError("VUID-VkSubpassDescription2-flags-04908", device, subpass_loc,
                              "enables shader resolve, which requires the depth/stencil resolve attachment"
                              " must be VK_ATTACHMENT_UNUSED, but a reference to attachment %" PRIu32 " was found instead.",
                              resolve_attachment);
