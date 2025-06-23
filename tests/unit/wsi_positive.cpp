@@ -1595,8 +1595,7 @@ TEST_F(PositiveWsi, PresentFenceRetiresPresentSemaphores) {
     vk::WaitForFences(*m_device, 1, &present_fences_handles[1], VK_TRUE, kWaitTimeout);
 }
 
-// https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10285
-TEST_F(PositiveWsi, DISABLED_DifferentPerPresentModeImageCount) {
+TEST_F(PositiveWsi, DifferentPerPresentModeImageCount) {
     TEST_DESCRIPTION("Create swapchain with per present mode minImageCount that is less than surface's general minImageCount");
 #ifndef VK_USE_PLATFORM_WAYLAND_KHR
     GTEST_SKIP() << "Test requires wayland platform support";
@@ -1619,6 +1618,7 @@ TEST_F(PositiveWsi, DISABLED_DifferentPerPresentModeImageCount) {
 
     VkSurfaceKHR surface;
     vk::CreateWaylandSurfaceKHR(instance(), &surface_create_info, nullptr, &surface);
+    auto info = GetSwapchainInfo(surface);
 
     const auto present_mode = VK_PRESENT_MODE_FIFO_KHR;  // Implementations must support
 
@@ -1639,8 +1639,6 @@ TEST_F(PositiveWsi, DISABLED_DifferentPerPresentModeImageCount) {
         wayland_ctx.Release();
         GTEST_SKIP() << "Can't find present mode that uses less images than a general case";
     }
-
-    auto info = GetSwapchainInfo(surface);
 
     VkSwapchainPresentModesCreateInfoEXT swapchain_present_mode_create_info = vku::InitStructHelper();
     swapchain_present_mode_create_info.presentModeCount = 1;
