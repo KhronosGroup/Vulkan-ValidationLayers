@@ -523,6 +523,7 @@ class Device : public vvl::base::Device {
     bool ValidateCreateImageDrmFormatModifiers(const VkImageCreateInfo &create_info, const Location &create_info_loc,
                                                std::vector<uint64_t> &image_create_drm_format_modifiers) const;
 
+    bool ValidateImageViewCreateInfo(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const;
     bool manual_PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo *pCreateInfo,
                                                const VkAllocationCallbacks *pAllocator, VkImageView *pView,
                                                const Context &context) const;
@@ -562,6 +563,8 @@ class Device : public vvl::base::Device {
     bool ValidateSamplerCustomBoarderColor(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerSubsampled(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
     bool ValidateSamplerImageProcessingQCOM(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const;
+    bool ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, const Location &create_info_loc,
+                                   const Context &context) const;
     bool manual_PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                              const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                              const Context &context) const;

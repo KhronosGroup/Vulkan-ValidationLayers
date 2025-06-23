@@ -1238,6 +1238,11 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateImageViewFormatFeatures(const vvl::Image& image_state, const VkFormat view_format,
                                          const VkImageUsageFlags image_usage, const Location& create_info_loc) const;
 
+    bool ValidateImageViewSlicedCreateInfo(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
+                                           const VkImageSubresourceRange& normalized_subresource_range,
+                                           const Location& create_info_loc) const;
+    bool ValidateImageViewCreateInfo(const VkImageViewCreateInfo& create_info, const Location& create_info_loc) const;
+
     bool PreCallValidateCreateImageView(VkDevice device, const VkImageViewCreateInfo* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator, VkImageView* pView,
                                         const ErrorObject& error_obj) const override;
@@ -1370,7 +1375,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                             const ErrorObject& error_obj) const override;
 
     bool ValidateCreateImageANDROID(const VkImageCreateInfo& create_info, const Location& create_info_loc) const;
-    bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const Location& create_info_loc) const;
+    bool ValidateCreateImageViewANDROID(const VkImageViewCreateInfo& create_info, const vvl::Image& image_state,
+                                        const Location& create_info_loc) const;
     bool ValidatePhysicalDeviceQueueFamilies(uint32_t queue_family_count, const uint32_t* queue_families, const Location& loc,
                                              const char* vuid) const;
     bool ValidateAllocateMemoryANDROID(const VkMemoryAllocateInfo& allocate_info, const Location& allocate_info_loc) const;
@@ -1477,6 +1483,7 @@ class CoreChecks : public vvl::DeviceProxy {
                                                         const VkAllocationCallbacks* pAllocator,
                                                         VkSamplerYcbcrConversion* pYcbcrConversion,
                                                         const ErrorObject& error_obj) const override;
+    bool ValidateSamplerCreateInfo(const VkSamplerCreateInfo& create_info, const Location& create_info_loc) const;
     bool PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo* pCreateInfo,
                                       const VkAllocationCallbacks* pAllocator, VkSampler* pSampler,
                                       const ErrorObject& error_obj) const override;
