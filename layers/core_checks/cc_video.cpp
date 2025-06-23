@@ -854,6 +854,7 @@ bool core::ValidateVideoProfileInfo(const StateObject &state, const VkVideoProfi
 
     const char *profile_pnext_msg = "chain does not contain a %s structure.";
     const char *codec_feature_not_enabled_msg = "is %s but the %s device feature is not enabled.";
+    (void)codec_feature_not_enabled_msg;
 
     if (GetBitSetCount(profile->chromaSubsampling) != 1) {
         skip |= state.LogError("VUID-VkVideoProfileInfoKHR-chromaSubsampling-07013", error_obj.objlist,
