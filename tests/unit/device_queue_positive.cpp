@@ -21,16 +21,13 @@ TEST_F(PositiveDeviceQueue, NoQueues) {
     AddRequiredFeature(vkt::Feature::maintenance9);
     RETURN_IF_SKIP(InitFramework());
 
-    std::vector<const char *> extensions = m_device_extension_names;
-    extensions.push_back(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
-
-    VkPhysicalDeviceMaintenance9FeaturesKHR maintenance9_features = vku::InitStructHelper();
-    maintenance9_features.maintenance9 = VK_TRUE;
-
     VkDeviceCreateInfo device_ci = vku::InitStructHelper();
-    device_ci.pNext = &maintenance9_features;
-    device_ci.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    device_ci.ppEnabledExtensionNames = extensions.data();
+    device_ci.pNext = requested_features_.GetEnabledFeatures2();
+    device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
 
     vkt::Device device(gpu_, device_ci);
+
+    CreateComputePipelineHelper pipe(device);
+    pipe.CreateComputePipeline();
 }
