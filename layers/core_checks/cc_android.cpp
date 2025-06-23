@@ -544,12 +544,11 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
 }
 
 // Validate creating an image view with an AHB format
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const vvl::Image &image_state,
+                                                const Location &create_info_loc) const {
     bool skip = false;
-    auto image_state = Get<vvl::Image>(create_info.image);
-    ASSERT_AND_RETURN_SKIP(image_state);
 
-    if (image_state->HasAHBFormat()) {
+    if (image_state.HasAHBFormat()) {
         if (VK_FORMAT_UNDEFINED != create_info.format) {
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02399", create_info.image, create_info_loc.dot(Field::format),
                              "is %s (not VK_FORMAT_UNDEFINED) but the VkImageViewCreateInfo struct has a chained "
@@ -573,13 +572,13 @@ bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &cre
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "is not valid (or forgot to add VkSamplerYcbcrConversionInfo).");
-        } else if ((external_format != image_state->ahb_format)) {
+        } else if ((external_format != image_state.ahb_format)) {
             const LogObjectList objlist(create_info.image, ycbcr_conv_info->conversion);
             skip |= LogError("VUID-VkImageViewCreateInfo-image-02400", objlist,
                              create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
                              "(%s) was created with externalFormat (%" PRIu64
                              ") which is different then image chain VkExternalFormatANDROID::externalFormat (%" PRIu64 ").",
-                             FormatHandle(ycbcr_conv_info->conversion).c_str(), external_format, image_state->ahb_format);
+                             FormatHandle(ycbcr_conv_info->conversion).c_str(), external_format, image_state.ahb_format);
         }
 
         // Errors in create_info swizzles
@@ -622,7 +621,8 @@ bool CoreChecks::ValidateCreateImageANDROID(const VkImageCreateInfo &create_info
     return false;
 }
 
-bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const Location &create_info_loc) const {
+bool CoreChecks::ValidateCreateImageViewANDROID(const VkImageViewCreateInfo &create_info, const vvl::Image &image_state,
+                                                const Location &create_info_loc) const {
     return false;
 }
 

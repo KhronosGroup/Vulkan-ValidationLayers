@@ -4811,6 +4811,61 @@ bool CoreChecks::PreCallValidateCmdPushConstants2KHR(VkCommandBuffer commandBuff
     return PreCallValidateCmdPushConstants2(commandBuffer, pPushConstantsInfo, error_obj);
 }
 
+bool CoreChecks::ValidateSamplerCreateInfo(const VkSamplerCreateInfo &create_info, const Location &create_info_loc) const {
+    bool skip = false;
+
+    if (enabled_features.samplerYcbcrConversion == VK_TRUE) {
+        if (const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(create_info.pNext)) {
+            const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
+            auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(sampler_ycbcr_conversion);
+            if (ycbcr_state && (ycbcr_state->format_features &
+                                VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT) == 0) {
+                const VkFilter chroma_filter = ycbcr_state->chromaFilter;
+                if (create_info.minFilter != chroma_filter) {
+                    skip |= LogError(
+                        "VUID-VkSamplerCreateInfo-minFilter-01645", device,
+                        create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
+                        "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
+                        "for format %s and minFilter (%s) is different from "
+                        "chromaFilter (%s)",
+                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
+                        string_VkFilter(create_info.minFilter), string_VkFilter(chroma_filter));
+                }
+                if (create_info.magFilter != chroma_filter) {
+                    skip |= LogError(
+                        "VUID-VkSamplerCreateInfo-minFilter-01645", device,
+                        create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
+                        "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
+                        "for format %s and magFilter (%s) is different from "
+                        "chromaFilter (%s)",
+                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
+                        string_VkFilter(create_info.magFilter), string_VkFilter(chroma_filter));
+                }
+            }
+        }
+    }
+
+    if (create_info.borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT || create_info.borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
+        if (device_state->custom_border_color_sampler_count >=
+            phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-None-04012", device, create_info_loc.dot(Field::borderColor),
+                             "is %s, creating a sampler with a custom border color will exceed the "
+                             "maxCustomBorderColorSamplers limit of %" PRIu32 ".",
+                             string_VkBorderColor(create_info.borderColor),
+                             phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers);
+        }
+    }
+
+    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
+        if ((VK_FALSE == enabled_features.samplerMipLodBias) && create_info.mipLodBias != 0) {
+            skip |= LogError("VUID-VkSamplerCreateInfo-samplerMipLodBias-04467", device, create_info_loc.dot(Field::mipLodBias),
+                             "(portability error) is %f, but samplerMipLodBias not supported.", create_info.mipLodBias);
+        }
+    }
+
+    return skip;
+}
+
 bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreateInfo *pCreateInfo,
                                               const VkAllocationCallbacks *pAllocator, VkSampler *pSampler,
                                               const ErrorObject &error_obj) const {
@@ -4825,55 +4880,6 @@ bool CoreChecks::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCr
     }
 
     const Location create_info_loc = error_obj.location.dot(Field::pCreateInfo);
-
-    if (enabled_features.samplerYcbcrConversion == VK_TRUE) {
-        if (const auto *conversion_info = vku::FindStructInPNextChain<VkSamplerYcbcrConversionInfo>(pCreateInfo->pNext)) {
-            const VkSamplerYcbcrConversion sampler_ycbcr_conversion = conversion_info->conversion;
-            auto ycbcr_state = Get<vvl::SamplerYcbcrConversion>(sampler_ycbcr_conversion);
-            if (ycbcr_state && (ycbcr_state->format_features &
-                                VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT) == 0) {
-                const VkFilter chroma_filter = ycbcr_state->chromaFilter;
-                if (pCreateInfo->minFilter != chroma_filter) {
-                    skip |= LogError(
-                        "VUID-VkSamplerCreateInfo-minFilter-01645", device,
-                        create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
-                        "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
-                        "for format %s and minFilter (%s) is different from "
-                        "chromaFilter (%s)",
-                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
-                        string_VkFilter(pCreateInfo->minFilter), string_VkFilter(chroma_filter));
-                }
-                if (pCreateInfo->magFilter != chroma_filter) {
-                    skip |= LogError(
-                        "VUID-VkSamplerCreateInfo-minFilter-01645", device,
-                        create_info_loc.pNext(Struct::VkSamplerYcbcrConversionInfo, Field::conversion),
-                        "(%s) does not support VK_FORMAT_FEATURE_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT "
-                        "for format %s and magFilter (%s) is different from "
-                        "chromaFilter (%s)",
-                        FormatHandle(sampler_ycbcr_conversion).c_str(), string_VkFormat(ycbcr_state->format),
-                        string_VkFilter(pCreateInfo->magFilter), string_VkFilter(chroma_filter));
-                }
-            }
-        }
-    }
-
-    if (pCreateInfo->borderColor == VK_BORDER_COLOR_INT_CUSTOM_EXT ||
-        pCreateInfo->borderColor == VK_BORDER_COLOR_FLOAT_CUSTOM_EXT) {
-        if (device_state->custom_border_color_sampler_count >=
-            phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-None-04012", device, error_obj.location,
-                             "Creating a sampler with a custom border color will exceed the "
-                             "maxCustomBorderColorSamplers limit of %" PRIu32 ".",
-                             phys_dev_ext_props.custom_border_color_props.maxCustomBorderColorSamplers);
-        }
-    }
-
-    if (IsExtEnabled(extensions.vk_khr_portability_subset)) {
-        if ((VK_FALSE == enabled_features.samplerMipLodBias) && pCreateInfo->mipLodBias != 0) {
-            skip |= LogError("VUID-VkSamplerCreateInfo-samplerMipLodBias-04467", device, error_obj.location,
-                             "(portability error) mipLodBias is %f, but samplerMipLodBias not supported.", pCreateInfo->mipLodBias);
-        }
-    }
-
+    skip |= ValidateSamplerCreateInfo(*pCreateInfo, create_info_loc);
     return skip;
 }
