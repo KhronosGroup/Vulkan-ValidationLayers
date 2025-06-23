@@ -7905,6 +7905,11 @@ bool Device::PreCallValidateAllocateMemory(VkDevice device, const VkMemoryAlloca
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkAllocateMemory-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, true,
                                        "VUID-vkAllocateMemory-pAllocateInfo-parameter", "VUID-VkMemoryAllocateInfo-sType-sType");
     if (pAllocateInfo != nullptr) {
@@ -8264,6 +8269,11 @@ bool Device::PreCallValidateCreateFence(VkDevice device, const VkFenceCreateInfo
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateFence-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, true,
                                        "VUID-vkCreateFence-pCreateInfo-parameter", "VUID-VkFenceCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8334,6 +8344,11 @@ bool Device::PreCallValidateCreateSemaphore(VkDevice device, const VkSemaphoreCr
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateSemaphore-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, true,
                                        "VUID-vkCreateSemaphore-pCreateInfo-parameter", "VUID-VkSemaphoreCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8378,6 +8393,11 @@ bool Device::PreCallValidateCreateEvent(VkDevice device, const VkEventCreateInfo
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateEvent-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_EVENT_CREATE_INFO, true,
                                        "VUID-vkCreateEvent-pCreateInfo-parameter", "VUID-VkEventCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8444,6 +8464,11 @@ bool Device::PreCallValidateCreateQueryPool(VkDevice device, const VkQueryPoolCr
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateQueryPool-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO, true,
                                        "VUID-vkCreateQueryPool-pCreateInfo-parameter", "VUID-VkQueryPoolCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8519,6 +8544,11 @@ bool Device::PreCallValidateCreateBuffer(VkDevice device, const VkBufferCreateIn
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateBuffer-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, true,
                                        "VUID-vkCreateBuffer-pCreateInfo-parameter", "VUID-VkBufferCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8570,6 +8600,11 @@ bool Device::PreCallValidateCreateBufferView(VkDevice device, const VkBufferView
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateBufferView-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, true,
                                        "VUID-vkCreateBufferView-pCreateInfo-parameter", "VUID-VkBufferViewCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8617,6 +8652,11 @@ bool Device::PreCallValidateCreateImage(VkDevice device, const VkImageCreateInfo
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateImage-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO, true,
                                        "VUID-vkCreateImage-pCreateInfo-parameter", "VUID-VkImageCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -8719,6 +8759,11 @@ bool Device::PreCallValidateCreateImageView(VkDevice device, const VkImageViewCr
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateImageView-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, true,
                                        "VUID-vkCreateImageView-pCreateInfo-parameter", "VUID-VkImageViewCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -9130,6 +9175,11 @@ bool Device::PreCallValidateCreateSampler(VkDevice device, const VkSamplerCreate
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateSampler-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO, true,
                                        "VUID-vkCreateSampler-pCreateInfo-parameter", "VUID-VkSamplerCreateInfo-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -9262,6 +9312,11 @@ bool Device::PreCallValidateCreateDescriptorPool(VkDevice device, const VkDescri
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateDescriptorPool-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
                                        true, "VUID-vkCreateDescriptorPool-pCreateInfo-parameter",
                                        "VUID-VkDescriptorPoolCreateInfo-sType-sType");
@@ -9331,6 +9386,11 @@ bool Device::PreCallValidateAllocateDescriptorSets(VkDevice device, const VkDesc
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkAllocateDescriptorSets-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
                                        true, "VUID-vkAllocateDescriptorSets-pAllocateInfo-parameter",
                                        "VUID-VkDescriptorSetAllocateInfo-sType-sType");
@@ -9438,6 +9498,11 @@ bool Device::PreCallValidateCreateFramebuffer(VkDevice device, const VkFramebuff
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateFramebuffer-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, true,
                                    "VUID-vkCreateFramebuffer-pCreateInfo-parameter", "VUID-VkFramebufferCreateInfo-sType-sType");
@@ -9699,6 +9764,11 @@ bool Device::PreCallValidateCreateCommandPool(VkDevice device, const VkCommandPo
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateCommandPool-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, true,
                                    "VUID-vkCreateCommandPool-pCreateInfo-parameter", "VUID-VkCommandPoolCreateInfo-sType-sType");
@@ -9753,6 +9823,11 @@ bool Device::PreCallValidateAllocateCommandBuffers(VkDevice device, const VkComm
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkAllocateCommandBuffers-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pAllocateInfo), pAllocateInfo, VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
                                        true, "VUID-vkAllocateCommandBuffers-pAllocateInfo-parameter",
                                        "VUID-VkCommandBufferAllocateInfo-sType-sType");
@@ -11240,6 +11315,11 @@ bool Device::PreCallValidateCreateSamplerYcbcrConversion(VkDevice device, const 
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateSamplerYcbcrConversion-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SAMPLER_YCBCR_CONVERSION_CREATE_INFO, true,
         "VUID-vkCreateSamplerYcbcrConversion-pCreateInfo-parameter", "VUID-VkSamplerYcbcrConversionCreateInfo-sType-sType");
@@ -11320,6 +11400,11 @@ bool Device::PreCallValidateCreateDescriptorUpdateTemplate(VkDevice device, cons
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateDescriptorUpdateTemplate-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO, true,
         "VUID-vkCreateDescriptorUpdateTemplate-pCreateInfo-parameter", "VUID-VkDescriptorUpdateTemplateCreateInfo-sType-sType");
@@ -12134,6 +12219,11 @@ bool Device::PreCallValidateCreatePrivateDataSlot(VkDevice device, const VkPriva
     bool skip = false;
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreatePrivateDataSlot-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_PRIVATE_DATA_SLOT_CREATE_INFO,
                                        true, "VUID-vkCreatePrivateDataSlot-pCreateInfo-parameter",
                                        "VUID-VkPrivateDataSlotCreateInfo-sType-sType");
@@ -14437,6 +14527,11 @@ bool Device::PreCallValidateCreateSwapchainKHR(VkDevice device, const VkSwapchai
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_swapchain)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_swapchain});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateSwapchainKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, true,
                                    "VUID-vkCreateSwapchainKHR-pCreateInfo-parameter", "VUID-VkSwapchainCreateInfoKHR-sType-sType");
@@ -14830,6 +14925,11 @@ bool Device::PreCallValidateCreateSharedSwapchainsKHR(VkDevice device, uint32_t 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_display_swapchain))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_display_swapchain});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateSharedSwapchainsKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructTypeArray(
         loc.dot(Field::swapchainCount), loc.dot(Field::pCreateInfos), swapchainCount, pCreateInfos,
         VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, true, true, "VUID-VkSwapchainCreateInfoKHR-sType-sType",
@@ -15232,6 +15332,11 @@ bool Device::PreCallValidateCreateVideoSessionKHR(VkDevice device, const VkVideo
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateVideoSessionKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_CREATE_INFO_KHR,
                                        true, "VUID-vkCreateVideoSessionKHR-pCreateInfo-parameter",
                                        "VUID-VkVideoSessionCreateInfoKHR-sType-sType");
@@ -15376,6 +15481,11 @@ bool Device::PreCallValidateCreateVideoSessionParametersKHR(VkDevice device,
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_video_queue)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_video_queue});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateVideoSessionParametersKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VIDEO_SESSION_PARAMETERS_CREATE_INFO_KHR, true,
         "VUID-vkCreateVideoSessionParametersKHR-pCreateInfo-parameter", "VUID-VkVideoSessionParametersCreateInfoKHR-sType-sType");
@@ -16968,6 +17078,11 @@ bool Device::PreCallValidateCreateDeferredOperationKHR(VkDevice device, const Vk
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_deferred_host_operations))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_deferred_host_operations});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateDeferredOperationKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     if (pAllocator != nullptr) {
         [[maybe_unused]] const Location pAllocator_loc = loc.dot(Field::pAllocator);
         skip |= context.ValidateAllocationCallbacks(*pAllocator, pAllocator_loc);
@@ -18257,6 +18372,11 @@ bool Device::PreCallValidateCreateCuModuleNVX(VkDevice device, const VkCuModuleC
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateCuModuleNVX-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CU_MODULE_CREATE_INFO_NVX, true,
                                    "VUID-vkCreateCuModuleNVX-pCreateInfo-parameter", "VUID-VkCuModuleCreateInfoNVX-sType-sType");
@@ -18288,6 +18408,11 @@ bool Device::PreCallValidateCreateCuFunctionNVX(VkDevice device, const VkCuFunct
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nvx_binary_import)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NVX_binary_import});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateCuFunctionNVX-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CU_FUNCTION_CREATE_INFO_NVX,
                                        true, "VUID-vkCreateCuFunctionNVX-pCreateInfo-parameter",
                                        "VUID-VkCuFunctionCreateInfoNVX-sType-sType");
@@ -19557,6 +19682,11 @@ bool Device::PreCallValidateCreateValidationCacheEXT(VkDevice device, const VkVa
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_validation_cache))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_validation_cache});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateValidationCacheEXT-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_VALIDATION_CACHE_CREATE_INFO_EXT,
                                        true, "VUID-vkCreateValidationCacheEXT-pCreateInfo-parameter",
                                        "VUID-VkValidationCacheCreateInfoEXT-sType-sType");
@@ -19708,6 +19838,11 @@ bool Device::PreCallValidateCreateAccelerationStructureNV(VkDevice device, const
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_ray_tracing)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_ray_tracing});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateAccelerationStructureNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV, true,
         "VUID-vkCreateAccelerationStructureNV-pCreateInfo-parameter", "VUID-VkAccelerationStructureCreateInfoNV-sType-sType");
@@ -21125,6 +21260,11 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutNV(VkDevice device, cons
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_device_generated_commands});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateIndirectCommandsLayoutNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NV, true,
         "VUID-vkCreateIndirectCommandsLayoutNV-pCreateInfo-parameter", "VUID-VkIndirectCommandsLayoutCreateInfoNV-sType-sType");
@@ -21311,6 +21451,11 @@ bool Device::PreCallValidateCreateCudaModuleNV(VkDevice device, const VkCudaModu
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateCudaModuleNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CUDA_MODULE_CREATE_INFO_NV, true,
                                    "VUID-vkCreateCudaModuleNV-pCreateInfo-parameter", "VUID-VkCudaModuleCreateInfoNV-sType-sType");
@@ -21353,6 +21498,11 @@ bool Device::PreCallValidateCreateCudaFunctionNV(VkDevice device, const VkCudaFu
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_cuda_kernel_launch))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_cuda_kernel_launch});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateCudaFunctionNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_CUDA_FUNCTION_CREATE_INFO_NV,
                                        true, "VUID-vkCreateCudaFunctionNV-pCreateInfo-parameter",
                                        "VUID-VkCudaFunctionCreateInfoNV-sType-sType");
@@ -22028,6 +22178,11 @@ bool Device::PreCallValidateCreateBufferCollectionFUCHSIA(VkDevice device, const
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_fuchsia_buffer_collection))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_FUCHSIA_buffer_collection});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateBufferCollectionFUCHSIA-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_BUFFER_COLLECTION_CREATE_INFO_FUCHSIA, true,
         "VUID-vkCreateBufferCollectionFUCHSIA-pCreateInfo-parameter", "VUID-VkBufferCollectionCreateInfoFUCHSIA-sType-sType");
@@ -22530,6 +22685,11 @@ bool Device::PreCallValidateCreateMicromapEXT(VkDevice device, const VkMicromapC
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_opacity_micromap))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_opacity_micromap});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateMicromapEXT-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |=
         context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_MICROMAP_CREATE_INFO_EXT, true,
                                    "VUID-vkCreateMicromapEXT-pCreateInfo-parameter", "VUID-VkMicromapCreateInfoEXT-sType-sType");
@@ -23612,6 +23772,11 @@ bool Device::PreCallValidateCreateTensorARM(VkDevice device, const VkTensorCreat
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateTensorARM-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_TENSOR_CREATE_INFO_ARM, true,
                                        "VUID-vkCreateTensorARM-pCreateInfo-parameter", "VUID-VkTensorCreateInfoARM-sType-sType");
     if (pCreateInfo != nullptr) {
@@ -23688,6 +23853,11 @@ bool Device::PreCallValidateCreateTensorViewARM(VkDevice device, const VkTensorV
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_arm_tensors)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_tensors});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateTensorViewARM-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_TENSOR_VIEW_CREATE_INFO_ARM,
                                        true, "VUID-vkCreateTensorViewARM-pCreateInfo-parameter",
                                        "VUID-VkTensorViewCreateInfoARM-sType-sType");
@@ -24133,6 +24303,11 @@ bool Device::PreCallValidateCreateOpticalFlowSessionNV(VkDevice device, const Vk
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_optical_flow)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_optical_flow});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateOpticalFlowSessionNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_OPTICAL_FLOW_SESSION_CREATE_INFO_NV, true,
         "VUID-vkCreateOpticalFlowSessionNV-pCreateInfo-parameter", "VUID-VkOpticalFlowSessionCreateInfoNV-sType-sType");
@@ -24811,6 +24986,11 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateDataGraphPipelinesARM-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructTypeArray(loc.dot(Field::createInfoCount), loc.dot(Field::pCreateInfos), createInfoCount,
                                             pCreateInfos, VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_CREATE_INFO_ARM, true, true,
                                             "VUID-VkDataGraphPipelineCreateInfoARM-sType-sType",
@@ -24878,6 +25058,11 @@ bool Device::PreCallValidateCreateDataGraphPipelineSessionARM(VkDevice device,
     Context context(*this, error_obj, extensions);
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_arm_data_graph)) skip |= OutputExtensionError(loc, {vvl::Extension::_VK_ARM_data_graph});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateDataGraphPipelineSessionARM-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(loc.dot(Field::pCreateInfo), pCreateInfo,
                                        VK_STRUCTURE_TYPE_DATA_GRAPH_PIPELINE_SESSION_CREATE_INFO_ARM, true,
                                        "VUID-vkCreateDataGraphPipelineSessionARM-pCreateInfo-parameter",
@@ -25291,6 +25476,11 @@ bool Device::PreCallValidateCreateExternalComputeQueueNV(VkDevice device, const 
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_nv_external_compute_queue))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_NV_external_compute_queue});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateExternalComputeQueueNV-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_EXTERNAL_COMPUTE_QUEUE_CREATE_INFO_NV, true,
         "VUID-vkCreateExternalComputeQueueNV-pCreateInfo-parameter", "VUID-VkExternalComputeQueueCreateInfoNV-sType-sType");
@@ -25616,6 +25806,11 @@ bool Device::PreCallValidateCreateIndirectCommandsLayoutEXT(VkDevice device,
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateIndirectCommandsLayoutEXT-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_EXT, true,
         "VUID-vkCreateIndirectCommandsLayoutEXT-pCreateInfo-parameter", "VUID-VkIndirectCommandsLayoutCreateInfoEXT-sType-sType");
@@ -25690,6 +25885,11 @@ bool Device::PreCallValidateCreateIndirectExecutionSetEXT(VkDevice device, const
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_ext_device_generated_commands))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_EXT_device_generated_commands});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateIndirectExecutionSetEXT-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_INDIRECT_EXECUTION_SET_CREATE_INFO_EXT, true,
         "VUID-vkCreateIndirectExecutionSetEXT-pCreateInfo-parameter", "VUID-VkIndirectExecutionSetCreateInfoEXT-sType-sType");
@@ -25918,6 +26118,11 @@ bool Device::PreCallValidateCreateAccelerationStructureKHR(VkDevice device, cons
     [[maybe_unused]] const Location loc = error_obj.location;
     if (!IsExtEnabled(extensions.vk_khr_acceleration_structure))
         skip |= OutputExtensionError(loc, {vvl::Extension::_VK_KHR_acceleration_structure});
+
+    if (has_zero_queues) {
+        skip |= LogError("VUID-vkCreateAccelerationStructureKHR-device-queuecount", device, error_obj.location,
+                         "device was created with queueCreateInfoCount of zero.");
+    }
     skip |= context.ValidateStructType(
         loc.dot(Field::pCreateInfo), pCreateInfo, VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR, true,
         "VUID-vkCreateAccelerationStructureKHR-pCreateInfo-parameter", "VUID-VkAccelerationStructureCreateInfoKHR-sType-sType");

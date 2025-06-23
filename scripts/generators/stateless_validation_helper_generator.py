@@ -568,6 +568,14 @@ class StatelessValidationHelperOutputGenerator(BaseGenerator):
                     # check function name so KHR version doesn't trigger flase positive
                     functionBody.append(f'if (loc.function == vvl::Func::{command.name} && CheckPromotedApiAgainstVulkanVersion({command.params[0].name}, loc, {command.version.nameApi})) return true;\n')
 
+                if not command.allowNoQueues and command.params[0].type == 'VkDevice':
+                    if 'vkCreate' in command.name or 'vkAllocate' in command.name:
+                        functionBody.append(f'''
+                            if (has_zero_queues) {{
+                                skip |= LogError("VUID-{command.name}-device-queuecount", device, error_obj.location, "device was created with queueCreateInfoCount of zero.");
+                            }}
+                            ''')
+
                 for line in lines:
                     if isinstance(line, list):
                         for sub in line:

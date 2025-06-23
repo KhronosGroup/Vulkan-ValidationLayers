@@ -449,6 +449,10 @@ class Device : public vvl::base::Device {
     uint32_t discard_rectangles_extension_version = 0;
     uint32_t scissor_exclusive_extension_version = 0;
 
+    // maintenance9 allows creating devices with zero queues, this is for doing things like compiling shaders/pipelines, so we need
+    // to catch if those workflows try and create other objects that actually require a queue
+    bool has_zero_queues = false;
+
     // Override chassis read/write locks for this validation object
     // This override takes a deferred lock. i.e. it is not acquired.
     ReadLockGuard ReadLock() const override;
