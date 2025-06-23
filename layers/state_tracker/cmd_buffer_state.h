@@ -645,9 +645,12 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
 
     void SetImageLayout(const vvl::Image &image_state, const VkImageSubresourceRange &normalized_subresource_range,
                         VkImageLayout layout, VkImageLayout expected_layout = kInvalidLayout);
+
     // This tracks the first known layout of the subresource in the command buffer.
+    // NOTE: depth_offset/depth_extent parameters are used to support per-slice image layout
+    // transitions in 3d image. Set depth_extent to zero if API does not specify region with depth information.
     void TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
-                               VkImageLayout layout);
+                               int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout);
 
     void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
     void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);

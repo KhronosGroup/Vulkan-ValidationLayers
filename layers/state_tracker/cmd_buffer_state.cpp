@@ -1460,9 +1460,17 @@ void CommandBuffer::TrackImageViewFirstLayout(const vvl::ImageView &view_state, 
 }
 
 void CommandBuffer::TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
+                                          int32_t depth_offset, uint32_t depth_extent,
                                           VkImageLayout layout) {
     if (auto image_layout_map = GetOrCreateImageLayoutMap(image_state)) {
-        const VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
+        VkImageSubresourceRange normalized_subresource_range = image_state.NormalizeSubresourceRange(subresource_range);
+
+        if (dev_data.extensions.vk_khr_maintenance9 && image_state.create_info.imageType == VK_IMAGE_TYPE_3D &&
+            (image_state.create_info.flags & VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT) != 0 && depth_extent != 0) {
+            normalized_subresource_range.baseArrayLayer = (uint32_t)depth_offset;
+            normalized_subresource_range.layerCount = depth_extent;
+        }
+
         if (image_state.subresource_encoder.InRange(normalized_subresource_range)) {
             RangeGenerator range_gen(image_state.subresource_encoder, normalized_subresource_range);
             TrackFirstLayout(*image_layout_map, std::move(range_gen), layout, normalized_subresource_range.aspectMask);
