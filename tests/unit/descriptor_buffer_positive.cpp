@@ -282,7 +282,7 @@ TEST_F(PositiveDescriptorBuffer, MultipleSet) {
     VkDescriptorSetLayoutBinding binding = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
     vkt::DescriptorSetLayout ds_layout(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT);
 
-    const VkDescriptorSetLayout set_layouts[3] = {ds_layout.handle(), ds_layout, ds_layout};
+    const VkDescriptorSetLayout set_layouts[3] = {ds_layout, ds_layout, ds_layout};
     VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
     pipe_layout_ci.setLayoutCount = 3;
     pipe_layout_ci.pSetLayouts = set_layouts;

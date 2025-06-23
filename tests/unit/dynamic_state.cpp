@@ -481,25 +481,25 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
     vkt::CommandBuffer commandBuffer(*m_device, m_command_pool);
     commandBuffer.Begin();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08971",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetCullModeEXT, "VUID-vkCmdSetCullMode-None-08971",
                           VK_CULL_MODE_NONE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthBoundsTestEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthBoundsTestEnableEXT,
                           "VUID-vkCmdSetDepthBoundsTestEnable-None-08971", VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthCompareOpEXT,
-                          "VUID-vkCmdSetDepthCompareOp-None-08971", VK_COMPARE_OP_NEVER);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthCompareOpEXT, "VUID-vkCmdSetDepthCompareOp-None-08971",
+                          VK_COMPARE_OP_NEVER);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthTestEnableEXT,
-                          "VUID-vkCmdSetDepthTestEnable-None-08971", VK_FALSE);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthTestEnableEXT, "VUID-vkCmdSetDepthTestEnable-None-08971",
+                          VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetDepthWriteEnableEXT,
-                          "VUID-vkCmdSetDepthWriteEnable-None-08971", VK_FALSE);
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetDepthWriteEnableEXT, "VUID-vkCmdSetDepthWriteEnable-None-08971",
+                          VK_FALSE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08971",
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetFrontFaceEXT, "VUID-vkCmdSetFrontFace-None-08971",
                           VK_FRONT_FACE_CLOCKWISE);
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetPrimitiveTopologyEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetPrimitiveTopologyEXT,
                           "VUID-vkCmdSetPrimitiveTopology-None-08971", VK_PRIMITIVE_TOPOLOGY_POINT_LIST);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetScissorWithCount-None-08971");
@@ -512,7 +512,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateDisabled) {
                            VK_COMPARE_OP_NEVER);
     m_errorMonitor->VerifyFound();
 
-    ExtendedDynStateCalls(m_errorMonitor, commandBuffer.handle(), vk::CmdSetStencilTestEnableEXT,
+    ExtendedDynStateCalls(m_errorMonitor, commandBuffer, vk::CmdSetStencilTestEnableEXT,
                           "VUID-vkCmdSetStencilTestEnable-None-08971", VK_FALSE);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdSetViewportWithCount-None-08971");
@@ -644,7 +644,7 @@ TEST_F(NegativeDynamicState, ExtendedDynamicStateBindVertexBuffers) {
     {
         vkt::Buffer bufferWrongUsage(*m_device, 16, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
         m_errorMonitor->SetDesiredError("VUID-vkCmdBindVertexBuffers2-pBuffers-03359");
-        VkBuffer buffers2[1] = {bufferWrongUsage.handle()};
+        VkBuffer buffers2[1] = {bufferWrongUsage};
         VkDeviceSize offsets2[1] = {};
         vk::CmdBindVertexBuffers2EXT(commandBuffer, 0, 1, buffers2, offsets2, 0, 0);
         m_errorMonitor->VerifyFound();
@@ -5713,7 +5713,7 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer, pg_query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, pg_query_pool, 0u, 0u);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdSetRasterizationStreamEXT(m_command_buffer, 1u);
@@ -5721,7 +5721,7 @@ TEST_F(NegativeDynamicState, PGQNonZeroRasterizationStreams) {
     vk::CmdDraw(m_command_buffer, 3u, 1u, 0u, 0u);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
-    vk::CmdEndQuery(m_command_buffer, pg_query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, pg_query_pool, 0u);
     m_command_buffer.End();
 }
 
@@ -5983,7 +5983,7 @@ TEST_F(NegativeDynamicState, RasterizationSamplesDynamicRendering) {
     colorAttachment.imageView = image_view;
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-    colorAttachment.resolveImageView = resolve_image_view.handle();
+    colorAttachment.resolveImageView = resolve_image_view;
     colorAttachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -6064,12 +6064,12 @@ TEST_F(NegativeDynamicState, DrawNotSetDepthWriteEnable) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer.handle(), VK_FALSE);
-    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_TRUE);
+    vk::CmdSetRasterizerDiscardEnableEXT(m_command_buffer, VK_FALSE);
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_TRUE);
 
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07844");
-    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.EndRenderPass();

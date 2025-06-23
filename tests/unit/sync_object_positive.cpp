@@ -1478,7 +1478,7 @@ struct SemBufferRaceData {
 
             VkMemoryPropertyFlags reqs = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
             auto buffer = std::make_unique<vkt::Buffer>();
-            buffer->init(dev, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, reqs);
+            buffer->Init(dev, 20, VK_BUFFER_USAGE_TRANSFER_DST_BIT, reqs);
 
             // main thread sets up buffer
             // main thread signals 1
@@ -2646,8 +2646,8 @@ TEST_F(PositiveSyncObject, Transition3dImageSlice) {
     image_memory_barrier.subresourceRange.layerCount = 1u;
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
     m_command_buffer.End();
 }
 
@@ -2677,7 +2677,7 @@ TEST_F(PositiveSyncObject, Transition3dImageSlices) {
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_memory_barrier.image = image.handle();
+    image_memory_barrier.image = image;
     image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_memory_barrier.subresourceRange.baseMipLevel = 0u;
     image_memory_barrier.subresourceRange.levelCount = 1u;
@@ -2685,26 +2685,26 @@ TEST_F(PositiveSyncObject, Transition3dImageSlices) {
     image_memory_barrier.subresourceRange.layerCount = 4u;
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
 
     image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     image_memory_barrier.subresourceRange.baseArrayLayer = 1u;
     image_memory_barrier.subresourceRange.layerCount = 1u;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
 
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     image_memory_barrier.subresourceRange.baseArrayLayer = 2u;
     image_memory_barrier.subresourceRange.layerCount = 1u;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
 
     image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
@@ -2742,7 +2742,7 @@ TEST_F(PositiveSyncObject, Transition3dImageWithMipLevels) {
     image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_memory_barrier.image = image.handle();
+    image_memory_barrier.image = image;
     image_memory_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     image_memory_barrier.subresourceRange.baseMipLevel = 0u;
     image_memory_barrier.subresourceRange.levelCount = 2u;
@@ -2750,8 +2750,8 @@ TEST_F(PositiveSyncObject, Transition3dImageWithMipLevels) {
     image_memory_barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
     m_command_buffer.Begin();
-    vk::CmdPipelineBarrier(m_command_buffer.handle(), VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 1u, &image_memory_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0u, 0u, nullptr, 0u,
+                           nullptr, 1u, &image_memory_barrier);
     m_command_buffer.End();
 }
 
@@ -2772,7 +2772,7 @@ TEST_F(PositiveSyncObject, SetEvent2Flags) {
     dependency_info.pMemoryBarriers = &memory_barrier;
 
     vkt::Event event(*m_device);
-    vk::CmdSetEvent2(m_command_buffer.handle(), event.handle(), &dependency_info);
+    vk::CmdSetEvent2(m_command_buffer, event, &dependency_info);
 }
 
 TEST_F(PositiveSyncObject, TimelineSemaphoreAndExportedCopyCooperation) {

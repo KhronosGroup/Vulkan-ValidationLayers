@@ -29,8 +29,7 @@ TEST_F(PositiveExternalMemorySync, GetMemoryFdHandle) {
     alloc_info.allocationSize = 1024;
     alloc_info.memoryTypeIndex = 0;
 
-    vkt::DeviceMemory memory;
-    memory.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory(*m_device, alloc_info);
     VkMemoryGetFdInfoKHR get_handle_info = vku::InitStructHelper();
     get_handle_info.memory = memory;
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
@@ -73,11 +72,10 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFd) {
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &export_info);
 
-    vkt::DeviceMemory memory_export;
-    memory_export.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory_export(*m_device, alloc_info);
 
     VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
-    mgfi.memory = memory_export.handle();
+    mgfi.memory = memory_export;
     mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     int fd;
@@ -242,13 +240,13 @@ TEST_F(PositiveExternalMemorySync, ExternalMemory) {
     // Copy from input buffer to output buffer through the exported/imported memory
     m_command_buffer.Begin();
     VkBufferCopy copy_info = {0, 0, buffer_size};
-    vk::CmdCopyBuffer(m_command_buffer, buffer_input.handle(), buffer_export.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_input, buffer_export, 1, &copy_info);
     // Insert memory barrier to guarantee copy order
     VkMemoryBarrier mem_barrier = {VK_STRUCTURE_TYPE_MEMORY_BARRIER, nullptr, VK_ACCESS_TRANSFER_WRITE_BIT,
                                    VK_ACCESS_TRANSFER_READ_BIT};
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mem_barrier, 0,
                            nullptr, 0, nullptr);
-    vk::CmdCopyBuffer(m_command_buffer, buffer_import.handle(), buffer_output.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_import, buffer_output, 1, &copy_info);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
@@ -529,11 +527,10 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryWin32BufferDifferentDedicated) {
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &export_info);
 
-    vkt::DeviceMemory memory_export;
-    memory_export.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory_export(*m_device, alloc_info);
 
     VkMemoryGetWin32HandleInfoKHR get_handle_info = vku::InitStructHelper();
-    get_handle_info.memory = memory_export.handle();
+    get_handle_info.memory = memory_export;
     get_handle_info.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
     HANDLE handle = NULL;
@@ -615,11 +612,10 @@ TEST_F(PositiveExternalMemorySync, ImportMemoryFdBufferDifferentDedicated) {
     export_info.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
     auto alloc_info = vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0, &export_info);
 
-    vkt::DeviceMemory memory_export;
-    memory_export.init(*m_device, alloc_info);
+    vkt::DeviceMemory memory_export(*m_device, alloc_info);
 
     VkMemoryGetFdInfoKHR mgfi = vku::InitStructHelper();
-    mgfi.memory = memory_export.handle();
+    mgfi.memory = memory_export;
     mgfi.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 
     int fd;

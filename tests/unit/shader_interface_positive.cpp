@@ -466,7 +466,7 @@ TEST_F(PositiveShaderInterface, InputAttachment) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }

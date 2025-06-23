@@ -56,7 +56,7 @@ void DeviceGeneratedCommandsTest::SetPreProcessBuffer(VkGeneratedCommandsInfoEXT
         buffer_usage_flags.usage = VK_BUFFER_USAGE_2_PREPROCESS_BUFFER_BIT_EXT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
         VkBufferCreateInfo buffer_ci = vku::InitStructHelper(&buffer_usage_flags);
         buffer_ci.size = pre_process_size;
-        pre_process_buffer_->init(*m_device, buffer_ci, 0, &allocate_flag_info);
+        pre_process_buffer_->Init(*m_device, buffer_ci, 0, &allocate_flag_info);
         pre_process_address = pre_process_buffer_->Address();
     }
 

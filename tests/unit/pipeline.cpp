@@ -515,7 +515,7 @@ TEST_F(NegativePipeline, SubpassRasterizationSamples) {
     pipeline_2.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(renderpass.handle(), framebuffer, fb_width, fb_height);
+    m_command_buffer.BeginRenderPass(renderpass, framebuffer, fb_width, fb_height);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_1.Handle());
 
@@ -613,7 +613,7 @@ TEST_F(NegativePipeline, RenderPassShaderResolveQCOM) {
 
     ms_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     ms_state.sampleShadingEnable = VK_TRUE;
-    pipe.gp_ci_.renderPass = renderpass2.handle();
+    pipe.gp_ci_.renderPass = renderpass2;
 
     // Create a pipeline with a subpass using VK_SUBPASS_DESCRIPTION_FRAGMENT_REGION_BIT_QCOM,
     // and with sampleShadingEnable enabled in the pipeline
@@ -1759,8 +1759,8 @@ TEST_F(NegativePipeline, NotCompatibleForSet) {
 
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, binding_pipeline_layout, 0, 1, &descriptor_set.set_,
+                              0, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08600");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();
@@ -2055,10 +2055,10 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
     const vkt::PipelineLayout combined_pipeline_layout(*m_device, {&combined_descriptor_set.layout_});
     const vkt::PipelineLayout seperate_pipeline_layout(*m_device, {&seperate_descriptor_set.layout_});
 
-    pipeline_combined.gp_ci_.layout = combined_pipeline_layout.handle();
-    pipeline_seperate.gp_ci_.layout = seperate_pipeline_layout.handle();
-    pipeline_unused.gp_ci_.layout = combined_pipeline_layout.handle();
-    pipeline_function.gp_ci_.layout = combined_pipeline_layout.handle();
+    pipeline_combined.gp_ci_.layout = combined_pipeline_layout;
+    pipeline_seperate.gp_ci_.layout = seperate_pipeline_layout;
+    pipeline_unused.gp_ci_.layout = combined_pipeline_layout;
+    pipeline_function.gp_ci_.layout = combined_pipeline_layout;
 
     pipeline_combined.CreateGraphicsPipeline();
     pipeline_seperate.CreateGraphicsPipeline();
@@ -2091,7 +2091,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
     // Unused is a valid version of the combined pipeline/descriptors
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_unused);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout, 0, 1,
                               &combined_descriptor_set.set_, 0, nullptr);
     vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
 
@@ -2111,7 +2111,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
         // Same error, but not with seperate descriptors
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout, 0, 1,
                                   &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-magFilter-04553");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
@@ -2129,7 +2129,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
                                                          VK_IMAGE_LAYOUT_UNDEFINED);
         seperate_descriptor_set.UpdateDescriptorSets();
 
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout.handle(), 0, 1,
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, combined_pipeline_layout, 0, 1,
                                   &combined_descriptor_set.set_, 0, nullptr);
 
         // Same descriptor set as combined test
@@ -2146,7 +2146,7 @@ TEST_F(NegativePipeline, SampledInvalidImageViews) {
 
         // Same error, but not with seperate descriptors
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_seperate);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout.handle(), 0, 1,
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, seperate_pipeline_layout, 0, 1,
                                   &seperate_descriptor_set.set_, 0, nullptr);
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-mipmapMode-04770");
         vk::CmdDraw(m_command_buffer, 1, 0, 0, 0);
@@ -2409,7 +2409,7 @@ TEST_F(NegativePipeline, CreateComputePipelineWithDerivatives) {
         vkt::Pipeline test_pipeline(*m_device, compute_create_infos[0]);
         if (test_pipeline.initialized()) {
             compute_create_infos[1].flags = VK_PIPELINE_CREATE_DERIVATIVE_BIT;
-            compute_create_infos[1].basePipelineHandle = test_pipeline.handle();
+            compute_create_infos[1].basePipelineHandle = test_pipeline;
             compute_create_infos[1].basePipelineIndex = 0;
 
             m_errorMonitor->SetDesiredError("VUID-VkComputePipelineCreateInfo-flags-07986");
@@ -2865,7 +2865,7 @@ TEST_F(NegativePipeline, RasterizationOrderAttachmentAccessNoSubpassFlags) {
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass;
 
-        render_pass.init(*this->m_device, rpci);
+        render_pass.Init(*this->m_device, rpci);
     };
 
     auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper &helper) {

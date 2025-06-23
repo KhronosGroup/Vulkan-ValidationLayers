@@ -2469,7 +2469,6 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
     const auto image_memory_requirements = image.MemoryRequirements();
 
-    vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype = m_device->Physical().SetMemoryType(
@@ -2477,7 +2476,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemory) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
     }
-    mem.init(*m_device, alloc_info);
+    vkt::DeviceMemory mem(*m_device, alloc_info);
 
     buffer.BindMemory(mem, 0);
     image.BindMemory(mem, 0);
@@ -2540,7 +2539,6 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemoryOffsets) {
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
     const auto image_memory_requirements = image.MemoryRequirements();
 
-    vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype = m_device->Physical().SetMemoryType(
@@ -2548,7 +2546,7 @@ TEST_F(NegativeCopyBufferImage, DISABLED_ImageOverlappingMemoryOffsets) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a memory type for both a buffer and an image";
     }
-    mem.init(*m_device, alloc_info);
+    vkt::DeviceMemory mem(*m_device, alloc_info);
 
     buffer.BindMemory(mem, 0);
     image.BindMemory(mem, 0);

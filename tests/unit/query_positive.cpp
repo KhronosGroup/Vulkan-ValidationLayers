@@ -248,13 +248,13 @@ TEST_F(PositiveQuery, QueryAndCopySecondaryCommandBuffers) {
         VkCommandBufferBeginInfo begin_info = vku::InitStructHelper();
         begin_info.pInheritanceInfo = &hinfo;
         secondary_buffer.Begin(&begin_info);
-        vk::CmdResetQueryPool(secondary_buffer.handle(), query_pool, 0, 1);
-        vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+        vk::CmdResetQueryPool(secondary_buffer, query_pool, 0, 1);
+        vk::CmdWriteTimestamp(secondary_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
         secondary_buffer.End();
 
         primary_buffer.Begin();
-        vk::CmdExecuteCommands(primary_buffer.handle(), 1, &secondary_buffer.handle());
-        vk::CmdCopyQueryPoolResults(primary_buffer.handle(), query_pool, 0, 1, buffer, 0, 0, VK_QUERY_RESULT_WAIT_BIT);
+        vk::CmdExecuteCommands(primary_buffer, 1, &secondary_buffer.handle());
+        vk::CmdCopyQueryPoolResults(primary_buffer, query_pool, 0, 1, buffer, 0, 0, VK_QUERY_RESULT_WAIT_BIT);
         primary_buffer.End();
     }
 
@@ -464,12 +464,12 @@ TEST_F(PositiveQuery, PerformanceQueries) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     cmd_buffer.Begin(&info);
 
-    vk::CmdBeginQuery(cmd_buffer.handle(), query_pool, 0u, 0u);
+    vk::CmdBeginQuery(cmd_buffer, query_pool, 0u, 0u);
 
-    vk::CmdPipelineBarrier(cmd_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 0u, nullptr);
+    vk::CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr,
+                           0u, nullptr, 0u, nullptr);
 
-    vk::CmdEndQuery(cmd_buffer.handle(), query_pool, 0u);
+    vk::CmdEndQuery(cmd_buffer, query_pool, 0u);
 
     cmd_buffer.End();
 
@@ -518,7 +518,7 @@ TEST_F(PositiveQuery, ReuseSecondaryWithQueryCommand) {
 
     vkt::CommandBuffer secondary_buffer(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
     secondary_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    vk::CmdWriteTimestamp(secondary_buffer.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
+    vk::CmdWriteTimestamp(secondary_buffer, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, query_pool, 0);
     secondary_buffer.End();
 
     m_command_buffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
@@ -588,12 +588,12 @@ TEST_F(PositiveQuery, PerformanceCountersWithoutEnumeration) {
     VkCommandBufferBeginInfo info = vku::InitStructHelper();
     cmd_buffer.Begin(&info);
 
-    vk::CmdBeginQuery(cmd_buffer.handle(), query_pool, 0u, 0u);
+    vk::CmdBeginQuery(cmd_buffer, query_pool, 0u, 0u);
 
-    vk::CmdPipelineBarrier(cmd_buffer.handle(), VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u,
-                           nullptr, 0u, nullptr, 0u, nullptr);
+    vk::CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0u, 0u, nullptr,
+                           0u, nullptr, 0u, nullptr);
 
-    vk::CmdEndQuery(cmd_buffer.handle(), query_pool, 0u);
+    vk::CmdEndQuery(cmd_buffer, query_pool, 0u);
 
     cmd_buffer.End();
 
@@ -627,8 +627,8 @@ TEST_F(PositiveQuery, QueryPoolResetBit) {
     vkt::QueryPool query_pool(*m_device, qpci);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQuery(m_command_buffer.handle(), query_pool.handle(), 0, 0);
-    vk::CmdEndQuery(m_command_buffer.handle(), query_pool.handle(), 0);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0, 0);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);

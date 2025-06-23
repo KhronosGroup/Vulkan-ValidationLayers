@@ -60,7 +60,7 @@ TEST_F(PositivePushDescriptor, NullDstSet) {
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper);
-    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_, 0, 1,
                                 &descriptor_write);
 }
 
@@ -108,8 +108,7 @@ TEST_F(PositivePushDescriptor, NullDstSet14) {
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper);
-    vk::CmdPushDescriptorSet(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
-                             &descriptor_write);
+    vk::CmdPushDescriptorSet(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_, 0, 1, &descriptor_write);
 }
 
 TEST_F(PositivePushDescriptor, UnboundSet) {

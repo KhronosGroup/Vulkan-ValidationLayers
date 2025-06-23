@@ -2100,7 +2100,7 @@ TEST_F(PositiveGpuAVBufferDeviceAddress, SharedPipelineLayoutSubsetGraphicsPushC
 
     CreatePipelineHelper pipe_2(*this);
     pipe_2.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
-    pipe_2.gp_ci_.layout = pipeline_layout_2.handle();
+    pipe_2.gp_ci_.layout = pipeline_layout_2;
     pipe_2.CreateGraphicsPipeline();
 
     vkt::Buffer out_buffer(*m_device, 16, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vkt::device_address);

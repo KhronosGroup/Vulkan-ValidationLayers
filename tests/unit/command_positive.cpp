@@ -49,7 +49,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDrawIndirectCountKHR(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
+    vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, indexed_indirect_buffer, 0, count_buffer, 0, 1,
                                        sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -85,7 +85,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithoutFeature12) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDrawIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer, 0, count_buffer, 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
@@ -118,7 +118,7 @@ TEST_F(PositiveCommand, DrawIndirectCountWithFeature) {
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     vk::CmdDrawIndirectCount(m_command_buffer, indirect_buffer, 0, count_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     vk::CmdBindIndexBuffer(m_command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer.handle(), 0, count_buffer, 0, 1,
+    vk::CmdDrawIndexedIndirectCount(m_command_buffer, indexed_indirect_buffer, 0, count_buffer, 0, 1,
                                     sizeof(VkDrawIndexedIndirectCommand));
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

@@ -64,7 +64,7 @@ TEST_F(NegativeParent, BindBuffer) {
 
     VkBindBufferMemoryInfo bind_buffer_info = vku::InitStructHelper();
     bind_buffer_info.buffer = buffer;
-    bind_buffer_info.memory = memory.handle();
+    bind_buffer_info.memory = memory;
     bind_buffer_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindBufferMemoryInfo-commonparent");
@@ -98,7 +98,7 @@ TEST_F(NegativeParent, DISABLED_BindImage) {
 
     VkBindImageMemoryInfo bind_image_info = vku::InitStructHelper();
     bind_image_info.image = image;
-    bind_image_info.memory = memory.handle();
+    bind_image_info.memory = memory;
     bind_image_info.memoryOffset = 0;
 
     m_errorMonitor->SetDesiredError("VUID-VkBindImageMemoryInfo-commonparent");
@@ -152,7 +152,7 @@ TEST_F(NegativeParent, BindPipeline) {
 
     m_command_buffer.Begin();
     m_errorMonitor->SetDesiredError("VUID-vkCmdBindPipeline-commonparent");
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline.handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
     m_errorMonitor->VerifyFound();
     m_command_buffer.End();
 }

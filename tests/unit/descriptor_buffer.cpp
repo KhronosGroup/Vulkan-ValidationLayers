@@ -1053,7 +1053,7 @@ TEST_F(NegativeDescriptorBuffer, BindPoint) {
         plci.setLayoutCount = 2;
         plci.pSetLayouts = set_layouts;
 
-        pipeline_layout.init(*m_device, plci);
+        pipeline_layout.Init(*m_device, plci);
     }
 
     {

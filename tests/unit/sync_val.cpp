@@ -2439,7 +2439,7 @@ TEST_F(NegativeSyncVal, RenderPassLoadHazardVsInitialLayout) {
         attachmentDescriptions[0].storeOp = VK_ATTACHMENT_STORE_OP_NONE;
         attachmentDescriptions[1].loadOp = VK_ATTACHMENT_LOAD_OP_NONE;
         attachmentDescriptions[1].storeOp = VK_ATTACHMENT_STORE_OP_NONE;
-        rp_no_load_store.init(*m_device, renderPassInfo);
+        rp_no_load_store.Init(*m_device, renderPassInfo);
         m_renderPassBeginInfo.renderPass = rp_no_load_store;
         m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
         m_command_buffer.EndRenderPass();
@@ -2797,7 +2797,7 @@ struct CreateRenderPassHelper {
         InitSubpasses();
         InitRenderPassInfo();
         render_pass = std::make_shared<vkt::RenderPass>();
-        render_pass->init(*dev, render_pass_create_info);
+        render_pass->Init(*dev, render_pass_create_info);
     }
 
     void InitFramebuffer() {
@@ -2811,7 +2811,7 @@ struct CreateRenderPassHelper {
                                         width,
                                         height,
                                         1u};
-        framebuffer->init(*dev, fbci);
+        framebuffer->Init(*dev, fbci);
     }
 
     void InitBeginInfo() {
@@ -3265,7 +3265,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
-            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+            g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
@@ -3344,7 +3344,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
-            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+            g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
@@ -3431,7 +3431,7 @@ TEST_F(NegativeSyncVal, RenderPassAsyncHazard) {
         std::vector<vkt::Pipeline> g_pipes(kNumImages - 1);
         for (size_t i = 0; i < g_pipes.size(); i++) {
             g_pipe_12.gp_ci_.subpass = i + 1;
-            g_pipes[i].init(*m_device, g_pipe_12.gp_ci_);
+            g_pipes[i].Init(*m_device, g_pipe_12.gp_ci_);
         }
 
         g_pipe_12.descriptor_set_->WriteDescriptorImageInfo(0, attachments[0], sampler, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT);
@@ -3816,8 +3816,7 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
     buffer_create_info.size = 32;
     buffer_create_info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    auto buffer = std::make_unique<vkt::Buffer>();
-    buffer->init(*m_device, buffer_create_info);
+    auto buffer = std::make_unique<vkt::Buffer>(*m_device, buffer_create_info);
 
     VkDescriptorBufferInfo buffer_info[2] = {};
     buffer_info[0].buffer = doit_buffer;
@@ -3836,23 +3835,20 @@ TEST_F(NegativeSyncVal, DestroyedUnusedDescriptors) {
     bvci.offset = 0;
     bvci.range = VK_WHOLE_SIZE;
 
-    auto texel_bufferview = std::make_unique<vkt::BufferView>();
-    texel_bufferview->init(*m_device, bvci);
+    auto texel_bufferview = std::make_unique<vkt::BufferView>(*m_device, bvci);
 
     vkt::Buffer index_buffer(*m_device, sizeof(uint32_t), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image sampled_image(*m_device, image_ci, vkt::set_layout);
-    auto sampled_view = std::make_unique<vkt::ImageView>();
     auto imageview_ci = sampled_image.BasicViewCreatInfo();
-    sampled_view->init(*m_device, imageview_ci);
+    auto sampled_view = std::make_unique<vkt::ImageView>(*m_device, imageview_ci);
 
     image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, format, VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::Image combined_image(*m_device, image_ci, vkt::set_layout);
     imageview_ci = combined_image.BasicViewCreatInfo();
-    auto combined_view = std::make_unique<vkt::ImageView>();
-    combined_view->init(*m_device, imageview_ci);
+    auto combined_view = std::make_unique<vkt::ImageView>(*m_device, imageview_ci);
 
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
@@ -4102,17 +4098,15 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
 
     vkt::ImageView imageview_s = image_s_a.CreateView();
 
-    vkt::Sampler sampler_s, sampler_c;
     VkSamplerCreateInfo sampler_ci = SafeSaneSamplerCreateInfo();
-    sampler_s.init(*m_device, sampler_ci);
-    sampler_c.init(*m_device, sampler_ci);
+    vkt::Sampler sampler_s(*m_device, sampler_ci);
+    vkt::Sampler sampler_c(*m_device, sampler_ci);
 
-    vkt::Buffer buffer_a, buffer_b;
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags buffer_usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*m_device, buffer_a.CreateInfo(2048, buffer_usage), mem_prop);
-    buffer_b.init(*m_device, buffer_b.CreateInfo(2048, buffer_usage), mem_prop);
+    vkt::Buffer buffer_a(*m_device, vkt::Buffer::CreateInfo(2048, buffer_usage), mem_prop);
+    vkt::Buffer buffer_b(*m_device, vkt::Buffer::CreateInfo(2048, buffer_usage), mem_prop);
 
     vkt::BufferView buffer_view(*m_device, buffer_a, VK_FORMAT_R32_SFLOAT);
 
@@ -4151,10 +4145,9 @@ TEST_F(NegativeSyncVal, StageAccessExpansion) {
     const float vbo_data[3] = {1.f, 0.f, 1.f};
     VkVertexInputAttributeDescription VertexInputAttributeDescription = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, sizeof(vbo_data)};
     VkVertexInputBindingDescription VertexInputBindingDescription = {0, sizeof(vbo_data), VK_VERTEX_INPUT_RATE_VERTEX};
-    vkt::Buffer vbo, vbo2;
     buffer_usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    vbo.init(*m_device, vbo.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
-    vbo2.init(*m_device, vbo2.CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+    vkt::Buffer vbo(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
+    vkt::Buffer vbo2(*m_device, vkt::Buffer::CreateInfo(sizeof(vbo_data), buffer_usage), mem_prop);
 
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkShaderObj fs(this, csSource.c_str(), VK_SHADER_STAGE_FRAGMENT_BIT);

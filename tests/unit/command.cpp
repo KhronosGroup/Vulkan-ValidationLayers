@@ -2017,9 +2017,8 @@ TEST_F(NegativeCommand, DrawIndirectCountKHR) {
 
     vkt::Buffer count_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
-    vkt::Buffer count_buffer_wrong;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    count_buffer_wrong.init(*m_device, count_buffer_create_info);
+    vkt::Buffer count_buffer_wrong(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndirectCount-countBuffer-02714");
     vk::CmdDrawIndirectCountKHR(m_command_buffer, draw_buffer, 0, count_buffer_unbound, 0, 1, sizeof(VkDrawIndirectCommand));
@@ -2098,9 +2097,8 @@ TEST_F(NegativeCommand, DrawIndexedIndirectCountKHR) {
 
     vkt::Buffer count_buffer_unbound(*m_device, count_buffer_create_info, vkt::no_mem);
 
-    vkt::Buffer count_buffer_wrong;
     count_buffer_create_info.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    count_buffer_wrong.init(*m_device, count_buffer_create_info);
+    vkt::Buffer count_buffer_wrong(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawIndexedIndirectCount-countBuffer-02714");
     vk::CmdDrawIndexedIndirectCountKHR(m_command_buffer, draw_buffer, 0, count_buffer_unbound, 0, 1,

@@ -3959,7 +3959,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
             GTEST_SKIP() << "DescriptorCount exceeds InlineUniformBlockSize limit";
         }
 
-        descLayout.init(*m_device, layoutCreate);
+        descLayout.Init(*m_device, layoutCreate);
 
         ASSERT_TRUE(descLayout.initialized());
     }
@@ -3980,7 +3980,7 @@ TEST_F(NegativeDescriptors, DescriptorUpdateOfMultipleBindingWithOneUpdateCall) 
         poolCreate.pPoolSizes = poolSize;
         poolCreate.maxSets = 1;
 
-        descPool.init(*m_device, poolCreate);
+        descPool.Init(*m_device, poolCreate);
         ASSERT_TRUE(descPool.initialized());
     }
 

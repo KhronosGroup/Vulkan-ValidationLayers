@@ -105,7 +105,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     const VkDeviceSize aabb_buffer_size = sizeof(VkAabbPositionsKHR) * aabbs.size();
     vkt::Buffer aabb_buffer;
-    aabb_buffer.init(*m_device, aabb_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
+    aabb_buffer.Init(*m_device, aabb_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
                      vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     uint8_t *mapped_aabb_buffer_data = (uint8_t *)aabb_buffer.Memory().Map();
@@ -155,7 +155,7 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDeviceSize instance_buffer_size = sizeof(instances[0]) * instances.size();
     vkt::Buffer instance_buffer;
-    instance_buffer.init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
+    instance_buffer.Init(*m_device, instance_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps, nullptr,
                          vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     uint8_t *mapped_instance_buffer_data = (uint8_t *)instance_buffer.Memory().Map();
@@ -206,12 +206,12 @@ void NegativeRayTracingNV::OOBRayTracingShadersTestBodyNV(bool gpu_assisted) {
 
     VkDeviceSize storage_buffer_size = 1024;
     vkt::Buffer storage_buffer;
-    storage_buffer.init(*m_device, storage_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps, nullptr,
+    storage_buffer.Init(*m_device, storage_buffer_size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps, nullptr,
                         vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     VkDeviceSize shader_binding_table_buffer_size = ray_tracing_properties.shaderGroupBaseAlignment * 4ull;
     vkt::Buffer shader_binding_table_buffer;
-    shader_binding_table_buffer.init(*m_device, shader_binding_table_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+    shader_binding_table_buffer.Init(*m_device, shader_binding_table_buffer_size, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
                                      kHostVisibleMemProps, nullptr, vvl::make_span(&ray_tracing_queue_family_index, 1));
 
     // Setup descriptors!
@@ -1046,17 +1046,10 @@ TEST_F(NegativeRayTracingNV, ValidateGeometry) {
     RETURN_IF_SKIP(NvInitFrameworkForRayTracingTest());
     RETURN_IF_SKIP(InitState());
 
-    vkt::Buffer vbo;
-    vbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
-
-    vkt::Buffer ibo;
-    ibo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
-
-    vkt::Buffer tbo;
-    tbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
-
-    vkt::Buffer aabbbo;
-    aabbbo.init(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
+    vkt::Buffer vbo(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
+    vkt::Buffer ibo(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
+    vkt::Buffer tbo(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
+    vkt::Buffer aabbbo(*m_device, 1024, VK_BUFFER_USAGE_RAY_TRACING_BIT_NV, kHostVisibleMemProps);
 
     VkBufferCreateInfo unbound_buffer_ci = vku::InitStructHelper();
     unbound_buffer_ci.size = 1024;
@@ -1839,7 +1832,7 @@ TEST_F(NegativeRayTracingNV, ValidateCmdCopyAccelerationStructure) {
     m_errorMonitor->VerifyFound();
 
     vkt::DeviceMemory host_memory;
-    host_memory.init(*m_device,
+    host_memory.Init(*m_device,
                      vkt::DeviceMemory::GetResourceAllocInfo(*m_device, dst_as_without_mem.MemoryRequirements().memoryRequirements,
                                                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
 

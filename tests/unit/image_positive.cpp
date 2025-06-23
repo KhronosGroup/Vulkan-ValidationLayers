@@ -102,7 +102,6 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     const auto buffer_memory_requirements = buffer->MemoryRequirements();
     const auto image_memory_requirements = image.MemoryRequirements();
 
-    vkt::DeviceMemory mem;
     VkMemoryAllocateInfo alloc_info = vku::InitStructHelper();
     alloc_info.allocationSize = (std::max)(buffer_memory_requirements.size, image_memory_requirements.size);
     bool has_memtype =
@@ -111,7 +110,7 @@ TEST_F(PositiveImage, AliasedMemoryTracking) {
     if (!has_memtype) {
         GTEST_SKIP() << "Failed to find a host visible memory type for both a buffer and an image";
     }
-    mem.init(*m_device, alloc_info);
+    vkt::DeviceMemory mem(*m_device, alloc_info);
 
     auto pData = mem.Map();
     std::memset(pData, 0xCADECADE, static_cast<size_t>(buff_size));

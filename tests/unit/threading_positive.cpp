@@ -207,7 +207,7 @@ TEST_F(PositiveThreading, DebugObjectNames) {
     vkt::PipelineLayout pipeline_layout(*m_device, {&set_layout2});
 
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
-    allocate_info.descriptorPool = descriptor_pool.handle();
+    allocate_info.descriptorPool = descriptor_pool;
     allocate_info.descriptorSetCount = 1u;
     allocate_info.pSetLayouts = &set_layout.handle();
 

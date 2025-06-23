@@ -277,8 +277,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatReadForFormat) {
         }
 
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
-                                  &ds.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_, 0, 1, &ds.set_, 0,
+                                  nullptr);
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07028");
         vk::CmdDispatch(m_command_buffer, 1, 1, 1);
@@ -421,8 +421,8 @@ TEST_F(NegativeShaderStorageImage, MissingFormatWriteForFormat) {
         }
 
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
-        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
-                                  &ds.set_, 0, nullptr);
+        vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_, 0, 1, &ds.set_, 0,
+                                  nullptr);
 
         if ((tests[t].props.optimalTilingFeatures & VK_FORMAT_FEATURE_2_STORAGE_WRITE_WITHOUT_FORMAT_BIT) == 0) {
             m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07027");

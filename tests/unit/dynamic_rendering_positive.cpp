@@ -375,7 +375,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipeline) {
 
     CreatePipelineHelper pipe(*this, &rendering_info);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
@@ -406,7 +406,7 @@ TEST_F(PositiveDynamicRendering, CreateGraphicsPipelineNoInfo) {
 
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.gp_ci_.renderPass = rp;
     pipe.CreateGraphicsPipeline();
 }
@@ -899,7 +899,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
         // Matching depth format
         const vkt::ImageView depth_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_DEPTH_BIT));
-        depth_stencil_attachment.imageView = depth_view.handle();
+        depth_stencil_attachment.imageView = depth_view;
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_depth);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -920,7 +920,7 @@ TEST_F(PositiveDynamicRendering, MatchingAttachmentFormats2) {
 
         // Matching stencil format
         const vkt::ImageView stencil_view(*m_device, depthStencilImage.BasicViewCreatInfo(VK_IMAGE_ASPECT_STENCIL_BIT));
-        depth_stencil_attachment.imageView = stencil_view.handle();
+        depth_stencil_attachment.imageView = stencil_view;
         m_command_buffer.BeginRendering(begin_rendering_info);
         vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_stencil);
         vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
@@ -1164,9 +1164,9 @@ TEST_F(PositiveDynamicRendering, BeginRenderingWithRenderPassStriped) {
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count];
 
     for (uint32_t i = 0; i < stripe_count; ++i) {
-        semaphores[i].init(*m_device, semaphore_create_info);
+        semaphores[i].Init(*m_device, semaphore_create_info);
         semaphore_submit_infos[i] = vku::InitStructHelper();
-        semaphore_submit_infos[i].semaphore = semaphores[i].handle();
+        semaphore_submit_infos[i].semaphore = semaphores[i];
     }
 
     VkRenderPassStripeSubmitInfoARM rp_stripe_submit_info = vku::InitStructHelper();

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,8 +208,8 @@ void GetSimpleGeometryForAccelerationStructureTests(const vkt::Device &device, v
         alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
         alloc_pnext = &alloc_flags;
     }
-    vbo->init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
-    ibo->init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
+    vbo->Init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
+    ibo->Init(device, 1024, usage, kHostVisibleMemProps, alloc_pnext);
 
     constexpr std::array vertices = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f, 0.0f};
     constexpr std::array<uint32_t, 3> indicies = {{0, 1, 2}};

@@ -55,14 +55,14 @@ void ShaderObjectTest::CreateMinimalShaders() {
     create_info.codeSize = vert_spirv.size() * sizeof(uint32_t);
     create_info.pCode = vert_spirv.data();
     create_info.pName = "main";
-    m_vert_shader.init(*m_device, create_info);
+    m_vert_shader.Init(*m_device, create_info);
 
     std::vector<uint32_t> frag_spirv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, kFragmentMinimalGlsl);
     create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     create_info.nextStage = 0u;
     create_info.codeSize = frag_spirv.size() * sizeof(uint32_t);
     create_info.pCode = frag_spirv.data();
-    m_frag_shader.init(*m_device, create_info);
+    m_frag_shader.Init(*m_device, create_info);
 }
 
 TEST_F(PositiveShaderObject, CreateAndDestroyShaderObject) {
@@ -125,14 +125,14 @@ TEST_F(PositiveShaderObject, DrawWithVertAndFragBinaryShaderObjects) {
     CreateMinimalShaders();
 
     size_t vertDataSize;
-    vk::GetShaderBinaryDataEXT(*m_device, m_vert_shader.handle(), &vertDataSize, nullptr);
+    vk::GetShaderBinaryDataEXT(*m_device, m_vert_shader, &vertDataSize, nullptr);
     std::vector<uint8_t> vertData(vertDataSize);
-    vk::GetShaderBinaryDataEXT(*m_device, m_vert_shader.handle(), &vertDataSize, vertData.data());
+    vk::GetShaderBinaryDataEXT(*m_device, m_vert_shader, &vertDataSize, vertData.data());
 
     size_t fragDataSize;
-    vk::GetShaderBinaryDataEXT(*m_device, m_frag_shader.handle(), &fragDataSize, nullptr);
+    vk::GetShaderBinaryDataEXT(*m_device, m_frag_shader, &fragDataSize, nullptr);
     std::vector<uint8_t> fragData(fragDataSize);
-    vk::GetShaderBinaryDataEXT(*m_device, m_frag_shader.handle(), &fragDataSize, fragData.data());
+    vk::GetShaderBinaryDataEXT(*m_device, m_frag_shader, &fragDataSize, fragData.data());
 
     vkt::Shader binary_vert_shader(*m_device, VK_SHADER_STAGE_VERTEX_BIT, vertData);
     vkt::Shader binary_frag_shader(*m_device, VK_SHADER_STAGE_FRAGMENT_BIT, fragData);
@@ -756,7 +756,7 @@ TEST_F(PositiveShaderObject, ShadersDescriptorSets) {
     const auto vert_spv = GLSLToSPV(VK_SHADER_STAGE_VERTEX_BIT, vert_src);
     const auto frag_spv = GLSLToSPV(VK_SHADER_STAGE_FRAGMENT_BIT, frag_src);
 
-    VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_.handle(), frag_descriptor_set.layout_.handle()};
+    VkDescriptorSetLayout descriptor_set_layouts[] = {vert_descriptor_set.layout_, frag_descriptor_set.layout_};
 
     const vkt::Shader vert_shader(*m_device, ShaderCreateInfo(vert_spv, VK_SHADER_STAGE_VERTEX_BIT, 2, descriptor_set_layouts));
     const vkt::Shader frag_shader(*m_device, ShaderCreateInfo(frag_spv, VK_SHADER_STAGE_FRAGMENT_BIT, 2, descriptor_set_layouts));
@@ -1056,7 +1056,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffers) {
     command_buffer.Begin();
     command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
+    SetDefaultDynamicStatesExclude({}, false, command_buffer);
     vk::CmdDraw(command_buffer, 4, 1, 0, 0);
     command_buffer.EndRendering();
     command_buffer.End();
@@ -1177,7 +1177,7 @@ TEST_F(PositiveShaderObject, DrawInSecondaryCommandBuffersWithRenderPassContinue
     begin_info.pInheritanceInfo = &hinfo;
     command_buffer.Begin(&begin_info);
     command_buffer.BindShaders(m_vert_shader, m_frag_shader);
-    SetDefaultDynamicStatesExclude({}, false, command_buffer.handle());
+    SetDefaultDynamicStatesExclude({}, false, command_buffer);
     vk::CmdDraw(command_buffer, 4, 1, 0, 0);
     command_buffer.End();
 

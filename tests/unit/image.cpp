@@ -3068,7 +3068,6 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
     image_create_info.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     vkt::Image image(*m_device, image_create_info, vkt::no_mem);
 
-    vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
     vk::GetImageMemoryRequirements(device(), image, &mem_reqs);
     VkMemoryAllocateInfo mem_alloc = vku::InitStructHelper(nullptr);
@@ -3081,7 +3080,7 @@ TEST_F(NegativeImage, ImageSplitInstanceBindRegionCount) {
         }
     }
 
-    image_mem.init(*m_device, mem_alloc);
+    vkt::DeviceMemory image_mem(*m_device, mem_alloc);
 
     std::array<uint32_t, 2> deviceIndices = {{0, 0}};
     VkRect2D splitInstanceBindregion = {{0, 0}, {16, 16}};

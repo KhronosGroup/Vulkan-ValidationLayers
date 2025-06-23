@@ -68,7 +68,7 @@ OneOffDescriptorIndexingSet::OneOffDescriptorIndexingSet(vkt::Device *device, co
     ds_layout_ci.flags = layout_flags;
     ds_layout_ci.bindingCount = ds_layout_bindings.size();
     ds_layout_ci.pBindings = ds_layout_bindings.data();
-    layout_.init(*device, ds_layout_ci);
+    layout_.Init(*device, ds_layout_ci);
 
     VkDescriptorPoolCreateInfo pool_ci = vku::InitStructHelper(create_pool_pnext);
     pool_ci.flags = pool_flags;

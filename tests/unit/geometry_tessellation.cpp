@@ -37,7 +37,7 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
 
     VkCommandPool command_pool;
-    vk::CreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
+    vk::CreateCommandPool(test_device, &pool_create_info, nullptr, &command_pool);
 
     VkCommandBufferAllocateInfo cmd = vku::InitStructHelper();
     cmd.commandPool = command_pool;
@@ -45,12 +45,12 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     cmd.commandBufferCount = 1;
 
     VkCommandBuffer cmd_buffer;
-    VkResult err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
+    VkResult err = vk::AllocateCommandBuffers(test_device, &cmd, &cmd_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkEvent event;
     VkEventCreateInfo evci = vku::InitStructHelper();
-    VkResult result = vk::CreateEvent(test_device.handle(), &evci, NULL, &event);
+    VkResult result = vk::CreateEvent(test_device, &evci, NULL, &event);
     ASSERT_EQ(VK_SUCCESS, result);
 
     VkCommandBufferBeginInfo cbbi = vku::InitStructHelper();
@@ -63,8 +63,8 @@ TEST_F(NegativeGeometryTessellation, StageMaskGsTsEnabled) {
     vk::CmdSetEvent(cmd_buffer, event, VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyEvent(test_device.handle(), event, NULL);
-    vk::DestroyCommandPool(test_device.handle(), command_pool, NULL);
+    vk::DestroyEvent(test_device, event, NULL);
+    vk::DestroyCommandPool(test_device, command_pool, NULL);
 }
 
 TEST_F(NegativeGeometryTessellation, GeometryShaderEnabled) {
@@ -418,7 +418,7 @@ TEST_F(NegativeGeometryTessellation, BuiltinBlockSizeMismatchVsGsShaderObject) {
     const VkShaderStageFlagBits stages[] = {VK_SHADER_STAGE_VERTEX_BIT, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
                                             VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT, VK_SHADER_STAGE_GEOMETRY_BIT,
                                             VK_SHADER_STAGE_FRAGMENT_BIT};
-    const VkShaderEXT shaders[] = {vertShader.handle(), VK_NULL_HANDLE, VK_NULL_HANDLE, geomShader.handle(), fragShader.handle()};
+    const VkShaderEXT shaders[] = {vertShader, VK_NULL_HANDLE, VK_NULL_HANDLE, geomShader, fragShader};
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderingColor(GetDynamicRenderTarget(), GetRenderTargetArea());
@@ -995,13 +995,13 @@ VK_DESCRIPTOR_SET_USAGE_NON_FREE, 1, &ds_layout.handle(), &descriptorSet);
 
     shaderStages[0] = vku::InitStructHelper();
     shaderStages[0].stage  = VK_SHADER_STAGE_VERTEX_BIT;
-    shaderStages[0].shader = vs.handle();
+    shaderStages[0].shader = vs;
     shaderStages[1] = vku::InitStructHelper();
     shaderStages[1].stage  = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    shaderStages[1].shader = tc.handle();
+    shaderStages[1].shader = tc;
     shaderStages[2] = vku::InitStructHelper();
     shaderStages[2].stage  = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    shaderStages[2].shader = te.handle();
+    shaderStages[2].shader = te;
 
     VkPipelineInputAssemblyStateCreateInfo iaCI = vku::InitStructHelper();
         iaCI.topology = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;

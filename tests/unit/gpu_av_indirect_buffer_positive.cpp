@@ -295,10 +295,10 @@ TEST_F(PositiveGpuAVIndirectBuffer, PipelineAndShaderObjectComputeDispatchIndire
     m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer.handle(), 0u);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     vk::CmdBindShadersEXT(m_command_buffer, 1u, &stage, &comp_shader.handle());
-    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer.handle(), 0u);
+    vk::CmdDispatchIndirect(m_command_buffer, dispatch_params_buffer, 0u);
 
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);

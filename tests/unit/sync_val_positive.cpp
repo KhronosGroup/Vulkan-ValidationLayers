@@ -2723,7 +2723,7 @@ TEST_F(PositiveSyncVal, TwoExternalDependenciesSyncLayoutTransitions) {
     vkt::Image image1(*m_device, w, h, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     vkt::ImageView image_view1 = image1.CreateView(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    const VkImageView image_views[2] = {image_view0.handle(), image_view1.handle()};
+    const VkImageView image_views[2] = {image_view0, image_view1};
 
     VkAttachmentDescription attachment0 = {};
     attachment0.format = VK_FORMAT_B8G8R8A8_UNORM;

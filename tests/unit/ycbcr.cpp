@@ -556,10 +556,10 @@ TEST_F(NegativeYcbcr, MultiplaneImageCopyBufferToImage) {
     copy.bufferOffset = 16;  // pushes over
 
     for (size_t i = 0; i < aspects.size(); ++i) {
-        buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        buffers[i].Init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
         m_errorMonitor->SetDesiredError("VUID-vkCmdCopyBufferToImage-pRegions-00171");
-        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i].handle(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i], image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
         m_errorMonitor->VerifyFound();
     }
     m_command_buffer.End();
@@ -1027,8 +1027,8 @@ TEST_F(NegativeYcbcr, BindMemory2Disjoint) {
         mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
         m_device->Physical().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
 
-        mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
-        mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
+        mp_image_mem[0].Init(*m_device, mp_image_alloc_info[0]);
+        mp_image_mem[1].Init(*m_device, mp_image_alloc_info[1]);
     }
 
     // All planes must be bound at once the same here
@@ -1222,8 +1222,8 @@ TEST_F(NegativeYcbcr, BindMemory2DisjointUnsupported) {
         mp_image_alloc_info[1].allocationSize = mp_image_mem_reqs2[1].memoryRequirements.size;
         m_device->Physical().SetMemoryType(mp_image_mem_reqs2[1].memoryRequirements.memoryTypeBits, &mp_image_alloc_info[1], 0);
 
-        mp_image_mem[0].init(*m_device, mp_image_alloc_info[0]);
-        mp_image_mem[1].init(*m_device, mp_image_alloc_info[1]);
+        mp_image_mem[0].Init(*m_device, mp_image_alloc_info[0]);
+        mp_image_mem[1].Init(*m_device, mp_image_alloc_info[1]);
     }
 
     // All planes must be bound at once the same here

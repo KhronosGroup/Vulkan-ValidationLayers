@@ -62,7 +62,7 @@ TEST_F(NegativeQuery, PerformanceCreation) {
 
     // Missing pNext
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolCreateInfo-queryType-03222");
-    query_pool.init(*m_device, query_pool_ci);
+    query_pool.Init(*m_device, query_pool_ci);
     m_errorMonitor->VerifyFound();
 
     query_pool_ci.pNext = &perf_query_pool_ci;
@@ -72,13 +72,13 @@ TEST_F(NegativeQuery, PerformanceCreation) {
     perf_query_pool_ci.counterIndexCount++;
     perf_query_pool_ci.pCounterIndices = counterIndices.data();
     m_errorMonitor->SetDesiredError("VUID-VkQueryPoolPerformanceCreateInfoKHR-pCounterIndices-03321");
-    query_pool.init(*m_device, query_pool_ci);
+    query_pool.Init(*m_device, query_pool_ci);
     m_errorMonitor->VerifyFound();
     perf_query_pool_ci.counterIndexCount--;
     counterIndices.pop_back();
 
     // Success
-    query_pool.init(*m_device, query_pool_ci);
+    query_pool.Init(*m_device, query_pool_ci);
 
     m_command_buffer.Begin();
 
@@ -1029,46 +1029,46 @@ TEST_F(NegativeQuery, Sizes) {
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09436");
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), query_pool_size, 1);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool, query_pool_size, 1);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdResetQueryPool-firstQuery-09437");
-    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), 1, query_pool_size);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool, 1, query_pool_size);
     m_errorMonitor->VerifyFound();
 
     // Actually reset all queries so they can be used
-    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool.handle(), 0, query_pool_size);
+    vk::CmdResetQueryPool(m_command_buffer, occlusion_query_pool, 0, query_pool_size);
 
-    vk::CmdBeginQuery(m_command_buffer, occlusion_query_pool.handle(), 0, 0);
+    vk::CmdBeginQuery(m_command_buffer, occlusion_query_pool, 0, 0);
 
     // Query index to large
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQuery-query-00810");
-    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool.handle(), query_pool_size);
+    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool, query_pool_size);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool.handle(), 0);
+    vk::CmdEndQuery(m_command_buffer, occlusion_query_pool, 0);
 
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09436");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
-    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), query_pool_size, 1, buffer, 0, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool, query_pool_size, 1, buffer, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-firstQuery-09437");
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-queryCount-09438");
-    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 1, query_pool_size, buffer, 0, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool, 1, query_pool_size, buffer, 0, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Offset larger than buffer size
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-dstOffset-00819");
-    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 0, 1, buffer, buffer_size + 4, 0, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool, 0, 1, buffer, buffer_size + 4, 0, 0);
     m_errorMonitor->VerifyFound();
 
     // Buffer does not have enough storage from offset to contain result of each query
     m_errorMonitor->SetDesiredError("VUID-vkCmdCopyQueryPoolResults-dstBuffer-00824");
-    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool.handle(), 0, 2, buffer, buffer_size - 4, 4, 0);
+    vk::CmdCopyQueryPoolResults(m_command_buffer, occlusion_query_pool, 0, 2, buffer, buffer_size - 4, 4, 0);
     m_errorMonitor->VerifyFound();
 
     // Query is not a timestamp type
@@ -1076,7 +1076,7 @@ TEST_F(NegativeQuery, Sizes) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-timestampValidBits-00829");
     }
     m_errorMonitor->SetDesiredError("VUID-vkCmdWriteTimestamp-queryPool-01416");
-    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool.handle(), 0);
+    vk::CmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, occlusion_query_pool, 0);
     m_errorMonitor->VerifyFound();
 
     m_command_buffer.End();
@@ -1087,12 +1087,12 @@ TEST_F(NegativeQuery, Sizes) {
     // FirstQuery is too large
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09436");
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09437");
-    vk::GetQueryPoolResults(device(), occlusion_query_pool.handle(), query_pool_size, 1, out_data_size, &data, 4, 0);
+    vk::GetQueryPoolResults(device(), occlusion_query_pool, query_pool_size, 1, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
 
     // Sum of firstQuery and queryCount is too large
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-firstQuery-09437");
-    vk::GetQueryPoolResults(device(), occlusion_query_pool.handle(), 1, query_pool_size, out_data_size, &data, 4, 0);
+    vk::GetQueryPoolResults(device(), occlusion_query_pool, 1, query_pool_size, out_data_size, &data, 4, 0);
     m_errorMonitor->VerifyFound();
 }
 
@@ -1144,7 +1144,7 @@ TEST_F(NegativeQuery, PreciseBit) {
     pool_create_info.queueFamilyIndex = test_device.graphics_queue_node_index_;
 
     VkCommandPool command_pool;
-    vk::CreateCommandPool(test_device.handle(), &pool_create_info, nullptr, &command_pool);
+    vk::CreateCommandPool(test_device, &pool_create_info, nullptr, &command_pool);
 
     VkCommandBufferAllocateInfo cmd = vku::InitStructHelper();
     cmd.commandPool = command_pool;
@@ -1152,16 +1152,16 @@ TEST_F(NegativeQuery, PreciseBit) {
     cmd.commandBufferCount = 1;
 
     VkCommandBuffer cmd_buffer;
-    VkResult err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer);
+    VkResult err = vk::AllocateCommandBuffers(test_device, &cmd, &cmd_buffer);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkCommandBuffer cmd_buffer2;
-    err = vk::AllocateCommandBuffers(test_device.handle(), &cmd, &cmd_buffer2);
+    err = vk::AllocateCommandBuffers(test_device, &cmd, &cmd_buffer2);
     ASSERT_EQ(VK_SUCCESS, err);
 
     VkEvent event;
     VkEventCreateInfo event_create_info = vku::InitStructHelper();
-    vk::CreateEvent(test_device.handle(), &event_create_info, nullptr, &event);
+    vk::CreateEvent(test_device, &event_create_info, nullptr, &event);
 
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, nullptr,
                                            VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, nullptr};
@@ -1188,11 +1188,11 @@ TEST_F(NegativeQuery, PreciseBit) {
     uint8_t data[out_data_size];
     // The dataSize is too small to return the data
     m_errorMonitor->SetDesiredError("VUID-vkGetQueryPoolResults-dataSize-00817");
-    vk::GetQueryPoolResults(test_device.handle(), query_pool, 0, 2, 8, &data, out_data_size / 2, 0);
+    vk::GetQueryPoolResults(test_device, query_pool, 0, 2, 8, &data, out_data_size / 2, 0);
     m_errorMonitor->VerifyFound();
 
-    vk::DestroyEvent(test_device.handle(), event, nullptr);
-    vk::DestroyCommandPool(test_device.handle(), command_pool, nullptr);
+    vk::DestroyEvent(test_device, event, nullptr);
+    vk::DestroyCommandPool(test_device, command_pool, nullptr);
 }
 
 TEST_F(NegativeQuery, PoolPartialTimestamp) {
@@ -1326,11 +1326,10 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTIndex) {
     vkt::QueryPool query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
 
     m_command_buffer.Begin();
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0,
-                              transform_feedback_properties.maxTransformFeedbackStreams);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool, 0, transform_feedback_properties.maxTransformFeedbackStreams);
 
     vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06695");
@@ -1364,21 +1363,18 @@ TEST_F(NegativeQuery, CmdEndQueryIndexedEXTPrimitiveGenerated) {
     m_command_buffer.Begin();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-02339");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0,
-                                transform_feedback_properties.maxTransformFeedbackStreams);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool, 0, 0, transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0, 0, 0);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, tf_query_pool, 0, 0, 0);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06696");
     m_errorMonitor->SetDesiredError("VUID-vkCmdEndQueryIndexedEXT-queryType-06694");
-    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool.handle(), 0,
-                              transform_feedback_properties.maxTransformFeedbackStreams);
+    vk::CmdEndQueryIndexedEXT(m_command_buffer, tf_query_pool, 0, transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06690");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer, pg_query_pool.handle(), 0, 0,
-                                transform_feedback_properties.maxTransformFeedbackStreams);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, pg_query_pool, 0, 0, transform_feedback_properties.maxTransformFeedbackStreams);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);
@@ -1672,7 +1668,7 @@ TEST_F(NegativeQuery, PrimitivesGenerated) {
 
     vkt::QueryPool occlusion_query_pool(*m_device, VK_QUERY_TYPE_OCCLUSION, 1);
     m_errorMonitor->SetDesiredError("VUID-vkCmdBeginQueryIndexedEXT-queryType-06692");
-    vk::CmdBeginQueryIndexedEXT(m_command_buffer, occlusion_query_pool.handle(), 0, 0, 1);
+    vk::CmdBeginQueryIndexedEXT(m_command_buffer, occlusion_query_pool, 0, 0, 1);
     m_errorMonitor->VerifyFound();
 
     vk::CmdBeginQueryIndexedEXT(m_command_buffer, query_pool, 0, 0, 0);

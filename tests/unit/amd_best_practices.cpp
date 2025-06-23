@@ -475,10 +475,10 @@ TEST_F(VkAmdBestPracticesLayerTest, NumSyncPrimitives) {
     const VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
     std::vector<vkt::Semaphore> test_semaphores(semaphore_warn_limit);
     for (int i = 0; i < semaphore_warn_limit - 1; ++i) {
-        test_semaphores[i].init(*m_device, semaphore_ci);
+        test_semaphores[i].Init(*m_device, semaphore_ci);
     }
     m_errorMonitor->SetDesiredFailureMsg(kPerformanceWarningBit, "BestPractices-SyncObjects-HighNumberOfSemaphores");
-    test_semaphores[semaphore_warn_limit - 1].init(*m_device, semaphore_ci);
+    test_semaphores[semaphore_warn_limit - 1].Init(*m_device, semaphore_ci);
     m_errorMonitor->VerifyFound();
 }
 

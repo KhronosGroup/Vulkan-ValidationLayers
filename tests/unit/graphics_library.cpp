@@ -208,7 +208,7 @@ TEST_F(NegativeGraphicsLibrary, LinkWithNonIndependent) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_null.handle();
+    exe_pipe_ci.layout = pipeline_layout_null;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06730");
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     m_errorMonitor->VerifyFound();
@@ -937,7 +937,7 @@ TEST_F(NegativeGraphicsLibrary, StageCount) {
     vkt::GraphicsPipelineLibraryStage vs_stage(vs_spv, VK_SHADER_STAGE_VERTEX_BIT);
     pre_raster_lib.InitPreRasterLibInfo(&vs_stage.stage_ci);
     pre_raster_lib.gp_ci_.stageCount = 0;
-    pre_raster_lib.gp_ci_.layout = pre_raster_lib.pipeline_layout_.handle();
+    pre_raster_lib.gp_ci_.layout = pre_raster_lib.pipeline_layout_;
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-flags-06644");
     pre_raster_lib.CreateGraphicsPipeline(false);
     m_errorMonitor->VerifyFound();
@@ -1588,13 +1588,13 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifier) {
     m_errorMonitor->VerifyFound();
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 
     // shader module id ci and module not VK_NULL_HANDLE
     stage_ci.pNext = &sm_id_create_info;
-    stage_ci.module = vs.handle();
+    stage_ci.module = vs;
     m_errorMonitor->SetDesiredError("VUID-VkPipelineShaderStageCreateInfo-stage-06848");
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -1628,11 +1628,11 @@ TEST_F(NegativeGraphicsLibrary, ShaderModuleIdentifierGPL) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
     VkPipelineShaderStageCreateInfo stage_ci = vku::InitStructHelper();
     stage_ci.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    stage_ci.module = vs.handle();
+    stage_ci.module = vs;
     stage_ci.pName = "main";
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
@@ -1773,7 +1773,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayouts) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
-    exe_ci.layout = pipeline_layout_exe.handle();
+    exe_ci.layout = pipeline_layout_exe;
     exe_ci.renderPass = RenderPass();
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state
@@ -1829,7 +1829,7 @@ TEST_F(NegativeGraphicsLibrary, IncompatibleLayoutsMultipleSubsets) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_ci = vku::InitStructHelper(&link_info);
-    exe_ci.layout = pipeline_layout_exe.handle();
+    exe_ci.layout = pipeline_layout_exe;
     exe_ci.renderPass = RenderPass();
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with pre-raster state
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-layout-07827");  // incompatible with fragment shader state

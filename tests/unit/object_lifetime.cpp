@@ -85,7 +85,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     vkt::DeviceMemory buffer_mem(*m_device, alloc_info);
     ASSERT_TRUE(buffer_mem.initialized());
 
-    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device(), buffer, buffer_mem.handle(), 0));
+    ASSERT_EQ(VK_SUCCESS, vk::BindBufferMemory(device(), buffer, buffer_mem, 0));
 
     m_command_buffer.Begin();
     VkBufferMemoryBarrier buf_barrier = vku::InitStructHelper();
@@ -100,7 +100,7 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(*m_device, buffer_mem.handle(), nullptr);
+    vk::FreeMemory(*m_device, buffer_mem, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -109,7 +109,6 @@ TEST_F(NegativeObjectLifetime, CmdBarrierBufferDestroyed) {
 TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     RETURN_IF_SKIP(Init());
 
-    vkt::DeviceMemory image_mem;
     VkMemoryRequirements mem_reqs;
 
     auto image_ci = vkt::Image::ImageCreateInfo2D(128, 128, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
@@ -123,9 +122,9 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     pass = m_device->Physical().SetMemoryType(mem_reqs.memoryTypeBits, &alloc_info, 0);
     ASSERT_TRUE(pass);
 
-    image_mem.init(*m_device, alloc_info);
+    vkt::DeviceMemory image_mem(*m_device, alloc_info);
 
-    auto err = vk::BindImageMemory(device(), image, image_mem.handle(), 0);
+    auto err = vk::BindImageMemory(device(), image, image_mem, 0);
     ASSERT_EQ(VK_SUCCESS, err);
 
     m_command_buffer.Begin();
@@ -135,14 +134,14 @@ TEST_F(NegativeObjectLifetime, CmdBarrierImageDestroyed) {
     img_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
     img_barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, NULL, 0,
-                           NULL, 1, &img_barrier);
+    vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
+                           0, nullptr, 1, &img_barrier);
     m_command_buffer.End();
 
     m_default_queue->Submit(m_command_buffer);
 
     m_errorMonitor->SetDesiredError("VUID-vkFreeMemory-memory-00677");
-    vk::FreeMemory(*m_device, image_mem.handle(), NULL);
+    vk::FreeMemory(*m_device, image_mem, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_default_queue->Wait();
@@ -613,9 +612,8 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
     image_ci.flags = 0;
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    vkt::DeviceMemory *image_memory = new vkt::DeviceMemory;
-    image_memory->init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
-    image.BindMemory(*image_memory, 0);
+    vkt::DeviceMemory image_memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    image.BindMemory(image_memory, 0);
 
     VkImageViewCreateInfo ivci = {
         VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -634,7 +632,7 @@ TEST_F(NegativeObjectLifetime, FramebufferAttachmentMemoryFreed) {
 
     // Introduce error:
     // Free the attachment image memory, then create framebuffer.
-    delete image_memory;
+    image_memory.destroy();
     m_errorMonitor->SetDesiredError("UNASSIGNED-VkFramebufferCreateInfo-BoundResourceFreedMemoryAccess");
     vk::CreateFramebuffer(device(), &fci, nullptr, &fb);
     m_errorMonitor->VerifyFound();
@@ -768,7 +766,7 @@ TEST_F(NegativeObjectLifetime, PushDescriptorUniformDestroySignaled) {
 
     // In Intel GPU, it needs to bind pipeline before push descriptor set.
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.Handle());
-    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_.handle(), 0, 1,
+    vk::CmdPushDescriptorSetKHR(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, helper.pipeline_layout_, 0, 1,
                                 &descriptor_write);
     m_command_buffer.End();
 

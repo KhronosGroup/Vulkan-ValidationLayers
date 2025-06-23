@@ -461,7 +461,7 @@ SimpleGPL::SimpleGPL(VkLayerTest &test, VkPipelineLayout layout, const char *ver
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
     exe_pipe_ci.layout = layout;
-    pipe_.init(*device, exe_pipe_ci);
+    pipe_.Init(*device, exe_pipe_ci);
 }
 
 }  // namespace vkt

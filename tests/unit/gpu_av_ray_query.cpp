@@ -423,7 +423,7 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninit) {
     auto buffer_ptr = static_cast<float *>(ssbo.Memory().Map());
     buffer_ptr[0] = -16.0f;
 
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo, 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
@@ -500,7 +500,7 @@ TEST_F(NegativeGpuAVRayQuery, RayGenUseQueryUninitSelectShaders) {
     auto buffer_ptr = static_cast<float *>(ssbo.Memory().Map());
     buffer_ptr[0] = -16.0f;
 
-    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo.handle(), 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    pipeline.GetDescriptorSet().WriteDescriptorBufferInfo(1, ssbo, 0, 4096, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
 
     pipeline.GetDescriptorSet().UpdateDescriptorSets();
 
