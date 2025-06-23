@@ -820,12 +820,12 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    const auto imageView = vkt::ImageView(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView.handle();
+    fb_info.pAttachments = &image_view.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width * 2;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;
@@ -876,12 +876,12 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensionsMultiview) {
     auto image_view_ci = image.BasicViewCreatInfo();
     image_view_ci.subresourceRange.layerCount = 2;
     image_view_ci.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    const auto imageView = vkt::ImageView(*m_device, image_view_ci);
+    vkt::ImageView image_view(*m_device, image_view_ci);
 
     VkFramebufferCreateInfo fb_info = vku::InitStructHelper();
     fb_info.renderPass = rp;
     fb_info.attachmentCount = 1;
-    fb_info.pAttachments = &imageView.handle();
+    fb_info.pAttachments = &image_view.handle();
     fb_info.width = fsr_properties.minFragmentShadingRateAttachmentTexelSize.width;
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
     fb_info.layers = 1;

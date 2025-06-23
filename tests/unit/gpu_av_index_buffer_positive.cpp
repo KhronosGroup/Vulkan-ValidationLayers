@@ -974,7 +974,7 @@ TEST_F(PositiveGpuAVIndexBuffer, DrawIndexedIndirectWithOffset) {
     const uint32_t offset = sizeof(VkDrawIndexedIndirectCommand);
     const uint32_t size = sizeof(VkDrawIndexedIndirectCommand) + offset;
 
-    vkt::Buffer draw_params_buffer = vkt::Buffer(*m_device, size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
+    vkt::Buffer draw_params_buffer(*m_device, size, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, kHostVisibleMemProps);
     uint8_t *data = (uint8_t *)draw_params_buffer.Memory().Map();
     memset(data, 255, size);
     auto indirect_command = reinterpret_cast<VkDrawIndexedIndirectCommand *>(data + offset);
