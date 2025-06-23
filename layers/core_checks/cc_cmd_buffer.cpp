@@ -1202,7 +1202,8 @@ bool CoreChecks::ValidateCmdExecuteCommandsRenderPassInheritance(const vvl::Comm
         }
         // Inherit primary's activeFramebuffer, or null if using dynamic rendering,
         // and while running validate functions
-        for (auto &function : secondary_cb_state.cmd_execute_commands_functions) {
+        auto &secondary_sub_state = core::SubState(secondary_cb_state);
+        for (auto &function : secondary_sub_state.cmd_execute_commands_functions) {
             skip |= function(secondary_cb_state, &cb_state, cb_state.active_framebuffer.get());
         }
     }

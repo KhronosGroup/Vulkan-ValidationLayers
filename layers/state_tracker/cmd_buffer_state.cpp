@@ -286,11 +286,6 @@ void CommandBuffer::ResetCBState() {
     current_vertex_buffer_binding_info.clear();
     primary_command_buffer = VK_NULL_HANDLE;
     linked_command_buffers.clear();
-    queue_submit_functions.clear();
-    queue_submit_functions_after_render_pass.clear();
-    cmd_execute_commands_functions.clear();
-    event_updates.clear();
-    query_updates.clear();
 
     for (auto &item : lastBound) {
         item.Reset();
@@ -441,34 +436,29 @@ std::shared_ptr<CommandBufferImageLayoutMap> CommandBuffer::GetOrCreateImageLayo
     return image_layout_map;
 }
 
-static bool SetQueryState(const QueryObject &object, QueryState value, QueryMap *localQueryToStateMap) {
-    (*localQueryToStateMap)[object] = value;
-    return false;
-}
-
 void CommandBuffer::BeginQuery(const QueryObject &query_obj) {
     active_queries.insert(query_obj);
     started_queries.insert(query_obj);
-    query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
-        SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_RUNNING, localQueryToStateMap);
-        return false;
-    });
+
     updated_queries.insert(query_obj);
     if (query_obj.inside_render_pass) {
         render_pass_queries.insert(query_obj);
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->BeginQuery(query_obj);
     }
 }
 
 void CommandBuffer::EndQuery(const QueryObject &query_obj) {
     active_queries.erase(query_obj);
-    query_updates.emplace_back([query_obj](CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                           uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
-        return SetQueryState(QueryObject(query_obj, perfQueryPass), QUERYSTATE_ENDED, localQueryToStateMap);
-    });
     updated_queries.insert(query_obj);
     if (query_obj.inside_render_pass) {
         render_pass_queries.erase(query_obj);
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->EndQuery(query_obj);
     }
 }
 
@@ -484,26 +474,16 @@ bool CommandBuffer::UpdatesQuery(const QueryObject &query_obj) const {
     return updated_queries.find(key) != updated_queries.end();
 }
 
-static bool SetQueryStateMulti(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, uint32_t perfPass, QueryState value,
-                               QueryMap *localQueryToStateMap) {
-    for (uint32_t i = 0; i < queryCount; i++) {
-        QueryObject query_obj = {queryPool, firstQuery + i, perfPass};
-        (*localQueryToStateMap)[query_obj] = value;
-    }
-    return false;
-}
-
 void CommandBuffer::EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
     for (uint32_t slot = firstQuery; slot < (firstQuery + queryCount); slot++) {
         QueryObject query_obj = {queryPool, slot};
         active_queries.erase(query_obj);
         updated_queries.insert(query_obj);
     }
-    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                                   QueryMap *localQueryToStateMap) {
-        return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_ENDED, localQueryToStateMap);
-    });
+
+    for (auto &item : sub_states_) {
+        item.second->EndQueries(queryPool, firstQuery, queryCount);
+    }
 }
 
 void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {
@@ -512,11 +492,9 @@ void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, u
         updated_queries.insert(query_obj);
     }
 
-    query_updates.emplace_back([queryPool, firstQuery, queryCount](CommandBuffer &cb_state_arg, bool do_validate,
-                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                                   QueryMap *localQueryToStateMap) {
-        return SetQueryStateMulti(queryPool, firstQuery, queryCount, perfQueryPass, QUERYSTATE_RESET, localQueryToStateMap);
-    });
+    for (auto &item : sub_states_) {
+        item.second->ResetQueryPool(queryPool, firstQuery, queryCount);
+    }
 }
 
 void CommandBuffer::UpdateSubpassAttachments() {
@@ -908,13 +886,10 @@ void CommandBuffer::ControlVideoCoding(const VkVideoCodingControlInfoKHR *pContr
 }
 
 void vvl::CommandBuffer::EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {
-    query_updates.emplace_back([query_info](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                            uint32_t perfQueryPass, QueryMap *localQueryToStateMap) {
-        for (uint32_t i = 0; i < query_info.queryCount; i++) {
-            SetQueryState(QueryObject(query_info.queryPool, query_info.firstQuery + i), QUERYSTATE_ENDED, localQueryToStateMap);
-        }
-        return false;
-    });
+    for (auto &item : sub_states_) {
+        item.second->EnqueueUpdateVideoInlineQueries(query_info);
+    }
+
     for (uint32_t i = 0; i < query_info.queryCount; i++) {
         updated_queries.insert(QueryObject(query_info.queryPool, query_info.firstQuery + i));
     }
@@ -1120,27 +1095,9 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
         secondary_cb_state->primary_command_buffer = VkHandle();
         linked_command_buffers.insert(secondary_cb_state.get());
         AddChild(secondary_cb_state);
-        // Add a query update that runs all the query updates that happen in the sub command buffer.
-        // This avoids locking ambiguity because primary command buffers are locked when these
-        // callbacks run, but secondary command buffers are not.
-        query_updates.emplace_back([sub_command_buffer](CommandBuffer &cb_state_arg, bool do_validate,
-                                                        VkQueryPool &firstPerfQueryPool, uint32_t perfQueryPass,
-                                                        QueryMap *localQueryToStateMap) {
-            bool skip = false;
-            auto secondary_cb_state_arg = cb_state_arg.dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
-            for (auto &function : secondary_cb_state_arg->query_updates) {
-                skip |= function(*secondary_cb_state_arg, do_validate, firstPerfQueryPool, perfQueryPass, localQueryToStateMap);
-            }
-            return skip;
-        });
-        for (auto &function : secondary_cb_state->event_updates) {
-            event_updates.push_back(function);
-        }
+
         for (auto &event : secondary_cb_state->events) {
             events.push_back(event);
-        }
-        for (auto &function : secondary_cb_state->queue_submit_functions) {
-            queue_submit_functions.push_back(function);
         }
 
         // State is trashed after executing secondary command buffers.
@@ -1528,9 +1485,13 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     }
 }
 
-void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
                                    const VkDependencyInfo *dependency_info) {
     RecordCmd(command);
+    for (auto &item : sub_states_) {
+        item.second->RecordSetEvent(command, event, stage_mask, dependency_info);
+    }
+
     if (!dev_data.disabled[command_buffer_state]) {
         auto event_state = dev_data.Get<vvl::Event>(event);
         if (event_state) {
@@ -1541,23 +1502,14 @@ void CommandBuffer::RecordSetEvent(Func command, VkEvent event, VkPipelineStageF
     if (!waited_events.count(event)) {
         write_events_before_wait.push_back(event);
     }
-    vku::safe_VkDependencyInfo safe_dependency_info = {};
-    if (dependency_info) {
-        safe_dependency_info.initialize(dependency_info);
-    } else {
-        // Set sType to invalid, so following code can check sType to see if the struct is valid
-        safe_dependency_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    }
-    event_updates.emplace_back([event, stageMask, safe_dependency_info](CommandBuffer &, bool do_validate,
-                                                                        EventMap &local_event_signal_info, VkQueue,
-                                                                        const Location &loc) {
-        local_event_signal_info[event] = EventInfo{stageMask, true, safe_dependency_info};
-        return false;  // skip
-    });
 }
 
-void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) {
+void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {
     RecordCmd(command);
+    for (auto &item : sub_states_) {
+        item.second->RecordResetEvent(command, event, stage_mask);
+    }
+
     if (!dev_data.disabled[command_buffer_state]) {
         auto event_state = dev_data.Get<vvl::Event>(event);
         if (event_state) {
@@ -1568,16 +1520,10 @@ void CommandBuffer::RecordResetEvent(Func command, VkEvent event, VkPipelineStag
     if (!waited_events.count(event)) {
         write_events_before_wait.push_back(event);
     }
-
-    event_updates.emplace_back(
-        [event](CommandBuffer &, bool do_validate, EventMap &local_event_signal_info, VkQueue, const Location &loc) {
-            local_event_signal_info[event] = EventInfo{VK_PIPELINE_STAGE_2_NONE, false};
-            return false;  // skip
-        });
 }
 
 void CommandBuffer::RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                     VkPipelineStageFlags2KHR src_stage_mask, const VkDependencyInfo *dependency_info) {
+                                     VkPipelineStageFlags2 src_stage_mask, const VkDependencyInfo *dependency_info) {
     RecordCmd(command);
     for (auto &item : sub_states_) {
         item.second->RecordWaitEvents(command, eventCount, pEvents, src_stage_mask, dependency_info);
@@ -1666,43 +1612,7 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layo
     }
 }
 
-void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {
-    for (auto& func : queue_submit_functions) {
-        func(queue_state, *this);
-    }
-
-    // Update vvl::QueryPool with a query state at the end of the command buffer.
-    // Ultimately, it tracks the final query state for the entire submission.
-    {
-        VkQueryPool first_pool = VK_NULL_HANDLE;
-        QueryMap local_query_to_state_map;
-        for (auto &function : query_updates) {
-            function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
-        }
-        for (const auto &[query_object, query_state] : local_query_to_state_map) {
-            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) continue;
-            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, query_state);
-        }
-    }
-
-    // Update vvl::Event with src_stage from the last recorded SetEvent.
-    // Ultimately, it tracks the last SetEvent for the entire submission.
-    {
-        EventMap local_event_signal_info;
-        for (const auto &function : event_updates) {
-            function(*this, /*do_validate*/ false, local_event_signal_info,
-                     VK_NULL_HANDLE /* when do_validate is false then wait handler is inactive */, loc);
-        }
-        for (const auto &[event, info] : local_event_signal_info) {
-            auto event_state = dev_data.Get<vvl::Event>(event);
-            event_state->signaled = info.signal;
-            event_state->dependency_info = info.dependency_info;
-            event_state->signal_src_stage_mask = info.src_stage_mask;
-            event_state->signaling_queue = queue_state.VkHandle();
-        }
-    }
-
+void CommandBuffer::SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {
     for (const auto &it : video_session_updates) {
         auto video_session_state = dev_data.Get<vvl::VideoSession>(it.first);
         auto device_state = video_session_state->DeviceStateWrite();
@@ -1710,21 +1620,9 @@ void CommandBuffer::Submit(Queue &queue_state, uint32_t perf_submit_pass, const 
             function(video_session_state.get(), *device_state, /*do_validate*/ false);
         }
     }
-}
 
-void CommandBuffer::Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after) {
-    QueryMap local_query_to_state_map;
-    VkQueryPool first_pool = VK_NULL_HANDLE;
-    for (auto &function : query_updates) {
-        function(*this, /*do_validate*/ false, first_pool, perf_submit_pass, &local_query_to_state_map);
-    }
-
-    for (const auto &[query_object, query_state] : local_query_to_state_map) {
-        if (query_state == QUERYSTATE_ENDED && !is_query_updated_after(query_object)) {
-            auto query_pool_state = dev_data.Get<vvl::QueryPool>(query_object.pool);
-            if (!query_pool_state) continue;
-            query_pool_state->SetQueryState(query_object.slot, query_object.perf_pass, QUERYSTATE_AVAILABLE);
-        }
+    for (auto &item : sub_states_) {
+        item.second->Submit(queue_state, perf_submit_pass, loc);
     }
 }
 

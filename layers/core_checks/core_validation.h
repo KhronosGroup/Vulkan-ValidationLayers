@@ -321,7 +321,8 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePipelineCacheControlFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
     bool ValidatePipelineIndirectBindableFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc, const char* vuid) const;
     bool ValidatePipelineProtectedAccessFlags(VkPipelineCreateFlags2 flags, const Location& flags_loc) const;
-    void EnqueueValidateImageBarrierAttachment(const Location& loc, vvl::CommandBuffer& cb_state, const ImageBarrier& barrier);
+    void EnqueueValidateImageBarrierAttachment(const Location& loc, core::CommandBufferSubState& cb_sub_state,
+                                               const ImageBarrier& barrier);
     void EnqueueValidateDynamicRenderingImageBarrierLayouts(const Location barrier_loc, vvl::CommandBuffer& cb_state,
                                                             const ImageBarrier& image_barrier);
     bool ValidateImageBarrierAttachment(const Location& barrier_loc, vvl::CommandBuffer const& cb_state,
@@ -429,9 +430,10 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidateBindImageMemory(uint32_t bindInfoCount, const VkBindImageMemoryInfo* pBindInfos,
                                  const ErrorObject& error_obj) const;
     static bool VerifyQueryIsReset(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
-                                   VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
+                                   uint32_t perf_query_pass, QueryMap* local_query_to_state_map);
     static bool ValidatePerformanceQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, Func command,
-                                         VkQueryPool& firstPerfQueryPool, uint32_t perfPass, QueryMap* localQueryToStateMap);
+                                         VkQueryPool& first_perf_query_pool, uint32_t perf_query_pass,
+                                         QueryMap* local_query_to_state_map);
     bool ValidateBeginQuery(const vvl::CommandBuffer& cb_state, const QueryObject& query_obj, VkQueryControlFlags flags,
                             uint32_t index, const Location& loc) const;
     bool ValidateCmdEndQuery(const vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t slot, uint32_t index,
@@ -1545,7 +1547,7 @@ class CoreChecks : public vvl::DeviceProxy {
     bool ValidatePerformanceQueryResults(const vvl::QueryPool& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
                                          VkQueryResultFlags flags, const Location& loc) const;
     bool ValidateQueryPoolWasReset(const vvl::QueryPool& query_pool_state, uint32_t firstQuery, uint32_t queryCount,
-                                   const Location& loc, QueryMap* localQueryToStateMap, uint32_t perfPass) const;
+                                   const Location& loc, QueryMap* local_query_to_state_map, uint32_t perf_query_pass) const;
     bool PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                             size_t dataSize, void* pData, VkDeviceSize stride, VkQueryResultFlags flags,
                                             const ErrorObject& error_obj) const override;
@@ -1941,7 +1943,8 @@ class CoreChecks : public vvl::DeviceProxy {
                                               uint32_t query, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2 stage, VkQueryPool queryPool,
                                            uint32_t query, const ErrorObject& error_obj) const override;
-    void RecordCmdWriteTimestamp2(vvl::CommandBuffer& cb_state, VkQueryPool queryPool, uint32_t query, Func command) const;
+    void RecordCmdWriteTimestamp2(core::CommandBufferSubState& cb_sub_state, VkQueryPool queryPool, uint32_t query,
+                                  Func command) const;
     void PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool,
                                         uint32_t slot, const RecordObject& record_obj) override;
     void PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage, VkQueryPool queryPool,

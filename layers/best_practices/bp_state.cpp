@@ -65,9 +65,13 @@ void ImageSubState::SetupUsages() {
 }
 
 void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) {
+    auto& secondary_sub_state = SubState(secondary_command_buffer);
     if (secondary_command_buffer.IsSecondary()) {
-        auto& secondary_sub_state = SubState(secondary_command_buffer);
         render_pass_state.has_draw_cmd |= secondary_sub_state.render_pass_state.has_draw_cmd;
+    }
+
+    for (auto& function : secondary_sub_state.queue_submit_functions) {
+        queue_submit_functions.push_back(function);
     }
 }
 
@@ -92,12 +96,20 @@ void CommandBufferSubState::Reset(const Location&) { ResetCBState(); }
 void CommandBufferSubState::ResetCBState() {
     num_submits = 0;
     small_indexed_draw_call_count = 0;
+    queue_submit_functions.clear();
+    queue_submit_functions_after_render_pass.clear();
     ClearPushConstants();
 }
 
 void CommandBufferSubState::RecordCmd(vvl::Func command) {
     if (vvl::IsCommandDrawMesh(command) || vvl::IsCommandDrawVertex(command)) {
         render_pass_state.has_draw_cmd = true;
+    }
+}
+
+void CommandBufferSubState::Submit(vvl::Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) {
+    for (auto& func : queue_submit_functions) {
+        func(queue_state, base);
     }
 }
 

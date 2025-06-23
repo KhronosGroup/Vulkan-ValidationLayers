@@ -172,6 +172,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
                              const void* values) final;
     void ClearPushConstants() final;
 
+    void Submit(vvl::Queue& queue_state, uint32_t perf_submit_pass, const Location& loc) final;
+
     struct SignalingInfo {
         // True, if the event's first state change within a command buffer is a signal (SetEvent)
         // rather than an unsignal (ResetEvent). It is used to do validation on the boundary
@@ -185,6 +187,12 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         explicit SignalingInfo(bool signal) : first_state_change_is_signal(signal), signaled(signal) {}
     };
     vvl::unordered_map<VkEvent, SignalingInfo> event_signaling_state;
+
+    using QueueCallback = std::function<bool(const class vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state)>;
+    std::vector<QueueCallback> queue_submit_functions;
+    // Used by some layers to defer actions until vkCmdEndRenderPass time.
+    // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
+    std::vector<QueueCallback> queue_submit_functions_after_render_pass;
 
   private:
     void ResetCBState();

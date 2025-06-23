@@ -471,6 +471,7 @@ static void ForEachSubresource(const vvl::Image& image, const VkImageSubresource
 template <typename ImageMemoryBarrier>
 void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer commandBuffer, const ImageMemoryBarrier& barrier) {
     auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
 
     // Is a queue ownership acquisition barrier
     if (barrier.srcQueueFamilyIndex != barrier.dstQueueFamilyIndex &&
@@ -478,7 +479,7 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
         auto image = Get<vvl::Image>(barrier.image);
         ASSERT_AND_RETURN(image);
         auto subresource_range = barrier.subresourceRange;
-        cb_state->queue_submit_functions.emplace_back(
+        sub_state.queue_submit_functions.emplace_back(
             [image, subresource_range](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
                 ForEachSubresource(*image, subresource_range, [&](uint32_t layer, uint32_t level) {
                     // Update queue family index without changing usage, signifying a correct queue family transfer
@@ -490,7 +491,6 @@ void BestPractices::RecordCmdPipelineBarrierImageBarrier(VkCommandBuffer command
     }
 
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto& sub_state = bp_state::SubState(*cb_state);
         RecordResetZcullDirection(sub_state, barrier.image, barrier.subresourceRange);
     }
 }

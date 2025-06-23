@@ -22,6 +22,7 @@
 #include "state_tracker/state_tracker.h"
 #include "state_tracker/cmd_buffer_state.h"
 #include "state_tracker/queue_state.h"
+#include "state_tracker/event_map.h"
 
 class CoreChecks;
 
@@ -34,15 +35,30 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     CommandBufferSubState(vvl::CommandBuffer &cb, CoreChecks &validator);
 
+    void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+                        const VkDependencyInfo *dependency_info) final;
+    void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) final;
     void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
-                          const VkDependencyInfo *dependency_info) override;
+                          const VkDependencyInfo *dependency_info) final;
+
+    void BeginQuery(const QueryObject &query_obj) final;
+    void EndQuery(const QueryObject &query_obj) final;
+    void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
+    void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) final;
+    void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) final;
+
+    // Only need to retire for core checks to track queries
+    void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
 
     void Reset(const Location &loc) final;
     void Destroy() final;
 
     void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) final;
 
+    // Called from the Queue state
     void SubmitTimeValidate();
+    // Called from the Command Buffer state
+    void Submit(vvl::Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) final;
 
     CoreChecks &validator;
 
@@ -61,9 +77,26 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     // currently need to hold in Command buffer because it can be a suspended renderpassss
     std::vector<VkOffset2D> fragment_density_offsets;
 
+    // Validation functions run at primary CB queue submit time
+    using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state)>;
+    std::vector<QueueCallback> queue_submit_functions;
+
     // The subresources from dynamic rendering barriers that can't be validated during record time.
     vvl::unordered_map<VkImage, std::vector<std::pair<VkImageSubresourceRange, vvl::LocationCapture>>>
         submit_validate_dynamic_rendering_barrier_subresources;
+
+    using EventCallback = std::function<bool(vvl::CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
+                                             VkQueue waiting_queue, const Location &loc)>;
+    std::vector<EventCallback> event_updates;
+
+    // Validation functions run when secondary CB is executed in primary
+    std::vector<
+        std::function<bool(const vvl::CommandBuffer &secondary, const vvl::CommandBuffer *primary, const vvl::Framebuffer *)>>
+        cmd_execute_commands_functions;
+
+    std::vector<std::function<bool(vvl::CommandBuffer &cb_state, bool do_validate, VkQueryPool &first_perf_query_pool,
+                                   uint32_t perf_query_pass, QueryMap *local_query_to_state_map)>>
+        query_updates;
 
   private:
     void ResetCBState();

@@ -2113,19 +2113,19 @@ bool CoreChecks::ValidateImageBarrierAttachment(const Location &barrier_loc, con
     return skip;
 }
 
-void CoreChecks::EnqueueValidateImageBarrierAttachment(const Location &loc, vvl::CommandBuffer &cb_state,
+void CoreChecks::EnqueueValidateImageBarrierAttachment(const Location &loc, core::CommandBufferSubState &cb_sub_state,
                                                        const ImageBarrier &barrier) {
     // Secondary CBs can have null framebuffer so queue up validation in that case 'til FB is known
-    const vvl::RenderPass *rp_state = cb_state.active_render_pass.get();
-    if (rp_state && (VK_NULL_HANDLE == cb_state.active_framebuffer) && cb_state.IsSecondary()) {
-        const auto active_subpass = cb_state.GetActiveSubpass();
+    const vvl::RenderPass *rp_state = cb_sub_state.base.active_render_pass.get();
+    if (rp_state && (VK_NULL_HANDLE == cb_sub_state.base.active_framebuffer) && cb_sub_state.base.IsSecondary()) {
+        const auto active_subpass = cb_sub_state.base.GetActiveSubpass();
         if (active_subpass < rp_state->create_info.subpassCount) {
             const auto &sub_desc = rp_state->create_info.pSubpasses[active_subpass];
             // Secondary CB case w/o FB specified delay validation
             auto *this_ptr = this;  // Required for older compilers with c++20 compatibility
             vvl::LocationCapture loc_capture(loc);
             const VkRenderPass render_pass = rp_state->VkHandle();
-            cb_state.cmd_execute_commands_functions.emplace_back(
+            cb_sub_state.cmd_execute_commands_functions.emplace_back(
                 [this_ptr, loc_capture, active_subpass, sub_desc, render_pass, barrier](
                     const vvl::CommandBuffer &secondary_cb, const vvl::CommandBuffer *primary_cb, const vvl::Framebuffer *fb) {
                     if (!fb) return false;
@@ -2230,7 +2230,7 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, Vk
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(pImageMemBarriers[i], src_stage_mask, dst_stage_mask);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
-        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
+        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
         EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
 
         // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.
@@ -2249,7 +2249,7 @@ void CoreChecks::RecordBarriers(Func func_name, vvl::CommandBuffer &cb_state, co
         Location barrier_loc(func_name, Struct::VkImageMemoryBarrier2, Field::pImageMemoryBarriers, i);
         const ImageBarrier img_barrier(dep_info.pImageMemoryBarriers[i]);
         RecordBarrierValidationInfo(barrier_loc, cb_state, img_barrier, cb_sub_state.qfo_transfer_image_barriers);
-        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_state, img_barrier);
+        EnqueueValidateImageBarrierAttachment(barrier_loc, cb_sub_state, img_barrier);
         EnqueueValidateDynamicRenderingImageBarrierLayouts(barrier_loc, cb_state, img_barrier);
 
         // Update layouts at the end. Submit time enqueuing logic above needs pre-update layout map.

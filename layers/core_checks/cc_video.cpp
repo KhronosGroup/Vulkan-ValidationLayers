@@ -21,6 +21,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "core_checks/cc_state_tracker.h"
 #include "error_message/error_strings.h"
 #include "error_message/logging.h"
 #include "state_tracker/image_state.h"
@@ -134,14 +135,14 @@ void CoreChecks::EnqueueVerifyVideoSessionInitialized(vvl::CommandBuffer &cb_sta
 void CoreChecks::EnqueueVerifyVideoInlineQueryUnavailable(vvl::CommandBuffer &cb_state, const VkVideoInlineQueryInfoKHR &query_info,
                                                           Func command) {
     if (disabled[query_validation]) return;
-    cb_state.query_updates.emplace_back([query_info, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                              QueryMap *localQueryToStateMap) {
+    auto &cb_sub_state = core::SubState(cb_state);
+    cb_sub_state.query_updates.emplace_back([query_info, command](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &,
+                                                                  uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
         if (!do_validate) return false;
         bool skip = false;
         for (uint32_t i = 0; i < query_info.queryCount; i++) {
-            QueryObject query_obj = {query_info.queryPool, query_info.firstQuery + i, perfPass};
-            skip |= VerifyQueryIsReset(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
+            QueryObject query_obj = {query_info.queryPool, query_info.firstQuery + i, perf_query_pass};
+            skip |= VerifyQueryIsReset(cb_state_arg, query_obj, command, perf_query_pass, local_query_to_state_map);
         }
         return skip;
     });

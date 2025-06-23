@@ -22,6 +22,7 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "core_validation.h"
+#include "core_checks/cc_state_tracker.h"
 #include "generated/enum_flag_bits.h"
 #include "state_tracker/device_state.h"
 #include "state_tracker/buffer_state.h"
@@ -29,12 +30,12 @@
 #include "state_tracker/cmd_buffer_state.h"
 #include "utils/math_utils.h"
 
-static QueryState GetLocalQueryState(const QueryMap *localQueryToStateMap, VkQueryPool queryPool, uint32_t queryIndex,
-                                     uint32_t perfPass) {
-    QueryObject query = QueryObject(queryPool, queryIndex, perfPass);
+static QueryState GetLocalQueryState(const QueryMap *local_query_to_state_map, VkQueryPool queryPool, uint32_t queryIndex,
+                                     uint32_t perf_query_pass) {
+    QueryObject query = QueryObject(queryPool, queryIndex, perf_query_pass);
 
-    auto iter = localQueryToStateMap->find(query);
-    if (iter != localQueryToStateMap->end()) return iter->second;
+    auto iter = local_query_to_state_map->find(query);
+    if (iter != local_query_to_state_map->end()) return iter->second;
 
     return QUERYSTATE_UNKNOWN;
 }
@@ -107,12 +108,13 @@ bool CoreChecks::ValidatePerformanceQueryResults(const vvl::QueryPool &query_poo
 }
 
 bool CoreChecks::ValidateQueryPoolWasReset(const vvl::QueryPool &query_pool_state, uint32_t firstQuery, uint32_t queryCount,
-                                           const Location &loc, QueryMap *localQueryToStateMap, uint32_t perfPass) const {
+                                           const Location &loc, QueryMap *local_query_to_state_map,
+                                           uint32_t perf_query_pass) const {
     bool skip = false;
 
     for (uint32_t i = firstQuery; i < firstQuery + queryCount; ++i) {
-        if (localQueryToStateMap &&
-            GetLocalQueryState(localQueryToStateMap, query_pool_state.VkHandle(), i, perfPass) != QUERYSTATE_UNKNOWN) {
+        if (local_query_to_state_map &&
+            GetLocalQueryState(local_query_to_state_map, query_pool_state.VkHandle(), i, perf_query_pass) != QUERYSTATE_UNKNOWN) {
             continue;
         }
         if (query_pool_state.GetQueryState(i, 0u) == QUERYSTATE_UNKNOWN) {
@@ -758,7 +760,7 @@ bool CoreChecks::PreCallValidateCmdBeginQuery(VkCommandBuffer commandBuffer, VkQ
 }
 
 bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command,
-                                    VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
+                                    uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
     bool skip = false;
     const auto &state_data = cb_state.dev_data;
 
@@ -766,15 +768,15 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
     ASSERT_AND_RETURN_SKIP(query_pool_state);
     const auto &query_pool_ci = query_pool_state->create_info;
 
-    QueryState state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
+    QueryState state = GetLocalQueryState(local_query_to_state_map, query_obj.pool, query_obj.slot, perf_query_pass);
     // If reset was in another command buffer, check the global map
     if (state == QUERYSTATE_UNKNOWN) {
-        state = query_pool_state->GetQueryState(query_obj.slot, perfPass);
+        state = query_pool_state->GetQueryState(query_obj.slot, perf_query_pass);
     }
     // Performance queries have limitation upon when they can be
     // reset.
     if (query_pool_ci.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR && state == QUERYSTATE_UNKNOWN &&
-        perfPass >= query_pool_state->n_performance_passes) {
+        perf_query_pass >= query_pool_state->n_performance_passes) {
         // If the pass is invalid, assume RESET state, another error
         // will be raised in ValidatePerformanceQuery().
         state = QUERYSTATE_RESET;
@@ -811,7 +813,8 @@ bool CoreChecks::VerifyQueryIsReset(const vvl::CommandBuffer &cb_state, const Qu
 }
 
 bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command,
-                                          VkQueryPool &firstPerfQueryPool, uint32_t perfPass, QueryMap *localQueryToStateMap) {
+                                          VkQueryPool &first_perf_query_pool, uint32_t perf_query_pass,
+                                          QueryMap *local_query_to_state_map) {
     bool skip = false;
     const auto &state_data = cb_state.dev_data;
     auto query_pool_state = state_data.Get<vvl::QueryPool>(query_obj.pool);
@@ -822,10 +825,10 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
 
     if (query_pool_ci.queryType != VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) return skip;
 
-    if (perfPass >= query_pool_state->n_performance_passes) {
+    if (perf_query_pass >= query_pool_state->n_performance_passes) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError("VUID-VkPerformanceQuerySubmitInfoKHR-counterPassIndex-03221", objlist, loc,
-                                    "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perfPass,
+                                    "Invalid counterPassIndex (%u, maximum allowed %u) value for query pool %s.", perf_query_pass,
                                     query_pool_state->n_performance_passes, state_data.FormatHandle(query_obj.pool).c_str());
     }
 
@@ -837,7 +840,7 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
                                     state_data.FormatHandle(cb_state).c_str());
     }
 
-    QueryState command_buffer_state = GetLocalQueryState(localQueryToStateMap, query_obj.pool, query_obj.slot, perfPass);
+    QueryState command_buffer_state = GetLocalQueryState(local_query_to_state_map, query_obj.pool, query_obj.slot, perf_query_pass);
     if (command_buffer_state == QUERYSTATE_RESET) {
         const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
         skip |= state_data.LogError(
@@ -847,8 +850,8 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
             "affecting the same query.");
     }
 
-    if (firstPerfQueryPool != VK_NULL_HANDLE) {
-        if (firstPerfQueryPool != query_obj.pool && !state_data.enabled_features.performanceCounterMultipleQueryPools) {
+    if (first_perf_query_pool != VK_NULL_HANDLE) {
+        if (first_perf_query_pool != query_obj.pool && !state_data.enabled_features.performanceCounterMultipleQueryPools) {
             const LogObjectList objlist(cb_state.Handle(), query_obj.pool);
             skip |= state_data.LogError(
                 query_obj.indexed ? "VUID-vkCmdBeginQueryIndexedEXT-queryPool-03226" : "VUID-vkCmdBeginQuery-queryPool-03226",
@@ -858,7 +861,7 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
                 state_data.FormatHandle(cb_state).c_str());
         }
     } else {
-        firstPerfQueryPool = query_obj.pool;
+        first_perf_query_pool = query_obj.pool;
     }
 
     return skip;
@@ -866,15 +869,17 @@ bool CoreChecks::ValidatePerformanceQuery(const vvl::CommandBuffer &cb_state, co
 
 void CoreChecks::EnqueueVerifyBeginQuery(VkCommandBuffer command_buffer, const QueryObject &query_obj, Func command) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(command_buffer);
+    auto &cb_sub_state = core::SubState(*cb_state);
 
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state->query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                              VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                              QueryMap *localQueryToStateMap) {
+    cb_sub_state.query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                                 VkQueryPool &first_perf_query_pool, uint32_t perf_query_pass,
+                                                                 QueryMap *local_query_to_state_map) {
         if (!do_validate) return false;
         bool skip = false;
-        skip |= ValidatePerformanceQuery(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
-        skip |= VerifyQueryIsReset(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        skip |= ValidatePerformanceQuery(cb_state_arg, query_obj, command, first_perf_query_pool, perf_query_pass,
+                                         local_query_to_state_map);
+        skip |= VerifyQueryIsReset(cb_state_arg, query_obj, command, perf_query_pass, local_query_to_state_map);
         return skip;
     });
 }
@@ -888,10 +893,10 @@ void CoreChecks::PreCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQue
 }
 
 void CoreChecks::EnqueueVerifyEndQuery(vvl::CommandBuffer &cb_state, const QueryObject &query_obj, Func command) {
+    auto &cb_sub_state = core::SubState(cb_state);
     // Enqueue the submit time validation here, ahead of the submit time state update in the StateTracker's PostCallRecord
-    cb_state.query_updates.emplace_back([this, query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                                   VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                                   QueryMap *localQueryToStateMap) {
+    cb_sub_state.query_updates.emplace_back([this, query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
+                                                                       VkQueryPool &, uint32_t perf_query_pass, QueryMap *) {
         if (!do_validate) return false;
         bool skip = false;
         // NOTE: dev_data == this, but the compiler "Visual Studio 16" complains Get is ambiguous if dev_data isn't used
@@ -1068,19 +1073,19 @@ void CoreChecks::PreCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, V
                                                 uint32_t queryCount, const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto &cb_sub_state = core::SubState(*cb_state);
     const auto query_pool_state = Get<vvl::QueryPool>(queryPool);
     ASSERT_AND_RETURN(query_pool_state);
 
     if (query_pool_state->create_info.queryType == VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR) {
-        cb_state->query_updates.emplace_back([queryPool, firstQuery, queryCount, record_obj](
-                                                 vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                 VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                 QueryMap *localQueryToStateMap) {
+        cb_sub_state.query_updates.emplace_back([queryPool, firstQuery, queryCount, record_obj](
+                                                    vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &,
+                                                    uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
             if (!do_validate) return false;
             const auto &state_data = cb_state_arg.dev_data;
             bool skip = false;
             for (uint32_t i = 0; i < queryCount; i++) {
-                QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
+                QueryState state = GetLocalQueryState(local_query_to_state_map, queryPool, firstQuery + i, perf_query_pass);
                 if (state == QUERYSTATE_ENDED) {
                     const LogObjectList objlist(cb_state_arg.Handle(), queryPool);
                     skip |= state_data.LogError("VUID-vkCmdResetQueryPool-firstQuery-02862", objlist, record_obj.location,
@@ -1213,14 +1218,15 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
                                                       const RecordObject &record_obj) {
     if (disabled[query_validation]) return;
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    cb_state->query_updates.emplace_back([queryPool, firstQuery, queryCount, flags, record_obj, this](
-                                             vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                             uint32_t perfPass, QueryMap *localQueryToStateMap) {
+    auto &cb_sub_state = core::SubState(*cb_state);
+    cb_sub_state.query_updates.emplace_back([queryPool, firstQuery, queryCount, flags, record_obj, this](
+                                                vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &,
+                                                uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
         if (!do_validate) return false;
         const auto &state_data = cb_state_arg.dev_data;
         bool skip = false;
         for (uint32_t i = 0; i < queryCount; i++) {
-            QueryState state = GetLocalQueryState(localQueryToStateMap, queryPool, firstQuery + i, perfPass);
+            QueryState state = GetLocalQueryState(local_query_to_state_map, queryPool, firstQuery + i, perf_query_pass);
             QueryResultType result_type = GetQueryResultType(state, flags);
             if (result_type != QUERYRESULT_SOME_DATA && result_type != QUERYRESULT_UNKNOWN) {
                 const LogObjectList objlist(cb_state_arg.Handle(), queryPool);
@@ -1234,8 +1240,8 @@ void CoreChecks::PreCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandBuf
         // NOTE: dev_data == this, but the compiler "Visual Studio 16" complains Get is ambiguous if dev_data isn't used
         auto query_pool_state = cb_state_arg.dev_data.Get<vvl::QueryPool>(queryPool);
         if (query_pool_state) {
-            skip |= ValidateQueryPoolWasReset(*query_pool_state, firstQuery, queryCount, record_obj.location, localQueryToStateMap,
-                                              perfPass);
+            skip |= ValidateQueryPoolWasReset(*query_pool_state, firstQuery, queryCount, record_obj.location,
+                                              local_query_to_state_map, perf_query_pass);
         }
 
         return skip;
@@ -1327,22 +1333,23 @@ bool CoreChecks::PreCallValidateCmdWriteTimestamp2KHR(VkCommandBuffer commandBuf
     return PreCallValidateCmdWriteTimestamp2(commandBuffer, stage, queryPool, query, error_obj);
 }
 
-void CoreChecks::RecordCmdWriteTimestamp2(vvl::CommandBuffer &cb_state, VkQueryPool queryPool, uint32_t slot, Func command) const {
+void CoreChecks::RecordCmdWriteTimestamp2(core::CommandBufferSubState &cb_sub_state, VkQueryPool queryPool, uint32_t slot,
+                                          Func command) const {
     if (disabled[query_validation]) return;
     // Enqueue the submit time validation check here, before the submit time state update in StateTracker::PostCall
     QueryObject query_obj = {queryPool, slot};
-    cb_state.query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate,
-                                                             VkQueryPool &firstPerfQueryPool, uint32_t perfPass,
-                                                             QueryMap *localQueryToStateMap) {
+    cb_sub_state.query_updates.emplace_back([query_obj, command](vvl::CommandBuffer &cb_state_arg, bool do_validate, VkQueryPool &,
+                                                                 uint32_t perf_query_pass, QueryMap *local_query_to_state_map) {
         if (!do_validate) return false;
-        return VerifyQueryIsReset(cb_state_arg, query_obj, command, firstPerfQueryPool, perfPass, localQueryToStateMap);
+        return VerifyQueryIsReset(cb_state_arg, query_obj, command, perf_query_pass, local_query_to_state_map);
     });
 }
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
                                                 VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, record_obj.location.function);
+    auto &cb_sub_state = core::SubState(*cb_state);
+    return RecordCmdWriteTimestamp2(cb_sub_state, queryPool, slot, record_obj.location.function);
 }
 
 void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
@@ -1353,7 +1360,8 @@ void CoreChecks::PreCallRecordCmdWriteTimestamp2KHR(VkCommandBuffer commandBuffe
 void CoreChecks::PreCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer, VkPipelineStageFlags2KHR stage,
                                                  VkQueryPool queryPool, uint32_t slot, const RecordObject &record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    return RecordCmdWriteTimestamp2(*cb_state, queryPool, slot, record_obj.location.function);
+    auto &cb_sub_state = core::SubState(*cb_state);
+    return RecordCmdWriteTimestamp2(cb_sub_state, queryPool, slot, record_obj.location.function);
 }
 
 bool CoreChecks::PreCallValidateCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
