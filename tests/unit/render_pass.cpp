@@ -1371,9 +1371,8 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
         vkt::Image no_fb_loop_attachment(
             *m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-        vkt::ImageView image_view_no_fb_loop;
         auto image_view_ci = no_fb_loop_attachment.BasicViewCreatInfo();
-        image_view_no_fb_loop.init(*m_device, image_view_ci);
+        vkt::ImageView image_view_no_fb_loop(*m_device, image_view_ci);
         views[0] = image_view_no_fb_loop;
         descriptions[0].format = VK_FORMAT_R8G8B8A8_UNORM;
         descriptions[0].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
@@ -1387,8 +1386,7 @@ TEST_F(NegativeRenderPass, BeginLayoutsFramebufferImageUsageMismatches) {
             *m_device, 128, 128, VK_FORMAT_R8G8B8A8_UNORM,
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_ATTACHMENT_FEEDBACK_LOOP_BIT_EXT);
         image_view_ci.image = no_usage_sampled_attachment;
-        vkt::ImageView image_view_no_usage_sampled;
-        image_view_no_usage_sampled.init(*m_device, image_view_ci);
+        vkt::ImageView image_view_no_usage_sampled(*m_device, image_view_ci);
         descriptions[1].initialLayout = VK_IMAGE_LAYOUT_ATTACHMENT_FEEDBACK_LOOP_OPTIMAL_EXT;
         views[1] = image_view_no_usage_sampled;
         test_layout_helper("VUID-vkCmdBeginRenderPass-initialLayout-07000", "VUID-vkCmdBeginRenderPass2-initialLayout-07002");
@@ -4295,7 +4293,7 @@ TEST_F(NegativeRenderPass, RenderPassWithRenderPassStripedQueueSubmit2) {
 
     for (uint32_t i = 0; i < stripe_count + 1; ++i) {
         VkSemaphoreCreateInfo create_info = i == 4 ? semaphore_timeline_create_info : semaphore_create_info;
-        semaphore[i].init(*m_device, create_info);
+        semaphore[i].Init(*m_device, create_info);
 
         semaphore_submit_infos[i] = vku::InitStructHelper();
         semaphore_submit_infos[i].semaphore = semaphore[i];

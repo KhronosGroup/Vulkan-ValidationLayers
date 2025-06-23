@@ -262,7 +262,7 @@ TEST_F(NegativeBuffer, BufferViewMaxTexelBufferElements) {
     VkBufferViewCreateInfo buff_view_ci = vku::InitStructHelper();
     buff_view_ci.offset = dev_limits.minTexelBufferOffsetAlignment;
     buff_view_ci.format = format_with_uniform_texel_support;
-    buff_view_ci.buffer = large_buffer.handle();
+    buff_view_ci.buffer = large_buffer;
     buff_view_ci.range = VK_WHOLE_SIZE;
 
     // For VK_WHOLE_SIZE, the buffer size - offset must be less than VkPhysicalDeviceLimits::maxTexelBufferElements
@@ -442,7 +442,7 @@ TEST_F(NegativeBuffer, BindNull) {
 
     vk::DestroyBuffer(device(), buffer, nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkBindBufferMemory-buffer-parameter");
-    vk::BindBufferMemory(device(), buffer, memory.handle(), 0);
+    vk::BindBufferMemory(device(), buffer, memory, 0);
     m_errorMonitor->VerifyFound();
 }
 

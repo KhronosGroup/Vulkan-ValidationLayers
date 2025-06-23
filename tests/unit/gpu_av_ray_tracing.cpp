@@ -239,7 +239,7 @@ TEST_F(NegativeGpuAVRayTracing, DISABLED_BasicTraceRaysDeferredBuild) {
     }
     VkPipelineLayoutCreateInfo pipe_layout_ci = vku::InitStructHelper();
 
-    pipeline.GetPipelineLayout().init(*m_device, pipe_layout_ci, des_set_layouts);
+    pipeline.GetPipelineLayout().Init(*m_device, pipe_layout_ci, des_set_layouts);
 
     // Deferred pipeline build
     RETURN_IF_SKIP(pipeline.DeferBuild());

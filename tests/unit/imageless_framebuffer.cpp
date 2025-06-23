@@ -1127,7 +1127,7 @@ TEST_F(NegativeImagelessFramebuffer, MissingInheritanceRenderingInfo) {
     vkt::Framebuffer framebuffer_bad_image_view(*m_device, fb_ci);
 
     VkCommandBufferInheritanceInfo inheritanceInfo = vku::InitStructHelper();
-    inheritanceInfo.framebuffer = framebuffer_null.handle();
+    inheritanceInfo.framebuffer = framebuffer_null;
 
     VkCommandBufferBeginInfo beginInfo = vku::InitStructHelper();
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;

@@ -149,7 +149,7 @@ TEST_F(NegativeWsi, BindImageMemorySwapchain) {
     bool pass = m_device->Physical().SetMemoryType(mem_reqs.memoryRequirements.memoryTypeBits, &alloc_info, 0);
     // some devices don't give us good memory requirements for the swapchain image
     if (pass) {
-        mem.init(*m_device, alloc_info);
+        mem.Init(*m_device, alloc_info);
         ASSERT_TRUE(mem.initialized());
     }
 

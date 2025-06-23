@@ -609,9 +609,9 @@ TEST_F(NegativeImageDrm, MultiPlanarBindMemory) {
         bind_info[plane].image = image;
         bind_info[plane].memoryOffset = 0;
     }
-    bind_info[0].memory = p0_mem.handle();
-    bind_info[1].memory = p1_mem.handle();
-    bind_info[2].memory = p2_mem.handle();
+    bind_info[0].memory = p0_mem;
+    bind_info[1].memory = p1_mem;
+    bind_info[2].memory = p2_mem;
     plane_info[0].planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_0_BIT_EXT;
     plane_info[1].planeAspect = VK_IMAGE_ASPECT_MEMORY_PLANE_1_BIT_EXT;
     plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;

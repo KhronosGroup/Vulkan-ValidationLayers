@@ -450,7 +450,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierGraphics) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 
@@ -489,7 +489,7 @@ TEST_F(NegativeSubgroup, SubgroupSizeControlFeaturesWithIdentifierCompute) {
     VkShaderObj cs(this, kMinimalShaderGlsl, VK_SHADER_STAGE_COMPUTE_BIT);
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), cs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), cs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 

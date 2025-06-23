@@ -264,7 +264,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
     link_info.pLibraries = libraries;
 
     VkGraphicsPipelineCreateInfo exe_pipe_ci = vku::InitStructHelper(&link_info);
-    exe_pipe_ci.layout = pipeline_layout_null.handle();
+    exe_pipe_ci.layout = pipeline_layout_null;
     vkt::Pipeline exe_pipe(*m_device, exe_pipe_ci);
     ASSERT_TRUE(exe_pipe.initialized());
 
@@ -273,7 +273,7 @@ TEST_F(PositiveGraphicsLibrary, DrawWithNullDSLs) {
 
     // Draw with pipeline created with null set
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, exe_pipe);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null.handle(), 0,
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout_null, 0,
                               static_cast<uint32_t>(desc_sets.size()), desc_sets.data(), 0, nullptr);
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
@@ -1037,7 +1037,7 @@ TEST_F(PositiveGraphicsLibrary, GPLDynamicRenderingWithDepthDraw) {
 
     vkt::ImageView depth_stencil_view = m_depthStencil->CreateView(VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
-    depth_attachment.imageView = depth_stencil_view.handle();
+    depth_attachment.imageView = depth_stencil_view;
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
@@ -1235,7 +1235,7 @@ TEST_F(PositiveGraphicsLibrary, ShaderModuleIdentifier) {
     ASSERT_TRUE(vs.initialized());
 
     VkShaderModuleIdentifierEXT vs_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &vs_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &vs_identifier);
 
     VkPipelineShaderStageModuleIdentifierCreateInfoEXT sm_id_create_info = vku::InitStructHelper();
     sm_id_create_info.identifierSize = vs_identifier.identifierSize;

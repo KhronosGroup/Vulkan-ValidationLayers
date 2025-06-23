@@ -340,7 +340,7 @@ void AccelerationStructureKHR::Create() {
         if (buffer_init_no_mem_) {
             device_buffer_.InitNoMemory(*device_, ci);
         } else {
-            device_buffer_.init(*device_, ci, buffer_memory_property_flags_, &alloc_flags);
+            device_buffer_.Init(*device_, ci, buffer_memory_property_flags_, &alloc_flags);
         }
     }
     vk_info_.buffer = device_buffer_.handle();
@@ -546,7 +546,7 @@ void BuildGeometryInfoKHR::SetupBuild(bool is_on_device_build, bool use_ppGeomet
                 alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
                 if (scratch_size > 0) {
-                    device_scratch_->init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
+                    device_scratch_->Init(*device_, scratch_size + as_props.minAccelerationStructureScratchOffsetAlignment,
                                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                               device_scratch_additional_flags_,
                                           VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &alloc_flags);
@@ -631,7 +631,7 @@ void BuildGeometryInfoKHR::VkCmdBuildAccelerationStructuresIndirectKHR(VkCommand
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
 
-    indirect_buffer_->init(*device_, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
+    indirect_buffer_->Init(*device_, 1 * vk_info_.geometryCount * sizeof(VkAccelerationStructureBuildRangeInfoKHR),
                            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, kHostVisibleMemProps,
                            &alloc_flags);
 
@@ -1107,7 +1107,7 @@ GeometryKHR GeometrySimpleOnDeviceAABBInfo(const vkt::Device &device, VkBufferUs
                                             VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
                                             VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | additional_geometry_buffer_flags;
 
-    aabb_buffer.init(device, aabb_buffer_size, buffer_usage, kHostVisibleMemProps, &alloc_flags);
+    aabb_buffer.Init(device, aabb_buffer_size, buffer_usage, kHostVisibleMemProps, &alloc_flags);
 
     // Fill buffer with one AABB
     aabb_geometry.SetPrimitiveCount(static_cast<uint32_t>(aabbs.size()));
@@ -1480,7 +1480,7 @@ void Pipeline::BuildPipeline() {
             pipeline_layout_ci_.setLayoutCount = 1;
             pipeline_layout_ci_.pSetLayouts = &desc_set_->layout_.handle();
         }
-        pipeline_layout_.init(*device_, pipeline_layout_ci_);
+        pipeline_layout_.Init(*device_, pipeline_layout_ci_);
     }
 
     // Assemble shaders information (stages and groups)
@@ -1554,7 +1554,7 @@ void Pipeline::BuildPipeline() {
     vk_info_.layout = pipeline_layout_;
 
     if (deferred_op_ == VK_NULL_HANDLE) {
-        rt_pipeline_.init(*device_, vk_info_);
+        rt_pipeline_.Init(*device_, vk_info_);
     } else {
         rt_pipeline_.InitDeferred(*device_, vk_info_, deferred_op_);
 
@@ -1604,7 +1604,7 @@ void Pipeline::BuildSbt() {
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryAllocateFlagsInfo alloc_flags = vku::InitStructHelper();
     alloc_flags.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
-    sbt_buffer_.init(*device_, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
+    sbt_buffer_.Init(*device_, sbt_buffer_info, kHostVisibleMemProps, &alloc_flags);
 
 #ifdef VVL_DEBUG_LOG_SBT
     std::cout << "SBT buffer fill:\n";

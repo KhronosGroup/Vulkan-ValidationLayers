@@ -677,7 +677,7 @@ TEST_F(PositiveRenderPass, FramebufferWithAttachmentsTo3DImageMultipleSubpasses)
     VkImageView views[depth_count] = {VK_NULL_HANDLE};
     for (unsigned i = 0; i < depth_count; ++i) {
         view_info.subresourceRange.baseArrayLayer = i;
-        image_views[i].init(*m_device, view_info);
+        image_views[i].Init(*m_device, view_info);
         views[i] = image_views[i];
     }
 
@@ -776,7 +776,7 @@ TEST_F(PositiveRenderPass, ImageLayoutTransitionOf3dImageWith2dViews) {
     VkImageView views[image_depth] = {VK_NULL_HANDLE};
     for (unsigned i = 0; i < image_depth; ++i) {
         view_info.subresourceRange.baseArrayLayer = i;
-        image_views[i].init(*m_device, view_info);
+        image_views[i].Init(*m_device, view_info);
         views[i] = image_views[i];
     }
 
@@ -1130,7 +1130,7 @@ TEST_F(PositiveRenderPass, BeginRenderPassWithRenderPassStriped) {
     VkSemaphoreSubmitInfo semaphore_submit_infos[stripe_count];
 
     for (uint32_t i = 0; i < stripe_count; ++i) {
-        semaphores[i].init(*m_device, semaphore_create_info);
+        semaphores[i].Init(*m_device, semaphore_create_info);
         semaphore_submit_infos[i] = vku::InitStructHelper();
         semaphore_submit_infos[i].semaphore = semaphores[i];
     }

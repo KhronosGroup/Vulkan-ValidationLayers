@@ -44,18 +44,18 @@ TEST_F(NegativeImageLayout, Blit) {
 
     m_command_buffer.Begin();
 
-    vk::CmdBlitImage(m_command_buffer, img_general.handle(), VK_IMAGE_LAYOUT_GENERAL, img_general.handle(), VK_IMAGE_LAYOUT_GENERAL,
-                     1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer, img_general, VK_IMAGE_LAYOUT_GENERAL, img_general, VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region,
+                     VK_FILTER_LINEAR);
 
     // Illegal srcImageLayout
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImageLayout-01398");
-    vk::CmdBlitImage(m_command_buffer, img_src_transfer.handle(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                     img_dst_transfer.handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, img_dst_transfer,
+                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
     m_errorMonitor->VerifyFound();
 
     // Illegal destImageLayout
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImageLayout-01399");
-    vk::CmdBlitImage(m_command_buffer, img_src_transfer.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_dst_transfer.handle(),
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_dst_transfer,
                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_command_buffer.End();
@@ -69,8 +69,8 @@ TEST_F(NegativeImageLayout, Blit) {
 
     // Source image in invalid layout at start of the CB
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    vk::CmdBlitImage(m_command_buffer, img_src_transfer.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_color.handle(),
-                     VK_IMAGE_LAYOUT_GENERAL, 1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_color, VK_IMAGE_LAYOUT_GENERAL,
+                     1, &blit_region, VK_FILTER_LINEAR);
 
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -82,8 +82,8 @@ TEST_F(NegativeImageLayout, Blit) {
 
     // Destination image in invalid layout at start of the CB
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    vk::CmdBlitImage(m_command_buffer, img_color.handle(), VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer, img_color, VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1, &blit_region, VK_FILTER_LINEAR);
 
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -99,7 +99,7 @@ TEST_F(NegativeImageLayout, Blit) {
     img_barrier.dstAccessMask = 0;
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    img_barrier.image = img_general.handle();
+    img_barrier.image = img_general;
     img_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     img_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -112,8 +112,8 @@ TEST_F(NegativeImageLayout, Blit) {
                            0, nullptr, 1, &img_barrier);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-srcImageLayout-00221");
-    vk::CmdBlitImage(m_command_buffer, img_general.handle(), VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer.handle(),
-                     VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
+    vk::CmdBlitImage(m_command_buffer, img_general, VK_IMAGE_LAYOUT_GENERAL, img_dst_transfer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                     1, &blit_region, VK_FILTER_LINEAR);
 
     m_command_buffer.End();
     m_default_queue->Submit(m_command_buffer);
@@ -126,13 +126,13 @@ TEST_F(NegativeImageLayout, Blit) {
 
     img_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     img_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    img_barrier.image = img_dst_transfer.handle();
+    img_barrier.image = img_dst_transfer;
 
     vk::CmdPipelineBarrier(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
                            0, nullptr, 1, &img_barrier);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdBlitImage-dstImageLayout-00226");
-    vk::CmdBlitImage(m_command_buffer, img_src_transfer.handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_dst_transfer.handle(),
+    vk::CmdBlitImage(m_command_buffer, img_src_transfer, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, img_dst_transfer,
                      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
 
     m_command_buffer.End();
@@ -174,10 +174,10 @@ TEST_F(NegativeImageLayout, Compute) {
     {  // Verify invalid image layout with CmdDispatch
         vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.Begin();
-        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                                  &pipe.descriptor_set_.set_, 0, nullptr);
-        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-        vk::CmdDispatch(cmd.handle(), 1, 1, 1);
+        vk::CmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_.set_, 0,
+                                  nullptr);
+        vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdDispatch(cmd, 1, 1, 1);
         cmd.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
@@ -189,10 +189,10 @@ TEST_F(NegativeImageLayout, Compute) {
     {  // Verify invalid image layout with CmdDispatchBaseKHR
         vkt::CommandBuffer cmd(*m_device, m_command_pool);
         cmd.Begin();
-        vk::CmdBindDescriptorSets(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1,
-                                  &pipe.descriptor_set_.set_, 0, nullptr);
-        vk::CmdBindPipeline(cmd.handle(), VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
-        vk::CmdDispatchBaseKHR(cmd.handle(), 0, 0, 0, 1, 1, 1);
+        vk::CmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipe.pipeline_layout_, 0, 1, &pipe.descriptor_set_.set_, 0,
+                                  nullptr);
+        vk::CmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
+        vk::CmdDispatchBaseKHR(cmd, 0, 0, 0, 1, 1, 1);
         cmd.End();
 
         m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");

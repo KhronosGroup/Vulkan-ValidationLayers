@@ -553,12 +553,12 @@ TEST_F(NegativeGpuAV, UseAllDescriptorSlotsPipelineLayout) {
 
     CreateComputePipelineHelper pipe(*this);
     pipe.cs_ = VkShaderObj(this, shader_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
-    pipe.cp_ci_.layout = bad_pipe_layout.handle();
+    pipe.cp_ci_.layout = bad_pipe_layout;
     pipe.CreateComputePipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe_layout.handle(), 0, 1,
-                              &descriptor_set.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, bad_pipe_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_command_buffer.End();

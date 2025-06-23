@@ -395,17 +395,15 @@ TEST_F(PositiveSecondaryCommandBuffer, EventsIn) {
         GTEST_SKIP() << "VK_KHR_portability_subset enabled, skipping.\n";
     }
 
-    vkt::Event ev(*m_device);
-    VkEvent ev_handle = ev.handle();
+    vkt::Event event(*m_device);
     vkt::CommandBuffer secondary_cb(*m_device, m_command_pool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
-    VkCommandBuffer scb = secondary_cb.handle();
     secondary_cb.Begin();
-    vk::CmdSetEvent(scb, ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
-    vk::CmdWaitEvents(scb, 1, &ev_handle, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, nullptr, 0,
-                      nullptr, 0, nullptr);
+    vk::CmdSetEvent(secondary_cb, event, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+    vk::CmdWaitEvents(secondary_cb, 1, &event.handle(), VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                      0, nullptr, 0, nullptr, 0, nullptr);
     secondary_cb.End();
     m_command_buffer.Begin();
-    vk::CmdExecuteCommands(m_command_buffer, 1, &scb);
+    vk::CmdExecuteCommands(m_command_buffer, 1, &secondary_cb.handle());
     m_command_buffer.End();
 
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -444,9 +442,9 @@ TEST_F(PositiveSecondaryCommandBuffer, Nested) {
     secondary1.End();
 
     secondary2.Begin(&cbbi);
-    vk::CmdBeginQuery(secondary2.handle(), query_pool, 0, 0);
-    vk::CmdExecuteCommands(secondary2.handle(), 1u, &secondary1.handle());
-    vk::CmdEndQuery(secondary2.handle(), query_pool, 0);
+    vk::CmdBeginQuery(secondary2, query_pool, 0, 0);
+    vk::CmdExecuteCommands(secondary2, 1u, &secondary1.handle());
+    vk::CmdEndQuery(secondary2, query_pool, 0);
     secondary2.End();
 }
 
@@ -488,7 +486,7 @@ TEST_F(PositiveSecondaryCommandBuffer, NestedPrimary) {
     secondary1.End();
 
     secondary2.Begin(&cbbi);
-    vk::CmdExecuteCommands(secondary2.handle(), 1u, &secondary1.handle());
+    vk::CmdExecuteCommands(secondary2, 1u, &secondary1.handle());
     secondary2.End();
 
     // The primary command buffer doesn't count toward nesting

@@ -5750,7 +5750,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipeline) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061");
     CreatePipelineHelper pipe(*this, &rendering_info);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
 }
@@ -5776,7 +5776,7 @@ TEST_F(NegativeDynamicRendering, CreateGraphicsPipelineNoInfo) {
     m_errorMonitor->SetDesiredError("VUID-VkGraphicsPipelineCreateInfo-renderPass-06061");
     CreatePipelineHelper pipe(*this);
     pipe.shader_stages_[1] = fs.GetStageCreateInfo();
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.cb_ci_.attachmentCount = 0;
     pipe.CreateGraphicsPipeline();
     m_errorMonitor->VerifyFound();
@@ -6139,7 +6139,7 @@ TEST_F(NegativeDynamicRendering, ResolveAttachmentUsage) {
     attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     attachment.imageView = image_view;
     attachment.resolveImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    attachment.resolveImageView = resolve_image_view.handle();
+    attachment.resolveImageView = resolve_image_view;
     attachment.resolveMode = VK_RESOLVE_MODE_SAMPLE_ZERO_BIT;
 
     VkRenderingInfo rendering_info = vku::InitStructHelper();
@@ -6352,10 +6352,10 @@ TEST_F(NegativeDynamicRendering, RenderPassStripeInfoQueueSubmit2) {
 
     for (uint32_t i = 0; i < stripe_count + 1; ++i) {
         VkSemaphoreCreateInfo create_info = i == 4 ? semaphore_timeline_create_info : semaphore_create_info;
-        semaphore[i].init(*m_device, create_info);
+        semaphore[i].Init(*m_device, create_info);
 
         semaphore_submit_infos[i] = vku::InitStructHelper();
-        semaphore_submit_infos[i].semaphore = semaphore[i].handle();
+        semaphore_submit_infos[i].semaphore = semaphore[i];
     }
 
     VkRenderPassStripeSubmitInfoARM rp_stripe_submit_info = vku::InitStructHelper();

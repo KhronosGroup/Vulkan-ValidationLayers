@@ -47,7 +47,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, MixingProtectedResources) {
         GTEST_SKIP() << "Memory type not found";
     }
     vkt::DeviceMemory memory_image_protected(*m_device, alloc_info);
-    vk::BindImageMemory(device(), image_protected, memory_image_protected.handle(), 0);
+    vk::BindImageMemory(device(), image_protected, memory_image_protected, 0);
     image_protected.SetLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     vkt::ImageView image_view_protected = image_protected.CreateView();
 
@@ -218,10 +218,10 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, AliasImageBindingRuntimeArray) {
     uint32_t *data = (uint32_t *)buffer.Memory().Map();
     *data = 0;
 
-    pipe.descriptor_set_.WriteDescriptorImageInfo(0, float_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL, 0);
-    pipe.descriptor_set_.WriteDescriptorImageInfo(0, uint_image_view.handle(), VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                                                   VK_IMAGE_LAYOUT_GENERAL, 1);
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, float_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                  VK_IMAGE_LAYOUT_GENERAL, 0);
+    pipe.descriptor_set_.WriteDescriptorImageInfo(0, uint_image_view, VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                                                  VK_IMAGE_LAYOUT_GENERAL, 1);
     pipe.descriptor_set_.WriteDescriptorBufferInfo(1, buffer, 0, VK_WHOLE_SIZE, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER);
     pipe.descriptor_set_.UpdateDescriptorSets();
 
@@ -919,7 +919,7 @@ TEST_F(PositiveGpuAVDescriptorPostProcess, ZeroBindingDescriptor) {
     pipe1.CreateComputePipeline();
 
     CreateComputePipelineHelper pipe2(*this);
-    pipe2.cp_ci_.layout = pipeline_layout2.handle();
+    pipe2.cp_ci_.layout = pipeline_layout2;
     pipe2.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT);
     pipe2.CreateComputePipeline();
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023-2024 Valve Corporation
- * Copyright (c) 2023-2024 LunarG, Inc.
+ * Copyright (c) 2023-2025 Valve Corporation
+ * Copyright (c) 2023-2025 LunarG, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ inline bool SetAllocationInfoImportAHB(vkt::Device *device, VkAndroidHardwareBuf
 namespace vkt {
 class AHB {
   public:
-    AHB(const AHardwareBuffer_Desc *ahb_desc) { init(ahb_desc); }
+    AHB(const AHardwareBuffer_Desc *ahb_desc) { Init(ahb_desc); }
     AHB(uint32_t format, uint64_t usage, uint32_t width, uint32_t height = 1, uint32_t layers = 1, uint32_t stride = 1) {
         AHardwareBuffer_Desc ahb_desc = {};
         ahb_desc.format = format;
@@ -52,10 +52,10 @@ class AHB {
         ahb_desc.height = height;
         ahb_desc.layers = layers;
         ahb_desc.stride = stride;
-        init(&ahb_desc);
+        Init(&ahb_desc);
     }
 
-    void init(const AHardwareBuffer_Desc *ahb_desc) { AHardwareBuffer_allocate(ahb_desc, &ahb); }
+    void Init(const AHardwareBuffer_Desc *ahb_desc) { AHardwareBuffer_allocate(ahb_desc, &ahb); }
 
     uint64_t GetExternalFormat(const Device &dev, void *pNext = nullptr) const {
         VkAndroidHardwareBufferFormatPropertiesANDROID ahb_fmt_props = vku::InitStructHelper(pNext);

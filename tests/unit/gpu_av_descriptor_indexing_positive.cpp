@@ -1292,10 +1292,10 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     vkt::DescriptorSetLayout dsl_1(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
                                    &flags_create_info);
 
-    std::array set_layouts = {dsl_1.handle(), dsl_1.handle()};
+    VkDescriptorSetLayout set_layouts[2] = {dsl_1, dsl_1};
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    pipeline_layout_ci.pSetLayouts = set_layouts.data();
+    pipeline_layout_ci.pSetLayouts = set_layouts;
 
     pipeline_layout_ci.setLayoutCount = 1;
     auto pipeline_layout_1 = std::make_unique<vkt::PipelineLayout>(*m_device, pipeline_layout_ci);
@@ -1342,7 +1342,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphics) {
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = 2;
-    allocate_info.pSetLayouts = set_layouts.data();
+    allocate_info.pSetLayouts = set_layouts;
 
     std::array<VkDescriptorSet, 2> descriptor_sets{};
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());
@@ -1424,10 +1424,10 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     vkt::DescriptorSetLayout dsl_1(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
                                    &flags_create_info);
 
-    std::array set_layouts = {dsl_1.handle(), dsl_1.handle()};
+    VkDescriptorSetLayout set_layouts[2] = {dsl_1, dsl_1};
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    pipeline_layout_ci.pSetLayouts = set_layouts.data();
+    pipeline_layout_ci.pSetLayouts = set_layouts;
 
     pipeline_layout_ci.setLayoutCount = 1;
     const vkt::PipelineLayout pipeline_layout_1(*m_device, pipeline_layout_ci);
@@ -1465,7 +1465,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsGPL) {
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = 2;
-    allocate_info.pSetLayouts = set_layouts.data();
+    allocate_info.pSetLayouts = set_layouts;
 
     std::array<VkDescriptorSet, 2> descriptor_sets{};
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());
@@ -1548,10 +1548,10 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     vkt::DescriptorSetLayout dsl_1(*m_device, binding, VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
                                    &flags_create_info);
 
-    std::array set_layouts = {dsl_1.handle(), dsl_1.handle()};
+    VkDescriptorSetLayout set_layouts[2] = {dsl_1, dsl_1};
 
     VkPipelineLayoutCreateInfo pipeline_layout_ci = vku::InitStructHelper();
-    pipeline_layout_ci.pSetLayouts = set_layouts.data();
+    pipeline_layout_ci.pSetLayouts = set_layouts;
     pipeline_layout_ci.setLayoutCount = 2;
     const vkt::PipelineLayout pipeline_layout(*m_device, pipeline_layout_ci);
 
@@ -1580,7 +1580,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     shader_obj_ci.pCode = vs_spv_1.data();
     shader_obj_ci.pName = "main";
     shader_obj_ci.setLayoutCount = 1u;
-    shader_obj_ci.pSetLayouts = set_layouts.data();
+    shader_obj_ci.pSetLayouts = set_layouts;
     vkt::Shader vs_1(*m_device, shader_obj_ci);
     shader_obj_ci.codeSize = vs_spv_2.size() * sizeof(uint32_t);
     shader_obj_ci.pCode = vs_spv_2.data();
@@ -1604,7 +1604,7 @@ TEST_F(PositiveGpuAVDescriptorIndexing, SharedPipelineLayoutSubsetGraphicsShader
     VkDescriptorSetAllocateInfo allocate_info = vku::InitStructHelper();
     allocate_info.descriptorPool = pool;
     allocate_info.descriptorSetCount = 2;
-    allocate_info.pSetLayouts = set_layouts.data();
+    allocate_info.pSetLayouts = set_layouts;
 
     std::array<VkDescriptorSet, 2> descriptor_sets{};
     vk::AllocateDescriptorSets(device(), &allocate_info, descriptor_sets.data());

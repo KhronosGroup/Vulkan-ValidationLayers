@@ -148,7 +148,7 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants) {
     vk::CmdPushConstants(m_command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT, shader_pcr_byte_size,
                          shader_pcr_byte_size, &push_constants.storage_buffer_ptr_2);
     // Vertex shader will write 8 values to storage buffer, fragment shader another 8
-    vk::CmdDrawIndirect(m_command_buffer, indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(m_command_buffer, indirect_draw_parameters_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
@@ -330,18 +330,17 @@ TEST_F(PositiveGpuAVShaderObject, RestoreUserPushConstants2) {
     m_command_buffer.BindShaders(vs, fs);
     m_command_buffer.BindCompShader(cs);
 
-    vk::CmdPushConstants(m_command_buffer, graphics_pipeline_layout.handle(),
-                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(graphics_push_constants),
-                         &graphics_push_constants);
+    vk::CmdPushConstants(m_command_buffer, graphics_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                         sizeof(graphics_push_constants), &graphics_push_constants);
 
     // Vertex shader will write 4 values to graphics storage buffer, fragment shader another 4
-    vk::CmdDrawIndirect(m_command_buffer, indirect_draw_parameters_buffer.handle(), 0, 1, sizeof(VkDrawIndirectCommand));
+    vk::CmdDrawIndirect(m_command_buffer, indirect_draw_parameters_buffer, 0, 1, sizeof(VkDrawIndirectCommand));
     m_command_buffer.EndRendering();
 
-    vk::CmdPushConstants(m_command_buffer, compute_pipeline_layout.handle(), VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                         sizeof(compute_push_constants), &compute_push_constants);
+    vk::CmdPushConstants(m_command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(compute_push_constants),
+                         &compute_push_constants);
     // Compute shaders will write 8 values to compute storage buffer
-    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer.handle(), 0);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0);
     m_command_buffer.End();
     m_default_queue->SubmitAndWait(m_command_buffer);
 
@@ -400,10 +399,10 @@ TEST_F(PositiveGpuAVShaderObject, DispatchShaderObjectAndPipeline) {
     m_command_buffer.Begin();
     SetDefaultDynamicStatesExclude();
     m_command_buffer.BindCompShader(compShader);
-    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer.handle(), 0u);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipe);
-    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer.handle(), 0u);
+    vk::CmdDispatchIndirect(m_command_buffer, indirect_dispatch_parameters_buffer, 0u);
 
     m_command_buffer.End();
 }

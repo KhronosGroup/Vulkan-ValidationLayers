@@ -337,7 +337,7 @@ bool VkShaderObj::InitFromGLSL(const void *pNext) {
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
-    init(*m_device, moduleCreateInfo);
+    Init(*m_device, moduleCreateInfo);
     m_stage_info.module = handle();
     return VK_NULL_HANDLE != handle();
 }
@@ -369,7 +369,7 @@ bool VkShaderObj::InitFromASM() {
     moduleCreateInfo.codeSize = spv.size() * sizeof(uint32_t);
     moduleCreateInfo.pCode = spv.data();
 
-    init(*m_device, moduleCreateInfo);
+    Init(*m_device, moduleCreateInfo);
     m_stage_info.module = handle();
     return VK_NULL_HANDLE != handle();
 }

@@ -111,9 +111,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopyBufferToImage) {
     copy.imageExtent = {16, 16, 1};
 
     for (size_t i = 0; i < aspects.size(); ++i) {
-        buffers[i].init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+        buffers[i].Init(*m_device, 16 * 16 * 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
         copy.imageSubresource.aspectMask = aspects[i];
-        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i].handle(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vk::CmdCopyBufferToImage(m_command_buffer, buffers[i], image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
     }
     m_command_buffer.End();
 }
@@ -149,8 +149,7 @@ TEST_F(PositiveYcbcr, MultiplaneImageCopy) {
     }
 
     vkt::Image image(*m_device, ci, vkt::no_mem);
-    vkt::DeviceMemory mem_obj;
-    mem_obj.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    vkt::DeviceMemory mem_obj(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
 
     vk::BindImageMemory(device(), image, mem_obj, 0);
 
@@ -248,9 +247,9 @@ TEST_F(PositiveYcbcr, MultiplaneImageBindDisjoint) {
         bind_info[plane].image = image;
         bind_info[plane].memoryOffset = 0;
     }
-    bind_info[0].memory = p0_mem.handle();
-    bind_info[1].memory = p1_mem.handle();
-    bind_info[2].memory = p2_mem.handle();
+    bind_info[0].memory = p0_mem;
+    bind_info[1].memory = p1_mem;
+    bind_info[2].memory = p2_mem;
     plane_info[0].planeAspect = VK_IMAGE_ASPECT_PLANE_0_BIT;
     plane_info[1].planeAspect = VK_IMAGE_ASPECT_PLANE_1_BIT;
     plane_info[2].planeAspect = VK_IMAGE_ASPECT_PLANE_2_BIT;

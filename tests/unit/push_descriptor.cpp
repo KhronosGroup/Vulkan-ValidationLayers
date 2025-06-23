@@ -447,7 +447,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate) {
     // Bad pipelineLayout handle, to be ignored if template type is DESCRIPTOR_SET
     {
         create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
-        create_info.descriptorSetLayout = ds_layout_ub.handle();
+        create_info.descriptorSetLayout = ds_layout_ub;
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplateKHR(*m_device, &create_info, nullptr, &dut)) {
             vk::DestroyDescriptorUpdateTemplateKHR(*m_device, dut, nullptr);
@@ -539,7 +539,7 @@ TEST_F(NegativePushDescriptor, CreateDescriptorUpdateTemplate14) {
     // Bad pipelineLayout handle, to be ignored if template type is DESCRIPTOR_SET
     {
         create_info.pipelineLayout = CastFromUint64<VkPipelineLayout>(badhandle);
-        create_info.descriptorSetLayout = ds_layout_ub.handle();
+        create_info.descriptorSetLayout = ds_layout_ub;
         VkDescriptorUpdateTemplateKHR dut = VK_NULL_HANDLE;
         if (VK_SUCCESS == vk::CreateDescriptorUpdateTemplate(*m_device, &create_info, nullptr, &dut)) {
             vk::DestroyDescriptorUpdateTemplate(*m_device, dut, nullptr);
@@ -806,8 +806,7 @@ TEST_F(NegativePushDescriptor, SetCmdPushQueueFamily) {
         m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-pipelineBindPoint-00363");
         m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
         m_errorMonitor->SetDesiredError("VUID-vkCmdPushDescriptorSet-commandBuffer-cmdpool");
-        vk::CmdPushDescriptorSetKHR(tran_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1,
-                                    &descriptor_write);
+        vk::CmdPushDescriptorSetKHR(tran_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_write);
         m_errorMonitor->VerifyFound();
         tran_command_buffer.End();
     }
@@ -1118,8 +1117,8 @@ TEST_F(NegativePushDescriptor, DescriptorTemplateIncompatibleLayout) {
     update_template_ci.pipelineLayout = pipeline_layout;
     vkt::DescriptorUpdateTemplate update_template(*m_device, update_template_ci);
 
-    update_template_ci.descriptorSetLayout = normal_dsl.handle();
-    update_template_ci.pipelineLayout = pipeline_layout3.handle();
+    update_template_ci.descriptorSetLayout = normal_dsl;
+    update_template_ci.pipelineLayout = pipeline_layout3;
     vkt::DescriptorUpdateTemplate update_template2(*m_device, update_template_ci);
 
     SimpleTemplateData update_template_data;

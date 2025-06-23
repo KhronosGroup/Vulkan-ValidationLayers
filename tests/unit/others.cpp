@@ -1292,7 +1292,7 @@ TEST_F(VkLayerTest, DISABLED_DisplayApplicationName) {
 
         // TODO - The second instance is not hooked up to the callback so will crash in corecheck or the driver
         m_errorMonitor->SetDesiredError("AppName: second instance");
-        vk::CreateImage(device2.handle(), nullptr, nullptr, &image);
+        vk::CreateImage(device2, nullptr, nullptr, &image);
         m_errorMonitor->VerifyFound();
     }
     ASSERT_NO_FATAL_FAILURE(vk::DestroyInstance(instance2, nullptr));

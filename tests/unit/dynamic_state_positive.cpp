@@ -273,7 +273,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesPipelineDepthWriteEnable) {
     rp.AddColorAttachment(0);
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
-    VkImageView views[2] = {color_view.handle(), ds_view.handle()};
+    VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
@@ -316,7 +316,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableOverridesDynamicDepthWriteEnable) {
     rp.AddColorAttachment(0);
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
-    VkImageView views[2] = {color_view.handle(), ds_view.handle()};
+    VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
@@ -359,7 +359,7 @@ TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
     rp.AddColorAttachment(0);
     rp.AddDepthStencilAttachment(1);
     rp.CreateRenderPass();
-    VkImageView views[2] = {color_view.handle(), ds_view.handle()};
+    VkImageView views[2] = {color_view, ds_view};
     vkt::Framebuffer fb(*m_device, rp, 2, views);
 
     VkPipelineDepthStencilStateCreateInfo ds_state = vku::InitStructHelper();
@@ -371,13 +371,13 @@ TEST_F(PositiveDynamicState, DepthTestEnableDepthWriteEnable) {
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
-    m_command_buffer.BeginRenderPass(rp, fb.handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    m_command_buffer.BeginRenderPass(rp, fb);
 
-    vk::CmdSetDepthTestEnableEXT(m_command_buffer.handle(), VK_FALSE);
+    vk::CmdSetDepthTestEnableEXT(m_command_buffer, VK_FALSE);
     // never call vkCmdSetDepthWriteEnableEXT as not needed
 
-    vk::CmdDraw(m_command_buffer.handle(), 1, 1, 0, 0);
+    vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }
@@ -801,12 +801,12 @@ TEST_F(PositiveDynamicState, ViewportInheritance) {
     info.pInheritanceInfo = &hinfo;
 
     cmd_buffer.Begin(&info);
-    vk::CmdBindPipeline(cmd_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    vk::CmdDraw(cmd_buffer.handle(), 3, 1, 0, 0);
+    vk::CmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+    vk::CmdDraw(cmd_buffer, 3, 1, 0, 0);
     cmd_buffer.End();
 
     set_state.Begin();
-    vk::CmdSetViewport(set_state.handle(), 1u, 1u, &viewports[1]);
+    vk::CmdSetViewport(set_state, 1u, 1u, &viewports[1]);
     set_state.End();
 
     m_command_buffer.Begin();
@@ -875,7 +875,7 @@ TEST_F(PositiveDynamicState, RasterizationSamplesDynamicRendering) {
     colorAttachment.imageView = image_view;
     colorAttachment.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachment.resolveMode = VK_RESOLVE_MODE_AVERAGE_BIT;
-    colorAttachment.resolveImageView = resolve_image_view.handle();
+    colorAttachment.resolveImageView = resolve_image_view;
     colorAttachment.resolveImageLayout = VK_IMAGE_LAYOUT_GENERAL;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1047,7 +1047,7 @@ TEST_F(PositiveDynamicState, VertexInputMultipleBindings) {
     vkt::Buffer vertex_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vkt::Buffer instance_buffer(*m_device, 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-    VkBuffer buffers[2] = {vertex_buffer.handle(), instance_buffer};
+    VkBuffer buffers[2] = {vertex_buffer, instance_buffer};
     VkDeviceSize offsets[2] = {0u, 0u};
 
     m_command_buffer.Begin();
@@ -1188,12 +1188,12 @@ TEST_F(PositiveDynamicState, DynamicColorBlendEnable) {
 
     VkRenderingAttachmentInfo color_attachments[3];
     color_attachments[0] = vku::InitStructHelper();
-    color_attachments[0].imageView = image_view1.handle();
+    color_attachments[0].imageView = image_view1;
     color_attachments[0].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     color_attachments[1] = color_attachments[0];
-    color_attachments[1].imageView = image_view2.handle();
+    color_attachments[1].imageView = image_view2;
     color_attachments[2] = color_attachments[0];
-    color_attachments[2].imageView = image_view3.handle();
+    color_attachments[2].imageView = image_view3;
 
     VkRenderingAttachmentInfo depth_attachment = vku::InitStructHelper();
     depth_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
@@ -1535,11 +1535,11 @@ TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    vk::CmdBindPipeline(m_command_buffer.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe.Handle());
 
     vkt::Buffer buffer(*m_device, 16, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     VkDeviceSize offset = 0u;
-    vk::CmdBindVertexBuffers(m_command_buffer.handle(), 0u, 1u, &buffer.handle(), &offset);
+    vk::CmdBindVertexBuffers(m_command_buffer, 0u, 1u, &buffer.handle(), &offset);
 
     VkVertexInputBindingDescription2EXT vertexInputBindingDescription = vku::InitStructHelper();
     vertexInputBindingDescription.binding = 0u;
@@ -1551,9 +1551,9 @@ TEST_F(PositiveDynamicState, VertexInputLocationMissing) {
     vertexAttributeDescription.binding = 0u;
     vertexAttributeDescription.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     vertexAttributeDescription.offset = 0u;
-    vk::CmdSetVertexInputEXT(m_command_buffer.handle(), 1u, &vertexInputBindingDescription, 1u, &vertexAttributeDescription);
+    vk::CmdSetVertexInputEXT(m_command_buffer, 1u, &vertexInputBindingDescription, 1u, &vertexAttributeDescription);
 
-    vk::CmdDraw(m_command_buffer.handle(), 4u, 1u, 0u, 0u);
+    vk::CmdDraw(m_command_buffer, 4u, 1u, 0u, 0u);
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();
 }

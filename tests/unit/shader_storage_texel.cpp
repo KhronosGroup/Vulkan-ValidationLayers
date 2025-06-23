@@ -325,8 +325,8 @@ TEST_F(NegativeShaderStorageTexel, MissingFormatWriteForFormat) {
     m_command_buffer.Begin();
 
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline);
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_.handle(), 0, 1,
-                              &ds.set_, 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, cs_pipeline.pipeline_layout_, 0, 1, &ds.set_, 0,
+                              nullptr);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-OpTypeImage-07029");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
     m_errorMonitor->VerifyFound();

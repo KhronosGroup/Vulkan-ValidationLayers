@@ -578,52 +578,43 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     ycbcr_create_info.yChromaOffset = VK_CHROMA_LOCATION_COSITED_EVEN;
     ycbcr_create_info.chromaFilter = VK_FILTER_NEAREST;
     ycbcr_create_info.forceExplicitReconstruction = false;
-    vkt::SamplerYcbcrConversion conversions[2];
-    conversions[0].init(*m_device, ycbcr_create_info);
+    vkt::SamplerYcbcrConversion conversions_0(*m_device, ycbcr_create_info);
     ycbcr_create_info.components.a = VK_COMPONENT_SWIZZLE_ZERO;  // Just anything different than above
-    conversions[1].init(*m_device, ycbcr_create_info);
+    vkt::SamplerYcbcrConversion conversions_1(*m_device, ycbcr_create_info);
 
     VkSamplerYcbcrConversionInfo ycbcr_info = vku::InitStructHelper();
-    ycbcr_info.conversion = conversions[0];
+    ycbcr_info.conversion = conversions_0;
 
     // Create a sampler using conversion
     VkSamplerCreateInfo sci = SafeSaneSamplerCreateInfo(&ycbcr_info);
     // Create two samplers with two different conversions, such that one will mismatch
     // It will make the second sampler fail to see if the log prints the second sampler or the first sampler.
-    vkt::Sampler samplers[2];
-    samplers[0].init(*m_device, sci);
-    ycbcr_info.conversion = conversions[1];  // Need two samplers with different conversions
-    samplers[1].init(*m_device, sci);
+    vkt::Sampler samplers_0(*m_device, sci);
+    ycbcr_info.conversion = conversions_1;  // Need two samplers with different conversions
+    vkt::Sampler samplers_1(*m_device, sci);
 
-    vkt::Sampler BadSampler;
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-addressModeU-01646");
-    BadSampler.init(*m_device, sci);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(sci, "VUID-VkSamplerCreateInfo-addressModeU-01646");
 
     sci.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sci.unnormalizedCoordinates = VK_TRUE;
     sci.minLod = 0.0;
     sci.maxLod = 0.0;
-    m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-addressModeU-01646");
-    BadSampler.init(*m_device, sci);
-    m_errorMonitor->VerifyFound();
+    CreateSamplerTest(sci, "VUID-VkSamplerCreateInfo-addressModeU-01646");
 
     {
         // samplerAnisotropy
         sci.unnormalizedCoordinates = VK_FALSE;
         sci.anisotropyEnable = VK_TRUE;
-        m_errorMonitor->SetDesiredError("VUID-VkSamplerCreateInfo-addressModeU-01646");
-        BadSampler.init(*m_device, sci);
-        m_errorMonitor->VerifyFound();
+        CreateSamplerTest(sci, "VUID-VkSamplerCreateInfo-addressModeU-01646");
     }
 
     // Create an image without a Ycbcr conversion
     vkt::Image mpimage(*m_device, image_ci, vkt::set_layout);
-    ycbcr_info.conversion = conversions[0];  // Need two samplers with different conversions
+    ycbcr_info.conversion = conversions_0;  // Need two samplers with different conversions
     vkt::ImageView view = mpimage.CreateView(VK_IMAGE_ASPECT_PLANE_0_BIT, &ycbcr_info);
 
-    VkSampler vksamplers[2] = {samplers[0], samplers[1]};
+    VkSampler vksamplers[2] = {samplers_0, samplers_1};
     // Use the image and sampler together in a descriptor set
     OneOffDescriptorSet descriptor_set(m_device,
                                        {
@@ -639,7 +630,7 @@ TEST_F(NegativeSampler, MultiplaneImageSamplerConversionMismatch) {
     image_infos[0] = {};
     image_infos[0].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     image_infos[0].imageView = view;
-    image_infos[0].sampler = samplers[0];
+    image_infos[0].sampler = samplers_0;
     image_infos[1] = image_infos[0];
 
     // Update the descriptor set expecting to get an error

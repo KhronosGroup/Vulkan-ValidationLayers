@@ -320,7 +320,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
             nullptr  // push constants
         };
 
-        pipeline_layout.init(*m_device, pipeline_layout_create_info, {});
+        pipeline_layout.Init(*m_device, pipeline_layout_create_info, {});
     }
 
     // try disabled rasterizer and no tessellation
@@ -354,7 +354,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
         vkt::Pipeline pipeline(*m_device, graphics_pipeline_create_info);
 
         m_command_buffer.Begin();
-        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.handle());
+        vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     }
 
     // try enabled rasterizer but no subpass attachments
@@ -391,7 +391,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineWithIgnoredPointers) {
                 nullptr  // subpass dependencies
             };
 
-            render_pass.init(*m_device, render_pass_create_info);
+            render_pass.Init(*m_device, render_pass_create_info);
         }
 
         VkGraphicsPipelineCreateInfo graphics_pipeline_create_info{
@@ -751,7 +751,7 @@ TEST_F(PositivePipeline, SampleMaskOverrideCoverageNV) {
     VkShaderObj fs(this, fs_src, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     CreatePipelineHelper pipe(*this);
-    pipe.gp_ci_.layout = pl.handle();
+    pipe.gp_ci_.layout = pl;
     pipe.gp_ci_.renderPass = rp;
     pipe.shader_stages_ = {vs.GetStageCreateInfo(), fs.GetStageCreateInfo()};
     pipe.gp_ci_.pMultisampleState = &msaa;
@@ -1265,7 +1265,7 @@ TEST_F(PositivePipeline, CreateGraphicsPipelineRasterizationOrderAttachmentAcces
         rpci.subpassCount = 1;
         rpci.pSubpasses = &subpass;
 
-        render_pass.init(*this->m_device, rpci);
+        render_pass.Init(*this->m_device, rpci);
     };
 
     auto set_flgas_pipeline_createinfo = [&](CreatePipelineHelper &helper) {
@@ -1404,7 +1404,7 @@ TEST_F(PositivePipeline, ShaderModuleIdentifier) {
     VkShaderObj vs(this, kVertexMinimalGlsl, VK_SHADER_STAGE_VERTEX_BIT);
 
     VkShaderModuleIdentifierEXT get_identifier = vku::InitStructHelper();
-    vk::GetShaderModuleIdentifierEXT(device(), vs.handle(), &get_identifier);
+    vk::GetShaderModuleIdentifierEXT(device(), vs, &get_identifier);
     sm_id_create_info.identifierSize = get_identifier.identifierSize;
     sm_id_create_info.pIdentifier = get_identifier.identifier;
 

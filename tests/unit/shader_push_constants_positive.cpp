@@ -317,9 +317,9 @@ TEST_F(PositiveShaderPushConstants, CompatibilityGraphicsOnly) {
     pipeline_helper_c.CreateGraphicsPipeline();
 
     // Easier to see in command buffers
-    const VkPipelineLayout layout_a = pipeline_helper_a.pipeline_layout_.handle();
-    const VkPipelineLayout layout_b = pipeline_helper_b.pipeline_layout_.handle();
-    const VkPipelineLayout layout_c = pipeline_helper_c.pipeline_layout_.handle();
+    const VkPipelineLayout layout_a = pipeline_helper_a.pipeline_layout_;
+    const VkPipelineLayout layout_b = pipeline_helper_b.pipeline_layout_;
+    const VkPipelineLayout layout_c = pipeline_helper_c.pipeline_layout_;
     const VkPipeline pipeline_a = pipeline_helper_a;
     const VkPipeline pipeline_b = pipeline_helper_b;
     const VkPipeline pipeline_c = pipeline_helper_c;

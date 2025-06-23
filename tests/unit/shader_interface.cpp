@@ -1991,7 +1991,7 @@ TEST_F(NegativeShaderInterface, FragmentOutputDynamicRenderingUnusedAttachments)
 
     VkRenderingAttachmentInfo depth_stencil_attachment = vku::InitStructHelper();
     depth_stencil_attachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-    depth_stencil_attachment.imageView = depth_view.handle();
+    depth_stencil_attachment.imageView = depth_view;
 
     m_command_buffer.Begin();
     VkRenderingInfo begin_rendering_info = vku::InitStructHelper();

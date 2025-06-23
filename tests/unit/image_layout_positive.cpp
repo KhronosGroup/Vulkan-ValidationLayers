@@ -63,7 +63,7 @@ TEST_F(PositiveImageLayout, BarriersAndImageUsage) {
 
         m_command_buffer.Begin();
         for (uint32_t i = 0; i < layout_count; ++i) {
-            img_barrier.image = buffer_layouts[i].image_obj.handle();
+            img_barrier.image = buffer_layouts[i].image_obj;
             const VkImageUsageFlags usage = buffer_layouts[i].image_obj.Usage();
             img_barrier.subresourceRange.aspectMask = (usage == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
                                                           ? (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)
@@ -289,20 +289,20 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = init_layout;
 
-        vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
 
         image_barrier.subresourceRange = first_range;
         image_barrier.oldLayout = init_layout;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
 
         image_barrier.subresourceRange = view_range;
         image_barrier.oldLayout = init_layout;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -312,11 +312,11 @@ TEST_F(PositiveImageLayout, DescriptorSubresource) {
         }
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
-                                  NULL);
+        vk::CmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                                  nullptr);
 
-        vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
+        vk::CmdDraw(cmd_buf, 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
         cmd_buf.End();
@@ -371,20 +371,17 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
     //    of the selected mip level of the 3D image, automatic layout transitions apply
     //    to the entire subresource referenced which is the entire mip level in this case.
     VkImageSubresourceRange full_range{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-    vkt::ImageView view_2d, other_view;
     VkImageViewCreateInfo image_view_create_info = vku::InitStructHelper();
     image_view_create_info.image = image_3d;
     image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     image_view_create_info.format = format;
     image_view_create_info.subresourceRange = view_range;
 
-    view_2d.init(*m_device, image_view_create_info);
-    ASSERT_TRUE(view_2d.initialized());
+    vkt::ImageView view_2d(*m_device, image_view_create_info);
 
-    image_view_create_info.image = other_image.handle();
+    image_view_create_info.image = other_image;
     image_view_create_info.subresourceRange = full_range;
-    other_view.init(*m_device, image_view_create_info);
-    ASSERT_TRUE(other_view.initialized());
+    vkt::ImageView other_view(*m_device, image_view_create_info);
 
     std::vector<VkAttachmentDescription> attachments = {
         {0, format, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
@@ -459,11 +456,11 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
         image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         image_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
-        image_barrier.image = other_image.handle();
-        vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0,
-                               nullptr, 0, nullptr, 1, &image_barrier);
+        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
+        image_barrier.image = other_image;
+        vk::CmdPipelineBarrier(cmd_buf, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT, 0, 0, nullptr, 0,
+                               nullptr, 1, &image_barrier);
 
         if (test_type == kExternal) {
             // The image layout is external to the command buffer we are recording to test.  Submit to push to instance scope.
@@ -477,10 +474,10 @@ TEST_F(PositiveImageLayout, Descriptor3D2DSubresource) {
         m_renderPassBeginInfo.renderArea = {{0, 0}, {kWidth, kHeight}};
 
         cmd_buf.BeginRenderPass(m_renderPassBeginInfo);
-        vk::CmdBindPipeline(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-        vk::CmdBindDescriptorSets(cmd_buf.handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+        vk::CmdBindPipeline(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
+        vk::CmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
                                   nullptr);
-        vk::CmdDraw(cmd_buf.handle(), 1, 0, 0, 0);
+        vk::CmdDraw(cmd_buf, 1, 0, 0, 0);
 
         cmd_buf.EndRenderPass();
         cmd_buf.End();

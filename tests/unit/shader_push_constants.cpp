@@ -134,7 +134,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
 
     // stageFlags of 0
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-stageFlags-requiredbitmask");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // will be at least 256 as required from the spec
@@ -144,37 +144,37 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, maxPushConstantsSize, 8};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00294");
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // offset not a multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 1, 8};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-offset-00295");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size of 0
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 0};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00296");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size not a multiple of 4
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, 7};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00297");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size over limit
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize + 4};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     // size over limit of non-zero offset
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 4, maxPushConstantsSize};
     m_errorMonitor->SetDesiredError("VUID-VkPushConstantRange-size-00298");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 
     push_constant_range = {VK_SHADER_STAGE_VERTEX_BIT, 0, maxPushConstantsSize};
@@ -183,7 +183,7 @@ TEST_F(NegativeShaderPushConstants, PipelineRangeShaderObject) {
     ci_info.pushConstantRangeCount = 2;
     ci_info.pPushConstantRanges = push_constant_range_duplicate;
     m_errorMonitor->SetDesiredError("VUID-VkShaderCreateInfoEXT-pPushConstantRanges-10063");
-    shader.init(*m_device, ci_info);
+    shader.Init(*m_device, ci_info);
     m_errorMonitor->VerifyFound();
 }
 

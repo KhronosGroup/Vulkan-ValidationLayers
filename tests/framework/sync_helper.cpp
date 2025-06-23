@@ -96,7 +96,7 @@ void BarrierQueueFamilyTestHelper::Init(std::vector<uint32_t> *families, bool im
     auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
                                              families ? vvl::make_span(families->data(), families->size()) : vvl::span<uint32_t>{});
     if (buffer_memory) {
-        buffer_.init(*device_obj, buffer_ci, mem_prop);
+        buffer_.Init(*device_obj, buffer_ci, mem_prop);
     } else {
         buffer_.InitNoMemory(*device_obj, buffer_ci);
     }
@@ -132,7 +132,7 @@ void Barrier2QueueFamilyTestHelper::Init(bool image_memory, bool buffer_memory) 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     auto buffer_ci = vkt::Buffer::CreateInfo(256, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     if (buffer_memory) {
-        buffer_.init(*device_obj, buffer_ci, mem_prop);
+        buffer_.Init(*device_obj, buffer_ci, mem_prop);
     } else {
         buffer_.InitNoMemory(*device_obj, buffer_ci);
     }

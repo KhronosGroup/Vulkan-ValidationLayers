@@ -632,9 +632,7 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
     RETURN_IF_SKIP(InitState(nullptr, &mesh_shader_features));
     InitRenderTarget();
 
-    vkt::Event event_obj(*m_device);
-    const auto event = event_obj.handle();
-    ASSERT_TRUE(event_obj.initialized());
+    vkt::Event event(*m_device);
 
     m_command_buffer.Begin();
 
@@ -656,14 +654,14 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-04095");
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-04095");
-    vk::CmdWaitEvents(m_command_buffer, 1, &event, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0,
-                      nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
+                      VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-srcStageMask-04096");
     m_errorMonitor->SetDesiredError("VUID-vkCmdWaitEvents-dstStageMask-04096");
-    vk::CmdWaitEvents(m_command_buffer, 1, &event, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0,
-                      nullptr, 0, nullptr, 0, nullptr);
+    vk::CmdWaitEvents(m_command_buffer, 1, &event.handle(), VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
+                      VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV, 0, nullptr, 0, nullptr, 0, nullptr);
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdPipelineBarrier-srcStageMask-04095");
@@ -680,22 +678,20 @@ TEST_F(NegativeMesh, ExtensionDisabledNV) {
 
     m_command_buffer.End();
 
-    vkt::Semaphore semaphore_obj(*m_device);
-    const auto semaphore = semaphore_obj.handle();
-    ASSERT_TRUE(semaphore_obj.initialized());
+    vkt::Semaphore semaphore(*m_device);
 
     VkPipelineStageFlags stage_flags = VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV | VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
     VkSubmitInfo submit_info = vku::InitStructHelper();
 
     // Signal the semaphore so the next test can wait on it.
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &semaphore;
+    submit_info.pSignalSemaphores = &semaphore.handle();
     vk::QueueSubmit(m_default_queue->handle(), 1, &submit_info, VK_NULL_HANDLE);
 
     submit_info.signalSemaphoreCount = 0;
     submit_info.pSignalSemaphores = nullptr;
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &semaphore;
+    submit_info.pWaitSemaphores = &semaphore.handle();
     submit_info.pWaitDstStageMask = &stage_flags;
 
     m_errorMonitor->SetDesiredError("VUID-VkSubmitInfo-pWaitDstStageMask-04095");
@@ -1004,12 +1000,12 @@ TEST_F(NegativeMesh, MultiDrawIndirect) {
     vkt::Buffer count_buffer_wrong_usage(*m_device, count_buffer_create_info);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02714");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_unbound.handle(), 0, 1,
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_unbound, 0, 1,
                                          sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksIndirectCountEXT-countBuffer-02715");
-    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_wrong_usage.handle(), 0, 1,
+    vk::CmdDrawMeshTasksIndirectCountEXT(m_command_buffer, draw_buffer, 0, count_buffer_wrong_usage, 0, 1,
                                          sizeof(VkDrawMeshTasksIndirectCommandEXT));
     m_errorMonitor->VerifyFound();
 
@@ -1285,17 +1281,17 @@ TEST_F(NegativeMesh, MeshIncompatibleActiveQueries) {
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    vk::CmdBeginQuery(m_command_buffer, xfb_query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, xfb_query_pool, 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-07074");
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer, xfb_query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, xfb_query_pool, 0u);
 
-    vk::CmdBeginQuery(m_command_buffer, pg_query_pool.handle(), 0u, 0u);
+    vk::CmdBeginQuery(m_command_buffer, pg_query_pool, 0u, 0u);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDrawMeshTasksEXT-None-07075");
     vk::CmdDrawMeshTasksEXT(m_command_buffer, 1u, 1u, 1u);
     m_errorMonitor->VerifyFound();
-    vk::CmdEndQuery(m_command_buffer, pg_query_pool.handle(), 0u);
+    vk::CmdEndQuery(m_command_buffer, pg_query_pool, 0u);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

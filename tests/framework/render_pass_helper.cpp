@@ -107,7 +107,7 @@ void RenderPassSingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateFl
     VkRenderPassCreateInfo rp_create_info = GetCreateInfo();
     rp_create_info.pNext = pNext;
     rp_create_info.flags = flags;
-    render_pass_.init(*device_, rp_create_info);
+    render_pass_.Init(*device_, rp_create_info);
 }
 
 RenderPass2SingleSubpass::RenderPass2SingleSubpass(VkLayerTest& test, vkt::Device* device)
@@ -224,5 +224,5 @@ void RenderPass2SingleSubpass::CreateRenderPass(void* pNext, VkRenderPassCreateF
     VkRenderPassCreateInfo2 rp_create_info = GetCreateInfo();
     rp_create_info.pNext = pNext;
     rp_create_info.flags = flags;
-    render_pass_.init(*device_, rp_create_info);
+    render_pass_.Init(*device_, rp_create_info);
 }

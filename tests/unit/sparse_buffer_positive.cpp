@@ -41,24 +41,22 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     vkt::Buffer buffer_sparse2(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::DeviceMemory buffer_mem;
-    buffer_mem.init(*m_device, buffer_mem_alloc);
-    vkt::DeviceMemory buffer_mem2;
-    buffer_mem2.init(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem2(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind = {};
     buffer_memory_bind.size = buffer_mem_reqs.size;
-    buffer_memory_bind.memory = buffer_mem.handle();
+    buffer_memory_bind.memory = buffer_mem;
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_infos[2] = {};
-    buffer_memory_bind_infos[0].buffer = buffer_sparse.handle();
+    buffer_memory_bind_infos[0].buffer = buffer_sparse;
     buffer_memory_bind_infos[0].bindCount = 1;
     buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind;
-    buffer_memory_bind_infos[1].buffer = buffer_sparse2.handle();
+    buffer_memory_bind_infos[1].buffer = buffer_sparse2;
     buffer_memory_bind_infos[1].bindCount = 1;
     buffer_memory_bind_infos[1].pBinds = &buffer_memory_bind;
 
@@ -76,11 +74,11 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy) {
     m_command_buffer.Begin();
     // This copy is be completely legal as long as we change the memory for buffer_sparse to not overlap with
     // buffer_sparse2's memory on queue submission
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse2.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse2, 1, &copy_info);
     m_command_buffer.End();
 
     // Rebind buffer_mem2 so it does not overlap
-    buffer_memory_bind.memory = buffer_mem2.handle();
+    buffer_memory_bind.memory = buffer_mem2;
     bind_info.bufferBindCount = 1;
     bind_info.waitSemaphoreCount = 1;
     bind_info.pWaitSemaphores = &semaphore.handle();
@@ -134,7 +132,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -142,10 +140,10 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
 
     VkSparseMemoryBind buffer_memory_bind_1 = {};
     buffer_memory_bind_1.size = buffer_mem_reqs.size;
-    buffer_memory_bind_1.memory = buffer_mem.handle();
+    buffer_memory_bind_1.memory = buffer_mem;
 
     std::array<VkSparseBufferMemoryBindInfo, 1> buffer_memory_bind_infos = {};
-    buffer_memory_bind_infos[0].buffer = buffer_sparse.handle();
+    buffer_memory_bind_infos[0].buffer = buffer_sparse;
     buffer_memory_bind_infos[0].bindCount = 1;
     buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind_1;
 
@@ -162,8 +160,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy2) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
-                      copy_info_list.data());
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse, size32(copy_info_list), copy_info_list.data());
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -198,7 +195,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     buffer_sparse.destroy();
     buffer_ci.size = 2 * buffer_mem_reqs.alignment;
     buffer_sparse.InitNoMemory(*m_device, buffer_ci);
@@ -216,13 +213,13 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
 
     std::array<VkSparseMemoryBind, 2> buffer_memory_binds = {};
     buffer_memory_binds[0].size = buffer_mem_reqs.alignment;
-    buffer_memory_binds[0].memory = buffer_mem_1.handle();
+    buffer_memory_binds[0].memory = buffer_mem_1;
     buffer_memory_binds[1].resourceOffset = buffer_mem_reqs.alignment;
     buffer_memory_binds[1].size = buffer_mem_reqs.alignment;
-    buffer_memory_binds[1].memory = buffer_mem_2.handle();
+    buffer_memory_binds[1].memory = buffer_mem_2;
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
-    buffer_memory_bind_info.buffer = buffer_sparse.handle();
+    buffer_memory_bind_info.buffer = buffer_sparse;
     buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
 
@@ -239,7 +236,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy3) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse, 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -275,7 +272,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
     vkt::Buffer buffer_sparse(*m_device, buffer_ci, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     if (buffer_mem_reqs.alignment <= 1) {
         GTEST_SKIP() << "Buffer copy will not work as intended if VkMemoryRequirements::alignment is not superior to 1";
     }
@@ -290,13 +287,13 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
 
     std::array<VkSparseMemoryBind, 2> buffer_memory_binds = {};
     buffer_memory_binds[0].size = buffer_mem_reqs.alignment;
-    buffer_memory_binds[0].memory = buffer_mem_1.handle();
+    buffer_memory_binds[0].memory = buffer_mem_1;
     buffer_memory_binds[1].resourceOffset = buffer_mem_reqs.alignment;
     buffer_memory_binds[1].size = buffer_mem_reqs.alignment;
-    buffer_memory_binds[1].memory = buffer_mem_2.handle();
+    buffer_memory_binds[1].memory = buffer_mem_2;
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
-    buffer_memory_bind_info.buffer = buffer_sparse.handle();
+    buffer_memory_bind_info.buffer = buffer_sparse;
     buffer_memory_bind_info.bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_info.pBinds = buffer_memory_binds.data();
 
@@ -318,7 +315,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy4) {
                                                           // => since overlaps are computed in buffer space, none should be detected
     copy_info.size = buffer_mem_reqs.alignment / 2;
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse, 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -371,18 +368,17 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_sparse_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::DeviceMemory buffer_mem;
-    buffer_mem.init(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
     buffer_not_sparse.BindMemory(buffer_mem, 0);  // Bind not sparse buffer on first part of memory
 
     VkSparseMemoryBind buffer_memory_bind = {};
     buffer_memory_bind.size = 0x10000;
-    buffer_memory_bind.memory = buffer_mem.handle();
+    buffer_memory_bind.memory = buffer_mem;
     buffer_memory_bind.memoryOffset = 0x10000;  // Bind sparse buffer on second part of memory => no overlap
 
     VkSparseBufferMemoryBindInfo buffer_memory_bind_info = {};
-    buffer_memory_bind_info.buffer = buffer_sparse.handle();
+    buffer_memory_bind_info.buffer = buffer_sparse;
     buffer_memory_bind_info.bindCount = 1;
     buffer_memory_bind_info.pBinds = &buffer_memory_bind;
 
@@ -399,7 +395,7 @@ TEST_F(PositiveSparseBuffer, NonOverlappingBufferCopy5) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_not_sparse.handle(), buffer_sparse.handle(), 1, &copy_info);
+    vk::CmdCopyBuffer(m_command_buffer, buffer_not_sparse, buffer_sparse, 1, &copy_info);
     m_command_buffer.End();
 
     // Submitting copy command with overlapping device memory regions
@@ -473,19 +469,18 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    vkt::DeviceMemory buffer_mem;
-    buffer_mem.init(*m_device, buffer_mem_alloc);
+    vkt::DeviceMemory buffer_mem(*m_device, buffer_mem_alloc);
 
     VkSparseMemoryBind buffer_memory_bind_1 = {};
     buffer_memory_bind_1.size = buffer_mem_reqs.size;
-    buffer_memory_bind_1.memory = buffer_mem.handle();
+    buffer_memory_bind_1.memory = buffer_mem;
 
     std::array<VkSparseBufferMemoryBindInfo, 1> buffer_memory_bind_infos = {};
-    buffer_memory_bind_infos[0].buffer = buffer_sparse.handle();
+    buffer_memory_bind_infos[0].buffer = buffer_sparse;
     buffer_memory_bind_infos[0].bindCount = 1;
     buffer_memory_bind_infos[0].pBinds = &buffer_memory_bind_1;
 
@@ -502,8 +497,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
-                      copy_info_list.data());
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse, size32(copy_info_list), copy_info_list.data());
     m_command_buffer.End();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -566,26 +560,26 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     vkt::Buffer buffer_sparse(*m_device, b_info, vkt::no_mem);
 
     VkMemoryRequirements buffer_mem_reqs;
-    vk::GetBufferMemoryRequirements(device(), buffer_sparse.handle(), &buffer_mem_reqs);
+    vk::GetBufferMemoryRequirements(device(), buffer_sparse, &buffer_mem_reqs);
     VkMemoryAllocateInfo buffer_mem_alloc =
         vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_mem_reqs, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     std::vector<vkt::DeviceMemory> memory_chunks(memory_chunks_count);
 
     for (auto& mem : memory_chunks) {
-        mem.init(*m_device, buffer_mem_alloc);
+        mem.Init(*m_device, buffer_mem_alloc);
     }
 
     std::vector<VkSparseMemoryBind> buffer_memory_binds(memory_chunks_count);
     for (auto [i, mem_bind] : vvl::enumerate(buffer_memory_binds)) {
         mem_bind.size = memory_size;
-        mem_bind.memory = memory_chunks[i].handle();
+        mem_bind.memory = memory_chunks[i];
         mem_bind.resourceOffset = i * memory_size;
         mem_bind.memoryOffset = 0;
     }
 
     std::array<VkSparseBufferMemoryBindInfo, 1> buffer_memory_bind_infos = {};
-    buffer_memory_bind_infos[0].buffer = buffer_sparse.handle();
+    buffer_memory_bind_infos[0].buffer = buffer_sparse;
     buffer_memory_bind_infos[0].bindCount = size32(buffer_memory_binds);
     buffer_memory_bind_infos[0].pBinds = buffer_memory_binds.data();
 
@@ -602,8 +596,7 @@ TEST_F(PositiveSparseBuffer, BufferCopiesValidationStressTest2) {
     // Set up complete
 
     m_command_buffer.Begin();
-    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse.handle(), buffer_sparse.handle(), size32(copy_info_list),
-                      copy_info_list.data());
+    vk::CmdCopyBuffer(m_command_buffer, buffer_sparse, buffer_sparse, size32(copy_info_list), copy_info_list.data());
     m_command_buffer.End();
 
     VkPipelineStageFlags mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;

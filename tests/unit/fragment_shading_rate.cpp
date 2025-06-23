@@ -838,13 +838,13 @@ TEST_F(NegativeFragmentShadingRate, FramebufferDimensions) {
 
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height * 2;
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04540");
-    fb.init(*m_device, fb_info);
+    fb.Init(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
     fb_info.height = fsr_properties.minFragmentShadingRateAttachmentTexelSize.height;
 
     fb_info.layers = 3;
     m_errorMonitor->SetDesiredError("VUID-VkFramebufferCreateInfo-flags-04538");
-    fb.init(*m_device, fb_info);
+    fb.Init(*m_device, fb_info);
     m_errorMonitor->VerifyFound();
 }
 

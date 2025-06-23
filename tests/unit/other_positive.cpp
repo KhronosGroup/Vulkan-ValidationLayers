@@ -42,7 +42,7 @@ TEST_F(VkPositiveLayerTest, Maintenance1Tests) {
     cmd_buf.Begin();
     // Set Negative height, should give error if Maintenance 1 is not enabled
     VkViewport viewport = {0, 0, 16, -16, 0, 1};
-    vk::CmdSetViewport(cmd_buf.handle(), 0, 1, &viewport);
+    vk::CmdSetViewport(cmd_buf, 0, 1, &viewport);
     cmd_buf.End();
 }
 

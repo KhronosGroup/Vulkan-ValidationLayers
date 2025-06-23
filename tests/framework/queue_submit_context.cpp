@@ -51,9 +51,9 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
 
     VkMemoryPropertyFlags mem_prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags transfer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    buffer_a.init(*device, 256, transfer_usage, mem_prop);
-    buffer_b.init(*device, 256, transfer_usage, mem_prop);
-    buffer_c.init(*device, 256, transfer_usage, mem_prop);
+    buffer_a.Init(*device, 256, transfer_usage, mem_prop);
+    buffer_b.Init(*device, 256, transfer_usage, mem_prop);
+    buffer_c.Init(*device, 256, transfer_usage, mem_prop);
 
     VkDeviceSize size = 256;
     VkDeviceSize half_size = size / 2;
@@ -70,10 +70,10 @@ QSTestContext::QSTestContext(vkt::Device* device, vkt::Queue* force_q0, vkt::Que
     h_cbc = InitFromPool(cbc);
 
     VkSemaphoreCreateInfo semaphore_ci = vku::InitStructHelper();
-    semaphore.init(*device, semaphore_ci);
+    semaphore.Init(*device, semaphore_ci);
 
     VkEventCreateInfo eci = vku::InitStructHelper();
-    event.init(*device, eci);
+    event.Init(*device, eci);
 }
 
 VkCommandBuffer QSTestContext::InitFromPool(vkt::CommandBuffer& cb_obj) {

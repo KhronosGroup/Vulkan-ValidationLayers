@@ -166,29 +166,25 @@ TEST_F(PositiveMemory, GetMemoryRequirements2) {
     vkt::Buffer buffer(
         *m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
-    // Use extension to get buffer memory requirements
-    VkBufferMemoryRequirementsInfo2 buffer_info = {VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr, buffer};
-    VkMemoryRequirements2 buffer_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
+    VkBufferMemoryRequirementsInfo2 buffer_info = vku::InitStructHelper();
+    buffer_info.buffer = buffer;
+    VkMemoryRequirements2 buffer_reqs = vku::InitStructHelper();
     vk::GetBufferMemoryRequirements2KHR(device(), &buffer_info, &buffer_reqs);
 
-    // Allocate and bind buffer memory
-    vkt::DeviceMemory buffer_memory;
-    buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_reqs.memoryRequirements, 0));
+    vkt::DeviceMemory buffer_memory(*m_device,
+                                    vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer_reqs.memoryRequirements, 0));
     vk::BindBufferMemory(device(), buffer, buffer_memory, 0);
 
-    // Create a test image
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    // Use extension to get image memory requirements
-    VkImageMemoryRequirementsInfo2 image_info = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR, nullptr, image};
-    VkMemoryRequirements2 image_reqs = {VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2_KHR};
+    VkImageMemoryRequirementsInfo2 image_info = vku::InitStructHelper();
+    image_info.image = image;
+    VkMemoryRequirements2 image_reqs = vku::InitStructHelper();
     vk::GetImageMemoryRequirements2KHR(device(), &image_info, &image_reqs);
 
-    // Allocate and bind image memory
-    vkt::DeviceMemory image_memory;
-    image_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_reqs.memoryRequirements, 0));
-    vk::BindImageMemory(device(), image, image_memory.handle(), 0);
+    vkt::DeviceMemory image_memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image_reqs.memoryRequirements, 0));
+    vk::BindImageMemory(device(), image, image_memory, 0);
 
     // Now execute arbitrary commands that use the test buffer and image
     m_command_buffer.Begin();
@@ -220,25 +216,17 @@ TEST_F(PositiveMemory, BindMemory2) {
 
     vkt::Buffer buffer(*m_device, vkt::Buffer::CreateInfo(1024, VK_BUFFER_USAGE_TRANSFER_DST_BIT), vkt::no_mem);
 
-    // Allocate buffer memory
-    vkt::DeviceMemory buffer_memory;
-    buffer_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0));
+    vkt::DeviceMemory buffer_memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, buffer.MemoryRequirements(), 0));
 
-    // Bind buffer memory with extension
     VkBindBufferMemoryInfo buffer_bind_info = {VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO_KHR, nullptr, buffer, buffer_memory, 0};
     vk::BindBufferMemory2KHR(device(), 1, &buffer_bind_info);
 
-    // Create a test image
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    // Allocate image memory
-    vkt::DeviceMemory image_memory;
-    image_memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    vkt::DeviceMemory image_memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
 
-    // Bind image memory with extension
-    VkBindImageMemoryInfo image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image, image_memory.handle(),
-                                             0};
+    VkBindImageMemoryInfo image_bind_info = {VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO_KHR, nullptr, image, image_memory, 0};
     vk::BindImageMemory2KHR(device(), 1, &image_bind_info);
 
     // Now execute arbitrary commands that use the test buffer and image
@@ -591,8 +579,7 @@ TEST_F(PositiveMemory, BindMemoryStatusImage) {
     auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
     vkt::Image image(*m_device, image_ci, vkt::no_mem);
 
-    vkt::DeviceMemory memory;
-    memory.init(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
+    vkt::DeviceMemory memory(*m_device, vkt::DeviceMemory::GetResourceAllocInfo(*m_device, image.MemoryRequirements(), 0));
 
     VkResult result = VK_RESULT_MAX_ENUM;
 
