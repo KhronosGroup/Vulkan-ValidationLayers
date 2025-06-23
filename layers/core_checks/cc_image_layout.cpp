@@ -809,9 +809,9 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
             const auto stencil_initial_layout = attachment_description_stencil_layout->stencilInitialLayout;
             VkImageSubresourceRange sub_range = view_state->normalized_subresource_range;
             sub_range.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-            cb_state.TrackImageFirstLayout(*image_state, sub_range, initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, initial_layout);
             sub_range.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-            cb_state.TrackImageFirstLayout(*image_state, sub_range, stencil_initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, sub_range, 0, 0, stencil_initial_layout);
         } else {
             // If layoutStencil is kInvalidLayout (meaning no separate depth/stencil layout), image view format has both depth
             // and stencil aspects, and subresource has only one of aspect out of depth or stencil, then the missing aspect will
@@ -822,7 +822,7 @@ void CoreChecks::TransitionBeginRenderPassLayouts(vvl::CommandBuffer &cb_state, 
                     subresource_range.aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
                 }
             }
-            cb_state.TrackImageFirstLayout(*image_state, subresource_range, initial_layout);
+            cb_state.TrackImageFirstLayout(*image_state, subresource_range, 0, 0, initial_layout);
         }
     }
     // Now transition for first subpass (index 0)
@@ -1119,7 +1119,7 @@ void CoreChecks::RecordTransitionImageLayout(vvl::CommandBuffer &cb_state, const
     //
     // However, we still need to record initial layout for the "initial layout" validation
     if (cb_state.IsReleaseOp(mem_barrier)) {
-        cb_state.TrackImageFirstLayout(*image_state, normalized_subresource_range, old_layout);
+        cb_state.TrackImageFirstLayout(*image_state, normalized_subresource_range, 0, 0, old_layout);
     } else {
         cb_state.SetImageLayout(*image_state, normalized_subresource_range, mem_barrier.newLayout, old_layout);
     }
