@@ -21,6 +21,7 @@
 
 #include "vulkan/vulkan.h"
 #include "containers/custom_containers.h"
+#include <vulkan/utility/vk_safe_struct.hpp>
 
 struct EventInfo {
     VkPipelineStageFlags2 src_stage_mask = VK_PIPELINE_STAGE_2_NONE;

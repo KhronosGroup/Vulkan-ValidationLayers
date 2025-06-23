@@ -494,7 +494,8 @@ class BestPractices : public vvl::DeviceProxy {
     bool PreCallValidateCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
                                          const ErrorObject& error_obj) const override;
 
-    using QueueCallbacks = std::vector<vvl::CommandBuffer::QueueCallback>;
+    using QueueCallback = std::function<bool(const class vvl::Queue& queue_state, const vvl::CommandBuffer& cb_state)>;
+    using QueueCallbacks = std::vector<QueueCallback>;
 
     void QueueValidateImageView(QueueCallbacks& func, Func command, vvl::ImageView* view, IMAGE_SUBRESOURCE_USAGE_BP usage);
     void QueueValidateImage(QueueCallbacks& func, Func command, std::shared_ptr<vvl::Image>& state,

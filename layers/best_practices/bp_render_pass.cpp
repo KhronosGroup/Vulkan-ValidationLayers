@@ -308,32 +308,32 @@ bool BestPractices::PreCallValidateCmdBeginRenderingKHR(VkCommandBuffer commandB
 // Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
 void BestPractices::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     if (auto rp_state = cb_state->active_render_pass.get()) {
-        auto& sub_state = bp_state::SubState(*cb_state);
         RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
     // Add Deferred Queue
-    cb_state->queue_submit_functions.insert(cb_state->queue_submit_functions.end(),
-                                            cb_state->queue_submit_functions_after_render_pass.begin(),
-                                            cb_state->queue_submit_functions_after_render_pass.end());
-    cb_state->queue_submit_functions_after_render_pass.clear();
+    sub_state.queue_submit_functions.insert(sub_state.queue_submit_functions.end(),
+                                            sub_state.queue_submit_functions_after_render_pass.begin(),
+                                            sub_state.queue_submit_functions_after_render_pass.end());
+    sub_state.queue_submit_functions_after_render_pass.clear();
 }
 
 // Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
 void BestPractices::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassInfo,
                                                    const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
+    auto& sub_state = bp_state::SubState(*cb_state);
     if (auto rp_state = cb_state->active_render_pass.get()) {
-        auto& sub_state = bp_state::SubState(*cb_state);
         RecordCmdEndRenderingCommon(sub_state, *rp_state);
     }
 
     // Add Deferred Queue
-    cb_state->queue_submit_functions.insert(cb_state->queue_submit_functions.end(),
-                                            cb_state->queue_submit_functions_after_render_pass.begin(),
-                                            cb_state->queue_submit_functions_after_render_pass.end());
-    cb_state->queue_submit_functions_after_render_pass.clear();
+    sub_state.queue_submit_functions.insert(sub_state.queue_submit_functions.end(),
+                                            sub_state.queue_submit_functions_after_render_pass.begin(),
+                                            sub_state.queue_submit_functions_after_render_pass.end());
+    sub_state.queue_submit_functions_after_render_pass.clear();
 }
 
 void BestPractices::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR* pSubpassInfo,
@@ -441,7 +441,7 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb
             }
         }
 
-        QueueValidateImageView(cb_state.base.queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
+        QueueValidateImageView(cb_state.queue_submit_functions, Func::vkCmdBeginRenderPass, image_view.get(), usage);
     }
 
     // Check store ops
@@ -478,7 +478,7 @@ void BestPractices::RecordCmdBeginRenderPass(bp_state::CommandBufferSubState& cb
             }
         }
 
-        QueueValidateImageView(cb_state.base.queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(),
+        QueueValidateImageView(cb_state.queue_submit_functions_after_render_pass, Func::vkCmdEndRenderPass, image_view.get(),
                                usage);
     }
 }

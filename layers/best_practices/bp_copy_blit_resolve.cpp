@@ -367,7 +367,8 @@ void BestPractices::PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer,
                                                   VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                   const VkImageResolve* pRegions, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto src = Get<vvl::Image>(srcImage);
     auto dst = Get<vvl::Image>(dstImage);
 
@@ -388,7 +389,8 @@ void BestPractices::PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuf
 void BestPractices::PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
                                                    const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto src = Get<vvl::Image>(pResolveImageInfo->srcImage);
     auto dst = Get<vvl::Image>(pResolveImageInfo->dstImage);
     uint32_t region_count = pResolveImageInfo->regionCount;
@@ -405,7 +407,8 @@ void BestPractices::PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuff
                                                      const VkClearColorValue* pColor, uint32_t rangeCount,
                                                      const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto dst = Get<vvl::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
@@ -422,14 +425,14 @@ void BestPractices::PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer comm
                                                             const VkImageSubresourceRange* pRanges,
                                                             const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto dst = Get<vvl::Image>(image);
 
     for (uint32_t i = 0; i < rangeCount; i++) {
         QueueValidateImage(funcs, record_obj.location.function, dst, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, pRanges[i]);
     }
     if (VendorCheckEnabled(kBPVendorNVIDIA)) {
-        auto& sub_state = bp_state::SubState(*cb_state);
         for (uint32_t i = 0; i < rangeCount; i++) {
             RecordResetZcullDirection(sub_state, image, pRanges[i]);
         }
@@ -440,7 +443,8 @@ void BestPractices::PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, Vk
                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                const VkImageCopy* pRegions, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto src = Get<vvl::Image>(srcImage);
     auto dst = Get<vvl::Image>(dstImage);
 
@@ -456,7 +460,8 @@ void BestPractices::PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBu
                                                        VkImageLayout dstImageLayout, uint32_t regionCount,
                                                        const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto dst = Get<vvl::Image>(dstImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -469,7 +474,8 @@ void BestPractices::PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBu
                                                        VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount,
                                                        const VkBufferImageCopy* pRegions, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto src = Get<vvl::Image>(srcImage);
 
     for (uint32_t i = 0; i < regionCount; i++) {
@@ -482,7 +488,8 @@ void BestPractices::PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, Vk
                                                VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
                                                const VkImageBlit* pRegions, VkFilter filter, const RecordObject& record_obj) {
     auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto& funcs = cb_state->queue_submit_functions;
+    auto& sub_state = bp_state::SubState(*cb_state);
+    auto& funcs = sub_state.queue_submit_functions;
     auto src = Get<vvl::Image>(srcImage);
     auto dst = Get<vvl::Image>(dstImage);
 

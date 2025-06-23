@@ -145,7 +145,6 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     // VVL needs helps to retire submsissions on present-only queue that does not use explicit host synchronization
     void UpdatePresentOnlyQueueProgress(const DeviceState &device_state);
 
-  public:
     // Queue family index. As queueFamilyIndex parameter in vkGetDeviceQueue.
     const uint32_t queue_family_index;
 
@@ -171,6 +170,11 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
     bool is_used_for_presentation = false;     // QueuePresent
     bool is_used_for_regular_submits = false;  // QueueSubmit and QueueBindSparse
 
+    using LockGuard = std::unique_lock<std::mutex>;
+    LockGuard Lock() const { return LockGuard(lock_); }
+
+    const std::deque<QueueSubmission> &Submissions() { return submissions_; }
+
   protected:
     // called from the various PostCallRecordQueueSubmit() methods
     void PostSubmit(QueueSubmission &submission);
@@ -181,11 +185,8 @@ class Queue : public StateObject, public SubStateManager<QueueSubState> {
   private:
     uint32_t timeline_wait_count_ = 0;
 
-  private:
-    using LockGuard = std::unique_lock<std::mutex>;
     void ThreadFunc();
     QueueSubmission *NextSubmission();
-    LockGuard Lock() const { return LockGuard(lock_); }
 
     DeviceState &dev_data_;
 

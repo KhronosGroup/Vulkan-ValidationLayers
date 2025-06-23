@@ -25,7 +25,6 @@
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/query_state.h"
 #include "state_tracker/vertex_index_buffer_state.h"
-#include "state_tracker/event_map.h"
 #include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
 
@@ -492,23 +491,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     VkCommandBuffer primary_command_buffer;
     // If primary, the secondary command buffers we will call.
     vvl::unordered_set<CommandBuffer *> linked_command_buffers;
-    // Validation functions run at primary CB queue submit time
-    using QueueCallback = std::function<bool(const class vvl::Queue &queue_state, const CommandBuffer &cb_state)>;
-    std::vector<QueueCallback> queue_submit_functions;
-    // Used by some layers to defer actions until vkCmdEndRenderPass time.
-    // Layers using this are responsible for inserting the callbacks into queue_submit_functions.
-    std::vector<QueueCallback> queue_submit_functions_after_render_pass;
-    // Validation functions run when secondary CB is executed in primary
-    std::vector<std::function<bool(const CommandBuffer &secondary, const CommandBuffer *primary, const vvl::Framebuffer *)>>
-        cmd_execute_commands_functions;
 
-    using EventCallback = std::function<bool(CommandBuffer &cb_state, bool do_validate, EventMap &local_event_signal_info,
-                                             VkQueue waiting_queue, const Location &loc)>;
-    std::vector<EventCallback> event_updates;
-
-    std::vector<std::function<bool(CommandBuffer &cb_state, bool do_validate, VkQueryPool &firstPerfQueryPool,
-                                   uint32_t perfQueryPass, QueryMap *localQueryToStateMap)>>
-        query_updates;
     bool performance_lock_acquired = false;
     bool performance_lock_released = false;
 
@@ -652,8 +635,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void TrackImageFirstLayout(const vvl::Image &image_state, const VkImageSubresourceRange &subresource_range,
                                int32_t depth_offset, uint32_t depth_extent, VkImageLayout layout);
 
-    void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
-    void Retire(uint32_t perf_submit_pass, const std::function<bool(const QueryObject &)> &is_query_updated_after);
+    void SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc);
 
     // Helpers to offset into |active_attachments|
     // [all color, all color resolve, depth, depth resolve, stencil, stencil resolve, FragmentDensityMap]
@@ -729,12 +711,24 @@ class CommandBufferSubState {
     virtual void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) {}
 
     virtual void RecordCmd(Func command) {}
-    virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents,
-                                  VkPipelineStageFlags2KHR src_stage_mask, const VkDependencyInfo *dependency_info) {}
+    virtual void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
+                                const VkDependencyInfo *dependency_info) {}
+    virtual void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {}
+    virtual void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
+                                  const VkDependencyInfo *dependency_info) {}
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
+
+    virtual void BeginQuery(const QueryObject &query_obj) {}
+    virtual void EndQuery(const QueryObject &query_obj) {}
+    virtual void EndQueries(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
+    virtual void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) {}
+    virtual void EnqueueUpdateVideoInlineQueries(const VkVideoInlineQueryInfoKHR &query_info) {}
+
     virtual void ClearPushConstants() {}
     virtual void NotifyInvalidate(const StateObject::NodeList &invalid_nodes, bool unlink) {}
+
+    virtual void Submit(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {}
 
     VulkanTypedHandle Handle() const;
     VkCommandBuffer VkHandle() const;

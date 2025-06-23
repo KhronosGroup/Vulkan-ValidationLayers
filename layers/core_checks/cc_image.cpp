@@ -27,6 +27,7 @@
 #include "core_validation.h"
 #include "cc_sync_vuid_maps.h"
 #include "cc_vuid_maps.h"
+#include "core_checks/cc_state_tracker.h"
 #include "error_message/error_location.h"
 #include "generated/pnext_chain_extraction.h"
 #include "generated/dispatch_functions.h"
@@ -1357,6 +1358,7 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
     if (!rp_state || cb_state.IsPrimary()) {
         return;
     }
+    auto &cb_sub_state = core::SubState(*cb_state_ptr);
     std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
     if (rp_state->use_dynamic_rendering_inherited) {
         for (uint32_t attachment_index = 0; attachment_index < attachmentCount; attachment_index++) {
@@ -1388,7 +1390,7 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
                         prim_cb->active_render_pass->dynamic_rendering_begin_rendering_info.layerCount, rectCount,
                         clear_rect_copy->data(), record_obj.location);
                 };
-                cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
+                cb_sub_state.cmd_execute_commands_functions.emplace_back(val_fn);
             }
         }
     } else if (!rp_state->use_dynamic_rendering) {
@@ -1425,7 +1427,7 @@ void CoreChecks::PostCallRecordCmdClearAttachments(VkCommandBuffer commandBuffer
                     }
                     return skip;
                 };
-                cb_state_ptr->cmd_execute_commands_functions.emplace_back(val_fn);
+                cb_sub_state.cmd_execute_commands_functions.emplace_back(val_fn);
             }
         }
     }

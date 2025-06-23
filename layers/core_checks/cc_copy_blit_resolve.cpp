@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "core_validation.h"
+#include "core_checks/cc_state_tracker.h"
 #include "cc_vuid_maps.h"
 #include "error_message/error_location.h"
 #include "error_message/error_strings.h"
@@ -1925,84 +1926,83 @@ void CoreChecks::PostCallRecordCmdCopyImage2(VkCommandBuffer commandBuffer, cons
 template <typename RegionType>
 void CoreChecks::RecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
                                      const RegionType *pRegions, const Location &loc) {
-    const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
-    const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
-
+    auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    auto &cb_sub_state = core::SubState(*cb_state);
     auto src_buffer_state = Get<vvl::Buffer>(srcBuffer);
     auto dst_buffer_state = Get<vvl::Buffer>(dstBuffer);
     ASSERT_AND_RETURN(src_buffer_state && dst_buffer_state);
+    if (regionCount == 0 || (!src_buffer_state->sparse && !dst_buffer_state->sparse)) {
+        return;
+    }
 
-    if (regionCount > 0 && (src_buffer_state->sparse || dst_buffer_state->sparse)) {
-        auto cb_state = Get<vvl::CommandBuffer>(commandBuffer);
+    using BufferRange = vvl::BindableMemoryTracker::BufferRange;
 
-        using BufferRange = vvl::BindableMemoryTracker::BufferRange;
+    std::vector<BufferRange> src_ranges(regionCount);
+    std::vector<BufferRange> dst_ranges(regionCount);
+    BufferRange src_ranges_bounds(pRegions[0].srcOffset, pRegions[0].srcOffset + pRegions[0].size);
+    BufferRange dst_ranges_bounds(pRegions[0].dstOffset, pRegions[0].dstOffset + pRegions[0].size);
 
-        std::vector<BufferRange> src_ranges(regionCount);
-        std::vector<BufferRange> dst_ranges(regionCount);
-        BufferRange src_ranges_bounds(pRegions[0].srcOffset, pRegions[0].srcOffset + pRegions[0].size);
-        BufferRange dst_ranges_bounds(pRegions[0].dstOffset, pRegions[0].dstOffset + pRegions[0].size);
+    for (uint32_t i = 0; i < regionCount; ++i) {
+        const RegionType &region = pRegions[i];
+        src_ranges[i] = vvl::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
+        dst_ranges[i] = vvl::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
 
-        for (uint32_t i = 0; i < regionCount; ++i) {
-            const RegionType &region = pRegions[i];
-            src_ranges[i] = vvl::range<VkDeviceSize>{region.srcOffset, region.srcOffset + region.size};
-            dst_ranges[i] = vvl::range<VkDeviceSize>{region.dstOffset, region.dstOffset + region.size};
+        src_ranges_bounds.begin = std::min(src_ranges_bounds.begin, region.srcOffset);
+        src_ranges_bounds.end = std::max(src_ranges_bounds.end, region.srcOffset + region.size);
 
-            src_ranges_bounds.begin = std::min(src_ranges_bounds.begin, region.srcOffset);
-            src_ranges_bounds.end = std::max(src_ranges_bounds.end, region.srcOffset + region.size);
+        dst_ranges_bounds.begin = std::min(dst_ranges_bounds.begin, region.dstOffset);
+        dst_ranges_bounds.end = std::max(dst_ranges_bounds.end, region.dstOffset + region.size);
+    }
 
-            dst_ranges_bounds.begin = std::min(dst_ranges_bounds.begin, region.dstOffset);
-            dst_ranges_bounds.end = std::max(dst_ranges_bounds.end, region.dstOffset + region.size);
-        }
+    auto queue_submit_validation = [this, src_buffer_state, dst_buffer_state, src_ranges = std::move(src_ranges),
+                                    dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds,
+                                    loc](const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) -> bool {
+        bool skip = false;
 
-        auto queue_submit_validation = [this, commandBuffer, src_buffer_state, dst_buffer_state, src_ranges = std::move(src_ranges),
-                                        dst_ranges = std::move(dst_ranges), src_ranges_bounds, dst_ranges_bounds, loc,
-                                        vuid](const class vvl::Queue &queue_state, const vvl::CommandBuffer &cb_state) -> bool {
-            bool skip = false;
+        auto src_vk_memory_to_ranges_map = src_buffer_state->GetBoundRanges(src_ranges_bounds, src_ranges);
+        auto dst_vk_memory_to_ranges_map = dst_buffer_state->GetBoundRanges(dst_ranges_bounds, dst_ranges);
 
-            auto src_vk_memory_to_ranges_map = src_buffer_state->GetBoundRanges(src_ranges_bounds, src_ranges);
-            auto dst_vk_memory_to_ranges_map = dst_buffer_state->GetBoundRanges(dst_ranges_bounds, dst_ranges);
+        for (const auto &[vk_memory, src_ranges] : src_vk_memory_to_ranges_map) {
+            const auto find_mem_it = dst_vk_memory_to_ranges_map.find(vk_memory);
+            if (find_mem_it == dst_vk_memory_to_ranges_map.end()) {
+                continue;
+            }
+            // Some source and destination ranges are bound to the same VkDeviceMemory, look for overlaps.
+            // Memory ranges are sorted, so looking for overlaps can be done in linear time
 
-            for (const auto &[vk_memory, src_ranges] : src_vk_memory_to_ranges_map) {
-                if (const auto find_mem_it = dst_vk_memory_to_ranges_map.find(vk_memory);
-                    find_mem_it != dst_vk_memory_to_ranges_map.end()) {
-                    // Some source and destination ranges are bound to the same VkDeviceMemory, look for overlaps.
-                    // Memory ranges are sorted, so looking for overlaps can be done in linear time
+            auto &dst_ranges_vec = find_mem_it->second;
+            auto src_ranges_it = src_ranges.cbegin();
+            auto dst_ranges_it = dst_ranges_vec.cbegin();
 
-                    auto &dst_ranges_vec = find_mem_it->second;
-                    auto src_ranges_it = src_ranges.cbegin();
-                    auto dst_ranges_it = dst_ranges_vec.cbegin();
+            while (src_ranges_it != src_ranges.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
+                if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
+                    auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
 
-                    while (src_ranges_it != src_ranges.cend() && dst_ranges_it != dst_ranges_vec.cend()) {
-                        if (src_ranges_it->first.intersects(dst_ranges_it->first)) {
-                            auto memory_range_overlap = src_ranges_it->first & dst_ranges_it->first;
+                    const LogObjectList objlist(cb_state.Handle(), src_buffer_state->Handle(), dst_buffer_state->Handle(),
+                                                vk_memory);
+                    const bool is_2 = loc.function == Func::vkCmdCopyBuffer2 || loc.function == Func::vkCmdCopyBuffer2KHR;
+                    const char *vuid = is_2 ? "VUID-VkCopyBufferInfo2-pRegions-00117" : "VUID-vkCmdCopyBuffer-pRegions-00117";
+                    skip |= this->LogError(
+                        vuid, objlist, loc,
+                        "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
+                        "bound to the same memory (%s), "
+                        "and end up overlapping on memory range %s.",
+                        vvl::string_range(src_ranges_it->second).c_str(), FormatHandle(src_buffer_state->VkHandle()).c_str(),
+                        vvl::string_range(dst_ranges_it->second).c_str(), FormatHandle(dst_buffer_state->VkHandle()).c_str(),
+                        FormatHandle(vk_memory).c_str(), vvl::string_range(memory_range_overlap).c_str());
+                }
 
-                            const LogObjectList objlist(commandBuffer, src_buffer_state->Handle(), dst_buffer_state->Handle(),
-                                                        vk_memory);
-                            skip |= this->LogError(
-                                vuid, objlist, loc,
-                                "Copy source buffer range %s (from buffer %s) and destination buffer range %s (from buffer %s) are "
-                                "bound to the same memory (%s), "
-                                "and end up overlapping on memory range %s.",
-                                vvl::string_range(src_ranges_it->second).c_str(),
-                                FormatHandle(src_buffer_state->VkHandle()).c_str(),
-                                vvl::string_range(dst_ranges_it->second).c_str(),
-                                FormatHandle(dst_buffer_state->VkHandle()).c_str(), FormatHandle(vk_memory).c_str(),
-                                vvl::string_range(memory_range_overlap).c_str());
-                        }
-
-                        if (src_ranges_it->first < dst_ranges_it->first) {
-                            ++src_ranges_it;
-                        } else {
-                            ++dst_ranges_it;
-                        }
-                    }
+                if (src_ranges_it->first < dst_ranges_it->first) {
+                    ++src_ranges_it;
+                } else {
+                    ++dst_ranges_it;
                 }
             }
-            return skip;
-        };
+        }
+        return skip;
+    };
 
-        cb_state->queue_submit_functions.emplace_back(queue_submit_validation);
-    }
+    cb_sub_state.queue_submit_functions.emplace_back(queue_submit_validation);
 }
 
 void CoreChecks::PostCallRecordCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer,

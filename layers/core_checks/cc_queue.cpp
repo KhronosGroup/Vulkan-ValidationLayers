@@ -24,6 +24,7 @@
 #include "cc_sync_vuid_maps.h"
 #include "cc_synchronization.h"
 #include "core_validation.h"
+#include "core_checks/cc_state_tracker.h"
 #include "state_tracker/queue_state.h"
 #include "state_tracker/semaphore_state.h"
 #include "state_tracker/image_state.h"
@@ -73,12 +74,13 @@ struct CommandBufferSubmitState {
             return true;
         }
 
-        for (auto &function : cb_state.event_updates) {
+        auto &cb_sub_state = core::SubState(cb_state);
+        for (auto &function : cb_sub_state.event_updates) {
             skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, local_event_signal_info,
                              queue_state.VkHandle(), loc);
         }
         VkQueryPool first_perf_query_pool = VK_NULL_HANDLE;
-        for (auto &function : cb_state.query_updates) {
+        for (auto &function : cb_sub_state.query_updates) {
             skip |= function(const_cast<vvl::CommandBuffer &>(cb_state), /*do_validate*/ true, first_perf_query_pool, perf_pass,
                              &local_query_to_state_map);
         }
