@@ -1783,40 +1783,6 @@ void DescriptorPool::Init(const Device &dev, const VkDescriptorPoolCreateInfo &i
 
 void DescriptorPool::Reset() { ASSERT_EQ(VK_SUCCESS, vk::ResetDescriptorPool(device(), handle(), 0)); }
 
-std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev,
-                                                          const std::vector<const DescriptorSetLayout *> &layouts) {
-    std::vector<VkDescriptorSetLayout> layout_handles;
-    layout_handles.reserve(layouts.size());
-    std::transform(layouts.begin(), layouts.end(), std::back_inserter(layout_handles),
-                   [](const DescriptorSetLayout *o) { return (o) ? o->handle() : VK_NULL_HANDLE; });
-
-    std::vector<VkDescriptorSet> set_handles;
-    set_handles.resize(layout_handles.size());
-
-    VkDescriptorSetAllocateInfo alloc_info = vku::InitStructHelper();
-    alloc_info.descriptorSetCount = static_cast<uint32_t>(layout_handles.size());
-    alloc_info.descriptorPool = handle();
-    alloc_info.pSetLayouts = layout_handles.data();
-    VkResult err = vk::AllocateDescriptorSets(device(), &alloc_info, set_handles.data());
-    EXPECT_EQ(VK_SUCCESS, err);
-
-    std::vector<DescriptorSet *> sets;
-    for (std::vector<VkDescriptorSet>::const_iterator it = set_handles.begin(); it != set_handles.end(); it++) {
-        // do descriptor sets need memories bound?
-        DescriptorSet *descriptorSet = new DescriptorSet(dev, this, *it);
-        sets.push_back(descriptorSet);
-    }
-    return sets;
-}
-
-std::vector<DescriptorSet *> DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count) {
-    return AllocateSets(dev, std::vector<const DescriptorSetLayout *>(count, &layout));
-}
-
-DescriptorSet *DescriptorPool::AllocateSets(const Device &dev, const DescriptorSetLayout &layout) {
-    std::vector<DescriptorSet *> set = AllocateSets(dev, layout, 1);
-    return (set.empty()) ? NULL : set[0];
-}
 void DescriptorSet::destroy() noexcept {
     if (!initialized()) {
         return;

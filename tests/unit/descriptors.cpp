@@ -2291,8 +2291,6 @@ TEST_F(NegativeDescriptors, DescriptorSetCompatibilityMutableDescriptors) {
 }
 
 TEST_F(NegativeDescriptors, DSUsageBits) {
-    TEST_DESCRIPTION("Attempt to update descriptor sets for images and buffers that do not have correct usage bits sets.");
-
     RETURN_IF_SKIP(Init());
 
     const VkFormat buffer_format = VK_FORMAT_R8_UNORM;
@@ -2300,98 +2298,103 @@ TEST_F(NegativeDescriptors, DSUsageBits) {
         GTEST_SKIP() << "Format doesn't support storage texel buffer";
     }
 
-    constexpr uint32_t kLocalDescriptorTypeRangeSize = (VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT - VK_DESCRIPTOR_TYPE_SAMPLER + 1);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {3, VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {4, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {5, VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {7, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {8, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {9, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1, VK_SHADER_STAGE_ALL, nullptr},
+                                           {10, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr},
+                                       });
 
-    std::array<VkDescriptorPoolSize, kLocalDescriptorTypeRangeSize> ds_type_count;
-    for (uint32_t i = 0; i < ds_type_count.size(); ++i) {
-        ds_type_count[i].type = VkDescriptorType(i);
-        ds_type_count[i].descriptorCount = 1;
-    }
+    vkt::Buffer buffer(*m_device, 256, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
+    vkt::Buffer storage_texel_buffer(*m_device, 256, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
 
-    vkt::DescriptorPool ds_pool(*m_device, vkt::DescriptorPool::CreateInfo(0, kLocalDescriptorTypeRangeSize, ds_type_count));
-    ASSERT_TRUE(ds_pool.initialized());
-
-    std::vector<VkDescriptorSetLayoutBinding> dsl_bindings(1);
-    dsl_bindings[0].binding = 0;
-    dsl_bindings[0].descriptorType = VkDescriptorType(0);
-    dsl_bindings[0].descriptorCount = 1;
-    dsl_bindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    dsl_bindings[0].pImmutableSamplers = NULL;
-
-    // Create arrays of layout and descriptor objects
-    using UpDescriptorSet = std::unique_ptr<vkt::DescriptorSet>;
-    std::vector<UpDescriptorSet> descriptor_sets;
-    using UpDescriptorSetLayout = std::unique_ptr<vkt::DescriptorSetLayout>;
-    std::vector<UpDescriptorSetLayout> ds_layouts;
-    descriptor_sets.reserve(kLocalDescriptorTypeRangeSize);
-    ds_layouts.reserve(kLocalDescriptorTypeRangeSize);
-    for (uint32_t i = 0; i < kLocalDescriptorTypeRangeSize; ++i) {
-        dsl_bindings[0].descriptorType = VkDescriptorType(i);
-        ds_layouts.push_back(UpDescriptorSetLayout(new vkt::DescriptorSetLayout(*m_device, dsl_bindings)));
-        descriptor_sets.push_back(UpDescriptorSet(ds_pool.AllocateSets(*m_device, *ds_layouts.back())));
-        ASSERT_TRUE(descriptor_sets.back()->initialized());
-    }
-
-    // Create a buffer & bufferView to be used for invalid updates
-    const VkDeviceSize buffer_size = 256;
-    vkt::Buffer buffer(*m_device, buffer_size, VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT);
-    vkt::Buffer storage_texel_buffer(*m_device, buffer_size, VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT);
-
-    vkt::BufferView buffer_view_obj(*m_device, buffer, VK_FORMAT_R8_UNORM);
-    vkt::BufferView storage_texel_buffer_view_obj(*m_device, storage_texel_buffer, VK_FORMAT_R8_UNORM);
+    vkt::BufferView buffer_view(*m_device, buffer, VK_FORMAT_R8_UNORM);
+    vkt::BufferView storage_texel_buffer_view(*m_device, storage_texel_buffer, VK_FORMAT_R8_UNORM);
 
     // Create an image to be used for invalid updates
-    vkt::Image image_obj(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    vkt::ImageView image_view = image_obj.CreateView();
+    vkt::Image image(*m_device, 64, 64, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::ImageView image_view = image.CreateView();
     vkt::Sampler sampler(*m_device, SafeSaneSamplerCreateInfo());
 
-    VkDescriptorBufferInfo buff_info = {};
-    buff_info.buffer = buffer;
-    buff_info.range = VK_WHOLE_SIZE;
-    VkDescriptorImageInfo img_info = {};
-    img_info.imageView = image_view;
-    img_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    img_info.sampler = sampler;
+    VkDescriptorBufferInfo buff_info = {buffer, 0, VK_WHOLE_SIZE};
+    VkDescriptorImageInfo img_info = {sampler, image_view, VK_IMAGE_LAYOUT_GENERAL};
     VkWriteDescriptorSet descriptor_write = vku::InitStructHelper();
-    descriptor_write.dstBinding = 0;
     descriptor_write.descriptorCount = 1;
-    descriptor_write.pTexelBufferView = &buffer_view_obj.handle();
     descriptor_write.pBufferInfo = &buff_info;
     descriptor_write.pImageInfo = &img_info;
+    descriptor_write.dstSet = descriptor_set.set_;
 
-    // These error messages align with VkDescriptorType struct
-    std::string error_codes[] = {
-        "",                                                // placeholder, no error for SAMPLER descriptor
-        "VUID-VkWriteDescriptorSet-descriptorType-00337",  // COMBINED_IMAGE_SAMPLER
-        "VUID-VkWriteDescriptorSet-descriptorType-00337",  // SAMPLED_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-00339",  // STORAGE_IMAGE
-        "VUID-VkWriteDescriptorSet-descriptorType-08765",  // UNIFORM_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-08766",  // STORAGE_TEXEL_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER
-        "VUID-VkWriteDescriptorSet-descriptorType-00330",  // UNIFORM_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00331",  // STORAGE_BUFFER_DYNAMIC
-        "VUID-VkWriteDescriptorSet-descriptorType-00338"   // INPUT_ATTACHMENT
-    };
+    descriptor_write.dstBinding = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00337");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 
-    for (uint32_t i = 1; i < kLocalDescriptorTypeRangeSize; ++i) {
-        if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-            // Now check for UNIFORM_TEXEL_BUFFER using storage_texel_buffer_view
-            descriptor_write.pTexelBufferView = &storage_texel_buffer_view_obj.handle();
-            ;
-        }
-        descriptor_write.descriptorType = VkDescriptorType(i);
-        descriptor_write.dstSet = descriptor_sets[i]->handle();
-        m_errorMonitor->SetDesiredError(error_codes[i].c_str());
+    descriptor_write.dstBinding = 1;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00337");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 
-        vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, NULL);
+    descriptor_write.dstBinding = 2;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00339");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 
-        m_errorMonitor->VerifyFound();
-        if (VkDescriptorType(i) == VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER) {
-            descriptor_write.pTexelBufferView = &buffer_view_obj.handle();
-            ;
-        }
-    }
+    descriptor_write.dstBinding = 3;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+    descriptor_write.pTexelBufferView = &storage_texel_buffer_view.handle();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-08765");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 5;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+    descriptor_write.pTexelBufferView = &buffer_view.handle();
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-08766");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 6;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 7;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00331");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 8;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00330");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 9;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00331");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
+
+    descriptor_write.dstBinding = 10;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
+    m_errorMonitor->SetDesiredError("VUID-VkWriteDescriptorSet-descriptorType-00338");
+    vk::UpdateDescriptorSets(device(), 1, &descriptor_write, 0, nullptr);
+    m_errorMonitor->VerifyFound();
 }
 
 TEST_F(NegativeDescriptors, DSUsageBitsFlags2) {

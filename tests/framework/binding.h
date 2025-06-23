@@ -1006,13 +1006,7 @@ class DescriptorPool : public internal::NonDispHandle<VkDescriptorPool> {
     // vkResetDescriptorPool()
     void Reset();
 
-    // vkFreeDescriptorSet()
     bool GetDynamicUsage() { return dynamic_usage_; }
-
-    // vkAllocateDescriptorSets()
-    std::vector<DescriptorSet *> AllocateSets(const Device &dev, const std::vector<const DescriptorSetLayout *> &layouts);
-    std::vector<DescriptorSet *> AllocateSets(const Device &dev, const DescriptorSetLayout &layout, uint32_t count);
-    DescriptorSet *AllocateSets(const Device &dev, const DescriptorSetLayout &layout);
 
     template <typename PoolSizes>
     static VkDescriptorPoolCreateInfo CreateInfo(VkDescriptorPoolCreateFlags flags, uint32_t max_sets, const PoolSizes &pool_sizes);

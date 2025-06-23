@@ -980,28 +980,11 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     AddRequiredFeature(vkt::Feature::bufferDeviceAddress);
     RETURN_IF_SKIP(InitBasicDescriptorBuffer());
 
-    const VkDescriptorSetLayoutBinding binding{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
-    VkDescriptorSetLayoutCreateInfo dslci = vku::InitStructHelper();
-    dslci.flags = 0;
-    dslci.bindingCount = 1;
-    dslci.pBindings = &binding;
-
-    vkt::DescriptorSetLayout dsl(*m_device, dslci);
-    VkDescriptorPoolSize ds_type_count = {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1};
-
-    VkDescriptorPoolCreateInfo ds_pool_ci = vku::InitStructHelper();
-    ds_pool_ci.maxSets = 1;
-    ds_pool_ci.poolSizeCount = 1;
-    ds_pool_ci.pPoolSizes = &ds_type_count;
-    vkt::DescriptorPool pool(*m_device, ds_pool_ci);
-
-    std::unique_ptr<vkt::DescriptorSet> ds(pool.AllocateSets(*m_device, dsl));
-
-    VkPipelineLayoutCreateInfo plci = vku::InitStructHelper();
-    plci.setLayoutCount = 1;
-    plci.pSetLayouts = &dsl.handle();
-
-    vkt::PipelineLayout pipeline_layout(*m_device, plci);
+    OneOffDescriptorSet descriptor_set(m_device,
+                                       {
+                                           {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr},
+                                       });
+    vkt::PipelineLayout pipeline_layout(*m_device, {&descriptor_set.layout_});
 
     char const *shader_source = R"glsl(
         #version 450
@@ -1019,7 +1002,8 @@ TEST_F(NegativeDescriptorBuffer, InconsistentSet) {
     m_command_buffer.Begin();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipe);
 
-    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &ds->handle(), 0, nullptr);
+    vk::CmdBindDescriptorSets(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout, 0, 1, &descriptor_set.set_, 0,
+                              nullptr);
 
     m_errorMonitor->SetDesiredError("VUID-vkCmdDispatch-None-08115");
     vk::CmdDispatch(m_command_buffer, 1, 1, 1);
