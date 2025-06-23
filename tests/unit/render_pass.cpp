@@ -780,7 +780,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
     test_rpci.pSubpasses = &test_subpass;
 
     TestRenderPassCreate(m_errorMonitor, *m_device, test_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03341",
-                         "VUID-VkRenderPassCreateInfo2-flags-04907");
+                         "VUID-VkSubpassDescription2-flags-04907");
 
     // Create a resolve subpass which is not the last subpass in the subpass dependency chain.
     {
@@ -794,7 +794,7 @@ TEST_F(NegativeRenderPass, ShaderResolveQCOM) {
                                                                   subpasses, size32(dependency), dependency.data());
 
         TestRenderPassCreate(m_errorMonitor, *m_device, test2_rpci, rp2Supported, "VUID-VkSubpassDescription-flags-03343",
-                             "VUID-VkRenderPassCreateInfo2-flags-04909");
+                             "VUID-VkSubpassDescription2-flags-04909");
     }
 }
 
