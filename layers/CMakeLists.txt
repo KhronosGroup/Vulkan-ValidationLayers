@@ -361,12 +361,13 @@ target_sources(vvl PRIVATE
     state_tracker/pipeline_sub_state.cpp
     state_tracker/pipeline_sub_state.h
     state_tracker/push_constant_data.h
-    state_tracker/query_state.h
     state_tracker/semaphore_state.cpp
     state_tracker/semaphore_state.h
     state_tracker/special_supported.h
     state_tracker/state_object.cpp
     state_tracker/state_object.h
+    state_tracker/query_state.cpp
+    state_tracker/query_state.h
     state_tracker/queue_state.cpp
     state_tracker/queue_state.h
     state_tracker/ray_tracing_state.h

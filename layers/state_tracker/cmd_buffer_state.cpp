@@ -1587,7 +1587,9 @@ void CommandBuffer::RecordBarriers(const VkDependencyInfo &dep_info) {
 void CommandBuffer::RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool,
                                          uint32_t slot) {
     RecordCmd(command);
-    if (dev_data.disabled[query_validation]) return;
+    if (dev_data.disabled[query_validation]) {
+        return;
+    }
 
     if (!dev_data.disabled[command_buffer_state]) {
         auto pool_state = dev_data.Get<vvl::QueryPool>(queryPool);
