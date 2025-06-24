@@ -293,34 +293,53 @@ static std::string string_DescriptorTypeSet(const vvl::unordered_set<uint32_t> &
 
 // Map SPIR-V type to VK_COMPONENT_TYPE enum
 VkComponentTypeKHR GetComponentType(const spirv::Instruction *insn, bool is_signed_int) {
-    switch (insn->Opcode()) {
-        case spv::OpTypeInt:
-            switch (insn->Word(2)) {
-                case 8:
-                    return is_signed_int ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
-                case 16:
-                    return is_signed_int ? VK_COMPONENT_TYPE_SINT16_KHR : VK_COMPONENT_TYPE_UINT16_KHR;
-                case 32:
-                    return is_signed_int ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
-                case 64:
-                    return is_signed_int ? VK_COMPONENT_TYPE_SINT64_KHR : VK_COMPONENT_TYPE_UINT64_KHR;
-                default:
-                    return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
-            }
-        case spv::OpTypeFloat:
-            switch (insn->Word(2)) {
-                case 16:
+    if (insn->Opcode() == spv::OpTypeInt) {
+        switch (insn->Word(2)) {
+            case 8:
+                return is_signed_int ? VK_COMPONENT_TYPE_SINT8_KHR : VK_COMPONENT_TYPE_UINT8_KHR;
+            case 16:
+                return is_signed_int ? VK_COMPONENT_TYPE_SINT16_KHR : VK_COMPONENT_TYPE_UINT16_KHR;
+            case 32:
+                return is_signed_int ? VK_COMPONENT_TYPE_SINT32_KHR : VK_COMPONENT_TYPE_UINT32_KHR;
+            case 64:
+                return is_signed_int ? VK_COMPONENT_TYPE_SINT64_KHR : VK_COMPONENT_TYPE_UINT64_KHR;
+            default:
+                return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
+        }
+    } else if (insn->Opcode() == spv::OpTypeFloat) {
+        switch (insn->Word(2)) {
+            case 8: {
+                assert(insn->Length() > 3);  // all float8 have an encoding
+                const uint32_t encoding = insn->Word(3);
+                if (encoding == spv::FPEncodingFloat8E4M3EXT) {
+                    return VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+                } else if (encoding == spv::FPEncodingFloat8E5M2EXT) {
+                    return VK_COMPONENT_TYPE_FLOAT8_E5M2_EXT;
+                } else {
+                    assert(false);  // New float8 encoding
+                }
+            } break;
+            case 16: {
+                if (insn->Length() > 3) {
+                    const uint32_t encoding = insn->Word(3);
+                    if (encoding == spv::FPEncodingBFloat16KHR) {
+                        return VK_COMPONENT_TYPE_BFLOAT16_KHR;
+                    } else {
+                        assert(false);  // New float16 encoding
+                    }
+                } else {
                     return VK_COMPONENT_TYPE_FLOAT16_KHR;
-                case 32:
-                    return VK_COMPONENT_TYPE_FLOAT32_KHR;
-                case 64:
-                    return VK_COMPONENT_TYPE_FLOAT64_KHR;
-                default:
-                    return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
-            }
-        default:
-            return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
+                }
+            } break;
+            case 32:
+                return VK_COMPONENT_TYPE_FLOAT32_KHR;
+            case 64:
+                return VK_COMPONENT_TYPE_FLOAT64_KHR;
+            default:
+                return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
+        }
     }
+    return VK_COMPONENT_TYPE_MAX_ENUM_KHR;
 }
 
 static bool IsSignedIntEnum(const VkComponentTypeKHR component_type) {

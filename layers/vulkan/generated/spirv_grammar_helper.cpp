@@ -601,6 +601,20 @@ const char* string_SpvOpcode(uint32_t opcode) {
             return "OpTensorWriteARM";
         case spv::OpTensorQuerySizeARM:
             return "OpTensorQuerySizeARM";
+        case spv::OpGraphConstantARM:
+            return "OpGraphConstantARM";
+        case spv::OpGraphEntryPointARM:
+            return "OpGraphEntryPointARM";
+        case spv::OpGraphARM:
+            return "OpGraphARM";
+        case spv::OpGraphInputARM:
+            return "OpGraphInputARM";
+        case spv::OpGraphSetOutputARM:
+            return "OpGraphSetOutputARM";
+        case spv::OpGraphEndARM:
+            return "OpGraphEndARM";
+        case spv::OpTypeGraphARM:
+            return "OpTypeGraphARM";
         case spv::OpTerminateInvocation:
             return "OpTerminateInvocation";
         case spv::OpSubgroupBallotKHR:
@@ -2313,6 +2327,13 @@ const OperandInfo& GetOperandInfo(uint32_t opcode) {
         {spv::OpTensorReadARM, {{OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpTensorWriteARM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id, OperandKind::BitEnum}}},
         {spv::OpTensorQuerySizeARM, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpGraphConstantARM, {{OperandKind::Literal}}},
+        {spv::OpGraphEntryPointARM, {{OperandKind::Id, OperandKind::LiteralString, OperandKind::Id}}},
+        {spv::OpGraphARM, {{}}},
+        {spv::OpGraphInputARM, {{OperandKind::Id, OperandKind::Id}}},
+        {spv::OpGraphSetOutputARM, {{OperandKind::Id, OperandKind::Id, OperandKind::Id}}},
+        {spv::OpGraphEndARM, {{}}},
+        {spv::OpTypeGraphARM, {{OperandKind::Literal, OperandKind::Id}}},
         {spv::OpTerminateInvocation, {{}}},
         {spv::OpSubgroupBallotKHR, {{OperandKind::Id}}},
         {spv::OpSubgroupFirstInvocationKHR, {{OperandKind::Id}}},

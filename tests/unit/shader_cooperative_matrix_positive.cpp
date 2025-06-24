@@ -412,3 +412,57 @@ TEST_F(PositiveShaderCooperativeMatrix, RequiredVulkanVersionShaderObject) {
     shader_ci.flags = VK_SHADER_CREATE_REQUIRE_FULL_SUBGROUPS_BIT_EXT;
     const vkt::Shader comp_shader(*m_device, shader_ci);
 }
+
+TEST_F(PositiveShaderCooperativeMatrix, BFloat16) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_BFLOAT16_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderBFloat16Type);
+    AddRequiredFeature(vkt::Feature::shaderBFloat16CooperativeMatrix);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+        #extension GL_EXT_bfloat16 : require
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        layout(local_size_x = 32) in;
+        void main() {
+            coopmat<bfloat16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> cmA = coopmat<bfloat16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA>(3.0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderCooperativeMatrix, Float8) {
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderFloat8);
+    AddRequiredFeature(vkt::Feature::shaderFloat8CooperativeMatrix);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(InitCooperativeMatrixKHR());
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+        #extension GL_EXT_float_e4m3 : require
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        #extension GL_KHR_memory_scope_semantics : enable
+        #extension GL_KHR_cooperative_matrix : enable
+        layout(local_size_x = 32) in;
+        void main() {
+            coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> cmA = coopmat<floate4m3_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA>(3.0);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+}

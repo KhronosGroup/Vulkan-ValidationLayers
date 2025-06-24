@@ -558,7 +558,7 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
         # Special case: vkReleaseFullScreenExclusiveModeEXT.
         # The specification does not define a parent VUID for the swapchain parameter.
         # It mentions in a free form that device should be associated with a swapchain.
-        if commandName == 'vkReleaseFullScreenExclusiveModeEXT':
+        if commandName == 'vkReleaseFullScreenExclusiveModeEXT' or commandName == 'vkCreateDataGraphPipelinesARM':
             return False
 
         # Not a vulkan handle. Parent VUIDs are only for vulkan handles
@@ -822,6 +822,18 @@ bool Device::ReportUndestroyedObjects(const Location& loc) const {
             return '"UNASSIGNED-VkTensorCaptureDescriptorDataInfoARM-tensor-parent"'
         if structName == 'VkTensorViewCaptureDescriptorDataInfoARM' and memberName == 'tensorView':
             return '"UNASSIGNED-VkTensorViewCaptureDescriptorDataInfoARM-tensorView-parent"'
+        if structName == 'VkDataGraphPipelineCreateInfoARM' and memberName == 'layout':
+            return '"UNASSIGNED-VkDataGraphPipelineCreateInfoARM-layout-parent"'
+        if structName == 'VkDataGraphPipelineShaderModuleCreateInfoARM' and memberName == 'module':
+            return '"UNASSIGNED-VkDataGraphPipelineShaderModuleCreateInfoARM-module-parent"'
+        if structName == 'VkDataGraphPipelineSessionCreateInfoARM' and memberName == 'dataGraphPipeline':
+            return '"UNASSIGNED-VkDataGraphPipelineSessionCreateInfoARM-dataGraphPipeline-parent"'
+        if structName == 'VkDataGraphPipelineSessionBindPointRequirementsInfoARM' and memberName == 'session':
+            return '"UNASSIGNED-VkDataGraphPipelineSessionBindPointRequirementsInfoARM-session-parent"'
+        if structName == 'VkDataGraphPipelineSessionMemoryRequirementsInfoARM' and memberName == 'session':
+            return '"UNASSIGNED-VkDataGraphPipelineSessionMemoryRequirementsInfoARM-session-parent"'
+        if structName == 'VkDataGraphPipelineInfoARM' and memberName == 'dataGraphPipeline':
+            return '"UNASSIGNED-VkDataGraphPipelineInfoARM-dataGraphPipeline-parent"'
 
         # Common parents because the structs have more then one handle that needs to be check
         if (structName == 'VkBufferMemoryBarrier' and memberName == 'buffer') or (structName == 'VkImageMemoryBarrier' and memberName == 'image'):

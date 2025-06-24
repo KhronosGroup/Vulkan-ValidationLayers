@@ -282,8 +282,7 @@ const std::unordered_multimap<uint32_t, RequiredSpirvInfo>& GetSpirvCapabilites(
         {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, {0, &DeviceFeatures::shaderStorageTensorArrayNonUniformIndexing, nullptr, ""}},
         {spv::CapabilityFloat8EXT, {0, &DeviceFeatures::shaderFloat8, nullptr, ""}},
         {spv::CapabilityFloat8CooperativeMatrixEXT, {0, &DeviceFeatures::shaderFloat8CooperativeMatrix, nullptr, ""}},
-        // Not found in current SPIR-V Headers
-        // {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
+        {spv::CapabilityGraphARM, {0, &DeviceFeatures::dataGraph, nullptr, ""}},
     };
     // clang-format on
     return spirv_capabilities;
@@ -548,6 +547,8 @@ static inline const char* string_SpvCapability(uint32_t input_value) {
             return "StorageTensorArrayDynamicIndexingARM";
         case spv::CapabilityStorageTensorArrayNonUniformIndexingARM:
             return "StorageTensorArrayNonUniformIndexingARM";
+        case spv::CapabilityGraphARM:
+            return "GraphARM";
         case spv::CapabilityCooperativeMatrixLayoutsARM:
             return "CooperativeMatrixLayoutsARM";
         case spv::CapabilityFloat8EXT:
@@ -1203,6 +1204,7 @@ static inline const char* SpvCapabilityRequirements(uint32_t capability) {
     {spv::CapabilityStorageTensorArrayNonUniformIndexingARM, "VkPhysicalDeviceTensorFeaturesARM::shaderStorageTensorArrayNonUniformIndexing"},
     {spv::CapabilityFloat8EXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8"},
     {spv::CapabilityFloat8CooperativeMatrixEXT, "VkPhysicalDeviceShaderFloat8FeaturesEXT::shaderFloat8CooperativeMatrix"},
+    {spv::CapabilityGraphARM, "VkPhysicalDeviceDataGraphFeaturesARM::dataGraph"},
     };
 
     // VUs before catch unknown capabilities

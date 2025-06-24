@@ -29,7 +29,7 @@
             "sub_dir": "SPIRV-Headers",
             "build_dir": "SPIRV-Headers/build",
             "install_dir": "SPIRV-Headers/build/install",
-            "commit": "3b9447dc98371e96b59a6225bd062a9867e1d203"
+            "commit": "2a611a970fdbc41ac2e3e328802aed9985352dca"
         },
         {
             "name": "SPIRV-Tools",
@@ -43,7 +43,7 @@
                 "-DSPIRV_SKIP_TESTS=ON",
                 "-DSPIRV_SKIP_EXECUTABLES=OFF"
             ],
-            "commit": "27dd301f866121798eca9f2b920b6cb58be3a92e"
+            "commit": "33e02568181e3312f49a3cf33df470bf96ef293a"
         },
         {
             "name": "mimalloc",
@@ -84,7 +84,7 @@
             "sub_dir": "glslang",
             "build_dir": "glslang/build",
             "install_dir": "glslang/build/install",
-            "commit": "ac1c686d562147c751a0c284f879499418beee46",
+            "commit": "efd24d75bcbc55620e759f6bf42c45a32abac5f8",
             "cmake_options": [
                 "-DENABLE_OPT=OFF"
             ],

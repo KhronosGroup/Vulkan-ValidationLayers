@@ -7890,13 +7890,12 @@ bool Device::PreCallValidateCreateDataGraphPipelinesARM(VkDevice device, VkDefer
                                                         const ErrorObject& error_obj) const {
     bool skip = false;
     // Checked by chassis: device: "VUID-vkCreateDataGraphPipelinesARM-device-parameter"
-    skip |=
-        ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true,
-                       "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parameter",
-                       "UNASSIGNED-vkCreateDataGraphPipelinesARM-commonparent", error_obj.location.dot(Field::deferredOperation));
+    skip |= ValidateObject(deferredOperation, kVulkanObjectTypeDeferredOperationKHR, true,
+                           "VUID-vkCreateDataGraphPipelinesARM-deferredOperation-parameter", kVUIDUndefined,
+                           error_obj.location.dot(Field::deferredOperation));
     skip |= ValidateObject(pipelineCache, kVulkanObjectTypePipelineCache, true,
-                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parameter",
-                           "UNASSIGNED-vkCreateDataGraphPipelinesARM-commonparent", error_obj.location.dot(Field::pipelineCache));
+                           "VUID-vkCreateDataGraphPipelinesARM-pipelineCache-parameter", kVUIDUndefined,
+                           error_obj.location.dot(Field::pipelineCache));
     if (pCreateInfos) {
         for (uint32_t index0 = 0; index0 < createInfoCount; ++index0) {
             [[maybe_unused]] const Location index0_loc = error_obj.location.dot(Field::pCreateInfos, index0);
