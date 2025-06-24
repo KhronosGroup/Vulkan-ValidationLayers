@@ -3033,68 +3033,58 @@ void DeviceState::PostCallRecordCmdPipelineBarrier2(VkCommandBuffer commandBuffe
 
 void DeviceState::PostCallRecordCmdBeginQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                               VkQueryControlFlags flags, const RecordObject &record_obj) {
-    if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-
-    uint32_t num_queries = 1;
-    uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
-    // If render pass instance has multiview enabled, query uses N consecutive query indices
-    if (inside_render_pass) {
-        subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
-        num_queries = std::max(num_queries, bits);
+    cb_state->RecordCmd(record_obj.location.function);
+    if (disabled[query_validation]) {
+        return;
     }
-    for (uint32_t i = 0; i < num_queries; ++i) {
-        cb_state->RecordCmd(record_obj.location.function);
-        if (!disabled[query_validation]) {
-            QueryObject query_obj = {queryPool, slot, flags};
-            query_obj.inside_render_pass = inside_render_pass;
-            query_obj.subpass = subpass;
-            cb_state->BeginQuery(query_obj);
-        }
-        if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QueryPool>(queryPool);
-            cb_state->AddChild(pool_state);
-        }
+
+    QueryCount query_count(*cb_state);
+
+    for (uint32_t i = 0; i < query_count.count; ++i) {
+        QueryObject query_obj = {queryPool, slot + i, flags};
+        query_obj.inside_render_pass = query_count.inside_render_pass;
+        query_obj.subpass = query_count.subpass;
+        cb_state->BeginQuery(query_obj);
+    }
+
+    if (!disabled[command_buffer_state]) {
+        auto pool_state = Get<QueryPool>(queryPool);
+        cb_state->AddChild(pool_state);
     }
 }
 
 void DeviceState::PostCallRecordCmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                             const RecordObject &record_obj) {
-    if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    uint32_t num_queries = 1;
-    uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
-    // If render pass instance has multiview enabled, query uses N consecutive query indices
-    if (inside_render_pass) {
-        subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
-        num_queries = std::max(num_queries, bits);
+    cb_state->RecordCmd(record_obj.location.function);
+    if (disabled[query_validation]) {
+        return;
     }
 
-    for (uint32_t i = 0; i < num_queries; ++i) {
-        cb_state->RecordCmd(record_obj.location.function);
-        if (!disabled[query_validation]) {
-            QueryObject query_obj = {queryPool, slot + i};
-            query_obj.inside_render_pass = inside_render_pass;
-            query_obj.subpass = subpass;
-            cb_state->EndQuery(query_obj);
-        }
-        if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QueryPool>(queryPool);
-            cb_state->AddChild(pool_state);
-        }
+    QueryCount query_count(*cb_state);
+
+    for (uint32_t i = 0; i < query_count.count; ++i) {
+        QueryObject query_obj = {queryPool, slot + i};
+        query_obj.inside_render_pass = query_count.inside_render_pass;
+        query_obj.subpass = query_count.subpass;
+        cb_state->EndQuery(query_obj);
+    }
+
+    if (!disabled[command_buffer_state]) {
+        auto pool_state = Get<QueryPool>(queryPool);
+        cb_state->AddChild(pool_state);
     }
 }
 
 void DeviceState::PostCallRecordCmdResetQueryPool(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery,
                                                   uint32_t queryCount, const RecordObject &record_obj) {
-    if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-
     cb_state->RecordCmd(record_obj.location.function);
+
+    if (disabled[query_validation]) {
+        return;
+    }
     cb_state->ResetQueryPool(queryPool, firstQuery, queryCount);
 
     if (!disabled[command_buffer_state]) {
@@ -3107,14 +3097,19 @@ void DeviceState::PostCallRecordCmdCopyQueryPoolResults(VkCommandBuffer commandB
                                                         uint32_t queryCount, VkBuffer dstBuffer, VkDeviceSize dstOffset,
                                                         VkDeviceSize stride, VkQueryResultFlags flags,
                                                         const RecordObject &record_obj) {
-    if (disabled[query_validation] || disabled[command_buffer_state]) return;
-
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
-    auto dst_buff_state = Get<Buffer>(dstBuffer);
-    cb_state->AddChild(dst_buff_state);
-    auto pool_state = Get<QueryPool>(queryPool);
-    cb_state->AddChild(pool_state);
+
+    if (disabled[query_validation]) {
+        return;
+    }
+
+    if (!disabled[command_buffer_state]) {
+        auto dst_buff_state = Get<Buffer>(dstBuffer);
+        cb_state->AddChild(dst_buff_state);
+        auto pool_state = Get<QueryPool>(queryPool);
+        cb_state->AddChild(pool_state);
+    }
 }
 
 void DeviceState::PostCallRecordCmdWriteTimestamp(VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage,
@@ -3137,14 +3132,19 @@ void DeviceState::PostCallRecordCmdWriteTimestamp2(VkCommandBuffer commandBuffer
 void DeviceState::PostCallRecordCmdWriteAccelerationStructuresPropertiesKHR(
     VkCommandBuffer commandBuffer, uint32_t accelerationStructureCount, const VkAccelerationStructureKHR *pAccelerationStructures,
     VkQueryType queryType, VkQueryPool queryPool, uint32_t firstQuery, const RecordObject &record_obj) {
-    if (disabled[query_validation]) return;
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
     cb_state->RecordCmd(record_obj.location.function);
+
+    if (disabled[query_validation]) {
+        return;
+    }
+
+    cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
+
     if (!disabled[command_buffer_state]) {
         auto pool_state = Get<QueryPool>(queryPool);
         cb_state->AddChild(pool_state);
     }
-    cb_state->EndQueries(queryPool, firstQuery, accelerationStructureCount);
 }
 
 void DeviceState::PostCallRecordCreateVideoSessionKHR(VkDevice device, const VkVideoSessionCreateInfoKHR *pCreateInfo,
@@ -4577,56 +4577,46 @@ void InstanceState::PostCallRecordGetPhysicalDeviceDisplayPlaneProperties2KHR(Vk
 void DeviceState::PostCallRecordCmdBeginQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                         VkQueryControlFlags flags, uint32_t index, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    uint32_t num_queries = 1;
-    uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
-    // If render pass instance has multiview enabled, query uses N consecutive query indices
-    if (inside_render_pass) {
-        subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
-        num_queries = std::max(num_queries, bits);
+    cb_state->RecordCmd(record_obj.location.function);
+    if (disabled[query_validation]) {
+        return;
     }
 
-    for (uint32_t i = 0; i < num_queries; ++i) {
-        cb_state->RecordCmd(record_obj.location.function);
-        if (!disabled[query_validation]) {
-            QueryObject query_obj = {queryPool, slot, flags, 0, true, index + i};
-            query_obj.inside_render_pass = inside_render_pass;
-            query_obj.subpass = subpass;
-            cb_state->BeginQuery(query_obj);
-        }
-        if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QueryPool>(queryPool);
-            cb_state->AddChild(pool_state);
-        }
+    QueryCount query_count(*cb_state);
+
+    for (uint32_t i = 0; i < query_count.count; ++i) {
+        QueryObject query_obj = {queryPool, slot, flags, 0, true, index + i};
+        query_obj.inside_render_pass = query_count.inside_render_pass;
+        query_obj.subpass = query_count.subpass;
+        cb_state->BeginQuery(query_obj);
+    }
+
+    if (!disabled[command_buffer_state]) {
+        auto pool_state = Get<QueryPool>(queryPool);
+        cb_state->AddChild(pool_state);
     }
 }
 
 void DeviceState::PostCallRecordCmdEndQueryIndexedEXT(VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t slot,
                                                       uint32_t index, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    uint32_t num_queries = 1;
-    uint32_t subpass = 0;
-    const bool inside_render_pass = cb_state->active_render_pass != nullptr;
-    // If render pass instance has multiview enabled, query uses N consecutive query indices
-    if (inside_render_pass) {
-        subpass = cb_state->GetActiveSubpass();
-        uint32_t bits = cb_state->active_render_pass->GetViewMaskBits(subpass);
-        num_queries = std::max(num_queries, bits);
+    cb_state->RecordCmd(record_obj.location.function);
+    if (disabled[query_validation]) {
+        return;
     }
 
-    for (uint32_t i = 0; i < num_queries; ++i) {
-        cb_state->RecordCmd(record_obj.location.function);
-        if (!disabled[query_validation]) {
-            QueryObject query_obj = {queryPool, slot, 0, 0, true, index + i};
-            query_obj.inside_render_pass = inside_render_pass;
-            query_obj.subpass = subpass;
-            cb_state->EndQuery(query_obj);
-        }
-        if (!disabled[command_buffer_state]) {
-            auto pool_state = Get<QueryPool>(queryPool);
-            cb_state->AddChild(pool_state);
-        }
+    QueryCount query_count(*cb_state);
+
+    for (uint32_t i = 0; i < query_count.count; ++i) {
+        QueryObject query_obj = {queryPool, slot, 0, 0, true, index + i};
+        query_obj.inside_render_pass = query_count.inside_render_pass;
+        query_obj.subpass = query_count.subpass;
+        cb_state->EndQuery(query_obj);
+    }
+
+    if (!disabled[command_buffer_state]) {
+        auto pool_state = Get<QueryPool>(queryPool);
+        cb_state->AddChild(pool_state);
     }
 }
 
@@ -4677,7 +4667,11 @@ void DeviceState::PostCallRecordResetQueryPoolEXT(VkDevice device, VkQueryPool q
 void DeviceState::PostCallRecordResetQueryPool(VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount,
                                                const RecordObject &record_obj) {
     // Do nothing if the feature is not enabled.
-    if (!enabled_features.hostQueryReset) return;
+    if (!enabled_features.hostQueryReset) {
+        return;
+    } else if (disabled[query_validation]) {
+        return;
+    }
 
     // Do nothing if the query pool has been destroyed.
     auto query_pool_state = Get<QueryPool>(queryPool);
