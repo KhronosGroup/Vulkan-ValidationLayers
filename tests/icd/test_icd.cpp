@@ -1624,7 +1624,7 @@ static VKAPI_ATTR VkResult VKAPI_CALL UnmapMemory2(VkDevice device, const VkMemo
 static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
     VkPhysicalDevice physicalDevice, uint32_t* pPropertyCount, VkCooperativeMatrixPropertiesKHR* pProperties) {
     if (!pProperties) {
-        *pPropertyCount = 2;
+        *pPropertyCount = 4;
     } else {
         // arbitrary
         pProperties[0].MSize = 16;
@@ -1639,6 +1639,18 @@ static VKAPI_ATTR VkResult VKAPI_CALL GetPhysicalDeviceCooperativeMatrixProperti
 
         pProperties[1] = pProperties[0];
         pProperties[1].scope = VK_SCOPE_DEVICE_KHR;
+
+        pProperties[2] = pProperties[0];
+        pProperties[2].AType = VK_COMPONENT_TYPE_BFLOAT16_KHR;
+        pProperties[2].BType = VK_COMPONENT_TYPE_BFLOAT16_KHR;
+        pProperties[2].CType = VK_COMPONENT_TYPE_BFLOAT16_KHR;
+        pProperties[2].ResultType = VK_COMPONENT_TYPE_BFLOAT16_KHR;
+
+        pProperties[3] = pProperties[0];
+        pProperties[3].AType = VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+        pProperties[3].BType = VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+        pProperties[3].CType = VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
+        pProperties[3].ResultType = VK_COMPONENT_TYPE_FLOAT8_E4M3_EXT;
     }
     return VK_SUCCESS;
 }

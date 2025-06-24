@@ -2028,6 +2028,158 @@ TEST_F(PositiveShaderSpirv, ScalarBlockLayoutShaderCache) {
     VkShaderObj cs(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_2);
 }
 
+TEST_F(PositiveShaderSpirv, BFloat16) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_BFLOAT16_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_16BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::storageBuffer16BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderInt16);
+    AddRequiredFeature(vkt::Feature::shaderBFloat16Type);
+    RETURN_IF_SKIP(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+
+        #extension GL_EXT_bfloat16 : require
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+        const bfloat16_t bc10 = bfloat16_t(10);
+        const bf16vec2 b2c20 = bf16vec2(20);
+        layout(constant_id = 1) const bfloat16_t bsc10 = bfloat16_t(10);
+        struct S { bfloat16_t b; };
+        const S sc = S(bc10);
+        const bfloat16_t bca[2] = {bc10, bc10};
+        shared bfloat16_t bfs[10];
+
+        layout(set = 0, binding = 0) buffer B {
+            bf16vec3 b3;
+            bf16vec2 b2;
+            bfloat16_t b1;
+        } buf;
+
+        bfloat16_t funcf32(float32_t x) {
+            return bfloat16_t(x);
+        }
+
+        void main() {
+            bfloat16_t b = bfloat16_t(1.0);
+            bf16vec2 b2 = bf16vec2(1.0);
+
+            uint32_t u32 = 5;
+            b = bfloat16_t(u32);
+            u32 = uint32_t(b);
+            b = buf.b1;
+            b2 = buf.b2;
+            bf16vec3 b3 = buf.b3;
+
+            funcf32(b);
+
+            i16vec2 i16_2 = bfloat16BitsToIntEXT(b2);
+            u16vec2  u16_2 = bfloat16BitsToUintEXT(b2);
+            bf16vec2   b16_2 = intBitsToBFloat16EXT(i16_2);
+            b16_2 = uintBitsToBFloat16EXT(u16_2);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, BFloat16DotProduct) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_BFLOAT16_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::shaderFloat16);
+    AddRequiredFeature(vkt::Feature::shaderBFloat16Type);
+    AddRequiredFeature(vkt::Feature::shaderBFloat16DotProduct);
+    RETURN_IF_SKIP(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+        #extension GL_EXT_bfloat16 : require
+        #extension GL_EXT_shader_explicit_arithmetic_types : enable
+        layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+        void main() {
+            bf16vec2 b2 = bf16vec2(1.0);
+            dot(b2, b2);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.CreateComputePipeline();
+}
+
+TEST_F(PositiveShaderSpirv, Float8) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_SHADER_FLOAT16_INT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_EXT_SHADER_FLOAT8_EXTENSION_NAME);
+    AddRequiredExtensions(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::storageBuffer8BitAccess);
+    AddRequiredFeature(vkt::Feature::shaderFloat8);
+    AddRequiredFeature(vkt::Feature::shaderInt8);
+    RETURN_IF_SKIP(Init());
+
+    char const *cs_source = R"glsl(
+        #version 450 core
+
+        #extension GL_EXT_float_e4m3 : require
+        #extension GL_EXT_float_e5m2 : require
+        #extension GL_EXT_shader_explicit_arithmetic_types : require
+
+        const floate4m3_t bc10 = floate4m3_t(10);
+        const fe4m3vec2 b2c20 = fe4m3vec2(20);
+        layout(constant_id = 1) const floate4m3_t bsc10 = floate4m3_t(10);
+        struct S { floate4m3_t b; };
+        const S sc = S(bc10);
+        const floate4m3_t bca[2] = {bc10, bc10};
+        shared floate4m3_t bfs[10];
+
+        layout(set = 0, binding = 0) buffer B {
+            floate4m3_t b1;
+            floate5m2_t c1;
+        } buf;
+
+        floate4m3_t funcfe4m3(floate4m3_t x) {
+            return x;
+        }
+
+        void main() {
+            float f = 1.0;
+            floate4m3_t b;
+            floate5m2_t c;
+
+            fe4m3vec2 b2 = fe4m3vec2(f);
+            fe5m2vec2 c2 = fe5m2vec2(f);
+            saturatedConvertEXT(b, f);
+            saturatedConvertEXT(c, f);
+
+            uint32_t u32 = 5;
+            b = floate4m3_t(u32);
+            b = buf.b1;
+            c = buf.c1;
+
+            funcfe4m3(b);
+
+            int8_t i8_1 = floate4m3BitsToIntEXT(b);
+            uint8_t u8_1 = floate4m3BitsToUintEXT(b);
+            floate4m3_t f8_1 = intBitsToFloate4m3EXT(i8_1);
+            f8_1 = uintBitsToFloate4m3EXT(u8_1);
+        }
+    )glsl";
+
+    CreateComputePipelineHelper pipe(*this);
+    pipe.cs_ = VkShaderObj(this, cs_source, VK_SHADER_STAGE_COMPUTE_BIT, SPV_ENV_VULKAN_1_1);
+    pipe.dsl_bindings_[0] = {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_ALL, nullptr};
+    pipe.CreateComputePipeline();
+}
+
 TEST_F(PositiveShaderSpirv, ExtendedTypesEnabled) {
     TEST_DESCRIPTION("Test VK_KHR_shader_subgroup_extended_types.");
     SetTargetApiVersion(VK_API_VERSION_1_1);

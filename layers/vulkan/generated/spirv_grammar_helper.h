@@ -265,6 +265,9 @@ static constexpr bool OpcodeHasType(uint32_t opcode) {
         case spv::OpStencilAttachmentReadEXT:
         case spv::OpTensorReadARM:
         case spv::OpTensorQuerySizeARM:
+        case spv::OpGraphConstantARM:
+        case spv::OpGraphARM:
+        case spv::OpGraphInputARM:
         case spv::OpSubgroupBallotKHR:
         case spv::OpSubgroupFirstInvocationKHR:
         case spv::OpSubgroupAllKHR:
@@ -695,6 +698,10 @@ static constexpr bool OpcodeHasResult(uint32_t opcode) {
         case spv::OpTypeTensorARM:
         case spv::OpTensorReadARM:
         case spv::OpTensorQuerySizeARM:
+        case spv::OpGraphConstantARM:
+        case spv::OpGraphARM:
+        case spv::OpGraphInputARM:
+        case spv::OpTypeGraphARM:
         case spv::OpSubgroupBallotKHR:
         case spv::OpSubgroupFirstInvocationKHR:
         case spv::OpSubgroupAllKHR:
@@ -1259,6 +1266,7 @@ enum class SpvType {
     kFunction,
     kForwardPointer,
     kTensorARM,
+    kGraphARM,
     kCooperativeMatrixKHR,
     kRayQueryKHR,
     kHitObjectNV,
@@ -1304,6 +1312,8 @@ static constexpr SpvType GetSpvType(uint32_t opcode) {
             return SpvType::kForwardPointer;
         case spv::OpTypeTensorARM:
             return SpvType::kTensorARM;
+        case spv::OpTypeGraphARM:
+            return SpvType::kGraphARM;
         case spv::OpTypeCooperativeMatrixKHR:
             return SpvType::kCooperativeMatrixKHR;
         case spv::OpTypeRayQueryKHR:

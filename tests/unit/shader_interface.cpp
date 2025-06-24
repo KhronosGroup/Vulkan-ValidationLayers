@@ -1665,69 +1665,6 @@ TEST_F(NegativeShaderInterface, PackingInsideArray) {
     CreatePipelineHelper::OneshotTest(*this, set_info, kErrorBit, "VUID-RuntimeSpirv-OpEntryPoint-08743");
 }
 
-TEST_F(NegativeShaderInterface, PackingInsideArray2) {
-    TEST_DESCRIPTION(
-        "From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558, but then overturned in "
-        "https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/4719");
-
-    RETURN_IF_SKIP(Init());
-    InitRenderTarget();
-
-    // GLSL use to allow alias location of different types
-    // https://github.com/KhronosGroup/glslang/pull/3438
-    //
-    // layout(location = 0, component = 1) out float[2] x;
-    // layout(location = 1, component = 0) out int y;
-    // layout(location = 1, component = 2) out int z;
-    char const *vsSource = R"(
-               OpCapability Shader
-               OpMemoryModel Logical GLSL450
-               OpEntryPoint Vertex %main "main" %x %y %z
-               OpDecorate %x Component 1
-               OpDecorate %x Location 0
-               OpDecorate %y Component 0
-               OpDecorate %y Location 1
-               OpDecorate %z Component 2
-               OpDecorate %z Location 1
-       %void = OpTypeVoid
-          %3 = OpTypeFunction %void
-      %float = OpTypeFloat 32
-       %uint = OpTypeInt 32 0
-     %uint_2 = OpConstant %uint 2
-%_arr_float_uint_2 = OpTypeArray %float %uint_2
-%_ptr_Output__arr_float_uint_2 = OpTypePointer Output %_arr_float_uint_2
-          %x = OpVariable %_ptr_Output__arr_float_uint_2 Output
-        %int = OpTypeInt 32 1
-%_ptr_Output_int = OpTypePointer Output %int
-          %y = OpVariable %_ptr_Output_int Output
-          %z = OpVariable %_ptr_Output_int Output
-       %main = OpFunction %void None %3
-          %5 = OpLabel
-               OpReturn
-               OpFunctionEnd
-    )";
-
-    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-OpEntryPoint-08722");
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT, SPV_ENV_VULKAN_1_0, SPV_SOURCE_ASM);
-    m_errorMonitor->VerifyFound();
-}
-
-TEST_F(NegativeShaderInterface, PackingInsideArray3) {
-    TEST_DESCRIPTION("From https://gitlab.khronos.org/vulkan/vulkan/-/issues/3558");
-    RETURN_IF_SKIP(Init());
-
-    char const *vsSource = R"glsl(
-        #version 450
-        layout(location = 0, component = 0) out float x;
-        layout(location = 0, component = 1) out float[2] y;
-        void main() {}
-    )glsl";
-
-    m_errorMonitor->SetDesiredError("VUID-StandaloneSpirv-OpEntryPoint-08722");
-    VkShaderObj vs(this, vsSource, VK_SHADER_STAGE_VERTEX_BIT);
-    m_errorMonitor->VerifyFound();
-}
-
 // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/9616
 TEST_F(NegativeShaderInterface, DISABLED_FragmentOutputNotWritten) {
     TEST_DESCRIPTION(

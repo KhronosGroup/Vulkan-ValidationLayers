@@ -134,6 +134,15 @@
                     "storagePushConstant16": true,
                     "storageInputOutput16": true
                 },
+                "VkPhysicalDeviceShaderFloat8FeaturesEXT": {
+                    "shaderFloat8": true,
+                    "shaderFloat8CooperativeMatrix": true
+                },
+                "VkPhysicalDeviceShaderBfloat16FeaturesKHR": {
+                    "shaderBFloat16Type": true,
+                    "shaderBFloat16DotProduct": true,
+                    "shaderBFloat16CooperativeMatrix": true
+                },
                 "VkPhysicalDeviceShaderRelaxedExtendedInstructionFeaturesKHR": {
                     "shaderRelaxedExtendedInstruction": true
                 },
@@ -2323,6 +2332,7 @@
                 "VK_KHR_sampler_ycbcr_conversion": 1,
                 "VK_KHR_separate_depth_stencil_layouts": 1,
                 "VK_KHR_shader_atomic_int64": 1,
+                "VK_KHR_shader_bfloat16": 1,
                 "VK_KHR_shader_clock": 1,
                 "VK_KHR_shader_draw_parameters": 1,
                 "VK_KHR_shader_expect_assume": 1,
