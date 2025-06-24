@@ -366,11 +366,6 @@ class SyncObjectTest : public VkLayerTest {
 };
 
 class WsiTest : public VkLayerTest {
-  public:
-    // most tests need images in VK_IMAGE_LAYOUT_PRESENT_SRC_KHR layout
-    void SetImageLayoutPresentSrc(VkImage image);
-    VkImageMemoryBarrier TransitionToPresent(VkImage swapchain_image, VkImageLayout old_layout, VkAccessFlags src_access_mask);
-
   protected:
     // Find physical device group that contains physical device selected by the test framework
     std::optional<VkPhysicalDeviceGroupProperties> FindPhysicalDeviceGroup();

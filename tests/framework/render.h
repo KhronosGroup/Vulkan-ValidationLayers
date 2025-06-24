@@ -115,6 +115,8 @@ class VkRenderFramework : public VkTestFramework {
     void SupportMultiSwapchain();
     void SupportSurfaceResize();
 
+    void SetPresentImageLayout(VkImage image);
+
     void InitRenderTarget();
     void InitRenderTarget(uint32_t targets);
     void InitRenderTarget(const VkImageView *dsBinding);
@@ -137,7 +139,6 @@ class VkRenderFramework : public VkTestFramework {
     // default to CommandPool Reset flag to allow recording multiple command buffers simpler
     void InitState(VkPhysicalDeviceFeatures *features = nullptr, void *create_device_pnext = nullptr,
                    const VkCommandPoolCreateFlags flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    void InitStateWithRequirements(vkt::FeatureRequirements &feature_requirements);
     bool DeviceExtensionSupported(const char *extension_name, uint32_t spec_version = 0) const;
     bool DeviceExtensionSupported(VkPhysicalDevice, const char *, const char *name,
                                   uint32_t spec_version = 0) const {  // deprecated

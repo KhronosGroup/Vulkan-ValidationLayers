@@ -235,30 +235,6 @@ TEST_F(PositiveSyncValWsi, ThreadedSubmitAndFenceWaitAndPresent) {
     thread.join();
 }
 
-// TODO: make this a shared function, since WSI tests also use it
-static void SetImageLayoutPresentSrc(vkt::Queue& queue, vkt::Device& device, VkImage image) {
-    vkt::CommandPool pool(device, device.graphics_queue_node_index_);
-    vkt::CommandBuffer cmd_buf(device, pool);
-
-    cmd_buf.Begin();
-    VkImageMemoryBarrier layout_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-                                        nullptr,
-                                        0,
-                                        VK_ACCESS_MEMORY_READ_BIT,
-                                        VK_IMAGE_LAYOUT_UNDEFINED,
-                                        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                        VK_QUEUE_FAMILY_IGNORED,
-                                        VK_QUEUE_FAMILY_IGNORED,
-                                        image,
-                                        {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1}};
-
-    vk::CmdPipelineBarrier(cmd_buf.handle(), VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr,
-                           0, nullptr, 1, &layout_barrier);
-    cmd_buf.End();
-    queue.Submit(cmd_buf);
-    queue.Wait();
-}
-
 TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     TEST_DESCRIPTION("Check that WaitForFences applies tagged waits to present batches");
     AddSurfaceExtension();
@@ -266,7 +242,7 @@ TEST_F(PositiveSyncValWsi, WaitForFencesWithPresentBatches) {
     RETURN_IF_SKIP(InitSwapchain());
     const auto swapchain_images = m_swapchain.GetImages();
     for (auto image : swapchain_images) {
-        SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
+        SetPresentImageLayout(image);
     }
 
     vkt::Semaphore acquire_semaphore(*m_device);
@@ -338,7 +314,7 @@ TEST_F(PositiveSyncValWsi, RecreateBuffer) {
     std::vector<vkt::Buffer> dst_buffers(swapchain_images.size());
 
     for (VkImage image : swapchain_images) {
-        SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
+        SetPresentImageLayout(image);
     }
     for (size_t i = 0; i < swapchain_images.size(); i++) {
         acquire_fences.emplace_back(*m_device);
@@ -400,7 +376,7 @@ TEST_F(PositiveSyncValWsi, RecreateImage) {
     std::vector<vkt::Image> dst_images(swapchain_images.size());
 
     for (auto image : swapchain_images) {
-        SetImageLayoutPresentSrc(*m_default_queue, *m_device, image);
+        SetPresentImageLayout(image);
     }
     for (size_t i = 0; i < swapchain_images.size(); i++) {
         acquire_fences.emplace_back(*m_device);

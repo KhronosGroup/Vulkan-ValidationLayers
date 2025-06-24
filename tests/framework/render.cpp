@@ -969,6 +969,23 @@ void VkRenderFramework::SupportSurfaceResize() {
     }
 }
 
+void VkRenderFramework::SetPresentImageLayout(VkImage image) {
+    VkImageMemoryBarrier layout_transition = vku::InitStructHelper();
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    layout_transition.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    layout_transition.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    vkt::CommandBuffer cmdbuf(*m_device, m_command_pool);
+    cmdbuf.Begin();
+    vk::CmdPipelineBarrier(cmdbuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0,
+                           nullptr, 1, &layout_transition);
+    cmdbuf.End();
+    m_default_queue->SubmitAndWait(cmdbuf);
+}
+
 void VkRenderFramework::InitRenderTarget() { InitRenderTarget(1); }
 
 void VkRenderFramework::InitRenderTarget(uint32_t targets) { InitRenderTarget(targets, NULL); }
