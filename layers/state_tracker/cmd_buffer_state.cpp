@@ -503,11 +503,12 @@ void CommandBuffer::UpdateSubpassAttachments() {
         const uint32_t attachment_index = subpass.pColorAttachments[index].attachment;
         if (attachment_index != VK_ATTACHMENT_UNUSED) {
             active_attachments[attachment_index].type = AttachmentInfo::Type::Color;
+            active_attachments[attachment_index].color_index = index;
+            active_color_attachments_index.insert(index);
             active_subpasses[attachment_index].used = true;
             active_subpasses[attachment_index].usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             active_subpasses[attachment_index].layout = subpass.pColorAttachments[index].layout;
             active_subpasses[attachment_index].aspectMask = subpass.pColorAttachments[index].aspectMask;
-            active_color_attachments_index.insert(index);
         }
         if (subpass.pResolveAttachments) {
             const uint32_t attachment_index2 = subpass.pResolveAttachments[index].attachment;
@@ -696,8 +697,6 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     active_attachments.resize(attachment_count);
 
     for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
-        active_color_attachments_index.insert(i);
-
         // Default from spec
         rendering_attachments.color_locations[i] = i;
         rendering_attachments.color_indexes[i] = i;
@@ -706,6 +705,8 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
             auto &color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
             color_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
+            color_attachment.color_index = i;
+            active_color_attachments_index.insert(i);
             if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
                 pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
                 auto &resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];

@@ -230,6 +230,19 @@ bool LastBound::IsColorWriteEnabled(uint32_t i) const {
     return true;
 }
 
+bool LastBound::IsColorBlendEnabled(uint32_t i) const {
+    if (IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+        if (cb_state.IsDynamicStateSet(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)) {
+            return cb_state.dynamic_state_value.color_blend_enabled[i];
+        }
+    } else {
+        if (pipeline_state->ColorBlendState()) {
+            return pipeline_state->ColorBlendState()->pAttachments[i].blendEnable;
+        }
+    }
+    return true;
+}
+
 VkPrimitiveTopology LastBound::GetPrimitiveTopology() const {
     if (IsDynamic(CB_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY)) {
         return cb_state.dynamic_state_value.primitive_topology;

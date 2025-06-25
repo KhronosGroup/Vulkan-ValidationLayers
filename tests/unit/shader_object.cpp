@@ -1433,7 +1433,7 @@ TEST_F(NegativeShaderObject, BlendEnabledWithNonBlendableFormat) {
     VkBool32 enabled = VK_TRUE;
     vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0, 1, &enabled);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-08643");
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-blendEnable-04727");
     vk::CmdDraw(m_command_buffer, 4, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 

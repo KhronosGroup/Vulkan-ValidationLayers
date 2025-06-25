@@ -4420,31 +4420,6 @@ bool CoreChecks::ValidateDrawPipelineRasterizationState(const LastBound &last_bo
         // TODO: Mirror the below VUs but using dynamic rendering
         const auto dynamic_rendering_info = rp_state->dynamic_rendering_begin_rendering_info;
     } else {
-        const auto render_pass_info = rp_state->create_info.ptr();
-        const VkSubpassDescription2 *subpass_desc = &render_pass_info->pSubpasses[cb_state.GetActiveSubpass()];
-        uint32_t i;
-
-        for (i = 0; i < subpass_desc->colorAttachmentCount; i++) {
-            const auto attachment = subpass_desc->pColorAttachments[i].attachment;
-            if (attachment == VK_ATTACHMENT_UNUSED) {
-                continue;
-            }
-
-            const auto *imageview_state = cb_state.GetActiveAttachmentImageViewState(attachment);
-            const auto *color_blend_state = pipeline.ColorBlendState();
-            if (imageview_state && color_blend_state && (attachment < color_blend_state->attachmentCount)) {
-                if ((imageview_state->format_features & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
-                    color_blend_state->pAttachments[i].blendEnable != VK_FALSE) {
-                    const LogObjectList objlist(cb_state.Handle(), pipeline.Handle(), rp_state->Handle());
-                    skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
-                                     "Image view's format features of the color attachment (%" PRIu32
-                                     ") of the active subpass do not contain VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT "
-                                     "bit, but active pipeline's pAttachments[%" PRIu32 "].blendEnable is not VK_FALSE.",
-                                     attachment, attachment);
-                }
-            }
-        }
-
         const bool dynamic_line_raster_mode = pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_RASTERIZATION_MODE_EXT);
         const bool dynamic_line_stipple_enable = pipeline.IsDynamic(CB_DYNAMIC_STATE_LINE_STIPPLE_ENABLE_EXT);
         if (dynamic_line_stipple_enable || dynamic_line_raster_mode) {

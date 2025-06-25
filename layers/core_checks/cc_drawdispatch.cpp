@@ -22,6 +22,7 @@
 #include "core_validation.h"
 #include "generated/vk_extension_helper.h"
 #include "state_tracker/buffer_state.h"
+#include "state_tracker/image_state.h"
 #include "state_tracker/last_bound_state.h"
 #include "state_tracker/shader_object_state.h"
 #include "state_tracker/descriptor_sets.h"
@@ -1363,6 +1364,7 @@ bool CoreChecks::ValidateActionState(const LastBound &last_bound_state, const Dr
         skip |= ValidateDrawProtectedMemory(last_bound_state, vuid);
         skip |= ValidateDrawDualSourceBlend(last_bound_state, vuid);
         skip |= ValidateDrawFragmentShadingRate(last_bound_state, vuid);
+        skip |= ValidateDrawAttachments(last_bound_state, vuid);
 
         if (cb_state.active_render_pass && cb_state.active_render_pass->UsesDynamicRendering()) {
             skip |= ValidateDrawDynamicRenderingFsOutputs(last_bound_state, pipeline, *cb_state.active_render_pass, loc);
@@ -1813,29 +1815,36 @@ bool CoreChecks::ValidateDrawDualSourceBlend(const LastBound &last_bound_state, 
     bool skip = false;
     const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
     const auto *pipeline = last_bound_state.pipeline_state;
-    if (pipeline && !pipeline->ColorBlendState()) return skip;
+    if (pipeline && !pipeline->ColorBlendState()) {
+        return skip;
+    }
 
     const spirv::EntryPoint *fragment_entry_point = last_bound_state.GetFragmentEntryPoint();
-    if (!fragment_entry_point) return skip;
+    if (!fragment_entry_point) {
+        return skip;
+    }
 
     uint32_t max_fragment_location = 0;
     for (const auto *variable : fragment_entry_point->user_defined_interface_variables) {
-        if (variable->storage_class != spv::StorageClassOutput) continue;
+        if (variable->storage_class != spv::StorageClassOutput) {
+            continue;
+        }
         if (variable->decorations.location != spirv::kInvalidValue) {
             max_fragment_location = std::max(max_fragment_location, variable->decorations.location);
         }
     }
-    if (max_fragment_location < phys_dev_props.limits.maxFragmentDualSrcAttachments) return skip;
+    if (max_fragment_location < phys_dev_props.limits.maxFragmentDualSrcAttachments) {
+        return skip;
+    }
 
     // If color blend is disabled, the blend equation doesn't matter
-    const bool dynamic_blend_enable = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
     const bool dynamic_blend_equation = last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
     const uint32_t attachment_count = pipeline ? pipeline->ColorBlendState()->attachmentCount
                                                : (uint32_t)cb_state.dynamic_state_value.color_blend_equations.size();
     for (uint32_t i = 0; i < attachment_count; ++i) {
-        const bool blend_enable = dynamic_blend_enable ? cb_state.dynamic_state_value.color_blend_enabled[i]
-                                                       : pipeline->ColorBlendState()->pAttachments[i].blendEnable;
-        if (!blend_enable) continue;
+        if (!last_bound_state.IsColorBlendEnabled(i)) {
+            continue;
+        }
         if (dynamic_blend_equation) {
             const VkColorBlendEquationEXT &color_blend_equation = cb_state.dynamic_state_value.color_blend_equations[i];
             if (IsSecondaryColorInputBlendFactor(color_blend_equation.srcColorBlendFactor) ||
@@ -1925,6 +1934,49 @@ bool CoreChecks::ValidateDrawFragmentShadingRate(const LastBound &last_bound_sta
                 }
                 break;
             }
+        }
+    }
+
+    return skip;
+}
+
+bool CoreChecks::ValidateDrawAttachments(const LastBound &last_bound_state, const vvl::DrawDispatchVuid &vuid) const {
+    bool skip = false;
+
+    const vvl::CommandBuffer &cb_state = last_bound_state.cb_state;
+    const auto pipeline = last_bound_state.pipeline_state;
+    if (pipeline && !pipeline->ColorBlendState()) {
+        return skip;
+    }
+    const bool has_pipeline = last_bound_state.pipeline_state != nullptr;
+    const bool fragment_shader_bound = has_pipeline || last_bound_state.IsValidShaderBound(ShaderObjectStage::FRAGMENT);
+
+    if (last_bound_state.IsRasterizationDisabled() || !fragment_shader_bound) {
+        return skip;
+    }
+
+    for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
+        const auto &attachment_info = cb_state.active_attachments[i];
+        const auto *attachment = attachment_info.image_view;
+        if (!attachment || !attachment_info.IsColor()) {
+            continue;
+        }
+        const bool has_blend_bit = attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT;
+        const bool blend_enable = last_bound_state.IsColorBlendEnabled(attachment_info.color_index);
+
+        if (!has_blend_bit && blend_enable) {
+            const LogObjectList objlist(cb_state.Handle(), attachment->VkHandle());
+            skip |= LogError(vuid.blend_enable_04727, objlist, vuid.loc(),
+                             "%s was created with %s which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
+                             "%s[%" PRIu32
+                             "] was set to VK_TRUE.\n"
+                             "(supported features: %s)",
+                             attachment_info.Describe(cb_state.attachment_source, i).c_str(),
+                             string_VkFormat(attachment->create_info.format),
+                             last_bound_state.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT)
+                                 ? "vkCmdSetColorBlendEnableEXT::pColorBlendEnables"
+                                 : "VkPipelineColorBlendStateCreateInfo::pAttachments",
+                             attachment_info.color_index, string_VkFormatFeatureFlags2(attachment->format_features).c_str());
         }
     }
 
