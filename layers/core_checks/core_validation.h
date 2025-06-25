@@ -1,7 +1,7 @@
-/* Copyright (c) 2015-2025 The Khronos Group Inc.
- * Copyright (c) 2015-2025 Valve Corporation
- * Copyright (c) 2015-2025 LunarG, Inc.
- * Copyright (C) 2015-2025 Google Inc.
+/* Copyright (c) 2015-2024 The Khronos Group Inc.
+ * Copyright (c) 2015-2024 Valve Corporation
+ * Copyright (c) 2015-2024 LunarG, Inc.
+ * Copyright (C) 2015-2024 Google Inc.
  * Modifications Copyright (C) 2020-2025 Advanced Micro Devices, Inc. All rights reserved.
  * Modifications Copyright (C) 2022-2025 RasterGrid Kft.
  *
@@ -20,26 +20,26 @@
 
 #pragma once
 
-#include "error_message/logging.h"
-#include "error_message/error_location.h"
-#include "error_message/record_object.h"
-
-#include "state_tracker/state_object.h"
-#include "state_tracker/state_tracker.h"
-#include "state_tracker/image_layout_map.h"
-#include "state_tracker/shader_stage_state.h"
-#include "state_tracker/query_state.h"
-#include "state_tracker/vertex_index_buffer_state.h"
-#include "state_tracker/event_map.h"
-
-#include "containers/subresource_adapter.h"
-#include "containers/custom_containers.h"
-
+                     #include "error_message/logging.h"
+              #include "error_message/error_location.h"
+                 #include "error_message/record_object.h"
+                                       
+     #include "state_tracker/state_object.h"
+ #include "state_tracker/state_tracker.h"
+                       #include "state_tracker/image_layout_map.h"
+                             #include "state_tracker/shader_stage_state.h"
+         #include "state_tracker/query_state.h"
+                #include "state_tracker/vertex_index_buffer_state.h"
+   #include "state_tracker/event_map.h"
+                                       
+        #include "containers/subresource_adapter.h"
+   #include "containers/custom_containers.h"
+                                       
 #include "generated/dynamic_state_helper.h"
-#include "stateless/sl_spirv.h"
-#include <spirv-tools/libspirv.hpp>
-
-#include "utils/sync_utils.h"
+                     #include "stateless/sl_spirv.h"
+                #include <spirv-tools/libspirv.hpp>
+                                       
+   #include "utils/sync_utils.h"
 
 namespace vvl {
 struct DrawDispatchVuid;
@@ -795,8 +795,9 @@ class CoreChecks : public vvl::DeviceProxy {
     // Descriptor Set Validation Functions
     bool ValidateBufferUpdate(const vvl::Buffer& buffer_state, const VkDescriptorBufferInfo& buffer_info, VkDescriptorType type,
                               const Location& buffer_info_loc) const;
-    bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites, uint32_t descriptorCopyCount,
-                                      const VkCopyDescriptorSet* pDescriptorCopies, const Location& loc) const;
+    bool ValidateUpdateDescriptorSets(uint32_t descriptorWriteCount, const VkWriteDescriptorSet* pDescriptorWrites,
+                                      uint32_t descriptorCopyCount, const VkCopyDescriptorSet* pDescriptorCopies,
+                                      const Location& loc) const;
 
     bool ValidateGraphicsPipelineVertexInputState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
     bool ValidateGraphicsPipelinePreRasterizationState(const vvl::Pipeline& pipeline, const Location& create_info_loc) const;
