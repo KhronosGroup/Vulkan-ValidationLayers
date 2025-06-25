@@ -342,7 +342,7 @@ TEST_F(NegativeWsi, TransferImageToSwapchainLayoutDeviceGroup) {
     // Even though both peer_image and swapchain_images[0] use the same memory and are in an invalid layout,
     // only peer_image is referenced by the command buffer so there should only be one error reported.
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-09600");
-    m_default_queue->Submit(m_command_buffer);
+    m_default_queue->SubmitAndWait(m_command_buffer);
     m_errorMonitor->VerifyFound();
 
     // peer_image is a presentable image and controlled by the implementation
@@ -1560,7 +1560,7 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     InitRenderTarget();
 
     vkt::Semaphore image_acquired(*m_device);
-    const uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+    uint32_t current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
 
     m_command_buffer.Begin();
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
@@ -1571,13 +1571,25 @@ TEST_F(NegativeWsi, DisplayPresentInfoSrcRect) {
     uint32_t swapchain_height = m_surface_capabilities.minImageExtent.height;
 
     VkDisplayPresentInfoKHR display_present_info = vku::InitStructHelper();
-    display_present_info.srcRect.extent.width = swapchain_width + 1;  // Invalid
+    display_present_info.srcRect.extent.width = swapchain_width;
     display_present_info.srcRect.extent.height = swapchain_height;
     display_present_info.dstRect.extent.width = swapchain_width;
     display_present_info.dstRect.extent.height = swapchain_height;
 
-    m_errorMonitor->SetDesiredError("VUID-VkDisplayPresentInfoKHR-srcRect-01257");
+    // Invalid layout (not present)
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
+    m_default_queue->Present(m_swapchain, current_buffer, image_acquired, &display_present_info);
+    m_default_queue->Wait();
+    m_errorMonitor->VerifyFound();
+
+    // TODO: remove this acquire when we move layout validation from queue thread
+    // back to QueueSubmit and implement it so it respects ordering due to timeline
+    // semaphores (resolves previous dependencies directly during queue submit).
+    current_buffer = m_swapchain.AcquireNextImage(image_acquired, kWaitTimeout);
+
+    // Invalid rect
+    display_present_info.srcRect.extent.width = swapchain_width + 1;  // Invalid
+    m_errorMonitor->SetDesiredError("VUID-VkDisplayPresentInfoKHR-srcRect-01257");
     m_default_queue->Present(m_swapchain, current_buffer, image_acquired, &display_present_info);
     m_errorMonitor->VerifyFound();
 }
@@ -2837,6 +2849,7 @@ TEST_F(NegativeWsi, PresentImageWithWrongLayout) {
 
     m_errorMonitor->SetDesiredError("VUID-VkPresentInfoKHR-pImageIndices-01430");
     m_default_queue->Present(m_swapchain, image_index, acquire_semaphore);
+    m_default_queue->Wait();
     m_errorMonitor->VerifyFound();
 }
 
