@@ -2697,7 +2697,8 @@ TEST_F(NegativeCommand, EndCommandBufferWithConditionalRendering) {
 
 TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     TEST_DESCRIPTION("Test pipeline blend enabled with missing image views format features");
-
+    AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEnable);
     RETURN_IF_SKIP(Init());
 
     PFN_vkSetPhysicalDeviceFormatPropertiesEXT fpvkSetPhysicalDeviceFormatPropertiesEXT = nullptr;
@@ -2727,13 +2728,28 @@ TEST_F(NegativeCommand, DrawBlendEnabledFormatFeatures) {
     pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
+    CreatePipelineHelper pipe2(*this);
+    pipe2.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+    pipe2.CreateGraphicsPipeline();
+
     m_command_buffer.Begin();
-    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
 
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
     m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-blendEnable-04727");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
+
+    VkBool32 color_blend_enable = VK_TRUE;
+    vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe2);
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0, 1u, &color_blend_enable);
+    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-blendEnable-04727");
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
+    m_errorMonitor->VerifyFound();
+
+    color_blend_enable = VK_FALSE;
+    vk::CmdSetColorBlendEnableEXT(m_command_buffer, 0, 1u, &color_blend_enable);
+    vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
 
     m_command_buffer.EndRenderPass();
     m_command_buffer.End();

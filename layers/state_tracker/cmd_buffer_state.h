@@ -77,8 +77,11 @@ struct AttachmentInfo {
 
     vvl::ImageView *image_view;
     Type type;
+    // When dealing with color attachments, need to know the index for things such as
+    // VkPipelineColorBlendStateCreateInfo::pAttachments or vkCmdSetColorBlendEnableEXT
+    uint32_t color_index;
 
-    AttachmentInfo() : image_view(nullptr), type(Type::Empty) {}
+    AttachmentInfo() : image_view(nullptr), type(Type::Empty), color_index(0) {}
 
     bool IsResolve() const { return type == Type::ColorResolve || type == Type::DepthResolve || type == Type::StencilResolve; }
     bool IsInput() const { return type == Type::Input; }

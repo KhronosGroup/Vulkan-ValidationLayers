@@ -105,6 +105,7 @@ struct LastBound {
     bool IsLogicOpEnabled() const;
     VkColorComponentFlags GetColorWriteMask(uint32_t i) const;
     bool IsColorWriteEnabled(uint32_t i) const;
+    bool IsColorBlendEnabled(uint32_t i) const;
     VkPrimitiveTopology GetPrimitiveTopology() const;
     VkCullModeFlags GetCullMode() const;
     VkConservativeRasterizationModeEXT GetConservativeRasterizationMode() const;

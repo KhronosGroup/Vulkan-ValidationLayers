@@ -23,6 +23,7 @@
 #include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
+#include "error_message/logging.h"
 #include "generated/dynamic_state_helper.h"
 #include "generated/error_location_helper.h"
 #include "generated/vk_extension_helper.h"
@@ -709,6 +710,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                 continue;
             }
 
+            // TODO - When this is moved, move to VUID-vkCmdDraw-blendEnable-04727 location
             if (cb_state.dynamic_state_value.color_blend_advanced_attachments[i]) {
                 if (pipeline.IsDynamic(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT) &&
                     cb_state.active_color_attachments_index.size() >
@@ -722,17 +724,6 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineValue(const LastBound& last_bou
                                      cb_state.DescribeInvalidatedState(CB_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT).c_str());
                     break;
                 }
-            }
-
-            if ((attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0) {
-                skip |=
-                    LogError(vuid.blend_feature_07470, objlist, vuid.loc(),
-                             "Color Attachment %" PRIu32
-                             " has an image view format (%s) that doesn't support VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT.\n"
-                             "(supported features: %s)",
-                             i, string_VkFormat(attachment->create_info.format),
-                             string_VkFormatFeatureFlags2(attachment->format_features).c_str());
-                break;
             }
         }
     }
@@ -1658,18 +1649,6 @@ bool CoreChecks::ValidateDrawDynamicStateShaderObject(const LastBound& last_boun
         geom_shader_bound && IsLineTopology(last_bound_state.GetShaderState(ShaderObjectStage::GEOMETRY)->GetTopology());
 
     if (!cb_state.dynamic_state_value.rasterizer_discard_enable) {
-        for (uint32_t i = 0; i < cb_state.active_attachments.size(); ++i) {
-            const auto* attachment = cb_state.active_attachments[i].image_view;
-            if (attachment && vkuFormatIsColor(attachment->create_info.format) &&
-                (attachment->format_features & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT) == 0 &&
-                cb_state.dynamic_state_value.color_blend_enabled[i] == VK_TRUE) {
-                skip |= LogError(vuid.set_color_blend_enable_08643, cb_state.Handle(), loc,
-                                 "Render pass attachment %" PRIu32
-                                 " has format %s, which does not have VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT, but "
-                                 "pColorBlendEnables[%" PRIu32 "] set with vkCmdSetColorBlendEnableEXT() was VK_TRUE.",
-                                 i, string_VkFormat(attachment->create_info.format), i);
-            }
-        }
         if (vertex_shader_bound) {
             if (IsLineTopology(cb_state.dynamic_state_value.primitive_topology)) {
                 skip |= ValidateDynamicStateIsSet(cb_state.dynamic_state_status.cb, CB_DYNAMIC_STATE_LINE_WIDTH, cb_state, objlist,

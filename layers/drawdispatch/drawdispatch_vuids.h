@@ -223,7 +223,6 @@ struct DrawDispatchVuid {
     const char* external_format_resolve_09367 = kVUIDUndefined;
     const char* external_format_resolve_09370 = kVUIDUndefined;
     const char* external_format_resolve_09371 = kVUIDUndefined;
-    const char* set_color_blend_enable_08643 = kVUIDUndefined;
     const char* set_rasterization_samples_08644 = kVUIDUndefined;
     const char* set_color_write_enable_08647 = kVUIDUndefined;
     const char* set_color_blend_equation_08658 = kVUIDUndefined;
@@ -272,7 +271,6 @@ struct DrawDispatchVuid {
     const char* mesh_shader_queries_07073 = kVUIDUndefined;
     const char* fdm_layered_10831 = kVUIDUndefined;
     const char* blend_advanced_07480 = kVUIDUndefined;
-    const char* blend_feature_07470 = kVUIDUndefined;
     const char* color_attachment_08963 = kVUIDUndefined;
     const char* depth_attachment_08964 = kVUIDUndefined;
     const char* stencil_attachment_08965 = kVUIDUndefined;
