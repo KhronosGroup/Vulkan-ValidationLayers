@@ -644,3 +644,52 @@ TEST_F(PositiveImageLayout, MultipleLayoutChanges) {
 
     m_command_buffer.End();
 }
+
+TEST_F(PositiveImageLayout, TimelineSemaphoreOrdering) {
+    // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/10185
+    TEST_DESCRIPTION("Timeline semaphore specifies the order of command buffer execution so it is different than submission order");
+    SetTargetApiVersion(VK_API_VERSION_1_3);
+    AddRequiredFeature(vkt::Feature::synchronization2);
+    AddRequiredFeature(vkt::Feature::timelineSemaphore);
+    RETURN_IF_SKIP(Init());
+
+    if (!m_second_queue) {
+        GTEST_SKIP() << "Two queues are needed";
+    }
+
+    vkt::Image image(*m_device, 32, 32, VK_FORMAT_R8G8B8A8_UNORM,
+                     VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+    vkt::Buffer buffer(*m_device, 32 * 32 * 4, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    vkt::Semaphore semaphore(*m_device, VK_SEMAPHORE_TYPE_TIMELINE);
+
+    const VkImageSubresourceRange subresource_range = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+    VkImageMemoryBarrier2 layout_transition = vku::InitStructHelper();
+    layout_transition.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+    layout_transition.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+    layout_transition.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+    layout_transition.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    layout_transition.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    layout_transition.image = image;
+    layout_transition.subresourceRange = subresource_range;
+
+    VkClearColorValue clear_color{};
+
+    VkBufferImageCopy copy_region{};
+    copy_region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+    copy_region.imageExtent = {32, 32, 1};
+
+    m_command_buffer.Begin();
+    m_command_buffer.Barrier(layout_transition);
+    vk::CmdClearColorImage(m_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, &clear_color, 1, &subresource_range);
+    m_command_buffer.End();
+
+    m_second_command_buffer.Begin();
+    vk::CmdCopyImageToBuffer(m_second_command_buffer, image, VK_IMAGE_LAYOUT_GENERAL, buffer, 1, &copy_region);
+    m_second_command_buffer.End();
+
+    m_second_queue->Submit2(m_second_command_buffer, vkt::TimelineWait(semaphore, 1));
+    m_default_queue->Submit2(m_command_buffer, vkt::TimelineSignal(semaphore, 1));
+    m_device->Wait();
+}
