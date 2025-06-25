@@ -25,6 +25,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "core_checks/cc_state_tracker.h"
 #include "state_tracker/last_bound_state.h"
 #include "utils/math_utils.h"
 #include "utils/vk_struct_compare.h"
@@ -3258,7 +3259,8 @@ bool CoreChecks::ValidateGraphicsPipelineBindPoint(const vvl::CommandBuffer &cb_
                                                    const Location &loc) const {
     bool skip = false;
 
-    if (!cb_state.viewport.inherited_depths.empty()) {
+    auto &cb_sub_state = core::SubState(cb_state);
+    if (!cb_sub_state.viewport.inherited_depths.empty()) {
         bool dyn_viewport =
             pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT);
         bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT) || pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);

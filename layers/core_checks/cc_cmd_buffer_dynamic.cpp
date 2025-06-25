@@ -20,6 +20,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include <vulkan/vulkan_core.h>
+#include "core_checks/cc_state_tracker.h"
 #include "core_validation.h"
 #include "drawdispatch/drawdispatch_vuids.h"
 #include "generated/dynamic_state_helper.h"
@@ -493,7 +494,8 @@ bool CoreChecks::ValidateGraphicsDynamicStateSetStatus(const LastBound& last_bou
         }
     }  // !IsRasterizationDisabled()
 
-    if (cb_state.viewport.inherited_depths.empty()) {
+    auto& cb_sub_state = core::SubState(cb_state);
+    if (cb_sub_state.viewport.inherited_depths.empty()) {
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT, vuid);
         skip |= ValidateDynamicStateIsSet(last_bound_state, state_status_cb, CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT, vuid);
     }
@@ -985,13 +987,14 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
                                                                  const vvl::DrawDispatchVuid& vuid) const {
     bool skip = false;
     const vvl::CommandBuffer& cb_state = last_bound_state.cb_state;
+    auto& cb_sub_state = core::SubState(cb_state);
     const LogObjectList objlist(cb_state.Handle(), pipeline.Handle());
 
     // If Viewport or scissors are dynamic, verify that dynamic count matches PSO count.
     // Skip check if rasterization is disabled, if there is no viewport, or if viewport/scissors are being inherited.
     const bool dyn_viewport = pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT);
     const auto* viewport_state = pipeline.ViewportState();
-    if (!pipeline.RasterizationDisabled() && viewport_state && (cb_state.viewport.inherited_depths.empty())) {
+    if (!pipeline.RasterizationDisabled() && viewport_state && (cb_sub_state.viewport.inherited_depths.empty())) {
         const bool dyn_scissor = pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR);
 
         // NB (akeley98): Current validation layers do not detect the error where vkCmdSetViewport (or scissor) was called, but
@@ -1000,7 +1003,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
         // nonzero in the range of bits needed by the pipeline.
         if (dyn_viewport) {
             const auto required_viewports_mask = (1 << viewport_state->viewportCount) - 1;
-            const auto missing_viewport_mask = ~cb_state.viewport.mask & required_viewports_mask;
+            const auto missing_viewport_mask = ~cb_sub_state.viewport.mask & required_viewports_mask;
             if (missing_viewport_mask) {
                 skip |= LogError(vuid.dynamic_viewport_07831, objlist, vuid.loc(),
                                  "Dynamic viewport(s) (0x%x) are used by pipeline state object, but were not provided via calls "
@@ -1011,7 +1014,7 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
 
         if (dyn_scissor) {
             const auto required_scissor_mask = (1 << viewport_state->scissorCount) - 1;
-            const auto missing_scissor_mask = ~cb_state.scissor.mask & required_scissor_mask;
+            const auto missing_scissor_mask = ~cb_sub_state.scissor.mask & required_scissor_mask;
             if (missing_scissor_mask) {
                 skip |= LogError(vuid.dynamic_scissor_07832, objlist, vuid.loc(),
                                  "Dynamic scissor(s) (0x%x) are used by pipeline state object, but were not provided via calls "
@@ -1022,9 +1025,9 @@ bool CoreChecks::ValidateDrawDynamicStatePipelineViewportScissor(const LastBound
     }
 
     // If inheriting viewports, verify that not using more than inherited.
-    if (cb_state.viewport.inherited_depths.size() != 0 && dyn_viewport) {
+    if (cb_sub_state.viewport.inherited_depths.size() != 0 && dyn_viewport) {
         const uint32_t viewport_count = viewport_state->viewportCount;
-        const uint32_t max_inherited = uint32_t(cb_state.viewport.inherited_depths.size());
+        const uint32_t max_inherited = uint32_t(cb_sub_state.viewport.inherited_depths.size());
         if (viewport_count > max_inherited) {
             skip |= LogError(vuid.dynamic_state_inherited_07850, objlist, vuid.loc(),
                              "Pipeline requires more viewports (%" PRIu32 ".) than inherited (viewportDepthCount = %" PRIu32 ".).",
@@ -1812,7 +1815,8 @@ bool CoreChecks::ValidateTraceRaysDynamicStateSetStatus(const LastBound& last_bo
 
 bool CoreChecks::ForbidInheritedViewportScissor(const vvl::CommandBuffer& cb_state, const char* vuid, const Location& loc) const {
     bool skip = false;
-    if (cb_state.viewport.inherited_depths.size() != 0) {
+    auto& cb_sub_state = core::SubState(cb_state);
+    if (cb_sub_state.viewport.inherited_depths.size() != 0) {
         skip |= LogError(vuid, cb_state.Handle(), loc,
                          "commandBuffer must not have VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D enabled.");
     }

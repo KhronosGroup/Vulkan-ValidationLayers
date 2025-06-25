@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
+#include <vulkan/vulkan_core.h>
 #include "gpuav/resources/gpuav_state_trackers.h"
-
+#include "gpuav/instrumentation/gpuav_instrumentation.h"
 #include "gpuav/shaders/gpuav_shaders_constants.h"
 #include "gpuav/core/gpuav.h"
 #include "gpuav/core/gpuav_constants.h"
@@ -83,6 +84,15 @@ void CommandBufferSubState::AllocateResources(const Location &loc) {
 
         cmd_errors_counts_buffer_.Clear();
     }
+}
+
+// Common logic after any draw/dispatch/traceRays
+void CommandBufferSubState::RecordActionCommand(LastBound &last_bound, const Location &loc) {
+    if (max_actions_cmd_validation_reached_) {
+        return;
+    }
+    PostCallSetupShaderInstrumentationResources(gpuav_, *this, last_bound, loc);
+    IncrementCommandCount(last_bound.bind_point, loc);
 }
 
 void CommandBufferSubState::Destroy() { ResetCBState(true); }
@@ -165,14 +175,14 @@ void CommandBufferSubState::ResetCBState(bool should_destroy) {
     ClearPushConstants();
 }
 
-void CommandBufferSubState::IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc) {
+void CommandBufferSubState::IncrementCommandCount(VkPipelineBindPoint bind_point, const Location &loc) {
     action_command_count++;
     if (action_command_count >= glsl::kMaxActionsPerCommandBuffer) {
         if (action_command_count == glsl::kMaxActionsPerCommandBuffer) {
-            gpuav.LogWarning("GPU-AV::Max action per command buffer reached", VkHandle(), loc,
-                             "Reached maximum validation commands count for command buffer ( %" PRIu32
-                             " ). No more draw/dispatch/trace rays commands will be validated inside this command buffer.",
-                             glsl::kMaxActionsPerCommandBuffer);
+            gpuav_.LogWarning("GPU-AV::Max action per command buffer reached", VkHandle(), loc,
+                              "Reached maximum validation commands count for command buffer ( %" PRIu32
+                              " ). No more draw/dispatch/trace rays commands will be validated inside this command buffer.",
+                              glsl::kMaxActionsPerCommandBuffer);
         }
         max_actions_cmd_validation_reached_ = true;
     }

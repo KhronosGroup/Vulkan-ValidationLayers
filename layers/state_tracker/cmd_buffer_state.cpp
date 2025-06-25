@@ -21,6 +21,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vulkan/utility/vk_format_utils.h>
 #include "state_tracker/descriptor_sets.h"
+#include "state_tracker/last_bound_state.h"
 #include "state_tracker/render_pass_state.h"
 #include "state_tracker/pipeline_state.h"
 #include "state_tracker/buffer_state.h"
@@ -246,21 +247,6 @@ void CommandBuffer::ResetCBState() {
     CBDynamicFlags all;
     dynamic_state_value.reset(all.set());
     memset(&invalidated_state_pipe, 0, sizeof(VkPipeline) * CB_DYNAMIC_STATE_STATUS_NUM);
-
-    used_viewport_scissor_count = 0;
-
-    viewport.mask = 0;
-    viewport.count_mask = 0;
-    viewport.trashed_mask = 0;
-    viewport.trashed_count = false;
-    viewport.used_dynamic_count = false;
-    viewport.inherited_depths.clear();
-
-    scissor.mask = 0;
-    scissor.count_mask = 0;
-    scissor.trashed_mask = 0;
-    scissor.trashed_count = false;
-    scissor.used_dynamic_count = false;
 
     dirty_static_state = false;
 
@@ -1022,15 +1008,6 @@ void CommandBuffer::Begin(const VkCommandBufferBeginInfo *pBeginInfo) {
                     active_render_pass = std::make_shared<vvl::RenderPass>(inheritance_rendering_info);
                 }
             }
-
-            // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
-            auto p_inherited_viewport_scissor_info =
-                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(pBeginInfo->pInheritanceInfo->pNext);
-            if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
-                auto pViewportDepths = p_inherited_viewport_scissor_info->pViewportDepths;
-                viewport.inherited_depths.assign(pViewportDepths,
-                                                 pViewportDepths + p_inherited_viewport_scissor_info->viewportDepthCount);
-            }
         }
     }
 
@@ -1100,13 +1077,6 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
             events.push_back(event);
         }
 
-        // State is trashed after executing secondary command buffers.
-        // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
-        viewport.trashed_mask = vvl::MaxTypeValue(viewport.trashed_mask);
-        viewport.trashed_count = true;
-        scissor.trashed_mask = vvl::MaxTypeValue(scissor.trashed_mask);
-        scissor.trashed_count = true;
-
         // Handle secondary command buffer updates for dynamic rendering
         if (!has_render_pass_instance) {
             resumes_render_pass_instance = secondary_cb_state->resumes_render_pass_instance;
@@ -1153,85 +1123,96 @@ void CommandBuffer::PushDescriptorSetState(VkPipelineBindPoint pipelineBindPoint
 }
 
 // Generic function to handle state update for all CmdDraw* type functions
-void CommandBuffer::UpdateDrawCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_GRAPHICS); }
+void CommandBuffer::RecordDraw(const Location &loc) {
+    RecordCmd(loc.function);
+    LastBound &last_bound = lastBound[vvl::BindPointGraphics];
+    for (auto &item : sub_states_) {
+        item.second->RecordActionCommand(last_bound, loc);
+    }
+}
 
 // Generic function to handle state update for all CmdDispatch* type functions
-void CommandBuffer::UpdateDispatchCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_COMPUTE); }
+void CommandBuffer::RecordDispatch(const Location &loc) {
+    RecordCmd(loc.function);
+    LastBound &last_bound = lastBound[vvl::BindPointCompute];
+    for (auto &item : sub_states_) {
+        item.second->RecordActionCommand(last_bound, loc);
+    }
+}
 
 // Generic function to handle state update for all CmdTraceRay* type functions
-void CommandBuffer::UpdateTraceRayCmd(Func command) { UpdatePipelineState(command, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR); }
+void CommandBuffer::RecordTraceRay(const Location &loc) {
+    RecordCmd(loc.function);
+    LastBound &last_bound = lastBound[vvl::BindPointRayTracing];
+    for (auto &item : sub_states_) {
+        item.second->RecordActionCommand(last_bound, loc);
+    }
+}
 
-// Generic function to handle state update for all Provoking functions calls (draw/dispatch/traceray/etc)
-void CommandBuffer::UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point) {
-    RecordCmd(command);
+void CommandBuffer::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {
+    BindLastBoundPipeline(ConvertToVvlBindPoint(bind_point), &pipeline);
 
-    auto &last_bound = lastBound[ConvertToVvlBindPoint(bind_point)];
-    vvl::Pipeline *pipe = last_bound.pipeline_state;
-    if (!pipe) {
-        return;
+    for (auto &item : sub_states_) {
+        item.second->RecordBindPipeline(bind_point, pipeline);
     }
 
-    // Update the consumed viewport/scissor count.
-    {
-        const auto *viewport_state = pipe->ViewportState();
-        // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
-        // this time), then these are set to 0 to disable this checking.
-        const auto has_dynamic_viewport_count = pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        const auto has_dynamic_scissor_count = pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-        const uint32_t pipeline_viewport_count =
-            (has_dynamic_viewport_count || !viewport_state) ? 0 : viewport_state->viewportCount;
-        const uint32_t pipeline_scissor_count = (has_dynamic_scissor_count || !viewport_state) ? 0 : viewport_state->scissorCount;
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        dynamic_state_status.pipeline.reset();
 
-        // For each draw command D recorded to this command buffer, let
-        //  * g_D be the graphics pipeline used
-        //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
-        //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
-        // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
-        used_viewport_scissor_count = std::max({used_viewport_scissor_count, pipeline_viewport_count, pipeline_scissor_count});
-        viewport.used_dynamic_count |= pipe->IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
-        scissor.used_dynamic_count |= pipe->IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
-    }
+        // Make a copy and then xor the new change
+        // This gives us which state has been invalidated, allows us to save time for most cases where nothing changes
+        CBDynamicFlags invalidated_state = dynamic_state_status.cb;
 
-    if (pipe->IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
-        IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
-        SetActiveSubpassRasterizationSampleCount(dynamic_state_value.rasterization_samples);
-    }
+        // Spec: "[dynamic state] made invalid by another pipeline bind with that state specified as static"
+        // So unset the bitmask for the command buffer lifetime tracking
+        dynamic_state_status.cb &= pipeline.dynamic_state;
 
-    if (last_bound.desc_set_pipeline_layout) {
-        for (const auto &[set_index, binding_req_map] : pipe->active_slots) {
-            if (set_index >= last_bound.ds_slots.size()) {
-                continue;
-            }
-            auto &ds_slot = last_bound.ds_slots[set_index];
-            // Pull the set node
-            auto &descriptor_set = ds_slot.ds_state;
-            if (!descriptor_set) {
-                continue;
-            }
+        invalidated_state ^= dynamic_state_status.cb;
+        if (invalidated_state.any()) {
+            // Reset dynamic state values
+            dynamic_state_value.reset(invalidated_state);
 
-            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
-
-            // We can skip updating the state if "nothing" has changed since the last validation.
-            // See CoreChecks::ValidateActionState for more details.
-            const bool need_update =  // Update if descriptor set (or contents) has changed
-                ds_slot.validated_set != descriptor_set.get() ||
-                ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
-                (!dev_data.disabled[image_layout_validation] &&
-                 ds_slot.validated_set_image_layout_change_count != image_layout_change_count);
-            if (need_update) {
-                if (!dev_data.disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
-                    AddChild(descriptor_set);
+            for (int index = 1; index < CB_DYNAMIC_STATE_STATUS_NUM; ++index) {
+                CBDynamicState status = static_cast<CBDynamicState>(index);
+                if (invalidated_state[status]) {
+                    invalidated_state_pipe[index] = pipeline.VkHandle();
                 }
-
-                // Bind this set and its active descriptor resources to the command buffer
-                descriptor_set->UpdateImageLayoutDrawStates(&dev_data, *this, binding_req_map);
-
-                ds_slot.validated_set = descriptor_set.get();
-                ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();
-                ds_slot.validated_set_image_layout_change_count = image_layout_change_count;
             }
         }
+
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_EXT) &&
+            !pipeline.IsDynamic(CB_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE) && pipeline.vertex_input_state) {
+            for (const auto &[binding_index, binding_state] : pipeline.vertex_input_state->bindings) {
+                current_vertex_buffer_binding_info[binding_index].stride = binding_state.desc.stride;
+            }
+        }
+
+        if (!dev_data.enabled_features.variableMultisampleRate) {
+            if (const auto *multisample_state = pipeline.MultisampleState(); multisample_state) {
+                if (const auto &render_pass = active_render_pass) {
+                    const uint32_t subpass = GetActiveSubpass();
+                    // if render pass uses no attachment, all bound pipelines in the same subpass must have the same
+                    // pMultisampleState->rasterizationSamples. To check that, record pMultisampleState->rasterizationSamples of the
+                    // first bound pipeline.
+                    if (render_pass->UsesNoAttachment(subpass)) {
+                        if (std::optional<VkSampleCountFlagBits> subpass_rasterization_samples =
+                                GetActiveSubpassRasterizationSampleCount();
+                            !subpass_rasterization_samples) {
+                            SetActiveSubpassRasterizationSampleCount(multisample_state->rasterizationSamples);
+                        }
+                    }
+                }
+            }
+        }
+
+    } else if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR) {
+        dynamic_state_status.rtx_stack_size_pipeline = false;
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_RAY_TRACING_PIPELINE_STACK_SIZE_KHR)) {
+            dynamic_state_status.rtx_stack_size_cb = false;  // invalidated
+        }
     }
+
+    dirty_static_state = false;
 }
 
 // Helper for descriptor set (and buffer) updates.
@@ -1461,10 +1442,9 @@ void CommandBuffer::SetImageViewLayout(const vvl::ImageView &view_state, VkImage
 }
 
 void CommandBuffer::RecordCmd(Func command) {
+    // This is currently only used to track if VK_QUERY_TYPE_PERFORMANCE_QUERY_KHR queries are the vkCmdBeginQuery/vkCmdEndQuery are
+    // the first and last command in the command buffer recording
     command_count++;
-    for (auto &item : sub_states_) {
-        item.second->RecordCmd(command);
-    }
 }
 
 void CommandBuffer::RecordStateCmd(Func command, CBDynamicState state) {
@@ -1481,6 +1461,43 @@ void CommandBuffer::RecordDynamicState(CBDynamicState state) {
     dynamic_state_status.cb.set(state);
     dynamic_state_status.pipeline.set(state);
     dynamic_state_status.history.set(state);
+}
+
+void CommandBuffer::RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport *viewports) {
+    if (dynamic_state_value.viewports.size() < first_viewport + viewport_count) {
+        dynamic_state_value.viewports.resize(first_viewport + viewport_count);
+    }
+    for (size_t i = 0; i < viewport_count; ++i) {
+        dynamic_state_value.viewports[first_viewport + i] = viewports[i];
+    }
+    for (auto &item : sub_states_) {
+        item.second->RecordSetViewport(first_viewport, viewport_count);
+    }
+}
+
+void CommandBuffer::RecordSetViewportWithCount(uint32_t viewport_count, const VkViewport *viewports) {
+    dynamic_state_value.viewport_count = viewport_count;
+    dynamic_state_value.viewports.resize(viewport_count);
+    for (size_t i = 0; i < viewport_count; ++i) {
+        dynamic_state_value.viewports[i] = viewports[i];
+    }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordSetViewportWithCount(viewport_count);
+    }
+}
+
+void CommandBuffer::RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {
+    for (auto &item : sub_states_) {
+        item.second->RecordSetScissor(first_scissor, scissor_count);
+    }
+}
+
+void CommandBuffer::RecordSetScissorWithCount(uint32_t scissor_count) {
+    dynamic_state_value.scissor_count = scissor_count;
+    for (auto &item : sub_states_) {
+        item.second->RecordSetScissorWithCount(scissor_count);
+    }
 }
 
 void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2) {
@@ -1620,6 +1637,33 @@ void CommandBuffer::RecordPushConstants(const vvl::PipelineLayout &pipeline_layo
     for (auto &item : sub_states_) {
         item.second->RecordPushConstants(pipeline_layout_state.VkHandle(), stage_flags, offset, size, values);
     }
+}
+
+void CommandBuffer::RecordBeginConditionalRendering(Func command) {
+    RecordCmd(command);
+    conditional_rendering_active = true;
+    conditional_rendering_inside_render_pass = active_render_pass != nullptr;
+    conditional_rendering_subpass = GetActiveSubpass();
+}
+
+void CommandBuffer::RecordEndConditionalRendering(Func command) {
+    RecordCmd(command);
+    conditional_rendering_active = false;
+    conditional_rendering_inside_render_pass = false;
+    conditional_rendering_subpass = 0;
+}
+
+void CommandBuffer::RecordSetRenderingInputAttachmentIndices(Func command,
+                                                             const VkRenderingInputAttachmentIndexInfo *pLocationInfo) {
+    RecordCmd(command);
+    rendering_attachments.set_color_indexes = true;
+    rendering_attachments.color_indexes.resize(pLocationInfo->colorAttachmentCount);
+    for (uint32_t i = 0; i < pLocationInfo->colorAttachmentCount; ++i) {
+        rendering_attachments.color_indexes[i] =
+            pLocationInfo->pColorAttachmentInputIndices ? pLocationInfo->pColorAttachmentInputIndices[i] : i;
+    }
+    rendering_attachments.depth_index = pLocationInfo->pDepthInputAttachmentIndex;
+    rendering_attachments.stencil_index = pLocationInfo->pStencilInputAttachmentIndex;
 }
 
 void CommandBuffer::SubmitTimeValidate(Queue &queue_state, uint32_t perf_submit_pass, const Location &loc) {

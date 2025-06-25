@@ -101,12 +101,14 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
         return cmd_errors_counts_buffer_.VkHandle();
     }
 
-    void IncrementCommandCount(Validator &gpuav, VkPipelineBindPoint bind_point, const Location &loc);
+    void IncrementCommandCount(VkPipelineBindPoint bind_point, const Location &loc);
 
     std::string GetDebugLabelRegion(uint32_t label_command_i, const std::vector<std::string> &initial_label_stack) const;
 
     void Destroy() final;
     void Reset(const Location &loc) final;
+
+    void RecordActionCommand(LastBound &last_bound, const Location &loc) final;
 
     void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                              const void *values) final;
