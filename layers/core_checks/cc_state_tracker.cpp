@@ -27,6 +27,7 @@
 #include "state_tracker/image_state.h"
 #include "state_tracker/event_map.h"
 #include "state_tracker/pipeline_state.h"
+#include "state_tracker/render_pass_state.h"
 
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
 void CoreChecks::DebugCapture() {}
@@ -183,6 +184,86 @@ void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
     scissor.trashed_count = false;
 }
 
+void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
+                                                   uint32_t rect_count, const VkClearRect* pRects, const Location& loc) {
+    const vvl::RenderPass* rp_state = base.active_render_pass.get();
+    if (!rp_state || base.IsPrimary()) {
+        return;
+    }
+
+    std::shared_ptr<std::vector<VkClearRect>> clear_rect_copy;
+    if (rp_state->use_dynamic_rendering_inherited) {
+        for (uint32_t attachment_index = 0; attachment_index < attachment_count; attachment_index++) {
+            const auto clear_desc = &pAttachments[attachment_index];
+            auto colorAttachmentCount = rp_state->inheritance_rendering_info.colorAttachmentCount;
+            int image_index = -1;
+            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) && (clear_desc->colorAttachment < colorAttachmentCount)) {
+                image_index = base.GetDynamicRenderingColorAttachmentIndex(clear_desc->colorAttachment);
+            } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT)) {
+                image_index = base.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth);
+            } else if (clear_desc->aspectMask & (VK_IMAGE_ASPECT_STENCIL_BIT)) {
+                image_index = base.GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil);
+            }
+
+            if (image_index != -1) {
+                if (!clear_rect_copy) {
+                    // We need a copy of the clear rectangles that will persist until the last lambda executes
+                    // but we want to create it as lazily as possible
+                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rect_count));
+                }
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                auto val_fn = [this, rect_count, clear_rect_copy, loc](const vvl::CommandBuffer& secondary,
+                                                                       const vvl::CommandBuffer* prim_cb, const vvl::Framebuffer*) {
+                    assert(rect_count == clear_rect_copy->size());
+                    return validator.ValidateClearAttachmentExtent(
+                        secondary, prim_cb->render_area,
+                        prim_cb->active_render_pass->dynamic_rendering_begin_rendering_info.layerCount, rect_count,
+                        clear_rect_copy->data(), loc);
+                };
+                cmd_execute_commands_functions.emplace_back(val_fn);
+            }
+        }
+    } else if (!rp_state->use_dynamic_rendering) {
+        const VkRenderPassCreateInfo2* renderpass_create_info = rp_state->create_info.ptr();
+        const VkSubpassDescription2* subpass_desc = &renderpass_create_info->pSubpasses[base.GetActiveSubpass()];
+
+        for (uint32_t attachment_index = 0; attachment_index < attachment_count; attachment_index++) {
+            const auto clear_desc = &pAttachments[attachment_index];
+            uint32_t fb_attachment = VK_ATTACHMENT_UNUSED;
+            if ((clear_desc->aspectMask & VK_IMAGE_ASPECT_COLOR_BIT) &&
+                (clear_desc->colorAttachment < subpass_desc->colorAttachmentCount)) {
+                fb_attachment = subpass_desc->pColorAttachments[clear_desc->colorAttachment].attachment;
+            } else if ((clear_desc->aspectMask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) &&
+                       subpass_desc->pDepthStencilAttachment) {
+                fb_attachment = subpass_desc->pDepthStencilAttachment->attachment;
+            }
+            if (fb_attachment != VK_ATTACHMENT_UNUSED) {
+                if (!clear_rect_copy) {
+                    // We need a copy of the clear rectangles that will persist until the last lambda executes
+                    // but we want to create it as lazily as possible
+                    clear_rect_copy.reset(new std::vector<VkClearRect>(pRects, pRects + rect_count));
+                }
+                // if a secondary level command buffer inherits the framebuffer from the primary command buffer
+                // (see VkCommandBufferInheritanceInfo), this validation must be deferred until queue submit time
+                auto val_fn = [this, rect_count, clear_rect_copy, loc](const vvl::CommandBuffer& secondary,
+                                                                       const vvl::CommandBuffer* prim_cb,
+                                                                       const vvl::Framebuffer* fb) {
+                    assert(rect_count == clear_rect_copy->size());
+                    bool skip = false;
+
+                    if (fb && prim_cb->IsPrimary()) {
+                        skip |= validator.ValidateClearAttachmentExtent(secondary, prim_cb->render_area, fb->create_info.layers,
+                                                                        rect_count, clear_rect_copy->data(), loc);
+                    }
+                    return skip;
+                };
+                cmd_execute_commands_functions.emplace_back(val_fn);
+            }
+        }
+    }
+}
+
 void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2 stage_mask,
                                            const VkDependencyInfo* dependency_info) {
     vku::safe_VkDependencyInfo safe_dependency_info = {};
@@ -335,7 +416,7 @@ void CommandBufferSubState::ResetCBState() {
     scissor.used_dynamic_count = false;
 }
 
-void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) {
+void CommandBufferSubState::RecordExecuteCommand(vvl::CommandBuffer& secondary_command_buffer) {
     auto& secondary_sub_state = SubState(secondary_command_buffer);
     if (secondary_command_buffer.IsSecondary()) {
         nesting_level = std::max(nesting_level, secondary_sub_state.nesting_level + 1);
