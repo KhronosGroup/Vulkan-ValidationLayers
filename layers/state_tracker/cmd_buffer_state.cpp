@@ -579,11 +579,12 @@ void CommandBuffer::UpdateAttachmentsView(const VkRenderPassBeginInfo *pRenderPa
     UpdateSubpassAttachments();
 }
 
-void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, const VkSubpassContents contents) {
+void CommandBuffer::RecordBeginRenderPass(Func command, const VkRenderPassBeginInfo &render_pass_begin,
+                                          const VkSubpassContents contents) {
     RecordCmd(command);
-    active_framebuffer = dev_data.Get<vvl::Framebuffer>(pRenderPassBegin->framebuffer);
-    active_render_pass = dev_data.Get<vvl::RenderPass>(pRenderPassBegin->renderPass);
-    render_area = pRenderPassBegin->renderArea;
+    active_framebuffer = dev_data.Get<vvl::Framebuffer>(render_pass_begin.framebuffer);
+    active_render_pass = dev_data.Get<vvl::RenderPass>(render_pass_begin.renderPass);
+    render_area = render_pass_begin.renderArea;
     SetActiveSubpass(0);
     active_subpass_contents = contents;
     render_pass_queries.clear();
@@ -593,10 +594,9 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         AddChild(active_render_pass);
     }
 
-    sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(pRenderPassBegin->pNext);
+    sample_locations_begin_info = vku::FindStructInPNextChain<VkRenderPassSampleLocationsBeginInfoEXT>(render_pass_begin.pNext);
 
-    auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderPassBegin->pNext);
-    if (rp_striped_begin) {
+    if (auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(render_pass_begin.pNext)) {
         has_render_pass_striped = true;
         striped_count += rp_striped_begin->stripeInfoCount;
     }
@@ -606,7 +606,7 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
         UnbindResources();
     }
 
-    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderPassBegin->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(render_pass_begin.pNext);
     render_pass_device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
 
     attachment_source = AttachmentSource::RenderPass;
@@ -616,14 +616,18 @@ void CommandBuffer::BeginRenderPass(Func command, const VkRenderPassBeginInfo *p
     if (active_framebuffer) {
         active_subpasses.resize(active_framebuffer->create_info.attachmentCount);
         active_attachments.resize(active_framebuffer->create_info.attachmentCount);
-        UpdateAttachmentsView(pRenderPassBegin);
+        UpdateAttachmentsView(&render_pass_begin);
 
         // Connect this framebuffer and its children to this cmdBuffer
         AddChild(active_framebuffer);
     }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordBeginRenderPass(render_pass_begin);
+    }
 }
 
-void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
+void CommandBuffer::RecordNextSubpass(Func command, VkSubpassContents contents) {
     RecordCmd(command);
     SetActiveSubpass(GetActiveSubpass() + 1);
     active_subpass_contents = contents;
@@ -642,6 +646,10 @@ void CommandBuffer::NextSubpass(Func command, VkSubpassContents contents) {
     if (active_render_pass->has_multiview_enabled) {
         UnbindResources();
     }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordNextSubpass();
+    }
 }
 
 void CommandBuffer::EndRenderPass(Func command) {
@@ -656,34 +664,34 @@ void CommandBuffer::EndRenderPass(Func command) {
     sample_locations_begin_info = nullptr;
 }
 
-void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo) {
+void CommandBuffer::RecordBeginRendering(Func command, const VkRenderingInfo &rendering_info) {
     RecordCmd(command);
-    active_render_pass = std::make_shared<vvl::RenderPass>(pRenderingInfo, true);
-    render_area = pRenderingInfo->renderArea;
+    active_render_pass = std::make_shared<vvl::RenderPass>(&rendering_info, true);
+    render_area = rendering_info.renderArea;
     render_pass_queries.clear();
 
     rendering_attachments.Reset();
-    rendering_attachments.color_locations.resize(pRenderingInfo->colorAttachmentCount);
-    rendering_attachments.color_indexes.resize(pRenderingInfo->colorAttachmentCount);
+    rendering_attachments.color_locations.resize(rendering_info.colorAttachmentCount);
+    rendering_attachments.color_indexes.resize(rendering_info.colorAttachmentCount);
 
-    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(pRenderingInfo->pNext);
+    auto chained_device_group_struct = vku::FindStructInPNextChain<VkDeviceGroupRenderPassBeginInfo>(rendering_info.pNext);
     render_pass_device_mask = chained_device_group_struct ? chained_device_group_struct->deviceMask : initial_device_mask;
 
-    auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(pRenderingInfo->pNext);
+    auto rp_striped_begin = vku::FindStructInPNextChain<VkRenderPassStripeBeginInfoARM>(rendering_info.pNext);
     if (rp_striped_begin) {
         has_render_pass_striped = true;
         striped_count += rp_striped_begin->stripeInfoCount;
     }
 
-    active_subpass_contents = ((pRenderingInfo->flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)
+    active_subpass_contents = ((rendering_info.flags & VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT)
                                    ? VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS
                                    : VK_SUBPASS_CONTENTS_INLINE);
 
     // Handle flags for dynamic rendering
-    if (!has_render_pass_instance && pRenderingInfo->flags & VK_RENDERING_RESUMING_BIT) {
+    if (!has_render_pass_instance && rendering_info.flags & VK_RENDERING_RESUMING_BIT) {
         resumes_render_pass_instance = true;
     }
-    suspends_render_pass_instance = (pRenderingInfo->flags & VK_RENDERING_SUSPENDING_BIT) > 0;
+    suspends_render_pass_instance = (rendering_info.flags & VK_RENDERING_SUSPENDING_BIT) > 0;
     has_render_pass_instance = true;
 
     attachment_source = AttachmentSource::DynamicRendering;
@@ -691,64 +699,68 @@ void CommandBuffer::BeginRendering(Func command, const VkRenderingInfo *pRenderi
     // add 2 for the Depth and Stencil
     // multiple by 2 because every attachment might have a resolve
     // add 1 for FragmentDensityMap (doesn't need a resolve)
-    uint32_t attachment_count = ((pRenderingInfo->colorAttachmentCount + 2) * 2) + 1;
+    uint32_t attachment_count = ((rendering_info.colorAttachmentCount + 2) * 2) + 1;
 
     // Currently reserve the maximum possible size for |active_attachments| so when looping, we NEED to check for null
     active_attachments.resize(attachment_count);
 
-    for (uint32_t i = 0; i < pRenderingInfo->colorAttachmentCount; ++i) {
+    for (uint32_t i = 0; i < rendering_info.colorAttachmentCount; ++i) {
         // Default from spec
         rendering_attachments.color_locations[i] = i;
         rendering_attachments.color_indexes[i] = i;
 
-        if (pRenderingInfo->pColorAttachments[i].imageView != VK_NULL_HANDLE) {
+        if (rendering_info.pColorAttachments[i].imageView != VK_NULL_HANDLE) {
             auto &color_attachment = active_attachments[GetDynamicRenderingColorAttachmentIndex(i)];
-            color_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+            color_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView).get();
             color_attachment.type = AttachmentInfo::Type::Color;
             color_attachment.color_index = i;
             active_color_attachments_index.insert(i);
-            if (pRenderingInfo->pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
-                pRenderingInfo->pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
+            if (rendering_info.pColorAttachments[i].resolveMode != VK_RESOLVE_MODE_NONE &&
+                rendering_info.pColorAttachments[i].resolveImageView != VK_NULL_HANDLE) {
                 auto &resolve_attachment = active_attachments[GetDynamicRenderingColorResolveAttachmentIndex(i)];
-                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pColorAttachments[i].imageView).get();
+                resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pColorAttachments[i].imageView).get();
                 resolve_attachment.type = AttachmentInfo::Type::ColorResolve;
             }
         }
     }
 
-    if (pRenderingInfo->pDepthAttachment && pRenderingInfo->pDepthAttachment->imageView != VK_NULL_HANDLE) {
+    if (rendering_info.pDepthAttachment && rendering_info.pDepthAttachment->imageView != VK_NULL_HANDLE) {
         auto &depth_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Depth)];
-        depth_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
+        depth_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
         depth_attachment.type = AttachmentInfo::Type::Depth;
-        if (pRenderingInfo->pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
-            pRenderingInfo->pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
+        if (rendering_info.pDepthAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
+            rendering_info.pDepthAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::DepthResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pDepthAttachment->imageView).get();
+            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pDepthAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::DepthResolve;
         }
     }
 
-    if (pRenderingInfo->pStencilAttachment && pRenderingInfo->pStencilAttachment->imageView != VK_NULL_HANDLE) {
+    if (rendering_info.pStencilAttachment && rendering_info.pStencilAttachment->imageView != VK_NULL_HANDLE) {
         auto &stencil_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::Stencil)];
-        stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+        stencil_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
         stencil_attachment.type = AttachmentInfo::Type::Stencil;
-        if (pRenderingInfo->pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
-            pRenderingInfo->pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
+        if (rendering_info.pStencilAttachment->resolveMode != VK_RESOLVE_MODE_NONE &&
+            rendering_info.pStencilAttachment->resolveImageView != VK_NULL_HANDLE) {
             auto &resolve_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::StencilResolve)];
-            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(pRenderingInfo->pStencilAttachment->imageView).get();
+            resolve_attachment.image_view = dev_data.Get<vvl::ImageView>(rendering_info.pStencilAttachment->imageView).get();
             resolve_attachment.type = AttachmentInfo::Type::StencilResolve;
         }
     }
 
     if (auto fragment_density_map_info =
-            vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(pRenderingInfo->pNext)) {
+            vku::FindStructInPNextChain<VkRenderingFragmentDensityMapAttachmentInfoEXT>(rendering_info.pNext)) {
         auto &fdm_attachment = active_attachments[GetDynamicRenderingAttachmentIndex(AttachmentInfo::Type::FragmentDensityMap)];
         fdm_attachment.image_view = dev_data.Get<vvl::ImageView>(fragment_density_map_info->imageView).get();
         fdm_attachment.type = AttachmentInfo::Type::FragmentDensityMap;
     }
+
+    for (auto &item : sub_states_) {
+        item.second->RecordBeginRendering(rendering_info);
+    }
 }
 
-void CommandBuffer::EndRendering(Func command) {
+void CommandBuffer::RecordEndRendering(Func command) {
     RecordCmd(command);
     active_render_pass = nullptr;
     active_color_attachments_index.clear();
@@ -1032,7 +1044,7 @@ void CommandBuffer::End(VkResult result) {
     }
 }
 
-void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
+void CommandBuffer::RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers) {
     RecordCmd(Func::vkCmdExecuteCommands);
     for (const VkCommandBuffer sub_command_buffer : secondary_command_buffers) {
         auto secondary_cb_state = dev_data.GetWrite<CommandBuffer>(sub_command_buffer);
@@ -1092,7 +1104,7 @@ void CommandBuffer::ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_c
                                secondary_cb_state->label_commands_.end());
 
         for (auto &item : sub_states_) {
-            item.second->ExecuteCommands(*secondary_cb_state);
+            item.second->RecordExecuteCommand(*secondary_cb_state);
         }
     }
 }
@@ -1508,6 +1520,14 @@ void CommandBuffer::RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&
     }
     if (buf2) {
         AddChild(buf2);
+    }
+}
+
+void CommandBuffer::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
+                                           const VkClearRect *pRects, const Location &loc) {
+    RecordCmd(loc.function);
+    for (auto &item : sub_states_) {
+        item.second->RecordClearAttachments(attachment_count, pAttachments, rect_count, pRects, loc);
     }
 }
 

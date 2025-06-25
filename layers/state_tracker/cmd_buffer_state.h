@@ -549,13 +549,13 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
     bool UpdatesQuery(const QueryObject &query_obj) const;
 
-    void BeginRenderPass(Func command, const VkRenderPassBeginInfo *pRenderPassBegin, VkSubpassContents contents);
-    void NextSubpass(Func command, VkSubpassContents contents);
+    void RecordBeginRenderPass(Func command, const VkRenderPassBeginInfo &render_pass_begin, VkSubpassContents contents);
+    void RecordNextSubpass(Func command, VkSubpassContents contents);
     void UpdateSubpassAttachments();
     void EndRenderPass(Func command);
 
-    void BeginRendering(Func command, const VkRenderingInfo *pRenderingInfo);
-    void EndRendering(Func command);
+    void RecordBeginRendering(Func command, const VkRenderingInfo &rendering_info);
+    void RecordEndRendering(Func command);
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);
@@ -563,7 +563,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void DecodeVideo(const VkVideoDecodeInfoKHR *pDecodeInfo);
     void EncodeVideo(const VkVideoEncodeInfoKHR *pEncodeInfo);
 
-    void ExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
+    void RecordExecuteCommands(vvl::span<const VkCommandBuffer> secondary_command_buffers);
 
     void UpdateLastBoundDescriptorSets(VkPipelineBindPoint pipeline_bind_point,
                                        std::shared_ptr<const vvl::PipelineLayout> pipeline_layout, vvl::Func bound_command,
@@ -592,7 +592,10 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordSetScissorWithCount(uint32_t scissor_count);
     void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline);
 
+    void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
+                                const VkClearRect *pRects, const Location &loc);
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
+
     void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
     void RecordWaitEvents(Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
@@ -696,7 +699,7 @@ class CommandBufferSubState {
     virtual void Reset(const Location &loc) {}
     virtual void Destroy() {}
 
-    virtual void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) {}
+    virtual void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer) {}
 
     virtual void RecordActionCommand(LastBound &last_bound, const Location &loc) {}
     virtual void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {}
@@ -706,6 +709,9 @@ class CommandBufferSubState {
     virtual void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {}
     virtual void RecordSetScissorWithCount(uint32_t scissor_count) {}
 
+    virtual void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
+                                        const VkClearRect *pRects, const Location &loc) {}
+
     virtual void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
                                 const VkDependencyInfo *dependency_info) {}
     virtual void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {}
@@ -713,6 +719,10 @@ class CommandBufferSubState {
                                   const VkDependencyInfo *dependency_info) {}
     virtual void RecordPushConstants(VkPipelineLayout layout, VkShaderStageFlags stage_flags, uint32_t offset, uint32_t size,
                                      const void *values) {}
+
+    virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info) {}
+    virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin) {}
+    virtual void RecordNextSubpass() {}
 
     virtual void BeginQuery(const QueryObject &query_obj) {}
     virtual void EndQuery(const QueryObject &query_obj) {}

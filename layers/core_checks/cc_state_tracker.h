@@ -45,10 +45,13 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) final;
     void RecordSetScissorWithCount(uint32_t scissor_count) final;
 
-    void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask,
+    void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
+                                const VkClearRect *pRects, const Location &loc) final;
+
+    void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask,
                         const VkDependencyInfo *dependency_info) final;
-    void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) final;
-    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2KHR src_stage_mask,
+    void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2 stageMask) final;
+    void RecordWaitEvents(vvl::Func command, uint32_t eventCount, const VkEvent *pEvents, VkPipelineStageFlags2 src_stage_mask,
                           const VkDependencyInfo *dependency_info) final;
 
     void BeginQuery(const QueryObject &query_obj) final;
@@ -63,7 +66,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void Reset(const Location &loc) final;
     void Destroy() final;
 
-    void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) final;
+    void RecordExecuteCommand(vvl::CommandBuffer &secondary_command_buffer) final;
 
     // Called from the Queue state
     void SubmitTimeValidate();

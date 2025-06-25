@@ -135,57 +135,56 @@ bool BestPractices::PreCallValidateCreateImage(VkDevice device, const VkImageCre
     return skip;
 }
 
-void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, Func command, vvl::ImageView* view,
+void BestPractices::QueueValidateImageView(QueueCallbacks& funcs, const Location& loc, const vvl::ImageView& image_view,
                                            IMAGE_SUBRESOURCE_USAGE_BP usage) {
-    if (view) {
-        auto image_state = std::static_pointer_cast<vvl::Image>(view->image_state);
-        QueueValidateImage(funcs, command, image_state, usage, view->normalized_subresource_range);
+    auto image_state = std::static_pointer_cast<vvl::Image>(image_view.image_state);
+    if (image_view.image_state) {
+        QueueValidateImage(funcs, loc, *image_view.image_state, usage, image_view.normalized_subresource_range);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& loc, vvl::Image& image_state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceRange& subresource_range) {
     // If we're viewing a 3D slice, ignore base array layer.
     // The entire 3D subresource is accessed as one atomic unit.
-    const uint32_t base_array_layer = state->create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
+    const uint32_t base_array_layer = image_state.create_info.imageType == VK_IMAGE_TYPE_3D ? 0 : subresource_range.baseArrayLayer;
 
-    const uint32_t max_layers = state->create_info.arrayLayers - base_array_layer;
+    const uint32_t max_layers = image_state.create_info.arrayLayers - base_array_layer;
     const uint32_t array_layers = std::min(subresource_range.layerCount, max_layers);
-    const uint32_t max_levels = state->create_info.mipLevels - subresource_range.baseMipLevel;
-    const uint32_t mip_levels = std::min(state->create_info.mipLevels, max_levels);
+    const uint32_t max_levels = image_state.create_info.mipLevels - subresource_range.baseMipLevel;
+    const uint32_t mip_levels = std::min(image_state.create_info.mipLevels, max_levels);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
         for (uint32_t level = 0; level < mip_levels; level++) {
-            QueueValidateImage(funcs, command, state, usage, layer + base_array_layer, level + subresource_range.baseMipLevel);
+            QueueValidateImage(funcs, loc, image_state, usage, layer + base_array_layer, level + subresource_range.baseMipLevel);
         }
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& loc, vvl::Image& image_state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, const VkImageSubresourceLayers& subresource_layers) {
-    const uint32_t max_layers = state->create_info.arrayLayers - subresource_layers.baseArrayLayer;
+    const uint32_t max_layers = image_state.create_info.arrayLayers - subresource_layers.baseArrayLayer;
     const uint32_t array_layers = std::min(subresource_layers.layerCount, max_layers);
 
     for (uint32_t layer = 0; layer < array_layers; layer++) {
-        QueueValidateImage(funcs, command, state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
+        QueueValidateImage(funcs, loc, image_state, usage, layer + subresource_layers.baseArrayLayer, subresource_layers.mipLevel);
     }
 }
 
-void BestPractices::QueueValidateImage(QueueCallbacks& funcs, Func command, std::shared_ptr<vvl::Image>& state,
+void BestPractices::QueueValidateImage(QueueCallbacks& funcs, const Location& loc, vvl::Image& image_state,
                                        IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     funcs.emplace_back(
-        [this, command, state, usage, array_layer, mip_level](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
-            ValidateImageInQueue(qs, cbs, command, *state, usage, array_layer, mip_level);
+        [this, loc, &image_state, usage, array_layer, mip_level](const vvl::Queue& qs, const vvl::CommandBuffer& cbs) -> bool {
+            ValidateImageInQueue(qs, cbs, loc, image_state, usage, array_layer, mip_level);
             return false;
         });
 }
 
-void BestPractices::ValidateImageInQueueArmImg(Func command, const vvl::Image& image, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
+void BestPractices::ValidateImageInQueueArmImg(const Location& loc, vvl::Image& image_state, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                                IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
     // Swapchain images are implicitly read so clear after store is expected.
-    const Location loc(command);
     if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_CLEARED && last_usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_STORED &&
-        !image.IsSwapchainImage()) {
+        !image_state.IsSwapchainImage()) {
         LogPerformanceWarning(
             "BestPractices-RenderPass-redundant-store", device, loc,
             "%s %s Subresource (arrayLayer: %u, mipLevel: %u) of image was cleared as part of LOAD_OP_CLEAR, but last time "
@@ -253,14 +252,15 @@ void BestPractices::ValidateImageInQueueArmImg(Func command, const vvl::Image& i
     }
 }
 
-void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, Func command, vvl::Image& image,
-                                         IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level) {
+void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::CommandBuffer& cbs, const Location& loc,
+                                         vvl::Image& image_state, IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer,
+                                         uint32_t mip_level) {
     auto queue_family = qs.queue_family_index;
-    auto& sub_state = bp_state::SubState(image);
+    auto& sub_state = bp_state::SubState(image_state);
     auto last_usage = sub_state.UpdateUsage(array_layer, mip_level, usage, queue_family);
 
     // Concurrent sharing usage of image with exclusive sharing mode
-    if (image.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
+    if (image_state.create_info.sharingMode == VK_SHARING_MODE_EXCLUSIVE && last_usage.queue_family_index != queue_family) {
         // if UNDEFINED then first use/acquisition of subresource
         if (last_usage.type != IMAGE_SUBRESOURCE_USAGE_BP::UNDEFINED) {
             // If usage might read from the subresource, as contents are undefined
@@ -268,8 +268,7 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
             if (usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE || usage == IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ || usage == IMAGE_SUBRESOURCE_USAGE_BP::DESCRIPTOR_ACCESS ||
                 usage == IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ) {
-                Location loc(command);
-                LogWarning("BestPractices-ConcurrentUsageOfExclusiveImage", image.Handle(), loc,
+                LogWarning("BestPractices-ConcurrentUsageOfExclusiveImage", image_state.Handle(), loc,
                            "Subresource (arrayLayer: %" PRIu32 ", mipLevel: %" PRIu32
                            ") of image is used on queue family index %" PRIu32 " after being used on queue family index %" PRIu32
                            ", but has VK_SHARING_MODE_EXCLUSIVE, and has not been acquired and released with a ownership transfer "
@@ -282,14 +281,13 @@ void BestPractices::ValidateImageInQueue(const vvl::Queue& qs, const vvl::Comman
     // When image was discarded with StoreOpDontCare but is now being read with LoadOpLoad
     if (last_usage.type == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_DISCARDED &&
         usage == IMAGE_SUBRESOURCE_USAGE_BP::RENDER_PASS_READ_TO_TILE) {
-        Location loc(command);
         LogWarning("BestPractices-StoreOpDontCareThenLoadOpLoad", device, loc,
                    "Trying to load an attachment with LOAD_OP_LOAD that was previously stored with STORE_OP_DONT_CARE. This may "
                    "result in undefined behaviour.");
     }
 
     if (VendorCheckEnabled(kBPVendorArm) || VendorCheckEnabled(kBPVendorIMG)) {
-        ValidateImageInQueueArmImg(command, image, last_usage.type, usage, array_layer, mip_level);
+        ValidateImageInQueueArmImg(loc, image_state, last_usage.type, usage, array_layer, mip_level);
     }
 }
 
