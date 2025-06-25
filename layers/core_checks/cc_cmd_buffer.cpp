@@ -713,7 +713,7 @@ bool CoreChecks::ValidateSecondaryCommandBufferLayout(const vvl::CommandBuffer &
 // Visit the calling primary command buffer first, then the called secondaries in order.
 // Contact David Zhao Akeley <dakeley@nvidia.com> for clarifications and bug fixes.
 class CoreChecks::ViewportScissorInheritanceTracker {
-    static_assert(4 == sizeof(vvl::CommandBuffer::Viewport::mask), "Adjust max_viewports to match viewportMask bit width");
+    static_assert(4 == sizeof(core::CommandBufferSubState::Viewport::mask), "Adjust max_viewports to match viewportMask bit width");
     static constexpr uint32_t kMaxViewports = 32, kNotTrashed = uint32_t(-2), kTrashedByPrimary = uint32_t(-1);
 
     const Logger &log_;
@@ -731,9 +731,9 @@ class CoreChecks::ViewportScissorInheritanceTracker {
   public:
     ViewportScissorInheritanceTracker(const Logger &log) : log_(log) {}
 
-    bool VisitPrimary(const vvl::CommandBuffer &primary_state) {
+    bool VisitPrimary(const core::CommandBufferSubState &primary_state) {
         assert(!primary_state_);
-        primary_state_ = &primary_state;
+        primary_state_ = &primary_state.base;
 
         viewport_mask_ = primary_state.viewport.mask | primary_state.viewport.count_mask;
         scissor_mask_ = primary_state.scissor.mask | primary_state.scissor.count_mask;
@@ -742,19 +742,19 @@ class CoreChecks::ViewportScissorInheritanceTracker {
             uint32_t bit = uint32_t(1) << n;
             viewport_trashed_by_[n] = primary_state.viewport.trashed_mask & bit ? kTrashedByPrimary : kNotTrashed;
             scissor_trashed_by_[n] = primary_state.scissor.trashed_mask & bit ? kTrashedByPrimary : kNotTrashed;
-            if (n < primary_state.dynamic_state_value.viewports.size() && viewport_mask_ & bit) {
-                viewports_to_inherit_[n] = primary_state.dynamic_state_value.viewports[n];
+            if (n < primary_state.base.dynamic_state_value.viewports.size() && viewport_mask_ & bit) {
+                viewports_to_inherit_[n] = primary_state.base.dynamic_state_value.viewports[n];
             }
         }
 
-        viewport_count_to_inherit_ = primary_state.dynamic_state_value.viewport_count;
-        scissor_count_to_inherit_ = primary_state.dynamic_state_value.scissor_count;
+        viewport_count_to_inherit_ = primary_state.base.dynamic_state_value.viewport_count;
+        scissor_count_to_inherit_ = primary_state.base.dynamic_state_value.scissor_count;
         viewport_count_trashed_by_ = primary_state.viewport.trashed_count ? kTrashedByPrimary : kNotTrashed;
         scissor_count_trashed_by_ = primary_state.scissor.trashed_count ? kTrashedByPrimary : kNotTrashed;
         return false;
     }
 
-    bool VisitSecondary(uint32_t cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondary(uint32_t cmd_buffer_idx, const Location &cb_loc, const core::CommandBufferSubState &secondary_state) {
         bool skip = false;
         if (secondary_state.viewport.inherited_depths.empty()) {
             skip |= VisitSecondaryNoInheritance(cmd_buffer_idx, secondary_state);
@@ -775,27 +775,27 @@ class CoreChecks::ViewportScissorInheritanceTracker {
   private:
     // Track state inheritance as specified by VK_NV_inherited_scissor_viewport, including states
     // overwritten to undefined value by bound pipelines with non-dynamic state.
-    bool VisitSecondaryNoInheritance(uint32_t cmd_buffer_idx, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondaryNoInheritance(uint32_t cmd_buffer_idx, const core::CommandBufferSubState &secondary_state) {
         viewport_mask_ |= secondary_state.viewport.mask | secondary_state.viewport.count_mask;
         scissor_mask_ |= secondary_state.scissor.mask | secondary_state.scissor.count_mask;
 
         for (uint32_t n = 0; n < kMaxViewports; ++n) {
             uint32_t bit = uint32_t(1) << n;
             if ((secondary_state.viewport.mask | secondary_state.viewport.count_mask) & bit) {
-                if (n < secondary_state.dynamic_state_value.viewports.size()) {
-                    viewports_to_inherit_[n] = secondary_state.dynamic_state_value.viewports[n];
+                if (n < secondary_state.base.dynamic_state_value.viewports.size()) {
+                    viewports_to_inherit_[n] = secondary_state.base.dynamic_state_value.viewports[n];
                 }
                 viewport_trashed_by_[n] = kNotTrashed;
             }
             if ((secondary_state.scissor.mask | secondary_state.scissor.count_mask) & bit) {
                 scissor_trashed_by_[n] = kNotTrashed;
             }
-            if (secondary_state.dynamic_state_value.viewport_count != 0) {
-                viewport_count_to_inherit_ = secondary_state.dynamic_state_value.viewport_count;
+            if (secondary_state.base.dynamic_state_value.viewport_count != 0) {
+                viewport_count_to_inherit_ = secondary_state.base.dynamic_state_value.viewport_count;
                 viewport_count_trashed_by_ = kNotTrashed;
             }
-            if (secondary_state.dynamic_state_value.scissor_count != 0) {
-                scissor_count_to_inherit_ = secondary_state.dynamic_state_value.scissor_count;
+            if (secondary_state.base.dynamic_state_value.scissor_count != 0) {
+                scissor_count_to_inherit_ = secondary_state.base.dynamic_state_value.scissor_count;
                 scissor_count_trashed_by_ = kNotTrashed;
             }
             // Order of above vs below matters here.
@@ -812,7 +812,8 @@ class CoreChecks::ViewportScissorInheritanceTracker {
     }
 
     // Validate needed inherited state as specified by VK_NV_inherited_scissor_viewport.
-    bool VisitSecondaryInheritance(uint32_t cmd_buffer_idx, const Location &cb_loc, const vvl::CommandBuffer &secondary_state) {
+    bool VisitSecondaryInheritance(uint32_t cmd_buffer_idx, const Location &cb_loc,
+                                   const core::CommandBufferSubState &secondary_state) {
         bool skip = false;
         uint32_t check_viewport_count = 0, check_scissor_count = 0;
 
@@ -943,12 +944,13 @@ constexpr uint32_t CoreChecks::ViewportScissorInheritanceTracker::kTrashedByPrim
 bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
                                                    const VkCommandBuffer *pCommandBuffers, const ErrorObject &error_obj) const {
     const auto &cb_state = *GetRead<vvl::CommandBuffer>(commandBuffer);
+    auto &cb_sub_state = core::SubState(cb_state);
     bool skip = false;
     vvl::unordered_set<const vvl::CommandBuffer *> linked_command_buffers;
     ViewportScissorInheritanceTracker viewport_scissor_inheritance{*device_state};
 
     if (enabled_features.inheritedViewportScissor2D) {
-        skip |= viewport_scissor_inheritance.VisitPrimary(cb_state);
+        skip |= viewport_scissor_inheritance.VisitPrimary(cb_sub_state);
     }
 
     if (!cb_state.IsPrimary()) {
@@ -992,10 +994,11 @@ bool CoreChecks::PreCallValidateCmdExecuteCommands(VkCommandBuffer commandBuffer
 
     for (uint32_t i = 0; i < commandBuffersCount; i++) {
         const auto &secondary_cb_state = *GetRead<vvl::CommandBuffer>(pCommandBuffers[i]);
+        auto &secondary_sub_state = core::SubState(secondary_cb_state);
         const Location cb_loc = error_obj.location.dot(Field::pCommandBuffers, i);
 
         if (enabled_features.inheritedViewportScissor2D) {
-            skip |= viewport_scissor_inheritance.VisitSecondary(i, cb_loc, secondary_cb_state);
+            skip |= viewport_scissor_inheritance.VisitSecondary(i, cb_loc, secondary_sub_state);
         }
 
         if (!secondary_cb_state.IsSecondary()) {

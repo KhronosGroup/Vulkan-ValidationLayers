@@ -35,6 +35,16 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   public:
     CommandBufferSubState(vvl::CommandBuffer &cb, CoreChecks &validator);
 
+    void Begin(const VkCommandBufferBeginInfo &begin_info) final;
+
+    void RecordActionCommand(LastBound &last_bound, const Location &loc) final;
+
+    void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) final;
+    void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count) final;
+    void RecordSetViewportWithCount(uint32_t viewport_count) final;
+    void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) final;
+    void RecordSetScissorWithCount(uint32_t scissor_count) final;
+
     void RecordSetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask,
                         const VkDependencyInfo *dependency_info) final;
     void RecordResetEvent(vvl::Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask) final;
@@ -63,6 +73,34 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     CoreChecks &validator;
 
     uint32_t nesting_level;  // VK_EXT_nested_command_buffer
+
+    struct Viewport {
+        uint32_t mask;
+        uint32_t count_mask;
+
+        // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
+        // Bits unset by calling a corresponding vkCmdSet[State] cmd.
+        uint32_t trashed_mask;
+        bool trashed_count;
+
+        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT
+
+        // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
+        // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
+        std::vector<VkViewport> inherited_depths;
+    } viewport;
+
+    struct Scissor {
+        uint32_t mask;
+        uint32_t count_mask;
+
+        uint32_t trashed_mask;
+        bool trashed_count;
+
+        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
+    } scissor;
+
+    uint32_t used_viewport_scissor_count;
 
     QFOTransferBarrierSets<QFOBufferTransferBarrier> qfo_transfer_buffer_barriers;
     QFOTransferBarrierSets<QFOImageTransferBarrier> qfo_transfer_image_barriers;
@@ -100,6 +138,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
 
   private:
     void ResetCBState();
+    void UpdateActionPipelineState(LastBound &last_bound, const vvl::Pipeline &pipeline_state);
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {

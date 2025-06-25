@@ -23,8 +23,10 @@
 #include "core_validation.h"
 #include "cc_sync_vuid_maps.h"
 #include "error_message/error_strings.h"
+#include "state_tracker/descriptor_sets.h"
 #include "state_tracker/image_state.h"
 #include "state_tracker/event_map.h"
+#include "state_tracker/pipeline_state.h"
 
 // Location to add per-queue submit debug info if built with -D DEBUG_CAPTURE_KEYBOARD=ON
 void CoreChecks::DebugCapture() {}
@@ -42,6 +44,143 @@ namespace core {
 CommandBufferSubState::CommandBufferSubState(vvl::CommandBuffer& cb, CoreChecks& validator)
     : vvl::CommandBufferSubState(cb), validator(validator) {
     ResetCBState();
+}
+
+void CommandBufferSubState::Begin(const VkCommandBufferBeginInfo& begin_info) {
+    if (begin_info.pInheritanceInfo && base.IsSecondary()) {
+        // If we are a secondary command-buffer and inheriting.  Update the items we should inherit.
+        if (begin_info.flags & VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+            // Check for VkCommandBufferInheritanceViewportScissorInfoNV (VK_NV_inherited_viewport_scissor)
+            auto p_inherited_viewport_scissor_info =
+                vku::FindStructInPNextChain<VkCommandBufferInheritanceViewportScissorInfoNV>(begin_info.pInheritanceInfo->pNext);
+            if (p_inherited_viewport_scissor_info != nullptr && p_inherited_viewport_scissor_info->viewportScissor2D) {
+                auto p_viewport_depths = p_inherited_viewport_scissor_info->pViewportDepths;
+                viewport.inherited_depths.assign(p_viewport_depths,
+                                                 p_viewport_depths + p_inherited_viewport_scissor_info->viewportDepthCount);
+            }
+        }
+    }
+}
+
+void CommandBufferSubState::UpdateActionPipelineState(LastBound& last_bound, const vvl::Pipeline& pipeline_state) {
+    // Update the consumed viewport/scissor count.
+    {
+        const auto* viewport_state = pipeline_state.ViewportState();
+        // If rasterization disabled (no viewport/scissors used), or the actual number of viewports/scissors is dynamic (unknown at
+        // this time), then these are set to 0 to disable this checking.
+        const auto has_dynamic_viewport_count = pipeline_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        const auto has_dynamic_scissor_count = pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+        const uint32_t pipeline_viewport_count =
+            (has_dynamic_viewport_count || !viewport_state) ? 0 : viewport_state->viewportCount;
+        const uint32_t pipeline_scissor_count = (has_dynamic_scissor_count || !viewport_state) ? 0 : viewport_state->scissorCount;
+
+        // For each draw command D recorded to this command buffer, let
+        //  * g_D be the graphics pipeline used
+        //  * v_G be the viewportCount of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)
+        //  * s_G be the scissorCount  of g_D (0 if g_D disables rasterization or enables VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT)
+        // Then this value is max(0, max(v_G for all D in cb), max(s_G for all D in cb))
+        used_viewport_scissor_count = std::max({used_viewport_scissor_count, pipeline_viewport_count, pipeline_scissor_count});
+        viewport.used_dynamic_count |= pipeline_state.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT);
+        scissor.used_dynamic_count |= pipeline_state.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT);
+    }
+
+    if (pipeline_state.IsDynamic(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT) &&
+        base.IsDynamicStateSet(CB_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT)) {
+        base.SetActiveSubpassRasterizationSampleCount(base.dynamic_state_value.rasterization_samples);
+    }
+
+    if (last_bound.desc_set_pipeline_layout) {
+        for (const auto& [set_index, binding_req_map] : pipeline_state.active_slots) {
+            if (set_index >= last_bound.ds_slots.size()) {
+                continue;
+            }
+            auto& ds_slot = last_bound.ds_slots[set_index];
+            // Pull the set node
+            auto& descriptor_set = ds_slot.ds_state;
+            if (!descriptor_set) {
+                continue;
+            }
+
+            // For the "bindless" style resource usage with many descriptors, need to optimize command <-> descriptor binding
+
+            // We can skip updating the state if "nothing" has changed since the last validation.
+            // See CoreChecks::ValidateActionState for more details.
+            const bool need_update =  // Update if descriptor set (or contents) has changed
+                ds_slot.validated_set != descriptor_set.get() ||
+                ds_slot.validated_set_change_count != descriptor_set->GetChangeCount() ||
+                (!base.dev_data.disabled[image_layout_validation] &&
+                 ds_slot.validated_set_image_layout_change_count != base.image_layout_change_count);
+            if (need_update) {
+                if (!base.dev_data.disabled[command_buffer_state] && !descriptor_set->IsPushDescriptor()) {
+                    base.AddChild(descriptor_set);
+                }
+
+                // Bind this set and its active descriptor resources to the command buffer
+                descriptor_set->UpdateImageLayoutDrawStates(&base.dev_data, base, binding_req_map);
+
+                ds_slot.validated_set = descriptor_set.get();
+                ds_slot.validated_set_change_count = descriptor_set->GetChangeCount();
+                ds_slot.validated_set_image_layout_change_count = base.image_layout_change_count;
+            }
+        }
+    }
+}
+
+// Common logic after any draw/dispatch/traceRays
+void CommandBufferSubState::RecordActionCommand(LastBound& last_bound, const Location&) {
+    if (last_bound.pipeline_state) {
+        UpdateActionPipelineState(last_bound, *last_bound.pipeline_state);
+    }
+}
+
+void CommandBufferSubState::RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline& pipeline) {
+    if (bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS) {
+        // Trash dynamic viewport/scissor state if pipeline defines static state and enabled rasterization.
+        // akeley98 NOTE: There's a bit of an ambiguity in the spec, whether binding such a pipeline overwrites
+        // the entire viewport (scissor) array, or only the subsection defined by the viewport (scissor) count.
+        // I am taking the latter interpretation based on the implementation details of NVIDIA's Vulkan driver.
+        const auto* viewport_state = pipeline.ViewportState();
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)) {
+            viewport.trashed_count = true;
+            if (viewport_state && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_VIEWPORT))) {
+                viewport.trashed_mask |= (1u << viewport_state->viewportCount) - 1u;
+                // should become = ~uint32_t(0) if the other interpretation is correct.
+            }
+        }
+        if (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR_WITH_COUNT)) {
+            scissor.trashed_count = true;
+            if (viewport_state && (!pipeline.IsDynamic(CB_DYNAMIC_STATE_SCISSOR))) {
+                scissor.trashed_mask |= (1u << viewport_state->scissorCount) - 1u;
+                // should become = ~uint32_t(0) if the other interpretation is correct.
+            }
+        }
+    }
+}
+
+void CommandBufferSubState::RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count) {
+    uint32_t bits = ((1u << viewport_count) - 1u) << first_viewport;
+    viewport.mask |= bits;
+    viewport.trashed_mask &= ~bits;
+}
+
+void CommandBufferSubState::RecordSetViewportWithCount(uint32_t viewport_count) {
+    uint32_t bits = (1u << viewport_count) - 1u;
+    viewport.count_mask |= bits;
+    viewport.trashed_mask &= ~bits;
+    viewport.trashed_count = false;
+}
+
+void CommandBufferSubState::RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {
+    uint32_t bits = ((1u << scissor_count) - 1u) << first_scissor;
+    scissor.mask |= bits;
+    scissor.trashed_mask &= ~bits;
+}
+
+void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
+    uint32_t bits = (1u << scissor_count) - 1u;
+    scissor.count_mask |= bits;
+    scissor.trashed_mask &= ~bits;
+    scissor.trashed_count = false;
 }
 
 void CommandBufferSubState::RecordSetEvent(vvl::Func, VkEvent event, VkPipelineStageFlags2 stage_mask,
@@ -180,6 +319,20 @@ void CommandBufferSubState::ResetCBState() {
     event_updates.clear();
     cmd_execute_commands_functions.clear();
     query_updates.clear();
+
+    // Inherited Viewport/Scissor
+    used_viewport_scissor_count = 0;
+    viewport.mask = 0;
+    viewport.count_mask = 0;
+    viewport.trashed_mask = 0;
+    viewport.trashed_count = false;
+    viewport.used_dynamic_count = false;
+    viewport.inherited_depths.clear();
+    scissor.mask = 0;
+    scissor.count_mask = 0;
+    scissor.trashed_mask = 0;
+    scissor.trashed_count = false;
+    scissor.used_dynamic_count = false;
 }
 
 void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_command_buffer) {
@@ -195,6 +348,13 @@ void CommandBufferSubState::ExecuteCommands(vvl::CommandBuffer& secondary_comman
     for (auto& function : secondary_sub_state.queue_submit_functions) {
         queue_submit_functions.push_back(function);
     }
+
+    // State is trashed after executing secondary command buffers.
+    // Importantly, this function runs after CoreChecks::PreCallValidateCmdExecuteCommands.
+    viewport.trashed_mask = vvl::MaxTypeValue(viewport.trashed_mask);
+    viewport.trashed_count = true;
+    scissor.trashed_mask = vvl::MaxTypeValue(scissor.trashed_mask);
+    scissor.trashed_count = true;
 
     // Add a query update that runs all the query updates that happen in the sub command buffer.
     // This avoids locking ambiguity because primary command buffers are locked when these

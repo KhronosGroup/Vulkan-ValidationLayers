@@ -101,8 +101,8 @@ void CommandBufferSubState::ResetCBState() {
     ClearPushConstants();
 }
 
-void CommandBufferSubState::RecordCmd(vvl::Func command) {
-    if (vvl::IsCommandDrawMesh(command) || vvl::IsCommandDrawVertex(command)) {
+void CommandBufferSubState::RecordActionCommand(LastBound&, const Location& loc) {
+    if (vvl::IsCommandDrawMesh(loc.function) || vvl::IsCommandDrawVertex(loc.function)) {
         render_pass_state.has_draw_cmd = true;
     }
 }

@@ -612,14 +612,11 @@ void PreCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferS
     cb_state.per_command_error_loggers.emplace_back(error_logger);
 }
 
-void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, VkPipelineBindPoint bind_point,
+void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBufferSubState &cb_state, const LastBound &last_bound,
                                                  const Location &loc) {
-    if (!gpuav.gpuav_settings.IsSpirvModified()) return;
-
-    assert(bind_point == VK_PIPELINE_BIND_POINT_GRAPHICS || bind_point == VK_PIPELINE_BIND_POINT_COMPUTE ||
-           bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-
-    const LastBound &last_bound = cb_state.base.lastBound[ConvertToVvlBindPoint(bind_point)];
+    if (!gpuav.gpuav_settings.IsSpirvModified()) {
+        return;
+    }
 
     // If nothing was updated, we don't want to bind anything
     if (!WasInstrumented(last_bound)) {
@@ -653,8 +650,9 @@ void PostCallSetupShaderInstrumentationResources(Validator &gpuav, CommandBuffer
                 VkDescriptorSet last_bound_set = last_bound_set_state->VkHandle();
                 const std::vector<uint32_t> &dynamic_offset = last_bound.ds_slots[last_bound_set_i].dynamic_offsets;
                 const uint32_t dynamic_offset_count = static_cast<uint32_t>(dynamic_offset.size());
-                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), bind_point, last_bound.desc_set_pipeline_layout->VkHandle(),
-                                              last_bound_set_i, 1, &last_bound_set, dynamic_offset_count, dynamic_offset.data());
+                DispatchCmdBindDescriptorSets(cb_state.VkHandle(), last_bound.bind_point,
+                                              last_bound.desc_set_pipeline_layout->VkHandle(), last_bound_set_i, 1, &last_bound_set,
+                                              dynamic_offset_count, dynamic_offset.data());
             }
         }
     }

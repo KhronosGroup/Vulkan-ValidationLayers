@@ -28,11 +28,14 @@
 #include "utils/sync_utils.h"
 #include "generated/dynamic_state_helper.h"
 
+struct Location;
+
 namespace vvl {
 class Bindable;
 class Buffer;
 class CommandBufferSubState;
 class DeviceState;
+class Pipeline;
 class Framebuffer;
 class Queue;
 class RenderPass;
@@ -386,34 +389,6 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     std::shared_ptr<const CommandBuffer> shared_from_this() const { return SharedFromThisImpl(this); }
     std::shared_ptr<CommandBuffer> shared_from_this() { return SharedFromThisImpl(this); }
 
-    struct Viewport {
-        uint32_t mask;
-        uint32_t count_mask;
-
-        // Bits set when binding graphics pipeline defining corresponding static state, or executing any secondary command buffer.
-        // Bits unset by calling a corresponding vkCmdSet[State] cmd.
-        uint32_t trashed_mask;
-        bool trashed_count;
-
-        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT
-
-        // If VK_NV_inherited_viewport_scissor is enabled and VkCommandBufferInheritanceViewportScissorInfoNV::viewportScissor2D is
-        // true, then is the nonempty list of viewports passed in pViewportDepths. Otherwise, this is empty.
-        std::vector<VkViewport> inherited_depths;
-    } viewport;
-
-    struct Scissor {
-        uint32_t mask;
-        uint32_t count_mask;
-
-        uint32_t trashed_mask;
-        bool trashed_count;
-
-        bool used_dynamic_count;  // true if any draw recorded used VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT
-    } scissor;
-
-    uint32_t used_viewport_scissor_count;
-
     // Track if any dynamic state is set that is static in the currently bound pipeline
     bool dirty_static_state;
 
@@ -601,14 +576,19 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
                                 vvl::Func bound_command, uint32_t set, uint32_t descriptorWriteCount,
                                 const VkWriteDescriptorSet *pDescriptorWrites);
 
-    void UpdateDrawCmd(Func command);
-    void UpdateDispatchCmd(Func command);
-    void UpdateTraceRayCmd(Func command);
-    void UpdatePipelineState(Func command, const VkPipelineBindPoint bind_point);
+    void RecordDraw(const Location &loc);
+    void RecordDispatch(const Location &loc);
+    void RecordTraceRay(const Location &loc);
 
     void RecordCmd(Func command);
     void RecordStateCmd(Func command, CBDynamicState dynamic_state);
     void RecordDynamicState(CBDynamicState dynamic_state);
+    void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count, const VkViewport *viewports);
+    void RecordSetViewportWithCount(uint32_t viewport_count, const VkViewport *viewports);
+    void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count);
+    void RecordSetScissorWithCount(uint32_t scissor_count);
+    void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline);
+
     void RecordTransferCmd(Func command, std::shared_ptr<Bindable> &&buf1, std::shared_ptr<Bindable> &&buf2 = nullptr);
     void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask, const VkDependencyInfo *dependency_info);
     void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2KHR stageMask);
@@ -617,6 +597,11 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void RecordWriteTimestamp(Func command, VkPipelineStageFlags2KHR pipelineStage, VkQueryPool queryPool, uint32_t slot);
     void RecordPushConstants(const vvl::PipelineLayout &pipeline_layout_state, VkShaderStageFlags stage_flags, uint32_t offset,
                              uint32_t size, const void *values);
+
+    void RecordBeginConditionalRendering(Func command);
+    void RecordEndConditionalRendering(Func command);
+
+    void RecordSetRenderingInputAttachmentIndices(Func command, const VkRenderingInputAttachmentIndexInfo *pLocationInfo);
 
     void RecordBarriers(uint32_t memoryBarrierCount, const VkMemoryBarrier *pMemoryBarriers, uint32_t bufferMemoryBarrierCount,
                         const VkBufferMemoryBarrier *pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount,
@@ -654,7 +639,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     bool HasValidDynamicStencilAttachment() const;
     bool HasExternalFormatResolveAttachment() const;
 
-    inline void BindPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {
+    inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {
         lastBound[bind_point].pipeline_state = pipe_state;
     }
     void BindShader(VkShaderStageFlagBits shader_stage, vvl::ShaderObject *shader_object_state);
@@ -710,7 +695,14 @@ class CommandBufferSubState {
 
     virtual void ExecuteCommands(vvl::CommandBuffer &secondary_command_buffer) {}
 
-    virtual void RecordCmd(Func command) {}
+    virtual void RecordActionCommand(LastBound &last_bound, const Location &loc) {}
+    virtual void RecordBindPipeline(VkPipelineBindPoint bind_point, vvl::Pipeline &pipeline) {}
+
+    virtual void RecordSetViewport(uint32_t first_viewport, uint32_t viewport_count) {}
+    virtual void RecordSetViewportWithCount(uint32_t viewport_count) {}
+    virtual void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) {}
+    virtual void RecordSetScissorWithCount(uint32_t scissor_count) {}
+
     virtual void RecordSetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask,
                                 const VkDependencyInfo *dependency_info) {}
     virtual void RecordResetEvent(Func command, VkEvent event, VkPipelineStageFlags2 stage_mask) {}
