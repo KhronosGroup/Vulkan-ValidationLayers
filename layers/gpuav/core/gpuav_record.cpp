@@ -161,43 +161,6 @@ void Validator::PreCallRecordDestroyDevice(VkDevice device, const VkAllocationCa
     desc_set_manager_.reset();
 }
 
-void Validator::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    valcmd::FlushValidationCmds(*this, SubState(*cb_state));
-}
-
-void Validator::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                   const RecordObject &record_obj) {
-    PostCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
-}
-
-void Validator::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    valcmd::FlushValidationCmds(*this, SubState(*cb_state));
-}
-
-void Validator::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    if (!cb_state) {
-        InternalError(commandBuffer, record_obj.location, "Unrecognized command buffer.");
-        return;
-    }
-    valcmd::FlushValidationCmds(*this, SubState(*cb_state));
-}
-
-void Validator::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    PostCallRecordCmdEndRendering(commandBuffer, record_obj);
-}
-
 void Validator::PostCallRecordCmdBindDescriptorSets(VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
                                                     VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount,
                                                     const VkDescriptorSet *pDescriptorSets, uint32_t dynamicOffsetCount,

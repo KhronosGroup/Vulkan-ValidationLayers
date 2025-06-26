@@ -45,6 +45,9 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordSetScissor(uint32_t first_scissor, uint32_t scissor_count) final;
     void RecordSetScissorWithCount(uint32_t scissor_count) final;
 
+    void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) final;
+    void RecordEndRenderPass() final;
+
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                 const VkClearRect *pRects, const Location &loc) final;
 

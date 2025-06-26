@@ -3260,13 +3260,13 @@ void DeviceState::PostCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer
 
 void DeviceState::PostCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordEndRendering(record_obj.location.function);
+    cb_state->RecordEndRendering(record_obj.location.function, nullptr);
 }
 
 void DeviceState::PostCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
                                                     const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->RecordEndRendering(record_obj.location.function);
+    cb_state->RecordEndRendering(record_obj.location.function, pRenderingEndInfo);
 }
 
 void DeviceState::PostCallRecordCmdBeginRenderPass2(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo *pRenderPassBegin,
@@ -3294,7 +3294,7 @@ void DeviceState::PostCallRecordCmdNextSubpass2(VkCommandBuffer commandBuffer, c
 
 void DeviceState::PostCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->EndRenderPass(record_obj.location.function);
+    cb_state->RecordEndRenderPass(record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
@@ -3305,7 +3305,7 @@ void DeviceState::PostCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuff
 void DeviceState::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->EndRenderPass(record_obj.location.function);
+    cb_state->RecordEndRenderPass(record_obj.location.function);
 }
 
 void DeviceState::PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,

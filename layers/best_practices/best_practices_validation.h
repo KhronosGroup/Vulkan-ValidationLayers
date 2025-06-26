@@ -301,14 +301,6 @@ class BestPractices : public vvl::DeviceProxy {
                                     const Location& loc) const;
     bool ValidateCmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo* pRenderingInfo, const Location& loc) const;
 
-    void PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo* pSubpassEndInfo,
-                                        const RecordObject& record_obj) override;
-    void PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfoKHR* pSubpassEndInfo,
-                                           const RecordObject& record_obj) override;
-    void PreCallRecordCmdEndRendering(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-    void PreCallRecordCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const RecordObject& record_obj) override;
-
     bool PreCallValidateCmdBeginRenderPass(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
                                            VkSubpassContents contents, const ErrorObject& error_obj) const override;
     bool PreCallValidateCmdBeginRenderPass2KHR(VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo* pRenderPassBegin,
@@ -646,7 +638,6 @@ class BestPractices : public vvl::DeviceProxy {
 
     // TODO - Move these to CommandBufferSubState
     void RecordCmdDrawTypeArm(bp_state::CommandBufferSubState& cb_state, uint32_t draw_count);
-    void RecordCmdEndRenderingCommon(bp_state::CommandBufferSubState& cb_state, const vvl::RenderPass& rp_state);
     void RecordClearColor(VkFormat format, const VkClearColorValue& clear_value);
     bool ClearAttachmentsIsFullClear(const bp_state::CommandBufferSubState& cb_state, uint32_t rectCount,
                                      const VkClearRect* pRects) const;

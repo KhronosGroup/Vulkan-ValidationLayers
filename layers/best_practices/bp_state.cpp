@@ -344,6 +344,57 @@ void CommandBufferSubState::RecordNextSubpass() {
     }
 }
 
+void CommandBufferSubState::RecordEndRenderingCommon(const vvl::RenderPass& rp_state) {
+    if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+        std::optional<VkAttachmentStoreOp> store_op;
+
+        if (rp_state.UsesDynamicRendering()) {
+            const auto depth_attachment = rp_state.dynamic_rendering_begin_rendering_info.pDepthAttachment;
+            if (depth_attachment) {
+                store_op.emplace(depth_attachment->storeOp);
+            }
+        } else {
+            if (rp_state.create_info.subpassCount > 0) {
+                const uint32_t last_subpass = rp_state.create_info.subpassCount - 1;
+                const auto depth_attachment = rp_state.create_info.pSubpasses[last_subpass].pDepthStencilAttachment;
+                if (depth_attachment) {
+                    const uint32_t attachment = depth_attachment->attachment;
+                    if (attachment != VK_ATTACHMENT_UNUSED) {
+                        store_op.emplace(rp_state.create_info.pAttachments[attachment].storeOp);
+                    }
+                }
+            }
+        }
+
+        if (store_op) {
+            if (*store_op == VK_ATTACHMENT_STORE_OP_DONT_CARE || *store_op == VK_ATTACHMENT_STORE_OP_NONE) {
+                RecordResetScopeZcullDirectionNV();
+            }
+        }
+
+        RecordUnbindZcullScopeNV();
+    }
+}
+
+void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT*) {
+    if (!base.active_render_pass) {
+        return;
+    }
+    RecordEndRenderingCommon(*base.active_render_pass);
+}
+
+void CommandBufferSubState::RecordEndRenderPass() {
+    if (!base.active_render_pass) {
+        return;
+    }
+    RecordEndRenderingCommon(*base.active_render_pass);
+
+    // Add Deferred Queue
+    queue_submit_functions.insert(queue_submit_functions.end(), queue_submit_functions_after_render_pass.begin(),
+                                  queue_submit_functions_after_render_pass.end());
+    queue_submit_functions_after_render_pass.clear();
+}
+
 void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
                                                    uint32_t rect_count, const VkClearRect* pRects, const Location&) {
     auto* rp_state = base.active_render_pass.get();

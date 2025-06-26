@@ -23,6 +23,7 @@
 #include "gpuav/core/gpuav_constants.h"
 #include "gpuav/shaders/gpuav_error_header.h"
 #include "gpuav/resources/gpuav_vulkan_objects.h"
+#include "gpuav/validation_cmd/gpuav_draw.h"
 
 #include "profiling/profiling.h"
 
@@ -138,6 +139,10 @@ void CommandBufferSubState::ClearPushConstants() {
     push_constant_data_chunks.clear();
     push_constant_latest_used_layout.fill(VK_NULL_HANDLE);
 }
+
+void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT *) { valcmd::FlushValidationCmds(gpuav_, *this); }
+
+void CommandBufferSubState::RecordEndRenderPass() { valcmd::FlushValidationCmds(gpuav_, *this); }
 
 void CommandBufferSubState::ResetCBState(bool should_destroy) {
     // Free or return to cache GPU resources

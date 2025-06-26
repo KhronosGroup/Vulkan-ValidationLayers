@@ -549,13 +549,12 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     void ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount);
     bool UpdatesQuery(const QueryObject &query_obj) const;
 
+    void RecordBeginRendering(Func command, const VkRenderingInfo &rendering_info);
     void RecordBeginRenderPass(Func command, const VkRenderPassBeginInfo &render_pass_begin, VkSubpassContents contents);
     void RecordNextSubpass(Func command, VkSubpassContents contents);
     void UpdateSubpassAttachments();
-    void EndRenderPass(Func command);
-
-    void RecordBeginRendering(Func command, const VkRenderingInfo &rendering_info);
-    void RecordEndRendering(Func command);
+    void RecordEndRendering(Func command, const VkRenderingEndInfoEXT *pRenderingEndInfo);
+    void RecordEndRenderPass(Func command);
 
     void BeginVideoCoding(const VkVideoBeginCodingInfoKHR *pBeginInfo);
     void EndVideoCoding(const VkVideoEndCodingInfoKHR *pEndCodingInfo);
@@ -723,6 +722,9 @@ class CommandBufferSubState {
     virtual void RecordBeginRendering(const VkRenderingInfo &rendering_info) {}
     virtual void RecordBeginRenderPass(const VkRenderPassBeginInfo &render_pass_begin) {}
     virtual void RecordNextSubpass() {}
+    // Note - these are called prior to the renderPass object being destroyed
+    virtual void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) {}
+    virtual void RecordEndRenderPass() {}
 
     virtual void BeginQuery(const QueryObject &query_obj) {}
     virtual void EndQuery(const QueryObject &query_obj) {}
