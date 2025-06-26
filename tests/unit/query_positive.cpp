@@ -634,3 +634,25 @@ TEST_F(PositiveQuery, QueryPoolResetBit) {
     m_default_queue->Submit(m_command_buffer);
     m_default_queue->Wait();
 }
+
+TEST_F(PositiveQuery, QueryPoolResultsStride) {
+    AddRequiredFeature(vkt::Feature::pipelineStatisticsQuery);
+    RETURN_IF_SKIP(Init());
+    InitRenderTarget();
+
+    VkQueryPoolCreateInfo qpci = vkt::QueryPool::CreateInfo(VK_QUERY_TYPE_PIPELINE_STATISTICS, 1u);
+    qpci.pipelineStatistics = VK_QUERY_PIPELINE_STATISTIC_INPUT_ASSEMBLY_VERTICES_BIT;
+    vkt::QueryPool query_pool(*m_device, qpci);
+
+    m_command_buffer.Begin();
+    vk::CmdResetQueryPool(m_command_buffer, query_pool, 0u, 1u);
+    vk::CmdBeginQuery(m_command_buffer, query_pool, 0u, 0u);
+    vk::CmdEndQuery(m_command_buffer, query_pool, 0u);
+    m_command_buffer.End();
+
+    m_default_queue->SubmitAndWait(m_command_buffer);
+
+    uint32_t data_space[2];
+    vk::GetQueryPoolResults(*m_device, query_pool, 0u, 1u, sizeof(uint32_t) * 2, data_space, 0u,
+                            VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+}
