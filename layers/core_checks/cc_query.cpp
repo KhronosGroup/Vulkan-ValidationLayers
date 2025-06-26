@@ -257,7 +257,7 @@ bool CoreChecks::PreCallValidateGetQueryPoolResults(VkDevice device, VkQueryPool
                          FormatHandle(queryPool).c_str(), dataSize);
     }
 
-    if (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) {
+    if (queryCount > 1 && (flags & VK_QUERY_RESULT_WITH_AVAILABILITY_BIT) != 0) {
         const uint32_t required_stride = query_size_in_bytes * (1 + query_avail_data);
         if (stride < required_stride) {
             skip |= LogError("VUID-vkGetQueryPoolResults-stride-08993", queryPool, error_obj.location.dot(Field::flags),
