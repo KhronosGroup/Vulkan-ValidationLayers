@@ -889,26 +889,6 @@ bool CoreChecks::PreCallValidateCmdEndRenderPass2(VkCommandBuffer commandBuffer,
     return skip;
 }
 
-// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
-void CoreChecks::PreCallRecordCmdEndRenderPass(VkCommandBuffer commandBuffer, const RecordObject &record_obj) {
-    if (auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer)) {
-        TransitionFinalSubpassLayouts(*cb_state);
-    }
-}
-
-void CoreChecks::PreCallRecordCmdEndRenderPass2KHR(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                   const RecordObject &record_obj) {
-    PreCallRecordCmdEndRenderPass2(commandBuffer, pSubpassEndInfo, record_obj);
-}
-
-// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
-void CoreChecks::PreCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer, const VkSubpassEndInfo *pSubpassEndInfo,
-                                                const RecordObject &record_obj) {
-    if (auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer)) {
-        TransitionFinalSubpassLayouts(*cb_state);
-    }
-}
-
 bool CoreChecks::VerifyRenderAreaBounds(const VkRenderPassBeginInfo &begin_info, const Location &begin_info_loc) const {
     bool skip = false;
 
@@ -4224,29 +4204,6 @@ bool CoreChecks::PreCallValidateCmdEndRendering2EXT(VkCommandBuffer commandBuffe
 
 bool CoreChecks::PreCallValidateCmdEndRenderingKHR(VkCommandBuffer commandBuffer, const ErrorObject &error_obj) const {
     return PreCallValidateCmdEndRendering(commandBuffer, error_obj);
-}
-
-// Using PreCallRecord because LayerObjectTypeStateTracker will destroy render pass object first in PostCallRecord
-void CoreChecks::PreCallRecordCmdEndRendering2EXT(VkCommandBuffer commandBuffer, const VkRenderingEndInfoEXT *pRenderingEndInfo,
-                                                  const RecordObject &record_obj) {
-    auto cb_state = GetWrite<vvl::CommandBuffer>(commandBuffer);
-    auto &cb_sub_state = core::SubState(*cb_state);
-
-    // Only track the first call to vkCmdEndRendering2EXT for pFragmentDensityOffsets, because they must match due to VU 10730
-    if (cb_sub_state.fragment_density_offsets.empty()) {
-        std::vector<VkOffset2D> fragment_density_offsets = {{0, 0}};
-        if (pRenderingEndInfo) {
-            const auto *fdm_offset_end_info =
-                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext);
-            if (fdm_offset_end_info) {
-                fragment_density_offsets.resize(fdm_offset_end_info->fragmentDensityOffsetCount);
-                for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
-                    fragment_density_offsets[i] = fdm_offset_end_info->pFragmentDensityOffsets[i];
-                }
-            }
-        }
-        cb_sub_state.fragment_density_offsets = fragment_density_offsets;
-    }
 }
 
 bool CoreChecks::ValidateMultisampledRenderToSingleSampleView(VkCommandBuffer commandBuffer, const vvl::ImageView &image_view_state,

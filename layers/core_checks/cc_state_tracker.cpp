@@ -184,6 +184,26 @@ void CommandBufferSubState::RecordSetScissorWithCount(uint32_t scissor_count) {
     scissor.trashed_count = false;
 }
 
+void CommandBufferSubState::RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEndInfo) {
+    // Only track the first call to vkCmdEndRendering2EXT for pFragmentDensityOffsets, because they must match due to VU 10730
+    if (fragment_density_offsets.empty()) {
+        std::vector<VkOffset2D> new_offsets = {{0, 0}};
+        if (pRenderingEndInfo) {
+            const auto* fdm_offset_end_info =
+                vku::FindStructInPNextChain<VkRenderPassFragmentDensityMapOffsetEndInfoEXT>(pRenderingEndInfo->pNext);
+            if (fdm_offset_end_info) {
+                new_offsets.resize(fdm_offset_end_info->fragmentDensityOffsetCount);
+                for (uint32_t i = 0; i < fdm_offset_end_info->fragmentDensityOffsetCount; ++i) {
+                    new_offsets[i] = fdm_offset_end_info->pFragmentDensityOffsets[i];
+                }
+            }
+        }
+        fragment_density_offsets = new_offsets;
+    }
+}
+
+void CommandBufferSubState::RecordEndRenderPass() { validator.TransitionFinalSubpassLayouts(base); }
+
 void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
                                                    uint32_t rect_count, const VkClearRect* pRects, const Location& loc) {
     const vvl::RenderPass* rp_state = base.active_render_pass.get();

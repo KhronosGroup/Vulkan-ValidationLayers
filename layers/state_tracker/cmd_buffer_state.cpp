@@ -652,7 +652,12 @@ void CommandBuffer::RecordNextSubpass(Func command, VkSubpassContents contents) 
     }
 }
 
-void CommandBuffer::EndRenderPass(Func command) {
+void CommandBuffer::RecordEndRenderPass(Func command) {
+    // Call first so SubState can use render pass object before we destroy it
+    for (auto &item : sub_states_) {
+        item.second->RecordEndRenderPass();
+    }
+
     RecordCmd(command);
     active_render_pass = nullptr;
     attachment_source = AttachmentSource::Empty;
@@ -760,7 +765,12 @@ void CommandBuffer::RecordBeginRendering(Func command, const VkRenderingInfo &re
     }
 }
 
-void CommandBuffer::RecordEndRendering(Func command) {
+void CommandBuffer::RecordEndRendering(Func command, const VkRenderingEndInfoEXT *pRenderingEndInfo) {
+    // Call first so SubState can use render pass object before we destroy it
+    for (auto &item : sub_states_) {
+        item.second->RecordEndRendering(pRenderingEndInfo);
+    }
+
     RecordCmd(command);
     active_render_pass = nullptr;
     active_color_attachments_index.clear();

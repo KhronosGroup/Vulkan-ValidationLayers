@@ -176,6 +176,8 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordBeginRendering(const VkRenderingInfo& rendering_info) final;
     void RecordBeginRenderPass(const VkRenderPassBeginInfo& render_pass_begin) final;
     void RecordNextSubpass() final;
+    void RecordEndRendering(const VkRenderingEndInfoEXT* pRenderingEndInfo) final;
+    void RecordEndRenderPass() final;
 
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments, uint32_t rect_count,
                                 const VkClearRect* pRects, const Location& loc) final;
@@ -226,6 +228,7 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   private:
     void ResetCBState();
     void RecordBeginRenderingCommon(const VkRenderPassBeginInfo* pRenderPassBegin, const VkRenderingInfo* pRenderingInfo);
+    void RecordEndRenderingCommon(const vvl::RenderPass& rp_state);
 };
 
 static inline CommandBufferSubState& SubState(vvl::CommandBuffer& cb) {
