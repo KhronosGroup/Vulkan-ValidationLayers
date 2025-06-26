@@ -482,6 +482,28 @@ TEST_F(NegativeDeviceQueue, DeviceCreateInvalidParameters) {
     }
 }
 
+TEST_F(NegativeDeviceQueue, NoQueues) {
+    SetTargetApiVersion(VK_API_VERSION_1_1);
+    AddRequiredExtensions(VK_KHR_MAINTENANCE_9_EXTENSION_NAME);
+    AddRequiredFeature(vkt::Feature::maintenance9);
+    RETURN_IF_SKIP(InitFramework());
+
+    VkDeviceCreateInfo device_ci = vku::InitStructHelper();
+    device_ci.pNext = requested_features_.GetEnabledFeatures2();
+    device_ci.enabledExtensionCount = static_cast<uint32_t>(m_device_extension_names.size());
+    device_ci.ppEnabledExtensionNames = m_device_extension_names.data();
+
+    vkt::Device device(gpu_, device_ci);
+
+    VkBufferCreateInfo buffer_create_info = vku::InitStructHelper();
+    buffer_create_info.size = 4096;
+    buffer_create_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    VkBuffer buffer;
+    m_errorMonitor->SetDesiredError("VUID-vkCreateBuffer-device-queuecount");
+    vk::CreateBuffer(device, &buffer_create_info, nullptr, &buffer);
+    m_errorMonitor->VerifyFound();
+}
+
 TEST_F(NegativeDeviceQueue, DeviceCreateEnabledLayerNamesPointer) {
     SetTargetApiVersion(VK_API_VERSION_1_2);
     RETURN_IF_SKIP(InitFramework());
