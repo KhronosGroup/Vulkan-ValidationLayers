@@ -832,14 +832,14 @@ bool CoreChecks::ValidateVideoPictureResource(const vvl::VideoPictureResource &p
             string_VkExtent2D(vs_state.create_info.maxCodedExtent).c_str(), FormatHandle(vs_state).c_str());
     }
 
-    if (picture_resource.base_array_layer >= picture_resource.image_view_state->create_info.subresourceRange.layerCount) {
+    if (picture_resource.base_array_layer >= picture_resource.image_view_state->normalized_subresource_range.layerCount) {
         const LogObjectList objlist(cmdbuf, vs_state.Handle(), picture_resource.image_view_state->Handle(),
                                     picture_resource.image_state->Handle());
         skip |=
             LogError("VUID-VkVideoPictureResourceInfoKHR-baseArrayLayer-07175", objlist, loc.dot(Field::baseArrayLayer),
                      "(%u) is greater than or equal to the layerCount (%u) "
                      "the %s specified in imageViewBinding was created with.",
-                     picture_resource.base_array_layer, picture_resource.image_view_state->create_info.subresourceRange.layerCount,
+                     picture_resource.base_array_layer, picture_resource.image_view_state->normalized_subresource_range.layerCount,
                      FormatHandle(picture_resource.image_view_state->Handle()).c_str());
     }
 

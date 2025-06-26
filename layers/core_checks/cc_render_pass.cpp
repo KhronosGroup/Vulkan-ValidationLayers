@@ -1089,6 +1089,8 @@ bool CoreChecks::VerifyFramebufferAndRenderPassImageViews(const VkRenderPassBegi
                              framebuffer_attachment_image_info->height);
         }
 
+        // TODO - Need to understand when this rule actually applies everywhere. There is some special language around
+        // vk_khr_maintenance9 where this logic isn't true for pipeline barriers
         const uint32_t layerCount = image_view_state->create_info.subresourceRange.layerCount != VK_REMAINING_ARRAY_LAYERS
                                         ? image_view_state->create_info.subresourceRange.layerCount
                                         : image_create_info->extent.depth;
@@ -3235,12 +3237,12 @@ bool CoreChecks::ValidateBeginRenderingFragmentShadingRate(VkCommandBuffer comma
     ASSERT_AND_RETURN_SKIP(view_state);
     const LogObjectList objlist(commandBuffer, view_state->Handle());
     if (rendering_info.viewMask == 0) {
-        if (view_state->create_info.subresourceRange.layerCount != 1 &&
-            view_state->create_info.subresourceRange.layerCount < rendering_info.layerCount) {
+        if (view_state->normalized_subresource_range.layerCount != 1 &&
+            view_state->normalized_subresource_range.layerCount < rendering_info.layerCount) {
             skip |= LogError("VUID-VkRenderingInfo-imageView-06123", objlist, rendering_info_loc.dot(Field::layerCount),
                              "is (%" PRIu32
                              ") but VkRenderingFragmentShadingRateAttachmentInfoKHR::imageView was created with (%" PRIu32 ").",
-                             rendering_info.layerCount, view_state->create_info.subresourceRange.layerCount);
+                             rendering_info.layerCount, view_state->normalized_subresource_range.layerCount);
         }
     } else {
         int highest_view_bit = MostSignificantBit(rendering_info.viewMask);
@@ -3756,6 +3758,15 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
                                  string_VkComponentMapping(components).c_str());
             }
 
+            if (rendering_info.viewMask == 0 &&
+                rendering_info.layerCount > image_view_state->normalized_subresource_range.layerCount) {
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+                skip |= LogError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount", objlist,
+                                 color_attachment_loc.dot(Field::layerCount),
+                                 "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
+                                 rendering_info.layerCount, image_view_state->normalized_subresource_range.layerCount);
+            }
+
             skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, color_image_view);
         }
 
@@ -3812,6 +3823,17 @@ bool CoreChecks::ValidateBeginRenderingColorAttachment(VkCommandBuffer commandBu
                                      color_attachment_loc.dot(Field::resolveImageView),
                                      "was created with subresourceRange.layerCount of %" PRIu32 ".",
                                      resolve_view_state->create_info.subresourceRange.layerCount);
+                }
+
+                if (rendering_info.viewMask == 0 &&
+                    rendering_info.layerCount > resolve_view_state->normalized_subresource_range.layerCount) {
+                    // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+                    const LogObjectList objlist(commandBuffer, color_attachment.resolveImageView);
+                    skip |= LogError("UNASSIGNED-VkRenderingInfo-colorAttachment-layerCount", objlist,
+                                     color_attachment_loc.dot(Field::layerCount),
+                                     "(%" PRIu32
+                                     ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
+                                     rendering_info.layerCount, resolve_view_state->normalized_subresource_range.layerCount);
                 }
 
                 if (auto color_view_state = Get<vvl::ImageView>(color_attachment.imageView)) {
@@ -3902,6 +3924,14 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
                              string_VkComponentMapping(components).c_str());
         }
 
+        if (rendering_info.viewMask == 0 && rendering_info.layerCount > depth_view_state->normalized_subresource_range.layerCount) {
+            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+            skip |= LogError("UNASSIGNED-VkRenderingInfo-depthAttachment-layerCount", objlist,
+                             depth_attachment_loc.dot(Field::layerCount),
+                             "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
+                             rendering_info.layerCount, depth_view_state->normalized_subresource_range.layerCount);
+        }
+
         skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, depth_image_view);
     }
 
@@ -3927,6 +3957,16 @@ bool CoreChecks::ValidateBeginRenderingDepthAttachment(VkCommandBuffer commandBu
                 skip |= LogError("VUID-VkRenderingInfo-pDepthAttachment-09477", objlist,
                                  depth_attachment_loc.dot(Field::resolveImageView), "image was created with %s.",
                                  string_VkImageUsageFlags(image_usage).c_str());
+            }
+
+            if (rendering_info.viewMask == 0 &&
+                rendering_info.layerCount > depth_resolve_view_state->normalized_subresource_range.layerCount) {
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+                const LogObjectList objlist(commandBuffer, depth_resolve_view_state->Handle());
+                skip |= LogError(
+                    "UNASSIGNED-VkRenderingInfo-depthAttachment-layerCount", objlist, depth_attachment_loc.dot(Field::layerCount),
+                    "(%" PRIu32 ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
+                    rendering_info.layerCount, depth_resolve_view_state->normalized_subresource_range.layerCount);
             }
         }
     }
@@ -3967,6 +4007,15 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer command
                              string_VkComponentMapping(components).c_str());
         }
 
+        if (rendering_info.viewMask == 0 &&
+            rendering_info.layerCount > stencil_view_state->normalized_subresource_range.layerCount) {
+            // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+            skip |= LogError("UNASSIGNED-VkRenderingInfo-stencilAttachment-layerCount", objlist,
+                             stencil_attachment_loc.dot(Field::layerCount),
+                             "(%" PRIu32 ") is greater than the imageView which was created with a layerCount of %" PRIu32 ".",
+                             rendering_info.layerCount, stencil_view_state->normalized_subresource_range.layerCount);
+        }
+
         skip |= ValidateRenderingInfoAttachmentDeviceGroup(image_state, rendering_info, objlist, stencil_image_view);
     }
     if (stencil_attachment.resolveMode != VK_RESOLVE_MODE_NONE) {
@@ -3992,6 +4041,17 @@ bool CoreChecks::ValidateBeginRenderingStencilAttachment(VkCommandBuffer command
                 skip |= LogError("VUID-VkRenderingInfo-pStencilAttachment-09478", objlist,
                                  stencil_attachment_loc.dot(Field::resolveImageView), "image was created with %s.",
                                  string_VkImageUsageFlags(image_usage).c_str());
+            }
+
+            if (rendering_info.viewMask == 0 &&
+                rendering_info.layerCount > stencil_resolve_view_state->normalized_subresource_range.layerCount) {
+                // https://gitlab.khronos.org/vulkan/vulkan/-/merge_requests/7446/diffs
+                const LogObjectList objlist(commandBuffer, stencil_resolve_view_state->Handle());
+                skip |= LogError("UNASSIGNED-VkRenderingInfo-stencilAttachment-layerCount", objlist,
+                                 stencil_attachment_loc.dot(Field::layerCount),
+                                 "(%" PRIu32
+                                 ") is greater than the resolveImageView which was created with a layerCount of %" PRIu32 ".",
+                                 rendering_info.layerCount, stencil_resolve_view_state->normalized_subresource_range.layerCount);
             }
         }
     }

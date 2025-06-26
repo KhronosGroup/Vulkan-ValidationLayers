@@ -1328,3 +1328,27 @@ TEST_F(PositiveDynamicRendering, ContentsSecondaryCommandBuffersBit) {
 
     m_default_queue->SubmitAndWait(m_command_buffer);
 }
+
+TEST_F(PositiveDynamicRendering, ColorAttachmentLayerCount) {
+    RETURN_IF_SKIP(InitBasicDynamicRendering());
+    InitRenderTarget();
+
+    auto image_ci = vkt::Image::ImageCreateInfo2D(32, 32, 1, 4, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    vkt::Image image(*m_device, image_ci, vkt::set_layout);
+    vkt::ImageView image_view = image.CreateView(VK_IMAGE_VIEW_TYPE_2D_ARRAY, 0, 1, 0, VK_REMAINING_ARRAY_LAYERS);
+
+    VkRenderingAttachmentInfo color_attachment = vku::InitStructHelper();
+    color_attachment.imageView = image_view;
+    color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkRenderingInfo begin_rendering_info = vku::InitStructHelper();
+    begin_rendering_info.layerCount = 4;
+    begin_rendering_info.renderArea = {{0, 0}, {1, 1}};
+    begin_rendering_info.colorAttachmentCount = 1;
+    begin_rendering_info.pColorAttachments = &color_attachment;
+
+    m_command_buffer.Begin();
+    m_command_buffer.BeginRendering(begin_rendering_info);
+    m_command_buffer.EndRendering();
+    m_command_buffer.End();
+}

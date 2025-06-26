@@ -171,10 +171,9 @@ void CommandBufferSubState::RecordBeginRenderingCommon(const VkRenderPassBeginIn
                 }
             }
         }
-        if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
+        if (depth_image_view && (depth_image_view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
             const VkImage depth_image = depth_image_view->image_state->VkHandle();
-            const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
-            RecordBindZcullScopeNV(depth_image, subresource_range);
+            RecordBindZcullScopeNV(depth_image, depth_image_view->normalized_subresource_range);
         } else {
             RecordUnbindZcullScopeNV();
         }
@@ -336,10 +335,9 @@ void CommandBufferSubState::RecordNextSubpass() {
                 depth_image_view = base.active_attachments[attachment_index].image_view;
             }
         }
-        if (depth_image_view && (depth_image_view->create_info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
+        if (depth_image_view && (depth_image_view->normalized_subresource_range.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT) != 0U) {
             const VkImage depth_image = depth_image_view->image_state->VkHandle();
-            const VkImageSubresourceRange& subresource_range = depth_image_view->create_info.subresourceRange;
-            RecordBindZcullScopeNV(depth_image, subresource_range);
+            RecordBindZcullScopeNV(depth_image, depth_image_view->normalized_subresource_range);
         } else {
             RecordUnbindZcullScopeNV();
         }
