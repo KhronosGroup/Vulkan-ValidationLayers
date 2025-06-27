@@ -1810,11 +1810,12 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendEquation) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07628");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Equation");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_errorMonitor->SetDesiredError("VUID-VkColorBlendEquationEXT-dualSrcBlend-07357");
@@ -1857,7 +1858,7 @@ TEST_F(NegativeDynamicState, ColorBlendEquationMultipleAttachments) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 1, 1, &equation);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Equation");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -1900,7 +1901,7 @@ TEST_F(NegativeDynamicState, ColorBlendEquationInvalidateStaticPipeline) {
     vk::CmdSetColorBlendEquationEXT(m_command_buffer, 0, 1, &equation);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07477");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Equation");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
 
@@ -2002,13 +2003,14 @@ TEST_F(NegativeDynamicState, DrawNotSetColorBlendAdvanced) {
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
 
     m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     VkColorBlendAdvancedEXT second = {VK_BLEND_OP_ADD, VK_FALSE, VK_FALSE, VK_BLEND_OVERLAP_UNCORRELATED_EXT, VK_FALSE};
     vk::CmdSetColorBlendAdvancedEXT(m_command_buffer, 1u, 1u, &second);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-firstAttachment-07479");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Advanced");
     vk::CmdDraw(m_command_buffer, 1, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     if (!blend_operation_advanced.advancedBlendNonPremultipliedSrcColor) {
@@ -5831,26 +5833,17 @@ TEST_F(NegativeDynamicState, ColorBlendEquationNotSet) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendEquation);
     RETURN_IF_SKIP(Init());
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07628");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Equation");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
@@ -5893,26 +5886,17 @@ TEST_F(NegativeDynamicState, ColorBlendAdvancedNotSet) {
     AddRequiredExtensions(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
     AddRequiredFeature(vkt::Feature::extendedDynamicState3ColorBlendAdvanced);
     RETURN_IF_SKIP(Init());
-
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-    VkRenderPassCreateInfo render_pass_ci = vku::InitStructHelper();
-    render_pass_ci.subpassCount = 1u;
-    render_pass_ci.pSubpasses = &subpass;
-
-    vkt::RenderPass render_pass(*m_device, render_pass_ci);
-    vkt::Framebuffer framebuffer(*m_device, render_pass, 0, nullptr);
+    InitRenderTarget();
 
     CreatePipelineHelper pipe(*this);
     pipe.AddDynamicState(VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT);
-    pipe.gp_ci_.renderPass = render_pass;
+    pipe.cb_attachments_.blendEnable = VK_TRUE;
     pipe.CreateGraphicsPipeline();
 
     m_command_buffer.Begin();
-    m_command_buffer.BeginRenderPass(render_pass, framebuffer, 32u, 32u);
+    m_command_buffer.BeginRenderPass(m_renderPassBeginInfo);
     vk::CmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipe);
-    m_errorMonitor->SetDesiredError("VUID-vkCmdDraw-None-07635");
+    m_errorMonitor->SetDesiredError("UNASSIGNED-Draw-DynamicState-Advanced");
     vk::CmdDraw(m_command_buffer, 3, 1, 0, 0);
     m_errorMonitor->VerifyFound();
     m_command_buffer.EndRenderPass();
