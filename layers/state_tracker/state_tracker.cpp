@@ -3295,7 +3295,7 @@ void DeviceState::PostCallRecordCmdBeginRenderPass2KHR(VkCommandBuffer commandBu
 void DeviceState::PostCallRecordCmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCodingInfoKHR *pBeginInfo,
                                                        const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->BeginVideoCoding(pBeginInfo);
+    cb_state->RecordBeginVideoCoding(*pBeginInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCounterBuffer,
@@ -3398,7 +3398,7 @@ void DeviceState::PostCallRecordCmdEndRenderPass2(VkCommandBuffer commandBuffer,
 void DeviceState::PostCallRecordCmdEndVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoEndCodingInfoKHR *pEndCodingInfo,
                                                      const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->EndVideoCoding(pEndCodingInfo);
+    cb_state->RecordEndVideoCoding();
 }
 
 void DeviceState::PostCallRecordCmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBuffersCount,
@@ -5722,19 +5722,19 @@ void DeviceState::PostCallRecordCmdControlVideoCodingKHR(VkCommandBuffer command
                                                          const VkVideoCodingControlInfoKHR *pCodingControlInfo,
                                                          const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->ControlVideoCoding(pCodingControlInfo);
+    cb_state->RecordControlVideoCoding(*pCodingControlInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdDecodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoDecodeInfoKHR *pDecodeInfo,
                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->DecodeVideo(pDecodeInfo);
+    cb_state->RecordDecodeVideo(*pDecodeInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordCmdEncodeVideoKHR(VkCommandBuffer commandBuffer, const VkVideoEncodeInfoKHR *pEncodeInfo,
                                                   const RecordObject &record_obj) {
     auto cb_state = GetWrite<CommandBuffer>(commandBuffer);
-    cb_state->EncodeVideo(pEncodeInfo);
+    cb_state->RecordEncodeVideo(*pEncodeInfo, record_obj.location);
 }
 
 void DeviceState::PostCallRecordGetShaderModuleIdentifierEXT(VkDevice, const VkShaderModule shaderModule,
