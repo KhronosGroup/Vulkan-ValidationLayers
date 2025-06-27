@@ -462,31 +462,6 @@ class BestPractices : public vvl::DeviceProxy {
     void ValidateImageInQueueArmImg(const Location& loc, vvl::Image& image_state, IMAGE_SUBRESOURCE_USAGE_BP last_usage,
                                     IMAGE_SUBRESOURCE_USAGE_BP usage, uint32_t array_layer, uint32_t mip_level);
 
-    void PostCallRecordCmdResolveImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                       VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount,
-                                       const VkImageResolve* pRegions, const RecordObject& record_obj) override;
-    void PostCallRecordCmdResolveImage2KHR(VkCommandBuffer commandBuffer, const VkResolveImageInfo2KHR* pResolveImageInfo,
-                                           const RecordObject& record_obj) override;
-    void PostCallRecordCmdResolveImage2(VkCommandBuffer commandBuffer, const VkResolveImageInfo2* pResolveImageInfo,
-                                        const RecordObject& record_obj) override;
-    void PostCallRecordCmdClearColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                          const VkClearColorValue* pColor, uint32_t rangeCount,
-                                          const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
-    void PostCallRecordCmdClearDepthStencilImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout,
-                                                 const VkClearDepthStencilValue* pDepthStencil, uint32_t rangeCount,
-                                                 const VkImageSubresourceRange* pRanges, const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions,
-                                    const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage,
-                                            VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject& record_obj) override;
-    void PostCallRecordCmdCopyImageToBuffer(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout,
-                                            VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy* pRegions,
-                                            const RecordObject& record_obj) override;
-    void PostCallRecordCmdBlitImage(VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage,
-                                    VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit* pRegions,
-                                    VkFilter filter, const RecordObject& record_obj) override;
     template <typename RegionType>
     bool ValidateCmdBlitImage(VkCommandBuffer command_buffer, uint32_t region_count, const RegionType* regions,
                               const Location& loc) const;

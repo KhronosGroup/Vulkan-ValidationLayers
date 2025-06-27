@@ -395,6 +395,124 @@ void CommandBufferSubState::RecordEndRenderPass() {
     queue_submit_functions_after_render_pass.clear();
 }
 
+void CommandBufferSubState::RecordCopyImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout, VkImageLayout,
+                                            uint32_t region_count, const VkImageCopy* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout, VkImageLayout,
+                                             uint32_t region_count, const VkImageCopy2* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordCopyBufferToImage(vvl::Image& dst_image_state, VkImageLayout, uint32_t region_count,
+                                                    const VkBufferImageCopy* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+                                     regions[i].imageSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordCopyBufferToImage2(vvl::Image& dst_image_state, VkImageLayout, uint32_t region_count,
+                                                     const VkBufferImageCopy2* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_WRITE,
+                                     regions[i].imageSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImageToBuffer(vvl::Image& src_image_state, VkImageLayout, uint32_t region_count,
+                                                    const VkBufferImageCopy* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+                                     regions[i].imageSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordCopyImageToBuffer2(vvl::Image& src_image_state, VkImageLayout, uint32_t region_count,
+                                                     const VkBufferImageCopy2* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::COPY_READ,
+                                     regions[i].imageSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordBlitImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout, VkImageLayout,
+                                            uint32_t region_count, const VkImageBlit* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordBlitImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, VkImageLayout, VkImageLayout,
+                                             uint32_t region_count, const VkImageBlit2* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::BLIT_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordResolveImage(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
+                                               const VkImageResolve* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordResolveImage2(vvl::Image& src_image_state, vvl::Image& dst_image_state, uint32_t region_count,
+                                                const VkImageResolve2* regions, const Location& loc) {
+    for (uint32_t i = 0; i < region_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, src_image_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_READ,
+                                     regions[i].srcSubresource);
+        validator.QueueValidateImage(queue_submit_functions, loc, dst_image_state, IMAGE_SUBRESOURCE_USAGE_BP::RESOLVE_WRITE,
+                                     regions[i].dstSubresource);
+    }
+}
+
+void CommandBufferSubState::RecordClearColorImage(vvl::Image& image_state, VkImageLayout image_layout,
+                                                  const VkClearColorValue* color_values, uint32_t range_count,
+                                                  const VkImageSubresourceRange* ranges, const Location& loc) {
+    for (uint32_t i = 0; i < range_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, image_state, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, ranges[i]);
+    }
+
+    if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+        validator.RecordClearColor(image_state.create_info.format, *color_values);
+    }
+}
+
+void CommandBufferSubState::RecordClearDepthStencilImage(vvl::Image& image_state, VkImageLayout image_layout,
+                                                         const VkClearDepthStencilValue* depth_stencil_values, uint32_t range_count,
+                                                         const VkImageSubresourceRange* ranges, const Location& loc) {
+    for (uint32_t i = 0; i < range_count; i++) {
+        validator.QueueValidateImage(queue_submit_functions, loc, image_state, IMAGE_SUBRESOURCE_USAGE_BP::CLEARED, ranges[i]);
+    }
+    if (validator.VendorCheckEnabled(kBPVendorNVIDIA)) {
+        for (uint32_t i = 0; i < range_count; i++) {
+            // TODO - use state object
+            RecordResetZcullDirectionNV(image_state.VkHandle(), ranges[i]);
+        }
+    }
+}
+
 void CommandBufferSubState::RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment* pAttachments,
                                                    uint32_t rect_count, const VkClearRect* pRects, const Location&) {
     auto* rp_state = base.active_render_pass.get();

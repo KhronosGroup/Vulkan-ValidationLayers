@@ -50,6 +50,35 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
     void RecordEndRendering(const VkRenderingEndInfoEXT *pRenderingEndInfo) final;
     void RecordEndRenderPass() final;
 
+    void RecordCopyBuffer(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
+                          const VkBufferCopy *regions, const Location &loc) final;
+    void RecordCopyBuffer2(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
+                           const VkBufferCopy2 *regions, const Location &loc) final;
+    void RecordCopyImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy *regions,
+                         const Location &loc) final;
+    void RecordCopyImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageCopy2 *regions,
+                          const Location &loc) final;
+    void RecordCopyBufferToImage(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
+                                 const VkBufferImageCopy *regions, const Location &loc) final;
+    void RecordCopyBufferToImage2(vvl::Image &dst_image_state, VkImageLayout dst_image_layout, uint32_t region_count,
+                                  const VkBufferImageCopy2 *regions, const Location &loc) final;
+    void RecordCopyImageToBuffer(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
+                                 const VkBufferImageCopy *regions, const Location &loc) final;
+    void RecordCopyImageToBuffer2(vvl::Image &src_image_state, VkImageLayout src_image_layout, uint32_t region_count,
+                                  const VkBufferImageCopy2 *regions, const Location &loc) final;
+    void RecordBlitImage(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                         VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit *regions,
+                         const Location &loc) final;
+    void RecordBlitImage2(vvl::Image &src_image_state, vvl::Image &dst_image_state, VkImageLayout src_image_layout,
+                          VkImageLayout dst_image_layout, uint32_t region_count, const VkImageBlit2 *regions,
+                          const Location &loc) final;
+    void RecordClearColorImage(vvl::Image &image_state, VkImageLayout image_layout, const VkClearColorValue *color_values,
+                               uint32_t range_count, const VkImageSubresourceRange *ranges, const Location &loc) final;
+    void RecordClearDepthStencilImage(vvl::Image &image_state, VkImageLayout image_layout,
+                                      const VkClearDepthStencilValue *depth_stencil_values, uint32_t range_count,
+                                      const VkImageSubresourceRange *ranges, const Location &loc) final;
     void RecordClearAttachments(uint32_t attachment_count, const VkClearAttachment *pAttachments, uint32_t rect_count,
                                 const VkClearRect *pRects, const Location &loc) final;
 
@@ -147,6 +176,11 @@ class CommandBufferSubState : public vvl::CommandBufferSubState {
   private:
     void ResetCBState();
     void UpdateActionPipelineState(LastBound &last_bound, const vvl::Pipeline &pipeline_state);
+
+    // Funnel because Image/Buffer copies have 2 variations for the regions
+    template <typename RegionType>
+    void RecordCopyBufferCommon(vvl::Buffer &src_buffer_state, vvl::Buffer &dst_buffer_state, uint32_t region_count,
+                                const RegionType *regions, const Location &loc);
 };
 
 static inline CommandBufferSubState &SubState(vvl::CommandBuffer &cb) {
