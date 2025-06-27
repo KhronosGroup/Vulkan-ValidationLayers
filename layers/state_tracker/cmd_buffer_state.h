@@ -667,8 +667,7 @@ class CommandBuffer : public RefcountedStateObject, public SubStateManager<Comma
     // For non-dynamic rendering, get count from current subpass
     uint32_t GetColorAttachmentCount() const;
 
-    bool HasValidDynamicDepthAttachment() const;
-    bool HasValidDynamicStencilAttachment() const;
+    bool HasValidDepthAttachment() const;
     bool HasExternalFormatResolveAttachment() const;
 
     inline void BindLastBoundPipeline(vvl::BindPoint bind_point, vvl::Pipeline *pipe_state) {

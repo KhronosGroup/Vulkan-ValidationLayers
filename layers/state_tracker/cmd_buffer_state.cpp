@@ -1884,28 +1884,19 @@ uint32_t CommandBuffer::GetColorAttachmentCount() const {
     return 0;
 }
 
-bool CommandBuffer::HasValidDynamicDepthAttachment() const {
+bool CommandBuffer::HasValidDepthAttachment() const {
     if (active_render_pass) {
         if (active_render_pass->use_dynamic_rendering_inherited) {
             return active_render_pass->inheritance_rendering_info.depthAttachmentFormat != VK_FORMAT_UNDEFINED;
-        }
-        if (active_render_pass->use_dynamic_rendering) {
+        } else if (active_render_pass->use_dynamic_rendering) {
             return active_render_pass->dynamic_rendering_begin_rendering_info.pDepthAttachment != nullptr;
+        } else {
+            return active_render_pass->UsesDepthStencilAttachment(GetActiveSubpass());
         }
     }
     return false;
 }
-bool CommandBuffer::HasValidDynamicStencilAttachment() const {
-    if (active_render_pass) {
-        if (active_render_pass->use_dynamic_rendering_inherited) {
-            return active_render_pass->inheritance_rendering_info.stencilAttachmentFormat != VK_FORMAT_UNDEFINED;
-        }
-        if (active_render_pass->use_dynamic_rendering) {
-            return active_render_pass->dynamic_rendering_begin_rendering_info.pStencilAttachment != nullptr;
-        }
-    }
-    return false;
-}
+
 bool CommandBuffer::HasExternalFormatResolveAttachment() const {
     if (active_render_pass && active_render_pass->use_dynamic_rendering &&
         active_render_pass->dynamic_rendering_begin_rendering_info.colorAttachmentCount > 0) {
